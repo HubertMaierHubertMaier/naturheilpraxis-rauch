@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets } from "lucide-react";
+import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -76,6 +76,13 @@ const infothekGroups: InfothekGroup[] = [
         href: "/ass-salicylat-histamin.html",
         icon: AlertTriangle,
         description: { de: "ASS-, Salicylat- & Histamin-Unverträglichkeit", en: "ASS, salicylate & histamine intolerance" },
+        external: true,
+      },
+      {
+        label: { de: "Diabetes Typ 1 & Typ 2", en: "Diabetes Type 1 & Type 2" },
+        href: "/diabetes-handout.html",
+        icon: HeartPulse,
+        description: { de: "Patientenhandout: Zielwerte, Messen & Alltagstipps", en: "Patient handout: target values, measuring & daily tips" },
         external: true,
       },
     ],
