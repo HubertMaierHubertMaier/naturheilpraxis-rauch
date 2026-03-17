@@ -81,7 +81,7 @@ const infothekGroups: InfothekGroup[] = [
     ],
   },
   {
-    title: { de: "Für Patienten der Naturheilpraxis Peter Rauch", en: "For Patients of Naturheilpraxis Peter Rauch" },
+    title: { de: "Nur für Patienten der Naturheilpraxis Peter Rauch", en: "Only for Patients of Naturheilpraxis Peter Rauch" },
     items: [
       {
         label: { de: "Allergiebehandlung", en: "Allergy Treatment" },
@@ -102,6 +102,13 @@ const infothekGroups: InfothekGroup[] = [
         href: "/kraeuter-schmerz-entzuendung.html",
         icon: Leaf,
         description: { de: "Phytotherapie bei Schmerz & Entzündung", en: "Phytotherapy for pain & inflammation" },
+        external: true,
+      },
+      {
+        label: { de: "Hochohmiges Wasser", en: "High-Ohm Water" },
+        href: "/patienteninfo-hochohmiges-wasser.html",
+        icon: Droplets,
+        description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" },
         external: true,
       },
     ],
