@@ -78,6 +78,13 @@ const infothekGroups: InfothekGroup[] = [
         description: { de: "ASS-, Salicylat- & Histamin-Unverträglichkeit", en: "ASS, salicylate & histamine intolerance" },
         external: true,
       },
+      {
+        label: { de: "Diabetes Typ 1 & Typ 2", en: "Diabetes Type 1 & Type 2" },
+        href: "/diabetes-handout.html",
+        icon: HeartPulse,
+        description: { de: "Patientenhandout: Zielwerte, Messen & Alltagstipps", en: "Patient handout: target values, measuring & daily tips" },
+        external: true,
+      },
     ],
   },
   {
