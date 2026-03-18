@@ -575,11 +575,6 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
               onChange={(e) => updateFormData("koerpergroesse", sanitizeDigitsOnly(e.target.value))} 
               onBlur={(e) => updateFormData("koerpergroesse", clampIntInRange(e.target.value, 0, 250))} 
             />
-            <datalist id="height-options">
-              {Array.from({ length: 211 }, (_, i) => (
-                <option key={i} value={i} />
-              ))}
-            </datalist>
           </div>
           <div className="space-y-2">
             <Label htmlFor="gewicht">{language === "de" ? "Gewicht (kg)" : "Weight (kg)"}</Label>
