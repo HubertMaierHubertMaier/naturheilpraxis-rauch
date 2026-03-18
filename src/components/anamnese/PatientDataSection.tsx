@@ -567,15 +567,13 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
             <Label htmlFor="koerpergroesse">{language === "de" ? "Körpergröße (cm)" : "Height (cm)"}</Label>
             <Input 
               id="koerpergroesse" 
-              type="number"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              min={0}
-              max={210}
-              step={1}
-              list="height-options"
+              placeholder="z.B. 175"
               value={formData.koerpergroesse} 
-              onChange={(e) => updateFormData("koerpergroesse", sanitizeIntInRange(e.target.value, 0, 210))} 
+              onChange={(e) => updateFormData("koerpergroesse", sanitizeDigitsOnly(e.target.value))} 
+              onBlur={(e) => updateFormData("koerpergroesse", clampIntInRange(e.target.value, 0, 250))} 
             />
             <datalist id="height-options">
               {Array.from({ length: 211 }, (_, i) => (
