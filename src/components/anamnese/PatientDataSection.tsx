@@ -42,7 +42,12 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
     updateFormData("informationsquelle", next);
   };
 
-  const sanitizeIntInRange = (raw: string, min: number, max: number) => {
+  /** Strip non-digits while typing; clamp only on blur */
+  const sanitizeDigitsOnly = (raw: string) => {
+    return raw.replace(/\D+/g, "");
+  };
+
+  const clampIntInRange = (raw: string, min: number, max: number) => {
     const digitsOnly = raw.replace(/\D+/g, "");
     if (!digitsOnly) return "";
     const n = Number.parseInt(digitsOnly, 10);
@@ -562,41 +567,27 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
             <Label htmlFor="koerpergroesse">{language === "de" ? "Körpergröße (cm)" : "Height (cm)"}</Label>
             <Input 
               id="koerpergroesse" 
-              type="number"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              min={0}
-              max={210}
-              step={1}
-              list="height-options"
+              placeholder="z.B. 175"
               value={formData.koerpergroesse} 
-              onChange={(e) => updateFormData("koerpergroesse", sanitizeIntInRange(e.target.value, 0, 210))} 
+              onChange={(e) => updateFormData("koerpergroesse", sanitizeDigitsOnly(e.target.value))} 
+              onBlur={(e) => updateFormData("koerpergroesse", clampIntInRange(e.target.value, 0, 250))} 
             />
-            <datalist id="height-options">
-              {Array.from({ length: 211 }, (_, i) => (
-                <option key={i} value={i} />
-              ))}
-            </datalist>
           </div>
           <div className="space-y-2">
             <Label htmlFor="gewicht">{language === "de" ? "Gewicht (kg)" : "Weight (kg)"}</Label>
             <Input 
               id="gewicht" 
-              type="number"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              min={1}
-              max={200}
-              step={1}
-              list="weight-options"
+              placeholder="z.B. 75"
               value={formData.gewicht} 
-              onChange={(e) => updateFormData("gewicht", sanitizeIntInRange(e.target.value, 1, 200))} 
+              onChange={(e) => updateFormData("gewicht", sanitizeDigitsOnly(e.target.value))} 
+              onBlur={(e) => updateFormData("gewicht", clampIntInRange(e.target.value, 1, 300))} 
             />
-            <datalist id="weight-options">
-              {Array.from({ length: 200 }, (_, i) => (
-                <option key={i + 1} value={i + 1} />
-              ))}
-            </datalist>
           </div>
           <div className="space-y-2">
             <Label>{language === "de" ? "BMI (berechnet)" : "BMI (calculated)"}</Label>

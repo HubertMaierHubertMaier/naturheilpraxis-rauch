@@ -603,9 +603,9 @@ const Anamnesebogen = () => {
       formData.unterschrift?.bestaetigung &&
       formData.unterschrift?.datenschutzEinwilligung &&
       formData.unterschrift?.patientenaufklaerungAkzeptiert &&
-      formData.unterschrift?.datum &&
       formData.unterschrift?.nameInDruckbuchstaben
     );
+    // Note: datum is always today (readonly, auto-set) — no need to validate
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
