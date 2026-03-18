@@ -580,21 +580,14 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
             <Label htmlFor="gewicht">{language === "de" ? "Gewicht (kg)" : "Weight (kg)"}</Label>
             <Input 
               id="gewicht" 
-              type="number"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              min={1}
-              max={200}
-              step={1}
-              list="weight-options"
+              placeholder="z.B. 75"
               value={formData.gewicht} 
-              onChange={(e) => updateFormData("gewicht", sanitizeIntInRange(e.target.value, 1, 200))} 
+              onChange={(e) => updateFormData("gewicht", sanitizeDigitsOnly(e.target.value))} 
+              onBlur={(e) => updateFormData("gewicht", clampIntInRange(e.target.value, 1, 300))} 
             />
-            <datalist id="weight-options">
-              {Array.from({ length: 200 }, (_, i) => (
-                <option key={i + 1} value={i + 1} />
-              ))}
-            </datalist>
           </div>
           <div className="space-y-2">
             <Label>{language === "de" ? "BMI (berechnet)" : "BMI (calculated)"}</Label>
