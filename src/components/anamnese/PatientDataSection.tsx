@@ -42,7 +42,12 @@ const PatientDataSection = ({ formData, updateFormData, userEmail }: PatientData
     updateFormData("informationsquelle", next);
   };
 
-  const sanitizeIntInRange = (raw: string, min: number, max: number) => {
+  /** Strip non-digits while typing; clamp only on blur */
+  const sanitizeDigitsOnly = (raw: string) => {
+    return raw.replace(/\D+/g, "");
+  };
+
+  const clampIntInRange = (raw: string, min: number, max: number) => {
     const digitsOnly = raw.replace(/\D+/g, "");
     if (!digitsOnly) return "";
     const n = Number.parseInt(digitsOnly, 10);
