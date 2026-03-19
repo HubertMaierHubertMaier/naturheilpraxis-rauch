@@ -228,6 +228,124 @@ const calciumPhosphorArgumente = {
   fazit: "Die aktuelle Studienlage ist widersprüchlich. Sicher ist: Calcium allein reicht für die Knochengesundheit nicht aus – Vitamin D, Vitamin K₂, Magnesium, Bewegung und ein ausgeglichener Säure-Basen-Haushalt sind ebenso entscheidend. Die Empfehlung, Milch als primäre Calciumquelle zu betrachten, wird zunehmend hinterfragt.",
 };
 
+/* ─── Pathogene in Milch ─── */
+const pathogeneData = [
+  {
+    keim: "Campylobacter jejuni",
+    infektionsdosis: "500–800 KbE",
+    symptome: "Wässriger bis blutiger Durchfall, Fieber, Krämpfe, Erbrechen. Komplikationen: Guillain-Barré-Syndrom, reaktive Arthritis",
+    inkubation: "2–5 Tage",
+    haeufigkeit: "~60.000–70.000 Fälle/Jahr in Deutschland (häufigste bakterielle Durchfallerkrankung, RKI)",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Salmonella spp.",
+    infektionsdosis: "10⁴–10⁶ KbE (bei Immunschwäche weniger)",
+    symptome: "Akute Gastroenteritis: Durchfall, Erbrechen, Fieber, Bauchkrämpfe. Komplikation: Sepsis bei Immunsupprimierten",
+    inkubation: "6–72 Stunden",
+    haeufigkeit: "~13.000–15.000 Fälle/Jahr (RKI, IfSG-Meldedaten)",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Listeria monocytogenes",
+    infektionsdosis: "Variabel (immunabhängig)",
+    symptome: "Fieber, Muskelschmerzen, Meningitis, Sepsis. Schwangere: Fehl-/Totgeburt, Neugeborenen-Sepsis. Letalität: 20–30 %!",
+    inkubation: "3–70 Tage (!)",
+    haeufigkeit: "~600–700 Fälle/Jahr (RKI), hohe Letalität",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "EHEC / STEC (E. coli)",
+    infektionsdosis: "10–100 KbE (extrem niedrig!)",
+    symptome: "Blutig-wässriger Durchfall, HUS (hämolytisch-urämisches Syndrom) → Nierenversagen, v.a. bei Kindern lebensbedrohlich",
+    inkubation: "2–10 Tage",
+    haeufigkeit: "~1.500–2.000 EHEC-Fälle/Jahr (RKI)",
+    hitze: "Abgetötet bei 70 °C / 2 Min.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Staphylococcus aureus (Enterotoxin)",
+    infektionsdosis: "Toxin ab ~100 ng",
+    symptome: "Heftiges Erbrechen, Durchfall, Bauchkrämpfe. Toxin ist hitzestabil – überlebt Pasteurisierung!",
+    inkubation: "1–6 Stunden",
+    haeufigkeit: "Untererfasst (keine Meldepflicht für S. aureus-Toxin)",
+    hitze: "Bakterium bei 72 °C abgetötet, aber Enterotoxin überlebt bis 121 °C!",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Coxiella burnetii (Q-Fieber)",
+    infektionsdosis: "1–10 Organismen",
+    symptome: "Fieber, Kopfschmerzen, atypische Pneumonie, Hepatitis. Chronisch: Endokarditis",
+    inkubation: "14–21 Tage",
+    haeufigkeit: "~80–120 Fälle/Jahr (RKI)",
+    hitze: "Referenzkeim für Pasteurisierung: 71,7 °C / 15 Sek. (HTST-Standard)",
+    gefahr: "secondary" as const,
+  },
+  {
+    keim: "Mycobacterium bovis (Rindertuberkulose)",
+    infektionsdosis: "Variabel",
+    symptome: "Tuberkulose (Lunge, Darm, Lymphknoten). Historisch häufigste durch Milch übertragene Erkrankung",
+    inkubation: "Wochen bis Monate",
+    haeufigkeit: "Sehr selten durch Milch in Deutschland (dank Pasteurisierung)",
+    hitze: "Abgetötet bei 63 °C / 30 Min. oder 72 °C / 15 Sek.",
+    gefahr: "secondary" as const,
+  },
+];
+
+const pasteurisierungsVerfahren = [
+  {
+    verfahren: "Dauererhitzung (LTLT)",
+    temperatur: "63 °C",
+    dauer: "30 Minuten",
+    anwendung: "Kleinstbetriebe, Hofkäsereien. Seltener in Großproduktion.",
+  },
+  {
+    verfahren: "Kurzzeiterhitzung (HTST)",
+    temperatur: "72–75 °C",
+    dauer: "15–30 Sekunden",
+    anwendung: "Standard für Frischmilch, Trinkmilch, Joghurt, Quark, Sahne – ca. 90 % der deutschen Trinkmilch.",
+  },
+  {
+    verfahren: "Hocherhitzung (ESL)",
+    temperatur: "85–127 °C",
+    dauer: "1–4 Sekunden",
+    anwendung: "ESL-Milch (\"länger frisch\"). Zunehmend im deutschen Handel.",
+  },
+  {
+    verfahren: "Ultrahocherhitzung (UHT)",
+    temperatur: "135–150 °C",
+    dauer: "2–4 Sekunden",
+    anwendung: "H-Milch. Keimfrei (steril). Monatelang ungekühlt haltbar.",
+  },
+];
+
+const pasteurisierteProdukte = {
+  ja: [
+    { produkt: "Trinkmilch (Frischmilch)", verfahren: "HTST (72 °C / 15 Sek.)" },
+    { produkt: "H-Milch", verfahren: "UHT (135–150 °C / 2–4 Sek.)" },
+    { produkt: "ESL-Milch", verfahren: "Hocherhitzung (85–127 °C)" },
+    { produkt: "Joghurt (Standard)", verfahren: "Milch vor Fermentation pasteurisiert" },
+    { produkt: "Quark", verfahren: "Milch vor Säuerung pasteurisiert" },
+    { produkt: "Sahne / Schlagsahne", verfahren: "HTST oder UHT" },
+    { produkt: "Frischkäse (Philadelphia etc.)", verfahren: "Aus pasteurisierter Milch" },
+    { produkt: "Butter (Standard)", verfahren: "Aus pasteurisierter Sahne (Süßrahm/Sauerrahm)" },
+    { produkt: "Schmelzkäse", verfahren: "Durch Erhitzung beim Schmelzen (>80 °C)" },
+    { produkt: "Kondensmilch", verfahren: "UHT oder Sterilisation" },
+  ],
+  nein: [
+    { produkt: "Rohmilch (ab Hof / Milchtankstelle)", risiko: "Alle Pathogene möglich" },
+    { produkt: "Vorzugsmilch", risiko: "Kontrolliert, aber NICHT pasteurisiert. Strenge Auflagen, aber Restrisiko" },
+    { produkt: "Rohmilchkäse (Camembert de Normandie, Brie de Meaux, Roquefort, Appenzeller, Gruyère u.v.m.)", risiko: "Listerien, EHEC, Salmonellen. Besonders gefährlich für Schwangere!" },
+    { produkt: "Mozzarella (aus Rohmilch, z.B. Büffelmozzarella)", risiko: "Listeriengefahr – auf Kennzeichnung achten" },
+    { produkt: "Feta (traditionell aus Rohmilch)", risiko: "Listerien, Brucella (selten). EU-Ware meist pasteurisiert" },
+    { produkt: "Weichkäse-Rinde (Schimmelrinde)", risiko: "Listerien bevorzugen feuchte Oberfläche von Weichkäse" },
+    { produkt: "Rohmilch-Butter (selten, ab Hof)", risiko: "Gering, aber bei Allergie/Immunschwäche relevant" },
+  ],
+};
+
 /* ─── Quellen ─── */
 const quellen = [
   { nr: 1, text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121." },
@@ -246,6 +364,15 @@ const quellen = [
   { nr: 14, text: "Huncharek M, Muscat J, Kupelnick B. Impact of dairy products and dietary calcium on bone-mineral content in children: results of a meta-analysis. Bone. 2008;43(2):312-321." },
   { nr: 15, text: "Weaver CM et al. Calcium plus vitamin D supplementation and risk of fractures. Osteoporos Int. 2016;27(1):367-376." },
   { nr: 16, text: "DGE (Deutsche Gesellschaft für Ernährung). Referenzwerte Calcium. https://www.dge.de/wissenschaft/referenzwerte/calcium/ (abgerufen März 2026)." },
+  { nr: 17, text: "BfR (Bundesinstitut für Risikobewertung). Erhitzen macht Milch zu einem sicheren Lebensmittel. Mitteilung Nr. 008/2025, 06.03.2025." },
+  { nr: 18, text: "BfR. Infektionen vermeiden – Was ist beim Verzehr von Rohmilch zu beachten? Aktualisierte Bewertung, 06.09.2024." },
+  { nr: 19, text: "Stingl K. Ausbruchsuntersuchungen zu Campylobacter in Rohmilch. BfR-Präsentation, 10.04.2019." },
+  { nr: 20, text: "RKI. Campylobacter-Enteritis. RKI-Ratgeber, Stand 28.11.2019." },
+  { nr: 21, text: "Rosner B et al. A combined case-control and molecular source attribution study of human Campylobacter infections in Germany, 2011–2014. Sci Rep. 2017;7:5139." },
+  { nr: 22, text: "LAVES Niedersachsen. Rohmilch – ein unterschätztes Risiko? https://www.laves.niedersachsen.de/ (abgerufen März 2026)." },
+  { nr: 23, text: "Rabbani A et al. Effect of Heat Pasteurization and Sterilization on Milk Safety, Composition, Sensory Properties, and Nutritional Quality. Foods. 2025;14(8):1342." },
+  { nr: 24, text: "Cerf O, Condron R. Coxiella burnetii and milk pasteurization: an early application of the precautionary principle? Epidemiol Infect. 2006;134(5):946-951." },
+  { nr: 25, text: "BVL/RKI. Gemeinsamer nationaler Bericht zu lebensmittelbedingten Krankheitsausbrüchen in Deutschland, 2015." },
 ];
 
 const MilchUnvertraeglichkeit = () => {
@@ -1005,6 +1132,189 @@ const MilchUnvertraeglichkeit = () => {
                     <p className="text-xs text-muted-foreground mt-2">
                       Quellen: Feskanich et al. 1997 [10], Michaëlsson et al. 2014 [11], Kemi et al. 2006 [12], 
                       Frassetto et al. 2000 [13], Huncharek et al. 2008 [14], Weaver et al. 2016 [15]
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* ═══════════════ Pathogene in Milch ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <CircleAlert className="mb-1 mr-2 inline-block h-7 w-7 text-destructive" />
+              Mikrobiologische Risiken – Pathogene in Milch
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Das Euter einer Kuh kann nicht sterilgehalten werden. Fäkalkeime, Umweltkeime und 
+              Erreger aus dem Tier selbst kontaminieren die Milch bereits beim Melken. Erst die 
+              Erhitzung (Pasteurisierung) macht Milch zu einem sicheren Lebensmittel [17, 18].
+            </p>
+
+            {/* Kontaminationswege */}
+            <Card className="shadow-card mb-8 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="bg-destructive/5 p-6 md:p-8">
+                  <h3 className="mb-4 font-serif text-lg font-medium text-foreground">
+                    Kontaminationswege – Warum ist Rohmilch nie „steril"?
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                      { weg: "Euter-Innenseite", detail: "Subklinische Mastitis (Euterentzündung) → S. aureus, Streptokokken, E. coli direkt im Eutergewebe. ~30 % aller Kühe haben subklinische Mastitis (BfR) [17]." },
+                      { weg: "Fäkale Kontamination", detail: "Kühe liegen in Einstreu, die mit Kot kontaminiert ist. Fäkalkeime (Salmonellen, Campylobacter, EHEC) gelangen beim Melken auf Zitzen und in die Milch [18, 22]." },
+                      { weg: "Umwelt & Wasser", detail: "Listerien (ubiquitär in Erde, Silage, Wasser) kontaminieren Melkequipment und Milchtanks. Biofilmbildung auf Oberflächen [22]." },
+                      { weg: "Tier selbst (systemisch)", detail: "Coxiella burnetii (Q-Fieber), Brucella, M. bovis werden über die Milch ausgeschieden, auch bei klinisch gesundem Tier [24]." },
+                    ].map((item) => (
+                      <div key={item.weg} className="rounded-xl border border-destructive/15 bg-background p-4">
+                        <h4 className="mb-2 text-sm font-medium text-foreground">{item.weg}</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pathogene Tabelle */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Die wichtigsten Milch-Pathogene und ihre Erkrankungen
+            </h3>
+            <div className="space-y-4 mb-8">
+              {pathogeneData.map((p) => (
+                <Card key={p.keim} className="shadow-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[300px_1fr]">
+                      <div className={`p-5 ${p.gefahr === "destructive" ? "bg-destructive/5" : "bg-sage-50"}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className={`h-4 w-4 ${p.gefahr === "destructive" ? "text-destructive" : "text-accent"}`} />
+                          <h4 className="font-serif text-base font-medium text-foreground">{p.keim}</h4>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div><span className="text-muted-foreground">Infektionsdosis:</span> <span className="font-medium text-foreground">{p.infektionsdosis}</span></div>
+                          <div><span className="text-muted-foreground">Inkubation:</span> <span className="font-medium text-foreground">{p.inkubation}</span></div>
+                          <div><span className="text-muted-foreground">Fälle/Jahr (DE):</span> <span className="font-medium text-foreground">{p.haeufigkeit}</span></div>
+                        </div>
+                      </div>
+                      <div className="p-5 space-y-2">
+                        <div>
+                          <span className="text-xs font-medium text-foreground">Symptome &amp; Komplikationen:</span>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{p.symptome}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs border-primary/30">
+                          🔥 {p.hitze}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pasteurisierungsverfahren */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Pasteurisierungsverfahren – Temperatur &amp; Zeit
+            </h3>
+            <Card className="shadow-card mb-8 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-sage-50">
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Verfahren</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Temperatur</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Dauer</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Anwendung</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pasteurisierungsVerfahren.map((v, i) => (
+                      <tr key={v.verfahren} className={`border-b last:border-0 ${i === 1 ? "bg-primary/5 font-medium" : ""}`}>
+                        <td className="px-5 py-3 text-foreground font-medium">{v.verfahren}</td>
+                        <td className="px-5 py-3 text-foreground font-bold">{v.temperatur}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{v.dauer}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{v.anwendung}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            <p className="mb-8 text-center text-xs text-muted-foreground">
+              Referenzkeim: Coxiella burnetii – Pasteurisierung ist so ausgelegt, dass dieser hitzeresistenteste 
+              milchrelevante Erreger sicher abgetötet wird (71,7 °C / 15 Sek.) [23, 24].
+            </p>
+
+            {/* Pasteurisiert vs. Nicht pasteurisiert */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Welche Milchprodukte sind pasteurisiert – und welche nicht?
+            </h3>
+            <div className="grid gap-6 md:grid-cols-2 mb-6">
+              {/* Pasteurisiert */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    Pasteurisiert (sicher)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {pasteurisierteProdukte.ja.map((p) => (
+                      <li key={p.produkt} className="flex items-start gap-2">
+                        <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span><strong className="text-foreground">{p.produkt}</strong> – {p.verfahren}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Nicht pasteurisiert */}
+              <Card className="border-destructive/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                      <Ban className="h-5 w-5 text-destructive" />
+                    </div>
+                    NICHT pasteurisiert (Risiko)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {pasteurisierteProdukte.nein.map((p) => (
+                      <li key={p.produkt} className="flex items-start gap-2">
+                        <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+                        <span>
+                          <strong className="text-foreground">{p.produkt}</strong>
+                          <br />
+                          <span className="text-xs">{p.risiko}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Risikogruppen-Warnung */}
+            <Card className="border-destructive/30 bg-destructive/5 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  <div className="space-y-2">
+                    <h4 className="font-serif text-base font-medium text-foreground">
+                      Besonders gefährdete Personengruppen
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      <strong>Schwangere, Säuglinge, Kleinkinder, ältere Menschen und Immunsupprimierte</strong> sollten 
+                      konsequent auf Rohmilch und Rohmilchprodukte verzichten. Listerien können bei Schwangeren die 
+                      Plazenta überwinden und zu Fehl-/Totgeburten führen. EHEC kann bei Kleinkindern das lebensbedrohliche 
+                      hämolytisch-urämische Syndrom (HUS) auslösen [17, 18, 25].
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Quellen: BfR 2024/2025 [17, 18], RKI Campylobacter-Ratgeber [20], Stingl 2019 [19], 
+                      Rosner et al. 2017 [21], LAVES Niedersachsen [22], Rabbani et al. 2025 [23]
                     </p>
                   </div>
                 </div>
