@@ -145,7 +145,7 @@ const pathogeneData = [
 const pasteurisierungsVerfahren = [
   { verfahren: "Dauererhitzung (LTLT)", temp: "63 °C / 30 Min.", anwendung: "Kleinstbetriebe" },
   { verfahren: "Kurzzeiterhitzung (HTST)", temp: "72–75 °C / 15–30 Sek.", anwendung: "Standard (90 % der Trinkmilch)" },
-  { verfahren: "Hocherhitzung (ESL)", temp: "85–127 °C / 1–4 Sek.", anwendung: "ESL-Milch „länger frisch"" },
+  { verfahren: "Hocherhitzung (ESL)", temp: "85–127 °C / 1–4 Sek.", anwendung: 'ESL-Milch \u201Elänger frisch\u201C' },
   { verfahren: "Ultrahocherhitzung (UHT)", temp: "135–150 °C / 2–4 Sek.", anwendung: "H-Milch (steril)" },
 ];
 
