@@ -97,6 +97,12 @@ const infothekGroups: InfothekGroup[] = [
     title: { de: "Nur für Patienten der Naturheilpraxis Peter Rauch", en: "Only for Patients of Naturheilpraxis Peter Rauch" },
     items: [
       {
+        label: { de: "Quellenhinweis & Haftung", en: "Sources & Disclaimer" },
+        href: "/quellenhinweis",
+        icon: Scale,
+        description: { de: "Herkunft, Einordnung & Grenzen unserer Informationen", en: "Origin, classification & limits of our information" },
+      },
+      {
         label: { de: "Allergiebehandlung", en: "Allergy Treatment" },
         href: "/allergiebehandlung.html",
         icon: Flower2,

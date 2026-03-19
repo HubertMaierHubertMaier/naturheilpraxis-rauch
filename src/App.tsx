@@ -57,6 +57,7 @@ const App = () => (
               <Route path="/praxis-info" element={<PraxisInfo />} />
               <Route path="/impressum" element={<Impressum />} />
               <Route path="/patientenaufklaerung" element={<Patientenaufklaerung />} />
+              <Route path="/quellenhinweis" element={<Quellenhinweis />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<PatientDashboard />} />
