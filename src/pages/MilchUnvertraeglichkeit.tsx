@@ -373,6 +373,17 @@ const quellen = [
   { nr: 23, text: "Rabbani A et al. Effect of Heat Pasteurization and Sterilization on Milk Safety, Composition, Sensory Properties, and Nutritional Quality. Foods. 2025;14(8):1342." },
   { nr: 24, text: "Cerf O, Condron R. Coxiella burnetii and milk pasteurization: an early application of the precautionary principle? Epidemiol Infect. 2006;134(5):946-951." },
   { nr: 25, text: "BVL/RKI. Gemeinsamer nationaler Bericht zu lebensmittelbedingten Krankheitsausbrüchen in Deutschland, 2015." },
+  { nr: 26, text: "Luk CH et al. Salmonella enters a dormant state within human epithelial cells for persistent infection. PLoS Pathog. 2021;17(4):e1009550." },
+  { nr: 27, text: "González JF et al. The Effect of the Gallbladder Environment during Chronic Infection on Salmonella Persister Cell Formation. Microorganisms. 2022;10(11):2276." },
+  { nr: 28, text: "Maciel BM, Rezende RP, Sriranganathan N. Salmonella enterica: Latency. IntechOpen. 2017. DOI: 10.5772/67173." },
+  { nr: 29, text: "Schorling E et al. Probability of sequelae following Campylobacter spp. infections: Update of systematic reviews and meta-analyses. Public Health. 2024; DOI: 10.1002/puh2.145." },
+  { nr: 30, text: "Keithlin J et al. Systematic review and meta-analysis of the proportion of Campylobacter cases that develop chronic sequelae. BMC Public Health. 2014;14:1203." },
+  { nr: 31, text: "Zautner AE et al. Seroprevalence of campylobacteriosis and relevant post-infectious sequelae. Eur J Clin Microbiol Infect Dis. 2014;33:1019-1027." },
+  { nr: 32, text: "Frontiers in Microbiology. Persistence of Listeria monocytogenes: an integrative narrative review. Front Microbiol. 2026;17:1721836." },
+  { nr: 33, text: "PMC. Acute neonatal Listeria monocytogenes infection causes long-term, organ-specific changes in immune cell subset composition. mBio. 2020;11(4):e01285-20." },
+  { nr: 34, text: "PMC. Progressive cognitive impairment after recovery from neuroinvasive and non-neuroinvasive Listeria monocytogenes infection. Brain Behav Immun. 2023;110:74-85." },
+  { nr: 35, text: "Pediatric Nephrology. Outcome 10 years after Shiga toxin-producing E. coli (STEC)-associated hemolytic uremic syndrome. Pediatr Nephrol. 2024;39:2459-2465." },
+  { nr: 36, text: "Pediatric Nephrology. Long-term health outcomes of STEC O157 infection and STEC-associated HUS, Wales, 1990–2020. Pediatr Nephrol. 2025; DOI: 10.1007/s00467-024-06640-x." },
 ];
 
 const MilchUnvertraeglichkeit = () => {
