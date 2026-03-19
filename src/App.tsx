@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import PatientenManagerPage from "./pages/PatientenManager";
 import Patientenaufklaerung from "./pages/Patientenaufklaerung";
 import Erstanmeldung from "./pages/Erstanmeldung";
+import Quellenhinweis from "./pages/Quellenhinweis";
 
 const queryClient = new QueryClient();
 
