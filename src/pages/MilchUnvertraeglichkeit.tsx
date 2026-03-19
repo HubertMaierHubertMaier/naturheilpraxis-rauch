@@ -228,6 +228,124 @@ const calciumPhosphorArgumente = {
   fazit: "Die aktuelle Studienlage ist widersprüchlich. Sicher ist: Calcium allein reicht für die Knochengesundheit nicht aus – Vitamin D, Vitamin K₂, Magnesium, Bewegung und ein ausgeglichener Säure-Basen-Haushalt sind ebenso entscheidend. Die Empfehlung, Milch als primäre Calciumquelle zu betrachten, wird zunehmend hinterfragt.",
 };
 
+/* ─── Pathogene in Milch ─── */
+const pathogeneData = [
+  {
+    keim: "Campylobacter jejuni",
+    infektionsdosis: "500–800 KbE",
+    symptome: "Wässriger bis blutiger Durchfall, Fieber, Krämpfe, Erbrechen. Komplikationen: Guillain-Barré-Syndrom, reaktive Arthritis",
+    inkubation: "2–5 Tage",
+    haeufigkeit: "~60.000–70.000 Fälle/Jahr in Deutschland (häufigste bakterielle Durchfallerkrankung, RKI)",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Salmonella spp.",
+    infektionsdosis: "10⁴–10⁶ KbE (bei Immunschwäche weniger)",
+    symptome: "Akute Gastroenteritis: Durchfall, Erbrechen, Fieber, Bauchkrämpfe. Komplikation: Sepsis bei Immunsupprimierten",
+    inkubation: "6–72 Stunden",
+    haeufigkeit: "~13.000–15.000 Fälle/Jahr (RKI, IfSG-Meldedaten)",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Listeria monocytogenes",
+    infektionsdosis: "Variabel (immunabhängig)",
+    symptome: "Fieber, Muskelschmerzen, Meningitis, Sepsis. Schwangere: Fehl-/Totgeburt, Neugeborenen-Sepsis. Letalität: 20–30 %!",
+    inkubation: "3–70 Tage (!)",
+    haeufigkeit: "~600–700 Fälle/Jahr (RKI), hohe Letalität",
+    hitze: "Abgetötet bei 72 °C / 15 Sek.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "EHEC / STEC (E. coli)",
+    infektionsdosis: "10–100 KbE (extrem niedrig!)",
+    symptome: "Blutig-wässriger Durchfall, HUS (hämolytisch-urämisches Syndrom) → Nierenversagen, v.a. bei Kindern lebensbedrohlich",
+    inkubation: "2–10 Tage",
+    haeufigkeit: "~1.500–2.000 EHEC-Fälle/Jahr (RKI)",
+    hitze: "Abgetötet bei 70 °C / 2 Min.",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Staphylococcus aureus (Enterotoxin)",
+    infektionsdosis: "Toxin ab ~100 ng",
+    symptome: "Heftiges Erbrechen, Durchfall, Bauchkrämpfe. Toxin ist hitzestabil – überlebt Pasteurisierung!",
+    inkubation: "1–6 Stunden",
+    haeufigkeit: "Untererfasst (keine Meldepflicht für S. aureus-Toxin)",
+    hitze: "Bakterium bei 72 °C abgetötet, aber Enterotoxin überlebt bis 121 °C!",
+    gefahr: "destructive" as const,
+  },
+  {
+    keim: "Coxiella burnetii (Q-Fieber)",
+    infektionsdosis: "1–10 Organismen",
+    symptome: "Fieber, Kopfschmerzen, atypische Pneumonie, Hepatitis. Chronisch: Endokarditis",
+    inkubation: "14–21 Tage",
+    haeufigkeit: "~80–120 Fälle/Jahr (RKI)",
+    hitze: "Referenzkeim für Pasteurisierung: 71,7 °C / 15 Sek. (HTST-Standard)",
+    gefahr: "secondary" as const,
+  },
+  {
+    keim: "Mycobacterium bovis (Rindertuberkulose)",
+    infektionsdosis: "Variabel",
+    symptome: "Tuberkulose (Lunge, Darm, Lymphknoten). Historisch häufigste durch Milch übertragene Erkrankung",
+    inkubation: "Wochen bis Monate",
+    haeufigkeit: "Sehr selten durch Milch in Deutschland (dank Pasteurisierung)",
+    hitze: "Abgetötet bei 63 °C / 30 Min. oder 72 °C / 15 Sek.",
+    gefahr: "secondary" as const,
+  },
+];
+
+const pasteurisierungsVerfahren = [
+  {
+    verfahren: "Dauererhitzung (LTLT)",
+    temperatur: "63 °C",
+    dauer: "30 Minuten",
+    anwendung: "Kleinstbetriebe, Hofkäsereien. Seltener in Großproduktion.",
+  },
+  {
+    verfahren: "Kurzzeiterhitzung (HTST)",
+    temperatur: "72–75 °C",
+    dauer: "15–30 Sekunden",
+    anwendung: "Standard für Frischmilch, Trinkmilch, Joghurt, Quark, Sahne – ca. 90 % der deutschen Trinkmilch.",
+  },
+  {
+    verfahren: "Hocherhitzung (ESL)",
+    temperatur: "85–127 °C",
+    dauer: "1–4 Sekunden",
+    anwendung: "ESL-Milch (\"länger frisch\"). Zunehmend im deutschen Handel.",
+  },
+  {
+    verfahren: "Ultrahocherhitzung (UHT)",
+    temperatur: "135–150 °C",
+    dauer: "2–4 Sekunden",
+    anwendung: "H-Milch. Keimfrei (steril). Monatelang ungekühlt haltbar.",
+  },
+];
+
+const pasteurisierteProdukte = {
+  ja: [
+    { produkt: "Trinkmilch (Frischmilch)", verfahren: "HTST (72 °C / 15 Sek.)" },
+    { produkt: "H-Milch", verfahren: "UHT (135–150 °C / 2–4 Sek.)" },
+    { produkt: "ESL-Milch", verfahren: "Hocherhitzung (85–127 °C)" },
+    { produkt: "Joghurt (Standard)", verfahren: "Milch vor Fermentation pasteurisiert" },
+    { produkt: "Quark", verfahren: "Milch vor Säuerung pasteurisiert" },
+    { produkt: "Sahne / Schlagsahne", verfahren: "HTST oder UHT" },
+    { produkt: "Frischkäse (Philadelphia etc.)", verfahren: "Aus pasteurisierter Milch" },
+    { produkt: "Butter (Standard)", verfahren: "Aus pasteurisierter Sahne (Süßrahm/Sauerrahm)" },
+    { produkt: "Schmelzkäse", verfahren: "Durch Erhitzung beim Schmelzen (>80 °C)" },
+    { produkt: "Kondensmilch", verfahren: "UHT oder Sterilisation" },
+  ],
+  nein: [
+    { produkt: "Rohmilch (ab Hof / Milchtankstelle)", risiko: "Alle Pathogene möglich" },
+    { produkt: "Vorzugsmilch", risiko: "Kontrolliert, aber NICHT pasteurisiert. Strenge Auflagen, aber Restrisiko" },
+    { produkt: "Rohmilchkäse (Camembert de Normandie, Brie de Meaux, Roquefort, Appenzeller, Gruyère u.v.m.)", risiko: "Listerien, EHEC, Salmonellen. Besonders gefährlich für Schwangere!" },
+    { produkt: "Mozzarella (aus Rohmilch, z.B. Büffelmozzarella)", risiko: "Listeriengefahr – auf Kennzeichnung achten" },
+    { produkt: "Feta (traditionell aus Rohmilch)", risiko: "Listerien, Brucella (selten). EU-Ware meist pasteurisiert" },
+    { produkt: "Weichkäse-Rinde (Schimmelrinde)", risiko: "Listerien bevorzugen feuchte Oberfläche von Weichkäse" },
+    { produkt: "Rohmilch-Butter (selten, ab Hof)", risiko: "Gering, aber bei Allergie/Immunschwäche relevant" },
+  ],
+};
+
 /* ─── Quellen ─── */
 const quellen = [
   { nr: 1, text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121." },
@@ -246,6 +364,15 @@ const quellen = [
   { nr: 14, text: "Huncharek M, Muscat J, Kupelnick B. Impact of dairy products and dietary calcium on bone-mineral content in children: results of a meta-analysis. Bone. 2008;43(2):312-321." },
   { nr: 15, text: "Weaver CM et al. Calcium plus vitamin D supplementation and risk of fractures. Osteoporos Int. 2016;27(1):367-376." },
   { nr: 16, text: "DGE (Deutsche Gesellschaft für Ernährung). Referenzwerte Calcium. https://www.dge.de/wissenschaft/referenzwerte/calcium/ (abgerufen März 2026)." },
+  { nr: 17, text: "BfR (Bundesinstitut für Risikobewertung). Erhitzen macht Milch zu einem sicheren Lebensmittel. Mitteilung Nr. 008/2025, 06.03.2025." },
+  { nr: 18, text: "BfR. Infektionen vermeiden – Was ist beim Verzehr von Rohmilch zu beachten? Aktualisierte Bewertung, 06.09.2024." },
+  { nr: 19, text: "Stingl K. Ausbruchsuntersuchungen zu Campylobacter in Rohmilch. BfR-Präsentation, 10.04.2019." },
+  { nr: 20, text: "RKI. Campylobacter-Enteritis. RKI-Ratgeber, Stand 28.11.2019." },
+  { nr: 21, text: "Rosner B et al. A combined case-control and molecular source attribution study of human Campylobacter infections in Germany, 2011–2014. Sci Rep. 2017;7:5139." },
+  { nr: 22, text: "LAVES Niedersachsen. Rohmilch – ein unterschätztes Risiko? https://www.laves.niedersachsen.de/ (abgerufen März 2026)." },
+  { nr: 23, text: "Rabbani A et al. Effect of Heat Pasteurization and Sterilization on Milk Safety, Composition, Sensory Properties, and Nutritional Quality. Foods. 2025;14(8):1342." },
+  { nr: 24, text: "Cerf O, Condron R. Coxiella burnetii and milk pasteurization: an early application of the precautionary principle? Epidemiol Infect. 2006;134(5):946-951." },
+  { nr: 25, text: "BVL/RKI. Gemeinsamer nationaler Bericht zu lebensmittelbedingten Krankheitsausbrüchen in Deutschland, 2015." },
 ];
 
 const MilchUnvertraeglichkeit = () => {
