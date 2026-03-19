@@ -97,6 +97,18 @@ const infothekGroups: InfothekGroup[] = [
         icon: Milk,
         description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" },
       },
+      {
+        label: { de: "Milch & Knochengesundheit", en: "Milk & Bone Health" },
+        href: "/milch-knochengesundheit",
+        icon: HeartPulse,
+        description: { de: "Das Calcium-Paradoxon & wissenschaftliche Debatte", en: "The calcium paradox & scientific debate" },
+      },
+      {
+        label: { de: "Rohmilch – Mikrobiologie", en: "Raw Milk – Microbiology" },
+        href: "/rohmilch-mikrobiologie",
+        icon: Microscope,
+        description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" },
+      },
     ],
   },
   {

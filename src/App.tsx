@@ -54,6 +54,8 @@ const App = () => (
               <Route path="/gebueh" element={<Gebueh />} />
               <Route path="/ernaehrung" element={<Ernaehrung />} />
               <Route path="/milch-unvertraeglichkeit" element={<MilchUnvertraeglichkeit />} />
+              <Route path="/milch-knochengesundheit" element={<MilchKnochengesundheit />} />
+              <Route path="/rohmilch-mikrobiologie" element={<RohmilchMikrobiologie />} />
               <Route path="/frequenztherapie" element={<Frequenztherapie />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
