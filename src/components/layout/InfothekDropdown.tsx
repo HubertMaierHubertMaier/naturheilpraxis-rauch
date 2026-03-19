@@ -91,6 +91,12 @@ const infothekGroups: InfothekGroup[] = [
         icon: Milk,
         description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" },
       },
+      {
+        label: { de: "Quellenhinweis & Haftung", en: "Sources & Disclaimer" },
+        href: "/quellenhinweis",
+        icon: Scale,
+        description: { de: "Herkunft, Einordnung & Grenzen unserer Informationen", en: "Origin, classification & limits of our information" },
+      },
     ],
   },
   {
