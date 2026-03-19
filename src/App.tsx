@@ -15,6 +15,7 @@ import Datenschutz from "./pages/Datenschutz";
 import Heilpraktiker from "./pages/Heilpraktiker";
 import Gebueh from "./pages/Gebueh";
 import Ernaehrung from "./pages/Ernaehrung";
+import MilchUnvertraeglichkeit from "./pages/MilchUnvertraeglichkeit";
 import Frequenztherapie from "./pages/Frequenztherapie";
 import FAQ from "./pages/FAQ";
 import PraxisInfo from "./pages/PraxisInfo";
