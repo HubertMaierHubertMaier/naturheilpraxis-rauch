@@ -681,6 +681,337 @@ const MilchUnvertraeglichkeit = () => {
             </div>
           </section>
 
+          {/* ═══════════════ Detaillierte Symptome ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Activity className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Symptome im Detail
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Warum treten diese Symptome auf? Die Mechanismen hinter den Beschwerden.
+            </p>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Allergie-Symptome erklärt */}
+              <Card className="border-destructive/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                      <Shield className="h-5 w-5 text-destructive" />
+                    </div>
+                    Allergie-Symptome &amp; ihre Ursachen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <div className="rounded-lg bg-destructive/5 p-4 space-y-3">
+                    <div>
+                      <strong className="text-foreground">Haut (Nesselsucht, Ekzem, Juckreiz):</strong>
+                      <p>IgE-Antikörper aktivieren Mastzellen → Histaminfreisetzung → Gefäßerweiterung, Schwellung, Rötung und Juckreiz der Haut.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Atemwege (Asthma, Rhinitis, Kehlkopfschwellung):</strong>
+                      <p>Histamin und Leukotriene verursachen Bronchospasmus und Schleimhautschwellung. Bei schweren Fällen droht Atemwegsobstruktion.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Magen-Darm (Erbrechen, Durchfall, Blut im Stuhl):</strong>
+                      <p>Entzündungsreaktion der Darmschleimhaut durch Immunzellen. Bei nicht-IgE-vermittelter Allergie: T-Zell-vermittelte verzögerte Entzündung → eosinophile Infiltration.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Anaphylaxie (lebensbedrohlich!):</strong>
+                      <p>Massive, systemische Histaminfreisetzung → Blutdruckabfall, Kreislaufschock, Bewusstlosigkeit. Sofortmaßnahme: Adrenalin-Autoinjektor!</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-destructive/20 p-3">
+                    <p className="text-xs">
+                      <strong className="text-destructive">Wichtig:</strong> Bereits Spuren von Milchprotein (z.B. in Medikamenten, Wurstwaren, Backwaren) 
+                      können bei sensibilisierten Personen eine Reaktion auslösen. Vollständige Meidung aller Milchprodukte ist bei echter Allergie erforderlich.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Intoleranz-Symptome erklärt */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Droplets className="h-5 w-5 text-primary" />
+                    </div>
+                    Intoleranz-Symptome &amp; ihre Ursachen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <div className="rounded-lg bg-primary/5 p-4 space-y-3">
+                    <div>
+                      <strong className="text-foreground">Blähungen &amp; Gasbildung:</strong>
+                      <p>Unverdaute Laktose gelangt in den Dickdarm → Darmbakterien fermentieren sie zu H₂, CO₂ und CH₄ (Methan). Diese Gase dehnen den Darm → Schmerzen und hörbares Rumoren.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Durchfall (osmotisch):</strong>
+                      <p>Laktose und kurzkettige Fettsäuren (Fermentationsprodukte) sind osmotisch aktiv → sie ziehen Wasser in den Darm → wässriger, oft säuerlich riechender Durchfall.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Bauchkrämpfe:</strong>
+                      <p>Gasausdehnung und beschleunigte Peristaltik führen zu krampfartigen Schmerzen, oft im Unterbauch.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Übelkeit &amp; Kopfschmerzen:</strong>
+                      <p>Toxische Gärungsprodukte und biogene Amine (Histamin) aus der bakteriellen Fermentation können systemische Beschwerden verursachen.</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-primary/20 p-3">
+                    <p className="text-xs">
+                      <strong className="text-primary">Gut zu wissen:</strong> Die Symptomstärke ist dosisabhängig. Viele Betroffene vertragen 
+                      kleine Mengen Laktose (z.B. 6–12 g, entspricht ~120–250 ml Milch) ohne Beschwerden. Joghurt wird oft besser vertragen, 
+                      da die Bakterienkulturen eigene Laktase mitbringen.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* ═══════════════ Sahne & Butter ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Milk className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Sahne, Butter &amp; Käse – Wie betroffen?
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Nicht alle Milchprodukte sind gleich problematisch. Laktose- und Proteingehalt variieren erheblich.
+            </p>
+
+            <div className="space-y-4">
+              {sahneButterData.map((item) => (
+                <Card key={item.produkt} className="shadow-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[280px_1fr]">
+                      <div className="bg-sage-50 p-5 flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-3">
+                          <item.icon className={`h-5 w-5 ${item.farbe}`} />
+                          <h3 className="font-serif text-lg font-medium text-foreground">{item.produkt}</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded bg-background p-2">
+                            <span className="text-muted-foreground">Laktose:</span>
+                            <div className="font-medium text-foreground">{item.laktose}</div>
+                          </div>
+                          <div className="rounded bg-background p-2">
+                            <span className="text-muted-foreground">Protein:</span>
+                            <div className="font-medium text-foreground">{item.protein}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5 space-y-3">
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          <Badge variant="outline" className="border-primary/30">
+                            Laktose-Risiko: {item.laktoseRisiko}
+                          </Badge>
+                          <Badge variant="outline" className="border-destructive/30">
+                            Allergie-Risiko: {item.allergieRisiko}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{item.details}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══════════════ Ausweichprodukte ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Leaf className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Ausweichprodukte &amp; Alternativen
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Wer Milch meiden muss oder möchte, hat heute eine große Auswahl an Alternativen – 
+              wichtig ist die Sicherstellung der Calciumzufuhr.
+            </p>
+
+            <div className="space-y-6">
+              {alternativProdukte.map((gruppe) => (
+                <Card key={gruppe.kategorie} className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100">
+                        <gruppe.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      {gruppe.kategorie}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-sage-50/50">
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Produkt</th>
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Calcium (mg)</th>
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Hinweis</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gruppe.produkte.map((p) => (
+                            <tr key={p.name} className="border-b last:border-0">
+                              <td className="px-4 py-2.5 font-medium text-foreground whitespace-nowrap">{p.name}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{p.ca_mg}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground">{p.hinweis}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══════════════ Calcium-Phosphor-Kontroverse ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Bone className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Milch &amp; Knochengesundheit – Die Kontroverse
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Ist Milch wirklich gut für die Knochen? Die wissenschaftliche Debatte um Calcium, 
+              Phosphor und Knochengesundheit.
+            </p>
+
+            <div className="grid gap-6 md:grid-cols-2 mb-6">
+              {/* Pro */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    {calciumPhosphorArgumente.pro.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {calciumPhosphorArgumente.pro.punkte.map((punkt, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <span className="leading-relaxed">{punkt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Contra */}
+              <Card className="border-accent/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+                      <Ban className="h-5 w-5 text-accent" />
+                    </div>
+                    {calciumPhosphorArgumente.contra.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {calciumPhosphorArgumente.contra.punkte.map((punkt, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                        <span className="leading-relaxed">{punkt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Mechanismus-Grafik */}
+            <Card className="shadow-card overflow-hidden mb-6">
+              <CardContent className="p-0">
+                <div className="bg-sage-50 p-6 md:p-8">
+                  <h3 className="mb-6 text-center font-serif text-lg font-medium text-foreground">
+                    <Scale className="mb-1 mr-2 inline-block h-5 w-5 text-primary" />
+                    Das Calcium-Phosphor-Paradoxon – Schematisch
+                  </h3>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="rounded-xl border border-primary/20 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                        <span className="font-medium text-foreground">Optimale Ca-Aufnahme</span>
+                      </div>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">1</div>
+                          <span>Calcium aus Nahrung (z.B. <strong className="text-foreground">Grünkohl, Sesam</strong>)</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">2</div>
+                          <span><strong className="text-foreground">Günstiges Ca:P-Verhältnis</strong> → keine Störung</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">3</div>
+                          <span><strong className="text-foreground">Vitamin D + K₂</strong> fördern Einbau in Knochen</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">4</div>
+                          <span>Ca wird in <strong className="text-foreground">Knochenmatrix eingebaut</strong> ✓</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-accent/30 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <XCircle className="h-5 w-5 text-accent" />
+                        <span className="font-medium text-foreground">Gestörte Ca-Bilanz (Milch)</span>
+                      </div>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">1</div>
+                          <span>Milch: Ca (~120 mg) + <strong className="text-foreground">Phosphor (~90 mg)</strong>/100 ml</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">2</div>
+                          <span>Phosphor ↑ → <strong className="text-foreground">Parathormon (PTH) ↑</strong></span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">3</div>
+                          <span>PTH mobilisiert Ca <strong className="text-foreground">AUS dem Knochen</strong></span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/20 text-xs font-bold text-destructive">4</div>
+                          <span>Kasein erzeugt <strong className="text-foreground">Säurelast</strong> → weiterer Ca-Verlust</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/20 text-xs font-bold text-destructive">5</div>
+                          <span><strong className="text-foreground">Netto-Ca-Bilanz kann negativ sein</strong> ✗</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Fazit */}
+            <Card className="border-primary/30 bg-primary/5 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Bone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div className="space-y-2">
+                    <h3 className="font-serif text-lg font-medium text-foreground">Fazit der aktuellen Forschung</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {calciumPhosphorArgumente.fazit}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Quellen: Feskanich et al. 1997 [10], Michaëlsson et al. 2014 [11], Kemi et al. 2006 [12], 
+                      Frassetto et al. 2000 [13], Huncharek et al. 2008 [14], Weaver et al. 2016 [15]
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           {/* ═══════════════ Rechtlicher Disclaimer ═══════════════ */}
           <Card className="border-accent/30 bg-accent/5 shadow-card">
             <CardContent className="p-6">
