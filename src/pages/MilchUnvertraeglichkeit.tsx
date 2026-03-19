@@ -206,7 +206,7 @@ const alternativProdukte = [
 /* ─── Calcium-Phosphor-Kontroverse ─── */
 const calciumPhosphorArgumente = {
   pro: {
-    title: "Traditionelle Sichtweise: „Milch stärkt die Knochen"",
+    title: 'Traditionelle Sichtweise: „Milch stärkt die Knochen"',
     punkte: [
       "Kuhmilch enthält ~120 mg Calcium/100 ml – eine der konzentriertesten Quellen",
       "Calcium-Bioverfügbarkeit aus Milch ist mit ~30–35 % relativ gut",
