@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope } from "lucide-react";
+import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope, Bug } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -108,6 +108,13 @@ const infothekGroups: InfothekGroup[] = [
         href: "/rohmilch-mikrobiologie",
         icon: Microscope,
         description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" },
+      },
+      {
+        label: { de: "Parasiten in Deutschland", en: "Parasites in Germany" },
+        href: "/parasiten-deutschland.html",
+        icon: Bug,
+        description: { de: "Vorkommen, Arten & Symptome heimischer Parasiten", en: "Prevalence, types & symptoms of local parasites" },
+        external: true,
       },
     ],
   },
