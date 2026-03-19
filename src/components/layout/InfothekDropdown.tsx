@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale } from "lucide-react";
+import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -97,6 +97,18 @@ const infothekGroups: InfothekGroup[] = [
         icon: Milk,
         description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" },
       },
+      {
+        label: { de: "Milch & Knochengesundheit", en: "Milk & Bone Health" },
+        href: "/milch-knochengesundheit",
+        icon: HeartPulse,
+        description: { de: "Das Calcium-Paradoxon & wissenschaftliche Debatte", en: "The calcium paradox & scientific debate" },
+      },
+      {
+        label: { de: "Rohmilch – Mikrobiologie", en: "Raw Milk – Microbiology" },
+        href: "/rohmilch-mikrobiologie",
+        icon: Microscope,
+        description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" },
+      },
     ],
   },
   {
@@ -107,6 +119,12 @@ const infothekGroups: InfothekGroup[] = [
         href: "/quellenhinweis",
         icon: Scale,
         description: { de: "Herkunft, Einordnung & Grenzen unserer Informationen", en: "Origin, classification & limits of our information" },
+      },
+      {
+        label: { de: "Milch-Unverträglichkeit", en: "Milk Intolerance" },
+        href: "/milch-unvertraeglichkeit",
+        icon: Milk,
+        description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" },
       },
       {
         label: { de: "Allergiebehandlung", en: "Allergy Treatment" },

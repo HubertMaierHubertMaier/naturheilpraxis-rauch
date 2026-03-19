@@ -16,6 +16,8 @@ import Heilpraktiker from "./pages/Heilpraktiker";
 import Gebueh from "./pages/Gebueh";
 import Ernaehrung from "./pages/Ernaehrung";
 import MilchUnvertraeglichkeit from "./pages/MilchUnvertraeglichkeit";
+import MilchKnochengesundheit from "./pages/MilchKnochengesundheit";
+import RohmilchMikrobiologie from "./pages/RohmilchMikrobiologie";
 import Frequenztherapie from "./pages/Frequenztherapie";
 import FAQ from "./pages/FAQ";
 import PraxisInfo from "./pages/PraxisInfo";
@@ -52,6 +54,8 @@ const App = () => (
               <Route path="/gebueh" element={<Gebueh />} />
               <Route path="/ernaehrung" element={<Ernaehrung />} />
               <Route path="/milch-unvertraeglichkeit" element={<MilchUnvertraeglichkeit />} />
+              <Route path="/milch-knochengesundheit" element={<MilchKnochengesundheit />} />
+              <Route path="/rohmilch-mikrobiologie" element={<RohmilchMikrobiologie />} />
               <Route path="/frequenztherapie" element={<Frequenztherapie />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
