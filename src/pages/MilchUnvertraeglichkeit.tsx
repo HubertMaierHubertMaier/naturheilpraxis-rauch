@@ -17,6 +17,12 @@ import {
   CircleAlert,
   CheckCircle,
   XCircle,
+  Milk,
+  Leaf,
+  Bone,
+  Apple,
+  Ban,
+  Scale,
 } from "lucide-react";
 
 /* ─── Statistik-Daten ─── */
