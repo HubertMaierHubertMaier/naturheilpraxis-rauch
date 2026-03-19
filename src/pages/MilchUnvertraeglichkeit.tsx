@@ -215,7 +215,7 @@ const calciumPhosphorArgumente = {
     ],
   },
   contra: {
-    title: "Kritische Wissenschaft: „Das Calcium-Phosphor-Paradoxon"",
+    title: 'Kritische Wissenschaft: „Das Calcium-Phosphor-Paradoxon"',
     punkte: [
       "Milch enthält ~90 mg Phosphor/100 ml – das Ca:P-Verhältnis liegt bei ~1,3:1",
       "Hoher Phosphorgehalt kann die renale Calciumausscheidung steigern (Kemi et al. 2006) [12]",
