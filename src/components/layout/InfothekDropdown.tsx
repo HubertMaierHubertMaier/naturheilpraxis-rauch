@@ -109,6 +109,13 @@ const infothekGroups: InfothekGroup[] = [
         icon: Microscope,
         description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" },
       },
+      {
+        label: { de: "Parasiten in Deutschland", en: "Parasites in Germany" },
+        href: "/parasiten-deutschland.html",
+        icon: Bug,
+        description: { de: "Vorkommen, Arten & Symptome heimischer Parasiten", en: "Prevalence, types & symptoms of local parasites" },
+        external: true,
+      },
     ],
   },
   {
