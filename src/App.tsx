@@ -15,6 +15,7 @@ import Datenschutz from "./pages/Datenschutz";
 import Heilpraktiker from "./pages/Heilpraktiker";
 import Gebueh from "./pages/Gebueh";
 import Ernaehrung from "./pages/Ernaehrung";
+import MilchUnvertraeglichkeit from "./pages/MilchUnvertraeglichkeit";
 import Frequenztherapie from "./pages/Frequenztherapie";
 import FAQ from "./pages/FAQ";
 import PraxisInfo from "./pages/PraxisInfo";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/heilpraktiker" element={<Heilpraktiker />} />
               <Route path="/gebueh" element={<Gebueh />} />
               <Route path="/ernaehrung" element={<Ernaehrung />} />
+              <Route path="/milch-unvertraeglichkeit" element={<MilchUnvertraeglichkeit />} />
               <Route path="/frequenztherapie" element={<Frequenztherapie />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
