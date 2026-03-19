@@ -1139,6 +1139,189 @@ const MilchUnvertraeglichkeit = () => {
             </Card>
           </section>
 
+          {/* ═══════════════ Pathogene in Milch ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <CircleAlert className="mb-1 mr-2 inline-block h-7 w-7 text-destructive" />
+              Mikrobiologische Risiken – Pathogene in Milch
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Das Euter einer Kuh kann nicht sterilgehalten werden. Fäkalkeime, Umweltkeime und 
+              Erreger aus dem Tier selbst kontaminieren die Milch bereits beim Melken. Erst die 
+              Erhitzung (Pasteurisierung) macht Milch zu einem sicheren Lebensmittel [17, 18].
+            </p>
+
+            {/* Kontaminationswege */}
+            <Card className="shadow-card mb-8 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="bg-destructive/5 p-6 md:p-8">
+                  <h3 className="mb-4 font-serif text-lg font-medium text-foreground">
+                    Kontaminationswege – Warum ist Rohmilch nie „steril"?
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                      { weg: "Euter-Innenseite", detail: "Subklinische Mastitis (Euterentzündung) → S. aureus, Streptokokken, E. coli direkt im Eutergewebe. ~30 % aller Kühe haben subklinische Mastitis (BfR) [17]." },
+                      { weg: "Fäkale Kontamination", detail: "Kühe liegen in Einstreu, die mit Kot kontaminiert ist. Fäkalkeime (Salmonellen, Campylobacter, EHEC) gelangen beim Melken auf Zitzen und in die Milch [18, 22]." },
+                      { weg: "Umwelt & Wasser", detail: "Listerien (ubiquitär in Erde, Silage, Wasser) kontaminieren Melkequipment und Milchtanks. Biofilmbildung auf Oberflächen [22]." },
+                      { weg: "Tier selbst (systemisch)", detail: "Coxiella burnetii (Q-Fieber), Brucella, M. bovis werden über die Milch ausgeschieden, auch bei klinisch gesundem Tier [24]." },
+                    ].map((item) => (
+                      <div key={item.weg} className="rounded-xl border border-destructive/15 bg-background p-4">
+                        <h4 className="mb-2 text-sm font-medium text-foreground">{item.weg}</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pathogene Tabelle */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Die wichtigsten Milch-Pathogene und ihre Erkrankungen
+            </h3>
+            <div className="space-y-4 mb-8">
+              {pathogeneData.map((p) => (
+                <Card key={p.keim} className="shadow-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[300px_1fr]">
+                      <div className={`p-5 ${p.gefahr === "destructive" ? "bg-destructive/5" : "bg-sage-50"}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className={`h-4 w-4 ${p.gefahr === "destructive" ? "text-destructive" : "text-accent"}`} />
+                          <h4 className="font-serif text-base font-medium text-foreground">{p.keim}</h4>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div><span className="text-muted-foreground">Infektionsdosis:</span> <span className="font-medium text-foreground">{p.infektionsdosis}</span></div>
+                          <div><span className="text-muted-foreground">Inkubation:</span> <span className="font-medium text-foreground">{p.inkubation}</span></div>
+                          <div><span className="text-muted-foreground">Fälle/Jahr (DE):</span> <span className="font-medium text-foreground">{p.haeufigkeit}</span></div>
+                        </div>
+                      </div>
+                      <div className="p-5 space-y-2">
+                        <div>
+                          <span className="text-xs font-medium text-foreground">Symptome &amp; Komplikationen:</span>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{p.symptome}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs border-primary/30">
+                          🔥 {p.hitze}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pasteurisierungsverfahren */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Pasteurisierungsverfahren – Temperatur &amp; Zeit
+            </h3>
+            <Card className="shadow-card mb-8 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-sage-50">
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Verfahren</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Temperatur</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Dauer</th>
+                      <th className="px-5 py-3 text-left font-serif font-medium text-foreground">Anwendung</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pasteurisierungsVerfahren.map((v, i) => (
+                      <tr key={v.verfahren} className={`border-b last:border-0 ${i === 1 ? "bg-primary/5 font-medium" : ""}`}>
+                        <td className="px-5 py-3 text-foreground font-medium">{v.verfahren}</td>
+                        <td className="px-5 py-3 text-foreground font-bold">{v.temperatur}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{v.dauer}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{v.anwendung}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            <p className="mb-8 text-center text-xs text-muted-foreground">
+              Referenzkeim: Coxiella burnetii – Pasteurisierung ist so ausgelegt, dass dieser hitzeresistenteste 
+              milchrelevante Erreger sicher abgetötet wird (71,7 °C / 15 Sek.) [23, 24].
+            </p>
+
+            {/* Pasteurisiert vs. Nicht pasteurisiert */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Welche Milchprodukte sind pasteurisiert – und welche nicht?
+            </h3>
+            <div className="grid gap-6 md:grid-cols-2 mb-6">
+              {/* Pasteurisiert */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    Pasteurisiert (sicher)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {pasteurisierteProdukte.ja.map((p) => (
+                      <li key={p.produkt} className="flex items-start gap-2">
+                        <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span><strong className="text-foreground">{p.produkt}</strong> – {p.verfahren}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Nicht pasteurisiert */}
+              <Card className="border-destructive/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                      <Ban className="h-5 w-5 text-destructive" />
+                    </div>
+                    NICHT pasteurisiert (Risiko)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {pasteurisierteProdukte.nein.map((p) => (
+                      <li key={p.produkt} className="flex items-start gap-2">
+                        <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+                        <span>
+                          <strong className="text-foreground">{p.produkt}</strong>
+                          <br />
+                          <span className="text-xs">{p.risiko}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Risikogruppen-Warnung */}
+            <Card className="border-destructive/30 bg-destructive/5 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  <div className="space-y-2">
+                    <h4 className="font-serif text-base font-medium text-foreground">
+                      Besonders gefährdete Personengruppen
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      <strong>Schwangere, Säuglinge, Kleinkinder, ältere Menschen und Immunsupprimierte</strong> sollten 
+                      konsequent auf Rohmilch und Rohmilchprodukte verzichten. Listerien können bei Schwangeren die 
+                      Plazenta überwinden und zu Fehl-/Totgeburten führen. EHEC kann bei Kleinkindern das lebensbedrohliche 
+                      hämolytisch-urämische Syndrom (HUS) auslösen [17, 18, 25].
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Quellen: BfR 2024/2025 [17, 18], RKI Campylobacter-Ratgeber [20], Stingl 2019 [19], 
+                      Rosner et al. 2017 [21], LAVES Niedersachsen [22], Rabbani et al. 2025 [23]
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           {/* ═══════════════ Rechtlicher Disclaimer ═══════════════ */}
           <Card className="border-accent/30 bg-accent/5 shadow-card">
             <CardContent className="p-6">
