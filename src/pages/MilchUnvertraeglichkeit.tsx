@@ -1322,6 +1322,338 @@ const MilchUnvertraeglichkeit = () => {
             </Card>
           </section>
 
+          {/* ═══════════════ Latente Infektionen ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Microscope className="mb-1 mr-2 inline-block h-7 w-7 text-destructive" />
+              Die übersehene Gefahr: Latente &amp; persistierende Infektionen
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Die Medizin fokussiert sich meist auf <strong className="text-foreground">akute Symptome</strong>. 
+              Doch viele milchrelevante Erreger können <em>intrazellulär persistieren</em> – oft über Monate 
+              bis Jahre – und chronische, schwer zuordenbare Beschwerden verursachen.
+            </p>
+
+            {/* Grundprinzip */}
+            <Card className="shadow-card mb-8 overflow-hidden">
+              <CardContent className="p-0">
+                <div className="bg-sage-50 p-6 md:p-8">
+                  <h3 className="mb-6 text-center font-serif text-lg font-medium text-foreground">
+                    Akute vs. Latente Infektion – Das Prinzip
+                  </h3>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="rounded-xl border border-destructive/20 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        <span className="font-medium text-foreground">Akute Infektion (bekannt)</span>
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>Erreger vermehren sich rasch → Immunsystem reagiert mit <strong className="text-foreground">Entzündung</strong> → klare Symptome (Durchfall, Fieber, Erbrechen).</p>
+                        <p>Dauer: Tage bis Wochen. Wird diagnostiziert und behandelt.</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-accent/30 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Brain className="h-5 w-5 text-accent" />
+                        <span className="font-medium text-foreground">Latente/Persistierende Infektion (übersehen)</span>
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <p>Erreger ziehen sich <strong className="text-foreground">intrazellulär</strong> zurück (Makrophagen, Epithelzellen, Gallenblase). Sie gehen in einen <em>Ruhezustand</em> (dormant state) und entziehen sich dem Immunsystem.</p>
+                        <p>Folge: <strong className="text-foreground">Chronische Entzündung niedrigen Grades</strong> → diffuse Symptome, die selten dem ursprünglichen Erreger zugeordnet werden.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Erreger-spezifische latente Infektionen */}
+            <h3 className="mb-4 font-serif text-xl font-semibold text-foreground text-center">
+              Latente Persistenz der wichtigsten Milch-Pathogene
+            </h3>
+            <div className="space-y-5 mb-8">
+              {/* Salmonella */}
+              <Card className="shadow-card overflow-hidden border-destructive/15">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-[280px_1fr]">
+                    <div className="bg-destructive/5 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-5 w-5 text-destructive" />
+                        <h4 className="font-serif text-base font-medium text-foreground">Salmonella enterica</h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-destructive/30 mb-2">Intrazelluläre Persistenz</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Salmonellen können in einen <strong className="text-foreground">Ruhezustand (dormant state)</strong> in 
+                        menschlichen Epithelzellen eintreten und dort über Monate persistieren [26].
+                      </p>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-destructive">Mechanismus der Persistenz:</span>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Salmonellen überleben <strong className="text-foreground">intrazellulär in Makrophagen</strong> innerhalb 
+                          sogenannter <em>Salmonella-containing vacuoles</em> (SCVs). Sie manipulieren die Immunantwort, 
+                          verhindern die Fusion mit Lysosomen und können sich im <strong className="text-foreground">Gallenblasenepithel</strong> und 
+                          in <strong className="text-foreground">mesenterialen Lymphknoten</strong> langfristig einnisten. 
+                          Biofilmbildung auf Gallensteinen ermöglicht chronisches Trägertum [27, 28].
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-accent">Latente/chronische Symptome:</span>
+                        <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span>Chronische, unspezifische <strong className="text-foreground">Bauchbeschwerden</strong> (Blähungen, wechselnde Stuhlkonsistenz)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Reaktive Arthritis</strong> (Gelenkentzündungen Wochen nach Infektion, ~2–7 % der Fälle)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Chronische Müdigkeit</strong>, Leistungsminderung, subfebrile Temperaturen</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span>Asymptomatisches <strong className="text-foreground">Dauerausscheidertum</strong> (bis zu 1 % werden chronische Träger, scheiden Salmonellen &gt;12 Monate aus)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span>Assoziation mit <strong className="text-foreground">Gallenblasen-Karzinom</strong> bei chronischem Trägertum (Salmonella Typhi) [28]</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Campylobacter */}
+              <Card className="shadow-card overflow-hidden border-destructive/15">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-[280px_1fr]">
+                    <div className="bg-destructive/5 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-5 w-5 text-destructive" />
+                        <h4 className="font-serif text-base font-medium text-foreground">Campylobacter jejuni</h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-destructive/30 mb-2">Postinfektiöse Sequelae</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Campylobacter verursacht die <strong className="text-foreground">höchste Rate an chronischen Folgeerkrankungen</strong> aller 
+                        lebensmittelbedingten Erreger [29, 30].
+                      </p>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-destructive">Mechanismus:</span>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Campylobacter-Lipooligosaccharide (LOS) ähneln strukturell menschlichen <strong className="text-foreground">Gangliosiden</strong> (Nervengewebe). 
+                          Dies löst eine <em>molekulare Mimikry</em> aus → das Immunsystem greift eigenes Nervengewebe an. 
+                          Zusätzlich verändert die Infektion das <strong className="text-foreground">Darmmikrobiom</strong> und die 
+                          Darmpermeabilität langfristig [30, 31].
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-accent">Latente/chronische Symptome (Metaanalyse-Daten):</span>
+                        <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Postinfektiöses Reizdarmsyndrom (PI-IBS)</strong>: ~9–13 % aller Campylobacter-Patienten entwickeln ein chronisches Reizdarmsyndrom [29, 31]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Guillain-Barré-Syndrom (GBS)</strong>: Autoimmune Nervenschädigung → aufsteigende Lähmungen. ~1 von 1.000 Campylobacter-Infektionen [30]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Reaktive Arthritis</strong>: Gelenkentzündungen 1–6 Wochen nach Akutinfektion, ~2–5 % der Fälle [30]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Chronische Müdigkeit und Schmerzsyndrome</strong> (Fibromyalgie-ähnlich)</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Listeria */}
+              <Card className="shadow-card overflow-hidden border-destructive/15">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-[280px_1fr]">
+                    <div className="bg-destructive/5 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-5 w-5 text-destructive" />
+                        <h4 className="font-serif text-base font-medium text-foreground">Listeria monocytogenes</h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-destructive/30 mb-2">Intrazellulärer Parasit</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Listerien sind <strong className="text-foreground">fakultativ intrazelluläre Erreger</strong>, die sich 
+                        aktiv in Wirtszellen bewegen und von Zelle zu Zelle ausbreiten, ohne dem Immunsystem ausgesetzt zu sein [32].
+                      </p>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-destructive">Mechanismus der Persistenz:</span>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Listerien entkommen dem Phagosom mittels <strong className="text-foreground">Listeriolysin O (LLO)</strong>, 
+                          vermehren sich im Zytoplasma und nutzen <strong className="text-foreground">Aktin-Polymerisation</strong> zur 
+                          Zell-zu-Zell-Ausbreitung. Sie können in Biofilmen und in infizierten Zellen langfristig persistieren. 
+                          Neonatale Infektionen führen zu <strong className="text-foreground">langfristigen Veränderungen der Immunzell-Zusammensetzung</strong> [33].
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-accent">Latente/chronische Symptome:</span>
+                        <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Progressive kognitive Beeinträchtigung</strong> nach überstandener Infektion – auch bei nicht-neuroinvasiven Formen nachgewiesen [34]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Chronische Müdigkeit</strong> und Konzentrationsstörungen über Monate</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Langfristige Immundysregulation</strong>: Veränderte T-Zell- und NK-Zell-Zusammensetzung [33]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span>Subklinische <strong className="text-foreground">rezidivierende Infektionen</strong> bei Immunsupprimierten</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* EHEC */}
+              <Card className="shadow-card overflow-hidden border-destructive/15">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-[280px_1fr]">
+                    <div className="bg-destructive/5 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-5 w-5 text-destructive" />
+                        <h4 className="font-serif text-base font-medium text-foreground">EHEC / STEC (E. coli)</h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-destructive/30 mb-2">Langzeit-Organschäden</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Shiga-Toxine verursachen <strong className="text-foreground">mikrovaskuläre Endothelschäden</strong>, 
+                        deren Langzeitfolgen oft erst Jahre nach der Akutinfektion klinisch relevant werden [35, 36].
+                      </p>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-destructive">Mechanismus der Langzeitschäden:</span>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Shiga-Toxine binden an <strong className="text-foreground">Gb3-Rezeptoren</strong> auf renalen Endothelzellen → 
+                          thrombotische Mikroangiopathie (TMA) → <strong className="text-foreground">Nierenschädigung</strong>. 
+                          Auch nach klinischer Erholung bleiben oft subklinische Nephronschäden bestehen, 
+                          die erst nach Jahren zu Proteinurie oder Hypertonie führen [35, 36].
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-accent">Langzeitfolgen (10-Jahres-Follow-up-Studien):</span>
+                        <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Chronische Niereninsuffizienz</strong>: ~25 % der HUS-Überlebenden zeigen nach 10 Jahren renale Auffälligkeiten (Proteinurie, reduzierte GFR) [35]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Hypertonie</strong>: Erhöhtes Risiko auch bei initial „mild" verlaufenen STEC-Infektionen [36]</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Neurologische Spätfolgen</strong>: Kognitive Defizite, epileptische Anfälle bei Kindern nach schwerem HUS</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Diabetes mellitus Typ 1</strong>: Erhöhte Inzidenz bei HUS-Überlebenden (Pankreas-Beteiligung) [36]</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coxiella */}
+              <Card className="shadow-card overflow-hidden border-primary/15">
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-[280px_1fr]">
+                    <div className="bg-sage-50 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <h4 className="font-serif text-base font-medium text-foreground">Coxiella burnetii (Q-Fieber)</h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs border-primary/30 mb-2">Obligat intrazellulär</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Coxiella ist ein <strong className="text-foreground">obligat intrazellulärer Erreger</strong>, der in 
+                        Makrophagen innerhalb saurer Vakuolen überlebt – ein Paradebeispiel für latente Persistenz [24].
+                      </p>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-accent">Latente/chronische Symptome:</span>
+                        <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Chronisches Q-Fieber</strong>: Entwickelt sich bei ~1–5 % der akut Infizierten, oft erst Monate/Jahre später</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Endokarditis</strong> (lebensbedrohlich, erfordert monatelange Antibiotikatherapie)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Post-Q-Fieber-Fatigue-Syndrom</strong>: Chronische Erschöpfung über Jahre bei ~20 % der Patienten</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                            <span><strong className="text-foreground">Hepatitis, Osteomyelitis, vaskuläre Infektionen</strong> als Manifestationen chronischer Persistenz</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Zusammenfassung latente Infektionen */}
+            <Card className="border-accent/30 bg-accent/5 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Brain className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                  <div className="space-y-2">
+                    <h4 className="font-serif text-base font-medium text-foreground">
+                      Klinische Relevanz: Warum latente Infektionen so wichtig sind
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Die klassische Infektiologie betrachtet eine Infektion als „ausgeheilt", wenn die akuten 
+                      Symptome abklingen. Doch die aktuelle Forschung zeigt: Viele milchrelevante Erreger 
+                      <strong className="text-foreground"> persistieren intrazellulär</strong> und verursachen eine 
+                      <strong className="text-foreground">chronische niedriggradige Entzündung (low-grade inflammation)</strong>, 
+                      die mit unspezifischen Beschwerden einhergeht – chronische Müdigkeit, Gelenkschmerzen, 
+                      Reizdarmsyndrom, kognitive Beeinträchtigungen. Da diese Symptome selten mit einer Milchprodukt-Exposition 
+                      in Verbindung gebracht werden, bleiben sie häufig <em>unerkannt und unbehandelt</em>.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Quellen: Luk et al. 2021 [26], González et al. 2022 [27], Maciel et al. 2017 [28], 
+                      Schorling et al. 2024 [29], Keithlin et al. 2014 [30], Zautner et al. 2014 [31], 
+                      Frontiers Review 2026 [32], PMC 2020 [33], PMC 2023 [34], 
+                      Ped. Nephrol. 2024 [35], Ped. Nephrol. 2025 [36]
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
           {/* ═══════════════ Rechtlicher Disclaimer ═══════════════ */}
           <Card className="border-accent/30 bg-accent/5 shadow-card">
             <CardContent className="p-6">
