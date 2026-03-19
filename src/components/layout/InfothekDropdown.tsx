@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk } from "lucide-react";
+import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -96,6 +96,12 @@ const infothekGroups: InfothekGroup[] = [
   {
     title: { de: "Nur für Patienten der Naturheilpraxis Peter Rauch", en: "Only for Patients of Naturheilpraxis Peter Rauch" },
     items: [
+      {
+        label: { de: "Quellenhinweis & Haftung", en: "Sources & Disclaimer" },
+        href: "/quellenhinweis",
+        icon: Scale,
+        description: { de: "Herkunft, Einordnung & Grenzen unserer Informationen", en: "Origin, classification & limits of our information" },
+      },
       {
         label: { de: "Allergiebehandlung", en: "Allergy Treatment" },
         href: "/allergiebehandlung.html",
