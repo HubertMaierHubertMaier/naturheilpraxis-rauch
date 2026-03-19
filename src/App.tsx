@@ -16,6 +16,8 @@ import Heilpraktiker from "./pages/Heilpraktiker";
 import Gebueh from "./pages/Gebueh";
 import Ernaehrung from "./pages/Ernaehrung";
 import MilchUnvertraeglichkeit from "./pages/MilchUnvertraeglichkeit";
+import MilchKnochengesundheit from "./pages/MilchKnochengesundheit";
+import RohmilchMikrobiologie from "./pages/RohmilchMikrobiologie";
 import Frequenztherapie from "./pages/Frequenztherapie";
 import FAQ from "./pages/FAQ";
 import PraxisInfo from "./pages/PraxisInfo";
