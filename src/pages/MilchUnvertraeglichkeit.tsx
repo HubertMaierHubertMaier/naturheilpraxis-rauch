@@ -113,44 +113,139 @@ const laktoseFormen = [
   },
 ];
 
+/* ─── Sahne & Butter ─── */
+const sahneButterData = [
+  {
+    produkt: "Butter",
+    laktose: "~0,6–0,7 g / 100 g",
+    protein: "~0,7 g / 100 g",
+    laktoseRisiko: "Sehr gering",
+    allergieRisiko: "Gering (Spuren von Kasein/Molke)",
+    details: "Butter besteht zu ~82 % aus Milchfett. Durch das Buttern wird die Molke weitgehend entfernt. Für die meisten Laktoseintoleranten ist Butter in üblichen Mengen verträglich. Bei schwerer Milchproteinallergie können die verbleibenden Proteinspuren (~0,7 g/100 g) dennoch eine Reaktion auslösen.",
+    icon: CheckCircle,
+    farbe: "text-primary",
+  },
+  {
+    produkt: "Ghee (Butterschmalz)",
+    laktose: "~0 g",
+    protein: "~0 g",
+    laktoseRisiko: "Praktisch null",
+    allergieRisiko: "Praktisch null",
+    details: "Durch langes Erhitzen und Filtrieren werden Laktose, Kasein und Molkenproteine nahezu vollständig entfernt. Ghee gilt als sicher für die meisten Betroffenen beider Erkrankungen.",
+    icon: CheckCircle,
+    farbe: "text-primary",
+  },
+  {
+    produkt: "Sahne (Schlagsahne 30 %)",
+    laktose: "~3,1 g / 100 g",
+    protein: "~2,4 g / 100 g",
+    laktoseRisiko: "Moderat",
+    allergieRisiko: "Hoch (enthält Kasein + Molkenproteine)",
+    details: "Sahne enthält weniger Laktose als Milch (~4,7 g/100 g), aber immer noch genug, um bei empfindlichen Personen Symptome auszulösen. Der Proteingehalt ist ebenfalls relevant – Sahne ist NICHT sicher bei Milchproteinallergie.",
+    icon: AlertTriangle,
+    farbe: "text-accent",
+  },
+  {
+    produkt: "Crème fraîche / Schmand",
+    laktose: "~2,5–3,5 g / 100 g",
+    protein: "~2,5–3 g / 100 g",
+    laktoseRisiko: "Moderat",
+    allergieRisiko: "Hoch",
+    details: "Ähnlich wie Sahne. Die bakterielle Fermentation bei Crème fraîche baut etwas Laktose ab, aber nicht ausreichend für empfindliche Personen. Alle Milchproteine bleiben erhalten.",
+    icon: AlertTriangle,
+    farbe: "text-accent",
+  },
+  {
+    produkt: "Hartkäse (Parmesan, Emmentaler)",
+    laktose: "<0,1 g / 100 g",
+    protein: "~25–35 g / 100 g",
+    laktoseRisiko: "Sehr gering",
+    allergieRisiko: "Sehr hoch (konzentriertes Kasein)",
+    details: "Durch die lange Reifung wird Laktose fast vollständig abgebaut. Hartkäse wird von den meisten Laktoseintoleranten gut vertragen. Bei Milchproteinallergie ist er jedoch NICHT geeignet, da Kasein hoch konzentriert ist.",
+    icon: CircleAlert,
+    farbe: "text-accent",
+  },
+];
+
+/* ─── Ausweichprodukte ─── */
+const alternativProdukte = [
+  {
+    kategorie: "Pflanzenmilch",
+    icon: Milk,
+    produkte: [
+      { name: "Haferdrink", ca_mg: "~120 (angereichert)", hinweis: "Cremig, mild. Beliebteste Alternative in Deutschland. Auf Calciumanreicherung achten." },
+      { name: "Sojadrink", ca_mg: "~120 (angereichert)", hinweis: "Proteinreich (~3,5 g/100 ml). Am nährstoffreichsten unter den Alternativen." },
+      { name: "Mandeldrink", ca_mg: "~120 (angereichert)", hinweis: "Kalorienarm, nussig. Proteinarm (~0,5 g/100 ml)." },
+      { name: "Reisdrink", ca_mg: "~120 (angereichert)", hinweis: "Allergenarm, sehr mild. Enthält kaum Protein. Nicht für Säuglinge (Arsengehalt)." },
+      { name: "Kokosdrink", ca_mg: "~10 (natürlich)", hinweis: "Geringe Nährstoffdichte. Gut zum Kochen, weniger als Milchersatz." },
+    ],
+  },
+  {
+    kategorie: "Pflanzliche Sahne & Butter",
+    icon: Leaf,
+    produkte: [
+      { name: "Hafersahne", ca_mg: "Variabel", hinweis: "Gut aufschäumbar. Für Soßen und Suppen geeignet." },
+      { name: "Sojasahne", ca_mg: "Variabel", hinweis: "Hitzebeständig, gut zum Kochen. Proteinreich." },
+      { name: "Pflanzliche Margarine", ca_mg: "Variabel", hinweis: "Auf milchfreie Varianten achten – viele enthalten Molke!" },
+    ],
+  },
+  {
+    kategorie: "Calciumreiche Lebensmittel (natürlich)",
+    icon: Apple,
+    produkte: [
+      { name: "Sesam / Tahin", ca_mg: "~780 mg/100 g", hinweis: "Außergewöhnlich calciumreich. 2 EL Tahin ≈ 1 Glas Milch." },
+      { name: "Grünkohl", ca_mg: "~210 mg/100 g", hinweis: "Hohe Bioverfügbarkeit (~60 %), da oxalatarm." },
+      { name: "Brokkoli", ca_mg: "~60 mg/100 g", hinweis: "Bioverfügbarkeit ~50 %. Gute tägliche Calciumquelle." },
+      { name: "Mandeln", ca_mg: "~265 mg/100 g", hinweis: "Zusätzlich Magnesium und Vitamin E." },
+      { name: "Mineralwasser", ca_mg: "bis 600 mg/L", hinweis: "Calciumreiche Mineralwässer (>150 mg/L) als einfache Quelle." },
+      { name: "Sardinen (mit Gräten)", ca_mg: "~380 mg/100 g", hinweis: "Exzellente Quelle mit gleichzeitig Vitamin D." },
+    ],
+  },
+];
+
+/* ─── Calcium-Phosphor-Kontroverse ─── */
+const calciumPhosphorArgumente = {
+  pro: {
+    title: "Traditionelle Sichtweise: „Milch stärkt die Knochen"",
+    punkte: [
+      "Kuhmilch enthält ~120 mg Calcium/100 ml – eine der konzentriertesten Quellen",
+      "Calcium-Bioverfügbarkeit aus Milch ist mit ~30–35 % relativ gut",
+      "Die Deutsche Gesellschaft für Ernährung (DGE) empfiehlt Milch als Calciumquelle [16]",
+      "Metaanalysen zeigen einen positiven Effekt auf die Knochendichte bei Kindern (Huncharek et al. 2008) [14]",
+    ],
+  },
+  contra: {
+    title: "Kritische Wissenschaft: „Das Calcium-Phosphor-Paradoxon"",
+    punkte: [
+      "Milch enthält ~90 mg Phosphor/100 ml – das Ca:P-Verhältnis liegt bei ~1,3:1",
+      "Hoher Phosphorgehalt kann die renale Calciumausscheidung steigern (Kemi et al. 2006) [12]",
+      "Milchprotein (v.a. Kasein) erhöht die Säurelast → Calcium wird als Puffer aus Knochen mobilisiert (Frassetto et al. 2000) [13]",
+      "Die Harvard Nurses' Health Study (77.761 Frauen, 12 Jahre) fand KEINEN Schutzeffekt von Milch vor Hüftfrakturen (Feskanich et al. 1997) [10]",
+      "Länder mit höchstem Milchkonsum (Skandinavien) haben paradoxerweise die höchsten Osteoporose-Raten (Michaëlsson et al. 2014, BMJ) [11]",
+      "Galaktose (Spaltprodukt der Laktose) steht im Verdacht, oxidativen Stress und chronische Entzündung zu fördern [11]",
+    ],
+  },
+  fazit: "Die aktuelle Studienlage ist widersprüchlich. Sicher ist: Calcium allein reicht für die Knochengesundheit nicht aus – Vitamin D, Vitamin K₂, Magnesium, Bewegung und ein ausgeglichener Säure-Basen-Haushalt sind ebenso entscheidend. Die Empfehlung, Milch als primäre Calciumquelle zu betrachten, wird zunehmend hinterfragt.",
+};
+
 /* ─── Quellen ─── */
 const quellen = [
-  {
-    nr: 1,
-    text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121.",
-  },
-  {
-    nr: 2,
-    text: "Deng Y, Misselwitz B, Dai N, Fox M. Lactose Intolerance in Adults: Biological Mechanism and Dietary Management. Nutrients. 2015;7(9):8020-8035.",
-  },
-  {
-    nr: 3,
-    text: "Wal JM. Cow's milk proteins/allergens. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):3-10.",
-  },
-  {
-    nr: 4,
-    text: "Host A. Frequency of cow's milk allergy in childhood. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):33-37.",
-  },
-  {
-    nr: 5,
-    text: "Enattah NS et al. Identification of a variant associated with adult-type hypolactasia. Nat Genet. 2002;30(2):233-237.",
-  },
-  {
-    nr: 6,
-    text: "Koletzko S et al. Leitlinie Kuhmilchproteinallergie (S2k). AWMF-Register Nr. 061/010, 2021.",
-  },
-  {
-    nr: 7,
-    text: "Wikipedia: Laktoseintoleranz. https://de.wikipedia.org/wiki/Laktoseintoleranz (abgerufen März 2026).",
-  },
-  {
-    nr: 8,
-    text: "AMBOSS: Lactoseintoleranz. https://www.amboss.com/de/wissen/lactoseintoleranz (abgerufen März 2026).",
-  },
-  {
-    nr: 9,
-    text: "Roth-Walter F et al. Cow's milk protein β-lactoglobulin prevents allergy development via immune modulation. J Allergy Clin Immunol. 2021;147(3):1024-1032.",
-  },
+  { nr: 1, text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121." },
+  { nr: 2, text: "Deng Y, Misselwitz B, Dai N, Fox M. Lactose Intolerance in Adults: Biological Mechanism and Dietary Management. Nutrients. 2015;7(9):8020-8035." },
+  { nr: 3, text: "Wal JM. Cow's milk proteins/allergens. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):3-10." },
+  { nr: 4, text: "Host A. Frequency of cow's milk allergy in childhood. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):33-37." },
+  { nr: 5, text: "Enattah NS et al. Identification of a variant associated with adult-type hypolactasia. Nat Genet. 2002;30(2):233-237." },
+  { nr: 6, text: "Koletzko S et al. Leitlinie Kuhmilchproteinallergie (S2k). AWMF-Register Nr. 061/010, 2021." },
+  { nr: 7, text: "Wikipedia: Laktoseintoleranz. https://de.wikipedia.org/wiki/Laktoseintoleranz (abgerufen März 2026)." },
+  { nr: 8, text: "AMBOSS: Lactoseintoleranz. https://www.amboss.com/de/wissen/lactoseintoleranz (abgerufen März 2026)." },
+  { nr: 9, text: "Roth-Walter F et al. Cow's milk protein β-lactoglobulin prevents allergy development via immune modulation. J Allergy Clin Immunol. 2021;147(3):1024-1032." },
+  { nr: 10, text: "Feskanich D, Willett WC, Stampfer MJ, Colditz GA. Milk, dietary calcium, and bone fractures in women: a 12-year prospective study. Am J Public Health. 1997;87(6):992-997." },
+  { nr: 11, text: "Michaëlsson K et al. Milk intake and risk of mortality and fractures in women and men: cohort studies. BMJ. 2014;349:g6015." },
+  { nr: 12, text: "Kemi VE et al. High phosphorus intakes acutely and negatively affect Ca and bone metabolism in a dose-dependent manner in healthy young females. Br J Nutr. 2006;96(3):545-552." },
+  { nr: 13, text: "Frassetto LA et al. Worldwide incidence of hip fracture in elderly women: relation to consumption of animal and vegetable foods. J Gerontol A Biol Sci Med Sci. 2000;55(10):M585-M592." },
+  { nr: 14, text: "Huncharek M, Muscat J, Kupelnick B. Impact of dairy products and dietary calcium on bone-mineral content in children: results of a meta-analysis. Bone. 2008;43(2):312-321." },
+  { nr: 15, text: "Weaver CM et al. Calcium plus vitamin D supplementation and risk of fractures. Osteoporos Int. 2016;27(1):367-376." },
+  { nr: 16, text: "DGE (Deutsche Gesellschaft für Ernährung). Referenzwerte Calcium. https://www.dge.de/wissenschaft/referenzwerte/calcium/ (abgerufen März 2026)." },
 ];
 
 const MilchUnvertraeglichkeit = () => {
