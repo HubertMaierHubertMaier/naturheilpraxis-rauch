@@ -17,6 +17,12 @@ import {
   CircleAlert,
   CheckCircle,
   XCircle,
+  Milk,
+  Leaf,
+  Bone,
+  Apple,
+  Ban,
+  Scale,
 } from "lucide-react";
 
 /* ─── Statistik-Daten ─── */
@@ -107,44 +113,139 @@ const laktoseFormen = [
   },
 ];
 
+/* ─── Sahne & Butter ─── */
+const sahneButterData = [
+  {
+    produkt: "Butter",
+    laktose: "~0,6–0,7 g / 100 g",
+    protein: "~0,7 g / 100 g",
+    laktoseRisiko: "Sehr gering",
+    allergieRisiko: "Gering (Spuren von Kasein/Molke)",
+    details: "Butter besteht zu ~82 % aus Milchfett. Durch das Buttern wird die Molke weitgehend entfernt. Für die meisten Laktoseintoleranten ist Butter in üblichen Mengen verträglich. Bei schwerer Milchproteinallergie können die verbleibenden Proteinspuren (~0,7 g/100 g) dennoch eine Reaktion auslösen.",
+    icon: CheckCircle,
+    farbe: "text-primary",
+  },
+  {
+    produkt: "Ghee (Butterschmalz)",
+    laktose: "~0 g",
+    protein: "~0 g",
+    laktoseRisiko: "Praktisch null",
+    allergieRisiko: "Praktisch null",
+    details: "Durch langes Erhitzen und Filtrieren werden Laktose, Kasein und Molkenproteine nahezu vollständig entfernt. Ghee gilt als sicher für die meisten Betroffenen beider Erkrankungen.",
+    icon: CheckCircle,
+    farbe: "text-primary",
+  },
+  {
+    produkt: "Sahne (Schlagsahne 30 %)",
+    laktose: "~3,1 g / 100 g",
+    protein: "~2,4 g / 100 g",
+    laktoseRisiko: "Moderat",
+    allergieRisiko: "Hoch (enthält Kasein + Molkenproteine)",
+    details: "Sahne enthält weniger Laktose als Milch (~4,7 g/100 g), aber immer noch genug, um bei empfindlichen Personen Symptome auszulösen. Der Proteingehalt ist ebenfalls relevant – Sahne ist NICHT sicher bei Milchproteinallergie.",
+    icon: AlertTriangle,
+    farbe: "text-accent",
+  },
+  {
+    produkt: "Crème fraîche / Schmand",
+    laktose: "~2,5–3,5 g / 100 g",
+    protein: "~2,5–3 g / 100 g",
+    laktoseRisiko: "Moderat",
+    allergieRisiko: "Hoch",
+    details: "Ähnlich wie Sahne. Die bakterielle Fermentation bei Crème fraîche baut etwas Laktose ab, aber nicht ausreichend für empfindliche Personen. Alle Milchproteine bleiben erhalten.",
+    icon: AlertTriangle,
+    farbe: "text-accent",
+  },
+  {
+    produkt: "Hartkäse (Parmesan, Emmentaler)",
+    laktose: "<0,1 g / 100 g",
+    protein: "~25–35 g / 100 g",
+    laktoseRisiko: "Sehr gering",
+    allergieRisiko: "Sehr hoch (konzentriertes Kasein)",
+    details: "Durch die lange Reifung wird Laktose fast vollständig abgebaut. Hartkäse wird von den meisten Laktoseintoleranten gut vertragen. Bei Milchproteinallergie ist er jedoch NICHT geeignet, da Kasein hoch konzentriert ist.",
+    icon: CircleAlert,
+    farbe: "text-accent",
+  },
+];
+
+/* ─── Ausweichprodukte ─── */
+const alternativProdukte = [
+  {
+    kategorie: "Pflanzenmilch",
+    icon: Milk,
+    produkte: [
+      { name: "Haferdrink", ca_mg: "~120 (angereichert)", hinweis: "Cremig, mild. Beliebteste Alternative in Deutschland. Auf Calciumanreicherung achten." },
+      { name: "Sojadrink", ca_mg: "~120 (angereichert)", hinweis: "Proteinreich (~3,5 g/100 ml). Am nährstoffreichsten unter den Alternativen." },
+      { name: "Mandeldrink", ca_mg: "~120 (angereichert)", hinweis: "Kalorienarm, nussig. Proteinarm (~0,5 g/100 ml)." },
+      { name: "Reisdrink", ca_mg: "~120 (angereichert)", hinweis: "Allergenarm, sehr mild. Enthält kaum Protein. Nicht für Säuglinge (Arsengehalt)." },
+      { name: "Kokosdrink", ca_mg: "~10 (natürlich)", hinweis: "Geringe Nährstoffdichte. Gut zum Kochen, weniger als Milchersatz." },
+    ],
+  },
+  {
+    kategorie: "Pflanzliche Sahne & Butter",
+    icon: Leaf,
+    produkte: [
+      { name: "Hafersahne", ca_mg: "Variabel", hinweis: "Gut aufschäumbar. Für Soßen und Suppen geeignet." },
+      { name: "Sojasahne", ca_mg: "Variabel", hinweis: "Hitzebeständig, gut zum Kochen. Proteinreich." },
+      { name: "Pflanzliche Margarine", ca_mg: "Variabel", hinweis: "Auf milchfreie Varianten achten – viele enthalten Molke!" },
+    ],
+  },
+  {
+    kategorie: "Calciumreiche Lebensmittel (natürlich)",
+    icon: Apple,
+    produkte: [
+      { name: "Sesam / Tahin", ca_mg: "~780 mg/100 g", hinweis: "Außergewöhnlich calciumreich. 2 EL Tahin ≈ 1 Glas Milch." },
+      { name: "Grünkohl", ca_mg: "~210 mg/100 g", hinweis: "Hohe Bioverfügbarkeit (~60 %), da oxalatarm." },
+      { name: "Brokkoli", ca_mg: "~60 mg/100 g", hinweis: "Bioverfügbarkeit ~50 %. Gute tägliche Calciumquelle." },
+      { name: "Mandeln", ca_mg: "~265 mg/100 g", hinweis: "Zusätzlich Magnesium und Vitamin E." },
+      { name: "Mineralwasser", ca_mg: "bis 600 mg/L", hinweis: "Calciumreiche Mineralwässer (>150 mg/L) als einfache Quelle." },
+      { name: "Sardinen (mit Gräten)", ca_mg: "~380 mg/100 g", hinweis: "Exzellente Quelle mit gleichzeitig Vitamin D." },
+    ],
+  },
+];
+
+/* ─── Calcium-Phosphor-Kontroverse ─── */
+const calciumPhosphorArgumente = {
+  pro: {
+    title: 'Traditionelle Sichtweise: „Milch stärkt die Knochen"',
+    punkte: [
+      "Kuhmilch enthält ~120 mg Calcium/100 ml – eine der konzentriertesten Quellen",
+      "Calcium-Bioverfügbarkeit aus Milch ist mit ~30–35 % relativ gut",
+      "Die Deutsche Gesellschaft für Ernährung (DGE) empfiehlt Milch als Calciumquelle [16]",
+      "Metaanalysen zeigen einen positiven Effekt auf die Knochendichte bei Kindern (Huncharek et al. 2008) [14]",
+    ],
+  },
+  contra: {
+    title: 'Kritische Wissenschaft: „Das Calcium-Phosphor-Paradoxon"',
+    punkte: [
+      "Milch enthält ~90 mg Phosphor/100 ml – das Ca:P-Verhältnis liegt bei ~1,3:1",
+      "Hoher Phosphorgehalt kann die renale Calciumausscheidung steigern (Kemi et al. 2006) [12]",
+      "Milchprotein (v.a. Kasein) erhöht die Säurelast → Calcium wird als Puffer aus Knochen mobilisiert (Frassetto et al. 2000) [13]",
+      "Die Harvard Nurses' Health Study (77.761 Frauen, 12 Jahre) fand KEINEN Schutzeffekt von Milch vor Hüftfrakturen (Feskanich et al. 1997) [10]",
+      "Länder mit höchstem Milchkonsum (Skandinavien) haben paradoxerweise die höchsten Osteoporose-Raten (Michaëlsson et al. 2014, BMJ) [11]",
+      "Galaktose (Spaltprodukt der Laktose) steht im Verdacht, oxidativen Stress und chronische Entzündung zu fördern [11]",
+    ],
+  },
+  fazit: "Die aktuelle Studienlage ist widersprüchlich. Sicher ist: Calcium allein reicht für die Knochengesundheit nicht aus – Vitamin D, Vitamin K₂, Magnesium, Bewegung und ein ausgeglichener Säure-Basen-Haushalt sind ebenso entscheidend. Die Empfehlung, Milch als primäre Calciumquelle zu betrachten, wird zunehmend hinterfragt.",
+};
+
 /* ─── Quellen ─── */
 const quellen = [
-  {
-    nr: 1,
-    text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121.",
-  },
-  {
-    nr: 2,
-    text: "Deng Y, Misselwitz B, Dai N, Fox M. Lactose Intolerance in Adults: Biological Mechanism and Dietary Management. Nutrients. 2015;7(9):8020-8035.",
-  },
-  {
-    nr: 3,
-    text: "Wal JM. Cow's milk proteins/allergens. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):3-10.",
-  },
-  {
-    nr: 4,
-    text: "Host A. Frequency of cow's milk allergy in childhood. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):33-37.",
-  },
-  {
-    nr: 5,
-    text: "Enattah NS et al. Identification of a variant associated with adult-type hypolactasia. Nat Genet. 2002;30(2):233-237.",
-  },
-  {
-    nr: 6,
-    text: "Koletzko S et al. Leitlinie Kuhmilchproteinallergie (S2k). AWMF-Register Nr. 061/010, 2021.",
-  },
-  {
-    nr: 7,
-    text: "Wikipedia: Laktoseintoleranz. https://de.wikipedia.org/wiki/Laktoseintoleranz (abgerufen März 2026).",
-  },
-  {
-    nr: 8,
-    text: "AMBOSS: Lactoseintoleranz. https://www.amboss.com/de/wissen/lactoseintoleranz (abgerufen März 2026).",
-  },
-  {
-    nr: 9,
-    text: "Roth-Walter F et al. Cow's milk protein β-lactoglobulin prevents allergy development via immune modulation. J Allergy Clin Immunol. 2021;147(3):1024-1032.",
-  },
+  { nr: 1, text: "Mattar R, de Campos Mazo DF, Carrilho FJ. Lactose intolerance: diagnosis, genetic and clinical factors. Clin Exp Gastroenterol. 2012;5:113-121." },
+  { nr: 2, text: "Deng Y, Misselwitz B, Dai N, Fox M. Lactose Intolerance in Adults: Biological Mechanism and Dietary Management. Nutrients. 2015;7(9):8020-8035." },
+  { nr: 3, text: "Wal JM. Cow's milk proteins/allergens. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):3-10." },
+  { nr: 4, text: "Host A. Frequency of cow's milk allergy in childhood. Ann Allergy Asthma Immunol. 2002;89(6 Suppl 1):33-37." },
+  { nr: 5, text: "Enattah NS et al. Identification of a variant associated with adult-type hypolactasia. Nat Genet. 2002;30(2):233-237." },
+  { nr: 6, text: "Koletzko S et al. Leitlinie Kuhmilchproteinallergie (S2k). AWMF-Register Nr. 061/010, 2021." },
+  { nr: 7, text: "Wikipedia: Laktoseintoleranz. https://de.wikipedia.org/wiki/Laktoseintoleranz (abgerufen März 2026)." },
+  { nr: 8, text: "AMBOSS: Lactoseintoleranz. https://www.amboss.com/de/wissen/lactoseintoleranz (abgerufen März 2026)." },
+  { nr: 9, text: "Roth-Walter F et al. Cow's milk protein β-lactoglobulin prevents allergy development via immune modulation. J Allergy Clin Immunol. 2021;147(3):1024-1032." },
+  { nr: 10, text: "Feskanich D, Willett WC, Stampfer MJ, Colditz GA. Milk, dietary calcium, and bone fractures in women: a 12-year prospective study. Am J Public Health. 1997;87(6):992-997." },
+  { nr: 11, text: "Michaëlsson K et al. Milk intake and risk of mortality and fractures in women and men: cohort studies. BMJ. 2014;349:g6015." },
+  { nr: 12, text: "Kemi VE et al. High phosphorus intakes acutely and negatively affect Ca and bone metabolism in a dose-dependent manner in healthy young females. Br J Nutr. 2006;96(3):545-552." },
+  { nr: 13, text: "Frassetto LA et al. Worldwide incidence of hip fracture in elderly women: relation to consumption of animal and vegetable foods. J Gerontol A Biol Sci Med Sci. 2000;55(10):M585-M592." },
+  { nr: 14, text: "Huncharek M, Muscat J, Kupelnick B. Impact of dairy products and dietary calcium on bone-mineral content in children: results of a meta-analysis. Bone. 2008;43(2):312-321." },
+  { nr: 15, text: "Weaver CM et al. Calcium plus vitamin D supplementation and risk of fractures. Osteoporos Int. 2016;27(1):367-376." },
+  { nr: 16, text: "DGE (Deutsche Gesellschaft für Ernährung). Referenzwerte Calcium. https://www.dge.de/wissenschaft/referenzwerte/calcium/ (abgerufen März 2026)." },
 ];
 
 const MilchUnvertraeglichkeit = () => {
@@ -578,6 +679,337 @@ const MilchUnvertraeglichkeit = () => {
                 </CardContent>
               </Card>
             </div>
+          </section>
+
+          {/* ═══════════════ Detaillierte Symptome ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Activity className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Symptome im Detail
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Warum treten diese Symptome auf? Die Mechanismen hinter den Beschwerden.
+            </p>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Allergie-Symptome erklärt */}
+              <Card className="border-destructive/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                      <Shield className="h-5 w-5 text-destructive" />
+                    </div>
+                    Allergie-Symptome &amp; ihre Ursachen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <div className="rounded-lg bg-destructive/5 p-4 space-y-3">
+                    <div>
+                      <strong className="text-foreground">Haut (Nesselsucht, Ekzem, Juckreiz):</strong>
+                      <p>IgE-Antikörper aktivieren Mastzellen → Histaminfreisetzung → Gefäßerweiterung, Schwellung, Rötung und Juckreiz der Haut.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Atemwege (Asthma, Rhinitis, Kehlkopfschwellung):</strong>
+                      <p>Histamin und Leukotriene verursachen Bronchospasmus und Schleimhautschwellung. Bei schweren Fällen droht Atemwegsobstruktion.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Magen-Darm (Erbrechen, Durchfall, Blut im Stuhl):</strong>
+                      <p>Entzündungsreaktion der Darmschleimhaut durch Immunzellen. Bei nicht-IgE-vermittelter Allergie: T-Zell-vermittelte verzögerte Entzündung → eosinophile Infiltration.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Anaphylaxie (lebensbedrohlich!):</strong>
+                      <p>Massive, systemische Histaminfreisetzung → Blutdruckabfall, Kreislaufschock, Bewusstlosigkeit. Sofortmaßnahme: Adrenalin-Autoinjektor!</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-destructive/20 p-3">
+                    <p className="text-xs">
+                      <strong className="text-destructive">Wichtig:</strong> Bereits Spuren von Milchprotein (z.B. in Medikamenten, Wurstwaren, Backwaren) 
+                      können bei sensibilisierten Personen eine Reaktion auslösen. Vollständige Meidung aller Milchprodukte ist bei echter Allergie erforderlich.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Intoleranz-Symptome erklärt */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Droplets className="h-5 w-5 text-primary" />
+                    </div>
+                    Intoleranz-Symptome &amp; ihre Ursachen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <div className="rounded-lg bg-primary/5 p-4 space-y-3">
+                    <div>
+                      <strong className="text-foreground">Blähungen &amp; Gasbildung:</strong>
+                      <p>Unverdaute Laktose gelangt in den Dickdarm → Darmbakterien fermentieren sie zu H₂, CO₂ und CH₄ (Methan). Diese Gase dehnen den Darm → Schmerzen und hörbares Rumoren.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Durchfall (osmotisch):</strong>
+                      <p>Laktose und kurzkettige Fettsäuren (Fermentationsprodukte) sind osmotisch aktiv → sie ziehen Wasser in den Darm → wässriger, oft säuerlich riechender Durchfall.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Bauchkrämpfe:</strong>
+                      <p>Gasausdehnung und beschleunigte Peristaltik führen zu krampfartigen Schmerzen, oft im Unterbauch.</p>
+                    </div>
+                    <div>
+                      <strong className="text-foreground">Übelkeit &amp; Kopfschmerzen:</strong>
+                      <p>Toxische Gärungsprodukte und biogene Amine (Histamin) aus der bakteriellen Fermentation können systemische Beschwerden verursachen.</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-primary/20 p-3">
+                    <p className="text-xs">
+                      <strong className="text-primary">Gut zu wissen:</strong> Die Symptomstärke ist dosisabhängig. Viele Betroffene vertragen 
+                      kleine Mengen Laktose (z.B. 6–12 g, entspricht ~120–250 ml Milch) ohne Beschwerden. Joghurt wird oft besser vertragen, 
+                      da die Bakterienkulturen eigene Laktase mitbringen.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* ═══════════════ Sahne & Butter ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Milk className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Sahne, Butter &amp; Käse – Wie betroffen?
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Nicht alle Milchprodukte sind gleich problematisch. Laktose- und Proteingehalt variieren erheblich.
+            </p>
+
+            <div className="space-y-4">
+              {sahneButterData.map((item) => (
+                <Card key={item.produkt} className="shadow-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[280px_1fr]">
+                      <div className="bg-sage-50 p-5 flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-3">
+                          <item.icon className={`h-5 w-5 ${item.farbe}`} />
+                          <h3 className="font-serif text-lg font-medium text-foreground">{item.produkt}</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded bg-background p-2">
+                            <span className="text-muted-foreground">Laktose:</span>
+                            <div className="font-medium text-foreground">{item.laktose}</div>
+                          </div>
+                          <div className="rounded bg-background p-2">
+                            <span className="text-muted-foreground">Protein:</span>
+                            <div className="font-medium text-foreground">{item.protein}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5 space-y-3">
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          <Badge variant="outline" className="border-primary/30">
+                            Laktose-Risiko: {item.laktoseRisiko}
+                          </Badge>
+                          <Badge variant="outline" className="border-destructive/30">
+                            Allergie-Risiko: {item.allergieRisiko}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{item.details}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══════════════ Ausweichprodukte ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Leaf className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Ausweichprodukte &amp; Alternativen
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Wer Milch meiden muss oder möchte, hat heute eine große Auswahl an Alternativen – 
+              wichtig ist die Sicherstellung der Calciumzufuhr.
+            </p>
+
+            <div className="space-y-6">
+              {alternativProdukte.map((gruppe) => (
+                <Card key={gruppe.kategorie} className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-3 font-serif text-lg">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-100">
+                        <gruppe.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      {gruppe.kategorie}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-sage-50/50">
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Produkt</th>
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Calcium (mg)</th>
+                            <th className="px-4 py-2 text-left font-medium text-foreground">Hinweis</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gruppe.produkte.map((p) => (
+                            <tr key={p.name} className="border-b last:border-0">
+                              <td className="px-4 py-2.5 font-medium text-foreground whitespace-nowrap">{p.name}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{p.ca_mg}</td>
+                              <td className="px-4 py-2.5 text-muted-foreground">{p.hinweis}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* ═══════════════ Calcium-Phosphor-Kontroverse ═══════════════ */}
+          <section>
+            <h2 className="mb-2 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              <Bone className="mb-1 mr-2 inline-block h-7 w-7 text-primary" />
+              Milch &amp; Knochengesundheit – Die Kontroverse
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground max-w-3xl mx-auto">
+              Ist Milch wirklich gut für die Knochen? Die wissenschaftliche Debatte um Calcium, 
+              Phosphor und Knochengesundheit.
+            </p>
+
+            <div className="grid gap-6 md:grid-cols-2 mb-6">
+              {/* Pro */}
+              <Card className="border-primary/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    {calciumPhosphorArgumente.pro.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {calciumPhosphorArgumente.pro.punkte.map((punkt, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <span className="leading-relaxed">{punkt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Contra */}
+              <Card className="border-accent/20 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 font-serif text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+                      <Ban className="h-5 w-5 text-accent" />
+                    </div>
+                    {calciumPhosphorArgumente.contra.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5 text-sm text-muted-foreground">
+                    {calciumPhosphorArgumente.contra.punkte.map((punkt, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                        <span className="leading-relaxed">{punkt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Mechanismus-Grafik */}
+            <Card className="shadow-card overflow-hidden mb-6">
+              <CardContent className="p-0">
+                <div className="bg-sage-50 p-6 md:p-8">
+                  <h3 className="mb-6 text-center font-serif text-lg font-medium text-foreground">
+                    <Scale className="mb-1 mr-2 inline-block h-5 w-5 text-primary" />
+                    Das Calcium-Phosphor-Paradoxon – Schematisch
+                  </h3>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="rounded-xl border border-primary/20 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                        <span className="font-medium text-foreground">Optimale Ca-Aufnahme</span>
+                      </div>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">1</div>
+                          <span>Calcium aus Nahrung (z.B. <strong className="text-foreground">Grünkohl, Sesam</strong>)</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">2</div>
+                          <span><strong className="text-foreground">Günstiges Ca:P-Verhältnis</strong> → keine Störung</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">3</div>
+                          <span><strong className="text-foreground">Vitamin D + K₂</strong> fördern Einbau in Knochen</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">4</div>
+                          <span>Ca wird in <strong className="text-foreground">Knochenmatrix eingebaut</strong> ✓</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-accent/30 bg-background p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <XCircle className="h-5 w-5 text-accent" />
+                        <span className="font-medium text-foreground">Gestörte Ca-Bilanz (Milch)</span>
+                      </div>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">1</div>
+                          <span>Milch: Ca (~120 mg) + <strong className="text-foreground">Phosphor (~90 mg)</strong>/100 ml</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">2</div>
+                          <span>Phosphor ↑ → <strong className="text-foreground">Parathormon (PTH) ↑</strong></span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">3</div>
+                          <span>PTH mobilisiert Ca <strong className="text-foreground">AUS dem Knochen</strong></span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/20 text-xs font-bold text-destructive">4</div>
+                          <span>Kasein erzeugt <strong className="text-foreground">Säurelast</strong> → weiterer Ca-Verlust</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/20 text-xs font-bold text-destructive">5</div>
+                          <span><strong className="text-foreground">Netto-Ca-Bilanz kann negativ sein</strong> ✗</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Fazit */}
+            <Card className="border-primary/30 bg-primary/5 shadow-card">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <Bone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div className="space-y-2">
+                    <h3 className="font-serif text-lg font-medium text-foreground">Fazit der aktuellen Forschung</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {calciumPhosphorArgumente.fazit}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Quellen: Feskanich et al. 1997 [10], Michaëlsson et al. 2014 [11], Kemi et al. 2006 [12], 
+                      Frassetto et al. 2000 [13], Huncharek et al. 2008 [14], Weaver et al. 2016 [15]
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </section>
 
           {/* ═══════════════ Rechtlicher Disclaimer ═══════════════ */}
