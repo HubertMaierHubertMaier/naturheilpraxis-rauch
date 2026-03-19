@@ -85,6 +85,12 @@ const infothekGroups: InfothekGroup[] = [
         description: { de: "Patientenhandout: Zielwerte, Messen & Alltagstipps", en: "Patient handout: target values, measuring & daily tips" },
         external: true,
       },
+      {
+        label: { de: "Milch-Unverträglichkeit", en: "Milk Intolerance" },
+        href: "/milch-unvertraeglichkeit",
+        icon: Milk,
+        description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" },
+      },
     ],
   },
   {

@@ -50,6 +50,7 @@ const App = () => (
               <Route path="/heilpraktiker" element={<Heilpraktiker />} />
               <Route path="/gebueh" element={<Gebueh />} />
               <Route path="/ernaehrung" element={<Ernaehrung />} />
+              <Route path="/milch-unvertraeglichkeit" element={<MilchUnvertraeglichkeit />} />
               <Route path="/frequenztherapie" element={<Frequenztherapie />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
