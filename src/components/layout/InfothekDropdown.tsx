@@ -116,6 +116,14 @@ const infothekGroups: InfothekGroup[] = [
         description: { de: "Vorkommen, Arten & Symptome heimischer Parasiten", en: "Prevalence, types & symptoms of local parasites" },
         external: true,
       },
+      {
+        label: { de: "Viren & Bakterien", en: "Viruses & Bacteria" },
+        href: "/viren-bakterien-deutschland.html",
+        icon: Syringe,
+        description: { de: "Akute & latente Belastungen, Erregerpersistenz", en: "Acute & latent infections, pathogen persistence" },
+        external: true,
+      },
+      },
     ],
   },
   {
