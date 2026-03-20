@@ -588,169 +588,455 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
 <!-- Slide 10: Symptom-Übersichtstabelle -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section>
-  <h2>📋 Symptom-Übersicht: Welcher Parasit – welche Beschwerden?</h2>
+  <h2>📋 Symptom-Übersicht: Akute &amp; latente Beschwerden</h2>
+  <p style="font-size:0.88rem !important; margin-bottom:0.5rem;">Die folgende Tabelle unterscheidet zwischen <strong>akuten Symptomen</strong> (bei Erstinfektion/hoher Erregerlast) und <strong>latenten Symptomen</strong> (bei chronischer, unterschwelliger Belastung). Latente Symptome werden in der Routinediagnostik selten der eigentlichen Ursache zugeordnet.</p>
 
-  <table>
+  <table style="font-size:0.72rem !important; line-height:1.3;">
     <thead>
       <tr>
-        <th>Parasit</th>
-        <th>Typ</th>
-        <th>Hauptsymptome</th>
-        <th>IgE / Eosinophilie</th>
+        <th style="min-width:120px;">Parasit</th>
+        <th style="min-width:60px;">Typ</th>
+        <th style="min-width:180px;">Akute Symptome</th>
+        <th style="min-width:180px;">Latente / chronische Symptome</th>
+        <th style="min-width:90px;">IgE / Eos.</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><strong>Madenwurm</strong><br><em>Enterobius vermicularis</em></td>
-        <td>Nematode</td>
-        <td>Analjuckreiz (nachts), Schlafstörungen</td>
-        <td>IgE normal; Eos. gering↑</td>
-      </tr>
+      <!-- === PROTOZOEN === -->
+      <tr><td colspan="5" style="background:var(--primary); color:#fff; font-weight:700; font-family:'Playfair Display',serif;">Protozoen (Einzeller)</td></tr>
       <tr>
         <td><strong>Toxoplasma gondii</strong></td>
         <td>Protozoon</td>
-        <td>Meist asymptomatisch; <span class="highlight">latent: Depression, Brain Fog, Verhaltensänderungen</span></td>
+        <td>Grippeähnlich, Lymphknotenschwellung; bei Immunsuppression: zerebrale Toxoplasmose</td>
+        <td><span class="highlight">Depression (OR 1.8), Brain Fog, Verhaltensänderungen, Reizbarkeit, Schlafstörungen</span>; lebenslange Gewebezysten in Gehirn &amp; Muskulatur</td>
         <td>IgE normal; IgG/IgM relevant</td>
       </tr>
       <tr>
         <td><strong>Giardia lamblia</strong></td>
         <td>Protozoon</td>
-        <td>Wässrige Durchfälle; <span class="highlight">post-infektiös: IBS, chronische Fatigue (46 %!)</span></td>
+        <td>Wässrige übelriechende Durchfälle, Blähungen, Übelkeit, Bauchkrämpfe, Fettstühle</td>
+        <td><span class="highlight">Post-infektiöses IBS (46 %!), chronische Fatigue, Laktoseintoleranz</span>, Malabsorption, Nahrungsmittelunverträglichkeiten</td>
         <td>IgE normal; kein Eos.↑</td>
       </tr>
       <tr>
-        <td><strong>Toxocara canis/cati</strong></td>
-        <td>Nematode</td>
-        <td>Fieber, Hepatomegalie, Asthma, Sehstörungen</td>
-        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
-      </tr>
-      <tr>
-        <td><strong>Strongyloides</strong></td>
-        <td>Nematode</td>
-        <td>Wechselnde Diarrhoe, Larva currens; <span class="highlight">jahrzehntelange Persistenz möglich</span></td>
-        <td><span class="highlight">IgE↑; Eos.↑</span></td>
-      </tr>
-      <tr>
-        <td><strong>Ascaris lumbricoides</strong></td>
-        <td>Nematode</td>
-        <td>Löffler-Syndrom, Bauchschmerzen, Obstruktion</td>
-        <td><span class="highlight">IgE stark↑; Eos.↑</span></td>
-      </tr>
-      <tr>
-        <td><strong>Hakenwürmer</strong></td>
-        <td>Nematode</td>
-        <td>Eisenmangelanämie, Müdigkeit, Dermatitis</td>
-        <td><span class="highlight">IgE↑; Eos.↑</span></td>
-      </tr>
-      <tr>
-        <td><strong>Blastocystis</strong></td>
+        <td><strong>Blastocystis hominis</strong></td>
         <td>Protozoon</td>
-        <td>Durchfall, Blähungen, <span class="highlight">Urtikaria, Reizdarmsymptomatik</span></td>
+        <td>Durchfall, Blähungen, Bauchschmerzen, Urtikaria</td>
+        <td><span class="highlight">Chronisches Reizdarmsyndrom, rezidivierende Urtikaria</span>, Müdigkeit, Nahrungsmittelunverträglichkeiten</td>
         <td>IgE gering↑; Eos. variabel</td>
       </tr>
       <tr>
         <td><strong>Dientamoeba fragilis</strong></td>
         <td>Protozoon</td>
-        <td>Chronische Bauchschmerzen, Blähungen, <span class="highlight">Reizdarmsyndrom</span></td>
+        <td>Durchfall, Bauchschmerzen, Blähungen (v.&nbsp;a. Kinder)</td>
+        <td><span class="highlight">Chronische Bauchschmerzen, Reizdarmsymptomatik</span>, Müdigkeit, Appetitlosigkeit</td>
         <td>IgE normal; Eos. variabel</td>
-      </tr>
-      <tr>
-        <td><strong>Fuchsbandwurm</strong></td>
-        <td>Cestode</td>
-        <td>Oberbauchschmerzen, Ikterus (nach 5–15 J.)</td>
-        <td>IgE variabel; Eos. gering↑</td>
-      </tr>
-      <tr>
-        <td><strong>Trichinella</strong></td>
-        <td>Nematode</td>
-        <td>Muskelschmerzen, Fieber, periobitale Ödeme</td>
-        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
       </tr>
       <tr>
         <td><strong>Cryptosporidium</strong></td>
         <td>Protozoon</td>
-        <td>Wässrige Durchfälle, Bauchkrämpfe</td>
+        <td>Wässrige Durchfälle, Bauchkrämpfe, Fieber</td>
+        <td>Chronische Durchfälle bei Immunsuppression; post-infektiöse GI-Beschwerden</td>
         <td>IgE normal; kein Eos.↑</td>
       </tr>
       <tr>
-        <td><strong>Krätzmilbe</strong></td>
-        <td>Ektoparasit</td>
-        <td>Intensiver Juckreiz (nachts), Milbengänge</td>
-        <td>IgE↑ möglich</td>
+        <td><strong>Entamoeba histolytica</strong></td>
+        <td>Protozoon</td>
+        <td>Amöbenruhr (blutig-schleimige Durchfälle), Leberabszess, Fieber</td>
+        <td>Chronische GI-Beschwerden, Zysten-Ausscheidung, intermittierende Bauchschmerzen</td>
+        <td>IgE normal; Eos. variabel</td>
       </tr>
       <tr>
-        <td><strong>Fasciola hepatica</strong><br><em>Großer Leberegel</em></td>
-        <td>Trematode</td>
-        <td>Oberbauchschmerzen, Hepatomegalie, Cholangitis</td>
-        <td><span class="highlight">IgE stark↑; Eos. stark↑↑</span></td>
+        <td><strong>Lamblia intestinalis</strong><br><em>(= Giardia)</em></td>
+        <td>Protozoon</td>
+        <td>Siehe Giardia lamblia</td>
+        <td>Siehe Giardia lamblia</td>
+        <td>Siehe oben</td>
       </tr>
       <tr>
-        <td><strong>Schistosoma spp.</strong><br><em>Pärchenegel</em></td>
-        <td>Trematode</td>
-        <td>Hämaturie (S. haematobium), Leberfibrose, Anämie</td>
-        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
+        <td><strong>Iodamoeba bütschlii</strong></td>
+        <td>Protozoon</td>
+        <td>Meist asymptomatisch (Kommensal)</td>
+        <td>Indikator für fäkale Kontamination; keine gesicherte Pathogenität</td>
+        <td>IgE normal</td>
       </tr>
       <tr>
-        <td><strong>Clonorchis/Opisthorchis</strong></td>
-        <td>Trematode</td>
-        <td>Cholangitis, Gallensteine; <span class="highlight">Cholangiokarzinom-Risiko</span></td>
-        <td>IgE↑; Eos. moderat↑</td>
+        <td><strong>Chilomastix mesnili</strong></td>
+        <td>Protozoon</td>
+        <td>Asymptomatisch (Kommensal)</td>
+        <td>Nicht pathogen; Zufallsbefund</td>
+        <td>IgE normal</td>
       </tr>
       <tr>
-        <td><strong>Taenia solium</strong><br><em>Schweinebandwurm</em></td>
-        <td>Cestode</td>
-        <td>Darminfektion mild; <span class="highlight">Neurozystizerkose → Epilepsie</span></td>
-        <td>IgE variabel; Eos. variabel</td>
+        <td><strong>Endolimax nana</strong></td>
+        <td>Protozoon</td>
+        <td>Asymptomatisch</td>
+        <td>Nicht pathogen; häufiger Zufallsbefund</td>
+        <td>IgE normal</td>
       </tr>
       <tr>
-        <td><strong>E. granulosus</strong><br><em>Hundebandwurm</em></td>
-        <td>Cestode</td>
-        <td>Leberzysten, Lungenzysten; <span class="highlight">bei Ruptur Anaphylaxie</span></td>
-        <td>IgE↑; Eos. moderat↑</td>
+        <td><strong>Eimeria</strong> spp.</td>
+        <td>Protozoon</td>
+        <td>Primär Tierparasit; beim Menschen: Durchfall (selten)</td>
+        <td>Keine gesicherte Humanpathogenität</td>
+        <td>IgE normal</td>
+      </tr>
+
+      <!-- === NEMATODEN === -->
+      <tr><td colspan="5" style="background:#2196F3; color:#fff; font-weight:700; font-family:'Playfair Display',serif;">Nematoden (Faden- &amp; Hakenwürmer)</td></tr>
+      <tr>
+        <td><strong>Madenwurm</strong><br><em>Enterobius vermicularis</em></td>
+        <td>Nematode</td>
+        <td>Intensiver nächtlicher Analjuckreiz, Schlafstörungen, Unruhe</td>
+        <td><span class="highlight">Chronische Schlafstörungen, Reizbarkeit, Konzentrationsprobleme (Kinder)</span>, rezidivierende Vulvovaginitis</td>
+        <td>IgE normal; Eos. gering↑</td>
+      </tr>
+      <tr>
+        <td><strong>Strongyloides stercoralis</strong></td>
+        <td>Nematode</td>
+        <td>Dermatitis, Husten (Löffler-Syndrom), Durchfall, Bauchschmerzen</td>
+        <td><span class="highlight">Jahrzehntelange Persistenz durch Autoinfektion!</span> Larva currens, chronische Urtikaria, wechselnde GI-Beschwerden, Müdigkeit</td>
+        <td><span class="highlight">IgE↑; Eos.↑</span></td>
+      </tr>
+      <tr>
+        <td><strong>Ancylostoma / Necator</strong><br><em>Hakenwürmer</em></td>
+        <td>Nematode</td>
+        <td>Dermatitis an Eintrittsstelle, Husten, Bauchschmerzen</td>
+        <td><span class="highlight">Chronische Eisenmangelanämie, Müdigkeit, Leistungsminderung</span>, Wachstumsverzögerung (Kinder)</td>
+        <td><span class="highlight">IgE↑; Eos.↑</span></td>
       </tr>
       <tr>
         <td><strong>Trichuris trichiura</strong><br><em>Peitschenwurm</em></td>
         <td>Nematode</td>
-        <td>Blutiger Durchfall, Rektalprolaps (Kinder), Anämie</td>
+        <td>Blutiger Durchfall, Tenesmen, Rektalprolaps (Kinder)</td>
+        <td><span class="highlight">Chronische Eisenmangelanämie, Wachstumsverzögerung</span>, intermittierende Bauchschmerzen</td>
         <td>IgE↑; Eos. moderat↑</td>
+      </tr>
+      <tr>
+        <td><strong>Trichinella spiralis</strong></td>
+        <td>Nematode</td>
+        <td>Fieber, Muskelschmerzen, periorbitale Ödeme, Durchfall</td>
+        <td><span class="highlight">Chronische Muskel-/Gelenkschmerzen, Müdigkeit</span>; Larven verkapseln in Muskulatur (jahrelang)</td>
+        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
+      </tr>
+      <tr>
+        <td><strong>Dirofilaria immitis</strong><br><em>Herzwurm</em></td>
+        <td>Nematode</td>
+        <td>Lungenknoten (Zufallsbefund), Brustschmerzen, Husten</td>
+        <td>Asymptomatisch; subkutane Knoten (D. repens); Einzelfälle in Südeuropa</td>
+        <td>IgE↑; Eos.↑</td>
       </tr>
       <tr>
         <td><strong>Loa Loa</strong><br><em>Augenwurm</em></td>
         <td>Nematode</td>
-        <td>Calabar-Schwellungen, <span class="highlight">Wurm unter Bindehaut sichtbar</span></td>
+        <td>Calabar-Schwellungen, Wurm unter Bindehaut sichtbar</td>
+        <td><span class="highlight">Rezidivierende subkutane Schwellungen</span>, chronische Eosinophilie, Müdigkeit</td>
         <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
       </tr>
       <tr>
-        <td><strong>Trichomonas vaginalis</strong></td>
-        <td>Protozoon</td>
-        <td>Fluor, Juckreiz, Kolpitis; Männer meist asymptomatisch</td>
+        <td><strong>Dipetalonema perstans</strong></td>
+        <td>Nematode</td>
+        <td>Fieber, Kopfschmerzen, transiente Schwellungen</td>
+        <td>Chronische Eosinophilie, Müdigkeit, Juckreiz, abdominelle Beschwerden</td>
+        <td>IgE↑; Eos.↑</td>
+      </tr>
+      <tr>
+        <td><strong>Capillaria hepatica</strong></td>
+        <td>Nematode</td>
+        <td>Hepatitis, Fieber, Hepatomegalie</td>
+        <td>Chronische Leberfunktionsstörung, Eosinophilie</td>
+        <td>IgE↑; Eos.↑</td>
+      </tr>
+      <tr>
+        <td><strong>Heterakis spumosa</strong></td>
+        <td>Nematode</td>
+        <td>Primär Nagerparasit; keine gesicherte Humanpathogenität</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+
+      <!-- === SPULWÜRMER === -->
+      <tr><td colspan="5" style="background:#f44336; color:#fff; font-weight:700; font-family:'Playfair Display',serif;">Spulwürmer (Ascaridida)</td></tr>
+      <tr>
+        <td><strong>Ascaris lumbricoides</strong></td>
+        <td>Nematode</td>
+        <td>Löffler-Syndrom (Husten, Infiltrate), Bauchschmerzen, Darmobstruktion</td>
+        <td><span class="highlight">Chronische Malabsorption, Wachstumsverzögerung (Kinder)</span>, rezidivierendes Asthma, Urtikaria</td>
+        <td><span class="highlight">IgE stark↑; Eos.↑</span></td>
+      </tr>
+      <tr>
+        <td><strong>Ascaris megalocephala</strong><br><em>Pferde-Spulwurm</em></td>
+        <td>Nematode</td>
+        <td>Primär Pferdeparasit; beim Menschen extrem selten</td>
+        <td>Keine gesicherte Humanpathogenität</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Toxocara canis/cati</strong></td>
+        <td>Nematode</td>
+        <td>Viszerale Larva migrans (Fieber, Hepatomegalie, Lungeninfiltrate), okuläre Larva migrans</td>
+        <td><span class="highlight">Covert Toxocariasis: chronische Müdigkeit, Urtikaria, Asthma-ähnlich, Bauchschmerzen</span>, Konzentrationsstörungen</td>
+        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
+      </tr>
+
+      <!-- === TREMATODEN === -->
+      <tr><td colspan="5" style="background:#d4a017; color:#000; font-weight:700; font-family:'Playfair Display',serif;">Egel &amp; Saugwürmer (Trematoda)</td></tr>
+      <tr>
+        <td><strong>Fasciolopsis buski</strong><br><em>Darmegel</em></td>
+        <td>Trematode</td>
+        <td>Bauchschmerzen, Durchfall, Übelkeit, Ödeme (Gesicht)</td>
+        <td>Chronische Malabsorption, Anämie, Aszites</td>
+        <td>IgE↑; Eos.↑</td>
+      </tr>
+      <tr>
+        <td><strong>Fasciola hepatica</strong><br><em>Großer Leberegel</em></td>
+        <td>Trematode</td>
+        <td>Fieber, Oberbauchschmerzen, Hepatomegalie, Eosinophilie bis 80 %</td>
+        <td><span class="highlight">Chronische Müdigkeit, unklare Leberwerterhöhung, Gallenbeschwerden</span>, Cholangitis</td>
+        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
+      </tr>
+      <tr>
+        <td><strong>Clonorchis sinensis</strong><br><em>Chin. Leberegel</em></td>
+        <td>Trematode</td>
+        <td>Cholangitis, Oberbauchschmerzen, Durchfall, Hepatomegalie</td>
+        <td><span class="highlight">Gallensteine, Cholangiokarzinom-Risiko</span> (IARC Gruppe 1!)</td>
+        <td>IgE↑; Eos. moderat↑</td>
+      </tr>
+      <tr>
+        <td><strong>Schistosoma spp.</strong><br><em>Pärchenegel</em></td>
+        <td>Trematode</td>
+        <td>Katayama-Fieber, Hämaturie (S. haematobium), Durchfall (S. mansoni)</td>
+        <td><span class="highlight">Leberfibrose, Blasenkrebs (IARC Gr. 1), chronische Anämie, Müdigkeit</span></td>
+        <td><span class="highlight">IgE stark↑; Eos. stark↑</span></td>
+      </tr>
+      <tr>
+        <td><strong>Opisthorchis felineus</strong><br><em>Katzenleberegel</em></td>
+        <td>Trematode</td>
+        <td>Cholangitis, Oberbauchschmerzen</td>
+        <td><span class="highlight">Gallensteine, Cholangiokarzinom-Risiko↑</span></td>
+        <td>IgE↑; Eos.↑</td>
+      </tr>
+      <tr>
+        <td><strong>Dicrocoelium</strong><br><em>Lanzettegel</em></td>
+        <td>Trematode</td>
+        <td>Selten beim Menschen; Cholangitis, Leberfunktionsstörung</td>
+        <td>Chronische Leberbeschwerden (extrem selten)</td>
+        <td>Eos. variabel</td>
+      </tr>
+      <tr>
+        <td><strong>Paragonimus spp.</strong><br><em>Lungenegel</em></td>
+        <td>Trematode</td>
+        <td>Chronischer Husten, Hämoptyse, Pleuraerguss</td>
+        <td><span class="highlight">Chronischer Husten (DD Tuberkulose!)</span>, Lungenabszess</td>
+        <td>IgE↑; Eos.↑</td>
+      </tr>
+      <tr>
+        <td><strong>Eurytrema pancreaticum</strong></td>
+        <td>Trematode</td>
+        <td>Pankreatitis, Oberbauchschmerzen</td>
+        <td>Chronische Pankreasinsuffizienz</td>
+        <td>Eos. variabel</td>
+      </tr>
+      <tr>
+        <td><strong>Heterophyes</strong></td>
+        <td>Trematode</td>
+        <td>Durchfall, Bauchschmerzen</td>
+        <td>Selten: kardiale Embolien</td>
+        <td>Eos. gering↑</td>
+      </tr>
+      <tr>
+        <td><strong>Echinostoma / Echinoparyphium</strong></td>
+        <td>Trematode</td>
+        <td>Durchfall, Bauchschmerzen, Malabsorption</td>
+        <td>Chronische GI-Beschwerden</td>
+        <td>Eos. variabel</td>
+      </tr>
+
+      <!-- === CESTODEN === -->
+      <tr><td colspan="5" style="background:#ff9800; color:#000; font-weight:700; font-family:'Playfair Display',serif;">Bandwürmer (Cestoda)</td></tr>
+      <tr>
+        <td><strong>Taenia saginata</strong><br><em>Rinderbandwurm</em></td>
+        <td>Cestode</td>
+        <td>Meist asymptomatisch; Proglottiden-Abgang, leichte Bauchbeschwerden</td>
+        <td>Chronische leichte GI-Beschwerden, Gewichtsverlust, Unwohlsein</td>
+        <td>IgE normal; Eos. gering↑</td>
+      </tr>
+      <tr>
+        <td><strong>Taenia solium</strong><br><em>Schweinebandwurm</em></td>
+        <td>Cestode</td>
+        <td>Darminfektion mild</td>
+        <td><span class="highlight">Neurozystizerkose → Epilepsie, Kopfschmerzen, neurologische Ausfälle</span></td>
+        <td>IgE variabel; Eos. variabel</td>
+      </tr>
+      <tr>
+        <td><strong>Taenia pisiformis</strong></td>
+        <td>Cestode</td>
+        <td>Primär bei Hasen/Kaninchen</td>
+        <td>Keine gesicherte Humanpathogenität</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>E. multilocularis</strong><br><em>Fuchsbandwurm</em></td>
+        <td>Cestode</td>
+        <td>Keine Akutsymptome (Latenz 5–15 Jahre!)</td>
+        <td><span class="highlight">Oberbauchschmerzen, Ikterus, Hepatomegalie; tumorartiges Leberwachstum; potenziell tödlich</span></td>
+        <td>IgE variabel; Eos. gering↑</td>
+      </tr>
+      <tr>
+        <td><strong>E. granulosus</strong><br><em>Hundebandwurm</em></td>
+        <td>Cestode</td>
+        <td>Keine Akutsymptome (Zysten wachsen langsam)</td>
+        <td>Oberbauchschmerzen, tastbare Raumforderung; <span class="highlight">bei Ruptur: Anaphylaxie!</span></td>
+        <td>IgE↑; Eos. moderat↑</td>
+      </tr>
+      <tr>
+        <td><strong>Dipylidium caninum</strong><br><em>Gurkenkernbandwurm</em></td>
+        <td>Cestode</td>
+        <td>Meist asymptomatisch; Proglottiden im Stuhl, Analjuckreiz</td>
+        <td>Chronische leichte GI-Beschwerden (v.&nbsp;a. Kinder mit Haustieren)</td>
         <td>IgE normal</td>
+      </tr>
+      <tr>
+        <td><strong>Hymenolepis</strong><br><em>Zwerg-/Rattenbandwurm</em></td>
+        <td>Cestode</td>
+        <td>Bauchschmerzen, Durchfall, Appetitlosigkeit</td>
+        <td>Gewichtsverlust, chronische GI-Beschwerden bei Massenbefall</td>
+        <td>Eos. variabel</td>
+      </tr>
+      <tr>
+        <td><strong>Diphyllobothrium</strong><br><em>Fischbandwurm</em></td>
+        <td>Cestode</td>
+        <td>Bauchbeschwerden, Durchfall</td>
+        <td><span class="highlight">Vitamin-B12-Mangel → megaloblastäre Anämie, Müdigkeit, neurologische Symptome</span></td>
+        <td>Eos. gering↑</td>
+      </tr>
+      <tr>
+        <td><strong>Moniezia expansa</strong></td>
+        <td>Cestode</td>
+        <td>Schaf-/Ziegenparasit</td>
+        <td>Keine gesicherte Humanpathogenität</td>
+        <td>—</td>
+      </tr>
+
+      <!-- === TRYPANOSOMEN & BLUTPARASITEN === -->
+      <tr><td colspan="5" style="background:#e91e63; color:#fff; font-weight:700; font-family:'Playfair Display',serif;">Trypanosomen, Leishmania &amp; Blutparasiten</td></tr>
+      <tr>
+        <td><strong>T. brucei gambiense</strong></td>
+        <td>Protozoon</td>
+        <td>Fieber, Kopfschmerzen, Lymphknoten↑ (Winterbottom)</td>
+        <td><span class="highlight">Schlafstörungen (Tag/Nacht-Inversion), Verwirrtheit, Persönlichkeitsveränderungen → Koma</span></td>
+        <td>IgE↑</td>
+      </tr>
+      <tr>
+        <td><strong>T. brucei rhodesiense</strong></td>
+        <td>Protozoon</td>
+        <td>Fulminant: Fieber, Myokarditis, Meningoenzephalitis</td>
+        <td>Akuter Verlauf – selten latent</td>
+        <td>IgE↑</td>
+      </tr>
+      <tr>
+        <td><strong>T. cruzi</strong><br><em>Chagas</em></td>
+        <td>Protozoon</td>
+        <td>Chagom, Fieber, Romaña-Zeichen (Lidödem)</td>
+        <td><span class="highlight">Latenz 10–30 J.! Kardiomyopathie (20–30 %), Megaösophagus, Megakolon</span></td>
+        <td>IgE variabel</td>
+      </tr>
+      <tr>
+        <td><strong>T. lewisi</strong></td>
+        <td>Protozoon</td>
+        <td>Primär Rattenparasit; beim Menschen extrem selten: Fieber</td>
+        <td>Keine gesicherte chronische Humanpathogenität</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Leishmania donovani</strong><br><em>Kala-Azar</em></td>
+        <td>Protozoon</td>
+        <td>Fieber, Hepatosplenomegalie, Panzytopenie, Gewichtsverlust</td>
+        <td><span class="highlight">Chronische Immunsuppression; Mortalität &gt;95 % unbehandelt</span>; PKDL (Post-Kala-Azar)</td>
+        <td>IgE variabel</td>
+      </tr>
+      <tr>
+        <td><strong>L. tropica / major</strong></td>
+        <td>Protozoon</td>
+        <td>Hautulzera (Orientbeule), Narbenbildung</td>
+        <td>Chronische Narben; selten mukokutane Ausbreitung</td>
+        <td>IgE variabel</td>
       </tr>
       <tr>
         <td><strong>Plasmodium spp.</strong><br><em>Malaria</em></td>
         <td>Protozoon</td>
-        <td>Fieberanfälle, Anämie, <span class="highlight">zerebrale Malaria (P. falciparum)</span></td>
+        <td>Fieberanfälle, Schüttelfrost, Anämie; P. falciparum: zerebrale Malaria</td>
+        <td><span class="highlight">P. vivax: Rückfälle über Monate–Jahre (Hypnozoiten)</span>; chronische Anämie, Splenomegalie</td>
         <td>IgE↑; Eos. variabel</td>
       </tr>
       <tr>
-        <td><strong>Salmonellen</strong><br><em>(nach Baklayan)</em></td>
+        <td><strong>Babesia spp.</strong></td>
+        <td>Protozoon</td>
+        <td>Fieber, hämolytische Anämie; bei Asplenie lebensbedrohlich</td>
+        <td><span class="highlight">Chronische Müdigkeit, rezidivierende Fieberschübe</span></td>
+        <td>Eos. variabel</td>
+      </tr>
+
+      <!-- === SONSTIGE === -->
+      <tr><td colspan="5" style="background:#607d8b; color:#fff; font-weight:700; font-family:'Playfair Display',serif;">Sonstige (nach Baklayan-Klassifikation)</td></tr>
+      <tr>
+        <td><strong>Salmonellen</strong><br><em>(Bakterium*)</em></td>
         <td>Bakterium*</td>
-        <td>Akut: Gastroenteritis; <span class="highlight">latent: intrazelluläre Persistenz, reaktive Arthritis</span></td>
+        <td>Gastroenteritis (Durchfall, Erbrechen, Fieber, Bauchkrämpfe)</td>
+        <td><span class="highlight">Intrazelluläre Persistenz in Makrophagen; chronische Ausscheider (1 %); reaktive Arthritis; post-infektiöses IBS</span></td>
         <td>IgE normal</td>
+      </tr>
+      <tr>
+        <td><strong>Trichomonas vaginalis</strong></td>
+        <td>Protozoon</td>
+        <td>Fluor (grünlich-gelb), Juckreiz, Kolpitis (Erdbeer-Zervix), Dysurie</td>
+        <td><span class="highlight">Chronische Infektion über Monate–Jahre; assoziiert mit erhöhtem HIV-Risiko</span>; Frühgeburt-Risiko</td>
+        <td>IgE normal</td>
+      </tr>
+      <tr>
+        <td><strong>Naegleria fowleri</strong></td>
+        <td>Amöbe</td>
+        <td>Fulminant: Meningoenzephalitis (Mortalität &gt;97 %) in 5–7 Tagen</td>
+        <td>Keine latente Form bekannt (akut tödlich)</td>
+        <td>—</td>
       </tr>
       <tr>
         <td><strong>Demodex</strong><br><em>Haarbalgmilbe</em></td>
         <td>Ektoparasit</td>
-        <td>Rosacea-ähnlich, Blepharitis, Juckreiz (bei Überpopulation)</td>
+        <td>Meist symptomlos (Kommensal; &gt;80 % Prävalenz ab 60 J.)</td>
+        <td><span class="highlight">Demodikose: Rosacea-ähnlich, Blepharitis, Juckreiz, schuppige Haut</span> bei Überpopulation</td>
         <td>IgE normal</td>
+      </tr>
+      <tr>
+        <td><strong>Krätzmilbe</strong><br><em>Sarcoptes scabiei</em></td>
+        <td>Ektoparasit</td>
+        <td>Intensiver Juckreiz (nachts), Milbengänge, Papeln</td>
+        <td><span class="highlight">Chronischer Juckreiz, sekundäre Hautinfektionen, Ekzematisierung</span></td>
+        <td>IgE↑ möglich</td>
+      </tr>
+      <tr>
+        <td><strong>Leucocytozoon</strong></td>
+        <td>Blutparasit</td>
+        <td>Vogelparasit; keine Humanpathogenität</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Acanthocephalus</strong></td>
+        <td>Kratzer</td>
+        <td>Extrem selten: Bauchschmerzen, GI-Ulzerationen</td>
+        <td>Keine gesicherten chronischen Symptome</td>
+        <td>Eos. variabel</td>
       </tr>
     </tbody>
   </table>
 
   <div class="note-box accent">
     <strong>🩺 Differentialdiagnostischer Hinweis</strong>
-    <span class="highlight">Eosinophilie + IgE↑ + chronische GI-Beschwerden oder Urtikaria → eine parasitologische Differentialdiagnose kann erwogen werden.</span> Insbesondere Toxocara, Strongyloides und Ascaris können relevante IgE-Anstiege verursachen.
+    <span class="highlight">Eosinophilie + IgE↑ + chronische GI-Beschwerden oder Urtikaria → eine parasitologische Differentialdiagnose kann erwogen werden.</span> Besonders bedeutsam für latente Belastungen: Toxoplasma (Neuropsychiatrie), Strongyloides (Autoinfektion über Jahrzehnte), Salmonellen (intrazelluläre Persistenz) und Giardia (post-infektiöses IBS).
   </div>
+
+  <p class="source-ref">Quellen: Wilking et al. 2016; Wensaas et al. 2012; Flegr 2013; Nutman 2015; Monack et al. 2004; IMD Berlin Nr. 341; CDC; WHO; RKI; Baklayan AE 1999/2018</p>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -1381,6 +1667,121 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Slide: Naturheilkundliche Antiparasitäre Mittel -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2>🌿 Naturheilkundliche Antiparasitäre Mittel</h2>
+
+  <div class="note-box warning" style="margin-bottom:0.75rem">
+    <strong>⚠️ Pflichthinweis gemäß § 3 HWG</strong>
+    Die nachfolgend beschriebenen naturheilkundlichen Mittel sind <strong>Verfahren der Erfahrungsheilkunde und Volksheilkunde</strong>. Die dargestellten Wirkungen basieren überwiegend auf <strong>traditioneller Anwendung, In-vitro-Studien und Erfahrungsberichten</strong> – nicht auf randomisierten kontrollierten Studien am Menschen. Sie stellen <strong>kein Heilversprechen</strong> dar und ersetzen keine ärztliche oder heilpraktische Diagnostik und Therapie. Die Anwendung sollte stets unter fachlicher Begleitung erfolgen.
+  </div>
+
+  <h3 style="margin-top:0.5rem !important">🔑 Die klassische Dreier-Kombination (nach Dr. Hulda Clark)</h3>
+  <p style="font-size:0.88rem !important;">Die Kombination aus <strong>Schwarzwalnuss, Wermut und Nelke</strong> gilt in der Erfahrungsheilkunde als traditionelle antiparasitäre Basisbehandlung. Clark formulierte die <strong>Hypothese</strong>, dass diese drei Mittel unterschiedliche Stadien (adulte Parasiten, Larven, Eier) adressieren. Diese Hypothese ist <strong>wissenschaftlich nicht gesichert</strong>.</p>
+
+  <div class="triple-grid">
+    <div class="split-card">
+      <h3>🥜 Schwarze Walnuss<br><em>(Juglans nigra) – Tinktur</em></h3>
+      <ul>
+        <li><strong>Wirkstoff:</strong> <span class="highlight">Juglon</span> (Naphthochinon) – in der grünen Schale</li>
+        <li><strong>Traditionelle Anwendung:</strong> Gegen adulte Parasiten und Larven</li>
+        <li><strong>In-vitro-Evidenz:</strong> Juglon zeigt antimikrobielle, antifungale und antiparasitäre Aktivität (Inbaraj &amp; Chien, 2004; Clark et al.)</li>
+        <li><strong>Anwendung:</strong> Tinktur aus grünen Schalen; tropfenweise, aufbauend dosiert</li>
+        <li><strong>Vorsicht:</strong> Nicht bei Nussallergie; Schwangerschaft kontraindiziert; kann Magenreizung verursachen</li>
+      </ul>
+      <p class="source-ref">Inbaraj BS, Chien JT, Food Chem 2004; Clark HR, The Cure for All Diseases 1995 (Hypothese)</p>
+    </div>
+    <div class="split-card">
+      <h3>🌿 Wermut<br><em>(Artemisia absinthium)</em></h3>
+      <ul>
+        <li><strong>Wirkstoffe:</strong> <span class="highlight">Absinthin, Thujon</span>, Flavonoide, Sesquiterpenlactone</li>
+        <li><strong>Traditionelle Anwendung:</strong> Gegen Würmer (Name „Wermut" = „Wurmkraut"!), Verdauungsstörungen</li>
+        <li><strong>Evidenz:</strong> Artemisia-Arten zeigen antiparasitäre Wirkung in vitro; <span class="highlight">Artemisinin (A. annua)</span> ist WHO-anerkanntes Malaria-Medikament</li>
+        <li><strong>Anwendung:</strong> Tee, Kapseln, Tinktur; kurmäßig (max. 2–4 Wochen)</li>
+        <li><strong>Vorsicht:</strong> Thujon in hohen Dosen neurotoxisch! Nicht in Schwangerschaft; nicht bei Epilepsie</li>
+      </ul>
+      <p class="source-ref">Bora KS, Sharma A, Pharm Biol 2011; WHO Monographs on Medicinal Plants; EMA HMPC Assessment Report</p>
+    </div>
+    <div class="split-card">
+      <h3>🌸 Gewürznelke<br><em>(Syzygium aromaticum)</em></h3>
+      <ul>
+        <li><strong>Wirkstoff:</strong> <span class="highlight">Eugenol</span> (70–90 % des ätherischen Öls)</li>
+        <li><strong>Traditionelle Anwendung:</strong> Gegen Parasiteneier; antimikrobiell, antifungal</li>
+        <li><strong>In-vitro-Evidenz:</strong> Eugenol zeigt antiparasitäre Wirkung gegen Protozoen und Helminthen-Eier (Machado M et al., 2010; Kamatou GP et al., 2012)</li>
+        <li><strong>Anwendung:</strong> Frisch gemahlene Nelke (Kapseln); als Tee; ätherisches Öl</li>
+        <li><strong>Vorsicht:</strong> Kann Magenreizung verursachen; blutverdünnend (Interaktion mit Antikoagulantien)</li>
+      </ul>
+      <p class="source-ref">Machado M et al., J Med Food 2010; Kamatou GP et al., Molecules 2012</p>
+    </div>
+  </div>
+
+  <h3>🧪 Papain-Cystein-Kur</h3>
+  <div class="split-grid">
+    <div class="split-card">
+      <h3>🍈 Papain (aus Carica papaya)</h3>
+      <ul>
+        <li><strong>Wirkstoff:</strong> <span class="highlight">Papain</span> – proteolytisches Enzym aus unreifer Papaya</li>
+        <li><strong>Wirkprinzip:</strong> Verdaut die Proteinschicht der Parasitenhülle (Kutikula); Parasiten werden für das Immunsystem und weitere Mittel angreifbar</li>
+        <li><strong>Evidenz:</strong> Okeniyi JA et al. (2007): Papaya-Samen zeigten in einer RCT bei Kindern in Nigeria signifikante Wurmabtreibung (71,4 % Clearance vs. 0 % Placebo)</li>
+        <li><strong>Traditionell:</strong> Papaya-Kerne (gemahlen), Papain-Kapseln; auch Papayablätter-Tee</li>
+      </ul>
+      <p class="source-ref">Okeniyi JA et al., J Med Food 2007 (RCT); Stepek G et al., Parasitology 2004 (cysteine proteinases)</p>
+    </div>
+    <div class="split-card">
+      <h3>💊 L-Cystein (Aminosäure)</h3>
+      <ul>
+        <li><strong>Wirkprinzip:</strong> <span class="highlight">Aktiviert Papain</span> – Cysteinproteasen benötigen Thiolgruppen für optimale Enzymaktivität</li>
+        <li><strong>Synergie:</strong> Papain + Cystein = verstärkte proteolytische Wirkung gegen Parasitenhüllen</li>
+        <li><strong>Zusätzlich:</strong> Cystein ist Vorläufer von <strong>Glutathion</strong> (wichtigstes intrazelluläres Antioxidans) → unterstützt Entgiftung</li>
+        <li><strong>Anwendung:</strong> 500–1000 mg L-Cystein oder N-Acetyl-Cystein (NAC) begleitend zur Papain-Kur</li>
+        <li><strong>Vorsicht:</strong> Nicht bei gleichzeitiger Einnahme von Immunsuppressiva ohne Rücksprache</li>
+      </ul>
+      <p class="source-ref">Stepek G et al., Int J Parasitol 2004; Luaces AL, Barrett J, Parasitology 1988</p>
+    </div>
+  </div>
+
+  <h3>🌱 Weitere naturheilkundliche Antiparasitika</h3>
+  <div class="split-grid">
+    <div class="split-card">
+      <ul>
+        <li><strong>🧄 Knoblauch (Allium sativum):</strong> <span class="highlight">Allicin</span> – antimikrobiell, antiparasitär; Wirkung gegen Giardia in vitro nachgewiesen (Ankri S &amp; Mirelman D, Microbes Infect 1999); traditionell gegen Madenwürmer</li>
+        <li><strong>🎃 Kürbiskerne (Cucurbita pepo):</strong> <span class="highlight">Cucurbitin</span> – Aminosäure mit anthelminthischer Wirkung; traditionell gegen Bandwürmer; in China und Osteuropa als Hausmittel etabliert; Wirkung gegen Taenia nachgewiesen (Li T et al., Acta Trop 2012)</li>
+        <li><strong>🫚 Oreganoöl (Origanum vulgare):</strong> <span class="highlight">Carvacrol &amp; Thymol</span> – starke antiparasitäre und antimikrobielle Aktivität in vitro; Wirkung gegen Giardia, Blastocystis und Cryptosporidium (Force M et al., Phytother Res 2000)</li>
+        <li><strong>🌿 Berberin (Berberis vulgaris u.a.):</strong> Alkaloid mit nachgewiesener Wirkung gegen Giardia lamblia und Entamoeba histolytica; antimikrobiell, entzündungshemmend (Kaneda Y et al., Ann Trop Med Parasitol 1991)</li>
+      </ul>
+    </div>
+    <div class="split-card">
+      <ul>
+        <li><strong>🌻 Grapefruitkernextrakt (GSE):</strong> Antimikrobielle Wirkung; Einsatz in der Erfahrungsheilkunde gegen Darmparasiten; Studienlage begrenzt</li>
+        <li><strong>🥥 Kokosöl (Caprylsäure):</strong> Mittelkettige Fettsäuren mit antimikrobieller und antiparasitärer Wirkung; traditionell gegen Giardia und Darmpilze</li>
+        <li><strong>🌿 Olivenblattextrakt (Oleuropein):</strong> Antimikrobielle und immunstimulierende Eigenschaften; in der Erfahrungsheilkunde bei chronischen Infektionen eingesetzt</li>
+        <li><strong>🧅 Zwiebel (Allium cepa):</strong> Enthält schwefelhaltige Verbindungen mit antimikrobieller Wirkung; traditionell in der Volksheilkunde gegen Darmparasiten</li>
+        <li><strong>🫖 Thymian (Thymus vulgaris):</strong> <span class="highlight">Thymol</span> – antiparasitäre und antimikrobielle Wirkung; Kombination mit Oregano in der Erfahrungsheilkunde üblich</li>
+        <li><strong>🍵 Katzenkralle (Uncaria tomentosa):</strong> Immunmodulierend; in der traditionellen südamerikanischen Medizin bei parasitären Infektionen eingesetzt</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note-box primary">
+    <strong>💡 Praxishinweis</strong>
+    In der <strong>Naturheilpraxis Peter Rauch</strong> wird die Auswahl und Dosierung antiparasitärer Mittel <strong>individuell</strong> nach gründlicher Anamnese und ggf. ergänzender Diagnostik (Kinesiologie/ART, Frequenztestung) abgestimmt. Eine Selbstmedikation ohne fachliche Begleitung ist <strong>nicht empfohlen</strong> – insbesondere bei Schwangerschaft, Stillzeit, Vorerkrankungen oder Medikamenteneinnahme. Bei Verdacht auf parasitäre Belastung sollte zunächst eine schulmedizinische Diagnostik (Stuhl 3×, Serologie, Blutbild) erfolgen.
+  </div>
+
+  <div class="note-box accent">
+    <strong>📌 Begleitende Maßnahmen (Erfahrungsheilkunde)</strong>
+    <ul style="margin-top:0.3rem; font-size:0.85rem !important;">
+      <li><strong>Darmaufbau:</strong> Probiotika, Präbiotika zur Wiederherstellung der Darmflora nach antiparasitärer Kur</li>
+      <li><strong>Entgiftungsunterstützung:</strong> Leber-Galle-Unterstützung (Mariendistel, Artischocke), ausreichend Wasser, Bitterstoffe</li>
+      <li><strong>Ernährung:</strong> Reduktion von Zucker und einfachen Kohlenhydraten während der Kur (entzieht Parasiten Nahrungsgrundlage)</li>
+      <li><strong>Frequenztherapie:</strong> Diamond Shield Zapper (nach Baklayan) als ergänzende Anwendung – Wellness-Gerät, kein zugelassenes Medizinprodukt</li>
+    </ul>
+  </div>
+
+  <p class="source-ref">Quellen: Okeniyi et al. 2007 (RCT Papaya); Stepek et al. 2004; Ankri &amp; Mirelman 1999; Force et al. 2000; Kaneda et al. 1991; Li et al. 2012; Bora &amp; Sharma 2011; Clark HR 1995 (Hypothese, nicht durch RCTs belegt); EMA HMPC Monographien; WHO Monographs on Medicinal Plants; Baklayan AE</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- Slide 13: Quellenverzeichnis -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section>
@@ -1459,6 +1860,23 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
     <li>Clark HR: <em>The Cure for All Diseases.</em> New Century Press (1995) – Hinweis: Hypothesen nicht durch RCTs belegt</li>
     <li>Pharmazeutische Zeitung: <em>Würmer – Einheimische Parasiten.</em></li>
     <li>MSD Manual; DEXIMED; AOK Gesundheitsmagazin; DocCheck Flexikon; ESCCAP Europa</li>
+  </ol>
+
+  <h3>Naturheilkundliche Antiparasitika – Quellen</h3>
+  <ol start="60" style="font-size:0.82rem !important">
+    <li>Okeniyi JA, Ogunlesi TA, Oyelami OA, Adeyemi LA: <em>Effectiveness of dried Carica papaya seeds against human intestinal parasitosis: a pilot study.</em> J Med Food 10(1), 194–196 (2007) – RCT</li>
+    <li>Stepek G, Buttle DJ, Duce IR, Lowe A, Behnke JM: <em>Assessment of the anthelmintic effect of natural plant cysteine proteinases against the gastrointestinal nematode.</em> Parasitology 128, 681–687 (2004)</li>
+    <li>Luaces AL, Barrett J: <em>Affinity purification and biochemical characterization of histolysain, the major cysteine proteinase of Entamoeba histolytica.</em> Biochem J 250, 605–611 (1988)</li>
+    <li>Ankri S, Mirelman D: <em>Antimicrobial properties of allicin from garlic.</em> Microbes Infect 1(2), 125–129 (1999)</li>
+    <li>Force M, Sparks WS, Ronzio RA: <em>Inhibition of enteric parasites by emulsified oil of oregano in vivo.</em> Phytother Res 14(3), 213–214 (2000)</li>
+    <li>Kaneda Y, Torii M, Tanaka T, Aikawa M: <em>In vitro effects of berberine sulphate on the growth and structure of Entamoeba histolytica, Giardia lamblia and Trichomonas vaginalis.</em> Ann Trop Med Parasitol 85(4), 417–425 (1991)</li>
+    <li>Li T et al.: <em>Useful plants for the treatment of Taenia and Echinococcus infections.</em> Acta Trop 2012</li>
+    <li>Inbaraj BS, Chien JT: <em>Antioxidant activity and toxicity of juglone.</em> Food Chemistry (2004)</li>
+    <li>Machado M et al.: <em>Anti-Giardia activity of Syzygium aromaticum essential oil and eugenol.</em> J Med Food 2010</li>
+    <li>Kamatou GP et al.: <em>Eugenol – from the remote Maluku Islands to the international marketplace.</em> Molecules 17, 6953–6981 (2012)</li>
+    <li>Bora KS, Sharma A: <em>The genus Artemisia: a comprehensive review.</em> Pharm Biol 49(1), 101–109 (2011)</li>
+    <li>EMA HMPC: <em>Assessment Report on Artemisia absinthium L., herba.</em> European Medicines Agency</li>
+    <li>WHO: <em>Monographs on Selected Medicinal Plants.</em> Vol. 1–4</li>
   </ol>
 </section>
 
