@@ -123,7 +123,6 @@ const infothekGroups: InfothekGroup[] = [
         description: { de: "Akute & latente Belastungen, Erregerpersistenz", en: "Acute & latent infections, pathogen persistence" },
         external: true,
       },
-      },
     ],
   },
   {
