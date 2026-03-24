@@ -52,6 +52,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const checkAdminRole = async (userId: string) => {
       console.log('[AuthContext] Checking admin role for:', userId);
+
+      // In preview/dev mode, keep admin bypass active even if token/role RPC fails.
+      if (devBypass) {
+        if (isMounted) setIsAdmin(true);
+        return;
+      }
+
       try {
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: userId,
