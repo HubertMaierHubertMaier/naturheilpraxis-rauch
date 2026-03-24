@@ -30,6 +30,7 @@ import PatientenManagerPage from "./pages/PatientenManager";
 import Patientenaufklaerung from "./pages/Patientenaufklaerung";
 import Erstanmeldung from "./pages/Erstanmeldung";
 import Quellenhinweis from "./pages/Quellenhinweis";
+import Wissensdatenbank from "./pages/Wissensdatenbank";
 
 const queryClient = new QueryClient();
 
