@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight } from "lucide-react";
 
 interface KnowledgeEntry {
   id: string;
