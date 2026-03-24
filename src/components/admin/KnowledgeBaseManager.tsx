@@ -109,6 +109,41 @@ export function KnowledgeBaseManager() {
     return result;
   }, [entries, categoryFilter, tagFilter, searchQuery]);
 
+  // Group filtered entries: entries with shared tags (like "NutraMedix") get grouped
+  const groupedEntries = useMemo(() => {
+    // Count tag frequency to find grouping tags (tags shared by 3+ entries)
+    const tagCounts: Record<string, number> = {};
+    filtered.forEach((e) => e.tags?.forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    const groupingTags = Object.entries(tagCounts)
+      .filter(([, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
+
+    const assigned = new Set<string>();
+    const groups: { groupName: string; entries: KnowledgeEntry[] }[] = [];
+
+    // Create groups for popular tags
+    for (const tag of groupingTags) {
+      const groupEntries = filtered.filter((e) => !assigned.has(e.id) && e.tags?.includes(tag));
+      if (groupEntries.length >= 3) {
+        groupEntries.forEach((e) => assigned.add(e.id));
+        groups.push({ groupName: tag, entries: groupEntries });
+      }
+    }
+
+    // Remaining entries grouped by category
+    const remaining = filtered.filter((e) => !assigned.has(e.id));
+    const byCat: Record<string, KnowledgeEntry[]> = {};
+    remaining.forEach((e) => {
+      (byCat[e.category] = byCat[e.category] || []).push(e);
+    });
+    for (const [cat, catEntries] of Object.entries(byCat)) {
+      groups.push({ groupName: cat, entries: catEntries });
+    }
+
+    return groups.sort((a, b) => a.groupName.localeCompare(b.groupName));
+  }, [filtered]);
+
   const openNewDialog = () => {
     setEditingEntry(null);
     setFormTitle("");
