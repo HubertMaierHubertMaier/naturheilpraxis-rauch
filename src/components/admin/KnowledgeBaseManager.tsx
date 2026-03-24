@@ -43,6 +43,7 @@ export function KnowledgeBaseManager() {
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<KnowledgeEntry | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
