@@ -1,15 +1,13 @@
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 
 const Wissensdatenbank = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isLoading: adminLoading } = useAdminCheck();
+  const { user, loading: authLoading, isAdmin } = useAuth();
 
-  if (authLoading || adminLoading) {
+  if (authLoading) {
     return (
       <Layout>
         <div className="container py-12">
@@ -20,7 +18,8 @@ const Wissensdatenbank = () => {
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  // Allow access if logged in as admin OR dev bypass is active
+  if (!user && !isAdmin) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
 
   return (
