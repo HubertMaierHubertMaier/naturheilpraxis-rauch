@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight } from "lucide-react";
 
 interface KnowledgeEntry {
   id: string;
@@ -43,6 +43,7 @@ export function KnowledgeBaseManager() {
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<KnowledgeEntry | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -107,6 +108,41 @@ export function KnowledgeBaseManager() {
     }
     return result;
   }, [entries, categoryFilter, tagFilter, searchQuery]);
+
+  // Group filtered entries: entries with shared tags (like "NutraMedix") get grouped
+  const groupedEntries = useMemo(() => {
+    // Count tag frequency to find grouping tags (tags shared by 3+ entries)
+    const tagCounts: Record<string, number> = {};
+    filtered.forEach((e) => e.tags?.forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    const groupingTags = Object.entries(tagCounts)
+      .filter(([, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
+
+    const assigned = new Set<string>();
+    const groups: { groupName: string; entries: KnowledgeEntry[] }[] = [];
+
+    // Create groups for popular tags
+    for (const tag of groupingTags) {
+      const groupEntries = filtered.filter((e) => !assigned.has(e.id) && e.tags?.includes(tag));
+      if (groupEntries.length >= 3) {
+        groupEntries.forEach((e) => assigned.add(e.id));
+        groups.push({ groupName: tag, entries: groupEntries });
+      }
+    }
+
+    // Remaining entries grouped by category
+    const remaining = filtered.filter((e) => !assigned.has(e.id));
+    const byCat: Record<string, KnowledgeEntry[]> = {};
+    remaining.forEach((e) => {
+      (byCat[e.category] = byCat[e.category] || []).push(e);
+    });
+    for (const [cat, catEntries] of Object.entries(byCat)) {
+      groups.push({ groupName: cat, entries: catEntries });
+    }
+
+    return groups.sort((a, b) => a.groupName.localeCompare(b.groupName));
+  }, [filtered]);
 
   const openNewDialog = () => {
     setEditingEntry(null);
@@ -263,56 +299,70 @@ export function KnowledgeBaseManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((entry) => (
-            <Card
-              key={entry.id}
-              className="cursor-pointer hover:border-primary/30 transition-colors"
-              onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base font-semibold">{entry.title}</CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        <FolderOpen className="h-3 w-3" />
-                        {entry.category}
-                      </Badge>
-                      {entry.tags?.map((tag) => (
-                        <Badge key={tag} variant="outline" className="gap-1 text-xs">
-                          <Tag className="h-3 w-3" />
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <Button size="icon" variant="ghost" onClick={() => openEditDialog(entry)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => { setDeletingEntry(entry); setDeleteDialogOpen(true); }}
+        <div className="space-y-6">
+          {groupedEntries.map(({ groupName, entries: groupEntries }) => (
+            <div key={groupName}>
+              <button
+                onClick={() => setExpandedGroup(expandedGroup === groupName ? null : groupName)}
+                className="flex items-center gap-2 w-full text-left mb-2 group"
+              >
+                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${expandedGroup === groupName ? "rotate-90" : ""}`} />
+                <h2 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {groupName}
+                </h2>
+                <Badge variant="outline" className="text-xs">{groupEntries.length}</Badge>
+              </button>
+              {expandedGroup === groupName && (
+                <div className="space-y-2 ml-6">
+                  {groupEntries.map((entry) => (
+                    <Card
+                      key={entry.id}
+                      className="cursor-pointer hover:border-primary/30 transition-colors"
+                      onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <CardHeader className="py-3 pb-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-sm font-semibold">{entry.title}</CardTitle>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              {entry.tags?.filter(t => t !== groupName).map((tag) => (
+                                <Badge key={tag} variant="outline" className="gap-1 text-xs">
+                                  <Tag className="h-3 w-3" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditDialog(entry)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => { setDeletingEntry(entry); setDeleteDialogOpen(true); }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {expandedId === entry.id && (
+                        <CardContent className="pt-0">
+                          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
+                            {entry.content || <span className="text-muted-foreground italic">Kein Inhalt</span>}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-3">
+                            Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
+                          </p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
                 </div>
-              </CardHeader>
-              {expandedId === entry.id && (
-                <CardContent className="pt-0">
-                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
-                    {entry.content || <span className="text-muted-foreground italic">Kein Inhalt</span>}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
-                  </p>
-                </CardContent>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}
