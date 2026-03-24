@@ -118,6 +118,20 @@ export function Header() {
               )}
               {isAdmin && (
                 <Link
+                  to="/wissensdatenbank"
+                  className={cn(
+                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+                    location.pathname === "/wissensdatenbank"
+                      ? "bg-sage-100 text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Wiki
+                </Link>
+              )}
+              {isAdmin && (
+                <Link
                   to="/admin"
                   className={cn(
                     "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
