@@ -416,8 +416,10 @@ const Auth: React.FC = () => {
 
     try {
       const type = mode === 'password_reset' ? 'password_reset' : mode;
+      const body: Record<string, string> = { email, type };
+      if (userId) body.userId = userId;
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type, userId },
+        body,
       });
 
       if (response.error || response.data?.error) {
