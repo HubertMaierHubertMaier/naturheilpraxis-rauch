@@ -236,6 +236,21 @@ export function Header() {
                 )}
                 {isAdmin && (
                   <Link
+                    to="/wissensdatenbank"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                      location.pathname === "/wissensdatenbank"
+                        ? "bg-sage-100 text-primary"
+                        : "text-muted-foreground hover:bg-sage-50 hover:text-primary"
+                    )}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Wissensdatenbank
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
                     to="/admin"
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
