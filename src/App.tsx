@@ -64,6 +64,7 @@ const App = () => (
               <Route path="/patientenaufklaerung" element={<Patientenaufklaerung />} />
               <Route path="/quellenhinweis" element={<Quellenhinweis />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<PatientDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
