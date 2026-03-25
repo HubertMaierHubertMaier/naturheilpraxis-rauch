@@ -36,7 +36,7 @@ serve(async (req) => {
     if (!isAdmin) throw new Error("Nur für Administratoren");
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
