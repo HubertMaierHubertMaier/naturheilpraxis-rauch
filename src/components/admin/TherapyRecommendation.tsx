@@ -63,6 +63,7 @@ export function TherapyRecommendation() {
             schwanger: schwanger !== "nein" ? schwanger : undefined,
             bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
+            budget: budget.trim() || undefined,
           }),
           signal: controller.signal,
         }
