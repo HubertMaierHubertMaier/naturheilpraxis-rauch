@@ -24,22 +24,27 @@ serve(async (req) => {
       });
     }
 
-    // Verify user is admin using service role client
+    // User-context client – validates JWT via RLS
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    // Verify the JWT token
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Verify token by getting user
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
+      console.error("Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Nicht autorisiert" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
+    // Check admin role using service role client (bypasses RLS)
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: isAdmin } = await adminClient.rpc("has_role", {
       _user_id: user.id,
       _role: "admin",
     });
@@ -49,12 +54,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // User-context client for RLS-protected queries
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
 
     // Parse request
     const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget } = await req.json();
