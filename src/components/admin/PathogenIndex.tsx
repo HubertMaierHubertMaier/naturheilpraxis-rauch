@@ -129,22 +129,54 @@ function extractProductName(title: string): string {
 function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: string }[] {
   const results: { pathogen: string; wirksamkeit: string }[] = [];
 
-  // Find the "Wirkspektrum / Pathogene" section
-  const pathogenSectionMatch = content.match(/##\s*🦠\s*Wirkspektrum\s*\/?\s*Pathogene([\s\S]*?)(?=##\s|$)/);
-  if (!pathogenSectionMatch) return results;
+  // Match multiple section header variants:
+  // "## 🦠 Wirkspektrum / Pathogene", "## 🦠 Wirkspektrum", "### Gegen XYZ"
+  const sectionPatterns = [
+    /##\s*🦠\s*Wirkspektrum\s*(?:\/?\s*Pathogene)?([\s\S]*?)(?=##\s(?!#)|$)/g,
+    /###\s*Gegen\s+(\w[\s\S]*?)(?=###\s|##\s(?!#)|$)/g,
+  ];
 
-  const section = pathogenSectionMatch[1];
-  // Parse markdown table rows: | **Name** | rating |
-  const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|/g;
-  let match;
-  while ((match = rowRegex.exec(section)) !== null) {
-    const name = match[1].trim().replace(/\*\*/g, "");
-    const wirk = match[2].trim();
-    // Skip header rows
-    if (name.toLowerCase() === "pathogen" || name.match(/^[-]+$/)) continue;
-    if (wirk.toLowerCase() === "wirksamkeit" || wirk.match(/^[-]+$/)) continue;
-    results.push({ pathogen: name, wirksamkeit: wirk });
+  const parseTableRows = (section: string) => {
+    const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|/g;
+    let match;
+    while ((match = rowRegex.exec(section)) !== null) {
+      const name = match[1].trim().replace(/\*\*/g, "");
+      const wirk = match[2].trim();
+      // Skip header rows and separator rows
+      if (name.toLowerCase() === "pathogen" || name.toLowerCase() === "pflanze" || name.match(/^[-]+$/)) continue;
+      if (wirk.toLowerCase() === "wirksamkeit" || wirk.toLowerCase() === "wirkung" || wirk.match(/^[-]+$/)) continue;
+      if (wirk.toLowerCase() === "evidenzgrad" || wirk.toLowerCase() === "evidenz") continue;
+      results.push({ pathogen: name, wirksamkeit: wirk });
+    }
+  };
+
+  // Try primary pattern (Wirkspektrum sections)
+  let sectionMatch;
+  const primaryRegex = /##\s*🦠\s*Wirkspektrum\s*(?:\/?\s*Pathogene)?([\s\S]*?)(?=##\s(?!#)|$)/g;
+  while ((sectionMatch = primaryRegex.exec(content)) !== null) {
+    parseTableRows(sectionMatch[1]);
   }
+
+  // Also parse "### Gegen Trichomonaden" / "### Gegen Toxoplasmen" style sections from protocol entries
+  const protocolRegex = /###\s*Gegen\s+(\w+)([\s\S]*?)(?=###\s|##\s(?!#)|$)/g;
+  while ((sectionMatch = protocolRegex.exec(content)) !== null) {
+    const targetPathogen = sectionMatch[1].trim();
+    const section = sectionMatch[2];
+    // Parse 4-column table: | Pflanze | Wirkung | Evidenzgrad | Quelle |
+    const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|/g;
+    let match;
+    while ((match = rowRegex.exec(section)) !== null) {
+      const pflanze = match[1].trim().replace(/\*\*/g, "");
+      const wirkung = match[2].trim().replace(/\*\*/g, "");
+      const evidenz = match[3].trim().replace(/\*\*/g, "");
+      if (pflanze.toLowerCase() === "pflanze" || pflanze.match(/^[-]+$/)) continue;
+      if (wirkung.toLowerCase() === "wirkung" || wirkung.match(/^[-]+$/)) continue;
+      // For protocol entries, the "pathogen" is the target (e.g., Trichomonaden)
+      // and the product is the plant - we store as pathogen=target, product comes from title
+      results.push({ pathogen: targetPathogen, wirksamkeit: evidenz });
+    }
+  }
+
   return results;
 }
 
