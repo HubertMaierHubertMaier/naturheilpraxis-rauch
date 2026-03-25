@@ -88,9 +88,25 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Antidepressiva (SSRI): KEIN Johanniskraut
    - Diabetes-Medikamente: Blutzuckersenkende Mittel mit Vorsicht
 
+4. **Bisherige Naturheilmittel**: ${bisherigeMittel || "Keine angegeben"}
+   - Falls der Patient bereits Naturheilmittel einnimmt, bewerte diese kritisch:
+     a) Sind die bisherigen Mittel sinnvoll für die aktuellen Belastungen? Wenn ja, bestätige und begründe.
+     b) Stimmen die Dosierungen? Falls nicht, empfehle angepasste Dosierungen mit Begründung.
+     c) Fehlen wichtige Mittel? Ergänze mit Begründung.
+     d) Gibt es Mittel die überflüssig oder kontraindiziert sind? Empfehle Absetzung mit Begründung.
+     e) Gibt es bessere Alternativen aus der Wissensdatenbank? Empfehle den Wechsel mit Begründung.
+     f) Gibt es problematische Wechselwirkungen zwischen den bisherigen Mitteln?
+
 AUSGABEFORMAT:
 ## 🔍 Analyse der Belastungen
 Kurze Zusammenfassung der identifizierten Probleme.
+
+## 📊 Bewertung der bisherigen Therapie
+(Nur falls bisherige Mittel angegeben) Detaillierte Bewertung jedes bisherigen Mittels:
+- ✅ Sinnvoll beibehalten (mit Begründung)
+- 🔄 Dosisanpassung empfohlen (alt → neu, mit Begründung)
+- ❌ Absetzen empfohlen (mit Begründung)
+- 🔀 Alternative empfohlen (Wechsel zu X, mit Begründung)
 
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
