@@ -19,23 +19,27 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
-    // Verify user is admin
+    // Verify user is admin using service role client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Verify the JWT token
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) throw new Error("Nicht autorisiert");
-    const userId = claimsData.claims.sub as string;
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) throw new Error("Nicht autorisiert");
 
     const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
+      _user_id: user.id,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Nur für Administratoren");
+
+    // User-context client for RLS-protected queries
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
     // Parse request
     const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget } = await req.json();
@@ -45,7 +49,7 @@ serve(async (req) => {
     }
 
     // Fetch all wiki entries
-    const { data: wikiEntries, error: wikiError } = await supabase
+    const { data: wikiEntries, error: wikiError } = await userClient
       .from("admin_knowledge_base")
       .select("title, category, tags, content")
       .order("updated_at", { ascending: false });
