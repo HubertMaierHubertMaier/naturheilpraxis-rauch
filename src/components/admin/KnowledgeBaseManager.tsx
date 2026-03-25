@@ -30,6 +30,7 @@ const DEFAULT_CATEGORIES = [
   "Ernährung",
   "Frequenztherapie",
   "Fallbeispiele",
+  "Schilddrüse",
 ];
 
 export function KnowledgeBaseManager() {
