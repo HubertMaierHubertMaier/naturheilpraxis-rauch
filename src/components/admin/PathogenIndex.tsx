@@ -138,12 +138,7 @@ function extractProductName(title: string): string {
 function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: string }[] {
   const results: { pathogen: string; wirksamkeit: string }[] = [];
 
-  // Match multiple section header variants:
-  // "## 🦠 Wirkspektrum / Pathogene", "## 🦠 Wirkspektrum", "### Gegen XYZ"
-  const sectionPatterns = [
-    /##\s*🦠\s*Wirkspektrum\s*(?:\/?\s*Pathogene)?([\s\S]*?)(?=##\s(?!#)|$)/g,
-    /###\s*Gegen\s+(\w[\s\S]*?)(?=###\s|##\s(?!#)|$)/g,
-  ];
+  // Match "## 🦠 Wirkspektrum / Pathogene" and "## 🦠 Wirkspektrum" variants
 
   const parseTableRows = (section: string) => {
     const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|/g;
