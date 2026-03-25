@@ -49,7 +49,7 @@ serve(async (req) => {
     }
 
     // Fetch all wiki entries
-    const { data: wikiEntries, error: wikiError } = await supabase
+    const { data: wikiEntries, error: wikiError } = await userClient
       .from("admin_knowledge_base")
       .select("title, category, tags, content")
       .order("updated_at", { ascending: false });
