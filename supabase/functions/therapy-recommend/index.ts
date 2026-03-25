@@ -136,8 +136,9 @@ ${patientInfo.join("\n")}
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}  
 Erkrankung: ${erkrankung || "Nicht angegeben"}
+Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 
-Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank.`;
+Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
