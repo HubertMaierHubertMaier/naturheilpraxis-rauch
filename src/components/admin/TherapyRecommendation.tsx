@@ -179,6 +179,19 @@ export function TherapyRecommendation() {
                 placeholder="z.B. Borreliose, Hashimoto, CFS..."
               />
             </div>
+            <div>
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                <Pill className="h-3.5 w-3.5 text-emerald-600" />
+                Bisherige Naturheilmittel
+              </label>
+              <Textarea
+                value={bisherigeMittel}
+                onChange={(e) => setBisherigeMittel(e.target.value)}
+                placeholder="z.B. Schwarzwalnuss 15 Tropfen 3x/Tag, Wermut 200mg morgens, Oreganoöl 2 Kapseln..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis)</p>
+            </div>
           </CardContent>
         </Card>
 
