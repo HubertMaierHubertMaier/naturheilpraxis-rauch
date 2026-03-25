@@ -267,6 +267,19 @@ export function TherapyRecommendation() {
                 <p className="text-xs text-red-600 mt-1">⚠️ Blutverdünner erkannt – strenge Einschränkungen!</p>
               )}
             </div>
+            <div>
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                💰 Maximales Budget
+              </label>
+              <Input
+                type="number"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="z.B. 150 (in Euro)"
+                min={0}
+              />
+              <p className="text-xs text-muted-foreground mt-1">NutraMedix-Produkte kosten ca. 40 €/30ml. Bei knappem Budget werden günstige Alternativen (Gewürze, Hausmittel) bevorzugt.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
