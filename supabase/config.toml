@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.get-patients]
 verify_jwt = false
+
+[functions.therapy-recommend]
+verify_jwt = false
