@@ -175,9 +175,17 @@ function parseDosierung(content: string): string {
   const standardMatch = section.match(/\|\s*\*?\*?Standard[^|]*\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
   if (standardMatch) return standardMatch[1].trim().replace(/\*\*/g, "");
 
-  // Try to get any dosage info
+  // Try to get any dosage info from table
   const anyDoseMatch = section.match(/\|\s*[^|]+\|\s*([^|]*(?:Tropfen|tgl|mg|ml)[^|]*)\s*\|/i);
   if (anyDoseMatch) return anyDoseMatch[1].trim().replace(/\*\*/g, "");
+
+  // Try plain text format: "Standard: 1→30 Tropfen 2x tgl."
+  const plainMatch = section.match(/Standard:\s*(.+?)(?:\n|$)/i);
+  if (plainMatch) return plainMatch[1].trim();
+
+  // Try any line with dosage info
+  const anyLineMatch = section.match(/(\d+[^.\n]*(?:Tropfen|tgl|mg|ml|Kapseln|Tabletten)[^.\n]*)/i);
+  if (anyLineMatch) return anyLineMatch[1].trim();
 
   return "Siehe Produkteintrag";
 }
