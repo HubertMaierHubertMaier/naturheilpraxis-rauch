@@ -60,6 +60,7 @@ serve(async (req) => {
     if (alter) patientInfo.push(`Alter: ${alter} Jahre`);
     if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
+    if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
