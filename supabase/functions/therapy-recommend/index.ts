@@ -17,7 +17,12 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Nicht autorisiert" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Verify user is admin using service role client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -27,13 +32,23 @@ serve(async (req) => {
     // Verify the JWT token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) throw new Error("Nicht autorisiert");
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Nicht autorisiert" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: user.id,
       _role: "admin",
     });
-    if (!isAdmin) throw new Error("Nur für Administratoren");
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Nur für Administratoren" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // User-context client for RLS-protected queries
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;

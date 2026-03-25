@@ -39,12 +39,22 @@ export function TherapyRecommendation() {
     abortRef.current = controller;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) {
-        toast({ title: "Nicht angemeldet", description: "Bitte melden Sie sich an.", variant: "destructive" });
-        setIsStreaming(false);
-        return;
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      let activeSession = session;
+      const expiresSoon = activeSession?.expires_at
+        ? activeSession.expires_at * 1000 < Date.now() + 60_000
+        : true;
+
+      if (!activeSession || expiresSoon) {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
+          toast({ title: "Sitzung abgelaufen", description: "Bitte erneut anmelden.", variant: "destructive" });
+          setIsStreaming(false);
+          return;
+        }
+        activeSession = refreshData.session;
       }
 
       const resp = await fetch(
@@ -53,7 +63,8 @@ export function TherapyRecommendation() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${activeSession.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             belastungen: belastungen.trim(),
@@ -71,7 +82,13 @@ export function TherapyRecommendation() {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Fehler" }));
-        toast({ title: "Fehler", description: err.error || `HTTP ${resp.status}`, variant: "destructive" });
+        if (resp.status === 401) {
+          toast({ title: "Sitzung abgelaufen", description: "Bitte erneut anmelden.", variant: "destructive" });
+        } else if (resp.status === 403) {
+          toast({ title: "Keine Berechtigung", description: err.error || "Nur für Administratoren", variant: "destructive" });
+        } else {
+          toast({ title: "Fehler", description: err.error || `HTTP ${resp.status}`, variant: "destructive" });
+        }
         setIsStreaming(false);
         return;
       }
