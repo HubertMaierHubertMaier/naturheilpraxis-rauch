@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Bug } from "lucide-react";
+import { BookOpen, Bug, Stethoscope } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
 
 interface KnowledgeEntry {
   id: string;
