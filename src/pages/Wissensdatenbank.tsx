@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Bug } from "lucide-react";
+import { BookOpen, Bug, Stethoscope } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
 
 interface KnowledgeEntry {
   id: string;
@@ -66,12 +67,19 @@ const Wissensdatenbank = () => {
               <Bug className="h-4 w-4" />
               Pathogen-Verzeichnis
             </TabsTrigger>
+            <TabsTrigger value="therapie" className="gap-2">
+              <Stethoscope className="h-4 w-4" />
+              Therapie-Empfehlung
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="wiki">
             <KnowledgeBaseManager />
           </TabsContent>
           <TabsContent value="pathogene">
             <PathogenIndex entries={entries} loading={entriesLoading} />
+          </TabsContent>
+          <TabsContent value="therapie">
+            <TherapyRecommendation />
           </TabsContent>
         </Tabs>
       </div>
