@@ -51,6 +51,7 @@ export function TherapyRecommendation() {
             erkrankung: erkrankung.trim(),
             alter: alter.trim() || undefined,
             schwanger: schwanger !== "nein" ? schwanger : undefined,
+            bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
           }),
           signal: controller.signal,
