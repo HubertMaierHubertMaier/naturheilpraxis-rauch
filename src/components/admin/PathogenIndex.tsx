@@ -161,25 +161,6 @@ function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: s
     parseTableRows(sectionMatch[1]);
   }
 
-  // Also parse "### Gegen Trichomonaden" / "### Gegen Toxoplasmen" style sections from protocol entries
-  const protocolRegex = /###\s*Gegen\s+(\w+)([\s\S]*?)(?=###\s|##\s(?!#)|$)/g;
-  while ((sectionMatch = protocolRegex.exec(content)) !== null) {
-    const targetPathogen = sectionMatch[1].trim();
-    const section = sectionMatch[2];
-    // Parse 4-column table: | Pflanze | Wirkung | Evidenzgrad | Quelle |
-    const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|/g;
-    let match;
-    while ((match = rowRegex.exec(section)) !== null) {
-      const pflanze = match[1].trim().replace(/\*\*/g, "");
-      const wirkung = match[2].trim().replace(/\*\*/g, "");
-      const evidenz = match[3].trim().replace(/\*\*/g, "");
-      if (pflanze.toLowerCase() === "pflanze" || pflanze.match(/^[-]+$/)) continue;
-      if (wirkung.toLowerCase() === "wirkung" || wirkung.match(/^[-]+$/)) continue;
-      // For protocol entries, the "pathogen" is the target (e.g., Trichomonaden)
-      // and the product is the plant - we store as pathogen=target, product comes from title
-      results.push({ pathogen: targetPathogen, wirksamkeit: evidenz });
-    }
-  }
 
   return results;
 }
