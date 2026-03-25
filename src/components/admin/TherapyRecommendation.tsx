@@ -294,9 +294,23 @@ export function TherapyRecommendation() {
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
         {result && !isStreaming && (
-          <Button variant="outline" onClick={handleReset} className="gap-2">
-            <RotateCcw className="h-4 w-4" /> Zurücksetzen
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => {
+              const printWindow = window.open('', '_blank');
+              if (printWindow) {
+                printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Therapie-Empfehlung</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}h1,h2,h3{margin-top:1.5rem}h2{border-bottom:1px solid #ddd;padding-bottom:0.3rem}ul,ol{padding-left:1.5rem}@media print{body{margin:0;padding:1cm}}</style></head><body>`);
+                printWindow.document.write(resultRef.current?.innerHTML || '');
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+              }
+            }} className="gap-2">
+              <Printer className="h-4 w-4" /> Drucken
+            </Button>
+            <Button variant="outline" onClick={handleReset} className="gap-2">
+              <RotateCcw className="h-4 w-4" /> Zurücksetzen
+            </Button>
+          </>
         )}
       </div>
 
