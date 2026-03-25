@@ -1,0 +1,1 @@
+UPDATE admin_knowledge_base SET category = 'Schilddrüse' WHERE id IN ('06824b2f-b20a-4fda-9f8b-190374e5c01c', '31ec9c17-01bf-435f-9cb6-ab600052ac34', 'dc424524-c594-45bd-96d7-66a8c2da3009', 'a6497418-ddb7-45b3-b5e4-cbb168debccf')
