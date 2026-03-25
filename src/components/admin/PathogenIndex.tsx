@@ -30,6 +30,8 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   // Bakterien
   "borrelia": "Bakterien",
   "borrelia burgdorferi": "Bakterien",
+  "borrelia (alle formen!)": "Bakterien",
+  "borrelia biofilm": "Bakterien",
   "bartonella": "Bakterien",
   "chlamydia": "Bakterien",
   "chlamydia pneumoniae": "Bakterien",
@@ -38,12 +40,14 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   "rickettsien": "Bakterien",
   "ehrlichia": "Bakterien",
   "rickettsien / ehrlichia": "Bakterien",
+  "rickettsien (inkl. coxiella, ehrlichia)": "Bakterien",
   "mrsa": "Bakterien",
   "staphylococcus aureus": "Bakterien",
   "streptokokken": "Bakterien",
   "helicobacter pylori": "Bakterien",
   "bakterielle infektionen": "Bakterien",
   "bakterielle infektionen allg.": "Bakterien",
+  "biofilm-bildner": "Bakterien",
   // Viren
   "ebv": "Viren",
   "cmv": "Viren",
@@ -60,7 +64,9 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   "influenza": "Viren",
   "viren": "Viren",
   "virale infektionen": "Viren",
+  "virale infektionen allg.": "Viren",
   "erkältung": "Viren",
+  "enzephalitis-viren": "Viren",
   // Pilze
   "candida": "Pilze",
   "candida albicans": "Pilze",
@@ -68,7 +74,10 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   "aspergillus": "Pilze",
   "aspergillus niger": "Pilze",
   "pilze": "Pilze",
+  "pilze allgemein": "Pilze",
   "mykosen": "Pilze",
+  "mycosis fungoides": "Pilze",
+  "sinusitis-pilze": "Pilze",
   // Parasiten - Protozoen
   "babesia": "Parasiten",
   "parasiten": "Parasiten",
@@ -90,6 +99,7 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   "entamoeba": "Parasiten",
   "cryptosporidium": "Parasiten",
   "protozoen allgemein": "Parasiten",
+  "protozoen": "Parasiten",
   // Parasiten - Helminthen
   "rundwürmer": "Parasiten",
   "rundwürmer (nematoden)": "Parasiten",
@@ -99,7 +109,6 @@ const PATHOGEN_GROUPS: Record<string, string> = {
   "peitschenwürmer (trichuris trichiura)": "Parasiten",
   "fadenwürmer": "Parasiten",
   "würmer": "Parasiten",
-  "protozoen": "Parasiten",
   "bandwürmer": "Parasiten",
   "bandwürmer (cestoden)": "Parasiten",
   "madenwurm": "Parasiten",
@@ -123,28 +132,41 @@ function classifyPathogen(name: string): string {
 
 function extractProductName(title: string): string {
   // "NutraMedix SAMENTO" -> "SAMENTO"
-  return title.replace(/^NutraMedix\s+/i, "").trim();
+  // "Schwarzwalnuss (Juglans nigra)" -> "Schwarzwalnuss"
+  // "Naturheilkundliches Protokoll: XYZ" -> "XYZ"
+  let name = title.replace(/^NutraMedix\s+/i, "").trim();
+  name = name.replace(/^Naturheilkundliches Protokoll:\s*/i, "").trim();
+  name = name.replace(/\s*\([^)]+\)\s*$/, "").trim();
+  return name;
 }
 
 function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: string }[] {
   const results: { pathogen: string; wirksamkeit: string }[] = [];
 
-  // Find the "Wirkspektrum / Pathogene" section
-  const pathogenSectionMatch = content.match(/##\s*🦠\s*Wirkspektrum\s*\/?\s*Pathogene([\s\S]*?)(?=##\s|$)/);
-  if (!pathogenSectionMatch) return results;
+  // Match "## 🦠 Wirkspektrum / Pathogene" and "## 🦠 Wirkspektrum" variants
 
-  const section = pathogenSectionMatch[1];
-  // Parse markdown table rows: | **Name** | rating |
-  const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|/g;
-  let match;
-  while ((match = rowRegex.exec(section)) !== null) {
-    const name = match[1].trim().replace(/\*\*/g, "");
-    const wirk = match[2].trim();
-    // Skip header rows
-    if (name.toLowerCase() === "pathogen" || name.match(/^[-]+$/)) continue;
-    if (wirk.toLowerCase() === "wirksamkeit" || wirk.match(/^[-]+$/)) continue;
-    results.push({ pathogen: name, wirksamkeit: wirk });
+  const parseTableRows = (section: string) => {
+    const rowRegex = /\|\s*\*?\*?([^|*]+?)\*?\*?\s*\|\s*([^|]+?)\s*\|/g;
+    let match;
+    while ((match = rowRegex.exec(section)) !== null) {
+      const name = match[1].trim().replace(/\*\*/g, "");
+      const wirk = match[2].trim();
+      // Skip header rows and separator rows
+      if (name.toLowerCase() === "pathogen" || name.toLowerCase() === "pflanze" || name.match(/^[-]+$/)) continue;
+      if (wirk.toLowerCase() === "wirksamkeit" || wirk.toLowerCase() === "wirkung" || wirk.match(/^[-]+$/)) continue;
+      if (wirk.toLowerCase() === "evidenzgrad" || wirk.toLowerCase() === "evidenz") continue;
+      results.push({ pathogen: name, wirksamkeit: wirk });
+    }
+  };
+
+  // Try primary pattern (Wirkspektrum sections)
+  let sectionMatch;
+  const primaryRegex = /##\s*🦠\s*Wirkspektrum\s*(?:\/?\s*Pathogene)?([\s\S]*?)(?=##\s(?!#)|$)/g;
+  while ((sectionMatch = primaryRegex.exec(content)) !== null) {
+    parseTableRows(sectionMatch[1]);
   }
+
+
   return results;
 }
 
@@ -158,9 +180,17 @@ function parseDosierung(content: string): string {
   const standardMatch = section.match(/\|\s*\*?\*?Standard[^|]*\*?\*?\s*\|\s*([^|]+?)\s*\|/i);
   if (standardMatch) return standardMatch[1].trim().replace(/\*\*/g, "");
 
-  // Try to get any dosage info
+  // Try to get any dosage info from table
   const anyDoseMatch = section.match(/\|\s*[^|]+\|\s*([^|]*(?:Tropfen|tgl|mg|ml)[^|]*)\s*\|/i);
   if (anyDoseMatch) return anyDoseMatch[1].trim().replace(/\*\*/g, "");
+
+  // Try plain text format: "Standard: 1→30 Tropfen 2x tgl."
+  const plainMatch = section.match(/Standard:\s*(.+?)(?:\n|$)/i);
+  if (plainMatch) return plainMatch[1].trim();
+
+  // Try any line with dosage info
+  const anyLineMatch = section.match(/(\d+[^.\n]*(?:Tropfen|tgl|mg|ml|Kapseln|Tabletten)[^.\n]*)/i);
+  if (anyLineMatch) return anyLineMatch[1].trim();
 
   return "Siehe Produkteintrag";
 }
