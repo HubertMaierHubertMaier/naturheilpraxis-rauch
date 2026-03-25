@@ -132,7 +132,12 @@ function classifyPathogen(name: string): string {
 
 function extractProductName(title: string): string {
   // "NutraMedix SAMENTO" -> "SAMENTO"
-  return title.replace(/^NutraMedix\s+/i, "").trim();
+  // "Schwarzwalnuss (Juglans nigra)" -> "Schwarzwalnuss"
+  // "Naturheilkundliches Protokoll: XYZ" -> "XYZ"
+  let name = title.replace(/^NutraMedix\s+/i, "").trim();
+  name = name.replace(/^Naturheilkundliches Protokoll:\s*/i, "").trim();
+  name = name.replace(/\s*\([^)]+\)\s*$/, "").trim();
+  return name;
 }
 
 function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: string }[] {
