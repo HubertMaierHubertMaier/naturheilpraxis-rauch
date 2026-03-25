@@ -139,6 +139,7 @@ export function TherapyRecommendation() {
     setSchwanger("nein");
     setMedikamente("");
     setBisherigeMittel("");
+    setBudget("");
     setResult("");
   };
 
