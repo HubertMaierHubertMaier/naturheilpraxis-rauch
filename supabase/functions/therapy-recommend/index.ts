@@ -1,0 +1,169 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header");
+
+    // Verify user is admin
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error("Nicht autorisiert");
+
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Nur für Administratoren");
+
+    // Parse request
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente } = await req.json();
+
+    if (!belastungen && !symptome && !erkrankung) {
+      throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
+    }
+
+    // Fetch all wiki entries
+    const { data: wikiEntries, error: wikiError } = await supabase
+      .from("admin_knowledge_base")
+      .select("title, category, tags, content")
+      .order("updated_at", { ascending: false });
+
+    if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
+
+    // Build wiki context (compact)
+    const wikiContext = (wikiEntries || [])
+      .map((e: any) => `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${e.content}`)
+      .join("\n\n---\n\n");
+
+    // Build patient context
+    const patientInfo: string[] = [];
+    if (alter) patientInfo.push(`Alter: ${alter} Jahre`);
+    if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
+    if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
+
+    const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
+
+WISSENSDATENBANK:
+${wikiContext}
+
+DEINE AUFGABE:
+Analysiere die Belastungen/Symptome/Erkrankung des Patienten und erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank.
+
+SICHERHEITSREGELN (ZWINGEND BEACHTEN):
+1. **Alter**: ${alter ? `Patient ist ${alter} Jahre alt.` : "Alter unbekannt."}
+   - Kinder unter 2: KEINE ätherischen Öle, KEIN Wermut, KEINE alkoholischen Tinkturen
+   - Kinder unter 6: Sehr eingeschränktes Spektrum, nur milde Mittel, reduzierte Dosen
+   - Kinder unter 12: Reduzierte Dosierungen (ca. 50% der Erwachsenendosis)
+   - Kinder unter 16: Leicht reduzierte Dosen
+
+2. **Schwangerschaft/Stillzeit**: ${schwanger || "Nicht angegeben"}
+   - Falls schwanger/stillend: KEIN Wermut (Artemisia), KEINE Schwarzwalnuss, KEIN Beifuß, KEIN Rainfarn, generell KEINE antiparasitären Kuren, KEIN hochdosiertes Vitamin A
+   - Nur absolut sichere Mittel empfehlen
+
+3. **Medikamente**: ${medikamente || "Keine angegeben"}
+   - Blutverdünner (Marcumar, Warfarin, Eliquis, Xarelto etc.): KEINE Gewürznelke, KEIN Ingwer hochdosiert, KEIN Kurkuma hochdosiert, KEIN Omega-3 hochdosiert, KEIN Ginkgo
+   - Immunsuppressiva: KEINE immunstimulierenden Mittel (Echinacea, Katzenkralle)
+   - Schilddrüsenmedikamente: Wechselwirkungen mit Selen, Jod beachten
+   - Antidepressiva (SSRI): KEIN Johanniskraut
+   - Diabetes-Medikamente: Blutzuckersenkende Mittel mit Vorsicht
+
+AUSGABEFORMAT:
+## 🔍 Analyse der Belastungen
+Kurze Zusammenfassung der identifizierten Probleme.
+
+## ⚠️ Sicherheitshinweise
+Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
+
+## 💊 Empfohlene Mittel
+Für jedes empfohlene Mittel:
+- **Mittelname** (Lateinischer Name falls vorhanden)
+  - Wirkung gegen: [relevante Pathogene/Symptome]
+  - Dosierung: [aus Wiki, ggf. angepasst an Alter]
+  - Einnahmedauer: [Empfehlung]
+  - Hinweise: [Besonderheiten]
+
+## 📋 Therapieprotokoll
+Zeitlicher Ablauf der Einnahme (welche Mittel wann, in welcher Reihenfolge).
+
+## 🔄 Begleitmaßnahmen
+Empfehlungen zu Ernährung, Darmaufbau, Entgiftungsunterstützung.
+
+## ❌ Ausgeschlossene Mittel
+Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft, Medikamente).
+
+WICHTIG: Empfehle NUR Mittel die in der Wissensdatenbank vorhanden sind. Erfinde keine neuen Mittel oder Dosierungen.`;
+
+    const userMessage = `Patientendaten:
+${patientInfo.join("\n")}
+
+Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
+Symptome: ${symptome || "Nicht angegeben"}  
+Erkrankung: ${erkrankung || "Nicht angegeben"}
+
+Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Zu viele Anfragen. Bitte warten Sie einen Moment." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "KI-Guthaben aufgebraucht." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const t = await response.text();
+      console.error("AI gateway error:", response.status, t);
+      throw new Error("KI-Gateway Fehler");
+    }
+
+    return new Response(response.body, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    });
+  } catch (e) {
+    console.error("therapy-recommend error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
