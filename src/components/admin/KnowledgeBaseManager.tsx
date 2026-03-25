@@ -87,6 +87,18 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
+  // Fuzzy search: tries progressively shorter prefixes if exact substring doesn't match
+  const fuzzyMatch = (text: string, query: string): boolean => {
+    const t = text.toLowerCase();
+    const q = query.toLowerCase();
+    if (t.includes(q)) return true;
+    // Try progressively shorter prefixes (min 4 chars)
+    for (let len = q.length - 1; len >= Math.min(4, q.length); len--) {
+      if (t.includes(q.substring(0, len))) return true;
+    }
+    return false;
+  };
+
   // Filter entries
   const filtered = useMemo(() => {
     let result = entries;
@@ -97,13 +109,13 @@ export function KnowledgeBaseManager() {
       result = result.filter((e) => e.tags?.includes(tagFilter));
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.trim();
       result = result.filter(
         (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.content.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q) ||
-          e.tags?.some((t) => t.toLowerCase().includes(q))
+          fuzzyMatch(e.title, q) ||
+          fuzzyMatch(e.content, q) ||
+          fuzzyMatch(e.category, q) ||
+          e.tags?.some((t) => fuzzyMatch(t, q))
       );
     }
     return result;
