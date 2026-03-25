@@ -67,12 +67,19 @@ const Wissensdatenbank = () => {
               <Bug className="h-4 w-4" />
               Pathogen-Verzeichnis
             </TabsTrigger>
+            <TabsTrigger value="therapie" className="gap-2">
+              <Stethoscope className="h-4 w-4" />
+              Therapie-Empfehlung
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="wiki">
             <KnowledgeBaseManager />
           </TabsContent>
           <TabsContent value="pathogene">
             <PathogenIndex entries={entries} loading={entriesLoading} />
+          </TabsContent>
+          <TabsContent value="therapie">
+            <TherapyRecommendation />
           </TabsContent>
         </Tabs>
       </div>
