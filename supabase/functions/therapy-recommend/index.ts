@@ -32,7 +32,7 @@ serve(async (req) => {
     const userId = claimsData.claims.sub as string;
 
     const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: user.id,
+      _user_id: userId,
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Nur für Administratoren");
