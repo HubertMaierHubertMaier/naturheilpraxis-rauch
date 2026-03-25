@@ -36,7 +36,7 @@ serve(async (req) => {
     if (!isAdmin) throw new Error("Nur für Administratoren");
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -60,6 +60,7 @@ serve(async (req) => {
     if (alter) patientInfo.push(`Alter: ${alter} Jahre`);
     if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
+    if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
@@ -87,9 +88,25 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Antidepressiva (SSRI): KEIN Johanniskraut
    - Diabetes-Medikamente: Blutzuckersenkende Mittel mit Vorsicht
 
+4. **Bisherige Naturheilmittel**: ${bisherigeMittel || "Keine angegeben"}
+   - Falls der Patient bereits Naturheilmittel einnimmt, bewerte diese kritisch:
+     a) Sind die bisherigen Mittel sinnvoll für die aktuellen Belastungen? Wenn ja, bestätige und begründe.
+     b) Stimmen die Dosierungen? Falls nicht, empfehle angepasste Dosierungen mit Begründung.
+     c) Fehlen wichtige Mittel? Ergänze mit Begründung.
+     d) Gibt es Mittel die überflüssig oder kontraindiziert sind? Empfehle Absetzung mit Begründung.
+     e) Gibt es bessere Alternativen aus der Wissensdatenbank? Empfehle den Wechsel mit Begründung.
+     f) Gibt es problematische Wechselwirkungen zwischen den bisherigen Mitteln?
+
 AUSGABEFORMAT:
 ## 🔍 Analyse der Belastungen
 Kurze Zusammenfassung der identifizierten Probleme.
+
+## 📊 Bewertung der bisherigen Therapie
+(Nur falls bisherige Mittel angegeben) Detaillierte Bewertung jedes bisherigen Mittels:
+- ✅ Sinnvoll beibehalten (mit Begründung)
+- 🔄 Dosisanpassung empfohlen (alt → neu, mit Begründung)
+- ❌ Absetzen empfohlen (mit Begründung)
+- 🔀 Alternative empfohlen (Wechsel zu X, mit Begründung)
 
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
@@ -119,8 +136,9 @@ ${patientInfo.join("\n")}
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}  
 Erkrankung: ${erkrankung || "Nicht angegeben"}
+Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 
-Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank.`;
+Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
