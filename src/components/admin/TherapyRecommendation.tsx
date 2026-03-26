@@ -159,6 +159,8 @@ export function TherapyRecommendation() {
     setMedikamente("");
     setBisherigeMittel("");
     setBudget("");
+    setLaborErhoeht("");
+    setLaborErniedrigt("");
     setResult("");
   };
 
