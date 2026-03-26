@@ -120,6 +120,11 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
      e) Gibt es bessere Alternativen aus der Wissensdatenbank? Empfehle den Wechsel mit Begründung.
      f) Gibt es problematische Wechselwirkungen zwischen den bisherigen Mitteln?
 
+5. **Laborwerte**: 
+   - Erhöhte Werte: ${laborErhoeht || "Keine angegeben"}
+   - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
+   - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können.
+
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
 - ${budget ? `Das maximale Budget des Patienten beträgt ${budget} Euro.` : "Kein Budget angegeben – trotzdem kostenbewusst empfehlen."}
