@@ -19,6 +19,8 @@ export function TherapyRecommendation() {
   const [medikamente, setMedikamente] = useState("");
   const [bisherigeMittel, setBisherigeMittel] = useState("");
   const [budget, setBudget] = useState("");
+  const [laborErhoeht, setLaborErhoeht] = useState("");
+  const [laborErniedrigt, setLaborErniedrigt] = useState("");
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -75,6 +77,8 @@ export function TherapyRecommendation() {
             bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
             budget: budget.trim() || undefined,
+            laborErhoeht: laborErhoeht.trim() || undefined,
+            laborErniedrigt: laborErniedrigt.trim() || undefined,
           }),
           signal: controller.signal,
         }
@@ -157,6 +161,8 @@ export function TherapyRecommendation() {
     setMedikamente("");
     setBisherigeMittel("");
     setBudget("");
+    setLaborErhoeht("");
+    setLaborErniedrigt("");
     setResult("");
   };
 
@@ -208,6 +214,24 @@ export function TherapyRecommendation() {
                 value={erkrankung}
                 onChange={(e) => setErkrankung(e.target.value)}
                 placeholder="z.B. Borreliose, Hashimoto, CFS..."
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">🔬 Erhöhte Laborwerte</label>
+              <Textarea
+                value={laborErhoeht}
+                onChange={(e) => setLaborErhoeht(e.target.value)}
+                placeholder="z.B. LDL 185 mg/dl, Triglyzeride 210 mg/dl, hsCRP 4.2, Homocystein 18..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">🔬 Erniedrigte Laborwerte</label>
+              <Textarea
+                value={laborErniedrigt}
+                onChange={(e) => setLaborErniedrigt(e.target.value)}
+                placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
+                rows={2}
               />
             </div>
             <div>

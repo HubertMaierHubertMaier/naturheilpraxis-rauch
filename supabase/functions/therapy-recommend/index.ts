@@ -56,7 +56,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -82,6 +82,8 @@ serve(async (req) => {
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
     if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
     if (budget) patientInfo.push(`Maximales Budget: ${budget} Euro`);
+    if (laborErhoeht) patientInfo.push(`Erhöhte Laborwerte: ${laborErhoeht}`);
+    if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
@@ -118,6 +120,11 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
      e) Gibt es bessere Alternativen aus der Wissensdatenbank? Empfehle den Wechsel mit Begründung.
      f) Gibt es problematische Wechselwirkungen zwischen den bisherigen Mitteln?
 
+5. **Laborwerte**: 
+   - Erhöhte Werte: ${laborErhoeht || "Keine angegeben"}
+   - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
+   - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können.
+
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
 - ${budget ? `Das maximale Budget des Patienten beträgt ${budget} Euro.` : "Kein Budget angegeben – trotzdem kostenbewusst empfehlen."}
@@ -139,6 +146,9 @@ Kurze Zusammenfassung der identifizierten Probleme.
 - 🔄 Dosisanpassung empfohlen (alt → neu, mit Begründung)
 - ❌ Absetzen empfohlen (mit Begründung)
 - 🔀 Alternative empfohlen (Wechsel zu X, mit Begründung)
+
+## 🔬 Laborwert-Analyse
+(Nur falls Laborwerte angegeben) Bewertung der auffälligen Werte mit naturheilkundlichen Empfehlungen zur Verbesserung.
 
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
