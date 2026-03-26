@@ -56,7 +56,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
