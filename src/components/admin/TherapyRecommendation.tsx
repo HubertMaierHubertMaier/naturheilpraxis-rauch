@@ -217,6 +217,24 @@ export function TherapyRecommendation() {
               />
             </div>
             <div>
+              <label className="text-sm font-medium mb-1 block">🔬 Erhöhte Laborwerte</label>
+              <Textarea
+                value={laborErhoeht}
+                onChange={(e) => setLaborErhoeht(e.target.value)}
+                placeholder="z.B. LDL 185 mg/dl, Triglyzeride 210 mg/dl, hsCRP 4.2, Homocystein 18..."
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">🔬 Erniedrigte Laborwerte</label>
+              <Textarea
+                value={laborErniedrigt}
+                onChange={(e) => setLaborErniedrigt(e.target.value)}
+                placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
+                rows={2}
+              />
+            </div>
+            <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                 <Pill className="h-3.5 w-3.5 text-emerald-600" />
                 Bisherige Naturheilmittel
