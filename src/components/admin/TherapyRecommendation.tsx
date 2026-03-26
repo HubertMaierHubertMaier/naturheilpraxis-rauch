@@ -19,6 +19,8 @@ export function TherapyRecommendation() {
   const [medikamente, setMedikamente] = useState("");
   const [bisherigeMittel, setBisherigeMittel] = useState("");
   const [budget, setBudget] = useState("");
+  const [laborErhoeht, setLaborErhoeht] = useState("");
+  const [laborErniedrigt, setLaborErniedrigt] = useState("");
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
