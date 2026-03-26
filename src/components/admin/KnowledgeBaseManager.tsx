@@ -284,7 +284,7 @@ export function KnowledgeBaseManager() {
       </Card>
 
       {/* Stats */}
-      <div className="flex gap-4 text-sm text-muted-foreground">
+      <div className="flex gap-4 text-sm text-muted-foreground items-center">
         <span>{filtered.length} von {entries.length} Einträgen</span>
         {(searchQuery || categoryFilter !== "all" || tagFilter) && (
           <button
@@ -292,6 +292,24 @@ export function KnowledgeBaseManager() {
             className="text-primary hover:underline flex items-center gap-1"
           >
             <X className="h-3 w-3" /> Filter zurücksetzen
+          </button>
+        )}
+        {groupedEntries.length > 0 && (
+          <button
+            onClick={() => {
+              const allGroupNames = groupedEntries.map(g => g.groupName);
+              const allCollapsed = allGroupNames.every(n => collapsedGroups.has(n));
+              if (allCollapsed) {
+                setCollapsedGroups(new Set());
+              } else {
+                setCollapsedGroups(new Set(allGroupNames));
+              }
+            }}
+            className="text-primary hover:underline flex items-center gap-1 ml-auto"
+          >
+            {groupedEntries.length > 0 && groupedEntries.every(g => collapsedGroups.has(g.groupName))
+              ? "▶ Alle aufklappen"
+              : "▼ Alle zuklappen"}
           </button>
         )}
       </div>
