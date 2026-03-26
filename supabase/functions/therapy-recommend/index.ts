@@ -147,6 +147,9 @@ Kurze Zusammenfassung der identifizierten Probleme.
 - ❌ Absetzen empfohlen (mit Begründung)
 - 🔀 Alternative empfohlen (Wechsel zu X, mit Begründung)
 
+## 🔬 Laborwert-Analyse
+(Nur falls Laborwerte angegeben) Bewertung der auffälligen Werte mit naturheilkundlichen Empfehlungen zur Verbesserung.
+
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
