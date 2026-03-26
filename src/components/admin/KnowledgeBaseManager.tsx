@@ -316,16 +316,23 @@ export function KnowledgeBaseManager() {
           {groupedEntries.map(({ groupName, entries: groupEntries }) => (
             <div key={groupName}>
               <button
-                onClick={() => setExpandedGroup(expandedGroup === groupName ? null : groupName)}
+                onClick={() => {
+                  setCollapsedGroups(prev => {
+                    const next = new Set(prev);
+                    if (next.has(groupName)) next.delete(groupName);
+                    else next.add(groupName);
+                    return next;
+                  });
+                }}
                 className="flex items-center gap-2 w-full text-left mb-2 group"
               >
-                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${expandedGroup === groupName ? "rotate-90" : ""}`} />
+                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${!collapsedGroups.has(groupName) ? "rotate-90" : ""}`} />
                 <h2 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                   {groupName}
                 </h2>
                 <Badge variant="outline" className="text-xs">{groupEntries.length}</Badge>
               </button>
-              {expandedGroup === groupName && (
+              {!collapsedGroups.has(groupName) && (
                 <div className="space-y-2 ml-6">
                   {groupEntries.map((entry) => (
                     <Card
