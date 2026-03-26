@@ -82,6 +82,8 @@ serve(async (req) => {
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
     if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
     if (budget) patientInfo.push(`Maximales Budget: ${budget} Euro`);
+    if (laborErhoeht) patientInfo.push(`Erhöhte Laborwerte: ${laborErhoeht}`);
+    if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
