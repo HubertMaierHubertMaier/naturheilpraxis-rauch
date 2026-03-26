@@ -77,6 +77,8 @@ export function TherapyRecommendation() {
             bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
             budget: budget.trim() || undefined,
+            laborErhoeht: laborErhoeht.trim() || undefined,
+            laborErniedrigt: laborErniedrigt.trim() || undefined,
           }),
           signal: controller.signal,
         }
