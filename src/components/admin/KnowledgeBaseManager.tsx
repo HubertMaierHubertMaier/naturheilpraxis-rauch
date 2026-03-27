@@ -456,7 +456,8 @@ export function KnowledgeBaseManager() {
         </CardContent>
       )}
     </Card>
-  );
+    );
+  };
 
   const totalEntries = filtered.length;
 
