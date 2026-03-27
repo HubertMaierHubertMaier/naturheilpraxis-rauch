@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight, RefreshCw } from "lucide-react";
 
 // Normalize text for robust German search (case + umlaut-insensitive)
 const normalizeSearchText = (value: string) =>
@@ -321,9 +321,14 @@ export function KnowledgeBaseManager() {
           <BookOpen className="h-7 w-7 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Wissensdatenbank</h1>
         </div>
-        <Button onClick={openNewDialog} className="gap-2">
-          <Plus className="h-4 w-4" /> Neuer Eintrag
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => fetchEntries()} className="gap-2" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Aktualisieren
+          </Button>
+          <Button onClick={openNewDialog} className="gap-2">
+            <Plus className="h-4 w-4" /> Neuer Eintrag
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}
