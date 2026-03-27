@@ -158,9 +158,11 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Search: exact substring match only (no fuzzy prefix matching)
+  // Search: strict match from 3 chars, diacritic-insensitive
   const searchMatch = (text: string, query: string): boolean => {
-    return text.toLowerCase().includes(query.toLowerCase());
+    const q = query.trim();
+    if (q.length < 3) return false;
+    return normalizeSearchText(text).includes(normalizeSearchText(q));
   };
 
   // Filter entries
