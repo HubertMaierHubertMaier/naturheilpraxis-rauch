@@ -8,19 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight, RefreshCw } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, BookOpen, Tag, X, ChevronRight, ChevronDown, RefreshCw, FolderOpen } from "lucide-react";
 
 // Normalize text for robust German search (case + umlaut-insensitive)
 const normalizeSearchText = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+  value.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 const tokenizeSearchText = (value: string) =>
-  normalizeSearchText(value)
-    .split(/[^a-z0-9]+/g)
-    .filter(Boolean);
+  normalizeSearchText(value).split(/[^a-z0-9]+/g).filter(Boolean);
 
 const extractSearchTerms = (query: string) =>
   tokenizeSearchText(query.trim()).filter((term) => term.length >= 4);
@@ -30,32 +25,25 @@ const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$
 const searchTextMatchesQuery = (text: string, query: string): boolean => {
   const terms = extractSearchTerms(query);
   if (terms.length === 0 || !text) return false;
-
   const words = tokenizeSearchText(text);
   if (words.length === 0) return false;
-
   return terms.every((term) =>
     words.some((word) => word === term || word.startsWith(term) || word.endsWith(term))
   );
 };
 
-// Highlight search query matches in text
 function HighlightText({ text, query }: { text: string; query: string }) {
   const terms = extractSearchTerms(query);
   if (terms.length === 0) return <>{text}</>;
-
   const regex = new RegExp(`(${terms.map(escapeRegex).sort((a, b) => b.length - a.length).join("|")})`, "gi");
   const normalizedTerms = new Set(terms);
   const parts = text.split(regex);
   if (parts.length === 1) return <>{text}</>;
-
   return (
     <>
       {parts.map((part, i) =>
         normalizedTerms.has(normalizeSearchText(part)) ? (
-          <mark key={i} className="bg-accent text-accent-foreground rounded-sm px-0.5 font-semibold">
-            {part}
-          </mark>
+          <mark key={i} className="bg-accent text-accent-foreground rounded-sm px-0.5 font-semibold">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -64,23 +52,18 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   );
 }
 
-// Extract snippets around search matches with context
 function ContentSnippets({ content, query }: { content: string; query: string }) {
   const terms = extractSearchTerms(query);
   if (terms.length === 0 || !content) return null;
-
   const lines = content.split("\n");
   const matchingLines: { lineIdx: number; line: string }[] = [];
-
   for (let i = 0; i < lines.length; i++) {
     if (searchTextMatchesQuery(lines[i], query)) {
       matchingLines.push({ lineIdx: i, line: lines[i] });
       if (matchingLines.length >= 5) break;
     }
   }
-
   if (matchingLines.length === 0) return null;
-
   return (
     <div className="mt-1.5 space-y-1">
       {matchingLines.map(({ lineIdx, line }) => {
@@ -90,7 +73,6 @@ function ContentSnippets({ content, query }: { content: string; query: string })
         const start = Math.max(0, matchIndex - 60);
         const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + highlightTerm.length + 140) : Math.min(line.length, 200);
         const snippet = line.substring(start, end).trim();
-
         return (
           <div key={lineIdx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
             {start > 0 && <span className="text-muted-foreground/60 mr-1">…</span>}
@@ -115,16 +97,33 @@ interface KnowledgeEntry {
 
 const DEFAULT_CATEGORIES = [
   "Allgemein",
-  "Erreger & Pathogene",
-  "Naturheilkundliche Mittel",
+  "Anti-Aging",
   "Diagnostik",
-  "Therapie & Protokolle",
-  "Laborwerte",
   "Ernährung",
-  "Frequenztherapie",
   "Fallbeispiele",
+  "Frequenztherapie",
+  "Laborwerte",
+  "Martin Auerswald",
+  "Naturheilpraxis Peter Rauch > Buhner",
+  "Naturheilpraxis Peter Rauch > Covid",
+  "Naturheilpraxis Peter Rauch > Homotoxikologie",
+  "Naturheilpraxis Peter Rauch > Mannayan",
+  "Naturheilpraxis Peter Rauch > Nutra Medix",
+  "Naturheilpraxis Peter Rauch > Phytotherapie",
   "Schilddrüse",
 ];
+
+// Parse hierarchical category into parent > child
+const parseCategory = (cat: string) => {
+  const parts = cat.split(" > ");
+  return { parent: parts[0], child: parts.length > 1 ? parts.slice(1).join(" > ") : null, full: cat };
+};
+
+interface HierarchicalGroup {
+  name: string;
+  children?: { name: string; entries: KnowledgeEntry[] }[];
+  entries?: KnowledgeEntry[];
+}
 
 export function KnowledgeBaseManager() {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
@@ -137,7 +136,8 @@ export function KnowledgeBaseManager() {
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<KnowledgeEntry | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+  const [expandedChildren, setExpandedChildren] = useState<Set<string>>(new Set());
 
   // Form state
   const [formTitle, setFormTitle] = useState("");
@@ -155,7 +155,6 @@ export function KnowledgeBaseManager() {
       .from("admin_knowledge_base")
       .select("*")
       .order("updated_at", { ascending: false });
-
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
@@ -164,11 +163,8 @@ export function KnowledgeBaseManager() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchEntries();
-  }, []);
+  useEffect(() => { fetchEntries(); }, []);
 
-  // Derive all unique categories and tags
   const allCategories = useMemo(() => {
     const cats = new Set(DEFAULT_CATEGORIES);
     entries.forEach((e) => cats.add(e.category));
@@ -185,7 +181,8 @@ export function KnowledgeBaseManager() {
   const filtered = useMemo(() => {
     let result = entries;
     if (categoryFilter && categoryFilter !== "all") {
-      result = result.filter((e) => e.category === categoryFilter);
+      // If filtering by parent category, include all sub-categories
+      result = result.filter((e) => e.category === categoryFilter || e.category.startsWith(categoryFilter + " > "));
     }
     if (tagFilter) {
       result = result.filter((e) => e.tags?.includes(tagFilter));
@@ -206,40 +203,82 @@ export function KnowledgeBaseManager() {
     return result;
   }, [entries, categoryFilter, tagFilter, searchQuery]);
 
-  // Group filtered entries: entries with shared tags (like "NutraMedix") get grouped
-  const groupedEntries = useMemo(() => {
-    // Count tag frequency to find grouping tags (tags shared by 3+ entries)
-    const tagCounts: Record<string, number> = {};
-    filtered.forEach((e) => e.tags?.forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
-    const groupingTags = Object.entries(tagCounts)
-      .filter(([, count]) => count >= 3)
-      .sort((a, b) => b[1] - a[1])
-      .map(([tag]) => tag);
+  // Build hierarchical groups
+  const hierarchicalGroups = useMemo(() => {
+    const groups: HierarchicalGroup[] = [];
+    const parentMap: Record<string, Record<string, KnowledgeEntry[]>> = {};
+    const topLevel: Record<string, KnowledgeEntry[]> = {};
 
-    const assigned = new Set<string>();
-    const groups: { groupName: string; entries: KnowledgeEntry[] }[] = [];
-
-    // Create groups for popular tags
-    for (const tag of groupingTags) {
-      const groupEntries = filtered.filter((e) => !assigned.has(e.id) && e.tags?.includes(tag));
-      if (groupEntries.length >= 3) {
-        groupEntries.forEach((e) => assigned.add(e.id));
-        groups.push({ groupName: tag, entries: groupEntries });
+    filtered.forEach((entry) => {
+      const parsed = parseCategory(entry.category);
+      if (parsed.child) {
+        if (!parentMap[parsed.parent]) parentMap[parsed.parent] = {};
+        if (!parentMap[parsed.parent][parsed.child]) parentMap[parsed.parent][parsed.child] = [];
+        parentMap[parsed.parent][parsed.child].push(entry);
+      } else {
+        if (!topLevel[parsed.parent]) topLevel[parsed.parent] = [];
+        topLevel[parsed.parent].push(entry);
       }
-    }
-
-    // Remaining entries grouped by category
-    const remaining = filtered.filter((e) => !assigned.has(e.id));
-    const byCat: Record<string, KnowledgeEntry[]> = {};
-    remaining.forEach((e) => {
-      (byCat[e.category] = byCat[e.category] || []).push(e);
     });
-    for (const [cat, catEntries] of Object.entries(byCat)) {
-      groups.push({ groupName: cat, entries: catEntries });
+
+    // Add hierarchical groups
+    for (const [parent, childMap] of Object.entries(parentMap).sort((a, b) => a[0].localeCompare(b[0]))) {
+      const children = Object.entries(childMap)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, entries]) => ({ name, entries }));
+      groups.push({ name: parent, children });
     }
 
-    return groups.sort((a, b) => a.groupName.localeCompare(b.groupName));
+    // Add top-level groups
+    for (const [name, entries] of Object.entries(topLevel).sort((a, b) => a[0].localeCompare(b[0]))) {
+      groups.push({ name, entries });
+    }
+
+    return groups;
   }, [filtered]);
+
+  // Unique parent categories for filter dropdown
+  const parentCategories = useMemo(() => {
+    const parents = new Set<string>();
+    allCategories.forEach((c) => {
+      const p = parseCategory(c);
+      parents.add(p.parent);
+    });
+    return Array.from(parents).sort();
+  }, [allCategories]);
+
+  const toggleParent = (name: string) => {
+    setExpandedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  };
+
+  const toggleChild = (key: string) => {
+    setExpandedChildren((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    const parents = hierarchicalGroups.map((g) => g.name);
+    const children: string[] = [];
+    hierarchicalGroups.forEach((g) => {
+      g.children?.forEach((c) => children.push(`${g.name}>${c.name}`));
+    });
+    setExpandedParents(new Set(parents));
+    setExpandedChildren(new Set(children));
+  };
+
+  const collapseAll = () => {
+    setExpandedParents(new Set());
+    setExpandedChildren(new Set());
+  };
+
+  const isAllExpanded = hierarchicalGroups.length > 0 && hierarchicalGroups.every((g) => expandedParents.has(g.name));
 
   const openNewDialog = () => {
     setEditingEntry(null);
@@ -268,27 +307,15 @@ export function KnowledgeBaseManager() {
       toast({ title: "Titel und Kategorie sind Pflichtfelder", variant: "destructive" });
       return;
     }
-
     setSaving(true);
-    const tags = formTags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    const payload = {
-      title: formTitle.trim(),
-      category: finalCategory,
-      tags,
-      content: formContent,
-    };
-
+    const tags = formTags.split(",").map((t) => t.trim()).filter(Boolean);
+    const payload = { title: formTitle.trim(), category: finalCategory, tags, content: formContent };
     let error;
     if (editingEntry) {
       ({ error } = await supabase.from("admin_knowledge_base").update(payload).eq("id", editingEntry.id));
     } else {
       ({ error } = await supabase.from("admin_knowledge_base").insert(payload));
     }
-
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
@@ -313,6 +340,60 @@ export function KnowledgeBaseManager() {
     }
   };
 
+  const renderEntry = (entry: KnowledgeEntry) => (
+    <Card
+      key={entry.id}
+      className="cursor-pointer hover:border-primary/30 transition-colors"
+      onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
+    >
+      <CardHeader className="py-3 pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-sm font-semibold">
+              <HighlightText text={entry.title} query={searchQuery} />
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              {entry.tags?.slice(0, 6).map((tag) => (
+                <Badge key={tag} variant="outline" className="gap-1 text-xs">
+                  <Tag className="h-3 w-3" />{tag}
+                </Badge>
+              ))}
+              {(entry.tags?.length || 0) > 6 && (
+                <Badge variant="outline" className="text-xs">+{entry.tags!.length - 6}</Badge>
+              )}
+            </div>
+            {extractSearchTerms(searchQuery).length > 0 && expandedId !== entry.id && (
+              <ContentSnippets content={entry.content} query={searchQuery} />
+            )}
+          </div>
+          <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditDialog(entry)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+              onClick={() => { setDeletingEntry(entry); setDeleteDialogOpen(true); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      {expandedId === entry.id && (
+        <CardContent className="pt-0">
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
+            {entry.content ? <HighlightText text={entry.content} query={searchQuery} /> : <span className="text-muted-foreground italic">Kein Inhalt</span>}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
+          </p>
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  const totalEntries = filtered.length;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -322,7 +403,7 @@ export function KnowledgeBaseManager() {
           <h1 className="text-2xl font-bold text-foreground">Wissensdatenbank</h1>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => fetchEntries()} className="gap-2" disabled={loading}>
+          <Button variant="outline" onClick={fetchEntries} className="gap-2" disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Aktualisieren
           </Button>
           <Button onClick={openNewDialog} className="gap-2">
@@ -350,7 +431,7 @@ export function KnowledgeBaseManager() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle Kategorien</SelectItem>
-                {allCategories.map((c) => (
+                {parentCategories.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
@@ -374,7 +455,7 @@ export function KnowledgeBaseManager() {
 
       {/* Stats */}
       <div className="flex gap-4 text-sm text-muted-foreground items-center">
-        <span>{filtered.length} von {entries.length} Einträgen</span>
+        <span>{totalEntries} von {entries.length} Einträgen</span>
         {(searchQuery || categoryFilter !== "all" || tagFilter) && (
           <button
             onClick={() => { setSearchQuery(""); setCategoryFilter("all"); setTagFilter(""); }}
@@ -383,22 +464,12 @@ export function KnowledgeBaseManager() {
             <X className="h-3 w-3" /> Filter zurücksetzen
           </button>
         )}
-        {groupedEntries.length > 0 && (
+        {hierarchicalGroups.length > 0 && (
           <button
-            onClick={() => {
-              const allGroupNames = groupedEntries.map(g => g.groupName);
-              const allCollapsed = allGroupNames.every(n => collapsedGroups.has(n));
-              if (allCollapsed) {
-                setCollapsedGroups(new Set());
-              } else {
-                setCollapsedGroups(new Set(allGroupNames));
-              }
-            }}
+            onClick={isAllExpanded ? collapseAll : expandAll}
             className="text-primary hover:underline flex items-center gap-1 ml-auto"
           >
-            {groupedEntries.length > 0 && groupedEntries.every(g => collapsedGroups.has(g.groupName))
-              ? "▶ Alle aufklappen"
-              : "▼ Alle zuklappen"}
+            {isAllExpanded ? "▼ Alle zuklappen" : "▶ Alle aufklappen"}
           </button>
         )}
       </div>
@@ -419,81 +490,78 @@ export function KnowledgeBaseManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {groupedEntries.map(({ groupName, entries: groupEntries }) => (
-            <div key={groupName}>
-              <button
-                onClick={() => {
-                  setCollapsedGroups(prev => {
-                    const next = new Set(prev);
-                    if (next.has(groupName)) next.delete(groupName);
-                    else next.add(groupName);
-                    return next;
-                  });
-                }}
-                className="flex items-center gap-2 w-full text-left mb-2 group"
-              >
-                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${!collapsedGroups.has(groupName) ? "rotate-90" : ""}`} />
-                <h2 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {groupName}
-                </h2>
-                <Badge variant="outline" className="text-xs">{groupEntries.length}</Badge>
-              </button>
-              {!collapsedGroups.has(groupName) && (
-                <div className="space-y-2 ml-6">
-                  {groupEntries.map((entry) => (
-                    <Card
-                      key={entry.id}
-                      className="cursor-pointer hover:border-primary/30 transition-colors"
-                      onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                    >
-                      <CardHeader className="py-3 pb-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <CardTitle className="text-sm font-semibold"><HighlightText text={entry.title} query={searchQuery} /></CardTitle>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                              {entry.tags?.filter(t => t !== groupName).map((tag) => (
-                                <Badge key={tag} variant="outline" className="gap-1 text-xs">
-                                  <Tag className="h-3 w-3" />
-                                  {tag}
-                                </Badge>
-                              ))}
+        <div className="space-y-3">
+          {hierarchicalGroups.map((group) => {
+            const isParentExpanded = expandedParents.has(group.name);
+            const hasChildren = !!group.children && group.children.length > 0;
+            const totalCount = hasChildren
+              ? group.children!.reduce((sum, c) => sum + c.entries.length, 0)
+              : (group.entries?.length || 0);
+
+            return (
+              <div key={group.name} className="border rounded-lg bg-card">
+                {/* Parent header */}
+                <button
+                  onClick={() => toggleParent(group.name)}
+                  className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors rounded-lg"
+                >
+                  {isParentExpanded ? (
+                    <ChevronDown className="h-5 w-5 text-primary shrink-0" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  )}
+                  {hasChildren ? (
+                    <FolderOpen className="h-5 w-5 text-primary shrink-0" />
+                  ) : (
+                    <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
+                  <span className="text-base font-semibold text-foreground">{group.name}</span>
+                  <Badge variant="outline" className="text-xs ml-1">{totalCount}</Badge>
+                </button>
+
+                {/* Expanded content */}
+                {isParentExpanded && (
+                  <div className="px-4 pb-3">
+                    {hasChildren ? (
+                      // Hierarchical: show sub-categories
+                      <div className="space-y-2 ml-4 border-l-2 border-muted pl-4">
+                        {group.children!.map((child) => {
+                          const childKey = `${group.name}>${child.name}`;
+                          const isChildExpanded = expandedChildren.has(childKey);
+                          return (
+                            <div key={childKey}>
+                              <button
+                                onClick={() => toggleChild(childKey)}
+                                className="flex items-center gap-2 w-full text-left py-2 hover:text-primary transition-colors"
+                              >
+                                {isChildExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-primary shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                                )}
+                                <span className="text-sm font-medium">{child.name}</span>
+                                <Badge variant="outline" className="text-xs">{child.entries.length}</Badge>
+                              </button>
+                              {isChildExpanded && (
+                                <div className="space-y-2 ml-6 mt-1">
+                                  {child.entries.map(renderEntry)}
+                                </div>
+                              )}
                             </div>
-                            {extractSearchTerms(searchQuery).length > 0 && expandedId !== entry.id && (
-                              <ContentSnippets content={entry.content} query={searchQuery} />
-                            )}
-                          </div>
-                          <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditDialog(entry)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => { setDeletingEntry(entry); setDeleteDialogOpen(true); }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      {expandedId === entry.id && (
-                        <CardContent className="pt-0">
-                          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
-                            {entry.content ? <HighlightText text={entry.content} query={searchQuery} /> : <span className="text-muted-foreground italic">Kein Inhalt</span>}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-3">
-                            Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
-                          </p>
-                        </CardContent>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      // Flat: show entries directly
+                      <div className="space-y-2 ml-4">
+                        {group.entries!.map(renderEntry)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -511,9 +579,7 @@ export function KnowledgeBaseManager() {
             <div>
               <label className="text-sm font-medium">Kategorie *</label>
               <Select value={formCategory} onValueChange={setFormCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {DEFAULT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -526,7 +592,7 @@ export function KnowledgeBaseManager() {
                   className="mt-2"
                   value={formCustomCategory}
                   onChange={(e) => setFormCustomCategory(e.target.value)}
-                  placeholder="Neue Kategorie eingeben"
+                  placeholder="z.B. Naturheilpraxis Peter Rauch > Neuer Bereich"
                 />
               )}
             </div>
