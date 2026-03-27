@@ -93,12 +93,13 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 }
 
 function ContentSnippets({ content, query }: { content: string; query: string }) {
-  const terms = extractSearchTerms(query);
-  if (terms.length === 0 || !content) return null;
+  const allTerms = extractAllTerms(query);
+  const phrases = splitSearchPhrases(query);
+  if (allTerms.length === 0 || !content) return null;
   const lines = content.split("\n");
   const matchingLines: { lineIdx: number; line: string }[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (searchTextMatchesQuery(lines[i], query)) {
+    if (phrases.some((phrase) => searchTextMatchesQuery(lines[i], phrase))) {
       matchingLines.push({ lineIdx: i, line: lines[i] });
       if (matchingLines.length >= 5) break;
     }
@@ -108,7 +109,7 @@ function ContentSnippets({ content, query }: { content: string; query: string })
     <div className="mt-1.5 space-y-1">
       {matchingLines.map(({ lineIdx, line }) => {
         const lowerLine = line.toLowerCase();
-        const highlightTerm = terms[0].toLowerCase();
+        const highlightTerm = allTerms[0].toLowerCase();
         const matchIndex = lowerLine.indexOf(highlightTerm);
         const start = Math.max(0, matchIndex - 60);
         const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + highlightTerm.length + 140) : Math.min(line.length, 200);
