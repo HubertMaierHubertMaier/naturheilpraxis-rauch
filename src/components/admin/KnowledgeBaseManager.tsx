@@ -10,19 +10,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight } from "lucide-react";
 
+// Normalize text for robust German search (case + umlaut-insensitive)
+const normalizeSearchText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
 // Highlight search query matches in text
 function HighlightText({ text, query }: { text: string; query: string }) {
-  if (!query || query.trim().length < 2) return <>{text}</>;
+  if (!query || query.trim().length < 3) return <>{text}</>;
   const q = query.trim();
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(`(${escaped})`, "gi");
   const parts = text.split(regex);
   if (parts.length === 1) return <>{text}</>;
+
   return (
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === q.toLowerCase() ? (
-          <mark key={i} className="bg-yellow-300 dark:bg-yellow-500/50 text-foreground rounded-sm px-0.5 font-semibold">{part}</mark>
+          <mark key={i} className="bg-accent text-accent-foreground rounded-sm px-0.5 font-semibold">
+            {part}
+          </mark>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -33,28 +43,39 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 // Extract snippets around search matches with context
 function ContentSnippets({ content, query }: { content: string; query: string }) {
-  if (!query || query.trim().length < 2 || !content) return null;
-  const q = query.trim().toLowerCase();
+  if (!query || query.trim().length < 3 || !content) return null;
+
+  const normalizedQuery = normalizeSearchText(query.trim());
   const lines = content.split("\n");
   const matchingLines: { lineIdx: number; line: string }[] = [];
-  
+
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].toLowerCase().includes(q)) {
+    if (normalizeSearchText(lines[i]).includes(normalizedQuery)) {
       matchingLines.push({ lineIdx: i, line: lines[i] });
-      if (matchingLines.length >= 5) break; // max 5 snippets
+      if (matchingLines.length >= 5) break;
     }
   }
-  
+
   if (matchingLines.length === 0) return null;
-  
+
   return (
     <div className="mt-1.5 space-y-1">
-      {matchingLines.map(({ lineIdx, line }) => (
-        <div key={lineIdx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 truncate max-w-full">
-          <span className="text-muted-foreground/60 mr-1">…</span>
-          <HighlightText text={line.trim().substring(0, 200)} query={query} />
-        </div>
-      ))}
+      {matchingLines.map(({ lineIdx, line }) => {
+        const lowerLine = line.toLowerCase();
+        const lowerQuery = query.trim().toLowerCase();
+        const matchIndex = lowerLine.indexOf(lowerQuery);
+        const start = Math.max(0, matchIndex - 60);
+        const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + lowerQuery.length + 140) : Math.min(line.length, 200);
+        const snippet = line.substring(start, end).trim();
+
+        return (
+          <div key={lineIdx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
+            {start > 0 && <span className="text-muted-foreground/60 mr-1">…</span>}
+            <HighlightText text={snippet} query={query} />
+            {end < line.length && <span className="text-muted-foreground/60 ml-1">…</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -137,9 +158,11 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Search: exact substring match only (no fuzzy prefix matching)
+  // Search: strict match from 3 chars, diacritic-insensitive
   const searchMatch = (text: string, query: string): boolean => {
-    return text.toLowerCase().includes(query.toLowerCase());
+    const q = query.trim();
+    if (q.length < 3) return false;
+    return normalizeSearchText(text).includes(normalizeSearchText(q));
   };
 
   // Filter entries
