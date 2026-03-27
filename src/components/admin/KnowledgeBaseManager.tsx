@@ -155,10 +155,10 @@ export function KnowledgeBaseManager() {
       const q = searchQuery.trim();
       result = result.filter(
         (e) =>
-          fuzzyMatch(e.title, q) ||
-          fuzzyMatch(e.content, q) ||
-          fuzzyMatch(e.category, q) ||
-          e.tags?.some((t) => fuzzyMatch(t, q))
+          searchMatch(e.title, q) ||
+          searchMatch(e.content, q) ||
+          searchMatch(e.category, q) ||
+          e.tags?.some((t) => searchMatch(t, q))
       );
     }
     return result;
