@@ -396,18 +396,28 @@ export function KnowledgeBaseManager() {
     }
   };
 
-  const renderEntry = (entry: KnowledgeEntry) => (
+  const renderEntry = (entry: KnowledgeEntry) => {
+    const phraseMatchCount = matchCounts.get(entry.id) || 0;
+    const isMultiMatch = phraseMatchCount >= 2;
+    return (
     <Card
       key={entry.id}
-      className="cursor-pointer hover:border-primary/30 transition-colors"
+      className={`cursor-pointer hover:border-primary/30 transition-colors ${isMultiMatch ? "ring-2 ring-primary/50 border-primary/40 bg-primary/5" : ""}`}
       onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
     >
       <CardHeader className="py-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-sm font-semibold">
-              <HighlightText text={entry.title} query={searchQuery} />
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">
+                <HighlightText text={entry.title} query={searchQuery} />
+              </CardTitle>
+              {isMultiMatch && (
+                <Badge className="bg-primary text-primary-foreground text-xs shrink-0">
+                  ⭐ {phraseMatchCount} Treffer
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
               {entry.tags?.slice(0, 6).map((tag) => (
                 <Badge key={tag} variant="outline" className="gap-1 text-xs">
@@ -418,7 +428,7 @@ export function KnowledgeBaseManager() {
                 <Badge variant="outline" className="text-xs">+{entry.tags!.length - 6}</Badge>
               )}
             </div>
-            {extractSearchTerms(searchQuery).length > 0 && expandedId !== entry.id && (
+            {extractAllTerms(searchQuery).length > 0 && expandedId !== entry.id && (
               <ContentSnippets content={entry.content} query={searchQuery} />
             )}
           </div>
