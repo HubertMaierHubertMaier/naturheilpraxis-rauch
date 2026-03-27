@@ -20,6 +20,18 @@ const tokenizeSearchText = (value: string) =>
 const extractSearchTerms = (query: string) =>
   tokenizeSearchText(query.trim()).filter((term) => term.length >= 4);
 
+// Split comma-separated search into individual phrases
+const splitSearchPhrases = (query: string): string[] =>
+  query.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
+
+// Get all unique terms from all comma-separated phrases
+const extractAllTerms = (query: string): string[] => {
+  const phrases = splitSearchPhrases(query);
+  const allTerms = new Set<string>();
+  phrases.forEach((p) => extractSearchTerms(p).forEach((t) => allTerms.add(t)));
+  return Array.from(allTerms);
+};
+
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const searchTextMatchesQuery = (text: string, query: string): boolean => {
@@ -31,6 +43,34 @@ const searchTextMatchesQuery = (text: string, query: string): boolean => {
     words.some((word) => word === term || word.startsWith(term) || word.endsWith(term))
   );
 };
+
+// Check if text matches ANY single phrase from a comma-separated query
+const textMatchesAnyPhrase = (text: string, phrases: string[]): boolean =>
+  phrases.some((phrase) => searchTextMatchesQuery(text, phrase));
+
+// Count how many distinct phrases match an entry
+const countPhraseMatches = (entry: KnowledgeEntry, phrases: string[]): number => {
+  return phrases.filter((phrase) => {
+    const terms = extractSearchTerms(phrase);
+    if (terms.length === 0) return false;
+    return (
+      searchTextMatchesQuery(entry.title, phrase) ||
+      searchTextMatchesQuery(entry.content, phrase) ||
+      searchTextMatchesQuery(entry.category, phrase) ||
+      entry.tags?.some((t) => searchTextMatchesQuery(t, phrase))
+    );
+  }).length;
+};
+
+interface KnowledgeEntry {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
 
 function HighlightText({ text, query }: { text: string; query: string }) {
   const terms = extractSearchTerms(query);
