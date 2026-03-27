@@ -17,19 +17,42 @@ const normalizeSearchText = (value: string) =>
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");
 
+const tokenizeSearchText = (value: string) =>
+  normalizeSearchText(value)
+    .split(/[^a-z0-9]+/g)
+    .filter(Boolean);
+
+const extractSearchTerms = (query: string) =>
+  tokenizeSearchText(query.trim()).filter((term) => term.length >= 4);
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const searchTextMatchesQuery = (text: string, query: string): boolean => {
+  const terms = extractSearchTerms(query);
+  if (terms.length === 0 || !text) return false;
+
+  const words = tokenizeSearchText(text);
+  if (words.length === 0) return false;
+
+  return terms.every((term) =>
+    words.some((word) => word === term || word.startsWith(term) || word.endsWith(term))
+  );
+};
+
 // Highlight search query matches in text
 function HighlightText({ text, query }: { text: string; query: string }) {
-  if (!query || query.trim().length < 3) return <>{text}</>;
-  const q = query.trim();
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
+  const terms = extractSearchTerms(query);
+  if (terms.length === 0) return <>{text}</>;
+
+  const regex = new RegExp(`(${terms.map(escapeRegex).sort((a, b) => b.length - a.length).join("|")})`, "gi");
+  const normalizedTerms = new Set(terms);
   const parts = text.split(regex);
   if (parts.length === 1) return <>{text}</>;
 
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === q.toLowerCase() ? (
+        normalizedTerms.has(normalizeSearchText(part)) ? (
           <mark key={i} className="bg-accent text-accent-foreground rounded-sm px-0.5 font-semibold">
             {part}
           </mark>
@@ -43,14 +66,14 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 // Extract snippets around search matches with context
 function ContentSnippets({ content, query }: { content: string; query: string }) {
-  if (!query || query.trim().length < 3 || !content) return null;
+  const terms = extractSearchTerms(query);
+  if (terms.length === 0 || !content) return null;
 
-  const normalizedQuery = normalizeSearchText(query.trim());
   const lines = content.split("\n");
   const matchingLines: { lineIdx: number; line: string }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    if (normalizeSearchText(lines[i]).includes(normalizedQuery)) {
+    if (searchTextMatchesQuery(lines[i], query)) {
       matchingLines.push({ lineIdx: i, line: lines[i] });
       if (matchingLines.length >= 5) break;
     }
@@ -62,10 +85,10 @@ function ContentSnippets({ content, query }: { content: string; query: string })
     <div className="mt-1.5 space-y-1">
       {matchingLines.map(({ lineIdx, line }) => {
         const lowerLine = line.toLowerCase();
-        const lowerQuery = query.trim().toLowerCase();
-        const matchIndex = lowerLine.indexOf(lowerQuery);
+        const highlightTerm = terms[0].toLowerCase();
+        const matchIndex = lowerLine.indexOf(highlightTerm);
         const start = Math.max(0, matchIndex - 60);
-        const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + lowerQuery.length + 140) : Math.min(line.length, 200);
+        const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + highlightTerm.length + 140) : Math.min(line.length, 200);
         const snippet = line.substring(start, end).trim();
 
         return (
@@ -158,13 +181,6 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Search: strict match from 3 chars, diacritic-insensitive
-  const searchMatch = (text: string, query: string): boolean => {
-    const q = query.trim();
-    if (q.length < 3) return false;
-    return normalizeSearchText(text).includes(normalizeSearchText(q));
-  };
-
   // Filter entries
   const filtered = useMemo(() => {
     let result = entries;
@@ -176,13 +192,16 @@ export function KnowledgeBaseManager() {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.trim();
-      result = result.filter(
-        (e) =>
-          searchMatch(e.title, q) ||
-          searchMatch(e.content, q) ||
-          searchMatch(e.category, q) ||
-          e.tags?.some((t) => searchMatch(t, q))
-      );
+      const terms = extractSearchTerms(q);
+      if (terms.length > 0) {
+        result = result.filter(
+          (e) =>
+            searchTextMatchesQuery(e.title, q) ||
+            searchTextMatchesQuery(e.content, q) ||
+            searchTextMatchesQuery(e.category, q) ||
+            e.tags?.some((t) => searchTextMatchesQuery(t, q))
+        );
+      }
     }
     return result;
   }, [entries, categoryFilter, tagFilter, searchQuery]);
@@ -435,7 +454,7 @@ export function KnowledgeBaseManager() {
                                 </Badge>
                               ))}
                             </div>
-                            {searchQuery.trim().length >= 2 && expandedId !== entry.id && (
+                            {extractSearchTerms(searchQuery).length > 0 && expandedId !== entry.id && (
                               <ContentSnippets content={entry.content} query={searchQuery} />
                             )}
                           </div>
