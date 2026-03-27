@@ -73,7 +73,7 @@ interface KnowledgeEntry {
 }
 
 function HighlightText({ text, query }: { text: string; query: string }) {
-  const terms = extractSearchTerms(query);
+  const terms = extractAllTerms(query);
   if (terms.length === 0) return <>{text}</>;
   const regex = new RegExp(`(${terms.map(escapeRegex).sort((a, b) => b.length - a.length).join("|")})`, "gi");
   const normalizedTerms = new Set(terms);
