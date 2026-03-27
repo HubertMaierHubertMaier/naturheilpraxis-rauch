@@ -20,6 +20,18 @@ const tokenizeSearchText = (value: string) =>
 const extractSearchTerms = (query: string) =>
   tokenizeSearchText(query.trim()).filter((term) => term.length >= 4);
 
+// Split comma-separated search into individual phrases
+const splitSearchPhrases = (query: string): string[] =>
+  query.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
+
+// Get all unique terms from all comma-separated phrases
+const extractAllTerms = (query: string): string[] => {
+  const phrases = splitSearchPhrases(query);
+  const allTerms = new Set<string>();
+  phrases.forEach((p) => extractSearchTerms(p).forEach((t) => allTerms.add(t)));
+  return Array.from(allTerms);
+};
+
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const searchTextMatchesQuery = (text: string, query: string): boolean => {
@@ -32,8 +44,36 @@ const searchTextMatchesQuery = (text: string, query: string): boolean => {
   );
 };
 
+// Check if text matches ANY single phrase from a comma-separated query
+const textMatchesAnyPhrase = (text: string, phrases: string[]): boolean =>
+  phrases.some((phrase) => searchTextMatchesQuery(text, phrase));
+
+// Count how many distinct phrases match an entry
+const countPhraseMatches = (entry: KnowledgeEntry, phrases: string[]): number => {
+  return phrases.filter((phrase) => {
+    const terms = extractSearchTerms(phrase);
+    if (terms.length === 0) return false;
+    return (
+      searchTextMatchesQuery(entry.title, phrase) ||
+      searchTextMatchesQuery(entry.content, phrase) ||
+      searchTextMatchesQuery(entry.category, phrase) ||
+      entry.tags?.some((t) => searchTextMatchesQuery(t, phrase))
+    );
+  }).length;
+};
+
+interface KnowledgeEntry {
+  id: string;
+  title: string;
+  category: string;
+  tags: string[];
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 function HighlightText({ text, query }: { text: string; query: string }) {
-  const terms = extractSearchTerms(query);
+  const terms = extractAllTerms(query);
   if (terms.length === 0) return <>{text}</>;
   const regex = new RegExp(`(${terms.map(escapeRegex).sort((a, b) => b.length - a.length).join("|")})`, "gi");
   const normalizedTerms = new Set(terms);
@@ -53,12 +93,13 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 }
 
 function ContentSnippets({ content, query }: { content: string; query: string }) {
-  const terms = extractSearchTerms(query);
-  if (terms.length === 0 || !content) return null;
+  const allTerms = extractAllTerms(query);
+  const phrases = splitSearchPhrases(query);
+  if (allTerms.length === 0 || !content) return null;
   const lines = content.split("\n");
   const matchingLines: { lineIdx: number; line: string }[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (searchTextMatchesQuery(lines[i], query)) {
+    if (phrases.some((phrase) => searchTextMatchesQuery(lines[i], phrase))) {
       matchingLines.push({ lineIdx: i, line: lines[i] });
       if (matchingLines.length >= 5) break;
     }
@@ -68,7 +109,7 @@ function ContentSnippets({ content, query }: { content: string; query: string })
     <div className="mt-1.5 space-y-1">
       {matchingLines.map(({ lineIdx, line }) => {
         const lowerLine = line.toLowerCase();
-        const highlightTerm = terms[0].toLowerCase();
+        const highlightTerm = allTerms[0].toLowerCase();
         const matchIndex = lowerLine.indexOf(highlightTerm);
         const start = Math.max(0, matchIndex - 60);
         const end = matchIndex >= 0 ? Math.min(line.length, matchIndex + highlightTerm.length + 140) : Math.min(line.length, 200);
@@ -177,31 +218,46 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Filter entries
+  // Parse search into comma-separated phrases
+  const searchPhrases = useMemo(() => splitSearchPhrases(searchQuery), [searchQuery]);
+  const hasMultiplePhrases = searchPhrases.length > 1;
+
+  // Filter entries - match ANY phrase (OR logic across commas)
   const filtered = useMemo(() => {
     let result = entries;
     if (categoryFilter && categoryFilter !== "all") {
-      // If filtering by parent category, include all sub-categories
       result = result.filter((e) => e.category === categoryFilter || e.category.startsWith(categoryFilter + " > "));
     }
     if (tagFilter) {
       result = result.filter((e) => e.tags?.includes(tagFilter));
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.trim();
-      const terms = extractSearchTerms(q);
-      if (terms.length > 0) {
-        result = result.filter(
-          (e) =>
-            searchTextMatchesQuery(e.title, q) ||
-            searchTextMatchesQuery(e.content, q) ||
-            searchTextMatchesQuery(e.category, q) ||
-            e.tags?.some((t) => searchTextMatchesQuery(t, q))
+      const phrases = searchPhrases.filter((p) => extractSearchTerms(p).length > 0);
+      if (phrases.length > 0) {
+        result = result.filter((e) =>
+          phrases.some((phrase) =>
+            searchTextMatchesQuery(e.title, phrase) ||
+            searchTextMatchesQuery(e.content, phrase) ||
+            searchTextMatchesQuery(e.category, phrase) ||
+            e.tags?.some((t) => searchTextMatchesQuery(t, phrase))
+          )
         );
       }
     }
     return result;
-  }, [entries, categoryFilter, tagFilter, searchQuery]);
+  }, [entries, categoryFilter, tagFilter, searchQuery, searchPhrases]);
+
+  // Compute match counts per entry (how many distinct phrases match)
+  const matchCounts = useMemo(() => {
+    if (!hasMultiplePhrases) return new Map<string, number>();
+    const phrases = searchPhrases.filter((p) => extractSearchTerms(p).length > 0);
+    const counts = new Map<string, number>();
+    filtered.forEach((e) => {
+      const count = countPhraseMatches(e, phrases);
+      if (count > 1) counts.set(e.id, count);
+    });
+    return counts;
+  }, [filtered, searchPhrases, hasMultiplePhrases]);
 
   // Build hierarchical groups
   const hierarchicalGroups = useMemo(() => {
@@ -340,18 +396,28 @@ export function KnowledgeBaseManager() {
     }
   };
 
-  const renderEntry = (entry: KnowledgeEntry) => (
+  const renderEntry = (entry: KnowledgeEntry) => {
+    const phraseMatchCount = matchCounts.get(entry.id) || 0;
+    const isMultiMatch = phraseMatchCount >= 2;
+    return (
     <Card
       key={entry.id}
-      className="cursor-pointer hover:border-primary/30 transition-colors"
+      className={`cursor-pointer hover:border-primary/30 transition-colors ${isMultiMatch ? "ring-2 ring-primary/50 border-primary/40 bg-primary/5" : ""}`}
       onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
     >
       <CardHeader className="py-3 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-sm font-semibold">
-              <HighlightText text={entry.title} query={searchQuery} />
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">
+                <HighlightText text={entry.title} query={searchQuery} />
+              </CardTitle>
+              {isMultiMatch && (
+                <Badge className="bg-primary text-primary-foreground text-xs shrink-0">
+                  ⭐ {phraseMatchCount} Treffer
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
               {entry.tags?.slice(0, 6).map((tag) => (
                 <Badge key={tag} variant="outline" className="gap-1 text-xs">
@@ -362,7 +428,7 @@ export function KnowledgeBaseManager() {
                 <Badge variant="outline" className="text-xs">+{entry.tags!.length - 6}</Badge>
               )}
             </div>
-            {extractSearchTerms(searchQuery).length > 0 && expandedId !== entry.id && (
+            {extractAllTerms(searchQuery).length > 0 && expandedId !== entry.id && (
               <ContentSnippets content={entry.content} query={searchQuery} />
             )}
           </div>
@@ -390,7 +456,8 @@ export function KnowledgeBaseManager() {
         </CardContent>
       )}
     </Card>
-  );
+    );
+  };
 
   const totalEntries = filtered.length;
 
@@ -419,7 +486,7 @@ export function KnowledgeBaseManager() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Suche in Titel, Inhalt, Tags..."
+                placeholder="Suche… (mehrere Begriffe mit Komma trennen, z.B. Müdigkeit, Schnupfen)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
