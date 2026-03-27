@@ -321,9 +321,14 @@ export function KnowledgeBaseManager() {
           <BookOpen className="h-7 w-7 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Wissensdatenbank</h1>
         </div>
-        <Button onClick={openNewDialog} className="gap-2">
-          <Plus className="h-4 w-4" /> Neuer Eintrag
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => fetchEntries()} className="gap-2" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Aktualisieren
+          </Button>
+          <Button onClick={openNewDialog} className="gap-2">
+            <Plus className="h-4 w-4" /> Neuer Eintrag
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}
