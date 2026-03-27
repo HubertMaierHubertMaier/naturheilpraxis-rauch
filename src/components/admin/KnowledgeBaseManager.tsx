@@ -218,31 +218,46 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Filter entries
+  // Parse search into comma-separated phrases
+  const searchPhrases = useMemo(() => splitSearchPhrases(searchQuery), [searchQuery]);
+  const hasMultiplePhrases = searchPhrases.length > 1;
+
+  // Filter entries - match ANY phrase (OR logic across commas)
   const filtered = useMemo(() => {
     let result = entries;
     if (categoryFilter && categoryFilter !== "all") {
-      // If filtering by parent category, include all sub-categories
       result = result.filter((e) => e.category === categoryFilter || e.category.startsWith(categoryFilter + " > "));
     }
     if (tagFilter) {
       result = result.filter((e) => e.tags?.includes(tagFilter));
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.trim();
-      const terms = extractSearchTerms(q);
-      if (terms.length > 0) {
-        result = result.filter(
-          (e) =>
-            searchTextMatchesQuery(e.title, q) ||
-            searchTextMatchesQuery(e.content, q) ||
-            searchTextMatchesQuery(e.category, q) ||
-            e.tags?.some((t) => searchTextMatchesQuery(t, q))
+      const phrases = searchPhrases.filter((p) => extractSearchTerms(p).length > 0);
+      if (phrases.length > 0) {
+        result = result.filter((e) =>
+          phrases.some((phrase) =>
+            searchTextMatchesQuery(e.title, phrase) ||
+            searchTextMatchesQuery(e.content, phrase) ||
+            searchTextMatchesQuery(e.category, phrase) ||
+            e.tags?.some((t) => searchTextMatchesQuery(t, phrase))
+          )
         );
       }
     }
     return result;
-  }, [entries, categoryFilter, tagFilter, searchQuery]);
+  }, [entries, categoryFilter, tagFilter, searchQuery, searchPhrases]);
+
+  // Compute match counts per entry (how many distinct phrases match)
+  const matchCounts = useMemo(() => {
+    if (!hasMultiplePhrases) return new Map<string, number>();
+    const phrases = searchPhrases.filter((p) => extractSearchTerms(p).length > 0);
+    const counts = new Map<string, number>();
+    filtered.forEach((e) => {
+      const count = countPhraseMatches(e, phrases);
+      if (count > 1) counts.set(e.id, count);
+    });
+    return counts;
+  }, [filtered, searchPhrases, hasMultiplePhrases]);
 
   // Build hierarchical groups
   const hierarchicalGroups = useMemo(() => {
