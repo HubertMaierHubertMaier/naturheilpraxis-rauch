@@ -409,7 +409,7 @@ export function KnowledgeBaseManager() {
                       {expandedId === entry.id && (
                         <CardContent className="pt-0">
                           <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
-                            {entry.content || <span className="text-muted-foreground italic">Kein Inhalt</span>}
+                            {entry.content ? <HighlightText text={entry.content} query={searchQuery} /> : <span className="text-muted-foreground italic">Kein Inhalt</span>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-3">
                             Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
