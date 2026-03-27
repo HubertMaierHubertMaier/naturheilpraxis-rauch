@@ -10,6 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRight } from "lucide-react";
 
+// Highlight search query matches in text
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query || query.trim().length < 2) return <>{text}</>;
+  const q = query.trim();
+  const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+  if (parts.length === 1) return <>{text}</>;
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-yellow-300/70 dark:bg-yellow-500/40 text-foreground rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 interface KnowledgeEntry {
   id: string;
   title: string;
@@ -361,7 +381,7 @@ export function KnowledgeBaseManager() {
                       <CardHeader className="py-3 pb-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="text-sm font-semibold">{entry.title}</CardTitle>
+                            <CardTitle className="text-sm font-semibold"><HighlightText text={entry.title} query={searchQuery} /></CardTitle>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {entry.tags?.filter(t => t !== groupName).map((tag) => (
                                 <Badge key={tag} variant="outline" className="gap-1 text-xs">
@@ -389,7 +409,7 @@ export function KnowledgeBaseManager() {
                       {expandedId === entry.id && (
                         <CardContent className="pt-0">
                           <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
-                            {entry.content || <span className="text-muted-foreground italic">Kein Inhalt</span>}
+                            {entry.content ? <HighlightText text={entry.content} query={searchQuery} /> : <span className="text-muted-foreground italic">Kein Inhalt</span>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-3">
                             Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
