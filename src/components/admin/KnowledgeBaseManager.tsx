@@ -137,16 +137,9 @@ export function KnowledgeBaseManager() {
     return Array.from(tags).sort();
   }, [entries]);
 
-  // Fuzzy search: tries progressively shorter prefixes if exact substring doesn't match
-  const fuzzyMatch = (text: string, query: string): boolean => {
-    const t = text.toLowerCase();
-    const q = query.toLowerCase();
-    if (t.includes(q)) return true;
-    // Try progressively shorter prefixes (min 4 chars)
-    for (let len = q.length - 1; len >= Math.min(4, q.length); len--) {
-      if (t.includes(q.substring(0, len))) return true;
-    }
-    return false;
+  // Search: exact substring match only (no fuzzy prefix matching)
+  const searchMatch = (text: string, query: string): boolean => {
+    return text.toLowerCase().includes(query.toLowerCase());
   };
 
   // Filter entries
@@ -162,10 +155,10 @@ export function KnowledgeBaseManager() {
       const q = searchQuery.trim();
       result = result.filter(
         (e) =>
-          fuzzyMatch(e.title, q) ||
-          fuzzyMatch(e.content, q) ||
-          fuzzyMatch(e.category, q) ||
-          e.tags?.some((t) => fuzzyMatch(t, q))
+          searchMatch(e.title, q) ||
+          searchMatch(e.content, q) ||
+          searchMatch(e.category, q) ||
+          e.tags?.some((t) => searchMatch(t, q))
       );
     }
     return result;
