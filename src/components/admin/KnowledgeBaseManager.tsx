@@ -14,19 +14,48 @@ import { Search, Plus, Pencil, Trash2, BookOpen, Tag, FolderOpen, X, ChevronRigh
 function HighlightText({ text, query }: { text: string; query: string }) {
   if (!query || query.trim().length < 2) return <>{text}</>;
   const q = query.trim();
-  const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
   const parts = text.split(regex);
   if (parts.length === 1) return <>{text}</>;
   return (
     <>
       {parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={i} className="bg-yellow-300/70 dark:bg-yellow-500/40 text-foreground rounded-sm px-0.5">{part}</mark>
+        part.toLowerCase() === q.toLowerCase() ? (
+          <mark key={i} className="bg-yellow-300 dark:bg-yellow-500/50 text-foreground rounded-sm px-0.5 font-semibold">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         )
       )}
     </>
+  );
+}
+
+// Extract snippets around search matches with context
+function ContentSnippets({ content, query }: { content: string; query: string }) {
+  if (!query || query.trim().length < 2 || !content) return null;
+  const q = query.trim().toLowerCase();
+  const lines = content.split("\n");
+  const matchingLines: { lineIdx: number; line: string }[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].toLowerCase().includes(q)) {
+      matchingLines.push({ lineIdx: i, line: lines[i] });
+      if (matchingLines.length >= 5) break; // max 5 snippets
+    }
+  }
+  
+  if (matchingLines.length === 0) return null;
+  
+  return (
+    <div className="mt-1.5 space-y-1">
+      {matchingLines.map(({ lineIdx, line }) => (
+        <div key={lineIdx} className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 truncate max-w-full">
+          <span className="text-muted-foreground/60 mr-1">…</span>
+          <HighlightText text={line.trim().substring(0, 200)} query={query} />
+        </div>
+      ))}
+    </div>
   );
 }
 
