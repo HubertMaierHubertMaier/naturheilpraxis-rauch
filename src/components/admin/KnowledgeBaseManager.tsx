@@ -419,7 +419,9 @@ export function KnowledgeBaseManager() {
                                 </Badge>
                               ))}
                             </div>
-                          </div>
+                            {searchQuery.trim().length >= 2 && expandedId !== entry.id && (
+                              <ContentSnippets content={entry.content} query={searchQuery} />
+                            )}
                           <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditDialog(entry)}>
                               <Pencil className="h-3.5 w-3.5" />
