@@ -381,7 +381,7 @@ export function KnowledgeBaseManager() {
                       <CardHeader className="py-3 pb-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="text-sm font-semibold">{entry.title}</CardTitle>
+                            <CardTitle className="text-sm font-semibold"><HighlightText text={entry.title} query={searchQuery} /></CardTitle>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {entry.tags?.filter(t => t !== groupName).map((tag) => (
                                 <Badge key={tag} variant="outline" className="gap-1 text-xs">
