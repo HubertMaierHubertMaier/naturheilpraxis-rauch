@@ -73,6 +73,15 @@ const Frequenztherapie = () => {
               )}
             </p>
           </div>
+          <div className="mx-auto mt-8 max-w-4xl overflow-hidden rounded-2xl shadow-elevated">
+            <img
+              src={heroImg}
+              alt={t("Diamond Shield Zapper – Frequenztherapiegerät", "Diamond Shield Zapper – Frequency therapy device")}
+              width={1200}
+              height={672}
+              className="h-auto w-full object-cover"
+            />
+          </div>
         </div>
       </div>
 
