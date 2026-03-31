@@ -107,6 +107,16 @@ const Frequenztherapie = () => {
                   )}
                 </p>
               </div>
+              <div className="mt-6 overflow-hidden rounded-xl">
+                <img
+                  src={zellenImg}
+                  alt={t("Bioelektrische Zellregeneration durch Frequenzimpulse", "Bioelectric cell regeneration through frequency impulses")}
+                  width={800}
+                  height={512}
+                  loading="lazy"
+                  className="h-auto w-full object-cover"
+                />
+              </div>
             </CardContent>
           </Card>
 
