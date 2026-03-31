@@ -143,7 +143,17 @@ const Frequenztherapie = () => {
           </div>
 
           {/* Ablauf einer Behandlung */}
-          <Card className="mb-12 border-sage-200 bg-sage-50/50 shadow-card">
+          <Card className="mb-12 border-sage-200 bg-sage-50/50 shadow-card overflow-hidden">
+            <div className="aspect-video overflow-hidden">
+              <img
+                src={behandlungImg}
+                alt={t("Behandlungsraum für Frequenztherapie", "Treatment room for frequency therapy")}
+                width={800}
+                height={600}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </div>
             <CardContent className="p-8 md:p-10">
               <h2 className="mb-6 font-serif text-2xl font-semibold text-foreground">
                 {t("Ablauf einer Behandlung", "Course of Treatment")}
