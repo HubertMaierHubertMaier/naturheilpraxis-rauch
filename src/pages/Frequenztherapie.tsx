@@ -5,6 +5,9 @@ import { Link } from "react-router-dom";
 import { Zap, Radio, Heart, Sparkles, Activity, Phone, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SEOHead from "@/components/seo/SEOHead";
+import heroImg from "@/assets/frequenztherapie-hero.jpg";
+import behandlungImg from "@/assets/frequenztherapie-behandlung.jpg";
+import zellenImg from "@/assets/frequenztherapie-zellen.jpg";
 
 const Frequenztherapie = () => {
   const { t } = useLanguage();
@@ -70,6 +73,15 @@ const Frequenztherapie = () => {
               )}
             </p>
           </div>
+          <div className="mx-auto mt-8 max-w-4xl overflow-hidden rounded-2xl shadow-elevated">
+            <img
+              src={heroImg}
+              alt={t("Diamond Shield Zapper – Frequenztherapiegerät", "Diamond Shield Zapper – Frequency therapy device")}
+              width={1200}
+              height={672}
+              className="h-auto w-full object-cover"
+            />
+          </div>
         </div>
       </div>
 
@@ -94,6 +106,16 @@ const Frequenztherapie = () => {
                     "In my practice, I use modern frequency therapy devices that are individually tailored to your complaints and needs. The treatment is painless and most patients find it pleasantly relaxing."
                   )}
                 </p>
+              </div>
+              <div className="mt-6 overflow-hidden rounded-xl">
+                <img
+                  src={zellenImg}
+                  alt={t("Bioelektrische Zellregeneration durch Frequenzimpulse", "Bioelectric cell regeneration through frequency impulses")}
+                  width={800}
+                  height={512}
+                  loading="lazy"
+                  className="h-auto w-full object-cover"
+                />
               </div>
             </CardContent>
           </Card>
@@ -121,7 +143,17 @@ const Frequenztherapie = () => {
           </div>
 
           {/* Ablauf einer Behandlung */}
-          <Card className="mb-12 border-sage-200 bg-sage-50/50 shadow-card">
+          <Card className="mb-12 border-sage-200 bg-sage-50/50 shadow-card overflow-hidden">
+            <div className="aspect-video overflow-hidden">
+              <img
+                src={behandlungImg}
+                alt={t("Behandlungsraum für Frequenztherapie", "Treatment room for frequency therapy")}
+                width={800}
+                height={600}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </div>
             <CardContent className="p-8 md:p-10">
               <h2 className="mb-6 font-serif text-2xl font-semibold text-foreground">
                 {t("Ablauf einer Behandlung", "Course of Treatment")}
