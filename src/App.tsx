@@ -31,6 +31,7 @@ import Patientenaufklaerung from "./pages/Patientenaufklaerung";
 import Erstanmeldung from "./pages/Erstanmeldung";
 import Quellenhinweis from "./pages/Quellenhinweis";
 import Wissensdatenbank from "./pages/Wissensdatenbank";
+import Raucherentwoehnung from "./pages/Raucherentwoehnung";
 
 const queryClient = new QueryClient();
 
