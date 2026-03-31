@@ -5,6 +5,9 @@ import { Link } from "react-router-dom";
 import { Zap, Radio, Heart, Sparkles, Activity, Phone, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SEOHead from "@/components/seo/SEOHead";
+import heroImg from "@/assets/frequenztherapie-hero.jpg";
+import behandlungImg from "@/assets/frequenztherapie-behandlung.jpg";
+import zellenImg from "@/assets/frequenztherapie-zellen.jpg";
 
 const Frequenztherapie = () => {
   const { t } = useLanguage();
