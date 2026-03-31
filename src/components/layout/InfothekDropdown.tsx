@@ -168,6 +168,12 @@ const infothekGroups: InfothekGroup[] = [
         description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" },
         external: true,
       },
+      {
+        label: { de: "Raucherentwöhnung", en: "Smoking Cessation" },
+        href: "/raucherentwoehnung",
+        icon: Cigarette,
+        description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" },
+      },
     ],
   },
   {
