@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ihr Therapieweg – Naturheilpraxis Peter Rauch</title>
+  <meta name="description" content="Übersicht über den ganzheitlichen Behandlungsablauf in der Naturheilpraxis Peter Rauch: Von der Anamnese über die Diagnostik bis zur individuellen Therapie." />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css" />
+  <style>
+    :root {
+      --sage: #6b7c5e;
+      --sage-light: #e8ece5;
+      --sage-dark: #4a5a3f;
+      --warm: #8b7355;
+      --cream: #faf8f5;
+      --text: #2d3436;
+      --muted: #636e72;
+      --accent: #c0392b;
+    }
+    .reveal { font-family: 'Georgia', 'Times New Roman', serif; color: var(--text); }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--sage-dark); font-weight: 600; }
+    .reveal h1 { font-size: 2em; }
+    .reveal h2 { font-size: 1.5em; }
+    .reveal h3 { font-size: 1.2em; color: var(--warm); }
+    .reveal p, .reveal li { font-size: 0.85em; line-height: 1.6; color: var(--text); }
+    .reveal ul { list-style: none; padding-left: 0; }
+    .reveal ul li::before { content: "›  "; color: var(--sage); font-weight: bold; }
+    .reveal section { text-align: left; padding: 2em; }
+    .reveal .center-text { text-align: center; }
+    .reveal .disclaimer {
+      background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.8em 1.2em;
+      font-size: 0.7em; color: #856404; border-radius: 4px; margin-top: 1em;
+    }
+    .reveal .info-box {
+      background: var(--sage-light); border-left: 4px solid var(--sage);
+      padding: 0.8em 1.2em; border-radius: 4px; margin-top: 0.8em;
+    }
+    .reveal .highlight-box {
+      background: #e8f4f8; border-left: 4px solid #2980b9;
+      padding: 0.8em 1.2em; border-radius: 4px; margin-top: 0.8em;
+    }
+    .reveal .recognized {
+      background: #d4edda; border-left: 4px solid #28a745;
+      padding: 0.6em 1em; font-size: 0.7em; border-radius: 4px; margin-top: 0.5em;
+    }
+    .reveal .not-recognized {
+      background: #fff3cd; border-left: 4px solid #ffc107;
+      padding: 0.6em 1em; font-size: 0.7em; border-radius: 4px; margin-top: 0.5em;
+    }
+    .reveal .step-number {
+      display: inline-block; background: var(--sage); color: white;
+      width: 2em; height: 2em; line-height: 2em; text-align: center;
+      border-radius: 50%; font-weight: bold; font-size: 1em; margin-right: 0.5em;
+    }
+    .reveal .step-header { display: flex; align-items: center; margin-bottom: 0.5em; }
+    .reveal img.slide-img {
+      max-width: 45%; max-height: 280px; border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1); float: right; margin: 0 0 1em 1.5em;
+    }
+    .reveal .two-col { display: flex; gap: 2em; align-items: flex-start; }
+    .reveal .two-col > div { flex: 1; }
+    .reveal .link-list a {
+      display: block; color: var(--sage-dark); text-decoration: none;
+      padding: 0.3em 0; font-size: 0.8em; border-bottom: 1px solid #eee;
+    }
+    .reveal .link-list a:hover { color: var(--sage); }
+    .reveal .link-list a::before { content: "📄 "; }
+    .clearfix::after { content: ""; display: table; clear: both; }
+    @media (max-width: 768px) {
+      .reveal img.slide-img { max-width: 100%; float: none; margin: 0 auto 1em; display: block; }
+      .reveal .two-col { flex-direction: column; gap: 1em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Titel -->
+      <section class="center-text">
+        <h1>Ihr Therapieweg</h1>
+        <h3>Ganzheitliche Behandlung in der Naturheilpraxis Peter Rauch</h3>
+        <p style="color: var(--muted); font-size: 0.8em; margin-top: 2em;">
+          Von der Anamnese über die Diagnostik bis zur individuellen Therapie<br/>
+          – Schritt für Schritt erklärt
+        </p>
+        <img src="/bilder/therapieweg-uebersicht.jpg" alt="Therapieweg Übersicht" style="max-width: 50%; border-radius: 12px; margin-top: 1em; box-shadow: 0 4px 20px rgba(0,0,0,0.12);" />
+      </section>
+
+      <!-- Slide 2: Rechtlicher Hinweis -->
+      <section>
+        <h2>Wichtiger Hinweis</h2>
+        <div class="disclaimer" style="font-size: 0.8em;">
+          <p><strong>Erfahrungsheilkunde:</strong> Bei den in dieser Präsentation beschriebenen diagnostischen und therapeutischen Verfahren handelt es sich – mit Ausnahme der klassischen Labordiagnostik – um Methoden der naturheilkundlichen Erfahrungsmedizin, die nicht zu den allgemein anerkannten Methoden im Sinne einer Anerkennung durch die Schulmedizin gehören.</p>
+          <p style="margin-top: 0.5em;">Alle getroffenen Aussagen über Eigenschaften und Wirkungen beruhen auf Erkenntnissen und Erfahrungswerten der jeweiligen Therapierichtung, die von der herrschenden Schulmedizin nicht geteilt werden und für die naturwissenschaftlich reproduzierbare Kausalzusammenhänge nicht belegt sind.</p>
+          <p style="margin-top: 0.5em;"><strong>Die klassische Labordiagnostik</strong> (Blutuntersuchungen) ist ein wissenschaftlich und medizinisch anerkanntes Verfahren.</p>
+        </div>
+      </section>
+
+      <!-- Slide 3: Warum ganzheitlich? -->
+      <section>
+        <h2>Warum ein ganzheitlicher Ansatz?</h2>
+        <img src="/bilder/therapieweg-anamnese.jpg" alt="Ganzheitliche Beratung" class="slide-img" />
+        <p>Die Naturheilpraxis Peter Rauch verfolgt einen <strong>integrativen Behandlungsansatz</strong>, der verschiedene Verfahren der Erfahrungsheilkunde miteinander verbindet:</p>
+        <ul>
+          <li>Bioenergetische Testung und Frequenztherapie</li>
+          <li>Biophysikalische Analyse (NLS-Systeme)</li>
+          <li>Herzratenvariabilität &amp; Vitalfeldmessung</li>
+          <li>Klassische Labordiagnostik (medizinisch anerkannt)</li>
+          <li>Klassische Naturheilkunde (Ernährung, Homöopathie, Pflanzenheilkunde)</li>
+        </ul>
+        <p style="margin-top: 0.8em; font-size: 0.8em; color: var(--muted);">Dieser mehrdimensionale Ansatz kann es ermöglichen, nicht nur Symptome, sondern auch mögliche Ursachen zu betrachten.</p>
+      </section>
+
+      <!-- Slide 4: Übersicht der Schritte -->
+      <section class="center-text">
+        <h2>Ihr Weg durch die Behandlung</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 1em; justify-content: center; margin-top: 1.5em;">
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">1</span><br/>
+            <strong style="font-size: 0.85em;">Anamnese</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Vorab online ausfüllen</span>
+          </div>
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">2</span><br/>
+            <strong style="font-size: 0.85em;">Erstgespräch</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Besprechung in der Praxis</span>
+          </div>
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">3</span><br/>
+            <strong style="font-size: 0.85em;">Diagnostik</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Metatron, Trikombin, Vieva</span>
+          </div>
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">4</span><br/>
+            <strong style="font-size: 0.85em;">Labor</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Bei Bedarf (anerkannt)</span>
+          </div>
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">5</span><br/>
+            <strong style="font-size: 0.85em;">Therapieplan</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Individuell zusammengestellt</span>
+          </div>
+          <div style="background: var(--sage-light); padding: 1em; border-radius: 8px; width: 180px; text-align: center;">
+            <span class="step-number">6</span><br/>
+            <strong style="font-size: 0.85em;">Regelmäßige Therapie</strong><br/>
+            <span style="font-size: 0.7em; color: var(--muted);">Trikombin &amp; Begleitung</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5: Schritt 1 – Anamnese -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">1</span>
+          <h2 style="margin: 0;">Die Anamnese – Ihr Gesundheitsprofil</h2>
+        </div>
+        <p>Vor Ihrem ersten Termin füllen Sie bequem von zu Hause unseren <strong>umfassenden digitalen Anamnesebogen</strong> aus. Dieser erfasst:</p>
+        <div class="two-col">
+          <div>
+            <ul>
+              <li>Aktuelle Beschwerden &amp; Symptome</li>
+              <li>Vorerkrankungen &amp; Operationen</li>
+              <li>Familiäre Belastungen</li>
+              <li>Medikamente &amp; Nahrungsergänzung</li>
+              <li>Allergien &amp; Unverträglichkeiten</li>
+            </ul>
+          </div>
+          <div>
+            <ul>
+              <li>Ernährungsgewohnheiten</li>
+              <li>Lebensumstände &amp; Umwelt</li>
+              <li>Zahnstatus &amp; HNO</li>
+              <li>Impfungen &amp; Infektionen</li>
+              <li>Persönliche Therapiewünsche</li>
+            </ul>
+          </div>
+        </div>
+        <div class="info-box">
+          <strong>Warum vorab?</strong> Je sorgfältiger die Anamnese ausgefüllt wird, desto gezielter kann beim Ersttermin auf Ihre individuelle Situation eingegangen werden. So nutzen wir die kostbare Behandlungszeit optimal.
+        </div>
+      </section>
+
+      <!-- Slide 6: Schritt 2 – Erstgespräch -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">2</span>
+          <h2 style="margin: 0;">Erstgespräch in der Praxis</h2>
+        </div>
+        <img src="/bilder/therapieweg-anamnese.jpg" alt="Erstgespräch" class="slide-img" />
+        <p>Beim ersten Termin besprechen wir gemeinsam Ihre Anamnese:</p>
+        <ul>
+          <li>Vertiefung der wichtigsten Beschwerden</li>
+          <li>Klärung offener Fragen</li>
+          <li>Einschätzung des bisherigen Krankheitsverlaufs</li>
+          <li>Erläuterung des geplanten diagnostischen Vorgehens</li>
+          <li>Besprechung Ihrer Erwartungen und Wünsche</li>
+        </ul>
+        <p style="font-size: 0.8em; color: var(--muted); margin-top: 1em;">Dieses Gespräch bildet die Grundlage für alle weiteren diagnostischen und therapeutischen Maßnahmen.</p>
+      </section>
+
+      <!-- Slide 7: Schritt 3a – Metatron -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">3a</span>
+          <h2 style="margin: 0;">Diagnostik: Metatron Hospital System</h2>
+        </div>
+        <img src="/bilder/therapieweg-diagnostik.jpg" alt="Metatron Diagnostik" class="slide-img" />
+        <p>Im Anschluss an das Erstgespräch erfolgt die erste <strong>biophysikalische Untersuchung</strong> mit dem Metatron Hospital System (NLS-Analyse):</p>
+        <ul>
+          <li>Computergestützte biophysikalische Analyse verschiedener Organsysteme</li>
+          <li>Darstellung möglicher funktioneller Abweichungen</li>
+          <li>Hinweise auf mögliche Belastungen (Erreger, Toxine, Unverträglichkeiten)</li>
+          <li>Option der sogenannten Meta-Therapie zur Harmonisierung</li>
+        </ul>
+        <div class="not-recognized">
+          ⚠️ <strong>Hinweis:</strong> Das Metatron Hospital System ist ein Verfahren der Erfahrungsheilkunde. Es ist wissenschaftlich und schulmedizinisch nicht anerkannt. Die Ergebnisse dienen als ergänzende Hinweise, nicht als medizinische Diagnose.
+        </div>
+      </section>
+
+      <!-- Slide 8: Schritt 3b – Trikombin & Vieva -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">3b</span>
+          <h2 style="margin: 0;">Diagnostik: Trikombin &amp; Vieva Plus</h2>
+        </div>
+        <p>Sofern beim Ersttermin ausreichend Zeit vorhanden ist – andernfalls in einem Folgetermin – erfolgt die erweiterte Diagnostik:</p>
+        <div class="two-col">
+          <div>
+            <h3>Trikombin-Gerät</h3>
+            <ul>
+              <li>Bioenergetische Testung mittels Testampullen</li>
+              <li>Erfassung möglicher Immunblockaden</li>
+              <li>Testung auf Erreger (Viren, Bakterien, Parasiten, Pilze)</li>
+              <li>Testung auf Unverträglichkeiten &amp; Allergien</li>
+              <li>Schwermetallbelastungen</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Vieva Plus Vitalanalyse</h3>
+            <ul>
+              <li>Herzratenvariabilität (HRV) – <em>wissenschaftlich anerkannt</em></li>
+              <li>Vitalfeldmessung des Gesamtorganismus</li>
+              <li>Darstellung des vegetativen Nervensystems</li>
+              <li>Energetischer Gesamtstatus</li>
+            </ul>
+          </div>
+        </div>
+        <div class="not-recognized" style="margin-top: 1em;">
+          ⚠️ <strong>Hinweis:</strong> Die bioenergetische Testung mit dem Trikombin-Gerät sowie die Vitalfeldmessung der Vieva Plus (ausgenommen die HRV-Messung) sind Verfahren der Erfahrungsheilkunde und wissenschaftlich nicht anerkannt.
+        </div>
+      </section>
+
+      <!-- Slide 9: Was wird untersucht? -->
+      <section>
+        <h2>Was wird bei der Diagnostik untersucht?</h2>
+        <p>Die Kombination der verschiedenen diagnostischen Verfahren kann Hinweise liefern auf:</p>
+        <div class="two-col">
+          <div>
+            <h3>Mögliche Belastungen</h3>
+            <ul>
+              <li><strong>Immunblockaden</strong> – Störungen der Immunregulation</li>
+              <li><strong>Viren</strong> – z. B. EBV, CMV, Herpes-Gruppe</li>
+              <li><strong>Bakterien</strong> – z. B. Borrelien, Chlamydien, Helicobacter</li>
+              <li><strong>Parasiten</strong> – z. B. Ascaris, Strongyloiden, Egel</li>
+              <li><strong>Hefepilze</strong> – z. B. Candida-Arten</li>
+              <li><strong>Schimmelpilze</strong> – z. B. Aspergillus, Alternaria</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Weitere Befunde</h3>
+            <ul>
+              <li><strong>Unverträglichkeiten</strong> – Nahrungsmittel, Zusatzstoffe</li>
+              <li><strong>Allergien</strong> – IgE- und IgG-vermittelt</li>
+              <li><strong>Schwermetalle</strong> – Quecksilber, Blei, Aluminium</li>
+              <li><strong>Organfunktionen</strong> – Leber, Niere, Darm, Schilddrüse</li>
+              <li><strong>Mangelzustände</strong> – Vitamine, Mineralstoffe, Spurenelemente</li>
+              <li><strong>Psychovegetative Belastungen</strong></li>
+            </ul>
+          </div>
+        </div>
+        <div class="not-recognized" style="margin-top: 0.5em;">
+          ⚠️ Die bioenergetische Testung liefert Hinweise im Sinne der Erfahrungsheilkunde. Für eine schulmedizinische Absicherung wird bei Bedarf eine klassische Laboruntersuchung empfohlen.
+        </div>
+      </section>
+
+      <!-- Slide 10: Schritt 4 – Labordiagnostik -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">4</span>
+          <h2 style="margin: 0;">Labordiagnostik – Wissenschaftlich anerkannt</h2>
+        </div>
+        <img src="/bilder/therapieweg-labor.jpg" alt="Labordiagnostik" class="slide-img" />
+        <p>Bei Bedarf wird eine <strong>klassische Laboruntersuchung</strong> empfohlen. Hierfür arbeitet die Praxis mit dem Labor <strong>Bio-Diagnostik</strong> zusammen – einem seit über 40 Jahren spezialisierten Fachlabor.</p>
+        <div class="recognized">
+          ✅ <strong>Die klassische Labordiagnostik ist ein wissenschaftlich und medizinisch anerkanntes Verfahren.</strong>
+        </div>
+        <h3 style="margin-top: 1em;">Besonderheit des Labors Bio-Diagnostik</h3>
+        <ul>
+          <li>Umfassende Blutanalyse mit klinischer Präzision</li>
+          <li>Zusätzlich: <strong>Naturheilkundlicher Therapievorschlag</strong> basierend auf den ermittelten Laborwerten</li>
+          <li>Die Brücke zwischen schulmedizinischer Diagnostik und naturheilkundlicher Therapie</li>
+          <li>Netzwerk von hunderten Therapeuten in ganz Deutschland</li>
+        </ul>
+        <p style="font-size: 0.8em; color: var(--muted); margin-top: 0.5em;">Alternativ können Sie auch Laborergebnisse Ihres Hausarztes mitbringen.</p>
+      </section>
+
+      <!-- Slide 11: Schritt 5 – Therapieplan -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">5</span>
+          <h2 style="margin: 0;">Ihr individueller Therapieplan</h2>
+        </div>
+        <p>Auf Basis aller erhobenen Befunde wird ein <strong>individueller Therapieplan</strong> erstellt. Dieser kann verschiedene Bausteine umfassen:</p>
+        <div class="two-col">
+          <div>
+            <h3>Frequenztherapie (Erfahrungsheilkunde)</h3>
+            <ul>
+              <li>Regelmäßige Trikombin-Therapiesitzungen zur gezielten Behandlung der ermittelten Belastungen</li>
+              <li>Diamond Shield Zapper für die Heimanwendung</li>
+              <li>ChipCards mit individuellen Frequenzprogrammen</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Klassische Naturheilkunde</h3>
+            <ul>
+              <li><strong>Ernährungsberatung</strong> – angepasst an Ihre Befunde</li>
+              <li><strong>Homöopathie</strong> – Konstitutionsmittel &amp; Nosoden</li>
+              <li><strong>Pflanzenheilkunde</strong> – Phytotherapie &amp; Kräuterkuren</li>
+              <li><strong>Orthomolekulare Medizin</strong> – Vitamine, Mineralstoffe</li>
+            </ul>
+          </div>
+        </div>
+        <div class="not-recognized" style="margin-top: 0.5em;">
+          ⚠️ Die Frequenztherapie mit dem Trikombin-Gerät und dem Diamond Shield Zapper ist ein Verfahren der Erfahrungsheilkunde und wissenschaftlich nicht anerkannt.
+        </div>
+      </section>
+
+      <!-- Slide 12: Schritt 6 – Regelmäßige Therapie -->
+      <section>
+        <div class="step-header">
+          <span class="step-number">6</span>
+          <h2 style="margin: 0;">Regelmäßige Therapiesitzungen</h2>
+        </div>
+        <img src="/bilder/therapieweg-naturheilkunde.jpg" alt="Naturheilkundliche Begleitung" class="slide-img" />
+        <p>Nach Erstellung des Therapieplans beginnen die <strong>regelmäßigen Behandlungstermine</strong>:</p>
+        <ul>
+          <li><strong>Trikombin-Therapie:</strong> Gezielte bioenergetische Behandlung der ermittelten Ursachen (Erreger, Blockaden, Toxine)</li>
+          <li><strong>Verlaufskontrolle:</strong> Regelmäßige Nachtestung, ob sich Befunde verändert haben</li>
+          <li><strong>Anpassung:</strong> Therapieplan wird laufend an Ihre Fortschritte angepasst</li>
+          <li><strong>Begleitung:</strong> Ernährungsempfehlungen, naturheilkundliche Verordnungen, Heimanwendung mit dem Zapper</li>
+        </ul>
+        <div class="info-box">
+          <strong>Therapiedauer:</strong> Die Dauer richtet sich nach Art und Schwere der Beschwerden. Chronische Belastungen erfordern oft eine längere, regelmäßige Behandlung. Ihr Therapeut bespricht dies individuell mit Ihnen.
+        </div>
+      </section>
+
+      <!-- Slide 13: Zusammenspiel der Methoden -->
+      <section>
+        <h2>Wie greifen die Methoden ineinander?</h2>
+        <p>Der integrative Ansatz dieser Praxis verbindet verschiedene Ebenen:</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 1em;">
+          <thead>
+            <tr style="background: var(--sage-light);">
+              <th style="padding: 0.6em; text-align: left; border-bottom: 2px solid var(--sage);">Verfahren</th>
+              <th style="padding: 0.6em; text-align: left; border-bottom: 2px solid var(--sage);">Aufgabe</th>
+              <th style="padding: 0.6em; text-align: left; border-bottom: 2px solid var(--sage);">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Metatron NLS</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Biophysikalische Übersicht</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #856404;">Erfahrungsheilkunde</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Trikombin (Testung)</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Gezielte bioenergetische Diagnostik</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #856404;">Erfahrungsheilkunde</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Trikombin (Therapie)</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Frequenzbasierte Behandlung</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #856404;">Erfahrungsheilkunde</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Vieva Plus (HRV)</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Herzratenvariabilität</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #28a745;">Wissenschaftlich anerkannt</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Vieva Plus (Vitalfeld)</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Energetische Gesamtanalyse</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #856404;">Erfahrungsheilkunde</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Labordiagnostik</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Blutuntersuchung &amp; Werte</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #28a745;">Wissenschaftlich anerkannt</td></tr>
+            <tr><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Diamond Shield Zapper</td><td style="padding: 0.5em; border-bottom: 1px solid #eee;">Heimanwendung Frequenzen</td><td style="padding: 0.5em; border-bottom: 1px solid #eee; color: #856404;">Erfahrungsheilkunde</td></tr>
+            <tr><td style="padding: 0.5em;">Naturheilkunde (Ernährung, Homöopathie, Phyto)</td><td style="padding: 0.5em;">Begleitende Therapie</td><td style="padding: 0.5em; color: #856404;">Erfahrungsheilkunde</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Slide 14: Typischer Zeitablauf -->
+      <section>
+        <h2>Typischer Zeitablauf</h2>
+        <div style="position: relative; padding-left: 2em; margin-top: 1em;">
+          <div style="position: absolute; left: 0.8em; top: 0; bottom: 0; width: 3px; background: var(--sage-light);"></div>
+
+          <div style="position: relative; margin-bottom: 1.2em;">
+            <div style="position: absolute; left: -1.5em; top: 0.2em; width: 12px; height: 12px; background: var(--sage); border-radius: 50%;"></div>
+            <strong>Vor dem Ersttermin:</strong>
+            <span style="font-size: 0.8em; color: var(--muted);">Anamnese online ausfüllen (ca. 30–45 Min.)</span>
+          </div>
+
+          <div style="position: relative; margin-bottom: 1.2em;">
+            <div style="position: absolute; left: -1.5em; top: 0.2em; width: 12px; height: 12px; background: var(--sage); border-radius: 50%;"></div>
+            <strong>Ersttermin (ca. 90–120 Min.):</strong>
+            <span style="font-size: 0.8em; color: var(--muted);">Anamnese-Besprechung + Metatron-Analyse + ggf. Trikombin &amp; Vieva</span>
+          </div>
+
+          <div style="position: relative; margin-bottom: 1.2em;">
+            <div style="position: absolute; left: -1.5em; top: 0.2em; width: 12px; height: 12px; background: var(--sage); border-radius: 50%;"></div>
+            <strong>Ggf. 2. Termin:</strong>
+            <span style="font-size: 0.8em; color: var(--muted);">Ergänzende Diagnostik (Trikombin &amp; Vieva), falls beim Ersttermin zeitlich nicht möglich</span>
+          </div>
+
+          <div style="position: relative; margin-bottom: 1.2em;">
+            <div style="position: absolute; left: -1.5em; top: 0.2em; width: 12px; height: 12px; background: var(--sage); border-radius: 50%;"></div>
+            <strong>Befundbesprechung:</strong>
+            <span style="font-size: 0.8em; color: var(--muted);">Erstellung des individuellen Therapieplans + ggf. Laborergebnisse</span>
+          </div>
+
+          <div style="position: relative;">
+            <div style="position: absolute; left: -1.5em; top: 0.2em; width: 12px; height: 12px; background: var(--sage); border-radius: 50%;"></div>
+            <strong>Regelmäßige Folgetermine:</strong>
+            <span style="font-size: 0.8em; color: var(--muted);">Trikombin-Therapiesitzungen, Nachtestung, Anpassung der Begleittherapie</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15: Weiterführende Skripte -->
+      <section>
+        <h2>Vertiefte Informationen zu den einzelnen Verfahren</h2>
+        <p style="font-size: 0.85em; margin-bottom: 1em;">Zu jedem Baustein unseres Therapiekonzepts finden Sie in der Infothek ein eigenes Skript mit detaillierten Informationen:</p>
+        <div class="two-col">
+          <div class="link-list">
+            <h3>Diagnostik &amp; Therapie</h3>
+            <a href="/krankheit-ist-messbar.html" target="_blank">Was ist Frequenztherapie?</a>
+            <a href="/zapper-diamond-shield.html" target="_blank">Diamond Shield Zapper</a>
+            <a href="/vieva-pro-vitalanalyse.html" target="_blank">Vieva Pro Vitalanalyse</a>
+          </div>
+          <div class="link-list">
+            <h3>Krankheitsbilder &amp; Erreger</h3>
+            <a href="/parasiten-deutschland.html" target="_blank">Parasiten in Deutschland</a>
+            <a href="/viren-bakterien-deutschland.html" target="_blank">Viren &amp; Bakterien</a>
+            <a href="/allergiebehandlung.html" target="_blank">Allergiebehandlung</a>
+            <a href="/ass-salicylat-histamin.html" target="_blank">ASS-, Salicylat- &amp; Histaminintoleranz</a>
+          </div>
+        </div>
+        <div class="two-col" style="margin-top: 0.5em;">
+          <div class="link-list">
+            <h3>Ernährung &amp; Begleitung</h3>
+            <a href="/candida-diaet.html" target="_blank">Candida-Diät</a>
+            <a href="/kraeuter-schmerz-entzuendung.html" target="_blank">Kräuter gegen Schmerz &amp; Entzündung</a>
+            <a href="/patienteninfo-hochohmiges-wasser.html" target="_blank">Hochohmiges Wasser</a>
+          </div>
+          <div class="link-list">
+            <h3>Weiteres</h3>
+            <a href="/heilpraktiker">Was ist ein Heilpraktiker?</a>
+            <a href="/patientenaufklaerung">Patientenaufklärung &amp; Preise</a>
+            <a href="/quellenhinweis">Quellenhinweis &amp; Haftung</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 16: Häufige Fragen -->
+      <section>
+        <h2>Häufige Fragen neuer Patienten</h2>
+        <div style="margin-top: 1em;">
+          <div style="margin-bottom: 1em;">
+            <h3 style="margin-bottom: 0.2em;">„Warum so viele verschiedene Methoden?"</h3>
+            <p style="font-size: 0.8em;">Jede Methode beleuchtet Ihren Gesundheitszustand aus einem anderen Blickwinkel. Wie ein Puzzle ergeben die verschiedenen Teile zusammen ein umfassenderes Bild. Der Körper ist komplex – eine einzelne Untersuchungsmethode kann diese Komplexität oft nicht vollständig erfassen.</p>
+          </div>
+          <div style="margin-bottom: 1em;">
+            <h3 style="margin-bottom: 0.2em;">„Was kostet die Behandlung?"</h3>
+            <p style="font-size: 0.8em;">Die Kosten richten sich nach Umfang und Dauer der Behandlung. Detaillierte Informationen finden Sie in unserer <a href="/patientenaufklaerung" style="color: var(--sage-dark);">Patientenaufklärung</a>. Bitte beachten Sie: Gesetzliche Krankenkassen übernehmen die Kosten nicht. Private Versicherungen erstatten je nach Tarif teilweise.</p>
+          </div>
+          <div style="margin-bottom: 1em;">
+            <h3 style="margin-bottom: 0.2em;">„Wie lange dauert eine Behandlung insgesamt?"</h3>
+            <p style="font-size: 0.8em;">Das ist individuell sehr unterschiedlich. Akute Beschwerden können oft schneller bearbeitet werden. Bei chronischen, mehrschichtigen Belastungen kann die Behandlung über mehrere Monate regelmäßiger Sitzungen erfolgen.</p>
+          </div>
+          <div>
+            <h3 style="margin-bottom: 0.2em;">„Muss ich meine ärztliche Behandlung aufgeben?"</h3>
+            <p style="font-size: 0.8em;"><strong>Nein, auf keinen Fall.</strong> Die naturheilkundliche Behandlung versteht sich als Ergänzung, nicht als Ersatz für eine ärztliche Behandlung. Bitte setzen Sie niemals eigenständig ärztlich verordnete Medikamente ab.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 17: Abschluss -->
+      <section class="center-text">
+        <h2>Ihr erster Schritt</h2>
+        <p style="font-size: 1em; margin-top: 1em;">Füllen Sie jetzt unseren <strong>digitalen Anamnesebogen</strong> aus<br/>und vereinbaren Sie Ihren Ersttermin.</p>
+        <div style="margin-top: 2em; display: flex; gap: 1em; justify-content: center; flex-wrap: wrap;">
+          <a href="/anamnesebogen" style="display: inline-block; padding: 0.8em 1.5em; background: var(--sage); color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">Zum Anamnesebogen</a>
+          <a href="/patientenaufklaerung" style="display: inline-block; padding: 0.8em 1.5em; background: white; color: var(--sage-dark); border: 2px solid var(--sage); border-radius: 8px; text-decoration: none; font-weight: bold;">Patientenaufklärung</a>
+        </div>
+        <p style="margin-top: 2em; font-size: 0.75em; color: var(--muted);">
+          Naturheilpraxis Peter Rauch · Dipl. Ing. (FH) Peter Rauch<br/>
+          Heilpraktiker · Praxis für Naturheilkunde
+        </p>
+        <div class="disclaimer" style="margin-top: 1em; text-align: left;">
+          Diese Präsentation dient der Patienteninformation. Die beschriebenen Verfahren der Erfahrungsheilkunde sind wissenschaftlich und schulmedizinisch nicht anerkannt – mit Ausnahme der klassischen Labordiagnostik und der HRV-Messung. Die Informationen ersetzen keine ärztliche Beratung oder Behandlung. Siehe auch: <a href="/quellenhinweis" style="color: #856404;">Quellenhinweis &amp; Haftung</a>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      width: 1100,
+      height: 700,
+      margin: 0.04,
+      center: false,
+      controlsTutorial: true,
+    });
+  </script>
+</body>
+</html>

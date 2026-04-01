@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope, Bug, Syringe, Cigarette } from "lucide-react";
+import { ChevronDown, Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText, ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle, Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope, Bug, Syringe, Cigarette, Route } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -38,6 +38,13 @@ const infothekGroups: InfothekGroup[] = [
         href: "/patientenaufklaerung",
         icon: FileSignature,
         description: { de: "Kosten, Erstattung & Vereinbarung", en: "Costs, reimbursement & agreement" },
+      },
+      {
+        label: { de: "Ihr Therapieweg", en: "Your Treatment Path" },
+        href: "/therapieweg-uebersicht.html",
+        icon: Route,
+        description: { de: "Ablauf der ganzheitlichen Behandlung Schritt für Schritt", en: "Step-by-step holistic treatment process" },
+        external: true,
       },
     ],
   },
