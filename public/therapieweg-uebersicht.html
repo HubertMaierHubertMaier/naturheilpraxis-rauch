@@ -18,15 +18,29 @@
       --muted: #636e72;
       --accent: #c0392b;
     }
-    .reveal { font-family: 'Georgia', 'Times New Roman', serif; color: var(--text); }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--cream);
+    }
+    .reveal {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      color: var(--text);
+      width: 100vw;
+      height: 100vh;
+      font-size: 28px;
+    }
+    .reveal * { box-sizing: border-box; }
     .reveal h1, .reveal h2, .reveal h3 { color: var(--sage-dark); font-weight: 600; }
-    .reveal h1 { font-size: 2em; }
-    .reveal h2 { font-size: 1.5em; }
-    .reveal h3 { font-size: 1.2em; color: var(--warm); }
-    .reveal p, .reveal li { font-size: 0.85em; line-height: 1.6; color: var(--text); }
+    .reveal h1 { font-size: 1.65em; }
+    .reveal h2 { font-size: 1.2em; }
+    .reveal h3 { font-size: 0.9em; color: var(--warm); }
+    .reveal p, .reveal li { font-size: 0.62em; line-height: 1.55; color: var(--text); }
     .reveal ul { list-style: none; padding-left: 0; }
     .reveal ul li::before { content: "›  "; color: var(--sage); font-weight: bold; }
-    .reveal section { text-align: left; padding: 2em; }
+    .reveal section { text-align: left; padding: 1.4em 1.8em 2.2em; }
     .reveal .center-text { text-align: center; }
     .reveal .disclaimer {
       background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.8em 1.2em;
@@ -55,7 +69,7 @@
     }
     .reveal .step-header { display: flex; align-items: center; margin-bottom: 0.5em; }
     .reveal img.slide-img {
-      max-width: 45%; max-height: 280px; border-radius: 8px;
+      max-width: min(42%, 540px); max-height: 240px; border-radius: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1); float: right; margin: 0 0 1em 1.5em;
     }
     .reveal .two-col { display: flex; gap: 2em; align-items: flex-start; }
@@ -67,21 +81,35 @@
     .reveal .link-list a:hover { color: var(--sage); }
     .reveal .link-list a::before { content: "📄 "; }
     .clearfix::after { content: ""; display: table; clear: both; }
-    /* Allow scrolling on slides with overflow */
+    .reveal .slides {
+      width: 100%;
+      height: 100%;
+      overflow: hidden !important;
+    }
+
+    /* Scroll only inside each slide */
     .reveal .slides section {
       overflow-y: auto !important;
-      max-height: none !important;
-      height: auto !important;
+      overflow-x: hidden !important;
+      max-height: 100% !important;
+      height: 100% !important;
+      scrollbar-gutter: stable;
     }
     .reveal .slides > section {
-      padding-bottom: 2em !important;
+      padding-bottom: 2.2em !important;
     }
     .reveal .slides section::-webkit-scrollbar { width: 6px; }
     .reveal .slides section::-webkit-scrollbar-thumb { background: var(--sage); border-radius: 3px; }
-    .reveal .slides {
-      overflow-y: auto !important;
+    .reveal .controls {
+      z-index: 20;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    .reveal .controls button {
+      pointer-events: auto !important;
     }
     @media (max-width: 768px) {
+      .reveal { font-size: 22px; }
       .reveal img.slide-img { max-width: 100%; float: none; margin: 0 auto 1em; display: block; }
       .reveal .two-col { flex-direction: column; gap: 1em; }
     }
@@ -516,16 +544,22 @@
     Reveal.initialize({
       hash: true,
       transition: 'slide',
-      width: 1100,
-      height: 700,
-      margin: 0.04,
+      controls: true,
+      progress: true,
+      mouseWheel: true,
+      touch: true,
+      width: 1600,
+      height: 900,
+      margin: 0.02,
       center: false,
       controlsTutorial: true,
+      navigationMode: 'default',
       disableLayout: false,
     });
-    // Fix: ensure each slide is scrollable
+    // Ensure each slide is scrollable by drag and mouse wheel
     document.querySelectorAll('.reveal .slides section').forEach(function(s) {
       s.style.overflowY = 'auto';
+      s.style.overflowX = 'hidden';
     });
   </script>
 </body>
