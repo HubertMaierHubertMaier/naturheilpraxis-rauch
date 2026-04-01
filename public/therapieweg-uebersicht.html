@@ -517,11 +517,15 @@
       hash: true,
       transition: 'slide',
       width: 1100,
-      height: 800,
-      margin: 0.02,
+      height: 700,
+      margin: 0.04,
       center: false,
-      scrollActivationWidth: null,
       controlsTutorial: true,
+      disableLayout: false,
+    });
+    // Fix: ensure each slide is scrollable
+    document.querySelectorAll('.reveal .slides section').forEach(function(s) {
+      s.style.overflowY = 'auto';
     });
   </script>
 </body>
