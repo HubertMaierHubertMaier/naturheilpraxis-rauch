@@ -39,6 +39,13 @@ const infothekGroups: InfothekGroup[] = [
         icon: FileSignature,
         description: { de: "Kosten, Erstattung & Vereinbarung", en: "Costs, reimbursement & agreement" },
       },
+      {
+        label: { de: "Ihr Therapieweg", en: "Your Treatment Path" },
+        href: "/therapieweg-uebersicht.html",
+        icon: Route,
+        description: { de: "Ablauf der ganzheitlichen Behandlung Schritt für Schritt", en: "Step-by-step holistic treatment process" },
+        external: true,
+      },
     ],
   },
   {
