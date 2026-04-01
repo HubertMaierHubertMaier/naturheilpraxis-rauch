@@ -70,10 +70,17 @@
     /* Allow scrolling on slides with overflow */
     .reveal .slides section {
       overflow-y: auto !important;
-      max-height: 100% !important;
+      max-height: none !important;
+      height: auto !important;
+    }
+    .reveal .slides > section {
+      padding-bottom: 2em !important;
     }
     .reveal .slides section::-webkit-scrollbar { width: 6px; }
     .reveal .slides section::-webkit-scrollbar-thumb { background: var(--sage); border-radius: 3px; }
+    .reveal .slides {
+      overflow-y: auto !important;
+    }
     @media (max-width: 768px) {
       .reveal img.slide-img { max-width: 100%; float: none; margin: 0 auto 1em; display: block; }
       .reveal .two-col { flex-direction: column; gap: 1em; }
@@ -510,11 +517,15 @@
       hash: true,
       transition: 'slide',
       width: 1100,
-      height: 800,
-      margin: 0.02,
+      height: 700,
+      margin: 0.04,
       center: false,
-      scrollActivationWidth: null,
       controlsTutorial: true,
+      disableLayout: false,
+    });
+    // Fix: ensure each slide is scrollable
+    document.querySelectorAll('.reveal .slides section').forEach(function(s) {
+      s.style.overflowY = 'auto';
     });
   </script>
 </body>
