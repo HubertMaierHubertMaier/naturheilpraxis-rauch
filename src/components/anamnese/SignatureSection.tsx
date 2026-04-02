@@ -421,8 +421,8 @@ const SignatureSection = ({ formData, updateFormData }: SignatureSectionProps) =
       <div className="text-center py-6 space-y-2">
         <p className="text-lg font-semibold text-primary">
           {language === "de" 
-            ? "VIELEN DANK FÜR IHRE GENAUE AUSFÜLLUNG!" 
-            : "THANK YOU FOR COMPLETING THIS FORM CAREFULLY!"}
+            ? "VIELEN DANK FÜR IHRE MÜHE!" 
+            : "THANK YOU FOR YOUR EFFORT!"}
         </p>
         <p className="text-muted-foreground">
           {language === "de"
