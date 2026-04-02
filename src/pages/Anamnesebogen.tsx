@@ -314,7 +314,7 @@ const WizardLayout = ({
                   className={`flex flex-col items-center cursor-pointer transition-all ${
                     wizardStep === index ? "scale-110" : wizardStep > index ? "opacity-70" : "opacity-40"
                   }`}
-                  onClick={() => setWizardStep(index)}
+                  onClick={() => { setWizardStep(index); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
                   <div
                     className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl mb-1 transition-all ${
@@ -368,7 +368,10 @@ const WizardLayout = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setWizardStep(Math.max(0, wizardStep - 1))}
+                  onClick={() => {
+                    setWizardStep(Math.max(0, wizardStep - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   disabled={wizardStep === 0}
                 >
                   <ChevronLeft className="w-4 h-4 mr-2" />
@@ -394,7 +397,7 @@ const WizardLayout = ({
                       {language === "de" ? "Absenden" : "Submit"}
                     </Button>
                   ) : (
-                    <Button type="button" onClick={() => setWizardStep(Math.min(formSections.length - 1, wizardStep + 1))}>
+                    <Button type="button" onClick={() => { setWizardStep(Math.min(formSections.length - 1, wizardStep + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                       {language === "de" ? "Weiter" : "Next"}
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
