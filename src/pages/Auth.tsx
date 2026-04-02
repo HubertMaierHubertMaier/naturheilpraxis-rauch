@@ -907,12 +907,26 @@ const Auth: React.FC = () => {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-2xl">
-              {language === 'de' ? 'Praxis-Login' : 'Practice Login'}
+              {isExistingPatient 
+                ? (language === 'de' ? 'Bestehender Patient' : 'Existing Patient')
+                : patientType === 'new_patient'
+                  ? (language === 'de' ? 'Neupatient – Registrierung' : 'New Patient – Registration')
+                  : (language === 'de' ? 'Praxis-Login' : 'Practice Login')
+              }
             </CardTitle>
             <CardDescription>
-              {language === 'de' 
-                ? 'Sichere Anmeldung mit Passwort und 2FA' 
-                : 'Secure login with password and 2FA'}
+              {isExistingPatient
+                ? (language === 'de' 
+                    ? 'Melden Sie sich an oder registrieren Sie sich. Nach der Registrierung wird die Praxis benachrichtigt und schaltet Ihren Zugang frei.' 
+                    : 'Log in or register. After registration, the practice will be notified and will activate your access.')
+                : patientType === 'new_patient'
+                  ? (language === 'de'
+                    ? 'Registrieren Sie sich, um Ihren Anamnesebogen online auszufüllen.'
+                    : 'Register to fill out your medical history form online.')
+                  : (language === 'de' 
+                    ? 'Sichere Anmeldung mit Passwort und 2FA' 
+                    : 'Secure login with password and 2FA')
+              }
             </CardDescription>
           </CardHeader>
 
