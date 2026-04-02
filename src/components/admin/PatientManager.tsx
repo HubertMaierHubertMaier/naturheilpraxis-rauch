@@ -11,7 +11,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Users, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Users, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ interface PatientProfile {
   date_of_birth: string | null;
   phone: string | null;
   created_at: string;
+  is_verified_patient: boolean;
   login_count: number;
   submission_id?: string | null;
 }
