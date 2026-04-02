@@ -51,9 +51,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
     try {
       // Use edge function to fetch patients (bypasses RLS with service role)
       const headers: Record<string, string> = {};
-      if (devBypass) {
-        headers["x-dev-mode"] = "true";
-      }
 
       const { data, error } = await supabase.functions.invoke("get-patients", {
         headers,
