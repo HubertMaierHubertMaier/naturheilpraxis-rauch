@@ -582,9 +582,11 @@ const Anamnesebogen = () => {
   const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [iaaData, setIaaData] = useState<Record<string, number>>({});
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingSubmissionCount, setExistingSubmissionCount] = useState(0);
   const [checkingSubmission, setCheckingSubmission] = useState(true);
 
-  // Check if user already has a verified submission
+  // Check if user already has a verified submission and load latest data
   useEffect(() => {
     const checkExisting = async () => {
       if (!user?.id) {
@@ -592,14 +594,22 @@ const Anamnesebogen = () => {
         return;
       }
       try {
-        const { data } = await supabase
+        const { data, count } = await supabase
           .from("anamnesis_submissions")
-          .select("id")
+          .select("id, form_data", { count: "exact" })
           .eq("user_id", user.id)
           .eq("status", "verified")
-          .limit(1)
-          .maybeSingle();
-        setHasExistingSubmission(!!data);
+          .order("submitted_at", { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) {
+          setHasExistingSubmission(true);
+          setExistingSubmissionCount(count || 1);
+          // Pre-fill form with latest submission data for editing
+          const latestFormData = data[0].form_data as unknown as AnamneseFormData;
+          if (latestFormData) {
+            setFormData(prev => ({ ...prev, ...latestFormData }));
+          }
+        }
       } catch {
         // ignore
       }
@@ -999,8 +1009,8 @@ const Anamnesebogen = () => {
           </div>
         </div>
 
-        {/* Block if already submitted */}
-        {hasExistingSubmission && !cameFromErstanmeldung ? (
+        {/* Block if already submitted – offer edit option */}
+        {hasExistingSubmission && !isEditMode && !cameFromErstanmeldung ? (
           <div className="container py-12">
             <Card className="mx-auto max-w-lg">
               <CardContent className="p-8 text-center">
@@ -1010,14 +1020,38 @@ const Anamnesebogen = () => {
                 <h2 className="text-xl font-semibold mb-2">
                   {language === "de" ? "Anamnesebogen bereits eingereicht" : "Medical history already submitted"}
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-2">
                   {language === "de" 
-                    ? "Sie haben bereits einen Anamnesebogen erfolgreich eingereicht und verifiziert. Bei Änderungswünschen wenden Sie sich bitte direkt an die Praxis."
-                    : "You have already successfully submitted and verified a medical history form. For changes, please contact the practice directly."}
+                    ? `Sie haben bereits ${existingSubmissionCount} Anamnesebogen${existingSubmissionCount > 1 ? "bögen" : ""} eingereicht.`
+                    : `You have already submitted ${existingSubmissionCount} medical history form${existingSubmissionCount > 1 ? "s" : ""}.`}
                 </p>
-                <Button variant="outline" onClick={() => navigate("/")}>
-                  {language === "de" ? "Zur Startseite" : "Go to Homepage"}
-                </Button>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {language === "de"
+                    ? "Sie können Ihren Bogen jederzeit ergänzen oder aktualisieren. Die neue Version wird mit dem heutigen Datum gespeichert – Ihre vorherigen Einreichungen bleiben erhalten."
+                    : "You can supplement or update your form at any time. The new version will be saved with today's date – your previous submissions are preserved."}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button variant="outline" onClick={() => navigate("/")}>
+                    {language === "de" ? "Zur Startseite" : "Go to Homepage"}
+                  </Button>
+                  <Button onClick={() => {
+                    setIsEditMode(true);
+                    // Reset signature confirmations for new version
+                    setFormData(prev => ({
+                      ...prev,
+                      unterschrift: {
+                        ...prev.unterschrift,
+                        bestaetigung: false,
+                        datenschutzEinwilligung: false,
+                        patientenaufklaerungAkzeptiert: false,
+                        datum: new Date().toISOString().split('T')[0],
+                      }
+                    }));
+                  }}>
+                    <PenTool className="w-4 h-4 mr-2" />
+                    {language === "de" ? "Bogen ergänzen / aktualisieren" : "Supplement / Update Form"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1029,8 +1063,26 @@ const Anamnesebogen = () => {
           <LayoutSelector language={language} onSelectLayout={(layout) => setSelectedLayout(layout)} />
         ) : null}
 
+        {/* Edit mode banner */}
+        {isEditMode && selectedLayout && (
+          <div className="container">
+            <div className="mx-auto max-w-3xl mb-4">
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex gap-3 items-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    {language === "de"
+                      ? "Sie bearbeiten eine neue Version Ihres Anamnesebogens. Alle vorherigen Versionen bleiben gespeichert. Nach dem Absenden wird eine neue Version mit dem heutigen Datum erstellt."
+                      : "You are editing a new version of your medical history form. All previous versions are preserved. Upon submission, a new version with today's date will be created."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content based on selected layout */}
-        {!hasExistingSubmission && selectedLayout === "wizard" && (
+        {(!hasExistingSubmission || isEditMode) && selectedLayout === "wizard" && (
           <WizardLayout
             language={language}
             formSections={getFilteredSections(formData.geschlecht)}
@@ -1044,7 +1096,7 @@ const Anamnesebogen = () => {
             onExportPdf={handleExportPdf}
           />
         )}
-        {!hasExistingSubmission && selectedLayout === "accordion" && (
+        {(!hasExistingSubmission || isEditMode) && selectedLayout === "accordion" && (
           <AccordionLayout
             language={language}
             formSections={getFilteredSections(formData.geschlecht)}
