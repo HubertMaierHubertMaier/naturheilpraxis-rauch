@@ -4,7 +4,7 @@ import { sendEmail } from "../_shared/smtp.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-dev-mode, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function escapeHtml(str: string): string {
@@ -190,17 +190,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     
-    // Dev mode bypass: only allowed when Origin matches non-production domains
-    const devModeHeader = req.headers.get("x-dev-mode") === "true";
-    let devAllowed = false;
-    if (devModeHeader) {
-      const origin = req.headers.get("origin") || "";
-      devAllowed = origin.includes("localhost") || origin.includes("preview") || origin.includes("lovableproject.com");
-      if (!devAllowed) {
-        console.warn(`[resend] dev-mode rejected for origin: ${origin}`);
-      }
-    }
-
     // Admin auth check
     let isAdmin = false;
     const authHeader = req.headers.get("authorization");
@@ -216,7 +205,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!isAdmin && !devAllowed) {
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

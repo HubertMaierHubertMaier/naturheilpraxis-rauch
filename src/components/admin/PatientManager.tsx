@@ -51,9 +51,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
     try {
       // Use edge function to fetch patients (bypasses RLS with service role)
       const headers: Record<string, string> = {};
-      if (devBypass) {
-        headers["x-dev-mode"] = "true";
-      }
 
       const { data, error } = await supabase.functions.invoke("get-patients", {
         headers,
@@ -102,7 +99,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
     try {
       const { data, error } = await supabase.functions.invoke("resend-submission", {
         body: { submissionId: patient.submission_id },
-        headers: devBypass ? { "x-dev-mode": "true" } : {},
       });
       if (error) throw error;
       toast.success(`E-Mails für ${patient.first_name || patient.email} erneut gesendet!`);
@@ -122,7 +118,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
       const { error } = await supabase.functions.invoke("get-patients", {
         method: "PATCH" as any,
         body: { userId: patient.user_id, is_verified_patient: newValue },
-        headers: devBypass ? { "x-dev-mode": "true" } : {},
       });
       // Actually, let's update directly since admin has RLS access
       // We need a dedicated approach - update via the profiles table

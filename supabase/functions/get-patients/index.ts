@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-dev-mode, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -29,18 +29,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Dev mode bypass: only allowed when Origin header matches non-production domains
-    const devMode = req.headers.get("x-dev-mode") === "true";
-    let devAllowed = false;
-    if (devMode) {
-      const origin = req.headers.get("origin") || "";
-      devAllowed = origin.includes("localhost") || origin.includes("preview") || origin.includes("lovableproject.com");
-      if (!devAllowed) {
-        console.warn(`[get-patients] dev-mode rejected for origin: ${origin}`);
-      }
-    }
-    
-    if (!isAdmin && !devAllowed) {
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,8 +79,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("Error in get-patients:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("[get-patients] Error:", error);
+    return new Response(JSON.stringify({ error: "Ein Fehler ist aufgetreten." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
