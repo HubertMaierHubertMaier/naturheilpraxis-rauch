@@ -32,6 +32,7 @@ import Erstanmeldung from "./pages/Erstanmeldung";
 import Quellenhinweis from "./pages/Quellenhinweis";
 import Wissensdatenbank from "./pages/Wissensdatenbank";
 import Raucherentwoehnung from "./pages/Raucherentwoehnung";
+import Infothek from "./pages/Infothek";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="/patientenaufklaerung" element={<Patientenaufklaerung />} />
               <Route path="/quellenhinweis" element={<Quellenhinweis />} />
               <Route path="/raucherentwoehnung" element={<Raucherentwoehnung />} />
+              <Route path="/infothek" element={<Infothek />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
