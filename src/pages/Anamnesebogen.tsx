@@ -309,7 +309,7 @@ const WizardLayout = ({
         <div className="relative mb-8">
           <div ref={scrollContainerRef} className="flex items-center overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
             {formSections.map((section, index) => (
-              <div key={section.id} className="flex items-center flex-shrink-0">
+              <div key={section.id} className="flex items-center flex-shrink-0" ref={(el) => { stepRefs.current[index] = el; }}>
                 <div
                   className={`flex flex-col items-center cursor-pointer transition-all ${
                     wizardStep === index ? "scale-110" : wizardStep > index ? "opacity-70" : "opacity-40"
