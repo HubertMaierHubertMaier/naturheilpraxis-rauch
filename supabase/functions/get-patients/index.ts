@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       date_of_birth: p.date_of_birth,
       phone: p.phone,
       created_at: p.created_at,
+      is_verified_patient: p.is_verified_patient || false,
       login_count: countMap[p.user_id] || 0,
       submission_id: submissionMap[p.user_id] || null,
     }));
