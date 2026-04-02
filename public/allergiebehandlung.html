@@ -87,38 +87,48 @@ td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(70,113,91,0.1); vert
 tr:last-child td { border-bottom: none; }
 tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
 
-/* ===== PROTECTED SLIDE OVERLAY ===== */
+/* ===== PROTECTED SLIDE HINWEIS ===== */
+.protected-slide {
+  border: 1px solid rgba(70, 113, 91, 0.14);
+}
 .protected-slide .slide-content {
-  filter: blur(1px);
-  opacity: 0.85;
-  pointer-events: none;
-  user-select: none;
+  filter: none;
+  opacity: 1;
 }
 .protected-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 1rem;
+  right: 1rem;
+  left: auto;
+  bottom: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
   z-index: 100;
-  background: rgba(249, 247, 242, 0.3);
+  width: min(420px, calc(100% - 2rem));
+  background: rgba(249, 247, 242, 0.92);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(70, 113, 91, 0.14);
   border-radius: 1rem;
-  text-align: center;
-  padding: 2rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 .protected-overlay .lock-icon {
-  width: 64px; height: 64px;
+  width: 2.75rem;
+  height: 2.75rem;
   background: var(--primary);
-  border-radius: 50%;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 8px 24px rgba(70, 113, 91, 0.3);
+  box-shadow: 0 8px 24px rgba(70, 113, 91, 0.22);
 }
 .protected-overlay .lock-icon svg {
-  width: 28px; height: 28px;
+  width: 1.2rem;
+  height: 1.2rem;
   color: #fff;
   fill: none;
   stroke: currentColor;
@@ -129,16 +139,15 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
 .protected-overlay h3 {
   font-family: 'Playfair Display', serif !important;
   color: var(--primary) !important;
-  font-size: 1.4rem !important;
-  margin-bottom: 0.75rem !important;
+  font-size: 1.05rem !important;
+  margin: 0 !important;
 }
 .protected-overlay p {
   color: var(--text);
-  opacity: 0.7;
-  font-size: 0.95rem !important;
-  max-width: 400px;
-  line-height: 1.5;
-  margin-bottom: 1.5rem;
+  opacity: 0.8;
+  font-size: 0.86rem !important;
+  line-height: 1.45;
+  margin: 0;
 }
 .protected-overlay .login-btn {
   display: inline-block;
@@ -146,24 +155,22 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   color: #fff;
   font-weight: 700;
   text-decoration: none;
-  padding: 0.6rem 2rem;
+  padding: 0.45rem 1rem;
   border-radius: 99px;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .protected-overlay .login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(70, 113, 91, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(70, 113, 91, 0.2);
 }
 </style>
 <style>
-  body, .reveal { -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; }
   @media print { body { display:none !important; } }
   img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
 </style>
 </head>
 <body>
-<script src="/content-protection.js"></script>
 <div class="reveal">
 <div class="slides">
 
