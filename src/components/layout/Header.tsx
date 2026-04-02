@@ -34,9 +34,7 @@ export function Header() {
   }, []);
 
   const navItems = [
-    { label: t(nav.home.de, nav.home.en), href: "/" },
     ...(isAdmin ? [{ label: "👥 Patienten", href: "/patienten?dev=true" }] : []),
-    { label: t("Erstanmeldung", "First Registration"), href: "/erstanmeldung" },
     ...(isAdmin ? [{ label: "📚 Wiki", href: "/wissensdatenbank" }] : []),
   ];
 

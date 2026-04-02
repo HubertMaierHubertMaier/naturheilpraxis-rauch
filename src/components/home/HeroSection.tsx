@@ -1,6 +1,3 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { FileText, HelpCircle } from "lucide-react";
 import heroImage from "@/assets/hero-nature.jpg";
 
 export function HeroSection() {
@@ -25,30 +22,11 @@ export function HeroSection() {
           <h1 className="mb-6 font-serif text-4xl font-semibold leading-tight text-primary-foreground md:text-5xl lg:text-6xl">
             Ganzheitliche Heilkunde für Körper und Seele
           </h1>
-          <p className="mb-8 text-lg leading-relaxed text-sage-100 md:text-xl">
+          <p className="text-lg leading-relaxed text-sage-100 md:text-xl">
             Willkommen in Ihrer Patienten-App. Hier finden Sie alle wichtigen
             Informationen, können Ihren Anamnesebogen ausfüllen und erhalten
             wertvolle Tipps für Ihre Gesundheit.
           </p>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Button asChild variant="hero" size="xl">
-              <Link to="/anamnesebogen">
-                <FileText className="mr-2 h-5 w-5" />
-                Anamnesebogen ausfüllen
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="xl"
-              className="border-sage-200 bg-transparent text-primary-foreground hover:bg-sage-100/20 hover:text-primary-foreground"
-            >
-              <Link to="/faq">
-                <HelpCircle className="mr-2 h-5 w-5" />
-                Häufige Fragen
-              </Link>
-            </Button>
-          </div>
         </div>
       </div>
 
