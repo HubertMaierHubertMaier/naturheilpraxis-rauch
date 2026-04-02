@@ -82,12 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => checkAdminRole(session.user.id), 0);
           
-          // Log sign-in events for DSGVO audit trail
-          if (event === 'SIGNED_IN') {
-            supabase.from('audit_log').insert({
-              user_id: session.user.id,
-              action: 'login',
-              details: { method: 'email', email: session.user.email },
+           // Log sign-in events for DSGVO audit trail
+           if (event === 'SIGNED_IN') {
+            supabase.rpc('insert_audit_log', {
+              _action: 'login',
+              _details: { method: 'email', email: session.user.email },
             }).then(() => {}, () => {}); // fire-and-forget
           }
         } else {
