@@ -124,10 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     // Log sign-out for DSGVO audit trail
     if (user?.id) {
-      await supabase.from('audit_log').insert({
-        user_id: user.id,
-        action: 'logout',
-        details: {},
+      await supabase.rpc('insert_audit_log', {
+        _action: 'logout',
+        _details: {},
       }).then(() => {}, () => {});
     }
     await supabase.auth.signOut();
