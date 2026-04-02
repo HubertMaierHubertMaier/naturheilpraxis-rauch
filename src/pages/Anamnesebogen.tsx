@@ -286,6 +286,26 @@ const WizardLayout = ({
   const Icon = currentSection?.Icon || AlertCircle;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [scrollIndicator, setScrollIndicator] = useState({ width: 0, left: 0, visible: false });
+
+  const updateScrollIndicator = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const hasOverflow = scrollWidth > clientWidth + 2;
+
+    if (!hasOverflow) {
+      setScrollIndicator({ width: 100, left: 0, visible: false });
+      return;
+    }
+
+    const width = Math.max((clientWidth / scrollWidth) * 100, 18);
+    const maxScroll = scrollWidth - clientWidth;
+    const left = maxScroll > 0 ? (scrollLeft / maxScroll) * (100 - width) : 0;
+
+    setScrollIndicator({ width, left, visible: true });
+  };
 
   useEffect(() => {
     const el = stepRefs.current[wizardStep];
@@ -298,6 +318,39 @@ const WizardLayout = ({
     }
   }, [wizardStep]);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    updateScrollIndicator();
+
+    const handleScroll = () => updateScrollIndicator();
+    const handleResize = () => updateScrollIndicator();
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [formSections.length, wizardStep]);
+
+  const handleIndicatorClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const ratio = rect.width > 0 ? clickX / rect.width : 0;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+
+    container.scrollTo({
+      left: maxScroll * ratio,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="container py-8">
       <div className="mx-auto max-w-3xl">
@@ -307,7 +360,7 @@ const WizardLayout = ({
         </Button>
 
         <div className="relative mb-8">
-          <div ref={scrollContainerRef} className="wizard-scrollbar flex items-center overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary) / 0.4) hsl(var(--muted))' }}>
+          <div ref={scrollContainerRef} className="wizard-scrollbar flex items-center overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
             {formSections.map((section, index) => (
               <div key={section.id} className="flex items-center flex-shrink-0" ref={(el) => { stepRefs.current[index] = el; }}>
                 <div
@@ -321,7 +374,7 @@ const WizardLayout = ({
                       wizardStep === index
                         ? "bg-primary text-primary-foreground shadow-lg"
                         : wizardStep > index
-                          ? "bg-green-500 text-white"
+                          ? "bg-primary text-primary-foreground"
                           : "bg-muted"
                     }`}
                   >
@@ -334,13 +387,26 @@ const WizardLayout = ({
                   </span>
                 </div>
                 {index < formSections.length - 1 && (
-                  <div className={`h-0.5 w-4 sm:w-6 mx-1 flex-shrink-0 ${wizardStep > index ? "bg-green-500" : "bg-muted"}`} />
+                  <div className={`h-0.5 w-4 sm:w-6 mx-1 flex-shrink-0 ${wizardStep > index ? "bg-primary" : "bg-muted"}`} />
                 )}
               </div>
             ))}
           </div>
+          {scrollIndicator.visible && (
+            <button
+              type="button"
+              aria-label={language === "de" ? "Schrittleiste horizontal verschieben" : "Scroll step navigation"}
+              onClick={handleIndicatorClick}
+              className="relative mt-2 block h-2 w-full overflow-hidden rounded-full bg-muted"
+            >
+              <span
+                className="absolute top-0 h-full rounded-full bg-primary transition-all duration-200"
+                style={{ width: `${scrollIndicator.width}%`, left: `${scrollIndicator.left}%` }}
+              />
+            </button>
+          )}
           <div className="text-xs text-muted-foreground text-center mt-1 md:hidden">
-            ← {language === "de" ? "Wischen zum Scrollen" : "Swipe to scroll"} →
+            ← {language === "de" ? "Wischen oder Balken antippen" : "Swipe or tap the bar"} →
           </div>
         </div>
 
