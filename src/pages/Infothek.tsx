@@ -49,16 +49,6 @@ const groups: InfoGroup[] = [
     ],
   },
   {
-    title: { de: "Nur für Patienten der Naturheilpraxis Peter Rauch", en: "Only for Patients of Naturheilpraxis Peter Rauch" },
-    items: [
-      { label: { de: "Allergiebehandlung", en: "Allergy Treatment" }, href: "/allergiebehandlung.html", icon: Flower2, description: { de: "Ganzheitliche Allergie-Betrachtung & Therapie", en: "Holistic allergy approach & therapy" }, external: true },
-      { label: { de: "Candida-Diät", en: "Candida Diet" }, href: "/candida-diaet.html", icon: FileText, description: { de: "Ernährungsratgeber bei Candida-Pilzbefall", en: "Dietary guide for Candida infection" }, external: true },
-      { label: { de: "Kräuter & Gewürze gegen Schmerz", en: "Herbs & Spices for Pain" }, href: "/kraeuter-schmerz-entzuendung.html", icon: Leaf, description: { de: "Phytotherapie bei Schmerz & Entzündung", en: "Phytotherapy for pain & inflammation" }, external: true },
-      { label: { de: "Hochohmiges Wasser", en: "High-Ohm Water" }, href: "/patienteninfo-hochohmiges-wasser.html", icon: Droplets, description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" }, external: true },
-      { label: { de: "Raucherentwöhnung", en: "Smoking Cessation" }, href: "/raucherentwoehnung", icon: Cigarette, description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" } },
-    ],
-  },
-  {
     title: { de: "Praktisches", en: "Practical Info" },
     items: [
       { label: { de: "GebÜH", en: "Fee Schedule" }, href: "/gebueh", icon: Euro, description: { de: "Gebührenordnung für Heilpraktiker", en: "Fee schedule for practitioners" } },
