@@ -582,9 +582,11 @@ const Anamnesebogen = () => {
   const [tempUserId, setTempUserId] = useState<string | null>(null);
   const [iaaData, setIaaData] = useState<Record<string, number>>({});
   const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingSubmissionCount, setExistingSubmissionCount] = useState(0);
   const [checkingSubmission, setCheckingSubmission] = useState(true);
 
-  // Check if user already has a verified submission
+  // Check if user already has a verified submission and load latest data
   useEffect(() => {
     const checkExisting = async () => {
       if (!user?.id) {
@@ -592,14 +594,22 @@ const Anamnesebogen = () => {
         return;
       }
       try {
-        const { data } = await supabase
+        const { data, count } = await supabase
           .from("anamnesis_submissions")
-          .select("id")
+          .select("id, form_data", { count: "exact" })
           .eq("user_id", user.id)
           .eq("status", "verified")
-          .limit(1)
-          .maybeSingle();
-        setHasExistingSubmission(!!data);
+          .order("submitted_at", { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) {
+          setHasExistingSubmission(true);
+          setExistingSubmissionCount(count || 1);
+          // Pre-fill form with latest submission data for editing
+          const latestFormData = data[0].form_data as unknown as AnamneseFormData;
+          if (latestFormData) {
+            setFormData(prev => ({ ...prev, ...latestFormData }));
+          }
+        }
       } catch {
         // ignore
       }
