@@ -619,6 +619,25 @@ const Anamnesebogen = () => {
     checkExisting();
   }, [user?.id]);
 
+  // Auto-activate edit mode when coming from Erstanmeldung with existing submission
+  useEffect(() => {
+    if (cameFromErstanmeldung && hasExistingSubmission && !autoEditActivated && !checkingSubmission) {
+      setIsEditMode(true);
+      setAutoEditActivated(true);
+      // Reset signature confirmations for new version
+      setFormData(prev => ({
+        ...prev,
+        unterschrift: {
+          ...prev.unterschrift,
+          bestaetigung: false,
+          datenschutzEinwilligung: false,
+          patientenaufklaerungAkzeptiert: false,
+          datum: new Date().toISOString().split('T')[0],
+        }
+      }));
+    }
+  }, [cameFromErstanmeldung, hasExistingSubmission, autoEditActivated, checkingSubmission]);
+
   const draftStorageKey = useMemo(() => {
     if (!user?.id) return null;
     return `anamnesebogen:draft:${user.id}`;
