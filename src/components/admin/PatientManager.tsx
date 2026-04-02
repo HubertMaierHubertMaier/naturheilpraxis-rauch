@@ -99,7 +99,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
     try {
       const { data, error } = await supabase.functions.invoke("resend-submission", {
         body: { submissionId: patient.submission_id },
-        headers: devBypass ? { "x-dev-mode": "true" } : {},
       });
       if (error) throw error;
       toast.success(`E-Mails für ${patient.first_name || patient.email} erneut gesendet!`);
