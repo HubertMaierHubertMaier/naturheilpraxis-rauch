@@ -1022,9 +1022,13 @@ const Anamnesebogen = () => {
               {language === "de" ? "Anamnesebogen" : "Medical History Form"}
             </h1>
             <p className="text-lg text-muted-foreground">
-              {language === "de"
-                ? "Bitte füllen Sie diesen Fragebogen vor Ihrem ersten Termin aus. Ihre Angaben helfen mir, Sie optimal zu behandeln."
-                : "Please complete this questionnaire before your first appointment. Your information helps me to treat you optimally."}
+              {isEditMode
+                ? (language === "de"
+                  ? "Ergänzen oder aktualisieren Sie Ihre Angaben. Die neue Version wird mit dem heutigen Datum gespeichert."
+                  : "Supplement or update your information. The new version will be saved with today's date.")
+                : (language === "de"
+                  ? "Bitte füllen Sie diesen Fragebogen vor Ihrem ersten Termin aus. Ihre Angaben helfen mir, Sie optimal zu behandeln."
+                  : "Please complete this questionnaire before your first appointment. Your information helps me to treat you optimally.")}
             </p>
           </div>
         </div>
