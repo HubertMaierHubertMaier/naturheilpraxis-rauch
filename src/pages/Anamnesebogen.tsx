@@ -284,6 +284,19 @@ const WizardLayout = ({
 }: WizardLayoutProps) => {
   const currentSection = formSections[wizardStep];
   const Icon = currentSection?.Icon || AlertCircle;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const el = stepRefs.current[wizardStep];
+    const container = scrollContainerRef.current;
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft + (elRect.left - containerRect.left) - (containerRect.width / 2) + (elRect.width / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }
+  }, [wizardStep]);
 
   return (
     <div className="container py-8">
@@ -294,7 +307,7 @@ const WizardLayout = ({
         </Button>
 
         <div className="relative mb-8">
-          <div className="flex items-center overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div ref={scrollContainerRef} className="flex items-center overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
             {formSections.map((section, index) => (
               <div key={section.id} className="flex items-center flex-shrink-0">
                 <div
