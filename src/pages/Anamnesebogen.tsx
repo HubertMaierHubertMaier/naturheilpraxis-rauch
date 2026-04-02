@@ -368,7 +368,10 @@ const WizardLayout = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setWizardStep(Math.max(0, wizardStep - 1))}
+                  onClick={() => {
+                    setWizardStep(Math.max(0, wizardStep - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   disabled={wizardStep === 0}
                 >
                   <ChevronLeft className="w-4 h-4 mr-2" />
