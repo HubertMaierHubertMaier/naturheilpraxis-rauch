@@ -569,6 +569,7 @@ const Anamnesebogen = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const cameFromErstanmeldung = (location.state as any)?.from === "erstanmeldung";
+  const [autoEditActivated, setAutoEditActivated] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<LayoutType>(null);
   const [wizardStep, setWizardStep] = useState(0);
   const [formData, setFormData] = useState<AnamneseFormData>(initialFormData);
