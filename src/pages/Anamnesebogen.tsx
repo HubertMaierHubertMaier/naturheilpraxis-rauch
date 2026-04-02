@@ -397,7 +397,7 @@ const WizardLayout = ({
                       {language === "de" ? "Absenden" : "Submit"}
                     </Button>
                   ) : (
-                    <Button type="button" onClick={() => setWizardStep(Math.min(formSections.length - 1, wizardStep + 1))}>
+                    <Button type="button" onClick={() => { setWizardStep(Math.min(formSections.length - 1, wizardStep + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                       {language === "de" ? "Weiter" : "Next"}
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
