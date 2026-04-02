@@ -371,6 +371,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_audit_log: {
+        Args: {
+          _action: string
+          _details?: Json
+          _ip_address?: string
+          _user_agent?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "patient"
