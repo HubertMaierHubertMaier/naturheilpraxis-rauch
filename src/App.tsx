@@ -32,6 +32,7 @@ import Erstanmeldung from "./pages/Erstanmeldung";
 import Quellenhinweis from "./pages/Quellenhinweis";
 import Wissensdatenbank from "./pages/Wissensdatenbank";
 import Raucherentwoehnung from "./pages/Raucherentwoehnung";
+import Infothek from "./pages/Infothek";
 
 const queryClient = new QueryClient();
 
