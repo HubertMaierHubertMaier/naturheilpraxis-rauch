@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("Error in get-patients:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("[get-patients] Error:", error);
+    return new Response(JSON.stringify({ error: "Ein Fehler ist aufgetreten." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -113,9 +113,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error sending verification email:", error);
+    console.error("[send-verification-email] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Ein Fehler ist aufgetreten." }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
