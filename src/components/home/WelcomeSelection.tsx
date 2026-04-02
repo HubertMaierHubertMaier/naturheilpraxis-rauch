@@ -33,7 +33,7 @@ const options = [
     description:
       "Erfahren Sie mehr über die Naturheilpraxis, Behandlungsmethoden und lesen Sie ausgewählte Fachartikel — ohne Registrierung.",
     cta: "Praxis entdecken",
-    href: "/heilpraktiker",
+    href: "/infothek",
     accent: false,
   },
 ];

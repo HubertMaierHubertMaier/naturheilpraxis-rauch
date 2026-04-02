@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import Layout from "@/components/layout/Layout";
-import { SEOHead } from "@/components/seo/SEOHead";
+import { Layout } from "@/components/layout/Layout";
+import SEOHead from "@/components/seo/SEOHead";
 import {
   Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText,
   ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle,
