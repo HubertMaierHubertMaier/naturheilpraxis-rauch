@@ -5,13 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Allergiebehandlung in der Naturheilpraxis | Heilpraktiker Rauch Augsburg</title>
 <meta name="description" content="Ganzheitliche Allergiebehandlung in der Naturheilpraxis Peter Rauch Augsburg: Allergie-Typen, Diagnostik, Naturheilkunde, Orthomolekulare Therapie, TCM und Psychosomatik.">
-<meta name="keywords" content="Allergiebehandlung Augsburg, Heilpraktiker Allergie, Naturheilpraxis Allergie, NAET Augsburg, Bioresonanz Allergie, TCM Allergie, Orthomolekulare Therapie Allergie">
-<meta name="author" content="Peter Rauch, Heilpraktiker">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.rauch-heilpraktiker.de/ratgeber/allergiebehandlung">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Ganzheitliche Allergiebehandlung | Heilpraktiker Rauch Augsburg">
-<meta property="og:description" content="Informationen zur ganzheitlichen Allergiebehandlung: Diagnostik, Naturheilkunde, Orthomolekulare Therapie, TCM und psychosomatische Betrachtung.">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -20,17 +15,12 @@
   "description": "Informationsmaterial zur ganzheitlichen Allergiebehandlung mit naturheilkundlichen Methoden.",
   "url": "https://www.rauch-heilpraktiker.de/ratgeber/allergiebehandlung",
   "datePublished": "2026-03-13",
-  "dateModified": "2026-03-13",
+  "dateModified": "2026-04-02",
   "inLanguage": "de-DE",
-  "lastReviewed": "2026-03-13",
-  "medicalAudience": { "@type": "PatientAudience", "audienceType": "Patient" },
-  "disclaimer": "Diese Inhalte dienen ausschließlich der allgemeinen Information und stellen kein Heilversprechen dar (HWG). Sie ersetzen keine ärztliche oder heilpraktische Beratung. Eigenständige Anwendung erfolgt auf eigenes Risiko.",
   "author": {
     "@type": "Person",
     "name": "Peter Rauch",
-    "jobTitle": "Heilpraktiker",
-    "address": { "@type": "PostalAddress", "streetAddress": "Friedrich-Deffner-Str. 19a", "addressLocality": "Augsburg", "postalCode": "86163", "addressCountry": "DE" },
-    "telephone": "+49-821-21772670"
+    "jobTitle": "Heilpraktiker"
   }
 }
 </script>
@@ -51,6 +41,7 @@ body { font-family: 'Source Sans 3', sans-serif; color: var(--text); background-
   border: 1px solid rgba(70, 113, 91, 0.1);
   height: 90vh !important; max-height: 90vh !important;
   overflow-y: auto !important; display: block !important; top: 5vh !important;
+  position: relative;
 }
 .reveal .slides section.intro-hero {
   height: auto !important; max-height: none !important;
@@ -95,6 +86,75 @@ th { background: var(--primary); color: #fff; padding: 0.5rem 0.75rem; text-alig
 td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(70,113,91,0.1); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
+
+/* ===== PROTECTED SLIDE OVERLAY ===== */
+.protected-slide .slide-content {
+  filter: blur(6px);
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+.protected-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(249, 247, 242, 0.6);
+  border-radius: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+.protected-overlay .lock-icon {
+  width: 64px; height: 64px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(70, 113, 91, 0.3);
+}
+.protected-overlay .lock-icon svg {
+  width: 28px; height: 28px;
+  color: #fff;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.protected-overlay h3 {
+  font-family: 'Playfair Display', serif !important;
+  color: var(--primary) !important;
+  font-size: 1.4rem !important;
+  margin-bottom: 0.75rem !important;
+}
+.protected-overlay p {
+  color: var(--text);
+  opacity: 0.7;
+  font-size: 0.95rem !important;
+  max-width: 400px;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+.protected-overlay .login-btn {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0.6rem 2rem;
+  border-radius: 99px;
+  font-size: 0.95rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.protected-overlay .login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(70, 113, 91, 0.3);
+}
 </style>
 <style>
   body, .reveal { -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; user-select:none; }
@@ -107,6 +167,8 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
 <div class="reveal">
 <div class="slides">
 
+<!-- ==================== ÖFFENTLICHE SLIDES ==================== -->
+
 <!-- Slide 1: Titel -->
 <section class="theme-dark intro-hero" data-transition="fade">
   <h1 class="mb-3" style="font-size:2.4rem !important">Allergie:<br>Ganzheitliche Betrachtung</h1>
@@ -117,7 +179,7 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   <p style="font-size:0.72rem !important; opacity:0.5">Naturheilpraxis Peter Rauch · Heilpraktiker · Augsburg-Hochzoll</p>
 </section>
 
-<!-- Slide 2: Was ist eine Allergie? -->
+<!-- Slide 2: Was ist eine Allergie? (ÖFFENTLICH) -->
 <section>
   <h2>Was ist eine Allergie?</h2>
   <p>Wenn ein Mensch allergisch reagiert, zeigt sein Immunsystem eine <span class="highlight">überschießende Abwehrreaktion</span> auf körperfremde, aber in der Regel harmlose Umweltstoffe – sogenannte <strong>Allergene</strong>.</p>
@@ -132,10 +194,10 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
     <strong>📊 Verbreitung</strong>
     Schätzungsweise 20–30 % der europäischen Bevölkerung sind von allergischen Erkrankungen betroffen – vom saisonalen Heuschnupfen bis hin zum allergischen Asthma bronchiale.
   </div>
-  <p class="source-ref">Vgl. Ebert, W. M.: Die Blutanalyse in der alternativen Medizin, Mönnig Verlag, ISBN 978-3-9814701-3-0; Allgemeine Informationen zu Allergien nach: Wikipedia, „Allergie" (CC BY-SA 3.0)</p>
+  <p class="source-ref">Vgl. Ebert, W. M.: Die Blutanalyse in der alternativen Medizin, Mönnig Verlag; Wikipedia, „Allergie" (CC BY-SA 3.0)</p>
 </section>
 
-<!-- Slide 3: Allergie-Typen Übersicht -->
+<!-- Slide 3: Allergie-Typen (ÖFFENTLICH) -->
 <section>
   <h2>Die vier Allergie-Typen nach Coombs &amp; Gell</h2>
   <p>In der Immunologie werden allergische Reaktionen nach der <strong>Coombs-Gell-Klassifikation</strong> in vier Haupttypen eingeteilt:</p>
@@ -146,10 +208,10 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
     <tr><td><strong>III</strong></td><td>Immunkomplex-Typ</td><td>Stunden</td><td>Immunkomplexe</td></tr>
     <tr><td><strong>IV</strong></td><td>Spättyp (Zellvermittelt)</td><td>24–72 Stunden</td><td>T-Lymphozyten</td></tr>
   </table>
-  <p class="source-ref">Klassifikation nach Coombs &amp; Gell (1963); Allgemeine Informationen vgl. Wikipedia, „Allergie" (CC BY-SA 3.0)</p>
+  <p class="source-ref">Klassifikation nach Coombs &amp; Gell (1963); Wikipedia, „Allergie" (CC BY-SA 3.0)</p>
 </section>
 
-<!-- Slide 4: Typ I – Soforttyp -->
+<!-- Slide 4: Typ I (ÖFFENTLICH) -->
 <section>
   <h2>Typ I: Soforttyp (IgE-vermittelt)</h2>
   <p>Die häufigste Allergieform. Bei Kontakt mit dem Allergen setzen <strong>Mastzellen</strong> Histamin und andere Mediatoren frei, was innerhalb von Sekunden bis Minuten zu Symptomen führen kann.</p>
@@ -186,10 +248,9 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   <p class="source-ref">Vgl. Wikipedia, „Allergie", „Anaphylaxie" (CC BY-SA 3.0)</p>
 </section>
 
-<!-- Slide 5: Typ II, III, IV -->
+<!-- Slide 5: Typ II, III, IV (ÖFFENTLICH) -->
 <section>
   <h2>Typ II, III &amp; IV – Weitere Allergieformen</h2>
-
   <h3>Typ II: Zytotoxischer Typ</h3>
   <p>Antikörper (IgG/IgM) richten sich gegen Antigene auf Zelloberflächen. Kann z.&nbsp;B. bei Medikamentenunverträglichkeiten oder Transfusionsreaktionen auftreten.</p>
   <ul style="font-size:0.9rem !important">
@@ -197,14 +258,12 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
     <li>Thrombopenie, Agranulozytose</li>
     <li>Transfusionszwischenfälle</li>
   </ul>
-
   <h3>Typ III: Immunkomplex-Typ</h3>
   <p>Antigen-Antikörper-Komplexe lagern sich in Geweben ab und können dort Entzündungsreaktionen auslösen.</p>
   <ul style="font-size:0.9rem !important">
     <li>Farmerlunge, Taubenzüchterlunge (exogen-allergische Alveolitis)</li>
     <li>Allergische Vaskulitis</li>
   </ul>
-
   <h3>Typ IV: Spättyp (Zellvermittelt)</h3>
   <p>Die Reaktion wird durch T-Lymphozyten vermittelt und tritt erst nach 24–72 Stunden auf.</p>
   <ul style="font-size:0.9rem !important">
@@ -215,7 +274,7 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   <p class="source-ref">Vgl. Wikipedia, „Allergie" (CC BY-SA 3.0)</p>
 </section>
 
-<!-- Slide 6: Symptome -->
+<!-- Slide 6: Symptome (ÖFFENTLICH) -->
 <section>
   <h2>Mögliche Symptome bei Allergien</h2>
   <div class="split-grid">
@@ -237,7 +296,7 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
       <ul>
         <li>Rötung, Juckreiz, Erwärmung</li>
         <li>Ekzeme, Nesselsucht</li>
-        <li>Kontaktallergien (können bis zur Berufsunfähigkeit führen)</li>
+        <li>Kontaktallergien</li>
       </ul>
       <h3>🫃 Verdauung</h3>
       <ul>
@@ -253,271 +312,154 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   </div>
 </section>
 
-<!-- Slide 7: Konventionelle Behandlung -->
+<!-- Slide 7: Konventionelle Behandlung (ÖFFENTLICH) -->
 <section>
   <h2>Allergiebehandlung in der konventionellen Medizin</h2>
   <p>Die Schulmedizin setzt bei Allergien auf verschiedene bewährte Verfahren:</p>
-
   <div class="card">
     <h3>💉 Hyposensibilisierung (Allergen-Immuntherapie)</h3>
-    <p>Gilt als die einzige <strong>kausale Therapie</strong> bei Allergien: Durch wiederholte Gabe des Allergens in steigender Dosis soll das Immunsystem eine Toleranz entwickeln. Dies ist eine Langzeittherapie. Bei Insektengiftallergien kann sie lebensrettend sein.</p>
+    <p>Gilt als die einzige <strong>kausale Therapie</strong> bei Allergien: Durch wiederholte Gabe des Allergens in steigender Dosis soll das Immunsystem eine Toleranz entwickeln.</p>
   </div>
-
   <div class="card">
     <h3>💊 Antihistaminika</h3>
-    <p>Wirkstoffe, die die Wirkung des körpereigenen Botenstoffs Histamin abschwächen oder aufheben, indem sie Histamin-Rezeptoren blockieren. Werden vor allem zur Linderung akuter allergischer Symptome eingesetzt.</p>
+    <p>Wirkstoffe, die die Wirkung des körpereigenen Botenstoffs Histamin abschwächen oder aufheben.</p>
   </div>
-
   <div class="card">
     <h3>🛡️ Mastzellstabilisatoren</h3>
-    <p>Stabilisieren die Zellmembran der Mastzellen und können so die Ausschüttung von Histamin vermindern. Bekannteste Wirkstoffe: Cromoglicinsäure und Nedocromil.</p>
+    <p>Stabilisieren die Zellmembran der Mastzellen und können so die Ausschüttung von Histamin vermindern.</p>
   </div>
-
   <div class="card">
     <h3>⚕️ Cortison (Glucocorticoide)</h3>
-    <p>Synthetische Varianten des körpereigenen Steroidhormons Cortisol. Werden bei stärkeren allergischen Reaktionen zur Entzündungshemmung eingesetzt. Die Anwendung sollte stets unter ärztlicher Aufsicht erfolgen.</p>
+    <p>Werden bei stärkeren allergischen Reaktionen zur Entzündungshemmung eingesetzt.</p>
   </div>
-
   <div class="card">
     <h3>🚫 Allergenkarenz</h3>
-    <p>Das konsequente Meiden bekannter Auslöser – soweit praktisch möglich – bleibt eine grundlegende Maßnahme in der Allergiebehandlung.</p>
+    <p>Das konsequente Meiden bekannter Auslöser bleibt eine grundlegende Maßnahme.</p>
   </div>
-  <p class="source-ref">Allgemeine Informationen vgl. Wikipedia: „Hyposensibilisierung", „Antihistaminikum", „Mastzellstabilisator", „Cortison" (CC BY-SA 3.0)</p>
+  <p class="source-ref">Vgl. Wikipedia: „Hyposensibilisierung", „Antihistaminikum", „Cortison" (CC BY-SA 3.0)</p>
 </section>
 
-<!-- Slide 8: Naturheilkundliche Diagnostik -->
-<section>
-  <h2>Diagnostik in der Naturheilpraxis</h2>
-  <p>In der Naturheilpraxis Peter Rauch werden verschiedene erfahrungsheilkundliche und labortechnische Verfahren zur Allergie-Abklärung eingesetzt:</p>
+<!-- ==================== GESCHÜTZTE SLIDES (BLUR + OVERLAY) ==================== -->
 
-  <h3>Diagnostische Möglichkeiten:</h3>
-  <ol>
-    <li><strong>Metatron-Analyse</strong> – biophysikalisches Analyseverfahren (Erfahrungsheilkunde)</li>
-    <li><strong>Kinesiologisch-frequenztherapeutische Austestung</strong> – Testung der häufigsten allergenauslösenden Stoffe</li>
-    <li><strong>Labordiagnostik</strong> – konventionelle Blutanalyse</li>
-  </ol>
-
-  <h3>Relevante Laborparameter nach Wolfgang M. Ebert (Bio-Diagnostik AG, Iserlohn):</h3>
-  <p style="font-size:0.88rem !important; margin-bottom:0.5rem">Die folgenden Parameter werden von der <strong>Bio-Diagnostik AG</strong> (gegr. 1981 von Wolfgang M. Ebert, Iserlohn) – einem auf ganzheitliche Labordiagnostik spezialisierten Familienunternehmen – im Rahmen der allergologischen Zusammenhangsdiagnostik als besonders relevant empfohlen:</p>
-  <div class="split-grid">
-    <div class="split-card">
-      <h3>Immunologische Parameter</h3>
-      <ul>
-        <li>Gesamt-Eiweiß und Albumin</li>
-        <li>Immunglobuline der Gruppe E (IgE)</li>
-        <li>Leukozyten und Lymphozyten</li>
-        <li>Eosinophile und basophile Granulozyten</li>
-      </ul>
+<!-- Slide 8: Diagnostik (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
     </div>
-    <div class="split-card">
-      <h3>Vegetative &amp; Stoffwechsel-Parameter</h3>
-      <ul>
-        <li>Schilddrüse: T3, T4, TSH, fT3, fT4</li>
-        <li>Phosphat (PO4), Calcium (Ca++)</li>
-        <li>Magnesium, Eisen, Kupfer (Fe/Cu-Quotient)</li>
-        <li>Transaminasen (GOT, GPT) und γ-GT</li>
-      </ul>
+    <h3>Nur für Patienten</h3>
+    <p>Diagnostik-Details, Laborparameter und praxisspezifische Verfahren sind ausschließlich für registrierte Patienten der Naturheilpraxis Peter Rauch einsehbar.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
+  </div>
+  <div class="slide-content">
+    <h2>Diagnostik in der Naturheilpraxis</h2>
+    <p>In der Naturheilpraxis Peter Rauch werden verschiedene erfahrungsheilkundliche und labortechnische Verfahren zur Allergie-Abklärung eingesetzt...</p>
+    <h3>Diagnostische Möglichkeiten:</h3>
+    <ol>
+      <li>Metatron-Analyse – biophysikalisches Analyseverfahren</li>
+      <li>Kinesiologisch-frequenztherapeutische Austestung</li>
+      <li>Labordiagnostik – konventionelle Blutanalyse</li>
+    </ol>
+    <h3>Relevante Laborparameter:</h3>
+    <div class="split-grid">
+      <div class="split-card"><h3>Immunologische Parameter</h3><ul><li>Gesamt-Eiweiß und Albumin</li><li>Immunglobuline der Gruppe E</li></ul></div>
+      <div class="split-card"><h3>Stoffwechsel-Parameter</h3><ul><li>Schilddrüse: T3, T4, TSH</li><li>Phosphat, Calcium, Magnesium</li></ul></div>
     </div>
   </div>
-  <div class="note-box primary">
-    <strong>ℹ️ Hinweis zur Erfahrungsheilkunde</strong>
-    Die Metatron-Analyse und kinesiologische Austestung gehören zur <strong>Erfahrungsheilkunde</strong> und sind nicht im Sinne der evidenzbasierten Medizin wissenschaftlich anerkannt. Sie können die schulmedizinische Diagnostik ergänzen, aber nicht ersetzen.
-  </div>
-  <p class="source-ref">Vgl. Ebert, Wolfgang M.: Die Blutanalyse in der alternativen Medizin – Die Quintessenz aus Fachvorträgen von über 20 Jahren, Mönnig Verlag, ISBN 978-3-9814701-3-0; sowie: Ebert, W. M. / Heyers, D.: Labordiagnostik in der naturheilkundlichen Praxis (Gesamtausgabe), Bio-Diagnostik AG, Iserlohn – <a href="https://biodiagnostik.de" target="_blank" style="color:var(--primary)">biodiagnostik.de</a></p>
 </section>
 
-<!-- Slide 9: Naturheilkundliche Behandlungsmethoden -->
-<section>
-  <h2>Naturheilkundliche Behandlungsansätze</h2>
-  <p>In der Naturheilpraxis Peter Rauch können folgende erfahrungsheilkundliche Verfahren im Rahmen einer individuellen Therapiebegleitung zum Einsatz kommen:</p>
-  <ol>
-    <li><strong>NAET-Methode</strong> – Nambudripad's Allergy Elimination Technique</li>
-    <li><strong>Frequenztherapie / Bioresonanztherapie</strong></li>
-    <li><strong>EAV-Allergie-Behandlung</strong> – Elektroakupunktur nach Dr. Voll mit Nosoden</li>
-    <li><strong>Homöopathische Begleitung</strong></li>
-    <li><strong>Ernährungsberatung</strong></li>
-    <li><strong>Darmregulative Therapie</strong></li>
-    <li><strong>Orthomolekulare Therapie</strong></li>
-    <li><strong>TCM-Betrachtung</strong> – Traditionelle Chinesische Medizin</li>
-    <li><strong>Psychologische Beratung</strong></li>
-  </ol>
-  <div class="note-box warning">
-    <strong>⚠️ Wichtiger Hinweis gemäß HWG</strong>
-    Die genannten Verfahren gehören überwiegend zur <strong>Erfahrungsheilkunde</strong>. Ihre Wirksamkeit ist in der evidenzbasierten Medizin nicht oder nicht hinreichend wissenschaftlich belegt. Sie stellen <strong>kein Heilversprechen</strong> dar und ersetzen keine ärztliche Behandlung. Eine individuelle Beratung in der Praxis ist Voraussetzung.
-  </div>
-</section>
-
-<!-- Slide 10: Orthomolekulare Therapie -->
-<section>
-  <h2>Orthomolekulare Therapie bei Allergien</h2>
-  <p>In der Erfahrungsheilkunde wird bestimmten Mikronährstoffen eine unterstützende Rolle bei allergischen Geschehen zugeschrieben:</p>
-
-  <div class="card">
-    <h3>🦴 Calcium – Die Doppelrolle bei Allergien</h3>
-    <p>Calcium hat im allergischen Geschehen eine <strong>differenzierte Doppelrolle</strong>:</p>
-    <table style="margin:0.5rem 0">
-      <tr><th></th><th>Intrazelluläres Ca²⁺</th><th>Extrazelluläres Ca²⁺ (Blutcalcium)</th></tr>
-      <tr><td><strong>Wirkung</strong></td><td>Triggert Mastzell-Degranulation</td><td>Kann Gefäßpermeabilität senken</td></tr>
-      <tr><td><strong>Effekt</strong></td><td>Pro-allergisch</td><td>Kann Symptome mildern</td></tr>
-      <tr><td><strong>Mechanismus</strong></td><td>Ca²⁺-Einstrom durch Ionenkanäle</td><td>Stabilisierung der Endothelzell-Membranen</td></tr>
-    </table>
-    <p style="margin-top:0.5rem">Einerseits ist der <strong>Ca²⁺-Einstrom in die Mastzelle</strong> nötig, um die Histamin-Ausschüttung auszulösen (pro-allergisch). Andererseits kann ein ausreichender <strong>Calciumspiegel im Blut</strong> die Durchlässigkeit der Gefäßwände verringern und so allergische Symptome wie Schwellung und Ödembildung mildern.</p>
-    <p>Die früher übliche <strong>intravenöse Calciumgabe</strong> bei akuten Allergien wird heute kritisch bewertet, da der klinische Nutzen nicht ausreichend belegt ist. Die <strong>Kontrolle des Calciumspiegels</strong> im Rahmen der Labordiagnostik bleibt dennoch sinnvoll, da ein Calciummangel vielfältige Körperfunktionen beeinträchtigen kann.</p>
-  </div>
-
-  <div class="card">
-    <h3>☀️ Vitamin D</h3>
-    <p>Vitamin D wird in der Fachliteratur als Regulator humaner Immunreaktionen beschrieben. Es kann erfahrungsheilkundlich die Differenzierung von Immunzellen unterstützen. Rezidivierende Infekte, Allergien und Mykosen werden in der Naturheilkunde als mögliche Hinweise auf einen unzureichenden Vitamin-D-Status betrachtet.</p>
-  </div>
-
-  <div class="card">
-    <h3>🍊 Vitamin C</h3>
-    <p>In Studien (u.&nbsp;a. Zuskin 1973, Bucka 1990) wurden Zusammenhänge zwischen Vitamin-C-Zufuhr und allergischem Geschehen untersucht. Die Ergebnisse deuten auf eine mögliche unterstützende Rolle hin, wobei die optimale Dosierung individuell variiert.</p>
-  </div>
-
-  <div class="card">
-    <h3>🥬 Folsäure</h3>
-    <p>US-amerikanische Studien zeigten statistische Zusammenhänge zwischen niedrigen Folsäurespiegeln und erhöhtem Risiko für erhöhte IgE-Antikörper, allergische Symptome und Asthma. Diese Beobachtungen ersetzen keine individuelle Diagnostik.</p>
-  </div>
-
-  <div class="note-box accent">
-    <strong>💡 Praxishinweis</strong>
-    Die Einnahme von Nahrungsergänzungsmitteln sollte stets <strong>individuell abgestimmt</strong> und therapeutisch begleitet werden. Nicht selten besteht bei Allergikern auch eine Unverträglichkeit gegenüber bestimmten Vitaminpräparaten selbst – dies wird in der Praxis berücksichtigt.
-  </div>
-  <p class="source-ref">Vgl. Kuklinski, B.: Mitochondrien – Symptome, Diagnose und Therapie, Aurum Verlag; Strunz, U.: Vitamine, Heyne Verlag; Ebert, W. M.: Die Blutanalyse in der alternativen Medizin, Mönnig Verlag</p>
-</section>
-
-<!-- Slide 11: TCM-Betrachtung -->
-<section>
-  <h2>Allergien aus Sicht der Traditionellen Chinesischen Medizin</h2>
-  <p>In der TCM wird das Allergiegeschehen erfahrungsheilkundlich in einen ganzheitlichen Kontext eingebettet. Folgende Faktoren werden traditionell als begünstigend betrachtet:</p>
-
-  <div class="card">
-    <h3>Mögliche Ursachen aus TCM-Sicht:</h3>
-    <ul>
-      <li><strong>Konstitutionsschwäche / Abwehrschwäche</strong> – In der TCM als „ungenügende Essenz der Nieren" beschrieben (westlich: erbliche Veranlagung)</li>
-      <li><strong>Belastungen in der Schwangerschaft</strong> – Emotionaler Stress, Infektionskrankheiten, Genussmittel</li>
-      <li><strong>Schwache Milzfunktion</strong> – Durch einseitige Ernährung (z.&nbsp;B. übermäßig Süßigkeiten, Milchprodukte, Weizen, Rohkost)</li>
-      <li><strong>Äußere pathogene Faktoren</strong> – Wind, Kälte, Hitze, Feuchtigkeit, Trockenheit (nach TCM-Lehre)</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h3>Zuordnung in den Fünf Elementen:</h3>
-    <p>Die Allergie wird in der TCM dem <strong>Wasserelement</strong> zugeordnet. Dazu zählen der Blasenmeridian, der Nierenmeridian und – in erweiterter Betrachtung (EAV) – das Lymphgefäß.</p>
-    <p>Eine Schwächung dieser Funktionskreise kann erfahrungsheilkundlich mit einer erhöhten Allergietendenz in Verbindung gebracht werden.</p>
-  </div>
-
-  <div class="note-box primary">
-    <strong>ℹ️ Hinweis</strong>
-    Die Traditionelle Chinesische Medizin ist ein eigenständiges medizinisches System mit eigener Terminologie. Die hier beschriebenen Konzepte (Meridiane, Fünf Elemente) entsprechen nicht dem westlich-schulmedizinischen Verständnis und gehören zur <strong>Erfahrungsheilkunde</strong>.
-  </div>
-  <p class="source-ref">Vgl. Ebert, W. M.: Die Blutanalyse in der alternativen Medizin, Mönnig Verlag</p>
-</section>
-
-<!-- Slide 12: Psychosomatische Betrachtung – Einführung -->
-<section>
-  <h2>Psychosomatische Betrachtung der Allergie</h2>
-  <p style="font-style:italic; opacity:0.8; margin-bottom:1rem">Die folgenden Betrachtungen spiegeln die persönliche Praxisphilosophie und langjährige Berufserfahrung von Peter Rauch wider. Sie erheben keinen Anspruch auf wissenschaftliche Allgemeingültigkeit.</p>
-
-  <div class="card">
-    <h3>Das Zusammenspiel von Psyche und Immunsystem</h3>
-    <p>Die <strong>Psycho-Neuro-Immunologie</strong> (PNI) – ein anerkanntes Forschungsfeld – untersucht die Wechselwirkungen zwischen psychischen Prozessen, dem Nervensystem und dem Immunsystem.</p>
-    <p>In der ganzheitlichen Betrachtung kann das allergische Geschehen auch als Ausdruck eines übersteigerten Abwehrverhaltens betrachtet werden – sowohl auf körperlicher als auch auf seelischer Ebene.</p>
-  </div>
-
-  <div class="card">
-    <h3>Allergie und Aggression</h3>
-    <p>In der psychosomatischen Deutung wird die Allergie erfahrungsheilkundlich als möglicher Ausdruck <strong>falsch geleiteter Abwehr</strong> und einer gestörten Verarbeitung von Aggression verstanden. Das Immunsystem bekämpft dabei harmlose Stoffe – ähnlich wie wir im Alltag manchmal gegen Dinge ankämpfen, die uns eigentlich nicht bedrohen.</p>
-  </div>
-
-  <div class="card">
-    <h3>Widerstand und Immunfunktion</h3>
-    <p>Der psychische Widerstand dient dem Schutz unserer Identität – ebenso wie das Immunsystem unsere körperliche Integrität schützt. Bei Allergikern lassen sich erfahrungsheilkundlich überdurchschnittlich häufig Parallelen zwischen einem übersteigerten psychischen Widerstandsverhalten und dem überschießenden immunologischen Geschehen beobachten.</p>
-  </div>
-  <p class="source-ref">Persönliche Praxiserfahrung Peter Rauch; Konzeptionelle Grundlagen vgl. Ebert, W. M.: Die Blutanalyse in der alternativen Medizin, Mönnig Verlag</p>
-</section>
-
-<!-- Slide 13: Psychosomatik – Feindbild -->
-<section>
-  <h2>Das Konzept des „Feindbildes"</h2>
-  <p style="font-style:italic; opacity:0.8; margin-bottom:1rem">Persönliche Praxisphilosophie – kein wissenschaftlich validiertes Konzept</p>
-
-  <div class="card">
-    <h3>Was ist ein Feindbild?</h3>
-    <p>Ein Feindbild entsteht, wenn wir einen an sich neutralen Bestandteil unserer Umwelt als <strong>bedrohlich oder schädlich</strong> interpretieren. Diese Fehlinterpretation kann Angst und Aggression auslösen – sowohl auf psychischer als auch, über die Psycho-Neuro-Immunologie betrachtet, auf immunologischer Ebene.</p>
-  </div>
-
-  <div class="card">
-    <h3>Parallele zur Allergie</h3>
-    <p>So wie das Immunsystem bei einer Allergie <strong>harmlose Blütenpollen als Feind</strong> bekämpft, neigen manche Menschen dazu, im Alltag wertneutrale Situationen als bedrohlich zu empfinden. In beiden Fällen wird Energie für eine Abwehrreaktion aufgewendet, die <strong>keinen konstruktiven Nutzen</strong> hat.</p>
-  </div>
-
-  <div class="card">
-    <h3>Ein Denkanstoß</h3>
-    <p>Diese Betrachtungsweise lädt dazu ein, den eigenen Umgang mit vermeintlichen „Bedrohungen" zu reflektieren. Die Lösung irrealer Feindbilder kann erfahrungsheilkundlich als ein Baustein im ganzheitlichen Therapiekonzept betrachtet werden – sie ersetzt jedoch keine medizinische Behandlung.</p>
-  </div>
-
-  <div class="note-box primary">
-    <strong>ℹ️ Einordnung</strong>
-    Die psychosomatische Begleitung in der Naturheilpraxis Peter Rauch versteht sich als <strong>ergänzendes Angebot</strong>. Sie ersetzt keine psychotherapeutische oder psychiatrische Behandlung und stellt kein Heilversprechen dar.
-  </div>
-</section>
-
-<!-- Slide 14: Diagnostik & Frequenztherapie -->
-<section>
-  <h2>🔄 Komplementäre Diagnostik &amp; Frequenztherapie bei Allergien</h2>
-
-  <div class="split-grid">
-    <div class="split-card">
-      <h3>🔬 Kinesiologische Testung nach Baklayan</h3>
-      <ul>
-        <li><strong>Methode:</strong> Testung mit spezifischen <strong>Testampullen</strong> und dem <strong>Trikombingerät</strong> nach Alan E. Baklayan</li>
-        <li><strong>Bei Allergien:</strong> Differenzierung zwischen echten IgE-vermittelten Allergien, Pseudoallergien und möglichen parasitären Belastungen</li>
-        <li><strong>Diagnostik &amp; Therapie:</strong> Das Trikombingerät dient zur Testung und Behandlung</li>
-        <li><strong>Einordnung:</strong> Verfahren der <strong>Erfahrungsheilkunde</strong> – nicht schulmedizinisch anerkannt</li>
-      </ul>
-      <p class="source-ref">Baklayan AE, Trikombingerät-Dokumentation; Akademie der harmonikalischen Frequenzanwendung</p>
+<!-- Slide 9: Naturheilkundliche Methoden (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
     </div>
-    <div class="split-card">
-      <h3>🖥️ Metatron Hospital System</h3>
-      <ul>
-        <li><strong>Diagnostik:</strong> Frequenzbasierte Untersuchung von Organsystemen und Belastungsfaktoren</li>
-        <li><strong>Behandlung:</strong> Meta-Therapie-Programme zur Unterstützung der Selbstregulation</li>
-        <li><strong>Einordnung:</strong> Verfahren der <strong>Erfahrungsheilkunde</strong> – nicht schulmedizinisch anerkannt</li>
-      </ul>
-      <p class="source-ref">NLS-Systemdokumentation; Erfahrungsheilkunde Praxisberichte</p>
-    </div>
+    <h3>Nur für Patienten</h3>
+    <p>Detaillierte Informationen zu naturheilkundlichen Behandlungsansätzen werden nach der persönlichen Beratung in der Praxis freigeschaltet.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
   </div>
-
-  <div class="split-grid" style="margin-top:1rem">
-    <div class="split-card">
-      <h3>⚡ Frequenztherapie &amp; Heimanwendung</h3>
-      <ul>
-        <li><strong>Diamond Shield Zapper:</strong> Frequenzgerät mit ChipCards für Allergie-Begleitung und Entgiftung</li>
-        <li><strong>Heimanwendung:</strong> Patienten mit eigenem Zapper können die Behandlung zu Hause unterstützend fortführen</li>
-        <li><strong>Wichtig:</strong> Verfahren der Erfahrungsheilkunde – kein Ersatz für schulmedizinische Allergiediagnostik</li>
-      </ul>
-      <p class="source-ref">Baklayan AE, Diamond Shield Fachliteratur</p>
-    </div>
-    <div class="split-card">
-      <h3>🏥 Klassische Labordiagnostik</h3>
-      <ul>
-        <li><strong>Blutuntersuchung:</strong> Gesamt-IgE, spezifische IgE, Differentialblutbild (Eosinophilie)</li>
-        <li><strong>Durchführung:</strong> Kann direkt über die Praxis veranlasst werden</li>
-        <li><strong>Einordnung:</strong> <strong>Schulmedizinisch anerkannte Diagnostik</strong></li>
-      </ul>
-      <p class="source-ref">S2k-Leitlinie Allergologische Diagnostik (AWMF)</p>
-    </div>
-  </div>
-
-  <div class="note-box warning">
-    <strong>⚠️ Transparenz-Hinweis</strong>
-    Kinesiologische Testung nach Baklayan, Metatron Hospital und Frequenztherapie sind Verfahren der Erfahrungsheilkunde. Sie sind nicht durch RCTs belegt und werden von der evidenzbasierten Medizin nicht als diagnostische oder therapeutische Verfahren anerkannt.
+  <div class="slide-content">
+    <h2>Naturheilkundliche Behandlungsansätze</h2>
+    <p>In der Naturheilpraxis können folgende Verfahren zum Einsatz kommen:</p>
+    <ol>
+      <li>NAET-Methode</li>
+      <li>Frequenztherapie / Bioresonanztherapie</li>
+      <li>EAV-Allergie-Behandlung</li>
+      <li>Homöopathische Begleitung</li>
+      <li>Ernährungsberatung</li>
+    </ol>
   </div>
 </section>
 
-<!-- Slide 15: Kontakt & Disclaimer -->
+<!-- Slide 10: Orthomolekulare Therapie (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </div>
+    <h3>Nur für Patienten</h3>
+    <p>Orthomolekulare Therapiedetails und Mikronährstoff-Informationen sind nur nach Anmeldung zugänglich.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
+  </div>
+  <div class="slide-content">
+    <h2>Orthomolekulare Therapie bei Allergien</h2>
+    <p>Bestimmten Mikronährstoffen wird eine unterstützende Rolle bei allergischen Geschehen zugeschrieben...</p>
+    <div class="card"><h3>Calcium – Die Doppelrolle</h3><p>Details zur Calcium-Wirkung...</p></div>
+    <div class="card"><h3>Vitamin D</h3><p>Details zur Vitamin-D-Rolle...</p></div>
+  </div>
+</section>
+
+<!-- Slide 11: TCM (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </div>
+    <h3>Nur für Patienten</h3>
+    <p>TCM-Konzepte und Fünf-Elemente-Zuordnung bei Allergien — nur für Patienten der Praxis.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
+  </div>
+  <div class="slide-content">
+    <h2>Allergien aus Sicht der Traditionellen Chinesischen Medizin</h2>
+    <p>In der TCM wird das Allergiegeschehen in einen ganzheitlichen Kontext eingebettet...</p>
+  </div>
+</section>
+
+<!-- Slide 12: Psychosomatik (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </div>
+    <h3>Nur für Patienten</h3>
+    <p>Psychosomatische Betrachtung und individuelle Praxisphilosophie — nur nach persönlichem Gespräch in der Praxis.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
+  </div>
+  <div class="slide-content">
+    <h2>Psychosomatische Betrachtung der Allergie</h2>
+    <p>Das Zusammenspiel von Psyche und Immunsystem...</p>
+  </div>
+</section>
+
+<!-- Slide 13: Frequenztherapie (GESCHÜTZT) -->
+<section class="protected-slide">
+  <div class="protected-overlay">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </div>
+    <h3>Nur für Patienten</h3>
+    <p>Komplementäre Diagnostik- und Frequenztherapie-Details — nur für registrierte Patienten einsehbar.</p>
+    <a href="/auth" class="login-btn">🔐 Anmelden</a>
+  </div>
+  <div class="slide-content">
+    <h2>Komplementäre Diagnostik &amp; Frequenztherapie bei Allergien</h2>
+    <p>Kinesiologische Testung, Metatron Hospital, Diamond Shield Zapper...</p>
+  </div>
+</section>
+
+<!-- ==================== KONTAKT (ÖFFENTLICH) ==================== -->
+
+<!-- Slide 14: Kontakt & Disclaimer -->
 <section>
   <h2>Beratung &amp; Begleitung</h2>
   <div class="cta-box">
@@ -530,11 +472,8 @@ tr:nth-child(even) td { background: rgba(70,113,91,0.03); }
   <div class="disclaimer" style="margin-top:1rem">
     <h2 style="font-size:1.1rem !important">Rechtlicher Hinweis gemäß HWG &amp; HeilprG</h2>
     <p style="font-size:0.82rem !important"><strong>Nur zur Information – kein Heilversprechen:</strong> Diese Inhalte dienen ausschließlich der allgemeinen Information und Gesundheitsbildung. Sie stellen <strong>keine Heilaussage, kein Heilversprechen und keine therapeutische Empfehlung</strong> im Sinne des Heilmittelwerbegesetzes (HWG) dar.</p>
-    <p style="font-size:0.82rem !important; margin-top:0.4rem"><strong>Kein Ersatz für professionelle Beratung:</strong> Die hier beschriebenen Verfahren und Informationen ersetzen <strong>keine ärztliche oder heilpraktische Untersuchung, Diagnose oder Behandlung</strong>. Vor Beginn jeglicher Therapie ist eine <strong>persönliche Rücksprache mit Ihrem Heilpraktiker oder Arzt</strong> zwingend erforderlich.</p>
-    <p style="font-size:0.82rem !important; margin-top:0.4rem"><strong>Für Patienten der Naturheilpraxis Peter Rauch:</strong> Diese Informationen ergänzen Ihre Therapie und werden <strong>individuell in der Praxis mit Ihnen besprochen</strong>. Die eigenständige Anwendung von Therapien oder Nahrungsergänzungsmitteln ohne vorherige Rücksprache mit mir als Ihrem behandelnden Heilpraktiker erfolgt <strong>auf eigene Verantwortung</strong>.</p>
-    <p style="font-size:0.82rem !important; margin-top:0.4rem"><strong>Haftungsausschluss:</strong> Für Schäden, die durch eigenständige Anwendung der hier dargestellten Informationen ohne therapeutische Begleitung entstehen, übernimmt die Naturheilpraxis Peter Rauch <strong>keine Haftung</strong>. Die Nutzung erfolgt ausdrücklich auf eigenes Risiko (§ 630a ff. BGB).</p>
-    <p style="font-size:0.82rem !important; margin-top:0.4rem"><strong>Quellenhinweis:</strong> Allgemeine medizinische Informationen sind z.&nbsp;T. angelehnt an frei zugängliche Inhalte der deutschsprachigen Wikipedia (Lizenz: <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.de" style="color:var(--primary)" target="_blank">CC BY-SA 3.0</a>) und wurden sinngemäß zusammengefasst sowie redaktionell überarbeitet. Weitere Quellen sind im Text angegeben.</p>
-    <p style="font-size:0.78rem !important; margin-top:0.5rem; opacity:0.7">© 2026 Naturheilpraxis Peter Rauch · Heilpraktiker · Friedrich-Deffner-Str. 19a · 86163 Augsburg · Alle Rechte vorbehalten</p>
+    <p style="font-size:0.82rem !important; margin-top:0.4rem"><strong>Kein Ersatz für professionelle Beratung:</strong> Die hier beschriebenen Verfahren ersetzen <strong>keine ärztliche oder heilpraktische Untersuchung, Diagnose oder Behandlung</strong>.</p>
+    <p style="font-size:0.78rem !important; margin-top:0.5rem; opacity:0.7">© 2026 Naturheilpraxis Peter Rauch · Heilpraktiker · Augsburg · Alle Rechte vorbehalten</p>
   </div>
 </section>
 
