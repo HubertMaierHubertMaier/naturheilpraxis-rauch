@@ -91,6 +91,7 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
   };
 
   const [resending, setResending] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   const handleResend = async (patient: PatientProfile) => {
     if (!patient.submission_id) {
@@ -110,6 +111,43 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
       toast.error("Fehler beim erneuten Senden: " + (err.message || "Unbekannt"));
     } finally {
       setResending(null);
+    }
+  };
+
+  const handleToggleVerified = async (patient: PatientProfile) => {
+    setVerifying(patient.user_id);
+    const newValue = !patient.is_verified_patient;
+    try {
+      // Use service-role via edge function for RLS bypass
+      const { error } = await supabase.functions.invoke("get-patients", {
+        method: "PATCH" as any,
+        body: { userId: patient.user_id, is_verified_patient: newValue },
+        headers: devBypass ? { "x-dev-mode": "true" } : {},
+      });
+      // Actually, let's update directly since admin has RLS access
+      // We need a dedicated approach - update via the profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ is_verified_patient: newValue } as any)
+        .eq("user_id", patient.user_id);
+      
+      if (updateError) throw updateError;
+      
+      // Update local state
+      setPatients(prev => prev.map(p => 
+        p.user_id === patient.user_id ? { ...p, is_verified_patient: newValue } : p
+      ));
+      
+      toast.success(
+        newValue
+          ? `✅ ${patient.first_name || patient.email} freigeschaltet!`
+          : `❌ ${patient.first_name || patient.email} Zugang gesperrt.`
+      );
+    } catch (err: any) {
+      console.error("Verify error:", err);
+      toast.error("Fehler: " + (err.message || "Unbekannt"));
+    } finally {
+      setVerifying(null);
     }
   };
 
