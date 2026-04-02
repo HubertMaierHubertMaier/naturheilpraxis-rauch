@@ -27,8 +27,6 @@ const groups: InfoGroup[] = [
   {
     title: { de: "Für Patienten", en: "For Patients" },
     items: [
-      { label: { de: "Anamnesebogen", en: "Medical History" }, href: "/anamnesebogen", icon: ClipboardList, description: { de: "Medizinischer Fragebogen", en: "Medical questionnaire" } },
-      { label: { de: "Datenschutzerklärung", en: "Privacy Policy" }, href: "/datenschutz", icon: ShieldCheck, description: { de: "Informationen zum Datenschutz", en: "Privacy information" } },
       { label: { de: "Patientenaufklärung", en: "Patient Information" }, href: "/patientenaufklaerung", icon: FileSignature, description: { de: "Kosten, Erstattung & Vereinbarung", en: "Costs, reimbursement & agreement" } },
       { label: { de: "Ihr Therapieweg", en: "Your Treatment Path" }, href: "/therapieweg-uebersicht.html", icon: Route, description: { de: "Ablauf der ganzheitlichen Behandlung Schritt für Schritt", en: "Step-by-step holistic treatment process" }, external: true },
     ],
@@ -48,16 +46,6 @@ const groups: InfoGroup[] = [
       { label: { de: "Rohmilch – Mikrobiologie", en: "Raw Milk – Microbiology" }, href: "/rohmilch-mikrobiologie", icon: Microscope, description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" } },
       { label: { de: "Parasiten in Deutschland", en: "Parasites in Germany" }, href: "/parasiten-deutschland.html", icon: Bug, description: { de: "Vorkommen, Arten & Symptome heimischer Parasiten", en: "Prevalence, types & symptoms of local parasites" }, external: true },
       { label: { de: "Viren & Bakterien", en: "Viruses & Bacteria" }, href: "/viren-bakterien-deutschland.html", icon: Syringe, description: { de: "Akute & latente Belastungen, Erregerpersistenz", en: "Acute & latent infections, pathogen persistence" }, external: true },
-    ],
-  },
-  {
-    title: { de: "Nur für Patienten der Naturheilpraxis Peter Rauch", en: "Only for Patients of Naturheilpraxis Peter Rauch" },
-    items: [
-      { label: { de: "Allergiebehandlung", en: "Allergy Treatment" }, href: "/allergiebehandlung.html", icon: Flower2, description: { de: "Ganzheitliche Allergie-Betrachtung & Therapie", en: "Holistic allergy approach & therapy" }, external: true },
-      { label: { de: "Candida-Diät", en: "Candida Diet" }, href: "/candida-diaet.html", icon: FileText, description: { de: "Ernährungsratgeber bei Candida-Pilzbefall", en: "Dietary guide for Candida infection" }, external: true },
-      { label: { de: "Kräuter & Gewürze gegen Schmerz", en: "Herbs & Spices for Pain" }, href: "/kraeuter-schmerz-entzuendung.html", icon: Leaf, description: { de: "Phytotherapie bei Schmerz & Entzündung", en: "Phytotherapy for pain & inflammation" }, external: true },
-      { label: { de: "Hochohmiges Wasser", en: "High-Ohm Water" }, href: "/patienteninfo-hochohmiges-wasser.html", icon: Droplets, description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" }, external: true },
-      { label: { de: "Raucherentwöhnung", en: "Smoking Cessation" }, href: "/raucherentwoehnung", icon: Cigarette, description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" } },
     ],
   },
   {
