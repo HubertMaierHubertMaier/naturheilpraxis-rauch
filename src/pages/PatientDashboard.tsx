@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Eye, Calendar, Clock, User, Shield, Loader2 } from "lucide-react";
+import {
+  FileText, Download, Eye, Calendar, Clock, User, Shield, Loader2,
+  BookOpen, PenTool, Plus, ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { generateEnhancedAnamnesePdf } from "@/lib/pdfExportEnhanced";
 import { AnamneseFormData } from "@/lib/anamneseFormData";
@@ -52,7 +55,6 @@ const PatientDashboard = () => {
 
       if (error) throw error;
       
-      // Safely cast the form_data from Json to AnamneseFormData
       const typedData: AnamnesisSubmission[] = (data || []).map(item => ({
         ...item,
         form_data: item.form_data as unknown as AnamneseFormData
@@ -81,21 +83,12 @@ const PatientDashboard = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-      draft: { 
-        label: t("Entwurf", "Draft"), 
-        variant: "secondary" 
-      },
-      submitted: { 
-        label: t("Eingereicht", "Submitted"), 
-        variant: "default" 
-      },
-      reviewed: { 
-        label: t("Überprüft", "Reviewed"), 
-        variant: "outline" 
-      }
+    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+      draft: { label: t("Entwurf", "Draft"), variant: "secondary" },
+      submitted: { label: t("Eingereicht", "Submitted"), variant: "default" },
+      verified: { label: t("Verifiziert", "Verified"), variant: "default" },
+      reviewed: { label: t("Überprüft", "Reviewed"), variant: "outline" },
     };
-    
     const config = statusConfig[status] || statusConfig.submitted;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -117,15 +110,15 @@ const PatientDashboard = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
+
+  const verifiedSubmissions = submissions.filter(s => s.status === "verified");
 
   return (
     <Layout>
       <SEOHead 
-        title={t("Mein Dashboard", "My Dashboard")} 
-        description={t("Verwalten Sie Ihre medizinischen Unterlagen", "Manage your medical records")}
+        title={t("Mein Patientenbereich", "My Patient Area")} 
+        description={t("Ihr persönlicher Bereich mit Infothek, Anamnesebogen und Dokumenten", "Your personal area with info center, medical history and documents")}
         noIndex={true}
       />
       
@@ -145,197 +138,214 @@ const PatientDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="submissions" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="submissions" className="gap-2">
-              <FileText className="h-4 w-4" />
-              {t("Anamnesebögen", "Medical History Forms")}
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
-              <Download className="h-4 w-4" />
-              {t("Dokumente", "Documents")}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Submissions Tab */}
-          <TabsContent value="submissions" className="space-y-4">
-            {submissions.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    {t("Noch keine Anamnesebögen", "No medical history forms yet")}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {t(
-                      "Füllen Sie Ihren ersten Anamnesebogen aus, um ihn hier zu sehen.",
-                      "Fill out your first medical history form to see it here."
-                    )}
-                  </p>
-                  <Button onClick={() => navigate("/anamnesebogen")}>
-                    {t("Anamnesebogen ausfüllen", "Fill out form")}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {submissions.map((submission) => (
-                  <Card key={submission.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-primary" />
-                            {t("Anamnesebogen", "Medical History Form")}
-                          </CardTitle>
-                          <CardDescription className="flex items-center gap-4 text-sm">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {formatDate(submission.submitted_at)}
-                            </span>
-                            {submission.updated_at !== submission.submitted_at && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {t("Aktualisiert", "Updated")}: {formatDate(submission.updated_at)}
-                              </span>
-                            )}
-                          </CardDescription>
-                        </div>
-                        {getStatusBadge(submission.status)}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                        <span>
-                          {t("Patient", "Patient")}: {submission.form_data.vorname} {submission.form_data.nachname}
-                        </span>
-                        {submission.form_data.geburtsdatum && (
-                          <>
-                            <span>•</span>
-                            <span>{t("Geb.", "DOB")}: {submission.form_data.geburtsdatum}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedSubmission(
-                            selectedSubmission?.id === submission.id ? null : submission
-                          )}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          {selectedSubmission?.id === submission.id 
-                            ? t("Schließen", "Close") 
-                            : t("Details anzeigen", "View details")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadPdf(submission)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          {t("PDF herunterladen", "Download PDF")}
-                        </Button>
-                      </div>
-                      
-                      {/* Expanded Details */}
-                      {selectedSubmission?.id === submission.id && (
-                        <div className="mt-4 pt-4 border-t space-y-3">
-                          <h4 className="font-semibold">{t("Zusammenfassung", "Summary")}</h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">{t("E-Mail", "Email")}:</span>
-                              <p>{submission.form_data.email || "-"}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">{t("Telefon", "Phone")}:</span>
-                              <p>{submission.form_data.telefonPrivat || submission.form_data.mobil || "-"}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">{t("Adresse", "Address")}:</span>
-                              <p>{submission.form_data.strasse}, {submission.form_data.plz} {submission.form_data.wohnort}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">{t("Versicherung", "Insurance")}:</span>
-                              <p>{submission.form_data.versicherungstyp || "-"}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+        {/* Quick Actions */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+          {/* Infothek */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/infothek")}>
+            <CardContent className="p-6 flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                <BookOpen className="h-6 w-6 text-primary" />
               </div>
-            )}
-          </TabsContent>
-
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  {t("Verfügbare Dokumente", "Available Documents")}
-                </CardTitle>
-                <CardDescription>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">{t("Infothek", "Info Center")}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
                   {t(
-                    "Laden Sie wichtige Dokumente und Formulare herunter",
-                    "Download important documents and forms"
+                    "Alle Fachartikel, Therapieskripte und Patienteninformationen",
+                    "All articles, therapy scripts and patient information"
                   )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div>
-                      <p className="font-medium">{t("Datenschutzerklärung", "Privacy Policy")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Informationen zum Datenschutz in unserer Praxis", "Information about data protection in our practice")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/datenschutz")}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    {t("Ansehen", "View")}
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t("Behandlungsvertrag", "Treatment Agreement")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Allgemeine Behandlungsbedingungen", "General treatment conditions")}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">{t("Demnächst", "Coming soon")}</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{t("Gebührenordnung", "Fee Schedule")}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t("Übersicht unserer Behandlungskosten", "Overview of our treatment costs")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/gebuehren")}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    {t("Ansehen", "View")}
-                  </Button>
-                </div>
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
+                  {t("Zur Infothek", "Go to Info Center")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anamnesebogen ergänzen */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/anamnesebogen")}>
+            <CardContent className="p-6 flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-950/50 transition-colors flex-shrink-0">
+                <PenTool className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">
+                  {verifiedSubmissions.length > 0
+                    ? t("Anamnesebogen ergänzen", "Update Medical History")
+                    : t("Anamnesebogen ausfüllen", "Fill out Medical History")}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {verifiedSubmissions.length > 0
+                    ? t(
+                        "Ergänzen Sie neue Symptome oder aktualisieren Sie Ihre Angaben",
+                        "Add new symptoms or update your information"
+                      )
+                    : t(
+                        "Füllen Sie Ihren Anamnesebogen vor dem ersten Termin aus",
+                        "Fill out your medical history before your first appointment"
+                      )}
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
+                  {verifiedSubmissions.length > 0
+                    ? t("Bogen ergänzen", "Update form")
+                    : t("Bogen ausfüllen", "Fill out form")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dokumente */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/datenschutz")}>
+            <CardContent className="p-6 flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted group-hover:bg-muted/80 transition-colors flex-shrink-0">
+                <Shield className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">{t("Datenschutz & Dokumente", "Privacy & Documents")}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {t(
+                    "Datenschutzerklärung, Gebührenordnung und wichtige Formulare",
+                    "Privacy policy, fee schedule and important forms"
+                  )}
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
+                  {t("Ansehen", "View")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Separator className="mb-8" />
+
+        {/* Submissions History */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            {t("Meine Anamnesebögen", "My Medical History Forms")}
+            {verifiedSubmissions.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{verifiedSubmissions.length} {t("Version(en)", "version(s)")}</Badge>
+            )}
+          </h2>
+
+          {submissions.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {t("Noch keine Anamnesebögen", "No medical history forms yet")}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {t(
+                    "Füllen Sie Ihren ersten Anamnesebogen aus, um ihn hier zu sehen.",
+                    "Fill out your first medical history form to see it here."
+                  )}
+                </p>
+                <Button onClick={() => navigate("/anamnesebogen")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("Anamnesebogen ausfüllen", "Fill out form")}
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          ) : (
+            <div className="grid gap-4">
+              {submissions.map((submission, index) => (
+                <Card key={submission.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-primary" />
+                          {t("Anamnesebogen", "Medical History Form")}
+                          {verifiedSubmissions.length > 1 && submission.status === "verified" && (
+                            <Badge variant="outline" className="ml-1">
+                              V{verifiedSubmissions.length - verifiedSubmissions.indexOf(submission)}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-4 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(submission.submitted_at)}
+                          </span>
+                          {submission.updated_at !== submission.submitted_at && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              {t("Aktualisiert", "Updated")}: {formatDate(submission.updated_at)}
+                            </span>
+                          )}
+                        </CardDescription>
+                      </div>
+                      {getStatusBadge(submission.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <span>
+                        {t("Patient", "Patient")}: {submission.form_data.vorname} {submission.form_data.nachname}
+                      </span>
+                      {submission.form_data.geburtsdatum && (
+                        <>
+                          <span>•</span>
+                          <span>{t("Geb.", "DOB")}: {submission.form_data.geburtsdatum}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedSubmission(
+                          selectedSubmission?.id === submission.id ? null : submission
+                        )}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        {selectedSubmission?.id === submission.id 
+                          ? t("Schließen", "Close") 
+                          : t("Details anzeigen", "View details")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadPdf(submission)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        {t("PDF herunterladen", "Download PDF")}
+                      </Button>
+                    </div>
+                    
+                    {/* Expanded Details */}
+                    {selectedSubmission?.id === submission.id && (
+                      <div className="mt-4 pt-4 border-t space-y-3">
+                        <h4 className="font-semibold">{t("Zusammenfassung", "Summary")}</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">{t("E-Mail", "Email")}:</span>
+                            <p>{submission.form_data.email || "-"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">{t("Telefon", "Phone")}:</span>
+                            <p>{submission.form_data.telefonPrivat || submission.form_data.mobil || "-"}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">{t("Adresse", "Address")}:</span>
+                            <p>{submission.form_data.strasse}, {submission.form_data.plz} {submission.form_data.wohnort}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">{t("Versicherung", "Insurance")}:</span>
+                            <p>{submission.form_data.versicherungstyp || "-"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
