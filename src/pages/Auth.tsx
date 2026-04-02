@@ -20,6 +20,7 @@ const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 
 
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
 type AuthMode = 'login' | 'registration' | 'password_reset';
+type PatientType = 'new_patient' | 'existing_patient' | null;
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,10 @@ const Auth: React.FC = () => {
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
   const searchParams = new URLSearchParams(window.location.search);
   const devBypass = isNonProduction && searchParams.get('dev') === 'true';
+  
+  // Patient type from landing page selection
+  const patientType: PatientType = (searchParams.get('type') as PatientType) || null;
+  const isExistingPatient = patientType === 'existing_patient';
 
   // Only redirect if user was ALREADY logged in when Auth page first mounted.
   // Do NOT react to auth state changes during the login/2FA flow.
