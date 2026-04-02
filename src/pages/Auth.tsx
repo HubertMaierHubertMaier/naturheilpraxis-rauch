@@ -347,6 +347,30 @@ const Auth: React.FC = () => {
         description: language === 'de' ? 'Registrierung erfolgreich! Sie sind jetzt angemeldet.' : 'Registration successful! You are now logged in.',
       });
 
+      // Send notification to practice for existing patients
+      if (isExistingPatient) {
+        try {
+          await supabase.functions.invoke('notify-existing-patient', {
+            body: { email, patientType: 'existing_patient' },
+          });
+          toast({
+            title: 'Freischaltung beantragt',
+            description: 'Die Praxis wurde benachrichtigt. Sie erhalten Zugriff auf alle Inhalte, sobald Ihre Identität bestätigt wurde.',
+          });
+        } catch (err) {
+          console.error('Failed to send notification:', err);
+        }
+      } else {
+        // New patients: notify practice too
+        try {
+          await supabase.functions.invoke('notify-existing-patient', {
+            body: { email, patientType: 'new_patient' },
+          });
+        } catch (err) {
+          console.error('Failed to send notification:', err);
+        }
+      }
+
       navigate('/erstanmeldung');
     } catch (error: any) {
       toast({
