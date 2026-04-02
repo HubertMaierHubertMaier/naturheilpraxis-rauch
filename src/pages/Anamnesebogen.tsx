@@ -293,37 +293,42 @@ const WizardLayout = ({
           {language === "de" ? "Layout ändern" : "Change layout"}
         </Button>
 
-        <div className="flex items-center justify-between mb-8 overflow-x-auto pb-4">
-          {formSections.map((section, index) => (
-            <div key={section.id} className="flex items-center">
-              <div
-                className={`flex flex-col items-center cursor-pointer transition-all ${
-                  wizardStep === index ? "scale-110" : wizardStep > index ? "opacity-70" : "opacity-40"
-                }`}
-                onClick={() => setWizardStep(index)}
-              >
+        <div className="relative mb-8">
+          <div className="flex items-center overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {formSections.map((section, index) => (
+              <div key={section.id} className="flex items-center flex-shrink-0">
                 <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl mb-1 transition-all ${
-                    wizardStep === index
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : wizardStep > index
-                        ? "bg-green-500 text-white"
-                        : "bg-muted"
+                  className={`flex flex-col items-center cursor-pointer transition-all ${
+                    wizardStep === index ? "scale-110" : wizardStep > index ? "opacity-70" : "opacity-40"
                   }`}
+                  onClick={() => setWizardStep(index)}
                 >
-                  {wizardStep > index ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : section.emoji}
+                  <div
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl mb-1 transition-all ${
+                      wizardStep === index
+                        ? "bg-primary text-primary-foreground shadow-lg"
+                        : wizardStep > index
+                          ? "bg-green-500 text-white"
+                          : "bg-muted"
+                    }`}
+                  >
+                    {wizardStep > index ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : section.emoji}
+                  </div>
+                  <span className="text-[10px] sm:text-xs text-center max-w-[60px] truncate">
+                    {language === "de"
+                      ? section.titleDe.replace(/^[IVX]+\.\s*/, "")
+                      : section.titleEn.replace(/^[IVX]+\.\s*/, "")}
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs text-center hidden md:block max-w-[60px] truncate">
-                  {language === "de"
-                    ? section.titleDe.replace(/^[IVX]+\.\s*/, "")
-                    : section.titleEn.replace(/^[IVX]+\.\s*/, "")}
-                </span>
+                {index < formSections.length - 1 && (
+                  <div className={`h-0.5 w-4 sm:w-6 mx-1 flex-shrink-0 ${wizardStep > index ? "bg-green-500" : "bg-muted"}`} />
+                )}
               </div>
-              {index < formSections.length - 1 && (
-                <div className={`h-0.5 w-4 sm:w-8 mx-1 sm:mx-2 ${wizardStep > index ? "bg-green-500" : "bg-muted"}`} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground text-center mt-1 md:hidden">
+            ← {language === "de" ? "Wischen zum Scrollen" : "Swipe to scroll"} →
+          </div>
         </div>
 
         <Card className={`${currentSection.color} border-2`}>
