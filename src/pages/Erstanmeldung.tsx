@@ -373,11 +373,24 @@ export default function Erstanmeldung() {
                     )}
                   </p>
                   {anamnesisComplete ? (
-                    <div className="bg-sage-50 border border-primary/20 rounded-lg p-4 inline-flex items-center gap-3">
-                      <Check className="h-6 w-6 text-primary" />
-                      <span className="font-medium text-primary">
-                        {t("Anamnesebogen bereits eingereicht ✓", "Medical history already submitted ✓")}
-                      </span>
+                    <div className="space-y-4">
+                      <div className="bg-sage-50 border border-primary/20 rounded-lg p-4 inline-flex items-center gap-3">
+                        <Check className="h-6 w-6 text-primary" />
+                        <span className="font-medium text-primary">
+                          {t("Anamnesebogen bereits eingereicht ✓", "Medical history already submitted ✓")}
+                        </span>
+                      </div>
+                      <div>
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          onClick={() => navigate("/anamnesebogen", { state: { from: "erstanmeldung" } })}
+                          className="gap-2"
+                        >
+                          <PenTool className="h-4 w-4" />
+                          {t("Bogen ergänzen / aktualisieren", "Supplement / update form")}
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Button
