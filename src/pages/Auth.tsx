@@ -577,9 +577,14 @@ const Auth: React.FC = () => {
           <Alert className="bg-sage-50 border-sage-200">
             <Info className="h-4 w-4 text-primary" />
             <AlertDescription className="text-sm">
-              {language === 'de' 
-                ? 'Bereits registriert? Bitte wechseln Sie zum Tab "Anmelden".' 
-                : 'Already registered? Please switch to the "Login" tab.'}
+              {isExistingPatient
+                ? (language === 'de'
+                  ? 'Als bestehender Patient: Nach der Registrierung wird die Praxis informiert und Ihren Zugang freischalten.'
+                  : 'As an existing patient: After registration, the practice will be notified and will activate your access.')
+                : (language === 'de' 
+                  ? 'Bereits registriert? Bitte wechseln Sie zum Tab "Anmelden".' 
+                  : 'Already registered? Please switch to the "Login" tab.')
+              }
             </AlertDescription>
           </Alert>
 
