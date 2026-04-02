@@ -118,7 +118,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
       const { error } = await supabase.functions.invoke("get-patients", {
         method: "PATCH" as any,
         body: { userId: patient.user_id, is_verified_patient: newValue },
-        headers: devBypass ? { "x-dev-mode": "true" } : {},
       });
       // Actually, let's update directly since admin has RLS access
       // We need a dedicated approach - update via the profiles table
