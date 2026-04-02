@@ -20,6 +20,7 @@ const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 
 
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
 type AuthMode = 'login' | 'registration' | 'password_reset';
+type PatientType = 'new_patient' | 'existing_patient' | null;
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,10 @@ const Auth: React.FC = () => {
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
   const searchParams = new URLSearchParams(window.location.search);
   const devBypass = isNonProduction && searchParams.get('dev') === 'true';
+  
+  // Patient type from landing page selection
+  const patientType: PatientType = (searchParams.get('type') as PatientType) || null;
+  const isExistingPatient = patientType === 'existing_patient';
 
   // Only redirect if user was ALREADY logged in when Auth page first mounted.
   // Do NOT react to auth state changes during the login/2FA flow.
@@ -342,6 +347,30 @@ const Auth: React.FC = () => {
         description: language === 'de' ? 'Registrierung erfolgreich! Sie sind jetzt angemeldet.' : 'Registration successful! You are now logged in.',
       });
 
+      // Send notification to practice for existing patients
+      if (isExistingPatient) {
+        try {
+          await supabase.functions.invoke('notify-existing-patient', {
+            body: { email, patientType: 'existing_patient' },
+          });
+          toast({
+            title: 'Freischaltung beantragt',
+            description: 'Die Praxis wurde benachrichtigt. Sie erhalten Zugriff auf alle Inhalte, sobald Ihre Identität bestätigt wurde.',
+          });
+        } catch (err) {
+          console.error('Failed to send notification:', err);
+        }
+      } else {
+        // New patients: notify practice too
+        try {
+          await supabase.functions.invoke('notify-existing-patient', {
+            body: { email, patientType: 'new_patient' },
+          });
+        } catch (err) {
+          console.error('Failed to send notification:', err);
+        }
+      }
+
       navigate('/erstanmeldung');
     } catch (error: any) {
       toast({
@@ -548,9 +577,14 @@ const Auth: React.FC = () => {
           <Alert className="bg-sage-50 border-sage-200">
             <Info className="h-4 w-4 text-primary" />
             <AlertDescription className="text-sm">
-              {language === 'de' 
-                ? 'Bereits registriert? Bitte wechseln Sie zum Tab "Anmelden".' 
-                : 'Already registered? Please switch to the "Login" tab.'}
+              {isExistingPatient
+                ? (language === 'de'
+                  ? 'Als bestehender Patient: Nach der Registrierung wird die Praxis informiert und Ihren Zugang freischalten.'
+                  : 'As an existing patient: After registration, the practice will be notified and will activate your access.')
+                : (language === 'de' 
+                  ? 'Bereits registriert? Bitte wechseln Sie zum Tab "Anmelden".' 
+                  : 'Already registered? Please switch to the "Login" tab.')
+              }
             </AlertDescription>
           </Alert>
 
@@ -878,12 +912,26 @@ const Auth: React.FC = () => {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-2xl">
-              {language === 'de' ? 'Praxis-Login' : 'Practice Login'}
+              {isExistingPatient 
+                ? (language === 'de' ? 'Bestehender Patient' : 'Existing Patient')
+                : patientType === 'new_patient'
+                  ? (language === 'de' ? 'Neupatient – Registrierung' : 'New Patient – Registration')
+                  : (language === 'de' ? 'Praxis-Login' : 'Practice Login')
+              }
             </CardTitle>
             <CardDescription>
-              {language === 'de' 
-                ? 'Sichere Anmeldung mit Passwort und 2FA' 
-                : 'Secure login with password and 2FA'}
+              {isExistingPatient
+                ? (language === 'de' 
+                    ? 'Melden Sie sich an oder registrieren Sie sich. Nach der Registrierung wird die Praxis benachrichtigt und schaltet Ihren Zugang frei.' 
+                    : 'Log in or register. After registration, the practice will be notified and will activate your access.')
+                : patientType === 'new_patient'
+                  ? (language === 'de'
+                    ? 'Registrieren Sie sich, um Ihren Anamnesebogen online auszufüllen.'
+                    : 'Register to fill out your medical history form online.')
+                  : (language === 'de' 
+                    ? 'Sichere Anmeldung mit Passwort und 2FA' 
+                    : 'Secure login with password and 2FA')
+              }
             </CardDescription>
           </CardHeader>
 

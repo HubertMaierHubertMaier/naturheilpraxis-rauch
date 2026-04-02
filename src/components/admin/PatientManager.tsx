@@ -11,7 +11,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Users, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Users, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ interface PatientProfile {
   date_of_birth: string | null;
   phone: string | null;
   created_at: string;
+  is_verified_patient: boolean;
   login_count: number;
   submission_id?: string | null;
 }
@@ -89,6 +91,7 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
   };
 
   const [resending, setResending] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   const handleResend = async (patient: PatientProfile) => {
     if (!patient.submission_id) {
@@ -108,6 +111,43 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
       toast.error("Fehler beim erneuten Senden: " + (err.message || "Unbekannt"));
     } finally {
       setResending(null);
+    }
+  };
+
+  const handleToggleVerified = async (patient: PatientProfile) => {
+    setVerifying(patient.user_id);
+    const newValue = !patient.is_verified_patient;
+    try {
+      // Use service-role via edge function for RLS bypass
+      const { error } = await supabase.functions.invoke("get-patients", {
+        method: "PATCH" as any,
+        body: { userId: patient.user_id, is_verified_patient: newValue },
+        headers: devBypass ? { "x-dev-mode": "true" } : {},
+      });
+      // Actually, let's update directly since admin has RLS access
+      // We need a dedicated approach - update via the profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ is_verified_patient: newValue } as any)
+        .eq("user_id", patient.user_id);
+      
+      if (updateError) throw updateError;
+      
+      // Update local state
+      setPatients(prev => prev.map(p => 
+        p.user_id === patient.user_id ? { ...p, is_verified_patient: newValue } : p
+      ));
+      
+      toast.success(
+        newValue
+          ? `✅ ${patient.first_name || patient.email} freigeschaltet!`
+          : `❌ ${patient.first_name || patient.email} Zugang gesperrt.`
+      );
+    } catch (err: any) {
+      console.error("Verify error:", err);
+      toast.error("Fehler: " + (err.message || "Unbekannt"));
+    } finally {
+      setVerifying(null);
     }
   };
 
@@ -144,12 +184,12 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>E-Mail</TableHead>
-              <TableHead>Straße</TableHead>
               <TableHead>PLZ / Ort</TableHead>
               <TableHead>Geburtsdatum</TableHead>
               <TableHead>Erstanmeldung</TableHead>
+              <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-right">Logins</TableHead>
-              <TableHead className="text-center">Aktion</TableHead>
+              <TableHead className="text-center">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -166,7 +206,6 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
                   <TableRow key={p.user_id}>
                     <TableCell className="font-medium whitespace-nowrap">{name}</TableCell>
                     <TableCell>{p.email}</TableCell>
-                    <TableCell>{p.street || "–"}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       {p.postal_code || p.city
                         ? `${p.postal_code || ""} ${p.city || ""}`.trim()
@@ -174,24 +213,50 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
                     </TableCell>
                     <TableCell>{formatDate(p.date_of_birth)}</TableCell>
                     <TableCell>{formatDate(p.created_at)}</TableCell>
-                    <TableCell className="text-right">{p.login_count}</TableCell>
                     <TableCell className="text-center">
-                      {p.submission_id ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleResend(p)}
-                          disabled={resending === p.user_id}
-                          className="gap-1"
-                        >
-                          <RefreshCw className={`h-3 w-3 ${resending === p.user_id ? "animate-spin" : ""}`} />
-                          Resend
-                        </Button>
+                      {p.is_verified_patient ? (
+                        <Badge variant="default" className="bg-green-600 hover:bg-green-700 gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Freigeschaltet
+                        </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground">–</span>
+                        <Badge variant="secondary" className="gap-1 text-amber-700 bg-amber-100">
+                          <XCircle className="h-3 w-3" />
+                          Ausstehend
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">{p.login_count}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          size="sm"
+                          variant={p.is_verified_patient ? "outline" : "default"}
+                          onClick={() => handleToggleVerified(p)}
+                          disabled={verifying === p.user_id}
+                          className="gap-1"
+                          title={p.is_verified_patient ? "Zugang sperren" : "Freischalten"}
+                        >
+                          {p.is_verified_patient ? (
+                            <><XCircle className="h-3 w-3" /> Sperren</>
+                          ) : (
+                            <><CheckCircle className="h-3 w-3" /> Freischalten</>
+                          )}
+                        </Button>
+                        {p.submission_id && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResend(p)}
+                            disabled={resending === p.user_id}
+                            className="gap-1"
+                          >
+                            <RefreshCw className={`h-3 w-3 ${resending === p.user_id ? "animate-spin" : ""}`} />
+                            Resend
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })

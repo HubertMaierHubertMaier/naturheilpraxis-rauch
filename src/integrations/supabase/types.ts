@@ -268,6 +268,7 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          is_verified_patient: boolean
           last_name: string | null
           phone: string | null
           postal_code: string | null
@@ -282,6 +283,7 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          is_verified_patient?: boolean
           last_name?: string | null
           phone?: string | null
           postal_code?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          is_verified_patient?: boolean
           last_name?: string | null
           phone?: string | null
           postal_code?: string | null
