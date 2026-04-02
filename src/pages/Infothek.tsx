@@ -27,8 +27,6 @@ const groups: InfoGroup[] = [
   {
     title: { de: "Für Patienten", en: "For Patients" },
     items: [
-      { label: { de: "Anamnesebogen", en: "Medical History" }, href: "/anamnesebogen", icon: ClipboardList, description: { de: "Medizinischer Fragebogen", en: "Medical questionnaire" } },
-      { label: { de: "Datenschutzerklärung", en: "Privacy Policy" }, href: "/datenschutz", icon: ShieldCheck, description: { de: "Informationen zum Datenschutz", en: "Privacy information" } },
       { label: { de: "Patientenaufklärung", en: "Patient Information" }, href: "/patientenaufklaerung", icon: FileSignature, description: { de: "Kosten, Erstattung & Vereinbarung", en: "Costs, reimbursement & agreement" } },
       { label: { de: "Ihr Therapieweg", en: "Your Treatment Path" }, href: "/therapieweg-uebersicht.html", icon: Route, description: { de: "Ablauf der ganzheitlichen Behandlung Schritt für Schritt", en: "Step-by-step holistic treatment process" }, external: true },
     ],
