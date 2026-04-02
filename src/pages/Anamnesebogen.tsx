@@ -307,7 +307,7 @@ const WizardLayout = ({
         </Button>
 
         <div className="relative mb-8">
-          <div ref={scrollContainerRef} className="flex items-center overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div ref={scrollContainerRef} className="wizard-scrollbar flex items-center overflow-x-auto pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary) / 0.4) hsl(var(--muted))' }}>
             {formSections.map((section, index) => (
               <div key={section.id} className="flex items-center flex-shrink-0" ref={(el) => { stepRefs.current[index] = el; }}>
                 <div
