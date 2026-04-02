@@ -297,7 +297,15 @@ const Auth: React.FC = () => {
         description: language === 'de' ? 'Anmeldung erfolgreich!' : 'Login successful!',
       });
 
-      navigate('/erstanmeldung');
+      // Check if patient has existing submissions → dashboard, otherwise onboarding
+      const { data: existingSub } = await supabase
+        .from('anamnesis_submissions')
+        .select('id')
+        .eq('status', 'verified')
+        .limit(1)
+        .maybeSingle();
+
+      navigate(existingSub ? '/dashboard' : '/erstanmeldung');
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
