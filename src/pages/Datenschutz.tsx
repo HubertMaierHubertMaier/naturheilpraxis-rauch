@@ -220,7 +220,7 @@ export default function Datenschutz() {
                 <CardTitle className="font-serif text-xl">{section.title}</CardTitle>
               </CardHeader>
               <CardContent className="pl-[4.5rem]">
-                <p className="text-muted-foreground leading-relaxed">{section.content}</p>
+                <div className="text-muted-foreground leading-relaxed whitespace-pre-line">{section.content}</div>
               </CardContent>
             </Card>
           ))}
