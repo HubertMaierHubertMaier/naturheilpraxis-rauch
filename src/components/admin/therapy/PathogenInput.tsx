@@ -35,43 +35,112 @@ export function formatPathogensForAI(entries: PathogenEntry[]): string {
 }
 
 /**
- * Parser für Bulk-Paste aus Metatron-/NLS-Befunden.
- * Erkennt Blöcke: PATHOGEN-NAME, dann Organ-Zeilen, dann numerischer Wert.
+ * Parser für Bulk-Paste. Unterstützt mehrere Formate:
+ *
+ * 1) Inline (eine Zeile pro Pathogen) – schnellster Modus:
+ *    "Helicobacter pylori: Magen, Duodenum"
+ *    "Borrelia burgdorferi - Gelenke, Nervensystem | 0.42"
+ *    "Candida albicans (Darm, Mundschleimhaut)"
+ *    "Yersinia enterocolitica = Dünndarm; Gelenke ~ 0,18"
+ *
+ * 2) Block-Format (Metatron/NLS): PATHOGEN-NAME, dann Organ-Zeilen, dann Zahl.
  */
 export function parseBulkPaste(text: string): PathogenEntry[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const entries: PathogenEntry[] = [];
-  let current: PathogenEntry | null = null;
 
   const isNumeric = (s: string) => /^[0-9]+([.,][0-9]+)?$/.test(s);
   const isCategoryHeader = (s: string) =>
-    /^(BAKTERIEN|VIREN|PARASITEN|PILZE|TOXINE|SCHWERMETALLE|MYKOSEN)$/i.test(s);
-  // Pathogen names tend to be UPPERCASE and contain letters/spaces/hyphens
-  const isPathogenName = (s: string) =>
+    /^(BAKTERIEN|VIREN|PARASITEN|PILZE|TOXINE|SCHWERMETALLE|MYKOSEN|PATHOGENE)$/i.test(s);
+
+  // Inline-Separator: : | - – — = → tab
+  const INLINE_SEP = /\s*[:\|=→]\s*|\s+[-–—]\s+|\t+/;
+  // Index-Separator am Ende: | 0.42  oder  ~ 0,18  oder  = 0.5
+  const INDEX_SEP = /\s*[\|~=]\s*([0-9]+([.,][0-9]+)?)\s*$/;
+
+  const looksLikeInline = (s: string): boolean => {
+    // Hat einen Inline-Separator ODER Klammer-Format "Name (Organe)"
+    if (/\([^)]+\)\s*$/.test(s)) return true;
+    return INLINE_SEP.test(s);
+  };
+
+  // Block-Modus Helper
+  let current: PathogenEntry | null = null;
+  const flush = () => {
+    if (current) {
+      entries.push(current);
+      current = null;
+    }
+  };
+  const isPathogenNameUpper = (s: string) =>
     s.length > 2 && s === s.toUpperCase() && /[A-ZÄÖÜ]/.test(s) && !isNumeric(s) && !isCategoryHeader(s);
 
-  for (const line of lines) {
+  for (const line of rawLines) {
     if (isCategoryHeader(line)) {
-      if (current) entries.push(current);
-      current = null;
+      flush();
       continue;
     }
-    if (isPathogenName(line)) {
-      if (current) entries.push(current);
+
+    // --- Inline-Format zuerst versuchen ---
+    if (looksLikeInline(line)) {
+      flush();
+      let rest = line;
+      let index = "";
+
+      // Index am Ende abtrennen
+      const idxMatch = rest.match(INDEX_SEP);
+      if (idxMatch) {
+        index = idxMatch[1].replace(",", ".");
+        rest = rest.slice(0, idxMatch.index).trim();
+      }
+
+      let name = "";
+      let organe = "";
+
+      // Klammer-Format "Name (Organe)"
+      const parenMatch = rest.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      if (parenMatch) {
+        name = parenMatch[1].trim();
+        organe = parenMatch[2].trim();
+      } else {
+        // Trennzeichen-Format
+        const sepMatch = rest.match(INLINE_SEP);
+        if (sepMatch && sepMatch.index !== undefined) {
+          name = rest.slice(0, sepMatch.index).trim();
+          organe = rest.slice(sepMatch.index + sepMatch[0].length).trim();
+        } else {
+          name = rest.trim();
+        }
+      }
+
+      // Organe normalisieren: Semikolons → Kommas
+      organe = organe.replace(/\s*;\s*/g, ", ").replace(/\s{2,}/g, " ");
+
+      if (name) {
+        entries.push({ id: newId(), name, organe, index });
+      }
+      continue;
+    }
+
+    // --- Block-Format (Metatron) ---
+    if (isPathogenNameUpper(line)) {
+      flush();
       current = { id: newId(), name: line, organe: "", index: "" };
       continue;
     }
-    if (!current) continue;
-    if (isNumeric(line)) {
-      current.index = line.replace(",", ".");
-      entries.push(current);
-      current = null;
+    if (!current) {
+      // Zeile ohne Separator und nicht UPPERCASE → als reiner Pathogen-Name übernehmen
+      entries.push({ id: newId(), name: line, organe: "", index: "" });
       continue;
     }
-    // Otherwise treat as organ line
+    if (isNumeric(line)) {
+      current.index = line.replace(",", ".");
+      flush();
+      continue;
+    }
     current.organe = current.organe ? current.organe + ", " + line : line;
   }
-  if (current) entries.push(current);
+  flush();
   return entries;
 }
 
