@@ -300,11 +300,3 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
     );
   }
 });
-  } catch (e) {
-    console.error("therapy-recommend error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-});
