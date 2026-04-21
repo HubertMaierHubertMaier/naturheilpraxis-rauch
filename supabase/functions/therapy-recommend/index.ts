@@ -193,9 +193,17 @@ serve(async (req) => {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
-    // Fetch wiki context (cached)
-    const { context: wikiContext, entryCount, cacheHit } = await getWikiContext(userClient);
-    console.log(`Wiki entries: ${entryCount}, context size: ${wikiContext.length} chars, cacheHit=${cacheHit}`);
+    // Fetch wiki entries (cached) and select only the relevant ones for this query
+    const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt]
+      .filter(Boolean)
+      .join(" ");
+    const relevantEntries = selectRelevantEntries(allEntries, queryText, MAX_TOTAL_CHARS);
+    const wikiContext = buildContext(relevantEntries);
+    console.log(
+      `Wiki: ${allEntries.length} total → ${relevantEntries.length} relevant, ` +
+      `context=${wikiContext.length} chars, cacheHit=${cacheHit}`
+    );
 
     // Build patient context
     const patientInfo: string[] = [];
