@@ -70,10 +70,23 @@ serve(async (req) => {
 
     if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
-    // Build wiki context (compact)
-    const wikiContext = (wikiEntries || [])
-      .map((e: any) => `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${e.content}`)
+    // Build wiki context (compact) – cap each entry to prevent oversized prompts
+    const MAX_ENTRY_CHARS = 8000;
+    const MAX_TOTAL_CHARS = 600_000; // ~150k tokens, safely below Gemini limits
+    let wikiContext = (wikiEntries || [])
+      .map((e: any) => {
+        const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
+        return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
+      })
       .join("\n\n---\n\n");
+
+    if (wikiContext.length > MAX_TOTAL_CHARS) {
+      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt wegen Größe ...]";
+    }
+    if (!wikiContext.trim()) {
+      wikiContext = "(Wissensdatenbank ist leer)";
+    }
+    console.log(`Wiki entries: ${wikiEntries?.length || 0}, context size: ${wikiContext.length} chars`);
 
     // Build patient context
     const patientInfo: string[] = [];
@@ -240,6 +253,8 @@ Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
 
+    console.log(`System prompt: ${systemPrompt.length} chars, User: ${userMessage.length} chars`);
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -271,12 +286,20 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error("KI-Gateway Fehler");
+      throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
+  } catch (e) {
+    console.error("therapy-recommend error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
   } catch (e) {
     console.error("therapy-recommend error:", e);
     return new Response(
