@@ -258,6 +258,7 @@ export function PathogenInput({ entries, onChange }: Props) {
     const existing = entries.filter((e) => e.name.trim());
     onChange([...existing, ...parsed]);
     setBulkText("");
+    setManualOpen(true); // Liste automatisch öffnen, damit der Nutzer das Ergebnis sieht
   };
 
   const clearAll = () => {
