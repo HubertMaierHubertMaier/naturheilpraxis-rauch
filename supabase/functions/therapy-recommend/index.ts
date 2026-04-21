@@ -39,7 +39,7 @@ async function getWikiContext(client: any): Promise<{ context: string; entryCoun
   if (countError) throw new Error("Wiki-Anzahl konnte nicht geladen werden: " + countError.message);
 
   const maxUpdated = sigRows?.[0]?.updated_at ?? "empty";
-  const signature = `${count ?? 0}|${maxUpdated}`;
+  const signature = `${CACHE_VERSION}|${count ?? 0}|${maxUpdated}`;
 
   const now = Date.now();
   if (
