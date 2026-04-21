@@ -13,9 +13,10 @@ import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
 import { openPrintRecipe } from "./therapy/printRecipe";
+import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 
 export function TherapyRecommendation() {
-  const [belastungen, setBelastungen] = useState("");
+  const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
   const [alter, setAlter] = useState("");
