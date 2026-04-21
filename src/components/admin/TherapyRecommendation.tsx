@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import ReactMarkdown from "react-markdown";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer } from "lucide-react";
+import { parseTherapyMarkdown } from "@/lib/therapyParser";
+import { CategoryCard } from "./therapy/CategoryCard";
+import { FreeSectionCard } from "./therapy/FreeSectionCard";
+import { PatientContextBar } from "./therapy/PatientContextBar";
+import { openPrintRecipe } from "./therapy/printRecipe";
 
 export function TherapyRecommendation() {
   const [belastungen, setBelastungen] = useState("");
