@@ -70,10 +70,23 @@ serve(async (req) => {
 
     if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
-    // Build wiki context (compact)
-    const wikiContext = (wikiEntries || [])
-      .map((e: any) => `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${e.content}`)
+    // Build wiki context (compact) – cap each entry to prevent oversized prompts
+    const MAX_ENTRY_CHARS = 8000;
+    const MAX_TOTAL_CHARS = 600_000; // ~150k tokens, safely below Gemini limits
+    let wikiContext = (wikiEntries || [])
+      .map((e: any) => {
+        const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
+        return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
+      })
       .join("\n\n---\n\n");
+
+    if (wikiContext.length > MAX_TOTAL_CHARS) {
+      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt wegen Größe ...]";
+    }
+    if (!wikiContext.trim()) {
+      wikiContext = "(Wissensdatenbank ist leer)";
+    }
+    console.log(`Wiki entries: ${wikiEntries?.length || 0}, context size: ${wikiContext.length} chars`);
 
     // Build patient context
     const patientInfo: string[] = [];
