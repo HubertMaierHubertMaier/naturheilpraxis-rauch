@@ -75,7 +75,7 @@ export function TherapyRecommendation() {
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            belastungen: belastungen.trim(),
+            belastungen: belastungenText,
             symptome: symptome.trim(),
             erkrankung: erkrankung.trim(),
             alter: alter.trim() || undefined,
@@ -159,7 +159,7 @@ export function TherapyRecommendation() {
   };
 
   const handleReset = () => {
-    setBelastungen("");
+    setPathogens([emptyEntry()]);
     setSymptome("");
     setErkrankung("");
     setAlter("");
@@ -194,16 +194,11 @@ export function TherapyRecommendation() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-accent" />
                 Belastungen / Pathogene
               </label>
-              <Textarea
-                value={belastungen}
-                onChange={(e) => setBelastungen(e.target.value)}
-                placeholder="z.B. Borrelia burgdorferi, Candida albicans, Blei, Quecksilber, Trichomonaden..."
-                rows={3}
-              />
+              <PathogenInput entries={pathogens} onChange={setPathogens} />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Symptome</label>
