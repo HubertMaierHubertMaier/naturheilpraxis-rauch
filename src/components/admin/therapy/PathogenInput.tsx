@@ -178,8 +178,9 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
         }
       }
 
-      // Organe normalisieren: Semikolons → Kommas
+      // Organe normalisieren: Semikolons → Kommas, Kürzel expandieren
       organe = organe.replace(/\s*;\s*/g, ", ").replace(/\s{2,}/g, " ");
+      organe = expandOrganAbbreviations(organe);
 
       if (name) {
         entries.push({ id: newId(), name, organe, index });
