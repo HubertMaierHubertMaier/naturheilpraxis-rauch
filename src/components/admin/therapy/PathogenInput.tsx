@@ -145,8 +145,12 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
 }
 
 export function PathogenInput({ entries, onChange }: Props) {
-  const [bulkOpen, setBulkOpen] = useState(false);
+  // Schnell-Eingabe ist STANDARD und immer sichtbar.
+  // Manuelle Einzelfeld-Liste ist optional ausklappbar.
   const [bulkText, setBulkText] = useState("");
+  const [manualOpen, setManualOpen] = useState(false);
+
+  const filledCount = entries.filter((e) => e.name.trim()).length;
 
   const update = (id: string, patch: Partial<PathogenEntry>) => {
     onChange(entries.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -157,107 +161,118 @@ export function PathogenInput({ entries, onChange }: Props) {
     onChange(filtered.length ? filtered : [emptyEntry()]);
   };
 
-  const add = () => onChange([...entries, emptyEntry()]);
+  const add = () => {
+    onChange([...entries, emptyEntry()]);
+    setManualOpen(true);
+  };
 
   const applyBulk = () => {
     const parsed = parseBulkPaste(bulkText);
     if (parsed.length === 0) return;
-    // Merge with existing non-empty entries
     const existing = entries.filter((e) => e.name.trim());
     onChange([...existing, ...parsed]);
     setBulkText("");
-    setBulkOpen(false);
+  };
+
+  const clearAll = () => {
+    onChange([emptyEntry()]);
+    setBulkText("");
   };
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {entries.filter((e) => e.name.trim()).length} Pathogen(e)
-        </span>
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={() => setBulkOpen((v) => !v)}
-          >
-            <ClipboardPaste className="h-3.5 w-3.5 mr-1" />
-            Bulk-Paste
+      {/* Schnell-Eingabe – immer sichtbar, prominent */}
+      <div className="rounded-md border border-primary/30 bg-primary/5 p-2.5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium flex items-center gap-1.5">
+            <ClipboardPaste className="h-3.5 w-3.5 text-primary" />
+            <span>⚡ Schnell-Eingabe</span>
+            <span className="text-muted-foreground font-normal">– eine Zeile pro Pathogen</span>
+          </p>
+          <span className="text-[11px] text-muted-foreground">{filledCount} erfasst</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Erkannte Formate: <code>Name: Organe</code> · <code>Name - Organe | Index</code> ·{" "}
+          <code>Name (Organe)</code> · <code>Name = Organe ~ 0,18</code>
+        </p>
+        <Textarea
+          value={bulkText}
+          onChange={(e) => setBulkText(e.target.value)}
+          rows={6}
+          className="text-xs font-mono bg-background"
+          placeholder={
+            "Helicobacter pylori: Magen, Duodenum\n" +
+            "Epstein-Barr-Virus: Lymphsystem, Leber | 0.35\n" +
+            "Candida albicans (Darm, Mundschleimhaut)\n" +
+            "Borrelia burgdorferi - Gelenke, Nervensystem"
+          }
+        />
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={clearAll} className="text-xs">
+            Alles leeren
           </Button>
+          <Button type="button" size="sm" onClick={applyBulk} disabled={!bulkText.trim()}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Zur Liste hinzufügen
+          </Button>
+        </div>
+      </div>
+
+      {/* Manuelle Einzelfeld-Bearbeitung – optional aufklappbar */}
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => setManualOpen((v) => !v)}
+        >
+          <List className="h-3.5 w-3.5 mr-1" />
+          {manualOpen ? "Liste ausblenden" : `Liste bearbeiten (${filledCount})`}
+        </Button>
+        {manualOpen && (
           <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={add}>
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Eintrag
+            Zeile
           </Button>
-        </div>
+        )}
       </div>
 
-      {bulkOpen && (
-        <div className="rounded-md border bg-muted/30 p-2 space-y-2">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <List className="h-3 w-3" />
-            <span>
-              <strong>Schnell-Eingabe:</strong> eine Zeile pro Pathogen. Folgende Formate werden erkannt:
-            </span>
-          </p>
-          <ul className="text-[11px] text-muted-foreground font-mono leading-relaxed pl-4 list-disc">
-            <li>Helicobacter pylori: Magen, Duodenum</li>
-            <li>Borrelia burgdorferi - Gelenke, Nervensystem | 0.42</li>
-            <li>Candida albicans (Darm, Mundschleimhaut)</li>
-            <li>Yersinia enterocolitica = Dünndarm; Gelenke ~ 0,18</li>
-          </ul>
-          <Textarea
-            value={bulkText}
-            onChange={(e) => setBulkText(e.target.value)}
-            rows={8}
-            className="text-xs font-mono"
-            placeholder={"Helicobacter pylori: Magen, Duodenum\nEpstein-Barr-Virus: Lymphsystem, Leber | 0.35\nCandida albicans (Darm, Mundschleimhaut)\nBorrelia burgdorferi - Gelenke, Nervensystem"}
-          />
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setBulkOpen(false)}>
-              Abbrechen
-            </Button>
-            <Button type="button" size="sm" onClick={applyBulk}>
-              Übernehmen
-            </Button>
-          </div>
+      {manualOpen && (
+        <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+          {entries.map((e) => (
+            <div key={e.id} className="grid grid-cols-12 gap-1.5 items-start">
+              <Input
+                className="col-span-5 h-8 text-xs"
+                placeholder="Pathogen (z.B. Helicobacter pylori)"
+                value={e.name}
+                onChange={(ev) => update(e.id, { name: ev.target.value })}
+              />
+              <Input
+                className="col-span-5 h-8 text-xs"
+                placeholder="Organe (z.B. Magen, Duodenum)"
+                value={e.organe}
+                onChange={(ev) => update(e.id, { organe: ev.target.value })}
+              />
+              <Input
+                className="col-span-1 h-8 text-xs"
+                placeholder="Idx"
+                value={e.index}
+                onChange={(ev) => update(e.id, { index: ev.target.value })}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="col-span-1 h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => remove(e.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
-
-      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-        {entries.map((e) => (
-          <div key={e.id} className="grid grid-cols-12 gap-1.5 items-start">
-            <Input
-              className="col-span-5 h-8 text-xs"
-              placeholder="Pathogen (z.B. Helicobacter pylori)"
-              value={e.name}
-              onChange={(ev) => update(e.id, { name: ev.target.value })}
-            />
-            <Input
-              className="col-span-5 h-8 text-xs"
-              placeholder="Organe (z.B. Magen, Duodenum)"
-              value={e.organe}
-              onChange={(ev) => update(e.id, { organe: ev.target.value })}
-            />
-            <Input
-              className="col-span-1 h-8 text-xs"
-              placeholder="Idx"
-              value={e.index}
-              onChange={(ev) => update(e.id, { index: ev.target.value })}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="col-span-1 h-8 w-8 text-muted-foreground hover:text-destructive"
-              onClick={() => remove(e.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
