@@ -23,10 +23,11 @@ interface WikiCache {
 let WIKI_CACHE: WikiCache | null = null;
 const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 
-// Limits sind pro Request (nach Filterung) – das Gateway akzeptiert ~50-80k Tokens pro Message
-const MAX_ENTRY_CHARS = 8000;
-const MAX_TOTAL_CHARS = 120_000; // ~30k Tokens – komfortabel unter Gateway-Limit
-const CACHE_VERSION = "v4";
+// Limits sind pro Request (nach Filterung). Das Lovable AI Gateway lehnt sehr große
+// Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
+const MAX_ENTRY_CHARS = 4000;
+const MAX_TOTAL_CHARS = 40_000; // ~10k Tokens – sicher unter Gateway-Limit
+const CACHE_VERSION = "v5";
 
 async function loadWikiEntries(client: any): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
   const { data: sigRows, error: sigError } = await client
