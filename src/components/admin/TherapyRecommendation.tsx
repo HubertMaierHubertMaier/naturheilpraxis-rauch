@@ -34,7 +34,8 @@ export function TherapyRecommendation() {
   const { toast } = useToast();
 
   const handleSubmit = async () => {
-    if (!belastungen.trim() && !symptome.trim() && !erkrankung.trim()) {
+    const belastungenText = formatPathogensForAI(pathogens);
+    if (!belastungenText && !symptome.trim() && !erkrankung.trim()) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome oder Erkrankung", variant: "destructive" });
       return;
     }
