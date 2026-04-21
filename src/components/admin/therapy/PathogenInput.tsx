@@ -35,15 +35,80 @@ export function formatPathogensForAI(entries: PathogenEntry[]): string {
 }
 
 /**
+ * Wörterbuch häufiger Organ-/Anatomie-Kürzel → Vollform.
+ * Wird beim Parsen automatisch expandiert, damit die KI konsistente Begriffe erhält.
+ * Schreibweise case-insensitive, Punkte werden ignoriert.
+ */
+export const ORGAN_ABBREVIATIONS: Record<string, string> = {
+  // Verdauung
+  magen: "Magen", duo: "Duodenum", jej: "Jejunum", ile: "Ileum",
+  dd: "Dünndarm", duenndarm: "Dünndarm", dickdarm: "Dickdarm",
+  kolon: "Kolon", colon: "Kolon", rektum: "Rektum", rectum: "Rektum",
+  app: "Appendix", leb: "Leber", hep: "Leber",
+  gb: "Gallenblase", galle: "Gallenblase",
+  pank: "Pankreas", pancr: "Pankreas", bspd: "Bauchspeicheldrüse",
+  oeso: "Ösophagus", ösophagus: "Ösophagus", speise: "Speiseröhre",
+  // Atemwege
+  lu: "Lunge", lung: "Lunge", bronch: "Bronchien", trach: "Trachea",
+  nnh: "Nasennebenhöhlen", ohr: "Ohren", tonsi: "Tonsillen",
+  pharynx: "Pharynx", larynx: "Larynx",
+  // Herz/Kreislauf
+  hz: "Herz", herz: "Herz", myo: "Myokard", peri: "Perikard", endo: "Endokard",
+  ven: "Venen", art: "Arterien",
+  // Niere/Harn
+  ni: "Nieren", niere: "Nieren", ren: "Nieren",
+  hb: "Harnblase", blase: "Harnblase", ureth: "Urethra", ureter: "Ureter",
+  prost: "Prostata",
+  // Geschlecht
+  ute: "Uterus", uterus: "Uterus", ova: "Ovarien", ovar: "Ovarien",
+  tube: "Tuben", vag: "Vagina", mam: "Mamma", test: "Hoden", hoden: "Hoden",
+  // Endokrin
+  sd: "Schilddrüse", schild: "Schilddrüse", thy: "Schilddrüse",
+  nnr: "Nebennieren", hyp: "Hypophyse", epi: "Epiphyse", thymus: "Thymus",
+  // Nerven
+  zns: "Zentrales Nervensystem", pns: "Peripheres Nervensystem", ns: "Nervensystem",
+  hirn: "Gehirn", gehirn: "Gehirn", rm: "Rückenmark",
+  // Lymph/Immun
+  ly: "Lymphsystem", lymph: "Lymphsystem", milz: "Milz", km: "Knochenmark",
+  // Bewegung
+  gel: "Gelenke", wbs: "Wirbelsäule", hws: "Halswirbelsäule",
+  bws: "Brustwirbelsäule", lws: "Lendenwirbelsäule", isg: "Iliosakralgelenk",
+  knie: "Knie", hand: "Handgelenke", schulter: "Schulter",
+  hüfte: "Hüfte", huefte: "Hüfte",
+  // Haut/Sinne/Mund
+  haut: "Haut", auge: "Augen",
+  zahn: "Zähne", zähne: "Zähne", zaehne: "Zähne",
+  ms: "Mundschleimhaut", zb: "Zahnbett", paro: "Parodont",
+};
+
+/**
+ * Expandiert Organ-Kürzel innerhalb einer Organ-Liste (komma-/slash-/plus-getrennt).
+ * Unbekannte Begriffe bleiben unverändert.
+ */
+export function expandOrganAbbreviations(input: string): string {
+  if (!input) return input;
+  const parts = input.split(/\s*[,/+]\s*/).map((p) => p.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const key = p.toLowerCase().replace(/\./g, "").trim();
+    const expanded = ORGAN_ABBREVIATIONS[key] ?? p;
+    const dedupKey = expanded.toLowerCase();
+    if (!seen.has(dedupKey)) {
+      seen.add(dedupKey);
+      out.push(expanded);
+    }
+  }
+  return out.join(", ");
+}
+
+/**
  * Parser für Bulk-Paste. Unterstützt mehrere Formate:
- *
- * 1) Inline (eine Zeile pro Pathogen) – schnellster Modus:
- *    "Helicobacter pylori: Magen, Duodenum"
- *    "Borrelia burgdorferi - Gelenke, Nervensystem | 0.42"
- *    "Candida albicans (Darm, Mundschleimhaut)"
- *    "Yersinia enterocolitica = Dünndarm; Gelenke ~ 0,18"
- *
- * 2) Block-Format (Metatron/NLS): PATHOGEN-NAME, dann Organ-Zeilen, dann Zahl.
+ *  1) Inline: "Helicobacter pylori: Ma, Duo" → "Magen, Duodenum"
+ *             "Borrelia: Gel, ZNS, Hz | 0.42"
+ *             "Candida (DD, MS)"
+ *  2) Block (Metatron/NLS): PATHOGEN-NAME, dann Organ-Zeilen, dann Zahl.
+ *  Organ-Kürzel werden automatisch über ORGAN_ABBREVIATIONS expandiert.
  */
 export function parseBulkPaste(text: string): PathogenEntry[] {
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
