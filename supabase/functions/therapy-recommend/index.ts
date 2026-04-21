@@ -70,9 +70,9 @@ serve(async (req) => {
 
     if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
-    // Build wiki context (compact) – cap each entry to prevent oversized prompts
-    const MAX_ENTRY_CHARS = 8000;
-    const MAX_TOTAL_CHARS = 600_000; // ~150k tokens, safely below Gemini limits
+    // Build wiki context (compact) – cap to prevent gateway "Invalid input" errors
+    const MAX_ENTRY_CHARS = 4000;
+    const MAX_TOTAL_CHARS = 120_000; // ~30k tokens, safe for gateway
     let wikiContext = (wikiEntries || [])
       .map((e: any) => {
         const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
@@ -81,7 +81,7 @@ serve(async (req) => {
       .join("\n\n---\n\n");
 
     if (wikiContext.length > MAX_TOTAL_CHARS) {
-      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt wegen Größe ...]";
+      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
     }
     if (!wikiContext.trim()) {
       wikiContext = "(Wissensdatenbank ist leer)";
@@ -292,14 +292,6 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
-  } catch (e) {
-    console.error("therapy-recommend error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-});
   } catch (e) {
     console.error("therapy-recommend error:", e);
     return new Response(
