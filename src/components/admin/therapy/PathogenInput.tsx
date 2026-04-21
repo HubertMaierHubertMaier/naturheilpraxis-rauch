@@ -118,18 +118,23 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   const isCategoryHeader = (s: string) =>
     /^(BAKTERIEN|VIREN|PARASITEN|PILZE|TOXINE|SCHWERMETALLE|MYKOSEN|PATHOGENE)$/i.test(s);
 
-  // Inline-Separator: : | - – — = → tab
-  const INLINE_SEP = /\s*[:\|=→]\s*|\s+[-–—]\s+|\t+/;
-  // Index-Separator am Ende: | 0.42  oder  ~ 0,18  oder  = 0.5
-  const INDEX_SEP = /\s*[\|~=]\s*([0-9]+([.,][0-9]+)?)\s*$/;
+  // Inline-Separator: : | = → tab    (Bindestriche sind unzuverlässig wegen Pathogen-Namen)
+  const INLINE_SEP = /\s*[:\|=→]\s*|\t+/;
+  // "Index: 0.42" / "Idx 0,42" am Zeilenende (mit oder ohne Pipe davor)
+  const INDEX_LABEL_TAIL = /\s*[\|~]?\s*(?:index|idx)\s*[:=]?\s*([0-9]+([.,][0-9]+)?)\s*$/i;
+  // Reine Zahl mit Trenner am Ende: " | 0.42"
+  const INDEX_PLAIN_TAIL = /\s*[\|~=]\s*([0-9]+([.,][0-9]+)?)\s*$/;
+  // "Organe:" / "Organ:" Label vor der Organ-Liste
+  const ORGAN_LABEL = /^\s*(?:organe?|organs?)\s*[:=]\s*/i;
 
   const looksLikeInline = (s: string): boolean => {
-    // Hat einen Inline-Separator ODER Klammer-Format "Name (Organe)"
     if (/\([^)]+\)\s*$/.test(s)) return true;
     return INLINE_SEP.test(s);
   };
 
-  // Block-Modus Helper
+  // Führenden Listen-Marker entfernen ("- ", "* ", "• ", "1. ", "1) ")
+  const stripBullet = (s: string) => s.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "");
+
   let current: PathogenEntry | null = null;
   const flush = () => {
     if (current) {
@@ -140,7 +145,9 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   const isPathogenNameUpper = (s: string) =>
     s.length > 2 && s === s.toUpperCase() && /[A-ZÄÖÜ]/.test(s) && !isNumeric(s) && !isCategoryHeader(s);
 
-  for (const line of rawLines) {
+  for (const raw of rawLines) {
+    const line = stripBullet(raw);
+    if (!line) continue;
     if (isCategoryHeader(line)) {
       flush();
       continue;
@@ -152,11 +159,17 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
       let rest = line;
       let index = "";
 
-      // Index am Ende abtrennen
-      const idxMatch = rest.match(INDEX_SEP);
-      if (idxMatch) {
+      // Index am Ende abtrennen – zuerst "Index: 0.42", dann " | 0.42"
+      let idxMatch = rest.match(INDEX_LABEL_TAIL);
+      if (idxMatch && idxMatch.index !== undefined) {
         index = idxMatch[1].replace(",", ".");
-        rest = rest.slice(0, idxMatch.index).trim();
+        rest = rest.slice(0, idxMatch.index).trim().replace(/[\|~=,;]\s*$/, "").trim();
+      } else {
+        idxMatch = rest.match(INDEX_PLAIN_TAIL);
+        if (idxMatch && idxMatch.index !== undefined) {
+          index = idxMatch[1].replace(",", ".");
+          rest = rest.slice(0, idxMatch.index).trim();
+        }
       }
 
       let name = "";
@@ -168,7 +181,7 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
         name = parenMatch[1].trim();
         organe = parenMatch[2].trim();
       } else {
-        // Trennzeichen-Format
+        // Ersten Inline-Separator als Grenze Name/Organe nehmen
         const sepMatch = rest.match(INLINE_SEP);
         if (sepMatch && sepMatch.index !== undefined) {
           name = rest.slice(0, sepMatch.index).trim();
@@ -178,9 +191,15 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
         }
       }
 
-      // Organe normalisieren: Semikolons → Kommas, Kürzel expandieren
-      organe = organe.replace(/\s*;\s*/g, ", ").replace(/\s{2,}/g, " ");
+      // "Organe:" Label aus Organe-Feld entfernen
+      organe = organe.replace(ORGAN_LABEL, "");
+      // Restliche Pipes (|) in Organe → Komma; "Organe:" Reste entfernen
+      organe = organe.replace(/\s*\|\s*(?:organe?\s*[:=]\s*)?/gi, ", ");
+      organe = organe.replace(/\s*;\s*/g, ", ").replace(/\s{2,}/g, " ").replace(/^[,\s]+|[,\s]+$/g, "");
       organe = expandOrganAbbreviations(organe);
+
+      // Trailing Punctuation aus Name entfernen
+      name = name.replace(/[\s:|,;]+$/, "").trim();
 
       if (name) {
         entries.push({ id: newId(), name, organe, index });
@@ -195,7 +214,6 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
       continue;
     }
     if (!current) {
-      // Zeile ohne Separator und nicht UPPERCASE → als reiner Pathogen-Name übernehmen
       entries.push({ id: newId(), name: line, organe: "", index: "" });
       continue;
     }
