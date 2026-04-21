@@ -137,31 +137,9 @@ serve(async (req) => {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
-    // Fetch all wiki entries
-    const { data: wikiEntries, error: wikiError } = await userClient
-      .from("admin_knowledge_base")
-      .select("title, category, tags, content")
-      .order("updated_at", { ascending: false });
-
-    if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
-
-    // Build wiki context (compact) – cap to prevent gateway "Invalid input" errors
-    const MAX_ENTRY_CHARS = 4000;
-    const MAX_TOTAL_CHARS = 120_000; // ~30k tokens, safe for gateway
-    let wikiContext = (wikiEntries || [])
-      .map((e: any) => {
-        const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
-        return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
-      })
-      .join("\n\n---\n\n");
-
-    if (wikiContext.length > MAX_TOTAL_CHARS) {
-      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
-    }
-    if (!wikiContext.trim()) {
-      wikiContext = "(Wissensdatenbank ist leer)";
-    }
-    console.log(`Wiki entries: ${wikiEntries?.length || 0}, context size: ${wikiContext.length} chars`);
+    // Fetch wiki context (cached)
+    const { context: wikiContext, entryCount, cacheHit } = await getWikiContext(userClient);
+    console.log(`Wiki entries: ${entryCount}, context size: ${wikiContext.length} chars, cacheHit=${cacheHit}`);
 
     // Build patient context
     const patientInfo: string[] = [];
