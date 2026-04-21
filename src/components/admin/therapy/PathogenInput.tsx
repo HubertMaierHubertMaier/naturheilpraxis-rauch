@@ -35,15 +35,80 @@ export function formatPathogensForAI(entries: PathogenEntry[]): string {
 }
 
 /**
+ * Wörterbuch häufiger Organ-/Anatomie-Kürzel → Vollform.
+ * Wird beim Parsen automatisch expandiert, damit die KI konsistente Begriffe erhält.
+ * Schreibweise case-insensitive, Punkte werden ignoriert.
+ */
+export const ORGAN_ABBREVIATIONS: Record<string, string> = {
+  // Verdauung
+  magen: "Magen", duo: "Duodenum", jej: "Jejunum", ile: "Ileum",
+  dd: "Dünndarm", duenndarm: "Dünndarm", dickdarm: "Dickdarm",
+  kolon: "Kolon", colon: "Kolon", rektum: "Rektum", rectum: "Rektum",
+  app: "Appendix", leb: "Leber", hep: "Leber",
+  gb: "Gallenblase", galle: "Gallenblase",
+  pank: "Pankreas", pancr: "Pankreas", bspd: "Bauchspeicheldrüse",
+  oeso: "Ösophagus", ösophagus: "Ösophagus", speise: "Speiseröhre",
+  // Atemwege
+  lu: "Lunge", lung: "Lunge", bronch: "Bronchien", trach: "Trachea",
+  nnh: "Nasennebenhöhlen", ohr: "Ohren", tonsi: "Tonsillen",
+  pharynx: "Pharynx", larynx: "Larynx",
+  // Herz/Kreislauf
+  hz: "Herz", herz: "Herz", myo: "Myokard", peri: "Perikard", endo: "Endokard",
+  ven: "Venen", art: "Arterien",
+  // Niere/Harn
+  ni: "Nieren", niere: "Nieren", ren: "Nieren",
+  hb: "Harnblase", blase: "Harnblase", ureth: "Urethra", ureter: "Ureter",
+  prost: "Prostata",
+  // Geschlecht
+  ute: "Uterus", uterus: "Uterus", ova: "Ovarien", ovar: "Ovarien",
+  tube: "Tuben", vag: "Vagina", mam: "Mamma", test: "Hoden", hoden: "Hoden",
+  // Endokrin
+  sd: "Schilddrüse", schild: "Schilddrüse", thy: "Schilddrüse",
+  nnr: "Nebennieren", hyp: "Hypophyse", epi: "Epiphyse", thymus: "Thymus",
+  // Nerven
+  zns: "Zentrales Nervensystem", pns: "Peripheres Nervensystem", ns: "Nervensystem",
+  hirn: "Gehirn", gehirn: "Gehirn", rm: "Rückenmark",
+  // Lymph/Immun
+  ly: "Lymphsystem", lymph: "Lymphsystem", milz: "Milz", km: "Knochenmark",
+  // Bewegung
+  gel: "Gelenke", wbs: "Wirbelsäule", hws: "Halswirbelsäule",
+  bws: "Brustwirbelsäule", lws: "Lendenwirbelsäule", isg: "Iliosakralgelenk",
+  knie: "Knie", hand: "Handgelenke", schulter: "Schulter",
+  hüfte: "Hüfte", huefte: "Hüfte",
+  // Haut/Sinne/Mund
+  haut: "Haut", auge: "Augen",
+  zahn: "Zähne", zähne: "Zähne", zaehne: "Zähne",
+  ms: "Mundschleimhaut", zb: "Zahnbett", paro: "Parodont",
+};
+
+/**
+ * Expandiert Organ-Kürzel innerhalb einer Organ-Liste (komma-/slash-/plus-getrennt).
+ * Unbekannte Begriffe bleiben unverändert.
+ */
+export function expandOrganAbbreviations(input: string): string {
+  if (!input) return input;
+  const parts = input.split(/\s*[,/+]\s*/).map((p) => p.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const key = p.toLowerCase().replace(/\./g, "").trim();
+    const expanded = ORGAN_ABBREVIATIONS[key] ?? p;
+    const dedupKey = expanded.toLowerCase();
+    if (!seen.has(dedupKey)) {
+      seen.add(dedupKey);
+      out.push(expanded);
+    }
+  }
+  return out.join(", ");
+}
+
+/**
  * Parser für Bulk-Paste. Unterstützt mehrere Formate:
- *
- * 1) Inline (eine Zeile pro Pathogen) – schnellster Modus:
- *    "Helicobacter pylori: Magen, Duodenum"
- *    "Borrelia burgdorferi - Gelenke, Nervensystem | 0.42"
- *    "Candida albicans (Darm, Mundschleimhaut)"
- *    "Yersinia enterocolitica = Dünndarm; Gelenke ~ 0,18"
- *
- * 2) Block-Format (Metatron/NLS): PATHOGEN-NAME, dann Organ-Zeilen, dann Zahl.
+ *  1) Inline: "Helicobacter pylori: Ma, Duo" → "Magen, Duodenum"
+ *             "Borrelia: Gel, ZNS, Hz | 0.42"
+ *             "Candida (DD, MS)"
+ *  2) Block (Metatron/NLS): PATHOGEN-NAME, dann Organ-Zeilen, dann Zahl.
+ *  Organ-Kürzel werden automatisch über ORGAN_ABBREVIATIONS expandiert.
  */
 export function parseBulkPaste(text: string): PathogenEntry[] {
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -113,8 +178,9 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
         }
       }
 
-      // Organe normalisieren: Semikolons → Kommas
+      // Organe normalisieren: Semikolons → Kommas, Kürzel expandieren
       organe = organe.replace(/\s*;\s*/g, ", ").replace(/\s{2,}/g, " ");
+      organe = expandOrganAbbreviations(organe);
 
       if (name) {
         entries.push({ id: newId(), name, organe, index });
@@ -135,11 +201,13 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
     }
     if (isNumeric(line)) {
       current.index = line.replace(",", ".");
+      current.organe = expandOrganAbbreviations(current.organe);
       flush();
       continue;
     }
     current.organe = current.organe ? current.organe + ", " + line : line;
   }
+  if (current) current.organe = expandOrganAbbreviations(current.organe);
   flush();
   return entries;
 }
@@ -195,16 +263,23 @@ export function PathogenInput({ entries, onChange }: Props) {
           Erkannte Formate: <code>Name: Organe</code> · <code>Name - Organe | Index</code> ·{" "}
           <code>Name (Organe)</code> · <code>Name = Organe ~ 0,18</code>
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          <strong>Organ-Kürzel</strong> werden automatisch expandiert, z.B.{" "}
+          <code>SD</code>=Schilddrüse, <code>NNR</code>=Nebennieren, <code>ZNS</code>,{" "}
+          <code>HWS/BWS/LWS</code>, <code>DD</code>=Dünndarm, <code>GB</code>=Gallenblase,{" "}
+          <code>NNH</code>, <code>Hz</code>, <code>Ni</code>, <code>Lu</code>, <code>Ly</code>,{" "}
+          <code>MS</code>=Mundschleimhaut, <code>Gel</code>=Gelenke …
+        </p>
         <Textarea
           value={bulkText}
           onChange={(e) => setBulkText(e.target.value)}
           rows={6}
           className="text-xs font-mono bg-background"
           placeholder={
-            "Helicobacter pylori: Magen, Duodenum\n" +
-            "Epstein-Barr-Virus: Lymphsystem, Leber | 0.35\n" +
-            "Candida albicans (Darm, Mundschleimhaut)\n" +
-            "Borrelia burgdorferi - Gelenke, Nervensystem"
+            "Helicobacter pylori: Magen, Duo\n" +
+            "Epstein-Barr-Virus: Ly, Leber | 0.35\n" +
+            "Candida albicans (DD, MS)\n" +
+            "Borrelia burgdorferi - Gel, ZNS, Hz"
           }
         />
         <div className="flex gap-2 justify-end">
