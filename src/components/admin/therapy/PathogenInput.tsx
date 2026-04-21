@@ -197,15 +197,22 @@ export function PathogenInput({ entries, onChange }: Props) {
         <div className="rounded-md border bg-muted/30 p-2 space-y-2">
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <List className="h-3 w-3" />
-            Befund einfügen (z.B. aus Metatron). Der Parser erkennt Pathogen-Name (Großbuchstaben),
-            Organe und Index-Wert automatisch.
+            <span>
+              <strong>Schnell-Eingabe:</strong> eine Zeile pro Pathogen. Folgende Formate werden erkannt:
+            </span>
           </p>
+          <ul className="text-[11px] text-muted-foreground font-mono leading-relaxed pl-4 list-disc">
+            <li>Helicobacter pylori: Magen, Duodenum</li>
+            <li>Borrelia burgdorferi - Gelenke, Nervensystem | 0.42</li>
+            <li>Candida albicans (Darm, Mundschleimhaut)</li>
+            <li>Yersinia enterocolitica = Dünndarm; Gelenke ~ 0,18</li>
+          </ul>
           <Textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
-            rows={5}
+            rows={8}
             className="text-xs font-mono"
-            placeholder="HELICOBACTER PYLORI&#10;Magen&#10;Duodenum&#10;0,018"
+            placeholder={"Helicobacter pylori: Magen, Duodenum\nEpstein-Barr-Virus: Lymphsystem, Leber | 0.35\nCandida albicans (Darm, Mundschleimhaut)\nBorrelia burgdorferi - Gelenke, Nervensystem"}
           />
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="ghost" size="sm" onClick={() => setBulkOpen(false)}>
