@@ -263,16 +263,23 @@ export function PathogenInput({ entries, onChange }: Props) {
           Erkannte Formate: <code>Name: Organe</code> · <code>Name - Organe | Index</code> ·{" "}
           <code>Name (Organe)</code> · <code>Name = Organe ~ 0,18</code>
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          <strong>Organ-Kürzel</strong> werden automatisch expandiert, z.B.{" "}
+          <code>SD</code>=Schilddrüse, <code>NNR</code>=Nebennieren, <code>ZNS</code>,{" "}
+          <code>HWS/BWS/LWS</code>, <code>DD</code>=Dünndarm, <code>GB</code>=Gallenblase,{" "}
+          <code>NNH</code>, <code>Hz</code>, <code>Ni</code>, <code>Lu</code>, <code>Ly</code>,{" "}
+          <code>MS</code>=Mundschleimhaut, <code>Gel</code>=Gelenke …
+        </p>
         <Textarea
           value={bulkText}
           onChange={(e) => setBulkText(e.target.value)}
           rows={6}
           className="text-xs font-mono bg-background"
           placeholder={
-            "Helicobacter pylori: Magen, Duodenum\n" +
-            "Epstein-Barr-Virus: Lymphsystem, Leber | 0.35\n" +
-            "Candida albicans (Darm, Mundschleimhaut)\n" +
-            "Borrelia burgdorferi - Gelenke, Nervensystem"
+            "Helicobacter pylori: Magen, Duo\n" +
+            "Epstein-Barr-Virus: Ly, Leber | 0.35\n" +
+            "Candida albicans (DD, MS)\n" +
+            "Borrelia burgdorferi - Gel, ZNS, Hz"
           }
         />
         <div className="flex gap-2 justify-end">
