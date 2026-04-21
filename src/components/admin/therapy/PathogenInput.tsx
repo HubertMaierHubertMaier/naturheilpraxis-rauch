@@ -201,11 +201,13 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
     }
     if (isNumeric(line)) {
       current.index = line.replace(",", ".");
+      current.organe = expandOrganAbbreviations(current.organe);
       flush();
       continue;
     }
     current.organe = current.organe ? current.organe + ", " + line : line;
   }
+  if (current) current.organe = expandOrganAbbreviations(current.organe);
   flush();
   return entries;
 }
