@@ -371,7 +371,18 @@ Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
 
-    console.log(`System prompt: ${systemPrompt.length} chars, User: ${userMessage.length} chars`);
+    // Defensive: ensure both messages are non-empty strings (gateway rejects empty/null content)
+    const safeSystem = typeof systemPrompt === "string" && systemPrompt.length > 0
+      ? systemPrompt
+      : "Du bist ein erfahrener naturheilkundlicher Therapeut. Erstelle eine Therapie-Empfehlung.";
+    const safeUser = typeof userMessage === "string" && userMessage.length > 0
+      ? userMessage
+      : "Bitte erstelle eine allgemeine Therapie-Empfehlung.";
+
+    console.log(
+      `System prompt: ${safeSystem.length} chars (type=${typeof systemPrompt}), ` +
+      `User: ${safeUser.length} chars (type=${typeof userMessage})`
+    );
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -382,8 +393,8 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
+          { role: "system", content: safeSystem },
+          { role: "user", content: safeUser },
         ],
         stream: true,
       }),
