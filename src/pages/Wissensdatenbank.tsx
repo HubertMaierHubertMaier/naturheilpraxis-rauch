@@ -58,7 +58,7 @@ const Wissensdatenbank = () => {
     <Layout>
       <div className="container py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
             <TabsTrigger value="wiki" className="gap-2">
               <BookOpen className="h-4 w-4" />
               Wiki

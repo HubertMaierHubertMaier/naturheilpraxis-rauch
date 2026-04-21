@@ -153,16 +153,54 @@ Kurze Zusammenfassung der identifizierten Probleme.
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
-## 💊 Empfohlene Mittel (nach Priorität)
-Für jedes empfohlene Mittel – AUSFÜHRLICH begründen:
+## 💊 Empfohlene Mittel – gegliedert nach Stoffgruppe / Wiki-Kategorie
+
+WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschriften (nur die Gruppen ausgeben, in denen Du tatsächlich etwas empfiehlst). Die Reihenfolge ist verbindlich:
+
+### 🌿 Hausmittel & Gewürze
+(Knoblauch, Kurkuma, Oregano, Ingwer, Nelken, Thymian, Zimt, Meerrettich, Schwarzkümmelöl, Zitrone usw.)
+
+### 🍋 Vitamine
+(Vitamin C, D, B-Komplex, A, E, K2 usw.)
+
+### 🧂 Mineralstoffe & Spurenelemente
+(Magnesium, Zink, Selen, Eisen, Jod, Kalium usw.)
+
+### 🐟 Fettsäuren & Aminosäuren
+(Omega-3, Krill-Öl, L-Carnitin, Taurin, Lysin, NAC usw.)
+
+### 🌱 Phytotherapie & Tinkturen
+(CERES-Urtinkturen, Ceylon-Zimt, Manuka, Kapuzinerkresse, Schwarzwalnuss, Wermut, Beifuß usw. – sofern nicht reine Hausmittel)
+
+### 🍄 Heilpilze (Mykotherapie)
+(Reishi, Maitake, Shiitake, Coriolus, Pleurotus, Auricularia, Champignon, Mandelpilz)
+
+### 🧪 Sanum-Therapie (Isopathie nach Enderlein)
+(MUCOKEHL, NIGERSAN, NOTAKEHL, FORTAKEHL, PEFRAKEHL, ALBICANSAN, EXMYKEHL, SANUVIS, CITROKEHL, ACIDUM TARTARICUM, FORMASAN, ALKALA N, ZINKOKEHL, UTILIN, RECARCIN, LATENSIN, BOVISAN, LEPTUCIN, ARTHROKEHLAN, SANUKEHL-Haptene usw.)
+
+### 💧 Homöopathie & Komplexmittel
+(Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; Klassische Homöopathika; spagyrische Mittel)
+
+### 🧫 Probiotika, Präbiotika & Darmaufbau
+(Symbioflor, Mutaflor, Lactobacillus-Stämme, RMS-Biofrid, EM-Ferment, Flohsamen, Inulin)
+
+### 💎 Spezialpräparate
+(NutraMedix Samento/Banderol/Cumanda, Biopure, Quicksilver Scientific u.ä. – nur wenn günstige Alternativen nicht ausreichen)
+
+### 🩺 Apparative & klinische Therapien
+(Infusionen, Ozon, IHHT, Colon-Hydrotherapie, Frequenztherapie, Bioresonanz)
+
+INNERHALB JEDER GRUPPE für jedes Mittel – AUSFÜHRLICH:
 - **Mittelname** (Lateinischer Name falls vorhanden) – 🟢 Günstig / 🟡 Mittel / 🔴 Teuer
   - **Warum dieses Mittel?**: Detaillierte Begründung warum genau dieses Mittel für diese Belastung/diesen Patienten sinnvoll ist
   - **Wirkung gegen**: [relevante Pathogene/Symptome mit Erklärung des Wirkmechanismus]
   - **Dosierung**: [aus Wiki, ggf. angepasst an Alter]
   - **Einnahmedauer**: [Empfehlung]
-  - **Geschätzte Kosten**: [pro Monat, z.B. "Knoblauch frisch: ca. 3-5 €/Monat" oder "NutraMedix Samento: ca. 40 €/Monat"]
-  - **Günstigere Alternative**: [falls vorhanden, z.B. "Statt NutraMedix Oreganoöl → Bio-Oregano frisch/getrocknet aus dem Supermarkt"]
+  - **Geschätzte Kosten**: [pro Monat]
+  - **Günstigere Alternative**: [falls vorhanden]
   - **Priorität**: 🔴 Essentiell / 🟡 Empfohlen / 🟢 Optional
+
+WICHTIG: Der Mittelname MUSS in **doppelten Sternchen** stehen (Markdown bold), damit er im Frontend hervorgehoben wird.
 
 ## 💰 Kostenübersicht
 - Gesamtkosten Essentiell: ca. XX €/Monat
