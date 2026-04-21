@@ -7,6 +7,81 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-Memory-Cache für den Wiki-Kontext (überlebt warm starts der Edge Function).
+// Invalidierung automatisch, sobald sich Anzahl oder max(updated_at) ändert.
+interface WikiCache {
+  signature: string;   // count + max(updated_at)
+  context: string;     // fertig formatierter Kontext-String
+  entryCount: number;
+  builtAt: number;     // ms epoch
+}
+let WIKI_CACHE: WikiCache | null = null;
+const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // Hard-TTL 10 min als Sicherheitsnetz
+
+const MAX_ENTRY_CHARS = 4000;
+const MAX_TOTAL_CHARS = 120_000;
+
+async function getWikiContext(client: any): Promise<{ context: string; entryCount: number; cacheHit: boolean }> {
+  // 1) Signatur ermitteln (leichtgewichtig: nur updated_at holen)
+  const { data: sigRows, error: sigError } = await client
+    .from("admin_knowledge_base")
+    .select("updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (sigError) throw new Error("Wiki-Signatur konnte nicht geladen werden: " + sigError.message);
+
+  const { count, error: countError } = await client
+    .from("admin_knowledge_base")
+    .select("*", { count: "exact", head: true });
+
+  if (countError) throw new Error("Wiki-Anzahl konnte nicht geladen werden: " + countError.message);
+
+  const maxUpdated = sigRows?.[0]?.updated_at ?? "empty";
+  const signature = `${count ?? 0}|${maxUpdated}`;
+
+  const now = Date.now();
+  if (
+    WIKI_CACHE &&
+    WIKI_CACHE.signature === signature &&
+    now - WIKI_CACHE.builtAt < WIKI_CACHE_TTL_MS
+  ) {
+    console.log(`Wiki cache HIT (signature=${signature}, age=${Math.round((now - WIKI_CACHE.builtAt) / 1000)}s)`);
+    return { context: WIKI_CACHE.context, entryCount: WIKI_CACHE.entryCount, cacheHit: true };
+  }
+
+  console.log(`Wiki cache MISS (new signature=${signature})`);
+
+  // 2) Vollständig neu laden und Kontext bauen
+  const { data: wikiEntries, error: wikiError } = await client
+    .from("admin_knowledge_base")
+    .select("title, category, tags, content")
+    .order("updated_at", { ascending: false });
+
+  if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
+
+  let context = (wikiEntries || [])
+    .map((e: any) => {
+      const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
+      return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
+    })
+    .join("\n\n---\n\n");
+
+  if (context.length > MAX_TOTAL_CHARS) {
+    context = context.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
+  }
+  if (!context.trim()) context = "(Wissensdatenbank ist leer)";
+
+  WIKI_CACHE = {
+    signature,
+    context,
+    entryCount: wikiEntries?.length || 0,
+    builtAt: now,
+  };
+
+  return { context, entryCount: WIKI_CACHE.entryCount, cacheHit: false };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -62,31 +137,9 @@ serve(async (req) => {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
-    // Fetch all wiki entries
-    const { data: wikiEntries, error: wikiError } = await userClient
-      .from("admin_knowledge_base")
-      .select("title, category, tags, content")
-      .order("updated_at", { ascending: false });
-
-    if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
-
-    // Build wiki context (compact) – cap to prevent gateway "Invalid input" errors
-    const MAX_ENTRY_CHARS = 4000;
-    const MAX_TOTAL_CHARS = 120_000; // ~30k tokens, safe for gateway
-    let wikiContext = (wikiEntries || [])
-      .map((e: any) => {
-        const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
-        return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
-      })
-      .join("\n\n---\n\n");
-
-    if (wikiContext.length > MAX_TOTAL_CHARS) {
-      wikiContext = wikiContext.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
-    }
-    if (!wikiContext.trim()) {
-      wikiContext = "(Wissensdatenbank ist leer)";
-    }
-    console.log(`Wiki entries: ${wikiEntries?.length || 0}, context size: ${wikiContext.length} chars`);
+    // Fetch wiki context (cached)
+    const { context: wikiContext, entryCount, cacheHit } = await getWikiContext(userClient);
+    console.log(`Wiki entries: ${entryCount}, context size: ${wikiContext.length} chars, cacheHit=${cacheHit}`);
 
     // Build patient context
     const patientInfo: string[] = [];
