@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import ReactMarkdown from "react-markdown";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer } from "lucide-react";
+import { parseTherapyMarkdown } from "@/lib/therapyParser";
+import { CategoryCard } from "./therapy/CategoryCard";
+import { FreeSectionCard } from "./therapy/FreeSectionCard";
+import { PatientContextBar } from "./therapy/PatientContextBar";
+import { openPrintRecipe } from "./therapy/printRecipe";
 
 export function TherapyRecommendation() {
   const [belastungen, setBelastungen] = useState("");
@@ -336,17 +340,17 @@ export function TherapyRecommendation() {
         )}
         {result && !isStreaming && (
           <>
-            <Button variant="outline" onClick={() => {
-              const printWindow = window.open('', '_blank');
-              if (printWindow) {
-                printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Therapie-Empfehlung</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.6;color:#1a1a1a}h1,h2,h3{margin-top:1.5rem}h2{border-bottom:1px solid #ddd;padding-bottom:0.3rem}ul,ol{padding-left:1.5rem}@media print{body{margin:0;padding:1cm}}</style></head><body>`);
-                printWindow.document.write(resultRef.current?.innerHTML || '');
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-                printWindow.print();
+            <Button
+              variant="outline"
+              onClick={() =>
+                openPrintRecipe({
+                  parsed: parseTherapyMarkdown(result),
+                  patient: { alter, schwanger, medikamente, budget, belastungen, symptome, erkrankung },
+                })
               }
-            }} className="gap-2">
-              <Printer className="h-4 w-4" /> Drucken
+              className="gap-2"
+            >
+              <Printer className="h-4 w-4" /> Als Rezept drucken
             </Button>
             <Button variant="outline" onClick={handleReset} className="gap-2">
               <RotateCcw className="h-4 w-4" /> Zurücksetzen
@@ -355,37 +359,80 @@ export function TherapyRecommendation() {
         )}
       </div>
 
-      {/* Result */}
+      {/* Result – Card layout */}
       {(result || isStreaming) && (
+        <div ref={resultRef} className="space-y-4">
+          <PatientContextBar
+            alter={alter}
+            schwanger={schwanger}
+            medikamente={medikamente}
+            budget={budget}
+            laborErhoeht={laborErhoeht}
+            laborErniedrigt={laborErniedrigt}
+          />
+          <ParsedResultView result={result} isStreaming={isStreaming} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParsedResultView({ result, isStreaming }: { result: string; isStreaming: boolean }) {
+  const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
+  const hasParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
+
+  if (isStreaming && !hasParsed) {
+    return (
+      <Card>
+        <CardContent className="py-10 flex items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Analysiere Wissensdatenbank und erstelle Empfehlung…</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {parsed.intro.length > 0 && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {parsed.intro.map((s, i) => (
+            <FreeSectionCard key={`intro-${i}`} section={s} />
+          ))}
+        </div>
+      )}
+
+      {parsed.categories.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-serif text-foreground flex items-center gap-2 mt-2">
+            <Pill className="h-4 w-4 text-primary" />
+            Empfohlene Mittel
+            {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+          </h2>
+          {parsed.categories.map((g, i) => (
+            <CategoryCard key={`cat-${i}-${g.title}`} group={g} />
+          ))}
+        </div>
+      )}
+
+      {parsed.outro.length > 0 && (
+        <div className="grid gap-3 md:grid-cols-2 mt-2">
+          {parsed.outro.map((s, i) => (
+            <FreeSectionCard key={`outro-${i}`} section={s} />
+          ))}
+        </div>
+      )}
+
+      {!hasParsed && result && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              📋 Therapie-Empfehlung
-              {isStreaming && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            </CardTitle>
+            <CardTitle className="text-base">Ergebnis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              ref={resultRef}
-              className="therapy-result prose prose-sm dark:prose-invert max-w-none max-h-[60vh] overflow-y-auto prose-strong:text-accent-foreground prose-strong:bg-accent/30 prose-strong:px-1 prose-strong:rounded prose-h2:text-primary prose-h2:border-b prose-h2:border-primary/30 prose-h2:pb-1 prose-h3:text-primary/90"
-            >
-              <ReactMarkdown
-                components={{
-                  // Emphasize remedy names (wrapped in **) with larger font + accent color
-                  strong: ({ node, ...props }) => (
-                    <strong
-                      className="text-lg md:text-xl font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-md"
-                      {...props}
-                    />
-                  ),
-                }}
-              >
-                {result}
-              </ReactMarkdown>
-            </div>
+            <pre className="whitespace-pre-wrap text-sm text-foreground font-sans">{result}</pre>
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   );
 }
