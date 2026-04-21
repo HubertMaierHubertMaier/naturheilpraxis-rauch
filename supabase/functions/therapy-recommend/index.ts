@@ -253,6 +253,8 @@ Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
 
+    console.log(`System prompt: ${systemPrompt.length} chars, User: ${userMessage.length} chars`);
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -284,12 +286,20 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error("KI-Gateway Fehler");
+      throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
+  } catch (e) {
+    console.error("therapy-recommend error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unbekannter Fehler" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
   } catch (e) {
     console.error("therapy-recommend error:", e);
     return new Response(
