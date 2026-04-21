@@ -190,17 +190,24 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 ### 🩺 Apparative & klinische Therapien
 (Infusionen, Ozon, IHHT, Colon-Hydrotherapie, Frequenztherapie, Bioresonanz)
 
-INNERHALB JEDER GRUPPE für jedes Mittel – AUSFÜHRLICH:
-- **Mittelname** (Lateinischer Name falls vorhanden) – 🟢 Günstig / 🟡 Mittel / 🔴 Teuer
-  - **Warum dieses Mittel?**: Detaillierte Begründung warum genau dieses Mittel für diese Belastung/diesen Patienten sinnvoll ist
-  - **Wirkung gegen**: [relevante Pathogene/Symptome mit Erklärung des Wirkmechanismus]
-  - **Dosierung**: [aus Wiki, ggf. angepasst an Alter]
-  - **Einnahmedauer**: [Empfehlung]
-  - **Geschätzte Kosten**: [pro Monat]
-  - **Günstigere Alternative**: [falls vorhanden]
-  - **Priorität**: 🔴 Essentiell / 🟡 Empfohlen / 🟢 Optional
+INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit ` | ` (Pipe-Zeichen) und beginne JEDE Mittel-Zeile mit `- ` (Bindestrich + Leerzeichen):
 
-WICHTIG: Der Mittelname MUSS in **doppelten Sternchen** stehen (Markdown bold), damit er im Frontend hervorgehoben wird.
+- **Mittelname** | Dosierung | Anwendung/Einnahme | Dauer | Priorität | Kosten/Monat | Begründung
+
+WO:
+- **Mittelname**: Name in doppelten Sternchen, ggf. mit lateinischem Namen in Klammern
+- Dosierung: z.B. "2×1 Tbl. tgl." oder "3×8 Tropfen"
+- Anwendung/Einnahme: z.B. "oral, vor dem Essen" oder "in Wasser einnehmen"
+- Dauer: z.B. "4 Wochen" oder "dauerhaft"
+- Priorität: NUR eines von: 🔴 Essentiell | 🟡 Empfohlen | 🟢 Optional
+- Kosten/Monat: z.B. "~5 €" oder "~40 €"
+- Begründung: KURZ (max 1 Satz) warum dieses Mittel und wogegen es wirkt
+
+BEISPIEL:
+- **MUCOKEHL D5** (Mucor racemosus) | 2×1 Tbl. tgl. | oral, einspeicheln | 6 Wochen | 🔴 Essentiell | ~28 € | Verflüssigt geronnenes Blut, verbessert Mikrozirkulation bei KHK
+- **Knoblauch** (Allium sativum) | 1-2 Zehen tgl. roh | mit Speisen | dauerhaft | 🟡 Empfohlen | ~3 € | Antimikrobiell, gefäßprotektiv, blutdrucksenkend
+
+WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel.
 
 ## 💰 Kostenübersicht
 - Gesamtkosten Essentiell: ca. XX €/Monat
