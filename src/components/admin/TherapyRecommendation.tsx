@@ -367,9 +367,21 @@ export function TherapyRecommendation() {
           <CardContent>
             <div
               ref={resultRef}
-              className="prose prose-sm dark:prose-invert max-w-none max-h-[60vh] overflow-y-auto"
+              className="therapy-result prose prose-sm dark:prose-invert max-w-none max-h-[60vh] overflow-y-auto prose-strong:text-accent-foreground prose-strong:bg-accent/30 prose-strong:px-1 prose-strong:rounded prose-h2:text-primary prose-h2:border-b prose-h2:border-primary/30 prose-h2:pb-1 prose-h3:text-primary/90"
             >
-              <ReactMarkdown>{result}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  // Emphasize remedy names (wrapped in **) with larger font + accent color
+                  strong: ({ node, ...props }) => (
+                    <strong
+                      className="text-lg md:text-xl font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-md"
+                      {...props}
+                    />
+                  ),
+                }}
+              >
+                {result}
+              </ReactMarkdown>
             </div>
           </CardContent>
         </Card>
