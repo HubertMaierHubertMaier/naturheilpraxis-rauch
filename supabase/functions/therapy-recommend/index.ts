@@ -7,62 +7,125 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// In-Memory-Cache für den Wiki-Kontext (überlebt warm starts der Edge Function).
+// In-Memory-Cache für die Wiki-Rohdaten (überlebt warm starts).
 // Invalidierung automatisch, sobald sich Anzahl oder max(updated_at) ändert.
+interface WikiEntry {
+  title: string;
+  category: string;
+  tags: string[];
+  content: string;
+}
 interface WikiCache {
-  signature: string;   // count + max(updated_at)
-  context: string;     // fertig formatierter Kontext-String
-  entryCount: number;
-  builtAt: number;     // ms epoch
+  signature: string;
+  entries: WikiEntry[];
+  builtAt: number;
 }
 let WIKI_CACHE: WikiCache | null = null;
-const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // Hard-TTL 10 min als Sicherheitsnetz
+const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 
-const MAX_ENTRY_CHARS = 6000;
-const MAX_TOTAL_CHARS = 400_000; // ~100k tokens – sicher für gemini-2.5-pro (1M ctx)
-const CACHE_VERSION = "v3";
+// Limits sind pro Request (nach Filterung) – das Gateway akzeptiert ~50-80k Tokens pro Message
+const MAX_ENTRY_CHARS = 8000;
+const MAX_TOTAL_CHARS = 120_000; // ~30k Tokens – komfortabel unter Gateway-Limit
+const CACHE_VERSION = "v4";
 
-async function getWikiContext(client: any): Promise<{ context: string; entryCount: number; cacheHit: boolean }> {
-  // 1) Signatur ermitteln (leichtgewichtig: nur updated_at holen)
+async function loadWikiEntries(client: any): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
   const { data: sigRows, error: sigError } = await client
     .from("admin_knowledge_base")
     .select("updated_at")
     .order("updated_at", { ascending: false })
     .limit(1);
-
   if (sigError) throw new Error("Wiki-Signatur konnte nicht geladen werden: " + sigError.message);
 
   const { count, error: countError } = await client
     .from("admin_knowledge_base")
     .select("*", { count: "exact", head: true });
-
   if (countError) throw new Error("Wiki-Anzahl konnte nicht geladen werden: " + countError.message);
 
   const maxUpdated = sigRows?.[0]?.updated_at ?? "empty";
   const signature = `${CACHE_VERSION}|${count ?? 0}|${maxUpdated}`;
-
   const now = Date.now();
-  if (
-    WIKI_CACHE &&
-    WIKI_CACHE.signature === signature &&
-    now - WIKI_CACHE.builtAt < WIKI_CACHE_TTL_MS
-  ) {
-    console.log(`Wiki cache HIT (signature=${signature}, age=${Math.round((now - WIKI_CACHE.builtAt) / 1000)}s)`);
-    return { context: WIKI_CACHE.context, entryCount: WIKI_CACHE.entryCount, cacheHit: true };
+
+  if (WIKI_CACHE && WIKI_CACHE.signature === signature && now - WIKI_CACHE.builtAt < WIKI_CACHE_TTL_MS) {
+    console.log(`Wiki cache HIT (signature=${signature}, entries=${WIKI_CACHE.entries.length})`);
+    return { entries: WIKI_CACHE.entries, cacheHit: true };
   }
 
   console.log(`Wiki cache MISS (new signature=${signature})`);
-
-  // 2) Vollständig neu laden und Kontext bauen
   const { data: wikiEntries, error: wikiError } = await client
     .from("admin_knowledge_base")
     .select("title, category, tags, content")
     .order("updated_at", { ascending: false });
-
   if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
-  let context = (wikiEntries || [])
-    .map((e: any) => {
+  const entries = (wikiEntries || []) as WikiEntry[];
+  WIKI_CACHE = { signature, entries, builtAt: now };
+  return { entries, cacheHit: false };
+}
+
+// Tokenisiert eine Query (Belastungen + Symptome + Erkrankung) für das Relevanz-Scoring.
+function tokenizeQuery(text: string): string[] {
+  const STOPWORDS = new Set([
+    "und", "oder", "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "eines",
+    "mit", "ohne", "von", "vom", "zur", "zum", "für", "auf", "bei", "auch", "ist", "sind",
+    "im", "in", "an", "am", "auf", "als", "wie", "noch", "nicht", "kein", "keine",
+    "organe", "organ", "index", "nicht", "angegeben", "li", "re", "rechts", "links",
+  ]);
+  return Array.from(new Set(
+    text
+      .toLowerCase()
+      .replace(/[^\wäöüß\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
+  ));
+}
+
+// Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
+function selectRelevantEntries(entries: WikiEntry[], queryText: string, maxChars: number): WikiEntry[] {
+  const tokens = tokenizeQuery(queryText);
+  if (tokens.length === 0) {
+    // Fallback: einfach so viele wie passen
+    return entries;
+  }
+
+  const scored = entries.map((e) => {
+    const haystack = (
+      e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")
+    ).toLowerCase();
+    let score = 0;
+    for (const tok of tokens) {
+      // Title/Tags zählen mehr
+      if ((e.title || "").toLowerCase().includes(tok)) score += 10;
+      if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
+      // Content-Treffer
+      const matches = haystack.split(tok).length - 1;
+      score += Math.min(matches, 8);
+    }
+    return { entry: e, score };
+  });
+
+  // Nach Score sortieren (höchster zuerst), Score 0 ans Ende
+  scored.sort((a, b) => b.score - a.score);
+
+  // Solange aufnehmen, bis maxChars erreicht – Einträge mit Score > 0 priorisieren
+  const selected: WikiEntry[] = [];
+  let totalChars = 0;
+  for (const s of scored) {
+    const entryLen = Math.min((s.entry.content || "").length, MAX_ENTRY_CHARS) + 200;
+    if (totalChars + entryLen > maxChars) continue;
+    selected.push(s.entry);
+    totalChars += entryLen;
+  }
+
+  console.log(
+    `Wiki filter: ${selected.length}/${entries.length} entries selected (` +
+    `query tokens=${tokens.length}, top scores=${scored.slice(0, 3).map((s) => s.score).join(",")})`
+  );
+  return selected;
+}
+
+function buildContext(entries: WikiEntry[]): string {
+  let context = entries
+    .map((e) => {
       const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
       return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
     })
@@ -71,16 +134,8 @@ async function getWikiContext(client: any): Promise<{ context: string; entryCoun
   if (context.length > MAX_TOTAL_CHARS) {
     context = context.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
   }
-  if (!context.trim()) context = "(Wissensdatenbank ist leer)";
-
-  WIKI_CACHE = {
-    signature,
-    context,
-    entryCount: wikiEntries?.length || 0,
-    builtAt: now,
-  };
-
-  return { context, entryCount: WIKI_CACHE.entryCount, cacheHit: false };
+  if (!context.trim()) context = "(Keine relevanten Wissensdatenbank-Einträge gefunden)";
+  return context;
 }
 
 serve(async (req) => {
