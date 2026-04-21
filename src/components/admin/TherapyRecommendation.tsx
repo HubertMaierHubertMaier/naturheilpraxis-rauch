@@ -342,7 +342,7 @@ export function TherapyRecommendation() {
               onClick={() =>
                 openPrintRecipe({
                   parsed: parseTherapyMarkdown(result),
-                  patient: { alter, schwanger, medikamente, budget, belastungen, symptome, erkrankung },
+                  patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
                 })
               }
               className="gap-2"
