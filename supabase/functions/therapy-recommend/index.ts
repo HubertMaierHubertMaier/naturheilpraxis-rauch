@@ -18,8 +18,9 @@ interface WikiCache {
 let WIKI_CACHE: WikiCache | null = null;
 const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // Hard-TTL 10 min als Sicherheitsnetz
 
-const MAX_ENTRY_CHARS = 4000;
-const MAX_TOTAL_CHARS = 120_000;
+const MAX_ENTRY_CHARS = 2500;
+const MAX_TOTAL_CHARS = 60_000; // ~15k tokens, sicher unter Gateway-Limit
+const CACHE_VERSION = "v2"; // bump to invalidate stale caches after limit changes
 
 async function getWikiContext(client: any): Promise<{ context: string; entryCount: number; cacheHit: boolean }> {
   // 1) Signatur ermitteln (leichtgewichtig: nur updated_at holen)
