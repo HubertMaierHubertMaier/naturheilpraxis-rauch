@@ -189,6 +189,22 @@ export function TherapyRecommendation() {
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
 
+      {/* Wissensdatenbank-Filter */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            📚 Wissensdatenbank-Filter
+            <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-2">
+            Wählen Sie aus welchen Hauptordnern die Empfehlungen kommen sollen. Ohne Auswahl wird die gesamte Wissensdatenbank durchsucht.
+          </p>
+          <CategoryFilter selected={selectedCategories} onChange={setSelectedCategories} />
+        </CardContent>
+      </Card>
+
       {/* Input Form */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Left: Main inputs */}
