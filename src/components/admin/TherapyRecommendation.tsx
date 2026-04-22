@@ -14,6 +14,7 @@ import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
+import { CategoryFilter } from "./therapy/CategoryFilter";
 
 export function TherapyRecommendation() {
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
@@ -26,6 +27,7 @@ export function TherapyRecommendation() {
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -85,6 +87,7 @@ export function TherapyRecommendation() {
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
+            categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           }),
           signal: controller.signal,
         }
@@ -169,6 +172,7 @@ export function TherapyRecommendation() {
     setBudget("");
     setLaborErhoeht("");
     setLaborErniedrigt("");
+    setSelectedCategories([]);
     setResult("");
   };
 
@@ -184,6 +188,22 @@ export function TherapyRecommendation() {
       <p className="text-sm text-muted-foreground">
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
+
+      {/* Wissensdatenbank-Filter */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            📚 Wissensdatenbank-Filter
+            <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-2">
+            Wählen Sie aus welchen Hauptordnern die Empfehlungen kommen sollen. Ohne Auswahl wird die gesamte Wissensdatenbank durchsucht.
+          </p>
+          <CategoryFilter selected={selectedCategories} onChange={setSelectedCategories} />
+        </CardContent>
+      </Card>
 
       {/* Input Form */}
       <div className="grid gap-4 md:grid-cols-2">
