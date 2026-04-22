@@ -87,6 +87,7 @@ export function TherapyRecommendation() {
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
+            categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           }),
           signal: controller.signal,
         }
@@ -171,6 +172,7 @@ export function TherapyRecommendation() {
     setBudget("");
     setLaborErhoeht("");
     setLaborErniedrigt("");
+    setSelectedCategories([]);
     setResult("");
   };
 
