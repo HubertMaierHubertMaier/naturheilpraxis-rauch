@@ -14,6 +14,7 @@ import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
+import { CategoryFilter } from "./therapy/CategoryFilter";
 
 export function TherapyRecommendation() {
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
@@ -26,6 +27,7 @@ export function TherapyRecommendation() {
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
