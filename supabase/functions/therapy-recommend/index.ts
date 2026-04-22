@@ -188,7 +188,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, categories } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -196,14 +196,31 @@ serve(async (req) => {
 
     // Fetch wiki entries (cached) and select only the relevant ones for this query
     const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
+
+    // Optional: Filter nach gewählten Hauptordnern (Top-Level-Kategorien).
+    // categories: string[] – z.B. ["Naturheilpraxis Peter Rauch", "Ernährung"].
+    // Match: exakte Kategorie ODER beginnt mit "<Kategorie> >" (Unter-Ordner).
+    const selectedCats: string[] = Array.isArray(categories)
+      ? categories.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
+      : [];
+    const filteredByCategory = selectedCats.length === 0
+      ? allEntries
+      : allEntries.filter((e) =>
+          selectedCats.some((c) => e.category === c || e.category.startsWith(c + " >"))
+        );
+    console.log(
+      `Category filter: ${selectedCats.length === 0 ? "ALL" : selectedCats.join(", ")} → ` +
+      `${filteredByCategory.length}/${allEntries.length} entries`
+    );
+
     const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt]
       .filter(Boolean)
       .join(" ");
-    const relevantEntries = selectRelevantEntries(allEntries, queryText, MAX_TOTAL_CHARS);
+    const relevantEntries = selectRelevantEntries(filteredByCategory, queryText, MAX_TOTAL_CHARS);
     const wikiContext = buildContext(relevantEntries);
     console.log(
-      `Wiki: ${allEntries.length} total → ${relevantEntries.length} relevant, ` +
-      `context=${wikiContext.length} chars, cacheHit=${cacheHit}`
+      `Wiki: ${allEntries.length} total → ${filteredByCategory.length} after category → ` +
+      `${relevantEntries.length} relevant, context=${wikiContext.length} chars, cacheHit=${cacheHit}`
     );
 
     // Build patient context
