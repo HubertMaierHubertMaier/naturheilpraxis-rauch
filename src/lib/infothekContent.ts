@@ -164,6 +164,13 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Akute & latente Belastungen, Erregerpersistenz", en: "Acute & latent infections, pathogen persistence" },
         external: true,
       },
+      {
+        label: { de: "Umwelt, Alltag & Gesundheit", en: "Environment, Daily Life & Health" },
+        href: "/umwelt-alltag-gesundheit.html",
+        icon: Sprout,
+        description: { de: "Belastungen im Wohn- und Lebensumfeld – mit Alternativen & seriösen Quellen", en: "Daily-life burdens & alternatives with reputable sources" },
+        external: true,
+      },
     ],
   },
   {
