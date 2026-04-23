@@ -27,7 +27,8 @@ export function Header() {
   const allowDevMode = isNonProduction && !isPublishedProduction;
   const devActive = sessionStorage.getItem('dev_admin_bypass') === 'true';
   const showDevButton = allowDevMode && !isAdmin && !devActive;
-  const showDevLogout = allowDevMode && devActive && !user;
+  // Show dev logout whenever dev bypass is active (independent of Supabase user)
+  const showDevLogout = allowDevMode && devActive;
   
   const activateDevMode = useCallback(() => {
     sessionStorage.setItem('dev_admin_bypass', 'true');
