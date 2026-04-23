@@ -235,6 +235,18 @@ export function Header() {
               </Button>
             )}
 
+            {/* Dev Mode Deactivate Button Mobile */}
+            {showDevLogout && (
+              <Button
+                variant="outline"
+                onClick={() => { deactivateDevMode(); setIsMenuOpen(false); }}
+                className="w-full justify-start gap-2 border-amber-400 text-amber-700"
+              >
+                <LogOut className="h-4 w-4" />
+                Dev-Modus beenden
+              </Button>
+            )}
+
             {/* Auth Button Mobile */}
             {user ? (
               <div className="mt-2 space-y-2">
