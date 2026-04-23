@@ -307,6 +307,18 @@ export function Header() {
                     Admin-Dashboard
                   </Link>
                 )}
+                {isAdmin && (
+                  <a
+                    href="/datenschutz-fahrplan.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Datensicherheit
+                  </a>
+                )}
                 <div className="flex items-center gap-2 rounded-lg bg-sage-50 px-4 py-2">
                   <User className="h-4 w-4 text-primary" />
                   <span className="truncate text-sm text-muted-foreground">
