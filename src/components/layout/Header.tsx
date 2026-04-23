@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
