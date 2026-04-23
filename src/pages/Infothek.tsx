@@ -6,7 +6,7 @@ import {
   Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText,
   ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle,
   Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope,
-  Bug, Syringe, Cigarette, Route, ExternalLink,
+  Bug, Syringe, Cigarette, Route, ExternalLink, Salad,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
