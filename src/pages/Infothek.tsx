@@ -6,7 +6,7 @@ import {
   Stethoscope, Euro, Zap, HelpCircle, BookOpen, Radio, FileText,
   ClipboardList, ShieldCheck, FileSignature, Activity, AlertTriangle,
   Leaf, Flower2, Droplets, HeartPulse, Milk, Scale, Microscope,
-  Bug, Syringe, Cigarette, Route, ExternalLink,
+  Bug, Syringe, Cigarette, Route, ExternalLink, Salad,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,7 @@ const groups: InfoGroup[] = [
       { label: { de: "Vieva Pro Vitalanalyse", en: "Vieva Pro Vital Analysis" }, href: "/vieva-pro-vitalanalyse.html", icon: Activity, description: { de: "Ganzheitliche Gesundheitsanalyse per HRV & Vitalfeld", en: "Holistic health analysis via HRV & vital field" }, external: true },
       { label: { de: "Allergien & Intoleranzen", en: "Allergies & Intolerances" }, href: "/ass-salicylat-histamin.html", icon: AlertTriangle, description: { de: "ASS-, Salicylat- & Histamin-Unverträglichkeit", en: "ASS, salicylate & histamine intolerance" }, external: true },
       { label: { de: "Diabetes Typ 1 & Typ 2", en: "Diabetes Type 1 & Type 2" }, href: "/diabetes-handout.html", icon: HeartPulse, description: { de: "Patientenhandout: Zielwerte, Messen & Alltagstipps", en: "Patient handout: target values, measuring & daily tips" }, external: true },
+      { label: { de: "LOGI-Kost & Mitochondrien", en: "LOGI Diet & Mitochondria" }, href: "/logi-ernaehrung-mitochondrien.html", icon: Salad, description: { de: "Niedrig glykämische Ernährung zur Mitochondrien-Entlastung", en: "Low-glycemic diet to support mitochondrial health" }, external: true },
       { label: { de: "Milch-Unverträglichkeit", en: "Milk Intolerance" }, href: "/milch-unvertraeglichkeit", icon: Milk, description: { de: "Milchprotein-Allergie & Laktoseintoleranz erklärt", en: "Milk protein allergy & lactose intolerance explained" } },
       { label: { de: "Milch & Knochengesundheit", en: "Milk & Bone Health" }, href: "/milch-knochengesundheit", icon: HeartPulse, description: { de: "Das Calcium-Paradoxon & wissenschaftliche Debatte", en: "The calcium paradox & scientific debate" } },
       { label: { de: "Rohmilch – Mikrobiologie", en: "Raw Milk – Microbiology" }, href: "/rohmilch-mikrobiologie", icon: Microscope, description: { de: "Pathogene Keime & Pasteurisierung", en: "Pathogenic organisms & pasteurization" } },
