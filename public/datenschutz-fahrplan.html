@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datenschutz-Fahrplan – Naturheilpraxis Peter Rauch</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --sage: #6b8e6b;
+    --sage-dark: #4a6b4a;
+    --sage-light: #e8f0e8;
+    --sand: #d4c5a9;
+    --sand-light: #f5efe3;
+    --terracotta: #c87963;
+    --text: #2d3a2d;
+    --muted: #6b7a6b;
+    --border: #d8e0d8;
+    --warning: #c87963;
+    --warning-bg: #fdf2ee;
+    --success: #6b8e6b;
+    --success-bg: #e8f0e8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.65;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--sand-light) 0%, #fff 100%);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(74, 107, 74, 0.1);
+    overflow: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, var(--sage-dark) 0%, var(--sage) 100%);
+    color: #fff;
+    padding: 3rem 2.5rem;
+    text-align: center;
+  }
+  header .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  header p {
+    font-size: 1.05rem;
+    opacity: 0.95;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  main { padding: 2.5rem; }
+  .status-box {
+    background: var(--warning-bg);
+    border-left: 4px solid var(--warning);
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2.5rem;
+  }
+  .status-box h3 {
+    color: var(--warning);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status-box p { color: var(--text); font-size: 0.95rem; }
+  h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.6rem;
+    color: var(--sage-dark);
+    margin: 2.5rem 0 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--sage-light);
+  }
+  h2:first-of-type { margin-top: 0; }
+  .step {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .step:hover {
+    border-color: var(--sage);
+    box-shadow: 0 4px 16px rgba(107, 142, 107, 0.12);
+    transform: translateY(-1px);
+  }
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .step-number {
+    background: var(--sage);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .step-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sage-dark);
+    flex: 1;
+  }
+  .step-priority {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .priority-high { background: var(--warning-bg); color: var(--warning); }
+  .priority-medium { background: #fff8e5; color: #b8860b; }
+  .priority-low { background: var(--success-bg); color: var(--success); }
+  .step-body { padding-left: 3rem; }
+  .step-body p { margin-bottom: 0.75rem; color: var(--text); }
+  .step-body ul { margin: 0.75rem 0 0.75rem 1.25rem; }
+  .step-body li { margin-bottom: 0.4rem; }
+  .step-body code {
+    background: var(--sage-light);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--sage-dark);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .step-body a {
+    color: var(--sage-dark);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--sage);
+  }
+  .step-body a:hover { color: var(--terracotta); border-color: var(--terracotta); }
+  .recommendation {
+    background: var(--success-bg);
+    border-left: 4px solid var(--success);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+  }
+  .recommendation strong { color: var(--sage-dark); }
+  .checklist {
+    background: var(--sand-light);
+    border-radius: 12px;
+    padding: 1.5rem 1.75rem;
+    margin-top: 2rem;
+  }
+  .checklist h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--sage-dark);
+    margin-bottom: 1rem;
+  }
+  .checklist label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .checklist input[type="checkbox"] {
+    margin-top: 0.3rem;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--sage);
+    cursor: pointer;
+  }
+  .email-template {
+    background: #1e2a1e;
+    color: #d4e4d4;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    margin-top: 0.75rem;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+  .email-template .label { color: #8fc28f; font-weight: 600; }
+  footer {
+    background: var(--sage-light);
+    padding: 1.5rem 2.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  .legal-note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+  @media (max-width: 640px) {
+    header { padding: 2rem 1.25rem; }
+    header h1 { font-size: 1.6rem; }
+    main { padding: 1.5rem; }
+    .step { padding: 1.25rem; }
+    .step-body { padding-left: 0; margin-top: 0.5rem; }
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .container { box-shadow: none; }
+    .step:hover { transform: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="badge">DSGVO-Compliance · Heilpraktiker</div>
+  <h1>Datenschutz-Fahrplan</h1>
+  <p>Konkrete nächste Schritte zur rechtssicheren Verarbeitung von Patientendaten (Art. 9 DSGVO) in Ihrer Patienten-App</p>
+</header>
+
+<main>
+
+  <div class="status-box">
+    <h3>⚠️ Wo wir stehen</h3>
+    <p>Die App ist technisch DSGVO-tauglich aufgebaut (RLS, 2FA, Verschlüsselung, Audit-Log, 10-Jahres-Aufbewahrung, AI-Training-Opt-out). <strong>Was noch fehlt:</strong> Ein rechtsverbindlicher Auftragsverarbeitungsvertrag (AV-Vertrag / DPA) mit dem Hosting-Anbieter – Pflicht nach Art. 28 DSGVO bei Verarbeitung von Gesundheitsdaten.</p>
+  </div>
+
+  <h2>🎯 Sofort-Maßnahmen (diese Woche)</h2>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <div class="step-title">AV-Vertrag bei Lovable anfordern</div>
+      <span class="step-priority priority-high">Pflicht</span>
+    </div>
+    <div class="step-body">
+      <p>Schreiben Sie an <code>privacy@lovable.dev</code> und fordern Sie einen Auftragsverarbeitungsvertrag (Data Processing Agreement / DPA) an. <strong>Wichtig:</strong> Art. 28 DSGVO verpflichtet jeden Auftragsverarbeiter zum Abschluss – unabhängig vom Tarif.</p>
+      <div class="email-template"><span class="label">Betreff:</span> Anforderung Auftragsverarbeitungsvertrag (Art. 28 DSGVO) – Heilpraktiker-Praxis
+
+Sehr geehrtes Lovable-Team,
+
+ich betreibe als zugelassener Heilpraktiker eine Patienten-App auf Ihrer
+Plattform (Projekt-ID: 2a361a45-233a-4659-a3f4-a2f1dda0e86d) und verarbeite
+besondere Kategorien personenbezogener Daten gemäß Art. 9 DSGVO
+(Gesundheitsdaten).
+
+Gemäß Art. 28 Abs. 3 DSGVO benötige ich zwingend einen Auftrags-
+verarbeitungsvertrag (AVV / DPA) mit Lovable als Auftragsverarbeiter.
+Dieser ist für mich gesetzliche Pflicht – nicht optional.
+
+Bitte senden Sie mir den entsprechenden Vertrag inkl. TOMs zur Prüfung
+und Unterzeichnung zu. Bitte teilen Sie mir auch mit, ob hierfür
+ein bestimmter Tarif Voraussetzung ist.
+
+Mit freundlichen Grüßen
+Peter Rauch
+Heilpraktiker
+www.rauch-heilpraktiker.de</div>
+      <div class="recommendation">
+        <strong>💡 Hinweis:</strong> Sollte Lovable den DPA nur ab Business-Plan (~100 €/Monat) anbieten, dokumentieren Sie diese Antwort schriftlich – das ist relevant für Ihre Entscheidung in Schritt 4.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">2</div>
+      <div class="step-title">Pro-Plan-Konditionen prüfen</div>
+      <span class="step-priority priority-medium">Empfohlen</span>
+    </div>
+    <div class="step-body">
+      <p>Prüfen Sie auf <a href="https://lovable.dev/pricing" target="_blank" rel="noopener">lovable.dev/pricing</a>, welche Pläne unterhalb des Business-Plans verfügbar sind und ob ein DPA dort enthalten ist.</p>
+      <ul>
+        <li>Aktuelle Plan-Stufe der Praxis-App ermitteln</li>
+        <li>Differenz zwischen Pro- und Business-Plan dokumentieren</li>
+        <li>Antwort von <code>privacy@lovable.dev</code> abwarten (Schritt 1)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>🔍 Mittelfristig (2–4 Wochen)</h2>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <div class="step-title">Verzeichnis von Verarbeitungstätigkeiten (VVT) erstellen</div>
+      <span class="step-priority priority-high">Pflicht</span>
+    </div>
+    <div class="step-body">
+      <p>Nach Art. 30 DSGVO sind Sie als Verantwortlicher verpflichtet, ein VVT zu führen. Vorlagen gibt es kostenlos bei den Aufsichtsbehörden (z. B. <a href="https://www.lda.bayern.de/" target="_blank" rel="noopener">BayLDA</a>, <a href="https://www.bfdi.bund.de/" target="_blank" rel="noopener">BfDI</a>).</p>
+      <ul>
+        <li>Zweck der Verarbeitung: Anamnese, Therapieplanung, Abrechnung</li>
+        <li>Datenkategorien: Stammdaten, Gesundheitsdaten (Art. 9), Signaturen</li>
+        <li>Empfänger: Lovable Cloud, anamnese@/iaa@art-of-therapy.de, ggf. Steuerberater</li>
+        <li>Löschfristen: 10 Jahre (Heilpraktikergesetz)</li>
+        <li>TOMs: 2FA, RLS, Verschlüsselung, Audit-Log</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">4</div>
+      <div class="step-title">Datenschutz-Folgenabschätzung (DSFA) durchführen</div>
+      <span class="step-priority priority-high">Pflicht</span>
+    </div>
+    <div class="step-body">
+      <p>Bei Verarbeitung von Gesundheitsdaten in größerem Umfang ist eine DSFA nach Art. 35 DSGVO verpflichtend. Sie können dafür die <a href="https://www.cnil.fr/en/open-source-pia-software-helps-carry-out-data-protection-impact-assesment" target="_blank" rel="noopener">PIA-Software der CNIL</a> (kostenlos, deutsch) nutzen.</p>
+      <p class="legal-note">Die DSFA muss vor der ersten produktiven Nutzung mit echten Patientendaten vorliegen.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">5</div>
+      <div class="step-title">Entscheidung: Hosting-Strategie festlegen</div>
+      <span class="step-priority priority-medium">Strategisch</span>
+    </div>
+    <div class="step-body">
+      <p>Basierend auf der Antwort aus Schritt 1 wählen Sie einen der folgenden Wege:</p>
+      <ul>
+        <li><strong>Option A – Lovable Business-Plan (~100 €/Mo):</strong> Bequem, alles aus einer Hand, DPA inklusive</li>
+        <li><strong>Option B – Eigenes Supabase-Projekt (EU-Region, ~25 €/Mo):</strong> Eigener DPA direkt mit Supabase, Lovable nur als UI-Schicht</li>
+        <li><strong>Option C – Hybrid:</strong> Lovable als Frontend, sensible Daten (Anamnese-PDFs) auf eigenem deutschen Hetzner-/IONOS-Server mit fertigem AV-Vertrag</li>
+        <li><strong>Option D – Self-Hosted Supabase auf Hetzner Root-Server (~40 €/Mo):</strong> Volle Datenhoheit, eigener Server in Falkenstein/Nürnberg</li>
+      </ul>
+      <div class="recommendation">
+        <strong>💡 Meine Empfehlung:</strong> <strong>Option B oder D</strong> – beides ist deutlich günstiger als der Business-Plan und bietet bessere Datenhoheit. Hetzner stellt einen fertigen AV-Vertrag kostenlos zur Verfügung. Die App ist bereits auf Portierbarkeit ausgelegt (siehe Memory: hosting-requirements).
+      </div>
+    </div>
+  </div>
+
+  <h2>📋 Vor Go-Live mit echten Patienten</h2>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">6</div>
+      <div class="step-title">Datenschutzerklärung final juristisch prüfen lassen</div>
+      <span class="step-priority priority-high">Pflicht</span>
+    </div>
+    <div class="step-body">
+      <p>Die bestehende Datenschutzerklärung (<code>/datenschutz</code>) muss vor dem Produktivbetrieb von einem Fachanwalt für IT-/Medizinrecht oder einem externen Datenschutzbeauftragten geprüft werden.</p>
+      <ul>
+        <li>Aufnahme des finalen Hosting-Anbieters (laut Schritt 5)</li>
+        <li>Konkrete Auflistung aller eingesetzten Subunternehmer</li>
+        <li>Korrekte Belehrung über Betroffenenrechte (Art. 15-22 DSGVO)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">7</div>
+      <div class="step-title">Externen Datenschutzbeauftragten klären</div>
+      <span class="step-priority priority-low">Empfohlen</span>
+    </div>
+    <div class="step-body">
+      <p>Als Einzelpraxis sind Sie i. d. R. <em>nicht</em> verpflichtet, einen DSB zu benennen (§ 38 BDSG, da typischerweise &lt; 20 Personen mit Datenverarbeitung). <strong>Aber:</strong> Bei umfangreicher Verarbeitung von Gesundheitsdaten kann eine Pflicht entstehen (Art. 37 Abs. 1c DSGVO).</p>
+      <div class="recommendation">
+        <strong>💡 Pragmatisch:</strong> Externe DSB-Pakete für Heilpraktiker gibt es ab ca. 30–60 €/Monat (z. B. über Berufsverbände wie BDH oder FDH). Investition zahlt sich bei Beschwerden/Audits aus.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">8</div>
+      <div class="step-title">Patienteneinwilligung neu formulieren</div>
+      <span class="step-priority priority-medium">Empfohlen</span>
+    </div>
+    <div class="step-body">
+      <p>Im Anamnesebogen wird bereits eine Einwilligungs-Checkbox verwendet. Diese muss nach finaler Hosting-Wahl ggf. um folgende Punkte erweitert werden:</p>
+      <ul>
+        <li>Konkreter Name des Hosting-Anbieters</li>
+        <li>Speicherort (EU/Deutschland)</li>
+        <li>Verweis auf Verschlüsselung und Zugriffsbeschränkung</li>
+        <li>Hinweis auf Widerrufsrecht (Art. 7 Abs. 3 DSGVO)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <h3>✓ Ihre persönliche Checkliste</h3>
+    <label><input type="checkbox"> E-Mail an privacy@lovable.dev gesendet</label>
+    <label><input type="checkbox"> Antwort von Lovable erhalten und dokumentiert</label>
+    <label><input type="checkbox"> Pro-/Business-Plan-Konditionen geprüft</label>
+    <label><input type="checkbox"> Verzeichnis von Verarbeitungstätigkeiten (VVT) angelegt</label>
+    <label><input type="checkbox"> Datenschutz-Folgenabschätzung (DSFA) durchgeführt</label>
+    <label><input type="checkbox"> Hosting-Strategie final entschieden (Option A/B/C/D)</label>
+    <label><input type="checkbox"> AV-Vertrag mit gewähltem Anbieter unterzeichnet</label>
+    <label><input type="checkbox"> Datenschutzerklärung juristisch geprüft</label>
+    <label><input type="checkbox"> Entscheidung über externen DSB getroffen</label>
+    <label><input type="checkbox"> Patienteneinwilligung im Anamnesebogen aktualisiert</label>
+    <label><input type="checkbox"> Erste echte Patientendaten erst NACH allen vorigen Schritten erfasst</label>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Naturheilpraxis Peter Rauch</strong> · Datenschutz-Fahrplan · Stand: 23.04.2026<br>
+  Dieses Dokument ersetzt keine Rechtsberatung. Im Zweifel Fachanwalt für Medizin-/IT-Recht konsultieren.
+</footer>
+
+</div>
+</body>
+</html>
