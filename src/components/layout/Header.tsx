@@ -104,6 +104,19 @@ export function Header() {
               Admin
             </Button>
           )}
+
+          {/* Dev Mode Deactivate Button - shows when dev bypass active without real user */}
+          {showDevLogout && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={deactivateDevMode}
+              className="ml-2 gap-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Dev-Modus beenden
+            </Button>
+          )}
           
           {/* Auth Button Desktop */}
           {user ? (
