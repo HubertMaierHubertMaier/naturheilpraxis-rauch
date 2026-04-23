@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -164,6 +164,17 @@ export function Header() {
                   Admin
                 </Link>
               )}
+              {isAdmin && (
+                <a
+                  href="/datenschutz-fahrplan.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Datensicherheit
+                </a>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -295,6 +306,18 @@ export function Header() {
                     <Shield className="h-4 w-4" />
                     Admin-Dashboard
                   </Link>
+                )}
+                {isAdmin && (
+                  <a
+                    href="/datenschutz-fahrplan.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Datensicherheit
+                  </a>
                 )}
                 <div className="flex items-center gap-2 rounded-lg bg-sage-50 px-4 py-2">
                   <User className="h-4 w-4 text-primary" />
