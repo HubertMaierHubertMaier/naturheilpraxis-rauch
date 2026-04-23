@@ -27,10 +27,17 @@ export function Header() {
   const allowDevMode = isNonProduction && !isPublishedProduction;
   const devActive = sessionStorage.getItem('dev_admin_bypass') === 'true';
   const showDevButton = allowDevMode && !isAdmin && !devActive;
+  const showDevLogout = allowDevMode && devActive && !user;
   
   const activateDevMode = useCallback(() => {
     sessionStorage.setItem('dev_admin_bypass', 'true');
     window.location.search = '?dev=true';
+  }, []);
+
+  const deactivateDevMode = useCallback(() => {
+    sessionStorage.removeItem('dev_admin_bypass');
+    // Strip ?dev=true from URL and reload
+    window.location.href = window.location.pathname;
   }, []);
 
   const navItems = [
