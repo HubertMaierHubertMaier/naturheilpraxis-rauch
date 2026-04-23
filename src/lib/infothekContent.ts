@@ -20,6 +20,7 @@ import {
   Salad,
   Scale,
   ShieldCheck,
+  Sprout,
   Stethoscope,
   Syringe,
   Zap,
