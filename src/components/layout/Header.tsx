@@ -27,10 +27,17 @@ export function Header() {
   const allowDevMode = isNonProduction && !isPublishedProduction;
   const devActive = sessionStorage.getItem('dev_admin_bypass') === 'true';
   const showDevButton = allowDevMode && !isAdmin && !devActive;
+  const showDevLogout = allowDevMode && devActive && !user;
   
   const activateDevMode = useCallback(() => {
     sessionStorage.setItem('dev_admin_bypass', 'true');
     window.location.search = '?dev=true';
+  }, []);
+
+  const deactivateDevMode = useCallback(() => {
+    sessionStorage.removeItem('dev_admin_bypass');
+    // Strip ?dev=true from URL and reload
+    window.location.href = window.location.pathname;
   }, []);
 
   const navItems = [
@@ -95,6 +102,19 @@ export function Header() {
             >
               <Shield className="h-3.5 w-3.5" />
               Admin
+            </Button>
+          )}
+
+          {/* Dev Mode Deactivate Button - shows when dev bypass active without real user */}
+          {showDevLogout && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={deactivateDevMode}
+              className="ml-2 gap-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Dev-Modus beenden
             </Button>
           )}
           
@@ -212,6 +232,18 @@ export function Header() {
               >
                 <Shield className="h-4 w-4" />
                 Admin-Modus aktivieren
+              </Button>
+            )}
+
+            {/* Dev Mode Deactivate Button Mobile */}
+            {showDevLogout && (
+              <Button
+                variant="outline"
+                onClick={() => { deactivateDevMode(); setIsMenuOpen(false); }}
+                className="w-full justify-start gap-2 border-amber-400 text-amber-700"
+              >
+                <LogOut className="h-4 w-4" />
+                Dev-Modus beenden
               </Button>
             )}
 
