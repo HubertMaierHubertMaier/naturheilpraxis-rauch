@@ -39,13 +39,15 @@ body { font-family: 'Source Sans 3', sans-serif; color: var(--text); background-
   background: var(--card-bg); border-radius: 1rem; padding: 2rem !important;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: left;
   border: 1px solid rgba(70, 113, 91, 0.1);
-  height: 90vh !important; max-height: 90vh !important;
-  overflow-y: auto !important; display: block !important; top: 5vh !important;
-  position: relative;
+  height: 850px !important; max-height: 850px !important;
+  overflow-y: auto !important; display: block !important;
+  box-sizing: border-box;
 }
 .reveal .slides section.intro-hero {
   height: auto !important; max-height: none !important;
-  overflow-y: visible !important; top: 0 !important;
+  overflow-y: visible !important;
+  display: flex !important; flex-direction: column; justify-content: center;
+  min-height: 600px;
 }
 .reveal .slides section::-webkit-scrollbar { width: 8px; }
 .reveal .slides section::-webkit-scrollbar-track { background: transparent; }
