@@ -77,7 +77,29 @@ export const infothekGroups: InfothekGroup[] = [
     ],
   },
   {
-    title: { de: "Wissen & Therapie", en: "Knowledge & Therapy" },
+    title: {
+      de: "Analyse- & Therapiegeräte der Praxis Peter Rauch",
+      en: "Analysis & Therapy Devices of Praxis Peter Rauch",
+    },
+    items: [
+      {
+        label: { de: "Vieva Pro Vitalanalyse", en: "Vieva Pro Vital Analysis" },
+        href: "/vieva-pro-vitalanalyse.html",
+        icon: Activity,
+        description: { de: "Ganzheitliche Gesundheitsanalyse per HRV & Vitalfeld", en: "Holistic health analysis via HRV & vital field" },
+        external: true,
+      },
+      {
+        label: { de: "Diamond Shield Zapper", en: "Diamond Shield Zapper" },
+        href: "/zapper-diamond-shield.html",
+        icon: Radio,
+        description: { de: "Frequenzgerät für Wellness und Erfahrungsheilkunde", en: "Frequency device for wellness" },
+        external: true,
+      },
+    ],
+  },
+  {
+    title: { de: "Wissen", en: "Knowledge" },
     items: [
       {
         label: { de: "Quellenhinweis & Haftung", en: "Sources & Disclaimer" },
@@ -96,20 +118,6 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/krankheit-ist-messbar.html",
         icon: Zap,
         description: { de: "Physikalische Grundlagen der Frequenztherapie", en: "Physical foundations of frequency therapy" },
-        external: true,
-      },
-      {
-        label: { de: "Diamond Shield Zapper", en: "Diamond Shield Zapper" },
-        href: "/zapper-diamond-shield.html",
-        icon: Radio,
-        description: { de: "Frequenzgerät für Wellness und Erfahrungsheilkunde", en: "Frequency device for wellness" },
-        external: true,
-      },
-      {
-        label: { de: "Vieva Pro Vitalanalyse", en: "Vieva Pro Vital Analysis" },
-        href: "/vieva-pro-vitalanalyse.html",
-        icon: Activity,
-        description: { de: "Ganzheitliche Gesundheitsanalyse per HRV & Vitalfeld", en: "Holistic health analysis via HRV & vital field" },
         external: true,
       },
       {
