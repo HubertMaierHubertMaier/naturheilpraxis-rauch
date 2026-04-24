@@ -145,6 +145,48 @@ const SchilddrueseHypnose = () => {
             </CardContent>
           </Card>
 
+          {/* Selbsthypnose-Audios */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Headphones className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-serif text-xl font-semibold text-foreground">
+                  Selbsthypnose-Audios
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  In ruhiger Umgebung, idealerweise mit Kopfhörern. Nicht beim Autofahren oder bei Tätigkeiten, die deine volle Aufmerksamkeit erfordern.
+                </p>
+              </div>
+            </div>
+
+            {audioFiles.map((audio) => (
+              <Card key={audio.file} className="shadow-card">
+                <CardContent className="p-5 md:p-6 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-foreground">{audio.title}</h3>
+                    <p className="text-xs text-muted-foreground">{audio.description}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                      <Clock className="h-3 w-3" />
+                      {audio.duration}
+                    </div>
+                  </div>
+                  <audio controls className="w-full" preload="none">
+                    <source src={audio.file} type="audio/mpeg" />
+                    Ihr Browser unterstützt kein Audio-Element.
+                  </audio>
+                  <a href={audio.file} download>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Download className="h-3.5 w-3.5" />
+                      Herunterladen
+                    </Button>
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
           {/* Materialien zum Download */}
           <div>
             <h2 className="font-serif text-2xl font-semibold text-foreground mb-4">
