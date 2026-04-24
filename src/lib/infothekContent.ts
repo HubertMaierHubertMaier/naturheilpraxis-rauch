@@ -23,6 +23,7 @@ import {
   Sprout,
   Stethoscope,
   Syringe,
+  Wind,
   Zap,
 } from "lucide-react";
 
@@ -209,6 +210,12 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/raucherentwoehnung",
         icon: Cigarette,
         description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" },
+      },
+      {
+        label: { de: "Schilddrüsen-Hypnose", en: "Thyroid Hypnosis" },
+        href: "/schilddruese-hypnose",
+        icon: Wind,
+        description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
       },
     ],
   },
