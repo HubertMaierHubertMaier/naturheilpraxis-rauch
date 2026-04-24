@@ -16,6 +16,11 @@ Peter Rauch ist Heilpraktiker mit eigenständiger Diagnose- und Behandlungsbefug
 | Diagnostisch breit | "Bitte **fachkundig** abklären lassen — Heilpraktiker oder Arzt." |
 | Echter Arztvorbehalt (akute Krebserkrankung, Notfall, meldepflichtige Infektion, Geburtshilfe) | "Bitte **ärztlich** abklären lassen." (hier zwingend) |
 | Patient ist bereits in Praxisbehandlung | "Melde dich in der Praxis." |
+| Verdacht auf Befundänderung bei Bestandspatient (Bildgebung nötig) | "Melde dich in der Praxis. Wir besprechen das Vorgehen — eine ärztliche Kontrolle (Sono/Labor) veranlasst dein Arzt, anschließend stimmen wir die naturheilkundliche Begleitung neu ab." |
+
+## Kompetenzverteilung (wichtig!)
+
+Heilpraktiker dürfen **keine** bildgebenden Verfahren veranlassen (Sono, MRT, CT, Röntgen) — das ist **Arztvorbehalt**. Bei Verdacht auf eine Befundänderung, die Bildgebung erfordert, wird der Patient an seinen Arzt verwiesen, **ohne** dass der Heilpraktiker als nachgeordnet dargestellt wird. Formulierung: "Arzt macht Bildgebung, wir stimmen die Begleittherapie ab" — kollegiale Aufgabenteilung statt Hierarchie.
 
 ## Warum
 
