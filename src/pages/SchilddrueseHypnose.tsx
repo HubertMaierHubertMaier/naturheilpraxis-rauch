@@ -10,8 +10,27 @@ import {
   Wind,
   ClipboardList,
   Hand,
+  Headphones,
+  Clock,
   AlertTriangle,
 } from "lucide-react";
+
+const audioFiles = [
+  {
+    title: "Selbsthypnose – Tägliche Kurzversion",
+    description:
+      "Sanfte Selbsthypnose mit goldenem Licht im Halsbereich. Ideal zur täglichen Anwendung — morgens, abends oder zur Mittagspause.",
+    file: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Taeglich.mp3",
+    duration: "ca. 4–5 Minuten",
+  },
+  {
+    title: "Selbsthypnose – Tiefe Sitzung",
+    description:
+      "Vollständige Tiefenentspannung mit Countdown, sicherem Ort, Heilungsaffirmationen und sanfter Rückführung. Ideal 2–3× pro Woche in ungestörter Umgebung.",
+    file: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Tief.mp3",
+    duration: "ca. 8–9 Minuten",
+  },
+];
 import SEOHead from "@/components/seo/SEOHead";
 
 const documents = [
