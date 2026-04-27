@@ -66,6 +66,8 @@ export function TherapyRecommendation() {
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
+    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
     setResult(session.empfehlung || "");
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
