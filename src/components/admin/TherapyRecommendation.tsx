@@ -182,7 +182,7 @@ export function TherapyRecommendation() {
       if (pseudonymId.trim() && accumulated.trim()) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { error: saveErr } = await supabase.from("therapy_sessions").insert({
+          const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
             pseudonym_id: pseudonymId.trim(),
             created_by: user.id,
             eingabe_daten: {
