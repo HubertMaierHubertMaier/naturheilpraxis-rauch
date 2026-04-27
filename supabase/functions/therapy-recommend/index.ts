@@ -569,7 +569,29 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
-    return new Response(response.body, {
+    // Prepend audit info as the FIRST SSE-Frame so the client can show
+    // exactly which wiki entries the AI saw. Then forward the AI stream.
+    const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
+    const encoder = new TextEncoder();
+    const aiStream = response.body!;
+    const wrapped = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(auditLine));
+        const reader = aiStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+          reader.releaseLock();
+        }
+      },
+    });
+
+    return new Response(wrapped, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
