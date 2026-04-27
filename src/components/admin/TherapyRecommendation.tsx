@@ -199,6 +199,7 @@ export function TherapyRecommendation() {
               budget,
               laborErhoeht,
               laborErniedrigt,
+              laborKomplett,
               stuhlbefund,
               belastungen: formatPathogensForAI(pathogens),
             },
