@@ -255,7 +255,7 @@ serve(async (req) => {
       (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
     );
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
-    const restRelevant = selectRelevantEntries(restPool, queryText, remainingBudget);
+    const { selected: restRelevant, scored: restScored } = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
 
     const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
@@ -265,6 +265,42 @@ serve(async (req) => {
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, ` +
       `preferredLines=[${preferredLines.join(",")}]`
     );
+
+    // ========= AUDIT-DATEN für Transparenz im Frontend =========
+    // Liste aller verwendeten Einträge (pinned + relevant) und der wichtigsten ausgelassenen.
+    const usedEntries = [
+      ...pinnedEntries.map((e) => ({
+        title: e.title, category: e.category, score: 9999, reason: "📌 Gepinnt"
+      })),
+      ...restScored.filter((s) => s.included).map((s) => ({
+        title: s.entry.title, category: s.entry.category, score: s.score, reason: "✅ Relevant"
+      })),
+    ];
+    const skippedEntries = restScored
+      .filter((s) => !s.included)
+      .slice(0, 50) // Top 50 ausgelassene zur Stichprobe
+      .map((s) => ({
+        title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "—"
+      }));
+
+    const auditPayload = {
+      __audit__: {
+        totalInDb: allEntries.length,
+        afterCategoryFilter: filteredByCategory.length,
+        pinnedCount: pinnedEntries.length,
+        relevantCount: restRelevant.length,
+        usedCount: usedEntries.length,
+        skippedTotalCount: restScored.filter((s) => !s.included).length,
+        contextChars: wikiContext.length,
+        contextLimit: MAX_TOTAL_CHARS,
+        cacheHit,
+        queryTokens: tokenizeQuery(queryText),
+        selectedCategories: selectedCats,
+        used: usedEntries,
+        skippedSample: skippedEntries,
+      },
+    };
+
 
     // Build patient context
     const patientInfo: string[] = [];
