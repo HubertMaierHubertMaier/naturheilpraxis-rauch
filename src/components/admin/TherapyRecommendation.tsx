@@ -208,6 +208,8 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              bevorzugteLinie,
+              pinnedMittel,
               belastungen: formatPathogensForAI(pathogens),
             },
             empfehlung: accumulated,
