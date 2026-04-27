@@ -552,6 +552,7 @@ export function TherapyRecommendation() {
             laborErniedrigt={laborErniedrigt}
             stuhlbefund={stuhlbefund}
           />
+          {auditInfo && <WikiAuditCard audit={auditInfo} />}
       <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
         </div>
       )}
