@@ -241,6 +241,7 @@ export function TherapyRecommendation() {
     setBudget("");
     setLaborErhoeht("");
     setLaborErniedrigt("");
+    setLaborKomplett("");
     setStuhlbefund("");
     setSelectedCategories([]);
     setResult("");
