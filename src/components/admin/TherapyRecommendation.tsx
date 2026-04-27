@@ -371,6 +371,16 @@ export function TherapyRecommendation() {
               />
             </div>
             <div>
+              <label className="text-sm font-medium mb-1 block">🧪 Alle Laborwerte (Klassisches Labor)</label>
+              <Textarea
+                value={laborKomplett}
+                onChange={(e) => setLaborKomplett(e.target.value)}
+                placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) für Mustererkennung & Plausibilitätsprüfung.</p>
+            </div>
+            <div>
               <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
               <Textarea
                 value={stuhlbefund}
