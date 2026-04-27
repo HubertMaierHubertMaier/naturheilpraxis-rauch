@@ -60,6 +60,7 @@ export function TherapyRecommendation() {
     setBudget(d.budget || "");
     setLaborErhoeht(d.laborErhoeht || "");
     setLaborErniedrigt(d.laborErniedrigt || "");
+    setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     setResult(session.empfehlung || "");
