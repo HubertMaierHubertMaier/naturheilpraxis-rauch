@@ -253,6 +253,8 @@ export function TherapyRecommendation() {
     setLaborKomplett("");
     setStuhlbefund("");
     setSelectedCategories([]);
+    setBevorzugteLinie([]);
+    setPinnedMittel([]);
     setResult("");
   };
 
