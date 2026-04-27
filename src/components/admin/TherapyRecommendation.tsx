@@ -17,6 +17,7 @@ import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } f
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
+import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
@@ -38,6 +39,7 @@ export function TherapyRecommendation() {
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
+  const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,7 @@ export function TherapyRecommendation() {
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
     setResult(session.empfehlung || "");
+    setAuditInfo(null);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
@@ -80,6 +83,7 @@ export function TherapyRecommendation() {
     }
 
     setResult("");
+    setAuditInfo(null);
     setIsStreaming(true);
 
     const controller = new AbortController();
@@ -172,6 +176,11 @@ export function TherapyRecommendation() {
 
           try {
             const parsed = JSON.parse(jsonStr);
+            // Audit-Frame (zuerst gesendet vor dem KI-Stream)
+            if (parsed && parsed.__audit__) {
+              setAuditInfo(parsed.__audit__ as WikiAuditInfo);
+              continue;
+            }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               accumulated += content;
@@ -256,6 +265,7 @@ export function TherapyRecommendation() {
     setBevorzugteLinie([]);
     setPinnedMittel([]);
     setResult("");
+    setAuditInfo(null);
   };
 
   return (
@@ -542,6 +552,7 @@ export function TherapyRecommendation() {
             laborErniedrigt={laborErniedrigt}
             stuhlbefund={stuhlbefund}
           />
+          {auditInfo && <WikiAuditCard audit={auditInfo} />}
       <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
         </div>
       )}

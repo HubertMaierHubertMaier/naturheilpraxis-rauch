@@ -81,39 +81,53 @@ function tokenizeQuery(text: string): string[] {
 }
 
 // Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
-function selectRelevantEntries(entries: WikiEntry[], queryText: string, maxChars: number): WikiEntry[] {
+// Liefert auch das vollständige Scoring zurück, damit das Frontend transparent
+// anzeigen kann, welche Einträge die KI gesehen hat (und welche aussortiert wurden).
+export interface ScoredEntry { entry: WikiEntry; score: number; included: boolean; reason?: string }
+
+function selectRelevantEntriesScored(
+  entries: WikiEntry[],
+  queryText: string,
+  maxChars: number,
+): { selected: WikiEntry[]; scored: ScoredEntry[] } {
   const tokens = tokenizeQuery(queryText);
-  if (tokens.length === 0) {
-    // Fallback: einfach so viele wie passen
-    return entries;
-  }
 
   const scored = entries.map((e) => {
     const haystack = (
       e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")
     ).toLowerCase();
     let score = 0;
-    for (const tok of tokens) {
-      // Title/Tags zählen mehr
-      if ((e.title || "").toLowerCase().includes(tok)) score += 10;
-      if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
-      // Content-Treffer
-      const matches = haystack.split(tok).length - 1;
-      score += Math.min(matches, 8);
+    if (tokens.length === 0) {
+      score = 1; // Fallback gleich gewichten
+    } else {
+      for (const tok of tokens) {
+        if ((e.title || "").toLowerCase().includes(tok)) score += 10;
+        if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
+        const matches = haystack.split(tok).length - 1;
+        score += Math.min(matches, 8);
+      }
     }
-    return { entry: e, score };
+    return { entry: e, score, included: false } as ScoredEntry;
   });
 
-  // Nach Score sortieren (höchster zuerst), Score 0 ans Ende
   scored.sort((a, b) => b.score - a.score);
 
-  // Solange aufnehmen, bis maxChars erreicht – Einträge mit Score > 0 priorisieren
   const selected: WikiEntry[] = [];
   let totalChars = 0;
   for (const s of scored) {
     const entryLen = Math.min((s.entry.content || "").length, MAX_ENTRY_CHARS) + 200;
-    if (totalChars + entryLen > maxChars) continue;
+    if (totalChars + entryLen > maxChars) {
+      s.included = false;
+      s.reason = "Zeichenlimit erreicht – nicht im Kontext";
+      continue;
+    }
+    if (s.score === 0) {
+      s.included = false;
+      s.reason = "Kein Treffer für die Query-Tokens";
+      continue;
+    }
     selected.push(s.entry);
+    s.included = true;
     totalChars += entryLen;
   }
 
@@ -121,7 +135,7 @@ function selectRelevantEntries(entries: WikiEntry[], queryText: string, maxChars
     `Wiki filter: ${selected.length}/${entries.length} entries selected (` +
     `query tokens=${tokens.length}, top scores=${scored.slice(0, 3).map((s) => s.score).join(",")})`
   );
-  return selected;
+  return { selected, scored };
 }
 
 function buildContext(entries: WikiEntry[]): string {
@@ -241,7 +255,7 @@ serve(async (req) => {
       (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
     );
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
-    const restRelevant = selectRelevantEntries(restPool, queryText, remainingBudget);
+    const { selected: restRelevant, scored: restScored } = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
 
     const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
@@ -251,6 +265,42 @@ serve(async (req) => {
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, ` +
       `preferredLines=[${preferredLines.join(",")}]`
     );
+
+    // ========= AUDIT-DATEN für Transparenz im Frontend =========
+    // Liste aller verwendeten Einträge (pinned + relevant) und der wichtigsten ausgelassenen.
+    const usedEntries = [
+      ...pinnedEntries.map((e) => ({
+        title: e.title, category: e.category, score: 9999, reason: "📌 Gepinnt"
+      })),
+      ...restScored.filter((s) => s.included).map((s) => ({
+        title: s.entry.title, category: s.entry.category, score: s.score, reason: "✅ Relevant"
+      })),
+    ];
+    const skippedEntries = restScored
+      .filter((s) => !s.included)
+      .slice(0, 50) // Top 50 ausgelassene zur Stichprobe
+      .map((s) => ({
+        title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "—"
+      }));
+
+    const auditPayload = {
+      __audit__: {
+        totalInDb: allEntries.length,
+        afterCategoryFilter: filteredByCategory.length,
+        pinnedCount: pinnedEntries.length,
+        relevantCount: restRelevant.length,
+        usedCount: usedEntries.length,
+        skippedTotalCount: restScored.filter((s) => !s.included).length,
+        contextChars: wikiContext.length,
+        contextLimit: MAX_TOTAL_CHARS,
+        cacheHit,
+        queryTokens: tokenizeQuery(queryText),
+        selectedCategories: selectedCats,
+        used: usedEntries,
+        skippedSample: skippedEntries,
+      },
+    };
+
 
     // Build patient context
     const patientInfo: string[] = [];
@@ -519,7 +569,29 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
-    return new Response(response.body, {
+    // Prepend audit info as the FIRST SSE-Frame so the client can show
+    // exactly which wiki entries the AI saw. Then forward the AI stream.
+    const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
+    const encoder = new TextEncoder();
+    const aiStream = response.body!;
+    const wrapped = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(auditLine));
+        const reader = aiStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+          reader.releaseLock();
+        }
+      },
+    });
+
+    return new Response(wrapped, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
