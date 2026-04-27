@@ -69,7 +69,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
   };
 
   const handleSaveNote = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("therapy_sessions")
       .update({ notiz: noteDraft })
       .eq("id", id);
