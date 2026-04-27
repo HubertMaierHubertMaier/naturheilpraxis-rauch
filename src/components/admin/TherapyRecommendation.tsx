@@ -254,6 +254,50 @@ export function TherapyRecommendation() {
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
 
+      {/* Pseudonym & DSGVO-Hinweis */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-primary" />
+            Pseudonym-ID
+            <span className="text-xs font-normal text-muted-foreground">(zur Wiedererkennung des Patienten)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <Input
+                value={pseudonymId}
+                onChange={(e) => setPseudonymId(e.target.value)}
+                placeholder="z. B. P-2026-0042 oder eigener Code"
+                className="font-mono"
+              />
+            </div>
+            <Button variant="outline" onClick={handleGeneratePseudonym} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Auto-ID
+            </Button>
+          </div>
+          <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
+            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>
+              <strong>DSGVO-Konformität:</strong> Niemals Klarnamen, Adressen, Geburtsdaten oder Kontaktdaten in den Feldern unten eingeben.
+              Die Zuordnung Pseudonym ↔ Patient erfolgt ausschließlich in deiner lokalen, geschützten Patientenakte.
+              Bei vorhandener Pseudonym-ID wird die Empfehlung automatisch im Verlauf gespeichert.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Verlauf bei vorhandenem Pseudonym */}
+      {pseudonymId.trim() && (
+        <PseudonymHistory
+          key={`${pseudonymId}-${historyRefresh}`}
+          pseudonymId={pseudonymId}
+          onLoadSession={handleLoadSession}
+        />
+      )}
+
       {/* Wissensdatenbank-Filter */}
       <Card>
         <CardHeader className="pb-3">
