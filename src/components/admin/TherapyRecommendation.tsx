@@ -16,6 +16,7 @@ import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
+import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
