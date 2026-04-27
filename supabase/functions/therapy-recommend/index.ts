@@ -81,39 +81,53 @@ function tokenizeQuery(text: string): string[] {
 }
 
 // Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
-function selectRelevantEntries(entries: WikiEntry[], queryText: string, maxChars: number): WikiEntry[] {
+// Liefert auch das vollständige Scoring zurück, damit das Frontend transparent
+// anzeigen kann, welche Einträge die KI gesehen hat (und welche aussortiert wurden).
+export interface ScoredEntry { entry: WikiEntry; score: number; included: boolean; reason?: string }
+
+function selectRelevantEntriesScored(
+  entries: WikiEntry[],
+  queryText: string,
+  maxChars: number,
+): { selected: WikiEntry[]; scored: ScoredEntry[] } {
   const tokens = tokenizeQuery(queryText);
-  if (tokens.length === 0) {
-    // Fallback: einfach so viele wie passen
-    return entries;
-  }
 
   const scored = entries.map((e) => {
     const haystack = (
       e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")
     ).toLowerCase();
     let score = 0;
-    for (const tok of tokens) {
-      // Title/Tags zählen mehr
-      if ((e.title || "").toLowerCase().includes(tok)) score += 10;
-      if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
-      // Content-Treffer
-      const matches = haystack.split(tok).length - 1;
-      score += Math.min(matches, 8);
+    if (tokens.length === 0) {
+      score = 1; // Fallback gleich gewichten
+    } else {
+      for (const tok of tokens) {
+        if ((e.title || "").toLowerCase().includes(tok)) score += 10;
+        if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
+        const matches = haystack.split(tok).length - 1;
+        score += Math.min(matches, 8);
+      }
     }
-    return { entry: e, score };
+    return { entry: e, score, included: false } as ScoredEntry;
   });
 
-  // Nach Score sortieren (höchster zuerst), Score 0 ans Ende
   scored.sort((a, b) => b.score - a.score);
 
-  // Solange aufnehmen, bis maxChars erreicht – Einträge mit Score > 0 priorisieren
   const selected: WikiEntry[] = [];
   let totalChars = 0;
   for (const s of scored) {
     const entryLen = Math.min((s.entry.content || "").length, MAX_ENTRY_CHARS) + 200;
-    if (totalChars + entryLen > maxChars) continue;
+    if (totalChars + entryLen > maxChars) {
+      s.included = false;
+      s.reason = "Zeichenlimit erreicht – nicht im Kontext";
+      continue;
+    }
+    if (s.score === 0) {
+      s.included = false;
+      s.reason = "Kein Treffer für die Query-Tokens";
+      continue;
+    }
     selected.push(s.entry);
+    s.included = true;
     totalChars += entryLen;
   }
 
