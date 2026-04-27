@@ -127,6 +127,8 @@ export function TherapyRecommendation() {
             laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+            bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
+            pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
           }),
           signal: controller.signal,
         }
