@@ -18,6 +18,7 @@ import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 
 export function TherapyRecommendation() {
+  const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
@@ -30,12 +31,39 @@ export function TherapyRecommendation() {
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const handleGeneratePseudonym = async () => {
+    const { data } = await supabase
+      .from("therapy_sessions")
+      .select("pseudonym_id")
+      .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
+    const existing = (data || []).map((r) => r.pseudonym_id);
+    setPseudonymId(generatePseudonymId(existing));
+  };
+
+  const handleLoadSession = (session: TherapySession) => {
+    const d = session.eingabe_daten || {};
+    setSymptome(d.symptome || "");
+    setErkrankung(d.erkrankung || "");
+    setAlter(d.alter || "");
+    setSchwanger(d.schwanger || "nein");
+    setMedikamente(d.medikamente || "");
+    setBisherigeMittel(d.bisherigeMittel || "");
+    setBudget(d.budget || "");
+    setLaborErhoeht(d.laborErhoeht || "");
+    setLaborErniedrigt(d.laborErniedrigt || "");
+    setStuhlbefund(d.stuhlbefund || "");
+    if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    setResult(session.empfehlung || "");
+    toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
+  };
 
   const handleSubmit = async () => {
     const belastungenText = formatPathogensForAI(pathogens);
