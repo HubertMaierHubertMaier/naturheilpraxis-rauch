@@ -59,7 +59,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Diese Sitzung endgültig löschen?")) return;
-    const { error } = await supabase.from("therapy_sessions").delete().eq("id", id);
+    const { error } = await (supabase as any).from("therapy_sessions").delete().eq("id", id);
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     } else {
