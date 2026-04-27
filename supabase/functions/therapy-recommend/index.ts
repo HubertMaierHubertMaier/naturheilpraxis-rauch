@@ -135,7 +135,7 @@ function selectRelevantEntriesScored(
     `Wiki filter: ${selected.length}/${entries.length} entries selected (` +
     `query tokens=${tokens.length}, top scores=${scored.slice(0, 3).map((s) => s.score).join(",")})`
   );
-  return selected;
+  return { selected, scored };
 }
 
 function buildContext(entries: WikiEntry[]): string {
