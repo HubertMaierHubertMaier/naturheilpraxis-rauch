@@ -265,6 +265,7 @@ export function TherapyRecommendation() {
     setBevorzugteLinie([]);
     setPinnedMittel([]);
     setResult("");
+    setAuditInfo(null);
   };
 
   return (
