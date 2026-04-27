@@ -29,6 +29,7 @@ export function TherapyRecommendation() {
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
+  const [laborKomplett, setLaborKomplett] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [historyRefresh, setHistoryRefresh] = useState(0);
@@ -59,6 +60,7 @@ export function TherapyRecommendation() {
     setBudget(d.budget || "");
     setLaborErhoeht(d.laborErhoeht || "");
     setLaborErniedrigt(d.laborErniedrigt || "");
+    setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     setResult(session.empfehlung || "");
@@ -117,6 +119,7 @@ export function TherapyRecommendation() {
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
+            laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           }),
@@ -196,6 +199,7 @@ export function TherapyRecommendation() {
               budget,
               laborErhoeht,
               laborErniedrigt,
+              laborKomplett,
               stuhlbefund,
               belastungen: formatPathogensForAI(pathogens),
             },
@@ -237,6 +241,7 @@ export function TherapyRecommendation() {
     setBudget("");
     setLaborErhoeht("");
     setLaborErniedrigt("");
+    setLaborKomplett("");
     setStuhlbefund("");
     setSelectedCategories([]);
     setResult("");
@@ -364,6 +369,16 @@ export function TherapyRecommendation() {
                 placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
                 rows={2}
               />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">🧪 Alle Laborwerte (Klassisches Labor)</label>
+              <Textarea
+                value={laborKomplett}
+                onChange={(e) => setLaborKomplett(e.target.value)}
+                placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) für Mustererkennung & Plausibilitätsprüfung.</p>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
