@@ -38,6 +38,7 @@ export function TherapyRecommendation() {
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
+  const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
