@@ -331,6 +331,14 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
+      {/* Bevorzugte Mittel / Pinning */}
+      <PreferredRemediesCard
+        bevorzugteLinie={bevorzugteLinie}
+        onBevorzugteLinieChange={setBevorzugteLinie}
+        pinnedMittel={pinnedMittel}
+        onPinnedMittelChange={setPinnedMittel}
+      />
+
       {/* Input Form */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Left: Main inputs */}
