@@ -213,7 +213,7 @@ serve(async (req) => {
       `${filteredByCategory.length}/${allEntries.length} entries`
     );
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, stuhlbefund]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund]
       .filter(Boolean)
       .join(" ");
     const relevantEntries = selectRelevantEntries(filteredByCategory, queryText, MAX_TOTAL_CHARS);
