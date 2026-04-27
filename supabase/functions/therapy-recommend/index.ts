@@ -359,6 +359,25 @@ Kurze Zusammenfassung der identifizierten Probleme.
 ## 🧫 Stuhlbefund-Analyse
 (Nur falls Stuhlbefund angegeben) Bewertung von Mikrobiom-Dysbiose, Verdauungs-, Entzündungs- und Barriere-Markern. Konkrete Ableitung der Darmsanierungs-Strategie (4-R-Konzept: Remove – Replace – Reinoculate – Repair).
 
+## 🕳️ Wissensdatenbank-Lücken (ZWINGEND – diesen Abschnitt FRÜH ausgeben, vor den Mittel-Tabellen, damit er nicht durch Längenkürzung verloren geht)
+Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diesen konkreten Fall unvollständig ist. Nichts erfinden – nur melden.
+
+Prüfe systematisch und gib pro Lücke EINE Zeile aus, beginnend mit \`- \`:
+
+1. **Substitutions-Lücken (Mikrobiom/Stuhl):** Für jedes im Stuhlbefund als "erniedrigt/fehlend" markierte Bakterium (z.B. Akkermansia muciniphila, Faecalibacterium prausnitzii, Bifidobacterium longum, Lactobacillus rhamnosus, E. coli, Enterokokken) prüfe, ob in der Wissensdatenbank ein konkretes Substitutions-Präparat (Probiotikum mit genau diesem Stamm oder gezieltes Präbiotikum) hinterlegt ist. Wenn nein → Lücke melden.
+2. **Ursachen-Lücken:** Für jedes auffällige Pathogen / jeden auffälligen Marker (zu viel ODER zu wenig) prüfe, ob in der Wiki erklärt ist, WARUM dieser Wert verschoben sein kann. Wenn keine Ursachen-Hypothese im Wiki vorhanden → Lücke melden.
+3. **Pathogen-Mittel-Lücken:** Für jedes genannte Pathogen prüfe, ob mindestens ein wirksames Mittel in der Wiki hinterlegt ist. Wenn nein → Lücke melden.
+4. **Referenzwert-Lücken / Dosierungs-Lücken** sammeln.
+
+FORMAT pro Lücke:
+- ⚠️ **[Kategorie]** – [Was fehlt konkret] → **Empfehlung Wiki-Ergänzung:** [Welcher Wiki-Eintrag sollte angelegt/erweitert werden]
+
+BEISPIELE:
+- ⚠️ **Substitution** – Akkermansia muciniphila erniedrigt, kein Akkermansia-Präparat in Wiki → **Empfehlung Wiki-Ergänzung:** Eintrag "Akkermansia muciniphila (Substitution)" mit Präparaten (Pendulum Akkermansia, Daily Health), Dosierung, Präbiotika-Kombination.
+- ⚠️ **Pathogen-Mittel** – Klebsiella pneumoniae genannt, kein gezieltes Wiki-Mittel → **Empfehlung Wiki-Ergänzung:** Eintrag "Klebsiella – naturheilkundliche Therapie" mit Oregano-Öl, Berberin, Allicin.
+
+Falls KEINE Lücken: Schreibe genau "✅ Für diesen Fall sind alle relevanten Wiki-Einträge vorhanden."
+
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
