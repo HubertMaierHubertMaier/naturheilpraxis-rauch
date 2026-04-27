@@ -16,6 +16,7 @@ import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
+import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
@@ -32,6 +33,8 @@ export function TherapyRecommendation() {
   const [laborKomplett, setLaborKomplett] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
+  const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
@@ -63,6 +66,8 @@ export function TherapyRecommendation() {
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
+    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
     setResult(session.empfehlung || "");
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
@@ -122,6 +127,8 @@ export function TherapyRecommendation() {
             laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+            bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
+            pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
           }),
           signal: controller.signal,
         }
@@ -201,6 +208,8 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              bevorzugteLinie,
+              pinnedMittel,
               belastungen: formatPathogensForAI(pathogens),
             },
             empfehlung: accumulated,
@@ -244,6 +253,8 @@ export function TherapyRecommendation() {
     setLaborKomplett("");
     setStuhlbefund("");
     setSelectedCategories([]);
+    setBevorzugteLinie([]);
+    setPinnedMittel([]);
     setResult("");
   };
 
@@ -319,6 +330,14 @@ export function TherapyRecommendation() {
           <CategoryFilter selected={selectedCategories} onChange={setSelectedCategories} />
         </CardContent>
       </Card>
+
+      {/* Bevorzugte Mittel / Pinning */}
+      <PreferredRemediesCard
+        bevorzugteLinie={bevorzugteLinie}
+        onBevorzugteLinieChange={setBevorzugteLinie}
+        pinnedMittel={pinnedMittel}
+        onPinnedMittelChange={setPinnedMittel}
+      />
 
       {/* Input Form */}
       <div className="grid gap-4 md:grid-cols-2">

@@ -188,7 +188,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -198,8 +198,6 @@ serve(async (req) => {
     const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
 
     // Optional: Filter nach gewählten Hauptordnern (Top-Level-Kategorien).
-    // categories: string[] – z.B. ["Naturheilpraxis Peter Rauch", "Ernährung"].
-    // Match: exakte Kategorie ODER beginnt mit "<Kategorie> >" (Unter-Ordner).
     const selectedCats: string[] = Array.isArray(categories)
       ? categories.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
       : [];
@@ -213,14 +211,45 @@ serve(async (req) => {
       `${filteredByCategory.length}/${allEntries.length} entries`
     );
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund]
+    // Pinned remedies: titles to ALWAYS include in context
+    const pinnedTitles: string[] = Array.isArray(pinnedMittel)
+      ? pinnedMittel
+          .map((p: any) => (typeof p?.title === "string" ? p.title.trim() : ""))
+          .filter((t: string) => t.length > 0)
+      : [];
+
+    // Bevorzugte Produktlinien (Tags / Kategorie-Hinweise für die KI)
+    const preferredLines: string[] = Array.isArray(bevorzugteLinie)
+      ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
+      : [];
+
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
-    const relevantEntries = selectRelevantEntries(filteredByCategory, queryText, MAX_TOTAL_CHARS);
+
+    // Force-include all pinned wiki entries (never drop them)
+    const pinnedEntries = pinnedTitles.length > 0
+      ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
+      : [];
+    const pinnedReserveChars = pinnedEntries.reduce(
+      (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
+      0
+    );
+
+    // Score the rest, but exclude already-pinned entries
+    const restPool = filteredByCategory.filter(
+      (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
+    );
+    const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
+    const restRelevant = selectRelevantEntries(restPool, queryText, remainingBudget);
+
+    const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
     console.log(
       `Wiki: ${allEntries.length} total → ${filteredByCategory.length} after category → ` +
-      `${relevantEntries.length} relevant, context=${wikiContext.length} chars, cacheHit=${cacheHit}`
+      `${pinnedEntries.length} pinned + ${restRelevant.length} relevant, ` +
+      `context=${wikiContext.length} chars, cacheHit=${cacheHit}, ` +
+      `preferredLines=[${preferredLines.join(",")}]`
     );
 
     // Build patient context
@@ -242,6 +271,17 @@ ${wikiContext}
 
 DEINE AUFGABE:
 Analysiere die Belastungen/Symptome/Erkrankung des Patienten und erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank.
+
+⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
+${preferredLines.length > 0
+  ? `- Bevorzugte Produktlinien: ${preferredLines.join(", ")}.\n  → Bei vergleichbarer Wirkung MUSST du Mittel aus diesen Linien priorisieren (vor anderen Marken). Nenne die Linie explizit im Mittelnamen (z.B. "Biotik Balance (Vitaplace)").`
+  : "- Keine Linien-Präferenz angegeben."}
+${pinnedTitles.length > 0
+  ? `- ZWINGEND in die Empfehlung aufzunehmende Mittel (vom Therapeuten gepinnt): ${pinnedTitles.join("; ")}.
+  → Diese Mittel MÜSSEN in der Empfehlung erscheinen, mit korrekter Dosierung aus dem Wiki-Eintrag, plausibler Indikationsbegründung im Patientenkontext und Einordnung in die passende Mittel-Gruppe (Hausmittel, Probiotika, Vitamine etc.).
+  → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
+  : "- Keine spezifischen Mittel gepinnt."}
+
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 1. **Alter**: ${alter ? `Patient ist ${alter} Jahre alt.` : "Alter unbekannt."}
