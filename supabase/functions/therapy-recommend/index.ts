@@ -359,6 +359,25 @@ Kurze Zusammenfassung der identifizierten Probleme.
 ## 🧫 Stuhlbefund-Analyse
 (Nur falls Stuhlbefund angegeben) Bewertung von Mikrobiom-Dysbiose, Verdauungs-, Entzündungs- und Barriere-Markern. Konkrete Ableitung der Darmsanierungs-Strategie (4-R-Konzept: Remove – Replace – Reinoculate – Repair).
 
+## 🕳️ Wissensdatenbank-Lücken (ZWINGEND – diesen Abschnitt FRÜH ausgeben, vor den Mittel-Tabellen, damit er nicht durch Längenkürzung verloren geht)
+Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diesen konkreten Fall unvollständig ist. Nichts erfinden – nur melden.
+
+Prüfe systematisch und gib pro Lücke EINE Zeile aus, beginnend mit \`- \`:
+
+1. **Substitutions-Lücken (Mikrobiom/Stuhl):** Für jedes im Stuhlbefund als "erniedrigt/fehlend" markierte Bakterium (z.B. Akkermansia muciniphila, Faecalibacterium prausnitzii, Bifidobacterium longum, Lactobacillus rhamnosus, E. coli, Enterokokken) prüfe, ob in der Wissensdatenbank ein konkretes Substitutions-Präparat (Probiotikum mit genau diesem Stamm oder gezieltes Präbiotikum) hinterlegt ist. Wenn nein → Lücke melden.
+2. **Ursachen-Lücken:** Für jedes auffällige Pathogen / jeden auffälligen Marker (zu viel ODER zu wenig) prüfe, ob in der Wiki erklärt ist, WARUM dieser Wert verschoben sein kann. Wenn keine Ursachen-Hypothese im Wiki vorhanden → Lücke melden.
+3. **Pathogen-Mittel-Lücken:** Für jedes genannte Pathogen prüfe, ob mindestens ein wirksames Mittel in der Wiki hinterlegt ist. Wenn nein → Lücke melden.
+4. **Referenzwert-Lücken / Dosierungs-Lücken** sammeln.
+
+FORMAT pro Lücke:
+- ⚠️ **[Kategorie]** – [Was fehlt konkret] → **Empfehlung Wiki-Ergänzung:** [Welcher Wiki-Eintrag sollte angelegt/erweitert werden]
+
+BEISPIELE:
+- ⚠️ **Substitution** – Akkermansia muciniphila erniedrigt, kein Akkermansia-Präparat in Wiki → **Empfehlung Wiki-Ergänzung:** Eintrag "Akkermansia muciniphila (Substitution)" mit Präparaten (Pendulum Akkermansia, Daily Health), Dosierung, Präbiotika-Kombination.
+- ⚠️ **Pathogen-Mittel** – Klebsiella pneumoniae genannt, kein gezieltes Wiki-Mittel → **Empfehlung Wiki-Ergänzung:** Eintrag "Klebsiella – naturheilkundliche Therapie" mit Oregano-Öl, Berberin, Allicin.
+
+Falls KEINE Lücken: Schreibe genau "✅ Für diesen Fall sind alle relevanten Wiki-Einträge vorhanden."
+
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
@@ -433,36 +452,12 @@ Empfehlungen zu Ernährung, Darmaufbau, Entgiftungsunterstützung. Hier auch gü
 ## ❌ Ausgeschlossene Mittel
 Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft, Medikamente).
 
-## 🕳️ Wissensdatenbank-Lücken (ZWINGEND ausfüllen)
-Dies ist ein **Pflichtabschnitt**. Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diesen konkreten Fall unvollständig ist. Nichts erfinden – nur melden.
-
-Prüfe systematisch und gib pro Lücke EINE Zeile aus, beginnend mit \`- \`:
-
-1. **Substitutions-Lücken (Mikrobiom/Stuhl):** Für jedes im Stuhlbefund als "erniedrigt/fehlend" markierte Bakterium (z.B. Akkermansia muciniphila, Faecalibacterium prausnitzii, Bifidobacterium longum, Lactobacillus rhamnosus) prüfe, ob in der Wissensdatenbank ein konkretes Substitutions-Präparat (Probiotikum mit genau diesem Stamm oder gezieltes Präbiotikum) hinterlegt ist. Wenn nein → Lücke melden.
-
-2. **Ursachen-Lücken:** Für jedes auffällige Pathogen / jeden auffälligen Marker (zu viel ODER zu wenig) prüfe, ob in der Wiki erklärt ist, WARUM dieser Wert verschoben sein kann (Ernährung, Antibiotika-Vorgeschichte, Stress, Leaky Gut, Co-Infektion etc.). Wenn keine Ursachen-Hypothese im Wiki vorhanden → Lücke melden.
-
-3. **Pathogen-Mittel-Lücken:** Für jedes genannte Pathogen prüfe, ob mindestens ein wirksames Mittel in der Wiki hinterlegt ist. Wenn nein → Lücke melden.
-
-4. **Referenzwert-Lücken:** Für jeden Labor-/Stuhlparameter ohne hinterlegten Referenzbereich (siehe Quellenregel oben) → hier nochmal gesammelt auflisten.
-
-5. **Dosierungs-Lücken:** Wenn ein Mittel im Wiki erwähnt, aber keine Dosierung/Dauer hinterlegt ist → Lücke melden.
-
-FORMAT pro Lücke:
-- ⚠️ **[Kategorie]** – [Was fehlt konkret] → **Empfehlung Wiki-Ergänzung:** [Welcher Wiki-Eintrag sollte angelegt/erweitert werden, mit welchem Inhalt]
-
-BEISPIELE:
-- ⚠️ **Substitution** – Akkermansia muciniphila ist erniedrigt, aber kein Akkermansia-Präparat in Wiki hinterlegt → **Empfehlung Wiki-Ergänzung:** Eintrag "Akkermansia muciniphila (Substitution)" mit Präparaten (z.B. Pendulum Akkermansia, Daily Health), Dosierung, Präbiotika-Kombination (Polyphenole, Cranberry).
-- ⚠️ **Ursache** – Faecalibacterium prausnitzii erniedrigt, keine Ursachen-Erklärung im Wiki → **Empfehlung Wiki-Ergänzung:** Abschnitt zu typischen Ursachen (ballaststoffarme Ernährung, chronische Entzündung, Antibiotika-Anamnese) im Eintrag "Faecalibacterium prausnitzii".
-- ⚠️ **Pathogen-Mittel** – Klebsiella pneumoniae genannt, kein gezieltes Wiki-Mittel → **Empfehlung Wiki-Ergänzung:** Eintrag "Klebsiella – naturheilkundliche Therapie" mit Oregano-Öl-Protokoll, Berberin, Allicin.
-
-Falls KEINE Lücken gefunden: Schreibe genau diesen Satz: "✅ Für diesen Fall sind alle relevanten Wiki-Einträge vorhanden."
-
 WICHTIG: 
 - Empfehle NUR Mittel die in der Wissensdatenbank vorhanden sind. Erfinde keine neuen Mittel oder Dosierungen.
-- WENN ein notwendiges Mittel fehlt: NICHT improvisieren, sondern als Lücke unter "🕳️ Wissensdatenbank-Lücken" melden.
+- WENN ein notwendiges Mittel fehlt: NICHT improvisieren, sondern als Lücke unter "🕳️ Wissensdatenbank-Lücken" (Abschnitt früh oben) melden.
 - Gewürze und Hausmittel IMMER mit aufnehmen wenn sie therapeutisch relevant sind – sie sind günstig und leicht verfügbar.
-- Bei JEDEM Mittel erklären WARUM es empfohlen wird und WOGEGEN es wirkt.`;
+- Bei JEDEM Mittel erklären WARUM es empfohlen wird und WOGEGEN es wirkt.
+- Schreibe KOMPAKT: pro Mittel max. 1 Begründungssatz, keine doppelten Erklärungen.`;
 
     const userMessage = `Patientendaten:
 ${patientInfo.join("\n")}
@@ -496,11 +491,12 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: safeSystem },
           { role: "user", content: safeUser },
         ],
+        max_tokens: 16384,
         stream: true,
       }),
     });
