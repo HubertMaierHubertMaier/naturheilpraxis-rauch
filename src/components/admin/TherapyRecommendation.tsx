@@ -226,6 +226,7 @@ export function TherapyRecommendation() {
   };
 
   const handleReset = () => {
+    setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
     setErkrankung("");
