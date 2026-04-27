@@ -81,6 +81,7 @@ export function TherapyRecommendation() {
     }
 
     setResult("");
+    setAuditInfo(null);
     setIsStreaming(true);
 
     const controller = new AbortController();
