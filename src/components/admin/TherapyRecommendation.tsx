@@ -629,10 +629,25 @@ function buildStoolGapSection(stuhlbefund: string, result: string): FreeSection 
     }
   };
 
+  // Vitaplace-Produkte, die mehrere Probiotika-Stämme enthalten (Biotik Sensitiv, Biotik Balance, Vitaplace Darmsanierung).
+  // Wenn die KI diese Produkte empfiehlt, gelten Lacto- und Bifido-Substitution als abgedeckt.
+  const vitaplaceProbioticPattern = /biotik\s*(sensitiv|balance)|vitaplace\s*(sensitiv|balance|darmsanier)|colovital/i;
+  const vitaplaceCovers = vitaplaceProbioticPattern.test(result);
+
   addIfDetected("Escherichia coli", /escherichia\s+coli|e\.\s*coli/, /mutaflor|symbioflor\s*2|nissle/, "E. coli-Aufbau mit Präparat, Dosierung, Dauer, Kontraindikationen.");
   addIfDetected("Enterokokken", /enterokokken|enterococcus/, /symbioflor\s*1|enterococcus|enterokokk/, "Enterococcus-Aufbau mit Präparat, Dosierung, Dauer, Kontraindikationen.");
-  addIfDetected("Lactobacillus", /lactobacillus.*↓|lactobacillus[^\n]*10\^([0-4])/, /lactobacillus|l\.\s*(rhamnosus|acidophilus|plantarum)/, "Lactobacillus-spezifische Stämme und Präbiotika.");
-  addIfDetected("Bifidobacterium", /bifidobacterium.*↓|bifidobacterium[^\n]*10\^([0-8])/, /bifidobacterium|b\.\s*(longum|lactis|bifidum)/, "Bifidobacterium-spezifische Stämme und Präbiotika.");
+  addIfDetected(
+    "Lactobacillus",
+    /lactobacillus.*↓|lactobacillus[^\n]*10\^([0-4])/,
+    vitaplaceCovers ? /.*/ : /lactobacillus|l\.\s*(rhamnosus|acidophilus|plantarum|casei|paracasei|lactis)|biotik\s*(sensitiv|balance)|vitaplace\s*(sensitiv|balance|darmsanier)/,
+    "Lactobacillus-spezifische Stämme und Präbiotika."
+  );
+  addIfDetected(
+    "Bifidobacterium",
+    /bifidobacterium.*↓|bifidobacterium[^\n]*10\^([0-8])/,
+    vitaplaceCovers ? /.*/ : /bifidobacterium|b\.\s*(longum|lactis|bifidum|infantis)|biotik\s*(sensitiv|balance)|vitaplace\s*(sensitiv|balance|darmsanier)|cncm\s*i-?509[07]/,
+    "Bifidobacterium-spezifische Stämme und Präbiotika."
+  );
 
   if (/stuhl\s*ph[^\n]*(↓|5\.0|5,0)/i.test(stuhlbefund) && !/stuhl.?ph|gärungs|saccharolytisch/i.test(result)) {
     lines.push("- ⚠️ **Ursachen-/Referenzwert prüfen** – Stuhl-pH erniedrigt, aber keine klare Wiki-basierte Ursachenableitung im Ergebnis erkannt → **Empfehlung Wiki-Ergänzung:** Stuhl-pH mit Ursachen, Referenzen und Milieu-Therapie.");
