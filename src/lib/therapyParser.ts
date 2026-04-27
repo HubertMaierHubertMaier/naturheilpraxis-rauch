@@ -57,7 +57,7 @@ const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"];
   { match: /therapieprotokoll|zeitlicher ablauf/i, variant: "success", emoji: "📋", title: "Therapieprotokoll", placement: "outro" },
   { match: /begleitmaßnahmen/i, variant: "info", emoji: "🔄", title: "Begleitmaßnahmen", placement: "outro" },
   { match: /ausgeschlossen/i, variant: "danger", emoji: "❌", title: "Ausgeschlossene Mittel", placement: "outro" },
-  { match: /wissensdatenbank.?lücken|wiki.?lücken|^lücken/i, variant: "warning", emoji: "🕳️", title: "Wissensdatenbank-Lücken", placement: "outro" },
+  { match: /wissensdatenbank.?lücken|wiki.?lücken|wissensdatenbank.?abgleich|^lücken/i, variant: "warning", emoji: "🕳️", title: "Wissensdatenbank-Lücken", placement: "intro" },
 ];
 
 function detectCategory(heading: string): { tone: CategoryGroup["tone"]; emoji: string; title: string } | null {

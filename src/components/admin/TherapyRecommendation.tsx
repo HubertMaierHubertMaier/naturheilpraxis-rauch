@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert } from "lucide-react";
-import { parseTherapyMarkdown } from "@/lib/therapyParser";
+import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
@@ -542,16 +542,21 @@ export function TherapyRecommendation() {
             laborErniedrigt={laborErniedrigt}
             stuhlbefund={stuhlbefund}
           />
-          <ParsedResultView result={result} isStreaming={isStreaming} />
+      <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
         </div>
       )}
     </div>
   );
 }
 
-function ParsedResultView({ result, isStreaming }: { result: string; isStreaming: boolean }) {
+function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string; isStreaming: boolean; stuhlbefund: string }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
-  const hasParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
+  const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
+  const hasGapCard = [...parsed.intro, ...parsed.outro].some((s) => /wissensdatenbank-lücken/i.test(s.title));
+  const introSections = deterministicGapSection && !hasGapCard
+    ? [...parsed.intro, deterministicGapSection]
+    : parsed.intro;
+  const hasParsed = introSections.length + parsed.categories.length + parsed.outro.length > 0;
 
   if (isStreaming && !hasParsed) {
     return (
@@ -566,9 +571,9 @@ function ParsedResultView({ result, isStreaming }: { result: string; isStreaming
 
   return (
     <>
-      {parsed.intro.length > 0 && (
+      {introSections.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          {parsed.intro.map((s, i) => (
+          {introSections.map((s, i) => (
             <FreeSectionCard key={`intro-${i}`} section={s} />
           ))}
         </div>
@@ -607,4 +612,44 @@ function ParsedResultView({ result, isStreaming }: { result: string; isStreaming
       )}
     </>
   );
+}
+
+function buildStoolGapSection(stuhlbefund: string, result: string): FreeSection | null {
+  if (!stuhlbefund.trim()) return null;
+
+  const text = stuhlbefund.toLowerCase();
+  const recommendation = result.toLowerCase();
+  const lines: string[] = [];
+  const addIfDetected = (label: string, detect: RegExp, expected: RegExp, wikiHint: string) => {
+    if (!detect.test(text)) return;
+    if (expected.test(recommendation)) {
+      lines.push(`- ✅ **Substitution vorhanden** – ${label} auffällig/erniedrigt; passende Substitution wurde in der Empfehlung gefunden.`);
+    } else {
+      lines.push(`- ⚠️ **Substitution prüfen** – ${label} auffällig/erniedrigt, aber keine klare Substitution im Ergebnis erkannt → **Empfehlung Wiki-Ergänzung/Prüfung:** ${wikiHint}`);
+    }
+  };
+
+  addIfDetected("Escherichia coli", /escherichia\s+coli|e\.\s*coli/, /mutaflor|symbioflor\s*2|nissle/, "E. coli-Aufbau mit Präparat, Dosierung, Dauer, Kontraindikationen.");
+  addIfDetected("Enterokokken", /enterokokken|enterococcus/, /symbioflor\s*1|enterococcus|enterokokk/, "Enterococcus-Aufbau mit Präparat, Dosierung, Dauer, Kontraindikationen.");
+  addIfDetected("Lactobacillus", /lactobacillus.*↓|lactobacillus[^\n]*10\^([0-4])/, /lactobacillus|l\.\s*(rhamnosus|acidophilus|plantarum)/, "Lactobacillus-spezifische Stämme und Präbiotika.");
+  addIfDetected("Bifidobacterium", /bifidobacterium.*↓|bifidobacterium[^\n]*10\^([0-8])/, /bifidobacterium|b\.\s*(longum|lactis|bifidum)/, "Bifidobacterium-spezifische Stämme und Präbiotika.");
+
+  if (/stuhl\s*ph[^\n]*(↓|5\.0|5,0)/i.test(stuhlbefund) && !/stuhl.?ph|gärungs|saccharolytisch/i.test(result)) {
+    lines.push("- ⚠️ **Ursachen-/Referenzwert prüfen** – Stuhl-pH erniedrigt, aber keine klare Wiki-basierte Ursachenableitung im Ergebnis erkannt → **Empfehlung Wiki-Ergänzung:** Stuhl-pH mit Ursachen, Referenzen und Milieu-Therapie.");
+  }
+  if (/candida|geotrichum|hefen/i.test(stuhlbefund) && !/candida|geotrichum|hefen|antimyk/i.test(result)) {
+    lines.push("- ⚠️ **Pathogen-Mittel prüfen** – Hefen/Pilze auffällig, aber kein klares Wiki-Mittel im Ergebnis erkannt → **Empfehlung Wiki-Ergänzung:** Candida/Geotrichum mit naturheilkundlicher Therapie und Grenzen.");
+  }
+
+  if (lines.length === 0) return null;
+  return {
+    emoji: "🕳️",
+    title: "Wissensdatenbank-Lücken",
+    variant: "warning",
+    content: [
+      "Automatisch aus dem Stuhlbefund geprüft, damit dieser Abschnitt sichtbar bleibt, auch wenn die KI ihn nicht als eigene Überschrift ausgibt.",
+      "",
+      ...lines,
+    ].join("\n"),
+  };
 }
