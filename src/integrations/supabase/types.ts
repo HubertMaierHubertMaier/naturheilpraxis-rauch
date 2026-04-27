@@ -308,6 +308,39 @@ export type Database = {
         }
         Relationships: []
       }
+      therapy_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          eingabe_daten: Json
+          empfehlung: string
+          id: string
+          notiz: string | null
+          pseudonym_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          eingabe_daten?: Json
+          empfehlung?: string
+          id?: string
+          notiz?: string | null
+          pseudonym_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          eingabe_daten?: Json
+          empfehlung?: string
+          id?: string
+          notiz?: string | null
+          pseudonym_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

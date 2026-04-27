@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert } from "lucide-react";
 import { parseTherapyMarkdown } from "@/lib/therapyParser";
 import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
@@ -15,8 +15,10 @@ import { PatientContextBar } from "./therapy/PatientContextBar";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
+import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 
 export function TherapyRecommendation() {
+  const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
@@ -29,12 +31,39 @@ export function TherapyRecommendation() {
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const handleGeneratePseudonym = async () => {
+    const { data } = await (supabase as any)
+      .from("therapy_sessions")
+      .select("pseudonym_id")
+      .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
+    const existing = ((data || []) as Array<{ pseudonym_id: string }>).map((r) => r.pseudonym_id);
+    setPseudonymId(generatePseudonymId(existing));
+  };
+
+  const handleLoadSession = (session: TherapySession) => {
+    const d = session.eingabe_daten || {};
+    setSymptome(d.symptome || "");
+    setErkrankung(d.erkrankung || "");
+    setAlter(d.alter || "");
+    setSchwanger(d.schwanger || "nein");
+    setMedikamente(d.medikamente || "");
+    setBisherigeMittel(d.bisherigeMittel || "");
+    setBudget(d.budget || "");
+    setLaborErhoeht(d.laborErhoeht || "");
+    setLaborErniedrigt(d.laborErniedrigt || "");
+    setStuhlbefund(d.stuhlbefund || "");
+    if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    setResult(session.empfehlung || "");
+    toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
+  };
 
   const handleSubmit = async () => {
     const belastungenText = formatPathogensForAI(pathogens);
@@ -148,6 +177,39 @@ export function TherapyRecommendation() {
           }
         }
       }
+
+      // Auto-Save wenn Pseudonym vorhanden
+      if (pseudonymId.trim() && accumulated.trim()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
+            pseudonym_id: pseudonymId.trim(),
+            created_by: user.id,
+            eingabe_daten: {
+              pathogens,
+              symptome,
+              erkrankung,
+              alter,
+              schwanger,
+              medikamente,
+              bisherigeMittel,
+              budget,
+              laborErhoeht,
+              laborErniedrigt,
+              stuhlbefund,
+              belastungen: formatPathogensForAI(pathogens),
+            },
+            empfehlung: accumulated,
+            notiz: "",
+          });
+          if (saveErr) {
+            toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+          } else {
+            toast({ title: "Sitzung gespeichert", description: `Pseudonym ${pseudonymId.trim()}` });
+            setHistoryRefresh((n) => n + 1);
+          }
+        }
+      }
     } catch (e: any) {
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
@@ -164,6 +226,7 @@ export function TherapyRecommendation() {
   };
 
   const handleReset = () => {
+    setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
     setErkrankung("");
@@ -191,6 +254,50 @@ export function TherapyRecommendation() {
       <p className="text-sm text-muted-foreground">
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
+
+      {/* Pseudonym & DSGVO-Hinweis */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-primary" />
+            Pseudonym-ID
+            <span className="text-xs font-normal text-muted-foreground">(zur Wiedererkennung des Patienten)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <Input
+                value={pseudonymId}
+                onChange={(e) => setPseudonymId(e.target.value)}
+                placeholder="z. B. P-2026-0042 oder eigener Code"
+                className="font-mono"
+              />
+            </div>
+            <Button variant="outline" onClick={handleGeneratePseudonym} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Auto-ID
+            </Button>
+          </div>
+          <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
+            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>
+              <strong>DSGVO-Konformität:</strong> Niemals Klarnamen, Adressen, Geburtsdaten oder Kontaktdaten in den Feldern unten eingeben.
+              Die Zuordnung Pseudonym ↔ Patient erfolgt ausschließlich in deiner lokalen, geschützten Patientenakte.
+              Bei vorhandener Pseudonym-ID wird die Empfehlung automatisch im Verlauf gespeichert.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Verlauf bei vorhandenem Pseudonym */}
+      {pseudonymId.trim() && (
+        <PseudonymHistory
+          key={`${pseudonymId}-${historyRefresh}`}
+          pseudonymId={pseudonymId}
+          onLoadSession={handleLoadSession}
+        />
+      )}
 
       {/* Wissensdatenbank-Filter */}
       <Card>
