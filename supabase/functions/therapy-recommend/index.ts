@@ -496,11 +496,12 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: safeSystem },
           { role: "user", content: safeUser },
         ],
+        max_tokens: 16384,
         stream: true,
       }),
     });
