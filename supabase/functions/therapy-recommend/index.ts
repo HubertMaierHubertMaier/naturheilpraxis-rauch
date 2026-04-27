@@ -274,10 +274,20 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können.
 
-6. **Stuhlbefund / Mikrobiom**: ${stuhlbefund || "Nicht angegeben"}
-   - Falls ein Stuhlbefund vorliegt: Werte Mikrobiom-Dysbiose (z.B. erhöhte Klebsiella/Proteus/Candida, verminderte Lactobacillus/Bifidobacterium/Akkermansia/F. prausnitzii), Verdauungsmarker (Pankreas-Elastase, Gallensäuren), Entzündungs- und Barriere-Marker (Calprotectin, sIgA, Zonulin, alpha-1-Antitrypsin, β-Defensin) sowie pH-Wert konkret aus.
-   - Leite daraus gezielt ab: Probiotika-Stämme (passend zur Defizit-Spezies), Präbiotika (Inulin, FOS, Akazienfaser, resistente Stärke), Verdauungsenzyme bei niedriger Elastase, Schleimhautregeneration (L-Glutamin, Mucosa comp., Zink-Carnosin) bei Leaky Gut, antimikrobielle Mittel (Oregano, Berberin, Kapuzinerkresse, Schwarzkümmel) bei Dysbiose, antifungal (Caprylsäure, Pau d'Arco) bei Candida.
-   - Bewerte sIgA (Schleimhautimmunität), Zonulin (Leaky Gut), Calprotectin (Entzündung) explizit und benenne die therapeutische Konsequenz.
+6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
+   
+   **ZWINGENDE QUELLENREGEL für Labor-/Stuhlwerte:**
+   - Für jeden im Befund genannten Parameter MUSST du prüfen, ob in der oben gelieferten WISSENSDATENBANK ein Eintrag aus der Kategorie "Labordiagnostik" zu genau diesem Parameter existiert (z.B. "Calprotectin", "Zonulin", "sIgA", "Pankreas-Elastase", "Lactobacillus", "Bifidobacterium", "Akkermansia muciniphila", "Faecalibacterium prausnitzii", "alpha-1-Antitrypsin", "Stuhl-pH" usw.).
+   - WENN ein Eintrag existiert: Verwende AUSSCHLIESSLICH die dort hinterlegten Referenzbereiche, Bedeutungen (↑/↓), Therapieprotokolle, Dosierungen, Dauern, Kontraindikationen und Quellen. ZITIERE die Quelle (z.B. "PMID 18936492" oder "AWMF S3 021/016") explizit am Ende der Bewertung jedes Wertes.
+   - WENN KEIN Eintrag existiert: Gib für diesen Parameter ZWINGEND aus: "⚠️ Kein hinterlegter Referenzwert in der Wissensdatenbank für [Parameter] – bitte vor der Therapieentscheidung manuell prüfen oder Wiki ergänzen." Erfinde KEINE Werte, Bereiche oder Therapien aus deinem allgemeinen Modellwissen.
+   - Strukturiere die Auswertung im Abschnitt "🧫 Stuhlbefund-Analyse" pro Parameter wie folgt:
+     **[Parameter]: [gemessener Wert]** 
+     - Bewertung: [normal/erhöht/erniedrigt anhand Wiki-Referenzbereich]
+     - Bedeutung: [Wiki-Inhalt, kurz]
+     - Therapie: [Wiki-Protokoll, kurz – die konkreten Mittel werden dann strukturiert in den Mittel-Gruppen aufgelistet]
+     - Quelle: [Wiki-Quellenangabe]
+   - Übertrage die im Wiki-Eintrag genannten Therapie-Mittel anschließend in die strukturierten Mittel-Gruppen (Hausmittel, Probiotika, Sanum etc.) mit den dort angegebenen Dosierungen.
+   - Verwende das 4-R-Konzept (Remove – Replace – Reinoculate – Repair) als Strukturhilfe, wenn Leaky-Gut-Marker (Zonulin, alpha-1-AT) oder Entzündungsmarker (Calprotectin) erhöht sind.
 
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
