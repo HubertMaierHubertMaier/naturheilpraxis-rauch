@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert } from "lucide-react";
-import { parseTherapyMarkdown } from "@/lib/therapyParser";
+import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
@@ -542,16 +542,21 @@ export function TherapyRecommendation() {
             laborErniedrigt={laborErniedrigt}
             stuhlbefund={stuhlbefund}
           />
-          <ParsedResultView result={result} isStreaming={isStreaming} />
+      <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
         </div>
       )}
     </div>
   );
 }
 
-function ParsedResultView({ result, isStreaming }: { result: string; isStreaming: boolean }) {
+function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string; isStreaming: boolean; stuhlbefund: string }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
-  const hasParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
+  const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
+  const hasGapCard = [...parsed.intro, ...parsed.outro].some((s) => /wissensdatenbank-lücken/i.test(s.title));
+  const introSections = deterministicGapSection && !hasGapCard
+    ? [...parsed.intro, deterministicGapSection]
+    : parsed.intro;
+  const hasParsed = introSections.length + parsed.categories.length + parsed.outro.length > 0;
 
   if (isStreaming && !hasParsed) {
     return (
@@ -566,9 +571,9 @@ function ParsedResultView({ result, isStreaming }: { result: string; isStreaming
 
   return (
     <>
-      {parsed.intro.length > 0 && (
+      {introSections.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          {parsed.intro.map((s, i) => (
+          {introSections.map((s, i) => (
             <FreeSectionCard key={`intro-${i}`} section={s} />
           ))}
         </div>
