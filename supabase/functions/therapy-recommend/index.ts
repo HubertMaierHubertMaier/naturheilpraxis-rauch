@@ -272,6 +272,17 @@ ${wikiContext}
 DEINE AUFGABE:
 Analysiere die Belastungen/Symptome/Erkrankung des Patienten und erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank.
 
+⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
+${preferredLines.length > 0
+  ? `- Bevorzugte Produktlinien: ${preferredLines.join(", ")}.\n  → Bei vergleichbarer Wirkung MUSST du Mittel aus diesen Linien priorisieren (vor anderen Marken). Nenne die Linie explizit im Mittelnamen (z.B. "Biotik Balance (Vitaplace)").`
+  : "- Keine Linien-Präferenz angegeben."}
+${pinnedTitles.length > 0
+  ? `- ZWINGEND in die Empfehlung aufzunehmende Mittel (vom Therapeuten gepinnt): ${pinnedTitles.join("; ")}.
+  → Diese Mittel MÜSSEN in der Empfehlung erscheinen, mit korrekter Dosierung aus dem Wiki-Eintrag, plausibler Indikationsbegründung im Patientenkontext und Einordnung in die passende Mittel-Gruppe (Hausmittel, Probiotika, Vitamine etc.).
+  → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
+  : "- Keine spezifischen Mittel gepinnt."}
+
+
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 1. **Alter**: ${alter ? `Patient ist ${alter} Jahre alt.` : "Alter unbekannt."}
    - Kinder unter 2: KEINE ätherischen Öle, KEIN Wermut, KEINE alkoholischen Tinkturen
