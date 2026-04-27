@@ -40,11 +40,11 @@ export function TherapyRecommendation() {
   const { toast } = useToast();
 
   const handleGeneratePseudonym = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("therapy_sessions")
       .select("pseudonym_id")
       .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
-    const existing = (data || []).map((r) => r.pseudonym_id);
+    const existing = ((data || []) as Array<{ pseudonym_id: string }>).map((r) => r.pseudonym_id);
     setPseudonymId(generatePseudonymId(existing));
   };
 
