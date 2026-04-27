@@ -174,6 +174,11 @@ export function TherapyRecommendation() {
 
           try {
             const parsed = JSON.parse(jsonStr);
+            // Audit-Frame (zuerst gesendet vor dem KI-Stream)
+            if (parsed && parsed.__audit__) {
+              setAuditInfo(parsed.__audit__ as WikiAuditInfo);
+              continue;
+            }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               accumulated += content;
