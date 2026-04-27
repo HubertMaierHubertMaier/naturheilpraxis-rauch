@@ -38,7 +38,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("therapy_sessions")
       .select("*")
       .eq("pseudonym_id", pseudonymId.trim())
