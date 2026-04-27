@@ -188,7 +188,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, categories } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, stuhlbefund, categories } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -213,7 +213,7 @@ serve(async (req) => {
       `${filteredByCategory.length}/${allEntries.length} entries`
     );
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, stuhlbefund]
       .filter(Boolean)
       .join(" ");
     const relevantEntries = selectRelevantEntries(filteredByCategory, queryText, MAX_TOTAL_CHARS);
@@ -232,6 +232,7 @@ serve(async (req) => {
     if (budget) patientInfo.push(`Maximales Budget: ${budget} Euro`);
     if (laborErhoeht) patientInfo.push(`Erhöhte Laborwerte: ${laborErhoeht}`);
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
+    if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater. Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
@@ -273,6 +274,11 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können.
 
+6. **Stuhlbefund / Mikrobiom**: ${stuhlbefund || "Nicht angegeben"}
+   - Falls ein Stuhlbefund vorliegt: Werte Mikrobiom-Dysbiose (z.B. erhöhte Klebsiella/Proteus/Candida, verminderte Lactobacillus/Bifidobacterium/Akkermansia/F. prausnitzii), Verdauungsmarker (Pankreas-Elastase, Gallensäuren), Entzündungs- und Barriere-Marker (Calprotectin, sIgA, Zonulin, alpha-1-Antitrypsin, β-Defensin) sowie pH-Wert konkret aus.
+   - Leite daraus gezielt ab: Probiotika-Stämme (passend zur Defizit-Spezies), Präbiotika (Inulin, FOS, Akazienfaser, resistente Stärke), Verdauungsenzyme bei niedriger Elastase, Schleimhautregeneration (L-Glutamin, Mucosa comp., Zink-Carnosin) bei Leaky Gut, antimikrobielle Mittel (Oregano, Berberin, Kapuzinerkresse, Schwarzkümmel) bei Dysbiose, antifungal (Caprylsäure, Pau d'Arco) bei Candida.
+   - Bewerte sIgA (Schleimhautimmunität), Zonulin (Leaky Gut), Calprotectin (Entzündung) explizit und benenne die therapeutische Konsequenz.
+
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
 - ${budget ? `Das maximale Budget des Patienten beträgt ${budget} Euro.` : "Kein Budget angegeben – trotzdem kostenbewusst empfehlen."}
@@ -297,6 +303,9 @@ Kurze Zusammenfassung der identifizierten Probleme.
 
 ## 🔬 Laborwert-Analyse
 (Nur falls Laborwerte angegeben) Bewertung der auffälligen Werte mit naturheilkundlichen Empfehlungen zur Verbesserung.
+
+## 🧫 Stuhlbefund-Analyse
+(Nur falls Stuhlbefund angegeben) Bewertung von Mikrobiom-Dysbiose, Verdauungs-, Entzündungs- und Barriere-Markern. Konkrete Ableitung der Darmsanierungs-Strategie (4-R-Konzept: Remove – Replace – Reinoculate – Repair).
 
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
@@ -384,6 +393,7 @@ Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}  
 Erkrankung: ${erkrankung || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
+Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
