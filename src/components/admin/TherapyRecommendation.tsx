@@ -177,6 +177,39 @@ export function TherapyRecommendation() {
           }
         }
       }
+
+      // Auto-Save wenn Pseudonym vorhanden
+      if (pseudonymId.trim() && accumulated.trim()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error: saveErr } = await supabase.from("therapy_sessions").insert({
+            pseudonym_id: pseudonymId.trim(),
+            created_by: user.id,
+            eingabe_daten: {
+              pathogens,
+              symptome,
+              erkrankung,
+              alter,
+              schwanger,
+              medikamente,
+              bisherigeMittel,
+              budget,
+              laborErhoeht,
+              laborErniedrigt,
+              stuhlbefund,
+              belastungen: formatPathogensForAI(pathogens),
+            },
+            empfehlung: accumulated,
+            notiz: "",
+          });
+          if (saveErr) {
+            toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+          } else {
+            toast({ title: "Sitzung gespeichert", description: `Pseudonym ${pseudonymId.trim()}` });
+            setHistoryRefresh((n) => n + 1);
+          }
+        }
+      }
     } catch (e: any) {
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
