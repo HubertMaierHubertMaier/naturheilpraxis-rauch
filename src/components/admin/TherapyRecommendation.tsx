@@ -119,6 +119,7 @@ export function TherapyRecommendation() {
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
+            laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           }),
