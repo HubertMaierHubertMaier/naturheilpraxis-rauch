@@ -51,6 +51,7 @@ const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"];
   { match: /analyse.*belastung/i, variant: "info", emoji: "🔍", title: "Analyse der Belastungen", placement: "intro" },
   { match: /bewertung.*bisherig|bewertung der bisherigen/i, variant: "info", emoji: "📊", title: "Bewertung der bisherigen Therapie", placement: "intro" },
   { match: /laborwert/i, variant: "info", emoji: "🔬", title: "Laborwert-Analyse", placement: "intro" },
+  { match: /stuhlbefund|mikrobiom/i, variant: "info", emoji: "🧫", title: "Stuhlbefund-Analyse", placement: "intro" },
   { match: /sicherheitshinweis/i, variant: "warning", emoji: "⚠️", title: "Sicherheitshinweise", placement: "intro" },
   { match: /kostenübersicht/i, variant: "muted", emoji: "💰", title: "Kostenübersicht", placement: "outro" },
   { match: /therapieprotokoll|zeitlicher ablauf/i, variant: "success", emoji: "📋", title: "Therapieprotokoll", placement: "outro" },
