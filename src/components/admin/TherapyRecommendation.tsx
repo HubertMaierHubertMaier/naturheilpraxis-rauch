@@ -27,6 +27,7 @@ export function TherapyRecommendation() {
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
+  const [stuhlbefund, setStuhlbefund] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const [result, setResult] = useState("");
@@ -87,6 +88,7 @@ export function TherapyRecommendation() {
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
+            stuhlbefund: stuhlbefund.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           }),
           signal: controller.signal,
@@ -172,6 +174,7 @@ export function TherapyRecommendation() {
     setBudget("");
     setLaborErhoeht("");
     setLaborErniedrigt("");
+    setStuhlbefund("");
     setSelectedCategories([]);
     setResult("");
   };
@@ -254,6 +257,16 @@ export function TherapyRecommendation() {
                 placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
                 rows={2}
               />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
+              <Textarea
+                value={stuhlbefund}
+                onChange={(e) => setStuhlbefund(e.target.value)}
+                placeholder="z.B. Candida albicans ++, Klebsiella ++, Lactobacillus ↓, Bifidobacterium ↓, sIgA 280 (niedrig), Calprotectin 95 µg/g, pH 6.8, Zonulin erhöht, Pankreas-Elastase 180 (vermindert)..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
             </div>
             <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
@@ -386,6 +399,7 @@ export function TherapyRecommendation() {
             budget={budget}
             laborErhoeht={laborErhoeht}
             laborErniedrigt={laborErniedrigt}
+            stuhlbefund={stuhlbefund}
           />
           <ParsedResultView result={result} isStreaming={isStreaming} />
         </div>

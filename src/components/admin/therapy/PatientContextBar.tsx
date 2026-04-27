@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { User, Pill, Heart, Wallet, FlaskConical, Baby } from "lucide-react";
+import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound } from "lucide-react";
 
 interface Props {
   alter?: string;
@@ -8,9 +8,10 @@ interface Props {
   budget?: string;
   laborErhoeht?: string;
   laborErniedrigt?: string;
+  stuhlbefund?: string;
 }
 
-export function PatientContextBar({ alter, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt }: Props) {
+export function PatientContextBar({ alter, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
   const items: Array<{ icon: React.ReactNode; label: string; value: string; tone?: "warn" | "danger" | "ok" }> = [];
 
   if (alter) {
@@ -44,6 +45,9 @@ export function PatientContextBar({ alter, schwanger, medikamente, budget, labor
   }
   if (laborErhoeht || laborErniedrigt) {
     items.push({ icon: <FlaskConical className="h-3.5 w-3.5" />, label: "Labor", value: "auffällig", tone: "warn" });
+  }
+  if (stuhlbefund) {
+    items.push({ icon: <FlaskRound className="h-3.5 w-3.5" />, label: "Stuhl", value: "Befund", tone: "warn" });
   }
 
   if (items.length === 0) return null;
