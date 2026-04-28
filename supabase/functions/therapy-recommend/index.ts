@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -152,6 +152,57 @@ function tokenizeQuery(text: string): string[] {
       .split(/\s+/)
       .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
   ));
+}
+
+type SymptomTarget = {
+  label: string;
+  terms: RegExp;
+  wikiTitles: string[];
+  keywords: string[];
+};
+
+const SYMPTOM_TARGETS: SymptomTarget[] = [
+  {
+    label: "Erschöpfung/Fatigue/Schwäche",
+    terms: /erschöpf|fatigue|müde|mued|schwäche|schwaeche|krafter|antrieb|lebensqualität|lebensqualitaet|cfids|cfs/i,
+    wikiTitles: ["Therapeutischer Index: Immunsystem", "Therapeutischer Index: Psyche", "Therapeutischer Index: Sonstige"],
+    keywords: ["erschöpfung", "fatigue", "cfids", "cfs", "müdigkeit", "schwäche", "aletris-heel", "tonico-heel", "coenzyme compositum", "ubichinon compositum"],
+  },
+  {
+    label: "Appetit/Gewicht/Abmagerung",
+    terms: /appetit|gewichtsverlust|abmager|kachex|untergewicht|gewichtsabnahme/i,
+    wikiTitles: ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung", "Therapeutischer Index: Endokrinologie"],
+    keywords: ["appetit", "gewichtsverlust", "gewichtsabnahme", "abmagerung", "kachexie", "untergewicht", "hepeel", "arsuraneel", "china-homaccord", "nux vomica-homaccord"],
+  },
+  {
+    label: "Psyche/Angst/Depression/Isolation",
+    terms: /angst|depress|psyche|nerv|isolation|sozial|stimmung|konzentration|rückzug|rueckzug/i,
+    wikiTitles: ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"],
+    keywords: ["psyche", "depression", "emotionale belastungen", "angst", "nervoheel", "neuro-heel", "tonico-heel", "ignatia-homaccord", "cerebrum compositum"],
+  },
+  {
+    label: "Schmerz/Bewegungsapparat",
+    terms: /gelenk|muskel|schmerz|rücken|ruecken|neuralg|arthr|fibromy/i,
+    wikiTitles: ["Therapeutischer Index: Bewegungsapparat", "Therapeutischer Index: Neurologie"],
+    keywords: ["schmerz", "gelenk", "muskel", "neuralgie", "traumeel", "discus compositum", "zeel", "colocynthis"],
+  },
+  {
+    label: "Haut/Allergie/Schleimhaut",
+    terms: /haut|ekzem|juck|allerg|schleimhaut|rhinitis|hno|atemweg/i,
+    wikiTitles: ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"],
+    keywords: ["haut", "ekzem", "allergie", "schleimhaut", "rhinitis", "mucosa compositum", "lymphomyosot", "galium-heel"],
+  },
+];
+
+function getActiveSymptomTargets(queryText: string): SymptomTarget[] {
+  return SYMPTOM_TARGETS.filter((target) => target.terms.test(queryText));
+}
+
+function expandQueryForScoring(queryText: string): string {
+  const extra = getActiveSymptomTargets(queryText)
+    .flatMap((target) => [...target.wikiTitles, ...target.keywords])
+    .join(" ");
+  return [queryText, extra].filter(Boolean).join(" ");
 }
 
 // Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
