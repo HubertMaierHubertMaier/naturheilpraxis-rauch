@@ -114,8 +114,8 @@ export function CategoryFilter({ selected, onChange }: Props) {
   };
 
   const summary = useMemo(() => {
-    if (selected.length === 0) return "Alle Ordner werden durchsucht";
-    return `${selected.length} ${selected.length === 1 ? "Ordner" : "Ordner"} ausgewählt`;
+    if (selected.length === 0) return "Keine Schwerpunkte – ganze Datenbank wird normal durchsucht";
+    return `${selected.length} Schwerpunkt-${selected.length === 1 ? "Ordner" : "Ordner"} garantiert geprüft (zusätzlich zur Gesamtsuche)`;
   }, [selected]);
 
   if (loading) {
