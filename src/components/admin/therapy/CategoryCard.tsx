@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type { CategoryGroup, RemedyRow } from "@/lib/therapyParser";
 import { priorityOrder } from "@/lib/therapyParser";
@@ -58,20 +59,47 @@ function PriorityBadge({ row }: { row: RemedyRow }) {
   );
 }
 
-export function CategoryCard({ group }: { group: CategoryGroup }) {
+interface CategoryCardProps {
+  group: CategoryGroup;
+  /** Index der Kategorie in der Gesamtliste (für Selection-Key) */
+  categoryIndex?: number;
+  /** Set der ausgewählten "categoryIndex|remedyIndex"-Keys */
+  selectedKeys?: Set<string>;
+  onToggleRemedy?: (key: string) => void;
+  onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
+}
+
+export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemedy, onToggleAll }: CategoryCardProps) {
   const styles = TONE_STYLES[group.tone];
-  const sorted = [...group.remedies].sort((a, b) => priorityOrder(a.priority) - priorityOrder(b.priority));
+  // Wir behalten Original-Indizes für stabile Selection-Keys
+  const indexed = group.remedies.map((r, i) => ({ row: r, originalIndex: i }));
+  const sorted = [...indexed].sort((a, b) => priorityOrder(a.row.priority) - priorityOrder(b.row.priority));
+  const selectionEnabled = selectedKeys !== undefined && categoryIndex !== undefined;
+
+  const groupKeys = sorted.map((s) => `${categoryIndex}|${s.originalIndex}`);
+  const allSelected = selectionEnabled && groupKeys.every((k) => selectedKeys!.has(k));
+  const someSelected = selectionEnabled && groupKeys.some((k) => selectedKeys!.has(k));
 
   return (
     <Card className={cn("overflow-hidden shadow-sm", styles.card)}>
       <CardHeader className={cn("py-3 px-4", styles.header)}>
         <CardTitle className="flex items-center justify-between gap-3 text-base">
           <span className="flex items-center gap-2">
+            {selectionEnabled && (
+              <Checkbox
+                checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                onCheckedChange={(checked) =>
+                  onToggleAll?.(categoryIndex!, sorted.map((s) => s.originalIndex), checked === true)
+                }
+                aria-label={`Alle Mittel in ${group.title} an-/abwählen`}
+                className="mr-1"
+              />
+            )}
             <span className="text-2xl leading-none" aria-hidden>{group.emoji}</span>
             <span className={cn("font-serif tracking-tight", styles.accent)}>{group.title}</span>
           </span>
           <Badge variant="outline" className={cn("text-xs font-normal", styles.pill)}>
-            {group.remedies.length} Mittel
+            {selectionEnabled ? `${groupKeys.filter((k) => selectedKeys!.has(k)).length}/${group.remedies.length}` : `${group.remedies.length}`} Mittel
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -79,9 +107,10 @@ export function CategoryCard({ group }: { group: CategoryGroup }) {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[28%]">Mittel</TableHead>
-              <TableHead className="w-[15%]">Dosierung</TableHead>
-              <TableHead className="w-[15%]">Anwendung</TableHead>
+              {selectionEnabled && <TableHead className="w-[40px]"></TableHead>}
+              <TableHead className="w-[26%]">Mittel</TableHead>
+              <TableHead className="w-[14%]">Dosierung</TableHead>
+              <TableHead className="w-[14%]">Anwendung</TableHead>
               <TableHead className="w-[10%]">Dauer</TableHead>
               <TableHead className="w-[12%]">Priorität</TableHead>
               <TableHead className="w-[8%] text-right">Kosten</TableHead>
@@ -89,24 +118,37 @@ export function CategoryCard({ group }: { group: CategoryGroup }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((row, i) => (
-              <TableRow key={`${row.name}-${i}`} className="align-top">
-                <TableCell className="py-3">
-                  <div className={cn("text-base md:text-lg font-bold leading-tight font-serif", styles.accent)}>
-                    {row.name}
-                  </div>
-                  {row.latin && (
-                    <div className="text-xs italic text-muted-foreground mt-0.5">{row.latin}</div>
+            {sorted.map(({ row, originalIndex }) => {
+              const key = `${categoryIndex}|${originalIndex}`;
+              const isChecked = selectionEnabled && selectedKeys!.has(key);
+              return (
+                <TableRow key={key} className={cn("align-top", selectionEnabled && !isChecked && "opacity-50")}>
+                  {selectionEnabled && (
+                    <TableCell className="py-3">
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => onToggleRemedy?.(key)}
+                        aria-label={`${row.name} aus-/abwählen`}
+                      />
+                    </TableCell>
                   )}
-                </TableCell>
-                <TableCell className="py-3 font-mono text-sm">{row.dosage || "—"}</TableCell>
-                <TableCell className="py-3 text-sm">{row.application || "—"}</TableCell>
-                <TableCell className="py-3 text-sm">{row.duration || "—"}</TableCell>
-                <TableCell className="py-3"><PriorityBadge row={row} /></TableCell>
-                <TableCell className="py-3 text-right font-mono text-sm whitespace-nowrap">{row.cost || "—"}</TableCell>
-                <TableCell className="py-3 text-xs text-muted-foreground">{row.reason || "—"}</TableCell>
-              </TableRow>
-            ))}
+                  <TableCell className="py-3">
+                    <div className={cn("text-base md:text-lg font-bold leading-tight font-serif", styles.accent)}>
+                      {row.name}
+                    </div>
+                    {row.latin && (
+                      <div className="text-xs italic text-muted-foreground mt-0.5">{row.latin}</div>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-3 font-mono text-sm">{row.dosage || "—"}</TableCell>
+                  <TableCell className="py-3 text-sm">{row.application || "—"}</TableCell>
+                  <TableCell className="py-3 text-sm">{row.duration || "—"}</TableCell>
+                  <TableCell className="py-3"><PriorityBadge row={row} /></TableCell>
+                  <TableCell className="py-3 text-right font-mono text-sm whitespace-nowrap">{row.cost || "—"}</TableCell>
+                  <TableCell className="py-3 text-xs text-muted-foreground">{row.reason || "—"}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>

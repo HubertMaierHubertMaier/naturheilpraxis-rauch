@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
+import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
@@ -42,9 +43,128 @@ export function TherapyRecommendation() {
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
+  const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
+  const [therapieNotiz, setTherapieNotiz] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Initial: alle Mittel ausgewählt, sobald Result geparst wird
+  const parsedForSelection = useMemo(() => parseTherapyMarkdown(result), [result]);
+  useEffect(() => {
+    if (!result) {
+      setSelectedKeys(new Set());
+      setDiagnosen([]);
+      return;
+    }
+    const all = new Set<string>();
+    parsedForSelection.categories.forEach((g, ci) => {
+      g.remedies.forEach((_, ri) => all.add(`${ci}|${ri}`));
+    });
+    setSelectedKeys(all);
+  }, [result, parsedForSelection]);
+
+  const toggleRemedy = (key: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleAllInCategory = (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      remedyIndices.forEach((ri) => {
+        const k = `${categoryIndex}|${ri}`;
+        if (selectAll) next.add(k);
+        else next.delete(k);
+      });
+      return next;
+    });
+  };
+
+  const fetchDiagnosen = async (): Promise<DiagnoseEntry[]> => {
+    setIsLoadingDiagnosen(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Nicht angemeldet", variant: "destructive" });
+        return [];
+      }
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diagnoses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            belastungen: formatPathogensForAI(pathogens),
+            symptome,
+            erkrankung,
+            laborErhoeht,
+            laborErniedrigt,
+            laborKomplett,
+            stuhlbefund,
+            medikamente,
+            alter,
+            schwanger,
+          }),
+        },
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+        toast({ title: "Diagnose-Generierung fehlgeschlagen", description: err.error, variant: "destructive" });
+        return [];
+      }
+      const json = await resp.json();
+      const list: DiagnoseEntry[] = Array.isArray(json.diagnosen) ? json.diagnosen : [];
+      setDiagnosen(list);
+      return list;
+    } catch (e: any) {
+      toast({ title: "Fehler", description: e.message, variant: "destructive" });
+      return [];
+    } finally {
+      setIsLoadingDiagnosen(false);
+    }
+  };
+
+  const handlePrintPatient = () => {
+    openPrintRecipe({
+      parsed: parseTherapyMarkdown(result),
+      patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
+      mode: "patient",
+      selectedKeys,
+    });
+  };
+
+  const handlePrintPraxis = async () => {
+    // Diagnosen nachladen, falls noch keine vorhanden
+    let diag = diagnosen;
+    if (diag.length === 0) {
+      diag = await fetchDiagnosen();
+    }
+    openPrintRecipe({
+      parsed: parseTherapyMarkdown(result),
+      patient: {
+        alter, schwanger, medikamente, budget,
+        belastungen: formatPathogensForAI(pathogens),
+        symptome, erkrankung,
+        pseudonymId: pseudonymId.trim() || undefined,
+        notiz: therapieNotiz.trim() || undefined,
+      },
+      mode: "praxis",
+      selectedKeys,
+      diagnosen: diag,
+    });
+  };
+
 
   const handleGeneratePseudonym = async () => {
     const { data } = await (supabase as any)
@@ -563,17 +683,14 @@ export function TherapyRecommendation() {
         )}
         {result && !isStreaming && (
           <>
-            <Button
-              variant="outline"
-              onClick={() =>
-                openPrintRecipe({
-                  parsed: parseTherapyMarkdown(result),
-                  patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
-                })
-              }
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" /> Als Rezept drucken
+            <Button onClick={handlePrintPatient} className="gap-2 bg-primary hover:bg-primary/90">
+              <FileText className="h-4 w-4" /> PDF Patient
+              <Badge variant="secondary" className="ml-1 text-[10px]">{selectedKeys.size} Mittel</Badge>
+            </Button>
+            <Button onClick={handlePrintPraxis} disabled={isLoadingDiagnosen} className="gap-2 bg-amber-600 hover:bg-amber-700 text-white">
+              {isLoadingDiagnosen ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+              PDF Praxis
+              {diagnosen.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{diagnosen.length} Dx</Badge>}
             </Button>
             <Button variant="outline" onClick={handleReset} className="gap-2">
               <RotateCcw className="h-4 w-4" /> Zurücksetzen
@@ -595,14 +712,50 @@ export function TherapyRecommendation() {
             stuhlbefund={stuhlbefund}
           />
           {auditInfo && <WikiAuditCard audit={auditInfo} />}
-      <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
+          {result && !isStreaming && (
+            <Card className="border-primary/30 bg-primary/[0.02]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  📝 Notiz Therapeut <span className="text-xs font-normal text-muted-foreground">(erscheint nur auf Praxis-PDF)</span>
+                </label>
+                <Textarea
+                  value={therapieNotiz}
+                  onChange={(e) => setTherapieNotiz(e.target.value)}
+                  placeholder="Interne Notizen, Beobachtungen, weiterer Behandlungsplan..."
+                  rows={2}
+                />
+              </CardContent>
+            </Card>
+          )}
+          <ParsedResultView
+            result={result}
+            isStreaming={isStreaming}
+            stuhlbefund={stuhlbefund}
+            selectedKeys={selectedKeys}
+            onToggleRemedy={toggleRemedy}
+            onToggleAll={toggleAllInCategory}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string; isStreaming: boolean; stuhlbefund: string }) {
+function ParsedResultView({
+  result,
+  isStreaming,
+  stuhlbefund,
+  selectedKeys,
+  onToggleRemedy,
+  onToggleAll,
+}: {
+  result: string;
+  isStreaming: boolean;
+  stuhlbefund: string;
+  selectedKeys?: Set<string>;
+  onToggleRemedy?: (key: string) => void;
+  onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
+}) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
   const hasAiParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
@@ -639,9 +792,21 @@ function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string
             <Pill className="h-4 w-4 text-primary" />
             Empfohlene Mittel
             {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+            {!isStreaming && selectedKeys && (
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                ({selectedKeys.size} ausgewählt für Patienten-PDF – Häkchen entfernen, was nicht mit soll)
+              </span>
+            )}
           </h2>
           {parsed.categories.map((g, i) => (
-            <CategoryCard key={`cat-${i}-${g.title}`} group={g} />
+            <CategoryCard
+              key={`cat-${i}-${g.title}`}
+              group={g}
+              categoryIndex={isStreaming ? undefined : i}
+              selectedKeys={isStreaming ? undefined : selectedKeys}
+              onToggleRemedy={onToggleRemedy}
+              onToggleAll={onToggleAll}
+            />
           ))}
         </div>
       )}
