@@ -103,12 +103,11 @@ export function CategoryFilter({ selected, onChange }: Props) {
     }
   };
 
-  const toggleSub = (fullPath: string, topName: string) => {
+  const toggleSub = (fullPath: string, _topName: string) => {
     if (isSubSelected(fullPath)) {
       onChange(selected.filter((c) => c !== fullPath));
     } else {
-      // Sub auswählen → falls Top selektiert ist, Top entfernen (sonst doppelt)
-      onChange([...selected.filter((c) => c !== topName), fullPath]);
+      onChange([...selected, fullPath]);
     }
   };
 
