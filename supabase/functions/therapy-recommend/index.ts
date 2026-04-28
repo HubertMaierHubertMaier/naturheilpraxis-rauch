@@ -731,6 +731,7 @@ serve(async (req) => {
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
     const forcedWikiRemedySection = buildForcedWikiRemedies(allEntries, scoringQueryText);
+    const phaseOneShortlist = buildPhaseOneShortlist(restScored, 80);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -819,10 +820,18 @@ Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogen
 WISSENSDATENBANK:
 ${wikiContext}
 
+${phaseOneShortlist ? `\n${phaseOneShortlist}\n` : ""}
+
 ${forcedWikiRemedySection ? `\n${forcedWikiRemedySection}\n` : ""}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
+
+ZWEISTUFIGER WIKI-PROZESS (VERBINDLICH FÜR ALLE PATIENTEN):
+- Phase 1 ist die Gesamt-Wiki-Sichtung: ALLE Einträge aus ALLEN Kategorien werden gegen die Eingabe aus der Therapie-Maske bewertet. Es gibt keine Beschränkung auf Homotoxikologie, Heel, Vitaplace oder Stuhldiagnostik.
+- Phase 2 ist die fachliche Auswahl: Verwende die Volltexte im Wiki-Kontext UND die Phase-1-Shortlist, um Mittel aus allen passenden Kategorien auszuwählen.
+- Produktlinien/Fokusordner sind nur Priorisierung/Boost, niemals Ausschluss anderer Wiki-Mittel.
+- Wenn Phase 1 relevante Mittel aus anderen Kategorien findet, müssen diese entweder empfohlen oder fachlich begründet verworfen werden.
 
 ZWINGENDE BALANCE-REGEL:
 - Teile deine interne Auswertung in drei gleichwertige Spuren: (A) Pathogene/Belastungen, (B) Symptome/klinisches Bild, (C) Labor/Stuhl.
