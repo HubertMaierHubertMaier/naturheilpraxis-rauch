@@ -315,6 +315,21 @@ function sanitizeRecommendation(text: string): string {
   return out.trim();
 }
 
+function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
+  const q = queryText.toLowerCase();
+  const directives: string[] = [];
+  const add = (label: string, terms: RegExp, wikiTitles: string[]) => {
+    if (terms.test(q)) directives.push(`- ${label}: Prüfe gezielt ${wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`);
+  };
+  add("Erschöpfung/Fatigue/Schwäche", /erschöpf|fatigue|müde|mued|schwäche|krafter|antrieb|lebensqualität|lebensqualitaet/, ["Therapeutischer Index: Immunsystem", "Therapeutischer Index: Psyche", "Therapeutischer Index: Sonstige"]);
+  add("Appetit/Gewicht/Abmagerung", /appetit|gewichtsverlust|abmager|kachex|untergewicht/, ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung"]);
+  add("Psyche/Angst/Depression/Isolation", /angst|depress|psyche|nerv|isolation|sozial|stimmung|konzentration/, ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"]);
+  add("Schmerz/Bewegungsapparat", /gelenk|muskel|schmerz|rücken|ruecken|neuralg|arthr|fibromy/, ["Therapeutischer Index: Bewegungsapparat", "Therapeutischer Index: Neurologie"]);
+  add("Haut/Allergie/Schleimhaut", /haut|ekzem|juck|allerg|schleimhaut|rhinitis|hno|atemweg/, ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"]);
+  if (!hasHomotContext || directives.length === 0) return "";
+  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (ZWINGEND):\n${directives.join("\n")}\n- Wenn diese Einträge im Wiki-Kontext stehen, MUSST du mindestens 1–3 passende Heel-/Homotoxikologie-Mittel zusätzlich zur Darmbehandlung nennen, mit kurzer Symptom-Begründung.\n- Darmaufbau darf Symptome nicht vollständig überdecken; erst Darmachse, dann organspezifische/symptomatische Mittel ergänzen.`;
+}
+
 async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
