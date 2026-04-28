@@ -14,26 +14,34 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Admin check
-    let isAdmin = false;
-    const authHeader = req.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ") && authHeader !== `Bearer ${anonKey}`) {
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { authorization: authHeader } },
-      });
-      const { data: { user } } = await userClient.auth.getUser();
-      if (user) {
-        const { data: adminCheck } = await userClient.rpc("has_role", {
-          _user_id: user.id,
-          _role: "admin",
-        });
-        isAdmin = !!adminCheck;
-      }
-    }
-
-    if (!isAdmin) {
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ") || authHeader === `Bearer ${anonKey}`) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const userClient = createClient(supabaseUrl, anonKey);
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceKey);
+    const { data: isAdmin, error: roleError } = await adminClient.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    if (roleError || !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -48,7 +56,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const adminClient = createClient(supabaseUrl, serviceKey);
     const { data, error } = await adminClient
       .from("therapy_sessions")
       .select("*")
