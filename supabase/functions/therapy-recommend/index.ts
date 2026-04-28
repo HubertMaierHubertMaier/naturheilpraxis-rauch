@@ -723,6 +723,7 @@ serve(async (req) => {
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
+    const forcedWikiRemedySection = buildForcedWikiRemedies(relevantEntries, scoringQueryText);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -810,6 +811,8 @@ Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogen
 
 WISSENSDATENBANK:
 ${wikiContext}
+
+${forcedWikiRemedySection ? `\n${forcedWikiRemedySection}\n` : ""}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
@@ -1071,7 +1074,10 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
-    const sanitizedText = sanitizeRecommendation(await readAiStreamText(response.body!));
+    const aiText = sanitizeRecommendation(await readAiStreamText(response.body!));
+    const sanitizedText = forcedWikiRemedySection
+      ? `${forcedWikiRemedySection}\n\n---\n\n${aiText}`
+      : aiText;
 
     // Prepend audit info as the FIRST SSE-Frame so the client can show
     // exactly which wiki entries the AI saw. Then send the sanitized result.
