@@ -453,6 +453,8 @@ serve(async (req) => {
     const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
+    const hasHomotoxContext = selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
+    const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
 
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
     // WICHTIG: NICHT die gesamte Kategorie "Labordiagnostik" matchen, sonst werden alle
