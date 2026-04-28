@@ -447,7 +447,7 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
 
   if (items.length === 0) return "";
   const groups = Array.from(new Set(items.map((i) => i.group)));
-  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
+  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht. Diese Sicherung ist NICHT exklusiv: Die KI muss zusätzlich alle in Phase 1 gefundenen Kandidaten aus ALLEN Wiki-Kategorien prüfen und daraus auswählen.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
 }
 
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
