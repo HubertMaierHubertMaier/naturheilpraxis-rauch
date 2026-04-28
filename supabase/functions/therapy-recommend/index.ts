@@ -654,12 +654,13 @@ serve(async (req) => {
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
-      `preferredLines=[${preferredLines.join(",")}]`
+      `preferredLines=[${preferredLines.join(",")}], symptomAxes=[${activeSymptomTargets.map((t) => t.label).join(",")}]`
     );
 
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
     const reasonFor = (e: WikiEntry) => {
       if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
+      if (symptomPinnedEntries.some((s) => sameEntry(s, e))) return "🧭 Auto-Pin (Symptome/Homotoxikologie)";
       if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
       if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
       return "📌 Pinned";
@@ -694,6 +695,7 @@ serve(async (req) => {
         cacheHit,
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
+        symptomAxes: activeSymptomTargets.map((t) => t.label),
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
