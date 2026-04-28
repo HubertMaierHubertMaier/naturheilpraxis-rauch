@@ -200,19 +200,13 @@ export function CategoryFilter({ selected, onChange }: Props) {
                   )}
                   {top.subs.map((sub) => {
                     const checked = isSubSelected(sub.fullPath);
-                    const disabled = topChecked; // Top überschreibt Subs
                     return (
                       <label
                         key={sub.fullPath}
-                        className={`flex items-center gap-2 px-1.5 py-1 rounded text-sm ${
-                          disabled
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-muted/50 cursor-pointer"
-                        }`}
+                        className="flex items-center gap-2 px-1.5 py-1 rounded text-sm hover:bg-muted/50 cursor-pointer"
                       >
                         <Checkbox
-                          checked={checked || disabled}
-                          disabled={disabled}
+                          checked={checked}
                           onCheckedChange={() => toggleSub(sub.fullPath, top.name)}
                           aria-label={sub.label}
                         />
