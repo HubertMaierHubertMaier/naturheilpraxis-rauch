@@ -723,7 +723,7 @@ serve(async (req) => {
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
-    const forcedWikiRemedySection = buildForcedWikiRemedies(relevantEntries, scoringQueryText);
+    const forcedWikiRemedySection = buildForcedWikiRemedies(allEntries, scoringQueryText);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
