@@ -69,8 +69,11 @@ export function TherapyRecommendation() {
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
+    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    setUseMapReduce(Boolean(d.useMapReduce));
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
@@ -219,6 +222,8 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              selectedCategories,
+              useMapReduce,
               bevorzugteLinie,
               pinnedMittel,
               belastungen: formatPathogensForAI(pathogens),
@@ -266,6 +271,7 @@ export function TherapyRecommendation() {
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
+    setUseMapReduce(false);
     setResult("");
     setAuditInfo(null);
   };
