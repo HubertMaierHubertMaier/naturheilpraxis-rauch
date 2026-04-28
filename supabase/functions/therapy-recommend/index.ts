@@ -1032,7 +1032,37 @@ WICHTIG:
 - Bei JEDEM Mittel erklären WARUM es empfohlen wird und WOGEGEN es wirkt.
 - Schreibe KOMPAKT: pro Mittel max. 1 Begründungssatz, keine doppelten Erklärungen.`;
 
-    const userMessage = `Patientendaten:
+    const userMessage = isNachschlag
+      ? `Patientendaten:
+${patientInfo.join("\n")}
+
+Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
+Symptome: ${symptome || "Nicht angegeben"}
+Erkrankung: ${erkrankung || "Nicht angegeben"}
+Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
+Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
+
+🔄 NACHSCHLAG-MODUS – ERWEITERUNG EINER BESTEHENDEN EMPFEHLUNG
+
+NEUE ZUSATZ-INFORMATION (vom Therapeuten ergänzt):
+${nachschlag}
+
+BISHERIGE EMPFEHLUNG (gilt weiterhin):
+\`\`\`
+${(previousResult as string).slice(0, 18000)}
+\`\`\`
+
+DEINE AUFGABE JETZT:
+1. **Behalte die bisherige Empfehlung vollständig bei** – wiederhole alle bestehenden Mittel mit identischer Dosierung/Anwendung/Dauer/Begründung.
+2. **Ergänze NUR die Mittel/Maßnahmen, die durch die neue Zusatz-Information zusätzlich nötig werden.**
+3. **Markiere jedes neue oder geänderte Mittel mit dem Präfix 🆕** direkt vor dem Mittelnamen, z.B. \`- 🆕 **Magnesium-Citrat**\`.
+4. Wenn die neue Info ein bestehendes Mittel inhaltlich anpasst (Dosis, Dauer), markiere die geänderte Zeile mit 🔄 und gib in der Begründung an, was sich geändert hat.
+5. Halte das gleiche Ausgabeformat ein (Gruppen, Pipe-Tabellenstruktur).
+6. Ergänze einen kurzen Abschnitt **## 🔄 Nachschlag-Begründung** ganz oben, der erklärt, was die neue Info therapeutisch bedeutet und welche Mittel deshalb dazukommen.
+
+Erfinde keine Mittel – nutze ausschließlich die Wissensdatenbank.`
+      : `Patientendaten:
 ${patientInfo.join("\n")}
 
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
