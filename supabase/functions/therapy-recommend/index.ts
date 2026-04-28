@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const FORCE_FULL_WIKI_MAP_REDUCE = true;
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
@@ -174,6 +174,18 @@ const SYMPTOM_TARGETS: SymptomTarget[] = [
     terms: /appetit|gewichtsverlust|abmager|kachex|untergewicht|gewichtsabnahme/i,
     wikiTitles: ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung", "Therapeutischer Index: Endokrinologie"],
     keywords: ["appetit", "gewichtsverlust", "gewichtsabnahme", "abmagerung", "kachexie", "untergewicht", "hepeel", "arsuraneel", "china-homaccord", "nux vomica-homaccord"],
+  },
+  {
+    label: "Verdauung/Druck/Blähung/Reflux",
+    terms: /verdau|darm|stuhl|bläh|blaeh|druck|spannung|aufsto|reflux|g[äa]rung|dysbio|candida|verstopf|durchfall|krampf|kolik|entleerung/i,
+    wikiTitles: ["Therapeutischer Index: Verdauung", "Therapeutischer Index: Sonstige"],
+    keywords: ["verdauung", "dyspepsie", "blähungen", "bauchbeschwerden", "druck", "spannung", "aufstoßen", "nux vomica-homaccord", "gastricumeel", "diarrheel", "hepeel", "spascupreel", "mucosa compositum"],
+  },
+  {
+    label: "Schlaf/Regeneration",
+    terms: /schlaf|insom|regeneration|ruhe|nacht|night relax|melatonin|tryptophan/i,
+    wikiTitles: ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"],
+    keywords: ["schlaf", "regeneration", "night relax", "nervoheel", "neurexan", "tonico-heel", "passionsblume", "lavendel", "melatonin"],
   },
   {
     label: "Psyche/Angst/Depression/Isolation",
@@ -370,6 +382,64 @@ function sanitizeRecommendation(text: string): string {
     "- ✅ **Substitution** – Bifidobacterium auffällig/erniedrigt → Vitaplace **Biotik Balance Kapseln** bzw. **Biotik Sensitiv Pulver** sind in der Wissensdatenbank als Bifidobacterium-/Lactobacillus-haltige Praxispräparate hinterlegt."
   );
   return out.trim();
+}
+
+type ForcedRemedy = { group: string; line: string };
+
+function hasWikiTitle(entries: WikiEntry[], title: string): boolean {
+  return entries.some((e) => (e.title || "").toLowerCase() === title.toLowerCase());
+}
+
+function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): string {
+  const query = queryText.toLowerCase();
+  const has = (re: RegExp) => re.test(query);
+  const add = (items: ForcedRemedy[], title: string, group: string, line: string) => {
+    if (hasWikiTitle(entries, title) && !items.some((i) => i.line.includes(`**${title}`) || i.line.includes(`**${title} (`))) {
+      items.push({ group, line });
+    }
+  };
+
+  const items: ForcedRemedy[] = [];
+  const microbiome = has(/stuhl|mikrobiom|darmflora|bifido|lacto|enterococcus|escherichia|ph\s*5|pH|candida|geotrichum|dysbio|gärung|gaerung|probiotik|präbiotik|praebiotik/i);
+  const digestive = has(/bläh|blaeh|druck|spannung|aufsto|reflux|dyspeps|gastro|verdau|krampf|kolik|verstopf|durchfall|entleerung|bauch/i);
+  const weight = has(/appetit|gewichtsverlust|gewichtsabnahme|abmager|untergewicht|kachex/i);
+  const fatigue = has(/erschöpf|erschoepf|müde|mued|schwäche|schwaeche|energie|kraft|lebensqualität|lebensqualitaet/i);
+  const psyche = has(/psyche|depress|angst|unruhe|rückzug|rueckzug|sozial|isolation|belastung/i);
+  const sleep = has(/schlaf|insom|nacht|regeneration/i);
+
+  if (microbiome) {
+    add(items, "Biotik Balance Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Balance Kapseln (Vitaplace)** | abends 2 Kapseln | oral, abends | 8–12 Wochen, Verlauf prüfen | 🔴 Essentiell | laut Bezug | Wiki: enthält Bifidobacterium bifidum/infantis/lactis/longum, Lactobacillus-Stämme, Inulin und resistente Stärke – daher KEINE Bifidobacterium-Substitutionslücke.");
+    add(items, "Biotik Sensitiv Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Sensitiv Pulver (Vitaplace)** | einschleichen: 1 gestr. Dosierlöffel, innerhalb 10 Tagen auf 3 Dosierlöffel steigern | morgens vor einer Mahlzeit in kalter/lauwarmer Flüssigkeit | 8–12 Wochen | 🟡 Empfohlen | laut Bezug | Wiki: Bifidobacterium infantis/longum plus Lactobacillus rhamnosus/gasseri/salivarius/reuteri, besonders bei empfindlichem/histaminrelevantem Darmaufbau.");
+    add(items, "DARM + LEBER Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **DARM + LEBER Pulver (Vitaplace)** | mit ¼ Messlöffel beginnen, über 1 Woche auf 1 Messlöffel täglich steigern | in 200 ml Wasser, vormittags | ca. 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Akazienfaser und resistente Stärke fördern Butyrat-bildende/mukonutritive Keime und unterstützen Darmschleimhaut plus Leberentgiftung.");
+  }
+  if (digestive) {
+    add(items, "Glutamin & Fenchel Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Glutamin & Fenchel Kapseln (Vitaplace)** | 2× täglich 1 Kapsel (1–0–1) | oral | 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Fenchel karminativ bei Blähungen/Flatulenz, L-Glutamin als Repair-Baustein der Darmschleimhaut.");
+    add(items, "Vitaplace Komplex BLAE", "### ⚕️ Homöopathie & Komplexmittel", "- **Vitaplace Komplex BLAE** | 5× täglich 10 Globuli | oral | symptomorientiert, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: explizit gegen Blähungen hinterlegt; passt zu Druck-/Spannungsgefühl und Gärungsbeschwerden.");
+  }
+  if (sleep) {
+    add(items, "Night Relax Kapseln", "### 🧠 Schlaf, Nerven & Regeneration", "- **Night Relax Kapseln (Vitaplace)** | 1 rote + 2 transparente Kapseln | abends ½–1 Stunde vor dem Schlafen mit Flüssigkeit | 4–8 Wochen, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: für Schlaf, Regeneration bei Anspannung/Überlastung/Stress mit Melatonin, Tryptophan, Magnesium, Lavendel, Passionsblume.");
+  }
+
+  if (weight && hasWikiTitle(entries, "Therapeutischer Index: Sonstige")) {
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Hepeel / Arsuraneel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: Hauptmittel bei Abmagerung; passend bei Gewichtsverlust/Appetitverlust." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **China-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Sonstige: Ergänzungsmittel bei Abmagerung und Schwächezuständen." });
+  }
+  if (digestive && hasWikiTitle(entries, "Therapeutischer Index: Verdauung")) {
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Nux vomica-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Verdauung: Haupt-/Ergänzungsmittel bei Blähungen, Darmstauung, Dyspepsie und Verdauungsbeschwerden." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Gastricumeel / Hepeel / Spascupreel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: für Dyspepsie, Hyperazidität, Blähungen, Krämpfe/Koliken und Leber-Galle-Achse." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Mucosa compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Repair-Phase prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung/Sonstige: Phasenmittel bei chronischer Schleimhaut-/Verdauungsbelastung." });
+  }
+  if (fatigue && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Psyche: Hauptmittel bei Erschöpfung/Neurasthenie." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum / Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche/Sonstige: Phasenmittel bei Müdigkeit, chronischer Schwäche und Energiestoffwechsel-Belastung." });
+  }
+  if (psyche && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel / Ignatia-Homaccord / Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei reaktiver depressiver Stimmung, emotionaler Belastung, Rückzug und nervöser Erschöpfung." });
+  }
+
+  if (items.length === 0) return "";
+  const groups = Array.from(new Set(items.map((i) => i.group)));
+  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
 }
 
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
@@ -653,6 +723,7 @@ serve(async (req) => {
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
+    const forcedWikiRemedySection = buildForcedWikiRemedies(allEntries, scoringQueryText);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -740,6 +811,8 @@ Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogen
 
 WISSENSDATENBANK:
 ${wikiContext}
+
+${forcedWikiRemedySection ? `\n${forcedWikiRemedySection}\n` : ""}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
@@ -900,7 +973,7 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 ### 🩺 Apparative & klinische Therapien
 (Infusionen, Ozon, IHHT, Colon-Hydrotherapie, Frequenztherapie, Bioresonanz)
 
-INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit ` | ` (Pipe-Zeichen) und beginne JEDE Mittel-Zeile mit `- ` (Bindestrich + Leerzeichen):
+INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit Pipe-Zeichen " | " und beginne JEDE Mittel-Zeile mit Bindestrich + Leerzeichen:
 
 - **Mittelname** | Dosierung | Anwendung/Einnahme | Dauer | Priorität | Kosten/Monat | Begründung
 
@@ -1001,7 +1074,10 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
-    const sanitizedText = sanitizeRecommendation(await readAiStreamText(response.body!));
+    const aiText = sanitizeRecommendation(await readAiStreamText(response.body!));
+    const sanitizedText = forcedWikiRemedySection
+      ? `${forcedWikiRemedySection}\n\n---\n\n${aiText}`
+      : aiText;
 
     // Prepend audit info as the FIRST SSE-Frame so the client can show
     // exactly which wiki entries the AI saw. Then send the sanitized result.
