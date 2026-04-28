@@ -857,7 +857,7 @@ export function TherapyRecommendation() {
             <Card className="border-accent/30 bg-accent/[0.03]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
-                  💊 Eigene Mittel ergänzen <span className="text-xs font-normal text-muted-foreground">(erscheinen auf beiden PDFs als „Manuell ergänzt")</span>
+                  💊 Eigene Mittel ergänzen <span className="text-xs font-normal text-muted-foreground">(erscheinen auf beiden PDFs als &quot;Manuell ergänzt&quot;)</span>
                 </label>
                 {manualMittel.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt.</p>
