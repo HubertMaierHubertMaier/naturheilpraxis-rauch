@@ -38,8 +38,19 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
       return;
     }
     setLoading(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    if (!accessToken) {
+      toast({ title: "Nicht angemeldet", description: "Bitte erneut einloggen.", variant: "destructive" });
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
       body: { pseudonym_id: pseudonymId.trim() },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (error) {
