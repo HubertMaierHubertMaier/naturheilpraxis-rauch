@@ -36,6 +36,7 @@ export function TherapyRecommendation() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
+  const [useMapReduce, setUseMapReduce] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
@@ -133,6 +134,7 @@ export function TherapyRecommendation() {
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
+            useMapReduce: useMapReduce || undefined,
           }),
           signal: controller.signal,
         }
@@ -510,11 +512,39 @@ export function TherapyRecommendation() {
         </Card>
       </div>
 
+      {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
+      <Card className="border-blue-300/50 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
+        <CardContent className="pt-4 pb-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useMapReduce}
+              onChange={(e) => setUseMapReduce(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-blue-600"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-sm flex items-center gap-2">
+                🚀 Vollständige KI-Auswertung aller Wiki-Einträge (Map-Reduce)
+                <Badge variant="outline" className="text-[10px] h-4">Experimentell</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>AN:</strong> Stufe 1 = ein günstiges KI-Modell bewertet ALLE Einträge in Batches auf Relevanz.
+                Stufe 2 = die Top-{35} kommen in Volltext an die finale Empfehlungs-KI.
+                <br />
+                <strong>AUS</strong> (Standard): Schnelle Wort-Treffer-Filterung (nur ~10 Einträge).
+                <br />
+                ⏱️ <strong>Dauer:</strong> 30–60 Sek. statt 10 Sek. &nbsp;|&nbsp; 💰 ~1–2 Cent extra pro Empfehlung
+              </p>
+            </div>
+          </label>
+        </CardContent>
+      </Card>
+
       {/* Action Buttons */}
       <div className="flex gap-3">
         <Button onClick={handleSubmit} disabled={isStreaming} className="gap-2">
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          {isStreaming ? "Analyse läuft..." : "Therapie-Empfehlung generieren"}
+          {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>

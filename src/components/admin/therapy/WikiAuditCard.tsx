@@ -21,6 +21,7 @@ export interface WikiAuditInfo {
   contextChars: number;
   contextLimit: number;
   cacheHit: boolean;
+  mapReduceUsed?: boolean;
   queryTokens: string[];
   selectedCategories: string[];
   used: WikiAuditEntry[];
@@ -45,6 +46,11 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
           <CardTitle className="text-sm font-serif flex items-center gap-2 text-blue-800 dark:text-blue-300">
             <Database className="h-4 w-4" />
             Wiki-Audit: KI hat {audit.usedCount} von {audit.afterCategoryFilter} Einträgen gelesen
+            {audit.mapReduceUsed && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300">
+                🚀 Map-Reduce (alle bewertet)
+              </Badge>
+            )}
             {isFull ? (
               <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300">
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Vollständig
@@ -90,9 +96,14 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
 
           {!isFull && (
             <div className="text-xs bg-amber-100/60 dark:bg-amber-950/30 border border-amber-300/50 dark:border-amber-900/40 rounded p-2 text-amber-900 dark:text-amber-200">
-              ⚠️ <strong>Hinweis:</strong> Aufgrund des Token-Limits des KI-Gateways konnten nicht alle {audit.afterCategoryFilter} Wiki-Einträge in den Kontext geladen werden.
-              Die {audit.usedCount} relevantesten wurden ausgewählt (per Wort-Treffer-Score). Falls ein wichtiger Eintrag fehlt, kann er via "📌 Pinning" oder
-              spezifische Kategorienfilterung erzwungen werden.
+              {audit.mapReduceUsed ? (
+                <>🚀 <strong>Map-Reduce aktiv:</strong> Eine günstige KI hat ALLE {audit.afterCategoryFilter} Einträge bewertet.
+                Die {audit.usedCount} bestbewerteten kamen in Volltext an die finale Empfehlungs-KI. Die "Nicht gelesen"-Tabelle unten zeigt, welche Einträge die Stufe-1-KI als irrelevant eingestuft hat (mit ihrem Score 0–10).</>
+              ) : (
+                <>⚠️ <strong>Hinweis:</strong> Aufgrund des Token-Limits konnten nicht alle {audit.afterCategoryFilter} Wiki-Einträge in den Kontext geladen werden.
+                Die {audit.usedCount} relevantesten wurden per Wort-Treffer-Score gewählt.
+                <br />💡 <strong>Tipp:</strong> Aktiviere oben den blauen Schalter "🚀 Vollständige KI-Auswertung", damit ALLE Einträge bewertet werden.</>
+              )}
             </div>
           )}
 
