@@ -43,9 +43,128 @@ export function TherapyRecommendation() {
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
+  const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
+  const [therapieNotiz, setTherapieNotiz] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Initial: alle Mittel ausgewählt, sobald Result geparst wird
+  const parsedForSelection = useMemo(() => parseTherapyMarkdown(result), [result]);
+  useEffect(() => {
+    if (!result) {
+      setSelectedKeys(new Set());
+      setDiagnosen([]);
+      return;
+    }
+    const all = new Set<string>();
+    parsedForSelection.categories.forEach((g, ci) => {
+      g.remedies.forEach((_, ri) => all.add(`${ci}|${ri}`));
+    });
+    setSelectedKeys(all);
+  }, [result, parsedForSelection]);
+
+  const toggleRemedy = (key: string) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleAllInCategory = (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      remedyIndices.forEach((ri) => {
+        const k = `${categoryIndex}|${ri}`;
+        if (selectAll) next.add(k);
+        else next.delete(k);
+      });
+      return next;
+    });
+  };
+
+  const fetchDiagnosen = async (): Promise<DiagnoseEntry[]> => {
+    setIsLoadingDiagnosen(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Nicht angemeldet", variant: "destructive" });
+        return [];
+      }
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-diagnoses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            belastungen: formatPathogensForAI(pathogens),
+            symptome,
+            erkrankung,
+            laborErhoeht,
+            laborErniedrigt,
+            laborKomplett,
+            stuhlbefund,
+            medikamente,
+            alter,
+            schwanger,
+          }),
+        },
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+        toast({ title: "Diagnose-Generierung fehlgeschlagen", description: err.error, variant: "destructive" });
+        return [];
+      }
+      const json = await resp.json();
+      const list: DiagnoseEntry[] = Array.isArray(json.diagnosen) ? json.diagnosen : [];
+      setDiagnosen(list);
+      return list;
+    } catch (e: any) {
+      toast({ title: "Fehler", description: e.message, variant: "destructive" });
+      return [];
+    } finally {
+      setIsLoadingDiagnosen(false);
+    }
+  };
+
+  const handlePrintPatient = () => {
+    openPrintRecipe({
+      parsed: parseTherapyMarkdown(result),
+      patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
+      mode: "patient",
+      selectedKeys,
+    });
+  };
+
+  const handlePrintPraxis = async () => {
+    // Diagnosen nachladen, falls noch keine vorhanden
+    let diag = diagnosen;
+    if (diag.length === 0) {
+      diag = await fetchDiagnosen();
+    }
+    openPrintRecipe({
+      parsed: parseTherapyMarkdown(result),
+      patient: {
+        alter, schwanger, medikamente, budget,
+        belastungen: formatPathogensForAI(pathogens),
+        symptome, erkrankung,
+        pseudonymId: pseudonymId.trim() || undefined,
+        notiz: therapieNotiz.trim() || undefined,
+      },
+      mode: "praxis",
+      selectedKeys,
+      diagnosen: diag,
+    });
+  };
+
 
   const handleGeneratePseudonym = async () => {
     const { data } = await (supabase as any)
