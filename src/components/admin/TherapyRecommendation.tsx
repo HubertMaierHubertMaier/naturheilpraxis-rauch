@@ -51,20 +51,25 @@ export function TherapyRecommendation() {
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Initial: alle Mittel ausgewählt, sobald Result geparst wird
-  const parsedForSelection = useMemo(() => parseTherapyMarkdown(result), [result]);
+  // Initial: alle Mittel ausgewählt, sobald Result fertig geparst wird.
+  // WICHTIG: Nur einmal pro `result`-String initialisieren, damit User-Auswahl nicht überschrieben wird.
+  const lastInitResultRef = useRef<string>("");
   useEffect(() => {
     if (!result) {
       setSelectedKeys(new Set());
       setDiagnosen([]);
+      lastInitResultRef.current = "";
       return;
     }
+    if (lastInitResultRef.current === result) return; // bereits initialisiert
+    lastInitResultRef.current = result;
+    const parsed = parseTherapyMarkdown(result);
     const all = new Set<string>();
-    parsedForSelection.categories.forEach((g, ci) => {
+    parsed.categories.forEach((g, ci) => {
       g.remedies.forEach((_, ri) => all.add(`${ci}|${ri}`));
     });
     setSelectedKeys(all);
-  }, [result, parsedForSelection]);
+  }, [result]);
 
   const toggleRemedy = (key: string) => {
     setSelectedKeys((prev) => {
