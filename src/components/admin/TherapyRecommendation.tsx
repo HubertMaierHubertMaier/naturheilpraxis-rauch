@@ -47,12 +47,19 @@ export function TherapyRecommendation() {
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
   const [therapieNotiz, setTherapieNotiz] = useState("");
+  // Nachschlag-Modus
+  const [ergaenzung, setErgaenzung] = useState("");
+  const [isNachschlag, setIsNachschlag] = useState(false);
+  // Manuelle Ergänzungen
+  const [manualDiagnosen, setManualDiagnosen] = useState<DiagnoseEntry[]>([]);
+  const [manualMittel, setManualMittel] = useState<Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Initial: alle Mittel ausgewählt, sobald Result fertig geparst wird.
-  // WICHTIG: Nur einmal pro `result`-String initialisieren, damit User-Auswahl nicht überschrieben wird.
+  // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
+  // - Erste Generierung: alle Mittel anhaken.
+  // - Nachschlag: bisherige Häkchen erhalten, neu hinzugekommene Keys automatisch anhaken.
   const lastInitResultRef = useRef<string>("");
   useEffect(() => {
     if (!result) {
@@ -61,14 +68,25 @@ export function TherapyRecommendation() {
       lastInitResultRef.current = "";
       return;
     }
-    if (lastInitResultRef.current === result) return; // bereits initialisiert
+    if (lastInitResultRef.current === result) return;
+    const isFirstInit = lastInitResultRef.current === "";
     lastInitResultRef.current = result;
     const parsed = parseTherapyMarkdown(result);
-    const all = new Set<string>();
-    parsed.categories.forEach((g, ci) => {
-      g.remedies.forEach((_, ri) => all.add(`${ci}|${ri}`));
+    setSelectedKeys((prev) => {
+      const next = isFirstInit ? new Set<string>() : new Set(prev);
+      parsed.categories.forEach((g, ci) => {
+        g.remedies.forEach((r, ri) => {
+          const key = `${ci}|${ri}`;
+          if (isFirstInit) {
+            next.add(key);
+          } else if (!next.has(key)) {
+            // Beim Nachschlag: neue Mittel automatisch anhaken (sind oft mit 🆕 markiert)
+            next.add(key);
+          }
+        });
+      });
+      return next;
     });
-    setSelectedKeys(all);
   }, [result]);
 
   const toggleRemedy = (key: string) => {
