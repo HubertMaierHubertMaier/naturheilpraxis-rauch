@@ -769,7 +769,7 @@ export function TherapyRecommendation() {
                 <Textarea
                   value={ergaenzung}
                   onChange={(e) => setErgaenzung(e.target.value)}
-                  placeholder="z.B. „Patient erinnert sich: nachts Wadenkrämpfe + Magnesium-Spiegel im Labor 0,68 mmol/l (niedrig)"  oder  „Stuhlbefund nachgereicht: Akkermansia stark erniedrigt"…"
+                  placeholder="z.B. Patient erinnert sich: nachts Wadenkrämpfe + Magnesium-Spiegel im Labor 0,68 mmol/l (niedrig); oder: Stuhlbefund nachgereicht – Akkermansia stark erniedrigt …"
                   rows={3}
                 />
                 <div className="flex items-center justify-between gap-3">
