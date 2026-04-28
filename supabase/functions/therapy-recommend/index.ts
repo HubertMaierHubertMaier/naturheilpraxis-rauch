@@ -29,6 +29,80 @@ const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
 const CACHE_VERSION = "v6";
 
+// Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
+const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
+const MAP_REDUCE_TOP_N = 35; // wie viele Einträge nach Stufe 1 in Volltext an Stufe 2 gehen
+const MAP_REDUCE_MODEL = "google/gemini-2.5-flash-lite"; // billigstes Modell für Bewertung
+const MAP_REDUCE_SNIPPET_CHARS = 350; // wie viel Content-Vorschau pro Eintrag in Stufe 1
+
+// Stufe 1 (Map): KI bekommt Batches mit nur Titel/Kategorie/Tags/Snippet und gibt Score 0-10 zurück
+async function scoreEntriesViaAI(
+  entries: WikiEntry[],
+  queryText: string,
+  apiKey: string,
+): Promise<Map<string, number>> {
+  const scoreMap = new Map<string, number>();
+  const batches: WikiEntry[][] = [];
+  for (let i = 0; i < entries.length; i += MAP_REDUCE_BATCH_SIZE) {
+    batches.push(entries.slice(i, i + MAP_REDUCE_BATCH_SIZE));
+  }
+  console.log(`Map-Reduce: bewerte ${entries.length} Einträge in ${batches.length} Batches à ${MAP_REDUCE_BATCH_SIZE}`);
+
+  const promises = batches.map(async (batch, batchIdx) => {
+    const list = batch.map((e, i) => {
+      const snippet = (e.content || "").slice(0, MAP_REDUCE_SNIPPET_CHARS).replace(/\s+/g, " ");
+      const tags = (e.tags || []).join(", ");
+      return `${i}. [${e.category}] ${e.title} (Tags: ${tags})\n   ${snippet}`;
+    }).join("\n\n");
+
+    const sys = `Du bist ein medizinischer Relevanz-Filter. Bewerte jeden der folgenden Wissensdatenbank-Einträge auf einer Skala 0-10 für die Relevanz zu der Patienten-Anfrage. 0=völlig irrelevant, 10=hochrelevant. Antworte AUSSCHLIESSLICH mit einem JSON-Array von Zahlen, gleiche Reihenfolge wie die Einträge, exakt ${batch.length} Werte. Beispiel: [8,0,3,10,0,2]. Keine Erklärungen.`;
+    const usr = `PATIENTEN-ANFRAGE:\n${queryText.slice(0, 2000)}\n\nEINTRÄGE (${batch.length} Stück):\n${list}`;
+
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MAP_REDUCE_MODEL,
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: usr },
+          ],
+          max_tokens: 500,
+          stream: false,
+        }),
+      });
+      if (!resp.ok) {
+        console.warn(`Batch ${batchIdx}: Gateway ${resp.status} – fallback auf Wort-Score für diesen Batch`);
+        return;
+      }
+      const json = await resp.json();
+      const text: string = json?.choices?.[0]?.message?.content || "";
+      const match = text.match(/\[[\d\s,.\-]+\]/);
+      if (!match) {
+        console.warn(`Batch ${batchIdx}: kein JSON-Array gefunden – Text:`, text.slice(0, 200));
+        return;
+      }
+      const scores: number[] = JSON.parse(match[0]);
+      if (!Array.isArray(scores) || scores.length !== batch.length) {
+        console.warn(`Batch ${batchIdx}: Score-Anzahl falsch (got ${scores?.length}, expected ${batch.length})`);
+        return;
+      }
+      batch.forEach((e, i) => {
+        const key = `${e.title}|||${e.category}`;
+        const sc = Math.max(0, Math.min(10, Number(scores[i]) || 0));
+        scoreMap.set(key, sc);
+      });
+    } catch (err) {
+      console.warn(`Batch ${batchIdx} Fehler:`, err instanceof Error ? err.message : String(err));
+    }
+  });
+
+  await Promise.all(promises);
+  console.log(`Map-Reduce: ${scoreMap.size}/${entries.length} Einträge bewertet`);
+  return scoreMap;
+}
+
 async function loadWikiEntries(client: any): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
   const { data: sigRows, error: sigError } = await client
     .from("admin_knowledge_base")
