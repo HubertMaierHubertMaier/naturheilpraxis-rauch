@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -47,12 +47,19 @@ export function TherapyRecommendation() {
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
   const [therapieNotiz, setTherapieNotiz] = useState("");
+  // Nachschlag-Modus
+  const [ergaenzung, setErgaenzung] = useState("");
+  const [isNachschlag, setIsNachschlag] = useState(false);
+  // Manuelle Ergänzungen
+  const [manualDiagnosen, setManualDiagnosen] = useState<DiagnoseEntry[]>([]);
+  const [manualMittel, setManualMittel] = useState<Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Initial: alle Mittel ausgewählt, sobald Result fertig geparst wird.
-  // WICHTIG: Nur einmal pro `result`-String initialisieren, damit User-Auswahl nicht überschrieben wird.
+  // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
+  // - Erste Generierung: alle Mittel anhaken.
+  // - Nachschlag: bisherige Häkchen erhalten, neu hinzugekommene Keys automatisch anhaken.
   const lastInitResultRef = useRef<string>("");
   useEffect(() => {
     if (!result) {
@@ -61,14 +68,25 @@ export function TherapyRecommendation() {
       lastInitResultRef.current = "";
       return;
     }
-    if (lastInitResultRef.current === result) return; // bereits initialisiert
+    if (lastInitResultRef.current === result) return;
+    const isFirstInit = lastInitResultRef.current === "";
     lastInitResultRef.current = result;
     const parsed = parseTherapyMarkdown(result);
-    const all = new Set<string>();
-    parsed.categories.forEach((g, ci) => {
-      g.remedies.forEach((_, ri) => all.add(`${ci}|${ri}`));
+    setSelectedKeys((prev) => {
+      const next = isFirstInit ? new Set<string>() : new Set(prev);
+      parsed.categories.forEach((g, ci) => {
+        g.remedies.forEach((r, ri) => {
+          const key = `${ci}|${ri}`;
+          if (isFirstInit) {
+            next.add(key);
+          } else if (!next.has(key)) {
+            // Beim Nachschlag: neue Mittel automatisch anhaken (sind oft mit 🆕 markiert)
+            next.add(key);
+          }
+        });
+      });
+      return next;
     });
-    setSelectedKeys(all);
   }, [result]);
 
   const toggleRemedy = (key: string) => {
@@ -146,11 +164,11 @@ export function TherapyRecommendation() {
       patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
       mode: "patient",
       selectedKeys,
+      manualMittel: manualMittel.filter((m) => m.name.trim()),
     });
   };
 
   const handlePrintPraxis = async () => {
-    // Diagnosen nachladen, falls noch keine vorhanden
     let diag = diagnosen;
     if (diag.length === 0) {
       diag = await fetchDiagnosen();
@@ -166,7 +184,8 @@ export function TherapyRecommendation() {
       },
       mode: "praxis",
       selectedKeys,
-      diagnosen: diag,
+      diagnosen: [...diag, ...manualDiagnosen.filter((d) => d.diagnose.trim()).map((d) => ({ ...d, diagnose: `${d.diagnose} (manuell)` }))],
+      manualMittel: manualMittel.filter((m) => m.name.trim()),
     });
   };
 
@@ -204,15 +223,19 @@ export function TherapyRecommendation() {
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
+    const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const belastungenText = formatPathogensForAI(pathogens);
-    if (!belastungenText && !symptome.trim() && !erkrankung.trim()) {
+    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim()) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome oder Erkrankung", variant: "destructive" });
       return;
     }
 
-    setResult("");
-    setAuditInfo(null);
+    if (!isErweitern) {
+      setResult("");
+      setAuditInfo(null);
+    }
+    setIsNachschlag(isErweitern);
     setIsStreaming(true);
 
     const controller = new AbortController();
@@ -263,6 +286,8 @@ export function TherapyRecommendation() {
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
             useMapReduce: useMapReduce || undefined,
+            nachschlag: isErweitern ? opts!.nachschlag : undefined,
+            previousResult: isErweitern ? opts!.previousResult : undefined,
           }),
           signal: controller.signal,
         }
@@ -679,7 +704,7 @@ export function TherapyRecommendation() {
 
       {/* Action Buttons */}
       <div className="flex gap-3">
-        <Button onClick={handleSubmit} disabled={isStreaming} className="gap-2">
+        <Button onClick={() => handleSubmit()} disabled={isStreaming} className="gap-2">
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
@@ -729,6 +754,167 @@ export function TherapyRecommendation() {
                   placeholder="Interne Notizen, Beobachtungen, weiterer Behandlungsplan..."
                   rows={2}
                 />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 🔄 Nachschlag-Modus: KI-gestützte Erweiterung mit Kontext-Erhalt */}
+          {result && !isStreaming && (
+            <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/10">
+              <CardContent className="pt-4 pb-4 space-y-3">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <RefreshCw className="h-4 w-4 text-amber-600" />
+                  Nachschlag – KI-Empfehlung erweitern
+                  <span className="text-xs font-normal text-muted-foreground">(neue Symptome / Laborwerte / Befunde → KI ergänzt passende Wiki-Mittel)</span>
+                </label>
+                <Textarea
+                  value={ergaenzung}
+                  onChange={(e) => setErgaenzung(e.target.value)}
+                  placeholder="z.B. Patient erinnert sich: nachts Wadenkrämpfe + Magnesium-Spiegel im Labor 0,68 mmol/l (niedrig); oder: Stuhlbefund nachgereicht – Akkermansia stark erniedrigt …"
+                  rows={3}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    Bestehende Mittel & Häkchen bleiben erhalten. Neue Mittel werden mit 🆕 markiert und automatisch angehakt.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      const txt = ergaenzung.trim();
+                      if (!txt) {
+                        toast({ title: "Leere Ergänzung", description: "Bitte Zusatz-Info eintragen.", variant: "destructive" });
+                        return;
+                      }
+                      handleSubmit({ nachschlag: txt, previousResult: result });
+                      setErgaenzung("");
+                    }}
+                    disabled={isStreaming || !ergaenzung.trim()}
+                    className="gap-2 bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap"
+                    size="sm"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Empfehlung erweitern
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ➕ Manuelle Diagnosen (kommen aufs Praxis-PDF) */}
+          {result && !isStreaming && (
+            <Card className="border-secondary/40 bg-secondary/[0.04]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  🩺 Eigene Diagnosen ergänzen <span className="text-xs font-normal text-muted-foreground">(nur Praxis-PDF, kombiniert mit KI-Diagnosen)</span>
+                </label>
+                {manualDiagnosen.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Diagnosen ergänzt.</p>
+                )}
+                <div className="space-y-2">
+                  {manualDiagnosen.map((d, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                      <Input
+                        className="col-span-2 font-mono text-sm"
+                        placeholder="ICD-10 (opt.)"
+                        value={d.icd10 || ""}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, icd10: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-4"
+                        placeholder="Diagnose / Verdachtsdiagnose"
+                        value={d.diagnose}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, diagnose: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-5"
+                        placeholder="Begründung (optional)"
+                        value={d.begruendung || ""}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, begruendung: e.target.value } : x))}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="col-span-1 h-9 w-9 text-destructive"
+                        onClick={() => setManualDiagnosen((arr) => arr.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setManualDiagnosen((arr) => [...arr, { diagnose: "", icd10: "", begruendung: "" }])}
+                >
+                  <Plus className="h-4 w-4" /> Diagnose hinzufügen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ➕ Manuelle Mittel (kommen auf BEIDE PDFs sofern angehakt im Patienten-PDF) */}
+          {result && !isStreaming && (
+            <Card className="border-accent/30 bg-accent/[0.03]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  💊 Eigene Mittel ergänzen <span className="text-xs font-normal text-muted-foreground">(erscheinen auf beiden PDFs als &quot;Manuell ergänzt&quot;)</span>
+                </label>
+                {manualMittel.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt.</p>
+                )}
+                <div className="space-y-2">
+                  {manualMittel.map((m, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                      <Input
+                        className="col-span-3"
+                        placeholder="Mittelname"
+                        value={m.name}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, name: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-2 font-mono text-sm"
+                        placeholder="Dosierung"
+                        value={m.dosage}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, dosage: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-2"
+                        placeholder="Anwendung"
+                        value={m.application}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, application: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-1"
+                        placeholder="Dauer"
+                        value={m.duration}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, duration: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="Begründung / Indikation"
+                        value={m.reason}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, reason: e.target.value } : x))}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="col-span-1 h-9 w-9 text-destructive"
+                        onClick={() => setManualMittel((arr) => arr.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setManualMittel((arr) => [...arr, { name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" }])}
+                >
+                  <Plus className="h-4 w-4" /> Mittel hinzufügen
+                </Button>
               </CardContent>
             </Card>
           )}

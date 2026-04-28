@@ -25,6 +25,8 @@ interface PrintArgs {
   selectedKeys?: Set<string>;
   /** Schulmedizinische Verdachtsdiagnosen – nur für Praxis-PDF */
   diagnosen?: DiagnoseEntry[];
+  /** Manuell ergänzte Mittel – erscheinen in beiden PDFs als eigene Sektion */
+  manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string }>;
 }
 
 const escapeHtml = (s: string) =>
@@ -53,7 +55,7 @@ function filterCategoriesBySelection(
   return { selected, unselected };
 }
 
-export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, diagnosen }: PrintArgs) {
+export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, diagnosen, manualMittel }: PrintArgs) {
   const isPraxis = mode === "praxis";
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -124,6 +126,25 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   };
 
   const selectedHtml = selected.map((g) => renderCategory(g, { showReason: isPraxis, showPrio: isPraxis })).join("");
+
+  const manualMittelHtml = (manualMittel && manualMittel.length)
+    ? `<section class="cat">
+        <h2>✍️ Manuell ergänzte Mittel <span class="muted-small">(vom Therapeuten ergänzt, nicht aus KI/Wiki)</span></h2>
+        <table>
+          <thead><tr><th>Mittel</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th>${isPraxis ? "<th>Begründung</th>" : ""}</tr></thead>
+          <tbody>
+            ${manualMittel.map((m) => `
+              <tr>
+                <td class="name"><strong>${escapeHtml(m.name)}</strong></td>
+                <td class="mono">${escapeHtml(m.dosage || "—")}</td>
+                <td>${escapeHtml(m.application || "—")}</td>
+                <td>${escapeHtml(m.duration || "—")}</td>
+                ${isPraxis ? `<td class="reason-cell">${escapeHtml(m.reason || "")}</td>` : ""}
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </section>`
+    : "";
 
   const reserveHtml = (isPraxis && unselected.length)
     ? `<section class="reserve">
@@ -221,6 +242,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   ${diagnoseHtml}
   ${introHtml}
   ${selectedHtml || `<p style="color:#888;font-style:italic;">Keine Mittel ausgewählt.</p>`}
+  ${manualMittelHtml}
   ${reserveHtml}
   ${outroHtml}
   ${notizHtml}
