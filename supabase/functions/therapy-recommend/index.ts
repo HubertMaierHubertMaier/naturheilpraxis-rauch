@@ -378,13 +378,11 @@ serve(async (req) => {
     const STUHL_REGEX = /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|enterococcus|escherichia|klebsiella|alpha-?1-?antitrypsin|probiotik|präbiotik|praebiotik|symbiose|darmsanier|darmaufbau/i;
     const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
       ? filteredByCategory.filter((e) => {
-          const meta = (e.category + " " + e.title + " " + (e.tags || []).join(" ")).toLowerCase();
-          if (STUHL_REGEX.test(meta)) return true;
-          // Zusätzlich: Content prüfen, aber NUR bei klaren Mikrobiom-/Probiotika-Treffern,
-          // damit nicht zufällige Erwähnungen alles aufblähen.
-          const content = (e.content || "").toLowerCase();
-          return /probiotik|präbiotik|praebiotik/.test(content) &&
-            /bifidobacterium|lactobacillus|akkermansia|faecalibacterium|enterococcus|escherichia coli/.test(content);
+          const text = entryText(e);
+          if (STUHL_REGEX.test(text)) return true;
+          // Vitaplace-Probiotika immer mitnehmen, sobald ein Stuhlbefund/Mikrobiom vorliegt:
+          // sie enthalten die gesuchten Bifido-/Lacto-Stämme oft nur im Content.
+          return isVitaplaceProbiotic(e);
         })
       : [];
     if (autoPinnedFromStuhl.length > 0) {
@@ -489,8 +487,12 @@ serve(async (req) => {
       restScored = r.scored;
     }
 
-    const relevantEntries = [...pinnedEntries, ...restRelevant];
-    const wikiContext = buildContext(relevantEntries);
+    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], queryText, preferredLines, pinnedTitles);
+    const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
+    const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
+      ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
+      : "";
+    const wikiContext = buildContext(relevantEntries) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
