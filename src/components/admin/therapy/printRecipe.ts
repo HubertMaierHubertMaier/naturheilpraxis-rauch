@@ -127,6 +127,25 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
 
   const selectedHtml = selected.map((g) => renderCategory(g, { showReason: isPraxis, showPrio: isPraxis })).join("");
 
+  const manualMittelHtml = (manualMittel && manualMittel.length)
+    ? `<section class="cat">
+        <h2>✍️ Manuell ergänzte Mittel <span class="muted-small">(vom Therapeuten ergänzt, nicht aus KI/Wiki)</span></h2>
+        <table>
+          <thead><tr><th>Mittel</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th>${isPraxis ? "<th>Begründung</th>" : ""}</tr></thead>
+          <tbody>
+            ${manualMittel.map((m) => `
+              <tr>
+                <td class="name"><strong>${escapeHtml(m.name)}</strong></td>
+                <td class="mono">${escapeHtml(m.dosage || "—")}</td>
+                <td>${escapeHtml(m.application || "—")}</td>
+                <td>${escapeHtml(m.duration || "—")}</td>
+                ${isPraxis ? `<td class="reason-cell">${escapeHtml(m.reason || "")}</td>` : ""}
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </section>`
+    : "";
+
   const reserveHtml = (isPraxis && unselected.length)
     ? `<section class="reserve">
         <h2>📦 Reserve & Alternativen <span class="muted-small">(nicht für Patienten ausgewählt)</span></h2>
