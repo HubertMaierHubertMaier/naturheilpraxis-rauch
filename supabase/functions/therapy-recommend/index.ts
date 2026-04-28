@@ -621,7 +621,9 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
     }
 
-    // Force-include all pinned wiki entries (manual + auto + boost-folders)
+    // Force-include only truly mandatory entries.
+    // WICHTIG: Boost-Ordner sind KEIN Filter und KEINE Exklusiv-Auswahl; sie markieren nur Schwerpunktbereiche.
+    // Die eigentliche Phase-1-Sichtung läuft unten immer über die gesamte Wiki.
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
       : [];
@@ -632,12 +634,6 @@ serve(async (req) => {
       ...autoPinnedFromStuhl.filter((a) =>
         !manualPinned.some((m) => sameEntry(m, a)) &&
         !symptomPinnedEntries.some((s) => sameEntry(s, a))
-      ),
-      ...boostEntries.filter(
-        (b) =>
-          !manualPinned.some((m) => sameEntry(m, b)) &&
-          !symptomPinnedEntries.some((s) => sameEntry(s, b)) &&
-          !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
       ),
     ];
     const pinnedReserveChars = pinnedEntries.reduce(
