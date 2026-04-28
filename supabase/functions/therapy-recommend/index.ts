@@ -678,6 +678,7 @@ ${pinnedTitles.length > 0
   → Diese Mittel MÜSSEN in der Empfehlung erscheinen, mit korrekter Dosierung aus dem Wiki-Eintrag, plausibler Indikationsbegründung im Patientenkontext und Einordnung in die passende Mittel-Gruppe (Hausmittel, Probiotika, Vitamine etc.).
   → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
   : "- Keine spezifischen Mittel gepinnt."}
+${symptomDirective}
 
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
