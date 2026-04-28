@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, BookOpen, Tag, X, ChevronRight, ChevronDown, RefreshCw, FolderOpen } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, BookOpen, Tag, X, ChevronRight, ChevronDown, RefreshCw, FolderOpen, Sparkles } from "lucide-react";
+import { TagEnrichmentDialog } from "./TagEnrichmentDialog";
 
 // Normalize text for robust German search (case + umlaut-insensitive)
 const normalizeSearchText = (value: string) =>
@@ -180,7 +181,7 @@ export function KnowledgeBaseManager() {
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   const [expandedChildren, setExpandedChildren] = useState<Set<string>>(new Set());
 
-  // Form state
+  const [enrichOpen, setEnrichOpen] = useState(false);
   const [formTitle, setFormTitle] = useState("");
   const [formCategory, setFormCategory] = useState("Allgemein");
   const [formCustomCategory, setFormCustomCategory] = useState("");
@@ -470,6 +471,9 @@ export function KnowledgeBaseManager() {
           <h1 className="text-2xl font-bold text-foreground">Wissensdatenbank</h1>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setEnrichOpen(true)} className="gap-2 border-amber-400 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20">
+            <Sparkles className="h-4 w-4" /> KI-Tags
+          </Button>
           <Button variant="outline" onClick={fetchEntries} className="gap-2" disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Aktualisieren
           </Button>
@@ -705,6 +709,12 @@ export function KnowledgeBaseManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TagEnrichmentDialog
+        open={enrichOpen}
+        onOpenChange={setEnrichOpen}
+        onApplied={fetchEntries}
+      />
     </div>
   );
 }
