@@ -134,6 +134,7 @@ export function TherapyRecommendation() {
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
+            useMapReduce: useMapReduce || undefined,
           }),
           signal: controller.signal,
         }
