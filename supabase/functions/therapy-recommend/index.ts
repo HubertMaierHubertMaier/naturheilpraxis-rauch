@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -232,6 +232,98 @@ function buildContext(entries: WikiEntry[]): string {
   return context;
 }
 
+function entryText(e: WikiEntry): string {
+  return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
+}
+
+function isVitaplaceProbiotic(e: WikiEntry): boolean {
+  const text = entryText(e);
+  const title = (e.title || "").toLowerCase();
+  return (
+    text.includes("vitaplace") &&
+    (
+      title.includes("biotik") ||
+      text.includes("probiotik") ||
+      text.includes("bifidobacterium") ||
+      text.includes("lactobacillus") ||
+      text.includes("inulin") ||
+      text.includes("resistente stärke")
+    )
+  );
+}
+
+function extractProbioticHighlights(e: WikiEntry): string {
+  const matches = (e.content || "").match(/(Bifidobacterium\s+[A-Za-z0-9\- ]+|Lactobacillus\s+[A-Za-z0-9\- ]+|Akkermansia\s+muciniphila|Faecalibacterium\s+prausnitzii|Inulin|Resistente Stärke)/gi) || [];
+  return Array.from(new Set(matches.map((m) => m.trim().replace(/\s+/g, " ")))).slice(0, 14).join(", ");
+}
+
+function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[]): WikiEntry[] {
+  const query = queryText.toLowerCase();
+  const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
+  const preferred = preferredLines.map((l) => l.toLowerCase());
+  const manual = manualTitles.map((t) => t.toLowerCase());
+  const score = (e: WikiEntry) => {
+    const text = entryText(e);
+    let s = 0;
+    if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    if (isVitaplaceProbiotic(e)) s += 50_000;
+    for (const line of preferred) if (line && text.includes(line)) s += 5_000;
+    for (const term of probioticTerms) {
+      if (query.includes(term) && text.includes(term)) s += 2_000;
+      if (text.includes(term)) s += 100;
+    }
+    if ((e.category || "").toLowerCase().includes("stuhldiagnostik")) s += 500;
+    return s;
+  };
+  return [...entries].sort((a, b) => score(b) - score(a));
+}
+
+function sanitizeRecommendation(text: string): string {
+  let out = text;
+  out = out.replace(/\*{0,2}WICHTIGER HINWEIS ZUERST:?\*{0,2}[\s\S]*?(?=\n\s*##\s|\n\s*#\s|$)/gi, "");
+  out = out
+    .split(/\n{2,}/)
+    .filter((p) => !/(Red Flags|Gastroenterolog|Koloskopie|zwingend.{0,40}ärzt|Bitte\s+suchen\s+Sie.{0,80}Arzt|organische Erkrankungen.{0,80}ausschließen|ersetzt.{0,40}Arzt)/i.test(p))
+    .join("\n\n");
+  out = out.replace(
+    /(?:[-*]\s*)?Substitution prüfen\s*[–-]\s*Bifidobacterium[^\n]*/gi,
+    "- ✅ **Substitution** – Bifidobacterium auffällig/erniedrigt → Vitaplace **Biotik Balance Kapseln** bzw. **Biotik Sensitiv Pulver** sind in der Wissensdatenbank als Bifidobacterium-/Lactobacillus-haltige Praxispräparate hinterlegt."
+  );
+  return out.trim();
+}
+
+async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let accumulated = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr || jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          accumulated += parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
+        } catch {
+          // Ignore malformed stream fragments; gateway frames are newline-delimited.
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return accumulated;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -330,15 +422,14 @@ serve(async (req) => {
     // Mikrobiom-/Stuhl-Stichworte: prüft Titel/Kategorie/Tags UND Content
     // (Probiotika-Produkte listen Stämme oft nur im Content, nicht in Tags – z.B. Vitaplace Biotik Balance)
     const STUHL_REGEX = /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|enterococcus|escherichia|klebsiella|alpha-?1-?antitrypsin|probiotik|präbiotik|praebiotik|symbiose|darmsanier|darmaufbau/i;
-    const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
+    const hasMicrobiomeSignal = Boolean(stuhlbefund && stuhlbefund.trim().length > 0) || STUHL_REGEX.test(queryText);
+    const autoPinnedFromStuhl: WikiEntry[] = hasMicrobiomeSignal
       ? filteredByCategory.filter((e) => {
-          const meta = (e.category + " " + e.title + " " + (e.tags || []).join(" ")).toLowerCase();
-          if (STUHL_REGEX.test(meta)) return true;
-          // Zusätzlich: Content prüfen, aber NUR bei klaren Mikrobiom-/Probiotika-Treffern,
-          // damit nicht zufällige Erwähnungen alles aufblähen.
-          const content = (e.content || "").toLowerCase();
-          return /probiotik|präbiotik|praebiotik/.test(content) &&
-            /bifidobacterium|lactobacillus|akkermansia|faecalibacterium|enterococcus|escherichia coli/.test(content);
+          const text = entryText(e);
+          if (STUHL_REGEX.test(text)) return true;
+          // Vitaplace-Probiotika immer mitnehmen, sobald ein Stuhlbefund/Mikrobiom vorliegt:
+          // sie enthalten die gesuchten Bifido-/Lacto-Stämme oft nur im Content.
+          return isVitaplaceProbiotic(e);
         })
       : [];
     if (autoPinnedFromStuhl.length > 0) {
@@ -443,8 +534,12 @@ serve(async (req) => {
       restScored = r.scored;
     }
 
-    const relevantEntries = [...pinnedEntries, ...restRelevant];
-    const wikiContext = buildContext(relevantEntries);
+    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], queryText, preferredLines, pinnedTitles);
+    const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
+    const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
+      ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
+      : "";
+    const wikiContext = buildContext(relevantEntries) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -513,6 +608,7 @@ serve(async (req) => {
 
 🚫 ABSOLUT VERBOTENE FORMULIERUNGEN (kritisch!):
 - "Bitte ärztlich abklären lassen" / "zwingend ärztliche Abklärung" / "Besuch beim Arzt erforderlich"
+- "Wichtiger Hinweis zuerst" / "Red Flags" / "Gastroenterologe" / "organische Erkrankungen sicher ausschließen" / "Koloskopie"
 - "professionelle Hilfe holen" (impliziert, der Heilpraktiker sei nicht professionell — FALSCH)
 - "ersetzt nicht den Arzt" / "konsultieren Sie einen Arzt"
 - Jede Formulierung, die den Heilpraktiker als nachgeordnet, weniger qualifiziert oder als bloßen "Komplementär-Anbieter" darstellt.
@@ -589,7 +685,8 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
      - Bedeutung: [Wiki-Inhalt, kurz]
      - Therapie: [Wiki-Protokoll, kurz – die konkreten Mittel werden dann strukturiert in den Mittel-Gruppen aufgelistet]
      - Quelle: [Wiki-Quellenangabe]
-   - Übertrage die im Wiki-Eintrag genannten Therapie-Mittel anschließend in die strukturierten Mittel-Gruppen (Hausmittel, Probiotika, Sanum etc.) mit den dort angegebenen Dosierungen.
+    - Übertrage die im Wiki-Eintrag genannten Therapie-Mittel anschließend in die strukturierten Mittel-Gruppen (Hausmittel, Probiotika, Sanum etc.) mit den dort angegebenen Dosierungen.
+    - WICHTIG BEI Bifidobacterium/Lactobacillus-Mangel: Die Vitaplace-Einträge **Biotik Balance Kapseln** und **Biotik Sensitiv Pulver** gelten als vorhandene Substitutionspräparate, wenn sie im Kontext stehen. Dann KEINE Substitutions-Lücke für Bifidobacterium oder Lactobacillus melden, sondern diese Mittel unter "Probiotika, Präbiotika & Darmaufbau" aufführen.
    - Verwende das 4-R-Konzept (Remove – Replace – Reinoculate – Repair) als Strukturhilfe, wenn Leaky-Gut-Marker (Zonulin, alpha-1-AT) oder Entzündungsmarker (Calprotectin) erhöht sind.
 
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
@@ -626,6 +723,7 @@ Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diese
 Prüfe systematisch und gib pro Lücke EINE Zeile aus, beginnend mit \`- \`:
 
 1. **Substitutions-Lücken (Mikrobiom/Stuhl):** Für jedes im Stuhlbefund als "erniedrigt/fehlend" markierte Bakterium (z.B. Akkermansia muciniphila, Faecalibacterium prausnitzii, Bifidobacterium longum, Lactobacillus rhamnosus, E. coli, Enterokokken) prüfe, ob in der Wissensdatenbank ein konkretes Substitutions-Präparat (Probiotikum mit genau diesem Stamm oder gezieltes Präbiotikum) hinterlegt ist. Wenn nein → Lücke melden.
+   - SONDERREGEL: Für **Bifidobacterium** und **Lactobacillus** sind **Vitaplace Biotik Balance Kapseln** und **Vitaplace Biotik Sensitiv Pulver** vorhandene Substitutionspräparate. Hier niemals "keine klare Substitution" melden, wenn einer dieser Vitaplace-Einträge im Kontext steht.
 2. **Ursachen-Lücken:** Für jedes auffällige Pathogen / jeden auffälligen Marker (zu viel ODER zu wenig) prüfe, ob in der Wiki erklärt ist, WARUM dieser Wert verschoben sein kann. Wenn keine Ursachen-Hypothese im Wiki vorhanden → Lücke melden.
 3. **Pathogen-Mittel-Lücken:** Für jedes genannte Pathogen prüfe, ob mindestens ein wirksames Mittel in der Wiki hinterlegt ist. Wenn nein → Lücke melden.
 4. **Referenzwert-Lücken / Dosierungs-Lücken** sammeln.
@@ -780,25 +878,18 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
+    const sanitizedText = sanitizeRecommendation(await readAiStreamText(response.body!));
+
     // Prepend audit info as the FIRST SSE-Frame so the client can show
-    // exactly which wiki entries the AI saw. Then forward the AI stream.
+    // exactly which wiki entries the AI saw. Then send the sanitized result.
     const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
     const encoder = new TextEncoder();
-    const aiStream = response.body!;
     const wrapped = new ReadableStream({
-      async start(controller) {
+      start(controller) {
         controller.enqueue(encoder.encode(auditLine));
-        const reader = aiStream.getReader();
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-        } finally {
-          controller.close();
-          reader.releaseLock();
-        }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sanitizedText } }] })}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
       },
     });
 
