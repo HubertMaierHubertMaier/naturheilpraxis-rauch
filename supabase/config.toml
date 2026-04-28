@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.therapy-recommend]
 verify_jwt = false
+
+[functions.get-therapy-sessions]
+verify_jwt = false
