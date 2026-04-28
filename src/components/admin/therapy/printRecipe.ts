@@ -25,6 +25,8 @@ interface PrintArgs {
   selectedKeys?: Set<string>;
   /** Schulmedizinische Verdachtsdiagnosen – nur für Praxis-PDF */
   diagnosen?: DiagnoseEntry[];
+  /** Manuell ergänzte Mittel – erscheinen in beiden PDFs als eigene Sektion */
+  manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string }>;
 }
 
 const escapeHtml = (s: string) =>
