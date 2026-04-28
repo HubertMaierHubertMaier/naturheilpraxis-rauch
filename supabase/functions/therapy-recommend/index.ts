@@ -290,18 +290,22 @@ serve(async (req) => {
     // Fetch wiki entries (cached) and select only the relevant ones for this query
     const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
 
-    // Optional: Filter nach gewählten Hauptordnern (Top-Level-Kategorien).
+    // Boost-Ordner: gewählte Ordner werden GARANTIERT vollständig in den Kontext aufgenommen
+    // (zusätzlich zur normalen Score-/Map-Reduce-Auswahl auf der GESAMTEN Datenbank).
+    // → Ersetzt das frühere "Filter"-Verhalten. Default = ganze DB wird durchsucht.
     const selectedCats: string[] = Array.isArray(categories)
       ? categories.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
       : [];
-    const filteredByCategory = selectedCats.length === 0
-      ? allEntries
+    // WICHTIG: Suchpool bleibt IMMER die gesamte Datenbank.
+    const filteredByCategory = allEntries;
+    const boostEntries: WikiEntry[] = selectedCats.length === 0
+      ? []
       : allEntries.filter((e) =>
           selectedCats.some((c) => e.category === c || e.category.startsWith(c + " >"))
         );
     console.log(
-      `Category filter: ${selectedCats.length === 0 ? "ALL" : selectedCats.join(", ")} → ` +
-      `${filteredByCategory.length}/${allEntries.length} entries`
+      `Boost folders: ${selectedCats.length === 0 ? "NONE" : selectedCats.join(", ")} → ` +
+      `${boostEntries.length} forced entries (search pool: ${allEntries.length})`
     );
 
     // Pinned remedies: titles to ALWAYS include in context
