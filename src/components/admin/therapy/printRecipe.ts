@@ -55,7 +55,7 @@ function filterCategoriesBySelection(
   return { selected, unselected };
 }
 
-export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, diagnosen }: PrintArgs) {
+export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, diagnosen, manualMittel }: PrintArgs) {
   const isPraxis = mode === "praxis";
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 
