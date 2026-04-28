@@ -652,7 +652,7 @@ serve(async (req) => {
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
-      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
+      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
       `preferredLines=[${preferredLines.join(",")}], symptomAxes=[${activeSymptomTargets.map((t) => t.label).join(",")}]`
     );
@@ -740,6 +740,13 @@ ${wikiContext}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
+
+ZWINGENDE BALANCE-REGEL:
+- Teile deine interne Auswertung in drei gleichwertige Spuren: (A) Pathogene/Belastungen, (B) Symptome/klinisches Bild, (C) Labor/Stuhl.
+- Wenn in der Wissensdatenbank therapeutische Index-Einträge, Homotoxikologie/Heel-Einträge oder symptombezogene Mittel stehen, MÜSSEN daraus konkrete Mittelzeilen entstehen – nicht nur Analyse-Fließtext.
+- Bei Symptomtreffern wie Erschöpfung, Appetitlosigkeit, Gewichtsverlust, Schwäche, Psyche/Isolation oder Verdauungsbeschwerden: Extrahiere die dort genannten **Hauptmittel**, **Ergänzungsmittel** und ggf. **Phasenmittel** aus dem Wiki-Kontext und ordne sie unter "Homöopathie & Komplexmittel" ein.
+- Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
+- Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
 
 ⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
 ${preferredLines.length > 0
