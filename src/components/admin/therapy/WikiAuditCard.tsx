@@ -21,6 +21,7 @@ export interface WikiAuditInfo {
   contextChars: number;
   contextLimit: number;
   cacheHit: boolean;
+  mapReduceUsed?: boolean;
   queryTokens: string[];
   selectedCategories: string[];
   used: WikiAuditEntry[];
