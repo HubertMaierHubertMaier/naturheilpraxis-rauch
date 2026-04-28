@@ -222,15 +222,19 @@ export function TherapyRecommendation() {
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
+    const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const belastungenText = formatPathogensForAI(pathogens);
-    if (!belastungenText && !symptome.trim() && !erkrankung.trim()) {
+    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim()) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome oder Erkrankung", variant: "destructive" });
       return;
     }
 
-    setResult("");
-    setAuditInfo(null);
+    if (!isErweitern) {
+      setResult("");
+      setAuditInfo(null);
+    }
+    setIsNachschlag(isErweitern);
     setIsStreaming(true);
 
     const controller = new AbortController();
