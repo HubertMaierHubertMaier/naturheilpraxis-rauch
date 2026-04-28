@@ -593,6 +593,7 @@ export function TherapyRecommendation() {
 function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string; isStreaming: boolean; stuhlbefund: string }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
+  const hasAiParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
   const hasGapCard = [...parsed.intro, ...parsed.outro].some((s) => /wissensdatenbank-lücken/i.test(s.title));
   const introSections = deterministicGapSection && !hasGapCard
     ? [...parsed.intro, deterministicGapSection]
@@ -641,10 +642,10 @@ function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string
         </div>
       )}
 
-      {!hasParsed && result && (
+      {!hasAiParsed && result && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ergebnis</CardTitle>
+            <CardTitle className="text-base">Therapietext</CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="whitespace-pre-wrap text-sm text-foreground font-sans">{result}</pre>
