@@ -470,7 +470,8 @@ serve(async (req) => {
     const auditPayload = {
       __audit__: {
         totalInDb: allEntries.length,
-        afterCategoryFilter: filteredByCategory.length,
+        afterCategoryFilter: allEntries.length, // legacy field: search pool = full DB
+        boostFolderCount: boostEntries.length,
         pinnedCount: pinnedEntries.length,
         relevantCount: restRelevant.length,
         usedCount: usedEntries.length,
@@ -480,7 +481,8 @@ serve(async (req) => {
         cacheHit,
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
-        selectedCategories: selectedCats,
+        boostCategories: selectedCats,
+        selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
         skippedSample: skippedEntries,
       },
