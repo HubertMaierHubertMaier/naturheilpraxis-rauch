@@ -276,7 +276,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel, useMapReduce } = await req.json();
 
     if (!belastungen && !symptome && !erkrankung) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
@@ -315,10 +315,22 @@ serve(async (req) => {
       .filter(Boolean)
       .join(" ");
 
-    // Force-include all pinned wiki entries (never drop them)
-    const pinnedEntries = pinnedTitles.length > 0
+    // ===== AUTO-PINNING: bei Stuhlbefund automatisch alle "Labordiagnostik"-Einträge mit aufnehmen =====
+    const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
+      ? filteredByCategory.filter((e) => /labordiagnostik|stuhl|mikrobiom/i.test(e.category))
+      : [];
+    if (autoPinnedFromStuhl.length > 0) {
+      console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Labordiagnostik-Einträge wegen Stuhlbefund`);
+    }
+
+    // Force-include all pinned wiki entries (manual + auto)
+    const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
       : [];
+    const pinnedEntries = [
+      ...manualPinned,
+      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => m.title === a.title && m.category === a.category)),
+    ];
     const pinnedReserveChars = pinnedEntries.reduce(
       (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
       0
@@ -329,30 +341,96 @@ serve(async (req) => {
       (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
     );
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
-    const { selected: restRelevant, scored: restScored } = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
+
+    let restRelevant: WikiEntry[];
+    let restScored: ScoredEntry[];
+    let mapReduceUsed = false;
+
+    if (useMapReduce === true && restPool.length > 0) {
+      // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
+      mapReduceUsed = true;
+      const aiScores = await scoreEntriesViaAI(restPool, queryText, LOVABLE_API_KEY);
+
+      // Kombiniere KI-Score (×10 Gewicht) + Wort-Score (Fallback für unbewertete Einträge)
+      const wordScored = restPool.map((e) => {
+        const haystack = (e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")).toLowerCase();
+        const tokens = tokenizeQuery(queryText);
+        let s = 0;
+        for (const tok of tokens) {
+          if ((e.title || "").toLowerCase().includes(tok)) s += 10;
+          if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) s += 5;
+          s += Math.min(haystack.split(tok).length - 1, 8);
+        }
+        const key = `${e.title}|||${e.category}`;
+        const aiScore = aiScores.get(key);
+        // KI-Score dominiert; Wort-Score nur als Fallback wenn KI nicht antwortete
+        const finalScore = aiScore !== undefined ? aiScore * 100 : s;
+        return { entry: e, score: finalScore, included: false, reason: aiScore !== undefined ? `KI-Score ${aiScore}/10` : `Wort-Score ${s} (KI keine Antwort)` } as ScoredEntry;
+      });
+      wordScored.sort((a, b) => b.score - a.score);
+
+      // Nimm Top-N nach Score, solange Zeichenbudget reicht
+      restRelevant = [];
+      let totalChars = 0;
+      let taken = 0;
+      for (const s of wordScored) {
+        if (taken >= MAP_REDUCE_TOP_N) {
+          s.included = false;
+          s.reason = `Top-${MAP_REDUCE_TOP_N}-Limit erreicht (${s.reason})`;
+          continue;
+        }
+        const entryLen = Math.min((s.entry.content || "").length, MAX_ENTRY_CHARS) + 200;
+        if (totalChars + entryLen > remainingBudget) {
+          s.included = false;
+          s.reason = `Zeichenlimit erreicht (${s.reason})`;
+          continue;
+        }
+        if (s.score < 200 && s.score > 0 && s.score < 100) {
+          // Score < 1 (KI sagt irrelevant) → raus, außer Wort-Treffer
+          // (Score-Werte: KI*100 oder reiner Wort-Score)
+        }
+        // Mindestrelevanz: KI-Score >=1 (also score >=100) ODER Wort-Score >0
+        if (s.score < 100 && s.score === 0) {
+          s.included = false;
+          s.reason = `Irrelevant (${s.reason})`;
+          continue;
+        }
+        restRelevant.push(s.entry);
+        s.included = true;
+        totalChars += entryLen;
+        taken++;
+      }
+      restScored = wordScored;
+      console.log(`Map-Reduce ausgewählt: ${restRelevant.length}/${restPool.length} Einträge`);
+    } else {
+      // ===== Klassisch: nur Wort-Score-Filter =====
+      const r = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
+      restRelevant = r.selected;
+      restScored = r.scored;
+    }
 
     const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
     console.log(
       `Wiki: ${allEntries.length} total → ${filteredByCategory.length} after category → ` +
-      `${pinnedEntries.length} pinned + ${restRelevant.length} relevant, ` +
-      `context=${wikiContext.length} chars, cacheHit=${cacheHit}, ` +
+      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto) + ${restRelevant.length} relevant, ` +
+      `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
       `preferredLines=[${preferredLines.join(",")}]`
     );
 
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
-    // Liste aller verwendeten Einträge (pinned + relevant) und der wichtigsten ausgelassenen.
     const usedEntries = [
       ...pinnedEntries.map((e) => ({
-        title: e.title, category: e.category, score: 9999, reason: "📌 Gepinnt"
+        title: e.title, category: e.category, score: 9999,
+        reason: manualPinned.some((m) => m.title === e.title) ? "📌 Manuell gepinnt" : "🔬 Auto-Pin (Stuhlbefund)"
       })),
       ...restScored.filter((s) => s.included).map((s) => ({
-        title: s.entry.title, category: s.entry.category, score: s.score, reason: "✅ Relevant"
+        title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "✅ Relevant"
       })),
     ];
     const skippedEntries = restScored
       .filter((s) => !s.included)
-      .slice(0, 50) // Top 50 ausgelassene zur Stichprobe
+      .slice(0, 50)
       .map((s) => ({
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "—"
       }));
@@ -368,6 +446,7 @@ serve(async (req) => {
         contextChars: wikiContext.length,
         contextLimit: MAX_TOTAL_CHARS,
         cacheHit,
+        mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
         selectedCategories: selectedCats,
         used: usedEntries,
