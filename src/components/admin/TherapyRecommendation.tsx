@@ -36,7 +36,7 @@ export function TherapyRecommendation() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
-  const [useMapReduce, setUseMapReduce] = useState(false);
+  const [useMapReduce, setUseMapReduce] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
@@ -73,7 +73,7 @@ export function TherapyRecommendation() {
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
-    setUseMapReduce(Boolean(d.useMapReduce));
+    setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
@@ -277,7 +277,7 @@ export function TherapyRecommendation() {
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
-    setUseMapReduce(false);
+    setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
   };
