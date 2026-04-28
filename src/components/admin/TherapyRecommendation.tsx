@@ -164,11 +164,11 @@ export function TherapyRecommendation() {
       patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
       mode: "patient",
       selectedKeys,
+      manualMittel: manualMittel.filter((m) => m.name.trim()),
     });
   };
 
   const handlePrintPraxis = async () => {
-    // Diagnosen nachladen, falls noch keine vorhanden
     let diag = diagnosen;
     if (diag.length === 0) {
       diag = await fetchDiagnosen();
@@ -184,7 +184,8 @@ export function TherapyRecommendation() {
       },
       mode: "praxis",
       selectedKeys,
-      diagnosen: diag,
+      diagnosen: [...diag, ...manualDiagnosen.filter((d) => d.diagnose.trim()).map((d) => ({ ...d, diagnose: `${d.diagnose} (manuell)` }))],
+      manualMittel: manualMittel.filter((m) => m.name.trim()),
     });
   };
 
