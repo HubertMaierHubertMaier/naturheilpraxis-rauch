@@ -337,13 +337,19 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund`);
     }
 
-    // Force-include all pinned wiki entries (manual + auto)
+    // Force-include all pinned wiki entries (manual + auto + boost-folders)
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
       : [];
+    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
     const pinnedEntries = [
       ...manualPinned,
-      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => m.title === a.title && m.category === a.category)),
+      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => sameEntry(m, a))),
+      ...boostEntries.filter(
+        (b) =>
+          !manualPinned.some((m) => sameEntry(m, b)) &&
+          !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
+      ),
     ];
     const pinnedReserveChars = pinnedEntries.reduce(
       (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
