@@ -36,6 +36,7 @@ export function TherapyRecommendation() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
+  const [useMapReduce, setUseMapReduce] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
