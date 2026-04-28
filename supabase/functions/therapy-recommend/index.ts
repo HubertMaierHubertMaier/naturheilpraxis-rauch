@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v11";
+const CACHE_VERSION = "v12";
 const FORCE_FULL_WIKI_MAP_REDUCE = true;
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
@@ -319,6 +319,14 @@ function buildContext(entries: WikiEntry[], queryText: string): string {
   return context;
 }
 
+function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
+  const relevant = scored
+    .filter((s) => s.score > 0)
+    .slice(0, maxItems);
+  if (relevant.length === 0) return "";
+  return `### PHASE 1 – Gesamt-Wiki-Sichtung (alle Kategorien)\nDie folgenden Kandidaten wurden aus der gesamten Wissensdatenbank bewertet. Phase 2 muss daraus fachlich auswählen; keine Kategorie oder Produktlinie ist exklusiv.\n${relevant.map((s, idx) => `${idx + 1}. [${s.entry.category}] ${s.entry.title} – ${s.reason || `Score ${s.score}`}${s.included ? " → Volltext in Phase 2" : ""}`).join("\n")}`;
+}
+
 function entryText(e: WikiEntry): string {
   return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
 }
@@ -439,7 +447,7 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
 
   if (items.length === 0) return "";
   const groups = Array.from(new Set(items.map((i) => i.group)));
-  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
+  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht. Diese Sicherung ist NICHT exklusiv: Die KI muss zusätzlich alle in Phase 1 gefundenen Kandidaten aus ALLEN Wiki-Kategorien prüfen und daraus auswählen.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
 }
 
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
@@ -613,7 +621,9 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
     }
 
-    // Force-include all pinned wiki entries (manual + auto + boost-folders)
+    // Force-include only truly mandatory entries.
+    // WICHTIG: Boost-Ordner sind KEIN Filter und KEINE Exklusiv-Auswahl; sie markieren nur Schwerpunktbereiche.
+    // Die eigentliche Phase-1-Sichtung läuft unten immer über die gesamte Wiki.
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
       : [];
@@ -625,12 +635,6 @@ serve(async (req) => {
         !manualPinned.some((m) => sameEntry(m, a)) &&
         !symptomPinnedEntries.some((s) => sameEntry(s, a))
       ),
-      ...boostEntries.filter(
-        (b) =>
-          !manualPinned.some((m) => sameEntry(m, b)) &&
-          !symptomPinnedEntries.some((s) => sameEntry(s, b)) &&
-          !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
-      ),
     ];
     const pinnedReserveChars = pinnedEntries.reduce(
       (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
@@ -638,9 +642,7 @@ serve(async (req) => {
     );
 
     // Score the rest, but exclude already-pinned entries
-    const restPool = filteredByCategory.filter(
-      (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
-    );
+    const restPool = filteredByCategory;
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
 
     let restRelevant: WikiEntry[];
@@ -649,7 +651,7 @@ serve(async (req) => {
     const mustUseFullWikiMapReduce = FORCE_FULL_WIKI_MAP_REDUCE || useMapReduce === true;
 
     if (mustUseFullWikiMapReduce && restPool.length > 0) {
-      // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
+      // ===== MAP-REDUCE STUFE 1: KI bewertet IMMER ALLE Wiki-Einträge in Batches =====
       mapReduceUsed = true;
       const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
 
@@ -682,6 +684,11 @@ serve(async (req) => {
       let taken = 0;
       let droppedLowRelevance = 0;
       for (const s of wordScored) {
+        if (pinnedEntries.some((p) => sameEntry(p, s.entry))) {
+          s.included = false;
+          s.reason = `Bereits als Pflichtkontext enthalten (${s.reason})`;
+          continue;
+        }
         const isAiScored = s.reason?.startsWith("KI-Score");
         const meetsMinimum = isAiScored
           ? s.score >= MIN_AI_SCORE
@@ -724,6 +731,7 @@ serve(async (req) => {
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
     const forcedWikiRemedySection = buildForcedWikiRemedies(allEntries, scoringQueryText);
+    const phaseOneShortlist = buildPhaseOneShortlist(restScored, 80);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -812,10 +820,18 @@ Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogen
 WISSENSDATENBANK:
 ${wikiContext}
 
+${phaseOneShortlist ? `\n${phaseOneShortlist}\n` : ""}
+
 ${forcedWikiRemedySection ? `\n${forcedWikiRemedySection}\n` : ""}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
+
+ZWEISTUFIGER WIKI-PROZESS (VERBINDLICH FÜR ALLE PATIENTEN):
+- Phase 1 ist die Gesamt-Wiki-Sichtung: ALLE Einträge aus ALLEN Kategorien werden gegen die Eingabe aus der Therapie-Maske bewertet. Es gibt keine Beschränkung auf Homotoxikologie, Heel, Vitaplace oder Stuhldiagnostik.
+- Phase 2 ist die fachliche Auswahl: Verwende die Volltexte im Wiki-Kontext UND die Phase-1-Shortlist, um Mittel aus allen passenden Kategorien auszuwählen.
+- Produktlinien/Fokusordner sind nur Priorisierung/Boost, niemals Ausschluss anderer Wiki-Mittel.
+- Wenn Phase 1 relevante Mittel aus anderen Kategorien findet, müssen diese entweder empfohlen oder fachlich begründet verworfen werden.
 
 ZWINGENDE BALANCE-REGEL:
 - Teile deine interne Auswertung in drei gleichwertige Spuren: (A) Pathogene/Belastungen, (B) Symptome/klinisches Bild, (C) Labor/Stuhl.
