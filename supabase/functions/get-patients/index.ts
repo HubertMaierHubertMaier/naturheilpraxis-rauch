@@ -14,19 +14,26 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Check if user is admin via auth header
+    const adminClient = createClient(supabaseUrl, serviceKey);
+
+    // Validate caller is admin via JWT in Authorization header
     let isAdmin = false;
-    const authHeader = req.headers.get("authorization");
-    
-    if (authHeader?.startsWith("Bearer ") && authHeader !== `Bearer ${anonKey}`) {
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { authorization: authHeader } },
-      });
-      const { data: { user } } = await userClient.auth.getUser();
-      if (user) {
-        const { data: adminCheck } = await userClient.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+    if (token && token !== anonKey) {
+      const { data: userData, error: userErr } = await adminClient.auth.getUser(token);
+      if (!userErr && userData?.user) {
+        const { data: adminCheck } = await adminClient.rpc("has_role", {
+          _user_id: userData.user.id,
+          _role: "admin",
+        });
         isAdmin = !!adminCheck;
+      } else {
+        console.log("[get-patients] getUser failed:", userErr?.message);
       }
+    } else {
+      console.log("[get-patients] No user token (only anon or missing)");
     }
 
     if (!isAdmin) {
@@ -35,9 +42,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Use service role to bypass RLS
-    const adminClient = createClient(supabaseUrl, serviceKey);
 
     const [profilesResult, loginCountsResult, submissionsResult] = await Promise.all([
       adminClient.from("profiles").select("*").order("created_at", { ascending: false }),
