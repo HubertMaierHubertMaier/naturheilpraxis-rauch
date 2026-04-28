@@ -242,6 +242,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   ${diagnoseHtml}
   ${introHtml}
   ${selectedHtml || `<p style="color:#888;font-style:italic;">Keine Mittel ausgewählt.</p>`}
+  ${manualMittelHtml}
   ${reserveHtml}
   ${outroHtml}
   ${notizHtml}
