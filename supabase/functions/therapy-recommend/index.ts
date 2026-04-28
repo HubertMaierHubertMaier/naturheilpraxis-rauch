@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -230,6 +230,52 @@ function buildContext(entries: WikiEntry[]): string {
   }
   if (!context.trim()) context = "(Keine relevanten Wissensdatenbank-Einträge gefunden)";
   return context;
+}
+
+function entryText(e: WikiEntry): string {
+  return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
+}
+
+function isVitaplaceProbiotic(e: WikiEntry): boolean {
+  const text = entryText(e);
+  const title = (e.title || "").toLowerCase();
+  return (
+    text.includes("vitaplace") &&
+    (
+      title.includes("biotik") ||
+      text.includes("probiotik") ||
+      text.includes("bifidobacterium") ||
+      text.includes("lactobacillus") ||
+      text.includes("inulin") ||
+      text.includes("resistente stärke")
+    )
+  );
+}
+
+function extractProbioticHighlights(e: WikiEntry): string {
+  const matches = (e.content || "").match(/(Bifidobacterium\s+[A-Za-z0-9\- ]+|Lactobacillus\s+[A-Za-z0-9\- ]+|Akkermansia\s+muciniphila|Faecalibacterium\s+prausnitzii|Inulin|Resistente Stärke)/gi) || [];
+  return Array.from(new Set(matches.map((m) => m.trim().replace(/\s+/g, " ")))).slice(0, 14).join(", ");
+}
+
+function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[]): WikiEntry[] {
+  const query = queryText.toLowerCase();
+  const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
+  const preferred = preferredLines.map((l) => l.toLowerCase());
+  const manual = manualTitles.map((t) => t.toLowerCase());
+  const score = (e: WikiEntry) => {
+    const text = entryText(e);
+    let s = 0;
+    if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    if (isVitaplaceProbiotic(e)) s += 50_000;
+    for (const line of preferred) if (line && text.includes(line)) s += 5_000;
+    for (const term of probioticTerms) {
+      if (query.includes(term) && text.includes(term)) s += 2_000;
+      if (text.includes(term)) s += 100;
+    }
+    if ((e.category || "").toLowerCase().includes("stuhldiagnostik")) s += 500;
+    return s;
+  };
+  return [...entries].sort((a, b) => score(b) - score(a));
 }
 
 serve(async (req) => {
