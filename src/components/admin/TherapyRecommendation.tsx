@@ -285,6 +285,8 @@ export function TherapyRecommendation() {
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
             useMapReduce: useMapReduce || undefined,
+            nachschlag: isErweitern ? opts!.nachschlag : undefined,
+            previousResult: isErweitern ? opts!.previousResult : undefined,
           }),
           signal: controller.signal,
         }
