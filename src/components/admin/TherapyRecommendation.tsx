@@ -327,17 +327,16 @@ export function TherapyRecommendation() {
         />
       )}
 
-      {/* Wissensdatenbank-Filter */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            📚 Wissensdatenbank-Filter
+            ⭐ Schwerpunkt-Ordner
             <span className="text-xs font-normal text-muted-foreground">(optional)</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground mb-2">
-            Wählen Sie aus welchen Hauptordnern die Empfehlungen kommen sollen. Ohne Auswahl wird die gesamte Wissensdatenbank durchsucht.
+            Die KI durchsucht <strong>immer die gesamte Wissensdatenbank</strong>. Hier markierte Ordner werden <strong>garantiert vollständig</strong> berücksichtigt – z.B. <em>Vitaplace</em> bei Stuhldiagnostik oder <em>Homotoxikologie</em> bei diffusen Symptomen. Andere Treffer gehen dadurch nicht verloren.
           </p>
           <CategoryFilter selected={selectedCategories} onChange={setSelectedCategories} />
         </CardContent>
