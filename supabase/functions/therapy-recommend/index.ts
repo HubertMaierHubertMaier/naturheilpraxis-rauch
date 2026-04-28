@@ -549,7 +549,10 @@ serve(async (req) => {
     const pinnedEntries = [
       ...manualPinned,
       ...symptomPinnedEntries.filter((s) => !manualPinned.some((m) => sameEntry(m, s))),
-      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => sameEntry(m, a))),
+      ...autoPinnedFromStuhl.filter((a) =>
+        !manualPinned.some((m) => sameEntry(m, a)) &&
+        !symptomPinnedEntries.some((s) => sameEntry(s, a))
+      ),
       ...boostEntries.filter(
         (b) =>
           !manualPinned.some((m) => sameEntry(m, b)) &&
@@ -575,12 +578,12 @@ serve(async (req) => {
     if (useMapReduce === true && restPool.length > 0) {
       // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
       mapReduceUsed = true;
-      const aiScores = await scoreEntriesViaAI(restPool, queryText, LOVABLE_API_KEY);
+      const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
 
       // Kombiniere KI-Score (×10 Gewicht) + Wort-Score (Fallback für unbewertete Einträge)
       const wordScored = restPool.map((e) => {
         const haystack = (e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")).toLowerCase();
-        const tokens = tokenizeQuery(queryText);
+          const tokens = tokenizeQuery(scoringQueryText);
         let s = 0;
         for (const tok of tokens) {
           if ((e.title || "").toLowerCase().includes(tok)) s += 10;
@@ -636,17 +639,17 @@ serve(async (req) => {
       console.log(`Map-Reduce ausgewählt: ${restRelevant.length}/${restPool.length} Einträge (${droppedLowRelevance} unter Mindestrelevanz verworfen)`);
     } else {
       // ===== Klassisch: nur Wort-Score-Filter =====
-      const r = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
+      const r = selectRelevantEntriesScored(restPool, scoringQueryText, remainingBudget);
       restRelevant = r.selected;
       restScored = r.scored;
     }
 
-    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], queryText, preferredLines, pinnedTitles);
+    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets);
     const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
     const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
-    const wikiContext = buildContext(relevantEntries, queryText) + vitaplaceContext;
+    const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
