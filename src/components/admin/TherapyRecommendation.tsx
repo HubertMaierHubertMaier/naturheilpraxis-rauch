@@ -683,17 +683,14 @@ export function TherapyRecommendation() {
         )}
         {result && !isStreaming && (
           <>
-            <Button
-              variant="outline"
-              onClick={() =>
-                openPrintRecipe({
-                  parsed: parseTherapyMarkdown(result),
-                  patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
-                })
-              }
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" /> Als Rezept drucken
+            <Button onClick={handlePrintPatient} className="gap-2 bg-primary hover:bg-primary/90">
+              <FileText className="h-4 w-4" /> PDF Patient
+              <Badge variant="secondary" className="ml-1 text-[10px]">{selectedKeys.size} Mittel</Badge>
+            </Button>
+            <Button onClick={handlePrintPraxis} disabled={isLoadingDiagnosen} className="gap-2 bg-amber-600 hover:bg-amber-700 text-white">
+              {isLoadingDiagnosen ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+              PDF Praxis
+              {diagnosen.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{diagnosen.length} Dx</Badge>}
             </Button>
             <Button variant="outline" onClick={handleReset} className="gap-2">
               <RotateCcw className="h-4 w-4" /> Zurücksetzen
@@ -715,7 +712,29 @@ export function TherapyRecommendation() {
             stuhlbefund={stuhlbefund}
           />
           {auditInfo && <WikiAuditCard audit={auditInfo} />}
-      <ParsedResultView result={result} isStreaming={isStreaming} stuhlbefund={stuhlbefund} />
+          {result && !isStreaming && (
+            <Card className="border-primary/30 bg-primary/[0.02]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  📝 Notiz Therapeut <span className="text-xs font-normal text-muted-foreground">(erscheint nur auf Praxis-PDF)</span>
+                </label>
+                <Textarea
+                  value={therapieNotiz}
+                  onChange={(e) => setTherapieNotiz(e.target.value)}
+                  placeholder="Interne Notizen, Beobachtungen, weiterer Behandlungsplan..."
+                  rows={2}
+                />
+              </CardContent>
+            </Card>
+          )}
+          <ParsedResultView
+            result={result}
+            isStreaming={isStreaming}
+            stuhlbefund={stuhlbefund}
+            selectedKeys={selectedKeys}
+            onToggleRemedy={toggleRemedy}
+            onToggleAll={toggleAllInCategory}
+          />
         </div>
       )}
     </div>
