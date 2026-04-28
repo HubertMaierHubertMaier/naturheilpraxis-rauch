@@ -529,9 +529,10 @@ export function TherapyRecommendation() {
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
-              checked={useMapReduce}
-              onChange={(e) => setUseMapReduce(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-blue-600"
+              checked={true}
+              readOnly
+              disabled
+              className="mt-1 h-4 w-4 accent-blue-600 disabled:opacity-80"
             />
             <div className="flex-1">
               <div className="font-medium text-sm flex items-center gap-2">
@@ -539,10 +540,10 @@ export function TherapyRecommendation() {
                 <Badge variant="outline" className="text-[10px] h-4">Experimentell</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                <strong>AN:</strong> Stufe 1 = ein günstiges KI-Modell bewertet ALLE Einträge in Batches auf Relevanz.
+                <strong>VERBINDLICH AN:</strong> Stufe 1 = ein günstiges KI-Modell bewertet ALLE Einträge in Batches auf Relevanz.
                 Stufe 2 = die Top-{35} kommen in Volltext an die finale Empfehlungs-KI.
                 <br />
-                <strong>AUS:</strong> Schnelle Wort-Treffer-Filterung nur für Ausnahmefälle; kann Symptom-/Mittel-Einträge übersehen.
+                Die schnelle Wort-Treffer-Filterung ist deaktiviert, weil sie Symptom-/Mittel-Einträge übersehen kann.
                 <br />
                 ⏱️ <strong>Dauer:</strong> 30–60 Sek. statt 10 Sek. &nbsp;|&nbsp; 💰 ~1–2 Cent extra pro Empfehlung
               </p>
