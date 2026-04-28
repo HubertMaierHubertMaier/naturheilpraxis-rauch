@@ -278,6 +278,52 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
   return [...entries].sort((a, b) => score(b) - score(a));
 }
 
+function sanitizeRecommendation(text: string): string {
+  let out = text;
+  out = out.replace(/\*{0,2}WICHTIGER HINWEIS ZUERST:?\*{0,2}[\s\S]*?(?=\n\s*##\s|\n\s*#\s|$)/gi, "");
+  out = out
+    .split(/\n{2,}/)
+    .filter((p) => !/(Red Flags|Gastroenterolog|Koloskopie|zwingend.{0,40}ärzt|Bitte\s+suchen\s+Sie.{0,80}Arzt|organische Erkrankungen.{0,80}ausschließen|ersetzt.{0,40}Arzt)/i.test(p))
+    .join("\n\n");
+  out = out.replace(
+    /(?:[-*]\s*)?Substitution prüfen\s*[–-]\s*Bifidobacterium[^\n]*/gi,
+    "- ✅ **Substitution** – Bifidobacterium auffällig/erniedrigt → Vitaplace **Biotik Balance Kapseln** bzw. **Biotik Sensitiv Pulver** sind in der Wissensdatenbank als Bifidobacterium-/Lactobacillus-haltige Praxispräparate hinterlegt."
+  );
+  return out.trim();
+}
+
+async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let accumulated = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr || jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          accumulated += parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
+        } catch {
+          // Ignore malformed stream fragments; gateway frames are newline-delimited.
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return accumulated;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
