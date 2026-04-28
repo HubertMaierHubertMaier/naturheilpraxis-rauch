@@ -327,14 +327,22 @@ serve(async (req) => {
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
     // WICHTIG: NICHT die gesamte Kategorie "Labordiagnostik" matchen, sonst werden alle
     // Blutdiagnostik-Einträge (HbA1c, TSH, Hormone …) fälschlich mitgezogen.
+    // Mikrobiom-/Stuhl-Stichworte: prüft Titel/Kategorie/Tags UND Content
+    // (Probiotika-Produkte listen Stämme oft nur im Content, nicht in Tags – z.B. Vitaplace Biotik Balance)
+    const STUHL_REGEX = /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|enterococcus|escherichia|klebsiella|alpha-?1-?antitrypsin|probiotik|präbiotik|praebiotik|symbiose|darmsanier|darmaufbau/i;
     const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
       ? filteredByCategory.filter((e) => {
-          const hay = (e.category + " " + e.title + " " + (e.tags || []).join(" ")).toLowerCase();
-          return /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|alpha-?1-?antitrypsin/i.test(hay);
+          const meta = (e.category + " " + e.title + " " + (e.tags || []).join(" ")).toLowerCase();
+          if (STUHL_REGEX.test(meta)) return true;
+          // Zusätzlich: Content prüfen, aber NUR bei klaren Mikrobiom-/Probiotika-Treffern,
+          // damit nicht zufällige Erwähnungen alles aufblähen.
+          const content = (e.content || "").toLowerCase();
+          return /probiotik|präbiotik|praebiotik/.test(content) &&
+            /bifidobacterium|lactobacillus|akkermansia|faecalibacterium|enterococcus|escherichia coli/.test(content);
         })
       : [];
     if (autoPinnedFromStuhl.length > 0) {
-      console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund`);
+      console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund (inkl. Content-Treffer)`);
     }
 
     // Force-include all pinned wiki entries (manual + auto + boost-folders)
