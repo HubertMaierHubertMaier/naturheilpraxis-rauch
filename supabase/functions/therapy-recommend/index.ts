@@ -676,6 +676,7 @@ Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diese
 Prüfe systematisch und gib pro Lücke EINE Zeile aus, beginnend mit \`- \`:
 
 1. **Substitutions-Lücken (Mikrobiom/Stuhl):** Für jedes im Stuhlbefund als "erniedrigt/fehlend" markierte Bakterium (z.B. Akkermansia muciniphila, Faecalibacterium prausnitzii, Bifidobacterium longum, Lactobacillus rhamnosus, E. coli, Enterokokken) prüfe, ob in der Wissensdatenbank ein konkretes Substitutions-Präparat (Probiotikum mit genau diesem Stamm oder gezieltes Präbiotikum) hinterlegt ist. Wenn nein → Lücke melden.
+   - SONDERREGEL: Für **Bifidobacterium** und **Lactobacillus** sind **Vitaplace Biotik Balance Kapseln** und **Vitaplace Biotik Sensitiv Pulver** vorhandene Substitutionspräparate. Hier niemals "keine klare Substitution" melden, wenn einer dieser Vitaplace-Einträge im Kontext steht.
 2. **Ursachen-Lücken:** Für jedes auffällige Pathogen / jeden auffälligen Marker (zu viel ODER zu wenig) prüfe, ob in der Wiki erklärt ist, WARUM dieser Wert verschoben sein kann. Wenn keine Ursachen-Hypothese im Wiki vorhanden → Lücke melden.
 3. **Pathogen-Mittel-Lücken:** Für jedes genannte Pathogen prüfe, ob mindestens ein wirksames Mittel in der Wiki hinterlegt ist. Wenn nein → Lücke melden.
 4. **Referenzwert-Lücken / Dosierungs-Lücken** sammeln.
