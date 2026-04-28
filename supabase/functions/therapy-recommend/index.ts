@@ -384,6 +384,64 @@ function sanitizeRecommendation(text: string): string {
   return out.trim();
 }
 
+type ForcedRemedy = { group: string; line: string };
+
+function hasWikiTitle(entries: WikiEntry[], title: string): boolean {
+  return entries.some((e) => (e.title || "").toLowerCase() === title.toLowerCase());
+}
+
+function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): string {
+  const query = queryText.toLowerCase();
+  const has = (re: RegExp) => re.test(query);
+  const add = (items: ForcedRemedy[], title: string, group: string, line: string) => {
+    if (hasWikiTitle(entries, title) && !items.some((i) => i.line.includes(`**${title}`) || i.line.includes(`**${title} (`))) {
+      items.push({ group, line });
+    }
+  };
+
+  const items: ForcedRemedy[] = [];
+  const microbiome = has(/stuhl|mikrobiom|darmflora|bifido|lacto|enterococcus|escherichia|ph\s*5|pH|candida|geotrichum|dysbio|gärung|gaerung|probiotik|präbiotik|praebiotik/i);
+  const digestive = has(/bläh|blaeh|druck|spannung|aufsto|reflux|dyspeps|gastro|verdau|krampf|kolik|verstopf|durchfall|entleerung|bauch/i);
+  const weight = has(/appetit|gewichtsverlust|gewichtsabnahme|abmager|untergewicht|kachex/i);
+  const fatigue = has(/erschöpf|erschoepf|müde|mued|schwäche|schwaeche|energie|kraft|lebensqualität|lebensqualitaet/i);
+  const psyche = has(/psyche|depress|angst|unruhe|rückzug|rueckzug|sozial|isolation|belastung/i);
+  const sleep = has(/schlaf|insom|nacht|regeneration/i);
+
+  if (microbiome) {
+    add(items, "Biotik Balance Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Balance Kapseln (Vitaplace)** | abends 2 Kapseln | oral, abends | 8–12 Wochen, Verlauf prüfen | 🔴 Essentiell | laut Bezug | Wiki: enthält Bifidobacterium bifidum/infantis/lactis/longum, Lactobacillus-Stämme, Inulin und resistente Stärke – daher KEINE Bifidobacterium-Substitutionslücke.");
+    add(items, "Biotik Sensitiv Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Sensitiv Pulver (Vitaplace)** | einschleichen: 1 gestr. Dosierlöffel, innerhalb 10 Tagen auf 3 Dosierlöffel steigern | morgens vor einer Mahlzeit in kalter/lauwarmer Flüssigkeit | 8–12 Wochen | 🟡 Empfohlen | laut Bezug | Wiki: Bifidobacterium infantis/longum plus Lactobacillus rhamnosus/gasseri/salivarius/reuteri, besonders bei empfindlichem/histaminrelevantem Darmaufbau.");
+    add(items, "DARM + LEBER Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **DARM + LEBER Pulver (Vitaplace)** | mit ¼ Messlöffel beginnen, über 1 Woche auf 1 Messlöffel täglich steigern | in 200 ml Wasser, vormittags | ca. 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Akazienfaser und resistente Stärke fördern Butyrat-bildende/mukonutritive Keime und unterstützen Darmschleimhaut plus Leberentgiftung.");
+  }
+  if (digestive) {
+    add(items, "Glutamin & Fenchel Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Glutamin & Fenchel Kapseln (Vitaplace)** | 2× täglich 1 Kapsel (1–0–1) | oral | 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Fenchel karminativ bei Blähungen/Flatulenz, L-Glutamin als Repair-Baustein der Darmschleimhaut.");
+    add(items, "Vitaplace Komplex BLAE", "### ⚕️ Homöopathie & Komplexmittel", "- **Vitaplace Komplex BLAE** | 5× täglich 10 Globuli | oral | symptomorientiert, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: explizit gegen Blähungen hinterlegt; passt zu Druck-/Spannungsgefühl und Gärungsbeschwerden.");
+  }
+  if (sleep) {
+    add(items, "Night Relax Kapseln", "### 🧠 Schlaf, Nerven & Regeneration", "- **Night Relax Kapseln (Vitaplace)** | 1 rote + 2 transparente Kapseln | abends ½–1 Stunde vor dem Schlafen mit Flüssigkeit | 4–8 Wochen, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: für Schlaf, Regeneration bei Anspannung/Überlastung/Stress mit Melatonin, Tryptophan, Magnesium, Lavendel, Passionsblume.");
+  }
+
+  if (weight && hasWikiTitle(entries, "Therapeutischer Index: Sonstige")) {
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Hepeel / Arsuraneel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: Hauptmittel bei Abmagerung; passend bei Gewichtsverlust/Appetitverlust." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **China-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Sonstige: Ergänzungsmittel bei Abmagerung und Schwächezuständen." });
+  }
+  if (digestive && hasWikiTitle(entries, "Therapeutischer Index: Verdauung")) {
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Nux vomica-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Verdauung: Haupt-/Ergänzungsmittel bei Blähungen, Darmstauung, Dyspepsie und Verdauungsbeschwerden." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Gastricumeel / Hepeel / Spascupreel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: für Dyspepsie, Hyperazidität, Blähungen, Krämpfe/Koliken und Leber-Galle-Achse." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Mucosa compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Repair-Phase prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung/Sonstige: Phasenmittel bei chronischer Schleimhaut-/Verdauungsbelastung." });
+  }
+  if (fatigue && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Psyche: Hauptmittel bei Erschöpfung/Neurasthenie." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum / Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche/Sonstige: Phasenmittel bei Müdigkeit, chronischer Schwäche und Energiestoffwechsel-Belastung." });
+  }
+  if (psyche && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel / Ignatia-Homaccord / Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei reaktiver depressiver Stimmung, emotionaler Belastung, Rückzug und nervöser Erschöpfung." });
+  }
+
+  if (items.length === 0) return "";
+  const groups = Array.from(new Set(items.map((i) => i.group)));
+  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
+}
+
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
   const directives = getActiveSymptomTargets(queryText).map(
     (target) => `- ${target.label}: Prüfe gezielt ${target.wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`
