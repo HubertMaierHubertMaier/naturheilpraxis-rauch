@@ -38,16 +38,15 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
       return;
     }
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("therapy_sessions")
-      .select("*")
-      .eq("pseudonym_id", pseudonymId.trim())
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+      body: { pseudonym_id: pseudonymId.trim() },
+    });
 
     if (error) {
       toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
+      setSessions([]);
     } else {
-      setSessions(data || []);
+      setSessions((data as any)?.sessions ?? []);
     }
     setLoading(false);
   }, [pseudonymId, toast]);
