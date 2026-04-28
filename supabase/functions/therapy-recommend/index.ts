@@ -973,7 +973,7 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 ### 🩺 Apparative & klinische Therapien
 (Infusionen, Ozon, IHHT, Colon-Hydrotherapie, Frequenztherapie, Bioresonanz)
 
-INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit ` | ` (Pipe-Zeichen) und beginne JEDE Mittel-Zeile mit `- ` (Bindestrich + Leerzeichen):
+INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit Pipe-Zeichen " | " und beginne JEDE Mittel-Zeile mit Bindestrich + Leerzeichen:
 
 - **Mittelname** | Dosierung | Anwendung/Einnahme | Dauer | Priorität | Kosten/Monat | Begründung
 
