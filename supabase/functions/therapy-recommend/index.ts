@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -152,6 +152,57 @@ function tokenizeQuery(text: string): string[] {
       .split(/\s+/)
       .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
   ));
+}
+
+type SymptomTarget = {
+  label: string;
+  terms: RegExp;
+  wikiTitles: string[];
+  keywords: string[];
+};
+
+const SYMPTOM_TARGETS: SymptomTarget[] = [
+  {
+    label: "Erschöpfung/Fatigue/Schwäche",
+    terms: /erschöpf|fatigue|müde|mued|schwäche|schwaeche|krafter|antrieb|lebensqualität|lebensqualitaet|cfids|cfs/i,
+    wikiTitles: ["Therapeutischer Index: Immunsystem", "Therapeutischer Index: Psyche", "Therapeutischer Index: Sonstige"],
+    keywords: ["erschöpfung", "fatigue", "cfids", "cfs", "müdigkeit", "schwäche", "aletris-heel", "tonico-heel", "coenzyme compositum", "ubichinon compositum"],
+  },
+  {
+    label: "Appetit/Gewicht/Abmagerung",
+    terms: /appetit|gewichtsverlust|abmager|kachex|untergewicht|gewichtsabnahme/i,
+    wikiTitles: ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung", "Therapeutischer Index: Endokrinologie"],
+    keywords: ["appetit", "gewichtsverlust", "gewichtsabnahme", "abmagerung", "kachexie", "untergewicht", "hepeel", "arsuraneel", "china-homaccord", "nux vomica-homaccord"],
+  },
+  {
+    label: "Psyche/Angst/Depression/Isolation",
+    terms: /angst|depress|psyche|nerv|isolation|sozial|stimmung|konzentration|rückzug|rueckzug/i,
+    wikiTitles: ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"],
+    keywords: ["psyche", "depression", "emotionale belastungen", "angst", "nervoheel", "neuro-heel", "tonico-heel", "ignatia-homaccord", "cerebrum compositum"],
+  },
+  {
+    label: "Schmerz/Bewegungsapparat",
+    terms: /gelenk|muskel|schmerz|rücken|ruecken|neuralg|arthr|fibromy/i,
+    wikiTitles: ["Therapeutischer Index: Bewegungsapparat", "Therapeutischer Index: Neurologie"],
+    keywords: ["schmerz", "gelenk", "muskel", "neuralgie", "traumeel", "discus compositum", "zeel", "colocynthis"],
+  },
+  {
+    label: "Haut/Allergie/Schleimhaut",
+    terms: /haut|ekzem|juck|allerg|schleimhaut|rhinitis|hno|atemweg/i,
+    wikiTitles: ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"],
+    keywords: ["haut", "ekzem", "allergie", "schleimhaut", "rhinitis", "mucosa compositum", "lymphomyosot", "galium-heel"],
+  },
+];
+
+function getActiveSymptomTargets(queryText: string): SymptomTarget[] {
+  return SYMPTOM_TARGETS.filter((target) => target.terms.test(queryText));
+}
+
+function expandQueryForScoring(queryText: string): string {
+  const extra = getActiveSymptomTargets(queryText)
+    .flatMap((target) => [...target.wikiTitles, ...target.keywords])
+    .join(" ");
+  return [queryText, extra].filter(Boolean).join(" ");
 }
 
 // Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
@@ -280,7 +331,7 @@ function extractProbioticHighlights(e: WikiEntry): string {
   return Array.from(new Set(matches.map((m) => m.trim().replace(/\s+/g, " ")))).slice(0, 14).join(", ");
 }
 
-function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[]): WikiEntry[] {
+function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[], symptomTargets: SymptomTarget[] = []): WikiEntry[] {
   const query = queryText.toLowerCase();
   const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
   const preferred = preferredLines.map((l) => l.toLowerCase());
@@ -289,6 +340,11 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
     const text = entryText(e);
     let s = 0;
     if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    for (const target of symptomTargets) {
+      if (target.wikiTitles.some((title) => title.toLowerCase() === (e.title || "").toLowerCase())) s += 80_000;
+      if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase()))) s += 60_000;
+    }
+    if (/homotoxikologie/i.test(e.category || "") && /therapeutischer\s+index/i.test(e.title || "")) s += 70_000;
     if (isVitaplaceProbiotic(e)) s += 50_000;
     for (const line of preferred) if (line && text.includes(line)) s += 5_000;
     for (const term of probioticTerms) {
@@ -316,18 +372,11 @@ function sanitizeRecommendation(text: string): string {
 }
 
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
-  const q = queryText.toLowerCase();
-  const directives: string[] = [];
-  const add = (label: string, terms: RegExp, wikiTitles: string[]) => {
-    if (terms.test(q)) directives.push(`- ${label}: Prüfe gezielt ${wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`);
-  };
-  add("Erschöpfung/Fatigue/Schwäche", /erschöpf|fatigue|müde|mued|schwäche|krafter|antrieb|lebensqualität|lebensqualitaet/, ["Therapeutischer Index: Immunsystem", "Therapeutischer Index: Psyche", "Therapeutischer Index: Sonstige"]);
-  add("Appetit/Gewicht/Abmagerung", /appetit|gewichtsverlust|abmager|kachex|untergewicht/, ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung"]);
-  add("Psyche/Angst/Depression/Isolation", /angst|depress|psyche|nerv|isolation|sozial|stimmung|konzentration/, ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"]);
-  add("Schmerz/Bewegungsapparat", /gelenk|muskel|schmerz|rücken|ruecken|neuralg|arthr|fibromy/, ["Therapeutischer Index: Bewegungsapparat", "Therapeutischer Index: Neurologie"]);
-  add("Haut/Allergie/Schleimhaut", /haut|ekzem|juck|allerg|schleimhaut|rhinitis|hno|atemweg/, ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"]);
-  if (!hasHomotContext || directives.length === 0) return "";
-  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (ZWINGEND):\n${directives.join("\n")}\n- Wenn diese Einträge im Wiki-Kontext stehen, MUSST du mindestens 1–3 passende Heel-/Homotoxikologie-Mittel zusätzlich zur Darmbehandlung nennen, mit kurzer Symptom-Begründung.\n- Darmaufbau darf Symptome nicht vollständig überdecken; erst Darmachse, dann organspezifische/symptomatische Mittel ergänzen.`;
+  const directives = getActiveSymptomTargets(queryText).map(
+    (target) => `- ${target.label}: Prüfe gezielt ${target.wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`
+  );
+  if (!hasHomotoxContext || directives.length === 0) return "";
+  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (ZWINGEND):\n${directives.join("\n")}\n- Diese Symptomachsen sind NICHT optional: Nenne mindestens 2 passende Heel-/Homotoxikologie-Mittel zusätzlich zur Darmbehandlung, sofern sie im Wiki-Kontext stehen.\n- Darmaufbau darf Symptome nicht vollständig überdecken; Labor/Stuhl, Symptome und gewählte Schwerpunkt-Ordner müssen sichtbar getrennt ausgewertet werden.`;
 }
 
 async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -453,7 +502,9 @@ serve(async (req) => {
     const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
-    const hasHomotoxContext = selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
+    const activeSymptomTargets = getActiveSymptomTargets(queryText);
+    const scoringQueryText = expandQueryForScoring(queryText);
+    const hasHomotoxContext = activeSymptomTargets.length > 0 || selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
     const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
 
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
@@ -476,6 +527,21 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund (inkl. Content-Treffer)`);
     }
 
+    // ===== AUTO-PINNING: Symptomachsen erzwingen, damit Labor/Stuhl die klinischen Symptome nicht verdrängt =====
+    const symptomPinnedEntries: WikiEntry[] = activeSymptomTargets.length === 0
+      ? []
+      : allEntries.filter((e) => {
+          const title = (e.title || "").toLowerCase();
+          const text = entryText(e);
+          return activeSymptomTargets.some((target) =>
+            target.wikiTitles.some((t) => t.toLowerCase() === title) ||
+            (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase())))
+          );
+        });
+    if (symptomPinnedEntries.length > 0) {
+      console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
+    }
+
     // Force-include all pinned wiki entries (manual + auto + boost-folders)
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
@@ -483,10 +549,15 @@ serve(async (req) => {
     const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
     const pinnedEntries = [
       ...manualPinned,
-      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => sameEntry(m, a))),
+      ...symptomPinnedEntries.filter((s) => !manualPinned.some((m) => sameEntry(m, s))),
+      ...autoPinnedFromStuhl.filter((a) =>
+        !manualPinned.some((m) => sameEntry(m, a)) &&
+        !symptomPinnedEntries.some((s) => sameEntry(s, a))
+      ),
       ...boostEntries.filter(
         (b) =>
           !manualPinned.some((m) => sameEntry(m, b)) &&
+          !symptomPinnedEntries.some((s) => sameEntry(s, b)) &&
           !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
       ),
     ];
@@ -508,12 +579,12 @@ serve(async (req) => {
     if (useMapReduce === true && restPool.length > 0) {
       // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
       mapReduceUsed = true;
-      const aiScores = await scoreEntriesViaAI(restPool, queryText, LOVABLE_API_KEY);
+      const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
 
       // Kombiniere KI-Score (×10 Gewicht) + Wort-Score (Fallback für unbewertete Einträge)
       const wordScored = restPool.map((e) => {
         const haystack = (e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")).toLowerCase();
-        const tokens = tokenizeQuery(queryText);
+          const tokens = tokenizeQuery(scoringQueryText);
         let s = 0;
         for (const tok of tokens) {
           if ((e.title || "").toLowerCase().includes(tok)) s += 10;
@@ -569,27 +640,28 @@ serve(async (req) => {
       console.log(`Map-Reduce ausgewählt: ${restRelevant.length}/${restPool.length} Einträge (${droppedLowRelevance} unter Mindestrelevanz verworfen)`);
     } else {
       // ===== Klassisch: nur Wort-Score-Filter =====
-      const r = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
+      const r = selectRelevantEntriesScored(restPool, scoringQueryText, remainingBudget);
       restRelevant = r.selected;
       restScored = r.scored;
     }
 
-    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], queryText, preferredLines, pinnedTitles);
+    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets);
     const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
     const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
-    const wikiContext = buildContext(relevantEntries, queryText) + vitaplaceContext;
+    const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
-      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
+      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
-      `preferredLines=[${preferredLines.join(",")}]`
+      `preferredLines=[${preferredLines.join(",")}], symptomAxes=[${activeSymptomTargets.map((t) => t.label).join(",")}]`
     );
 
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
     const reasonFor = (e: WikiEntry) => {
       if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
+      if (symptomPinnedEntries.some((s) => sameEntry(s, e))) return "🧭 Auto-Pin (Symptome/Homotoxikologie)";
       if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
       if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
       return "📌 Pinned";
@@ -624,6 +696,7 @@ serve(async (req) => {
         cacheHit,
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
+        symptomAxes: activeSymptomTargets.map((t) => t.label),
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
@@ -668,6 +741,13 @@ ${wikiContext}
 
 DEINE AUFGABE:
 Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
+
+ZWINGENDE BALANCE-REGEL:
+- Teile deine interne Auswertung in drei gleichwertige Spuren: (A) Pathogene/Belastungen, (B) Symptome/klinisches Bild, (C) Labor/Stuhl.
+- Wenn in der Wissensdatenbank therapeutische Index-Einträge, Homotoxikologie/Heel-Einträge oder symptombezogene Mittel stehen, MÜSSEN daraus konkrete Mittelzeilen entstehen – nicht nur Analyse-Fließtext.
+- Bei Symptomtreffern wie Erschöpfung, Appetitlosigkeit, Gewichtsverlust, Schwäche, Psyche/Isolation oder Verdauungsbeschwerden: Extrahiere die dort genannten **Hauptmittel**, **Ergänzungsmittel** und ggf. **Phasenmittel** aus dem Wiki-Kontext und ordne sie unter "Homöopathie & Komplexmittel" ein.
+- Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
+- Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
 
 ⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
 ${preferredLines.length > 0

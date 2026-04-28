@@ -36,7 +36,7 @@ export function TherapyRecommendation() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
-  const [useMapReduce, setUseMapReduce] = useState(false);
+  const [useMapReduce, setUseMapReduce] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
@@ -73,7 +73,7 @@ export function TherapyRecommendation() {
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
-    setUseMapReduce(Boolean(d.useMapReduce));
+    setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
@@ -277,7 +277,7 @@ export function TherapyRecommendation() {
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
-    setUseMapReduce(false);
+    setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
   };
@@ -542,7 +542,7 @@ export function TherapyRecommendation() {
                 <strong>AN:</strong> Stufe 1 = ein günstiges KI-Modell bewertet ALLE Einträge in Batches auf Relevanz.
                 Stufe 2 = die Top-{35} kommen in Volltext an die finale Empfehlungs-KI.
                 <br />
-                <strong>AUS</strong> (Standard): Schnelle Wort-Treffer-Filterung (nur ~10 Einträge).
+                <strong>AUS:</strong> Schnelle Wort-Treffer-Filterung nur für Ausnahmefälle; kann Symptom-/Mittel-Einträge übersehen.
                 <br />
                 ⏱️ <strong>Dauer:</strong> 30–60 Sek. statt 10 Sek. &nbsp;|&nbsp; 💰 ~1–2 Cent extra pro Empfehlung
               </p>
