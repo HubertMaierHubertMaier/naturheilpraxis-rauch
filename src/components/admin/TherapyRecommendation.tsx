@@ -183,7 +183,13 @@ export function TherapyRecommendation() {
             const parsed = JSON.parse(jsonStr);
             // Audit-Frame (zuerst gesendet vor dem KI-Stream)
             if (parsed && parsed.__audit__) {
-              setAuditInfo(parsed.__audit__ as WikiAuditInfo);
+              const audit = parsed.__audit__ as WikiAuditInfo;
+              setAuditInfo(audit);
+              const usedTitles = (audit.used || []).map((e) => e.title.toLowerCase());
+              const homotoxExpected = selectedCategories.some((c) => /homotoxikologie/i.test(c)) || bevorzugteLinie.some((l) => /heel|homotox/i.test(l));
+              if (homotoxExpected && !usedTitles.some((t) => t.includes("therapeutischer index") || t.includes("homotox"))) {
+                toast({ title: "Hinweis", description: "Homotoxikologie/Heel wurde gewählt, erscheint aber nicht im gelesenen Wiki-Kontext – bitte Audit öffnen.", variant: "destructive" });
+              }
               continue;
             }
             const content = parsed.choices?.[0]?.delta?.content;
