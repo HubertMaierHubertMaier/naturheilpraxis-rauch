@@ -756,6 +756,167 @@ export function TherapyRecommendation() {
               </CardContent>
             </Card>
           )}
+
+          {/* 🔄 Nachschlag-Modus: KI-gestützte Erweiterung mit Kontext-Erhalt */}
+          {result && !isStreaming && (
+            <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/10">
+              <CardContent className="pt-4 pb-4 space-y-3">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <RefreshCw className="h-4 w-4 text-amber-600" />
+                  Nachschlag – KI-Empfehlung erweitern
+                  <span className="text-xs font-normal text-muted-foreground">(neue Symptome / Laborwerte / Befunde → KI ergänzt passende Wiki-Mittel)</span>
+                </label>
+                <Textarea
+                  value={ergaenzung}
+                  onChange={(e) => setErgaenzung(e.target.value)}
+                  placeholder="z.B. „Patient erinnert sich: nachts Wadenkrämpfe + Magnesium-Spiegel im Labor 0,68 mmol/l (niedrig)"  oder  „Stuhlbefund nachgereicht: Akkermansia stark erniedrigt"…"
+                  rows={3}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    Bestehende Mittel & Häkchen bleiben erhalten. Neue Mittel werden mit 🆕 markiert und automatisch angehakt.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      const txt = ergaenzung.trim();
+                      if (!txt) {
+                        toast({ title: "Leere Ergänzung", description: "Bitte Zusatz-Info eintragen.", variant: "destructive" });
+                        return;
+                      }
+                      handleSubmit({ nachschlag: txt, previousResult: result });
+                      setErgaenzung("");
+                    }}
+                    disabled={isStreaming || !ergaenzung.trim()}
+                    className="gap-2 bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap"
+                    size="sm"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Empfehlung erweitern
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ➕ Manuelle Diagnosen (kommen aufs Praxis-PDF) */}
+          {result && !isStreaming && (
+            <Card className="border-secondary/40 bg-secondary/[0.04]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  🩺 Eigene Diagnosen ergänzen <span className="text-xs font-normal text-muted-foreground">(nur Praxis-PDF, kombiniert mit KI-Diagnosen)</span>
+                </label>
+                {manualDiagnosen.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Diagnosen ergänzt.</p>
+                )}
+                <div className="space-y-2">
+                  {manualDiagnosen.map((d, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                      <Input
+                        className="col-span-2 font-mono text-sm"
+                        placeholder="ICD-10 (opt.)"
+                        value={d.icd10 || ""}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, icd10: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-4"
+                        placeholder="Diagnose / Verdachtsdiagnose"
+                        value={d.diagnose}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, diagnose: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-5"
+                        placeholder="Begründung (optional)"
+                        value={d.begruendung || ""}
+                        onChange={(e) => setManualDiagnosen((arr) => arr.map((x, i) => i === idx ? { ...x, begruendung: e.target.value } : x))}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="col-span-1 h-9 w-9 text-destructive"
+                        onClick={() => setManualDiagnosen((arr) => arr.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setManualDiagnosen((arr) => [...arr, { diagnose: "", icd10: "", begruendung: "" }])}
+                >
+                  <Plus className="h-4 w-4" /> Diagnose hinzufügen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ➕ Manuelle Mittel (kommen auf BEIDE PDFs sofern angehakt im Patienten-PDF) */}
+          {result && !isStreaming && (
+            <Card className="border-accent/30 bg-accent/[0.03]">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  💊 Eigene Mittel ergänzen <span className="text-xs font-normal text-muted-foreground">(erscheinen auf beiden PDFs als „Manuell ergänzt")</span>
+                </label>
+                {manualMittel.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt.</p>
+                )}
+                <div className="space-y-2">
+                  {manualMittel.map((m, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+                      <Input
+                        className="col-span-3"
+                        placeholder="Mittelname"
+                        value={m.name}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, name: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-2 font-mono text-sm"
+                        placeholder="Dosierung"
+                        value={m.dosage}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, dosage: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-2"
+                        placeholder="Anwendung"
+                        value={m.application}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, application: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-1"
+                        placeholder="Dauer"
+                        value={m.duration}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, duration: e.target.value } : x))}
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="Begründung / Indikation"
+                        value={m.reason}
+                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, reason: e.target.value } : x))}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="col-span-1 h-9 w-9 text-destructive"
+                        onClick={() => setManualMittel((arr) => arr.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setManualMittel((arr) => [...arr, { name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" }])}
+                >
+                  <Plus className="h-4 w-4" /> Mittel hinzufügen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           <ParsedResultView
             result={result}
             isStreaming={isStreaming}
