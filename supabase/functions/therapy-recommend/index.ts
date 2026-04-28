@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -217,10 +217,33 @@ function selectRelevantEntriesScored(
   return { selected, scored };
 }
 
-function buildContext(entries: WikiEntry[]): string {
+function buildEntryContent(entry: WikiEntry, queryText: string): string {
+  const content = entry.content || "";
+  const tokens = tokenizeQuery(queryText);
+  const lines = content.split("\n");
+  const picked = new Set<number>();
+
+  lines.forEach((line, idx) => {
+    const normalized = line.toLowerCase();
+    const isHeading = /^#{2,4}\s/.test(line);
+    const hit = tokens.some((tok) => normalized.includes(tok));
+    if (hit || (isHeading && tokens.some((tok) => normalized.includes(tok)))) {
+      for (let i = Math.max(0, idx - 2); i <= Math.min(lines.length - 1, idx + 8); i++) picked.add(i);
+    }
+  });
+
+  const snippets = Array.from(picked).sort((a, b) => a - b).map((i) => lines[i]).join("\n").trim();
+  const head = content.slice(0, Math.min(MAX_ENTRY_CHARS, snippets ? 1200 : MAX_ENTRY_CHARS));
+  const combined = snippets && !head.includes(snippets.slice(0, 120))
+    ? `${head}\n\n### Relevante Trefferstellen im Eintrag\n${snippets}`
+    : head;
+  return combined.slice(0, MAX_ENTRY_CHARS);
+}
+
+function buildContext(entries: WikiEntry[], queryText: string): string {
   let context = entries
     .map((e) => {
-      const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
+      const content = buildEntryContent(e, queryText);
       return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
     })
     .join("\n\n---\n\n");
