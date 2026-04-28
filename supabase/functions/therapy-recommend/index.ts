@@ -877,25 +877,18 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
+    const sanitizedText = sanitizeRecommendation(await readAiStreamText(response.body!));
+
     // Prepend audit info as the FIRST SSE-Frame so the client can show
-    // exactly which wiki entries the AI saw. Then forward the AI stream.
+    // exactly which wiki entries the AI saw. Then send the sanitized result.
     const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
     const encoder = new TextEncoder();
-    const aiStream = response.body!;
     const wrapped = new ReadableStream({
-      async start(controller) {
+      start(controller) {
         controller.enqueue(encoder.encode(auditLine));
-        const reader = aiStream.getReader();
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-        } finally {
-          controller.close();
-          reader.releaseLock();
-        }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sanitizedText } }] })}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
       },
     });
 
