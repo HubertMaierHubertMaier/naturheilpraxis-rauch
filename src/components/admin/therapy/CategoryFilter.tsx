@@ -94,13 +94,12 @@ export function CategoryFilter({ selected, onChange }: Props) {
   const isTopSelected = (name: string) => selected.includes(name);
   const isSubSelected = (fullPath: string) => selected.includes(fullPath);
 
-  const toggleTop = (name: string, subs: SubNode[]) => {
+  const toggleTop = (name: string, _subs: SubNode[]) => {
     if (isTopSelected(name)) {
       onChange(selected.filter((c) => c !== name));
     } else {
-      // Top auswählen → einzelne Subs dieser Gruppe entfernen (redundant)
-      const subPaths = new Set(subs.map((s) => s.fullPath));
-      onChange([...selected.filter((c) => !subPaths.has(c)), name]);
+      // Boost-Modell: Top und Subs dürfen unabhängig markiert werden
+      onChange([...selected, name]);
     }
   };
 
