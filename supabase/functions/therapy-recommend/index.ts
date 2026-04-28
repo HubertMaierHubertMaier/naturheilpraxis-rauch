@@ -561,6 +561,7 @@ serve(async (req) => {
 
 🚫 ABSOLUT VERBOTENE FORMULIERUNGEN (kritisch!):
 - "Bitte ärztlich abklären lassen" / "zwingend ärztliche Abklärung" / "Besuch beim Arzt erforderlich"
+- "Wichtiger Hinweis zuerst" / "Red Flags" / "Gastroenterologe" / "organische Erkrankungen sicher ausschließen" / "Koloskopie"
 - "professionelle Hilfe holen" (impliziert, der Heilpraktiker sei nicht professionell — FALSCH)
 - "ersetzt nicht den Arzt" / "konsultieren Sie einen Arzt"
 - Jede Formulierung, die den Heilpraktiker als nachgeordnet, weniger qualifiziert oder als bloßen "Komplementär-Anbieter" darstellt.
@@ -637,7 +638,8 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
      - Bedeutung: [Wiki-Inhalt, kurz]
      - Therapie: [Wiki-Protokoll, kurz – die konkreten Mittel werden dann strukturiert in den Mittel-Gruppen aufgelistet]
      - Quelle: [Wiki-Quellenangabe]
-   - Übertrage die im Wiki-Eintrag genannten Therapie-Mittel anschließend in die strukturierten Mittel-Gruppen (Hausmittel, Probiotika, Sanum etc.) mit den dort angegebenen Dosierungen.
+    - Übertrage die im Wiki-Eintrag genannten Therapie-Mittel anschließend in die strukturierten Mittel-Gruppen (Hausmittel, Probiotika, Sanum etc.) mit den dort angegebenen Dosierungen.
+    - WICHTIG BEI Bifidobacterium/Lactobacillus-Mangel: Die Vitaplace-Einträge **Biotik Balance Kapseln** und **Biotik Sensitiv Pulver** gelten als vorhandene Substitutionspräparate, wenn sie im Kontext stehen. Dann KEINE Substitutions-Lücke für Bifidobacterium oder Lactobacillus melden, sondern diese Mittel unter "Probiotika, Präbiotika & Darmaufbau" aufführen.
    - Verwende das 4-R-Konzept (Remove – Replace – Reinoculate – Repair) als Strukturhilfe, wenn Leaky-Gut-Marker (Zonulin, alpha-1-AT) oder Entzündungsmarker (Calprotectin) erhöht sind.
 
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
