@@ -96,9 +96,14 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
 
           {!isFull && (
             <div className="text-xs bg-amber-100/60 dark:bg-amber-950/30 border border-amber-300/50 dark:border-amber-900/40 rounded p-2 text-amber-900 dark:text-amber-200">
-              ⚠️ <strong>Hinweis:</strong> Aufgrund des Token-Limits des KI-Gateways konnten nicht alle {audit.afterCategoryFilter} Wiki-Einträge in den Kontext geladen werden.
-              Die {audit.usedCount} relevantesten wurden ausgewählt (per Wort-Treffer-Score). Falls ein wichtiger Eintrag fehlt, kann er via "📌 Pinning" oder
-              spezifische Kategorienfilterung erzwungen werden.
+              {audit.mapReduceUsed ? (
+                <>🚀 <strong>Map-Reduce aktiv:</strong> Eine günstige KI hat ALLE {audit.afterCategoryFilter} Einträge bewertet.
+                Die {audit.usedCount} bestbewerteten kamen in Volltext an die finale Empfehlungs-KI. Die "Nicht gelesen"-Tabelle unten zeigt, welche Einträge die Stufe-1-KI als irrelevant eingestuft hat (mit ihrem Score 0–10).</>
+              ) : (
+                <>⚠️ <strong>Hinweis:</strong> Aufgrund des Token-Limits konnten nicht alle {audit.afterCategoryFilter} Wiki-Einträge in den Kontext geladen werden.
+                Die {audit.usedCount} relevantesten wurden per Wort-Treffer-Score gewählt.
+                <br />💡 <strong>Tipp:</strong> Aktiviere oben den blauen Schalter "🚀 Vollständige KI-Auswertung", damit ALLE Einträge bewertet werden.</>
+              )}
             </div>
           )}
 
