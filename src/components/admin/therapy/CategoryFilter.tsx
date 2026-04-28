@@ -94,22 +94,20 @@ export function CategoryFilter({ selected, onChange }: Props) {
   const isTopSelected = (name: string) => selected.includes(name);
   const isSubSelected = (fullPath: string) => selected.includes(fullPath);
 
-  const toggleTop = (name: string, subs: SubNode[]) => {
+  const toggleTop = (name: string, _subs: SubNode[]) => {
     if (isTopSelected(name)) {
       onChange(selected.filter((c) => c !== name));
     } else {
-      // Top auswählen → einzelne Subs dieser Gruppe entfernen (redundant)
-      const subPaths = new Set(subs.map((s) => s.fullPath));
-      onChange([...selected.filter((c) => !subPaths.has(c)), name]);
+      // Boost-Modell: Top und Subs dürfen unabhängig markiert werden
+      onChange([...selected, name]);
     }
   };
 
-  const toggleSub = (fullPath: string, topName: string) => {
+  const toggleSub = (fullPath: string, _topName: string) => {
     if (isSubSelected(fullPath)) {
       onChange(selected.filter((c) => c !== fullPath));
     } else {
-      // Sub auswählen → falls Top selektiert ist, Top entfernen (sonst doppelt)
-      onChange([...selected.filter((c) => c !== topName), fullPath]);
+      onChange([...selected, fullPath]);
     }
   };
 
@@ -200,19 +198,13 @@ export function CategoryFilter({ selected, onChange }: Props) {
                   )}
                   {top.subs.map((sub) => {
                     const checked = isSubSelected(sub.fullPath);
-                    const disabled = topChecked; // Top überschreibt Subs
                     return (
                       <label
                         key={sub.fullPath}
-                        className={`flex items-center gap-2 px-1.5 py-1 rounded text-sm ${
-                          disabled
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-muted/50 cursor-pointer"
-                        }`}
+                        className="flex items-center gap-2 px-1.5 py-1 rounded text-sm hover:bg-muted/50 cursor-pointer"
                       >
                         <Checkbox
-                          checked={checked || disabled}
-                          disabled={disabled}
+                          checked={checked}
                           onCheckedChange={() => toggleSub(sub.fullPath, top.name)}
                           aria-label={sub.label}
                         />
