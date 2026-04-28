@@ -539,9 +539,11 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel, useMapReduce } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel, useMapReduce, nachschlag, previousResult } = await req.json();
 
-    if (!belastungen && !symptome && !erkrankung) {
+    const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
+
+    if (!belastungen && !symptome && !erkrankung && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
