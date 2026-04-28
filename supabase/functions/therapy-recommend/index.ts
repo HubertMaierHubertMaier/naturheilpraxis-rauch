@@ -331,7 +331,7 @@ function extractProbioticHighlights(e: WikiEntry): string {
   return Array.from(new Set(matches.map((m) => m.trim().replace(/\s+/g, " ")))).slice(0, 14).join(", ");
 }
 
-function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[]): WikiEntry[] {
+function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[], symptomTargets: SymptomTarget[] = []): WikiEntry[] {
   const query = queryText.toLowerCase();
   const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
   const preferred = preferredLines.map((l) => l.toLowerCase());
@@ -340,6 +340,10 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
     const text = entryText(e);
     let s = 0;
     if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    for (const target of symptomTargets) {
+      if (target.wikiTitles.some((title) => title.toLowerCase() === (e.title || "").toLowerCase())) s += 80_000;
+      if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase()))) s += 60_000;
+    }
     if (isVitaplaceProbiotic(e)) s += 50_000;
     for (const line of preferred) if (line && text.includes(line)) s += 5_000;
     for (const term of probioticTerms) {
