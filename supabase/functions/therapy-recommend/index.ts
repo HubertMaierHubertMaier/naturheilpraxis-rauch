@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const FORCE_FULL_WIKI_MAP_REDUCE = true;
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
@@ -174,6 +174,18 @@ const SYMPTOM_TARGETS: SymptomTarget[] = [
     terms: /appetit|gewichtsverlust|abmager|kachex|untergewicht|gewichtsabnahme/i,
     wikiTitles: ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung", "Therapeutischer Index: Endokrinologie"],
     keywords: ["appetit", "gewichtsverlust", "gewichtsabnahme", "abmagerung", "kachexie", "untergewicht", "hepeel", "arsuraneel", "china-homaccord", "nux vomica-homaccord"],
+  },
+  {
+    label: "Verdauung/Druck/Blähung/Reflux",
+    terms: /verdau|darm|stuhl|bläh|blaeh|druck|spannung|aufsto|reflux|g[äa]rung|dysbio|candida|verstopf|durchfall|krampf|kolik|entleerung/i,
+    wikiTitles: ["Therapeutischer Index: Verdauung", "Therapeutischer Index: Sonstige"],
+    keywords: ["verdauung", "dyspepsie", "blähungen", "bauchbeschwerden", "druck", "spannung", "aufstoßen", "nux vomica-homaccord", "gastricumeel", "diarrheel", "hepeel", "spascupreel", "mucosa compositum"],
+  },
+  {
+    label: "Schlaf/Regeneration",
+    terms: /schlaf|insom|regeneration|ruhe|nacht|night relax|melatonin|tryptophan/i,
+    wikiTitles: ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"],
+    keywords: ["schlaf", "regeneration", "night relax", "nervoheel", "neurexan", "tonico-heel", "passionsblume", "lavendel", "melatonin"],
   },
   {
     label: "Psyche/Angst/Depression/Isolation",
