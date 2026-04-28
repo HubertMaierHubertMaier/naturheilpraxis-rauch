@@ -27,7 +27,8 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
+const FORCE_FULL_WIKI_MAP_REDUCE = true;
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -575,8 +576,9 @@ serve(async (req) => {
     let restRelevant: WikiEntry[];
     let restScored: ScoredEntry[];
     let mapReduceUsed = false;
+    const mustUseFullWikiMapReduce = FORCE_FULL_WIKI_MAP_REDUCE || useMapReduce === true;
 
-    if (useMapReduce === true && restPool.length > 0) {
+    if (mustUseFullWikiMapReduce && restPool.length > 0) {
       // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
       mapReduceUsed = true;
       const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
