@@ -283,7 +283,8 @@ export function KnowledgeBaseManager() {
       const children = Object.entries(childMap)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([name, entries]) => ({ name, entries }));
-      groups.push({ name: parent, children });
+      groups.push({ name: parent, children, entries: topLevel[parent] || [] });
+      delete topLevel[parent];
     }
 
     // Add top-level groups
@@ -596,6 +597,11 @@ export function KnowledgeBaseManager() {
                     {hasChildren ? (
                       // Hierarchical: show sub-categories
                       <div className="space-y-2 ml-4 border-l-2 border-muted pl-4">
+                        {(group.entries?.length || 0) > 0 && (
+                          <div className="space-y-2 mb-2">
+                            {group.entries!.map(renderEntry)}
+                          </div>
+                        )}
                         {group.children!.map((child) => {
                           const childKey = `${group.name}>${child.name}`;
                           const isChildExpanded = expandedChildren.has(childKey);
