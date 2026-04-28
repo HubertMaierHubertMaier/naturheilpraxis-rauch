@@ -374,11 +374,27 @@ serve(async (req) => {
       });
       wordScored.sort((a, b) => b.score - a.score);
 
-      // Nimm Top-N nach Score, solange Zeichenbudget reicht
+      // Nimm Top-N nach Score, solange Zeichenbudget reicht UND Mindestrelevanz erfüllt
+      // Mindestrelevanz: KI-Score >= 4/10 (= finalScore >= 400) ODER reiner Wort-Score >= 5.
+      // Damit verhindern wir, dass KI-Scores 1-3 (z.B. Blutdiagnostik bei reinem Stuhlbefund)
+      // den Kontext mit irrelevanten Einträgen aufblähen.
+      const MIN_AI_SCORE = 400;   // entspricht KI-Score 4/10
+      const MIN_WORD_SCORE = 5;   // mindestens ein klarer Tag-/Titel-Treffer
       restRelevant = [];
       let totalChars = 0;
       let taken = 0;
+      let droppedLowRelevance = 0;
       for (const s of wordScored) {
+        const isAiScored = s.reason?.startsWith("KI-Score");
+        const meetsMinimum = isAiScored
+          ? s.score >= MIN_AI_SCORE
+          : s.score >= MIN_WORD_SCORE;
+        if (!meetsMinimum) {
+          s.included = false;
+          s.reason = `Unter Mindestrelevanz (${s.reason})`;
+          droppedLowRelevance++;
+          continue;
+        }
         if (taken >= MAP_REDUCE_TOP_N) {
           s.included = false;
           s.reason = `Top-${MAP_REDUCE_TOP_N}-Limit erreicht (${s.reason})`;
@@ -390,23 +406,13 @@ serve(async (req) => {
           s.reason = `Zeichenlimit erreicht (${s.reason})`;
           continue;
         }
-        if (s.score < 200 && s.score > 0 && s.score < 100) {
-          // Score < 1 (KI sagt irrelevant) → raus, außer Wort-Treffer
-          // (Score-Werte: KI*100 oder reiner Wort-Score)
-        }
-        // Mindestrelevanz: KI-Score >=1 (also score >=100) ODER Wort-Score >0
-        if (s.score < 100 && s.score === 0) {
-          s.included = false;
-          s.reason = `Irrelevant (${s.reason})`;
-          continue;
-        }
         restRelevant.push(s.entry);
         s.included = true;
         totalChars += entryLen;
         taken++;
       }
       restScored = wordScored;
-      console.log(`Map-Reduce ausgewählt: ${restRelevant.length}/${restPool.length} Einträge`);
+      console.log(`Map-Reduce ausgewählt: ${restRelevant.length}/${restPool.length} Einträge (${droppedLowRelevance} unter Mindestrelevanz verworfen)`);
     } else {
       // ===== Klassisch: nur Wort-Score-Filter =====
       const r = selectRelevantEntriesScored(restPool, queryText, remainingBudget);
