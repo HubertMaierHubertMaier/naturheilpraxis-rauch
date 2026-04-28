@@ -701,7 +701,7 @@ export function TherapyRecommendation() {
 
       {/* Action Buttons */}
       <div className="flex gap-3">
-        <Button onClick={handleSubmit} disabled={isStreaming} className="gap-2">
+        <Button onClick={() => handleSubmit()} disabled={isStreaming} className="gap-2">
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
