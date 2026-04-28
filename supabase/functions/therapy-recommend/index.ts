@@ -642,9 +642,7 @@ serve(async (req) => {
     );
 
     // Score the rest, but exclude already-pinned entries
-    const restPool = filteredByCategory.filter(
-      (e) => !pinnedEntries.some((p) => p.title === e.title && p.category === e.category)
-    );
+    const restPool = filteredByCategory;
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
 
     let restRelevant: WikiEntry[];
@@ -653,7 +651,7 @@ serve(async (req) => {
     const mustUseFullWikiMapReduce = FORCE_FULL_WIKI_MAP_REDUCE || useMapReduce === true;
 
     if (mustUseFullWikiMapReduce && restPool.length > 0) {
-      // ===== MAP-REDUCE STUFE 1: KI bewertet ALLE restlichen Einträge in Batches =====
+      // ===== MAP-REDUCE STUFE 1: KI bewertet IMMER ALLE Wiki-Einträge in Batches =====
       mapReduceUsed = true;
       const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
 
@@ -686,6 +684,11 @@ serve(async (req) => {
       let taken = 0;
       let droppedLowRelevance = 0;
       for (const s of wordScored) {
+        if (pinnedEntries.some((p) => sameEntry(p, s.entry))) {
+          s.included = false;
+          s.reason = `Bereits als Pflichtkontext enthalten (${s.reason})`;
+          continue;
+        }
         const isAiScored = s.reason?.startsWith("KI-Score");
         const meetsMinimum = isAiScored
           ? s.score >= MIN_AI_SCORE
