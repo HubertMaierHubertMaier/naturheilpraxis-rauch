@@ -344,6 +344,7 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
       if (target.wikiTitles.some((title) => title.toLowerCase() === (e.title || "").toLowerCase())) s += 80_000;
       if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase()))) s += 60_000;
     }
+    if (/homotoxikologie/i.test(e.category || "") && /therapeutischer\s+index/i.test(e.title || "")) s += 70_000;
     if (isVitaplaceProbiotic(e)) s += 50_000;
     for (const line of preferred) if (line && text.includes(line)) s += 5_000;
     for (const term of probioticTerms) {
