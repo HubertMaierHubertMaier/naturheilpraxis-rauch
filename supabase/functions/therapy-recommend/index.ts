@@ -501,7 +501,9 @@ serve(async (req) => {
     const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
-    const hasHomotoxContext = selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
+    const activeSymptomTargets = getActiveSymptomTargets(queryText);
+    const scoringQueryText = expandQueryForScoring(queryText);
+    const hasHomotoxContext = activeSymptomTargets.length > 0 || selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
     const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
 
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
@@ -524,6 +526,21 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund (inkl. Content-Treffer)`);
     }
 
+    // ===== AUTO-PINNING: Symptomachsen erzwingen, damit Labor/Stuhl die klinischen Symptome nicht verdrängt =====
+    const symptomPinnedEntries: WikiEntry[] = activeSymptomTargets.length === 0
+      ? []
+      : allEntries.filter((e) => {
+          const title = (e.title || "").toLowerCase();
+          const text = entryText(e);
+          return activeSymptomTargets.some((target) =>
+            target.wikiTitles.some((t) => t.toLowerCase() === title) ||
+            (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase())))
+          );
+        });
+    if (symptomPinnedEntries.length > 0) {
+      console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
+    }
+
     // Force-include all pinned wiki entries (manual + auto + boost-folders)
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
@@ -531,10 +548,12 @@ serve(async (req) => {
     const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
     const pinnedEntries = [
       ...manualPinned,
+      ...symptomPinnedEntries.filter((s) => !manualPinned.some((m) => sameEntry(m, s))),
       ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => sameEntry(m, a))),
       ...boostEntries.filter(
         (b) =>
           !manualPinned.some((m) => sameEntry(m, b)) &&
+          !symptomPinnedEntries.some((s) => sameEntry(s, b)) &&
           !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
       ),
     ];
