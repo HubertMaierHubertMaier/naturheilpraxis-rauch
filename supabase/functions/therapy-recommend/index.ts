@@ -315,12 +315,17 @@ serve(async (req) => {
       .filter(Boolean)
       .join(" ");
 
-    // ===== AUTO-PINNING: bei Stuhlbefund automatisch alle "Labordiagnostik"-Einträge mit aufnehmen =====
+    // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
+    // WICHTIG: NICHT die gesamte Kategorie "Labordiagnostik" matchen, sonst werden alle
+    // Blutdiagnostik-Einträge (HbA1c, TSH, Hormone …) fälschlich mitgezogen.
     const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
-      ? filteredByCategory.filter((e) => /labordiagnostik|stuhl|mikrobiom/i.test(e.category))
+      ? filteredByCategory.filter((e) => {
+          const hay = (e.category + " " + e.title + " " + (e.tags || []).join(" ")).toLowerCase();
+          return /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|alpha-?1-?antitrypsin/i.test(hay);
+        })
       : [];
     if (autoPinnedFromStuhl.length > 0) {
-      console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Labordiagnostik-Einträge wegen Stuhlbefund`);
+      console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund`);
     }
 
     // Force-include all pinned wiki entries (manual + auto)
