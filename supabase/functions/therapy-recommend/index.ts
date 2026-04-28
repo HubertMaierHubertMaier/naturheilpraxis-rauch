@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -217,10 +217,33 @@ function selectRelevantEntriesScored(
   return { selected, scored };
 }
 
-function buildContext(entries: WikiEntry[]): string {
+function buildEntryContent(entry: WikiEntry, queryText: string): string {
+  const content = entry.content || "";
+  const tokens = tokenizeQuery(queryText);
+  const lines = content.split("\n");
+  const picked = new Set<number>();
+
+  lines.forEach((line, idx) => {
+    const normalized = line.toLowerCase();
+    const isHeading = /^#{2,4}\s/.test(line);
+    const hit = tokens.some((tok) => normalized.includes(tok));
+    if (hit || (isHeading && tokens.some((tok) => normalized.includes(tok)))) {
+      for (let i = Math.max(0, idx - 2); i <= Math.min(lines.length - 1, idx + 8); i++) picked.add(i);
+    }
+  });
+
+  const snippets = Array.from(picked).sort((a, b) => a - b).map((i) => lines[i]).join("\n").trim();
+  const head = content.slice(0, Math.min(MAX_ENTRY_CHARS, snippets ? 1200 : MAX_ENTRY_CHARS));
+  const combined = snippets && !head.includes(snippets.slice(0, 120))
+    ? `${head}\n\n### Relevante Trefferstellen im Eintrag\n${snippets}`
+    : head;
+  return combined.slice(0, MAX_ENTRY_CHARS);
+}
+
+function buildContext(entries: WikiEntry[], queryText: string): string {
   let context = entries
     .map((e) => {
-      const content = (e.content || "").slice(0, MAX_ENTRY_CHARS);
+      const content = buildEntryContent(e, queryText);
       return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
     })
     .join("\n\n---\n\n");
@@ -290,6 +313,21 @@ function sanitizeRecommendation(text: string): string {
     "- ✅ **Substitution** – Bifidobacterium auffällig/erniedrigt → Vitaplace **Biotik Balance Kapseln** bzw. **Biotik Sensitiv Pulver** sind in der Wissensdatenbank als Bifidobacterium-/Lactobacillus-haltige Praxispräparate hinterlegt."
   );
   return out.trim();
+}
+
+function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
+  const q = queryText.toLowerCase();
+  const directives: string[] = [];
+  const add = (label: string, terms: RegExp, wikiTitles: string[]) => {
+    if (terms.test(q)) directives.push(`- ${label}: Prüfe gezielt ${wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`);
+  };
+  add("Erschöpfung/Fatigue/Schwäche", /erschöpf|fatigue|müde|mued|schwäche|krafter|antrieb|lebensqualität|lebensqualitaet/, ["Therapeutischer Index: Immunsystem", "Therapeutischer Index: Psyche", "Therapeutischer Index: Sonstige"]);
+  add("Appetit/Gewicht/Abmagerung", /appetit|gewichtsverlust|abmager|kachex|untergewicht/, ["Therapeutischer Index: Sonstige", "Therapeutischer Index: Verdauung"]);
+  add("Psyche/Angst/Depression/Isolation", /angst|depress|psyche|nerv|isolation|sozial|stimmung|konzentration/, ["Therapeutischer Index: Psyche", "Therapeutischer Index: Neurologie"]);
+  add("Schmerz/Bewegungsapparat", /gelenk|muskel|schmerz|rücken|ruecken|neuralg|arthr|fibromy/, ["Therapeutischer Index: Bewegungsapparat", "Therapeutischer Index: Neurologie"]);
+  add("Haut/Allergie/Schleimhaut", /haut|ekzem|juck|allerg|schleimhaut|rhinitis|hno|atemweg/, ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"]);
+  if (!hasHomotContext || directives.length === 0) return "";
+  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (ZWINGEND):\n${directives.join("\n")}\n- Wenn diese Einträge im Wiki-Kontext stehen, MUSST du mindestens 1–3 passende Heel-/Homotoxikologie-Mittel zusätzlich zur Darmbehandlung nennen, mit kurzer Symptom-Begründung.\n- Darmaufbau darf Symptome nicht vollständig überdecken; erst Darmachse, dann organspezifische/symptomatische Mittel ergänzen.`;
 }
 
 async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -415,6 +453,8 @@ serve(async (req) => {
     const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
+    const hasHomotoxContext = selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
+    const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
 
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
     // WICHTIG: NICHT die gesamte Kategorie "Labordiagnostik" matchen, sonst werden alle
@@ -539,7 +579,7 @@ serve(async (req) => {
     const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
-    const wikiContext = buildContext(relevantEntries) + vitaplaceContext;
+    const wikiContext = buildContext(relevantEntries, queryText) + vitaplaceContext;
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -627,7 +667,7 @@ WISSENSDATENBANK:
 ${wikiContext}
 
 DEINE AUFGABE:
-Analysiere die Belastungen/Symptome/Erkrankung des Patienten und erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank.
+Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
 
 ⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
 ${preferredLines.length > 0
@@ -638,6 +678,7 @@ ${pinnedTitles.length > 0
   → Diese Mittel MÜSSEN in der Empfehlung erscheinen, mit korrekter Dosierung aus dem Wiki-Eintrag, plausibler Indikationsbegründung im Patientenkontext und Einordnung in die passende Mittel-Gruppe (Hausmittel, Probiotika, Vitamine etc.).
   → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
   : "- Keine spezifischen Mittel gepinnt."}
+${symptomDirective}
 
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):

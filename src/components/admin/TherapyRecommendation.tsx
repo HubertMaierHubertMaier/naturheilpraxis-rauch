@@ -69,8 +69,11 @@ export function TherapyRecommendation() {
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
+    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
+    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    setUseMapReduce(Boolean(d.useMapReduce));
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
@@ -180,7 +183,13 @@ export function TherapyRecommendation() {
             const parsed = JSON.parse(jsonStr);
             // Audit-Frame (zuerst gesendet vor dem KI-Stream)
             if (parsed && parsed.__audit__) {
-              setAuditInfo(parsed.__audit__ as WikiAuditInfo);
+              const audit = parsed.__audit__ as WikiAuditInfo;
+              setAuditInfo(audit);
+              const usedTitles = (audit.used || []).map((e) => e.title.toLowerCase());
+              const homotoxExpected = selectedCategories.some((c) => /homotoxikologie/i.test(c)) || bevorzugteLinie.some((l) => /heel|homotox/i.test(l));
+              if (homotoxExpected && !usedTitles.some((t) => t.includes("therapeutischer index") || t.includes("homotox"))) {
+                toast({ title: "Hinweis", description: "Homotoxikologie/Heel wurde gewählt, erscheint aber nicht im gelesenen Wiki-Kontext – bitte Audit öffnen.", variant: "destructive" });
+              }
               continue;
             }
             const content = parsed.choices?.[0]?.delta?.content;
@@ -219,6 +228,8 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              selectedCategories,
+              useMapReduce,
               bevorzugteLinie,
               pinnedMittel,
               belastungen: formatPathogensForAI(pathogens),
@@ -266,6 +277,7 @@ export function TherapyRecommendation() {
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
+    setUseMapReduce(false);
     setResult("");
     setAuditInfo(null);
   };
