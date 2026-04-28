@@ -438,17 +438,23 @@ serve(async (req) => {
     const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
     console.log(
-      `Wiki: ${allEntries.length} total → ${filteredByCategory.length} after category → ` +
-      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto) + ${restRelevant.length} relevant, ` +
+      `Wiki: ${allEntries.length} total (full DB search) → ` +
+      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
       `preferredLines=[${preferredLines.join(",")}]`
     );
 
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
+    const reasonFor = (e: WikiEntry) => {
+      if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
+      if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
+      if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
+      return "📌 Pinned";
+    };
     const usedEntries = [
       ...pinnedEntries.map((e) => ({
         title: e.title, category: e.category, score: 9999,
-        reason: manualPinned.some((m) => m.title === e.title) ? "📌 Manuell gepinnt" : "🔬 Auto-Pin (Stuhlbefund)"
+        reason: reasonFor(e)
       })),
       ...restScored.filter((s) => s.included).map((s) => ({
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "✅ Relevant"
