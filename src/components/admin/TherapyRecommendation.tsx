@@ -741,7 +741,21 @@ export function TherapyRecommendation() {
   );
 }
 
-function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string; isStreaming: boolean; stuhlbefund: string }) {
+function ParsedResultView({
+  result,
+  isStreaming,
+  stuhlbefund,
+  selectedKeys,
+  onToggleRemedy,
+  onToggleAll,
+}: {
+  result: string;
+  isStreaming: boolean;
+  stuhlbefund: string;
+  selectedKeys?: Set<string>;
+  onToggleRemedy?: (key: string) => void;
+  onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
+}) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
   const hasAiParsed = parsed.intro.length + parsed.categories.length + parsed.outro.length > 0;
@@ -778,9 +792,21 @@ function ParsedResultView({ result, isStreaming, stuhlbefund }: { result: string
             <Pill className="h-4 w-4 text-primary" />
             Empfohlene Mittel
             {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+            {!isStreaming && selectedKeys && (
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                ({selectedKeys.size} ausgewählt für Patienten-PDF – Häkchen entfernen, was nicht mit soll)
+              </span>
+            )}
           </h2>
           {parsed.categories.map((g, i) => (
-            <CategoryCard key={`cat-${i}-${g.title}`} group={g} />
+            <CategoryCard
+              key={`cat-${i}-${g.title}`}
+              group={g}
+              categoryIndex={isStreaming ? undefined : i}
+              selectedKeys={isStreaming ? undefined : selectedKeys}
+              onToggleRemedy={onToggleRemedy}
+              onToggleAll={onToggleAll}
+            />
           ))}
         </div>
       )}
