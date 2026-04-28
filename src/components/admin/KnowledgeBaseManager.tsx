@@ -567,7 +567,7 @@ export function KnowledgeBaseManager() {
             const isParentExpanded = expandedParents.has(group.name);
             const hasChildren = !!group.children && group.children.length > 0;
             const totalCount = hasChildren
-              ? group.children!.reduce((sum, c) => sum + c.entries.length, 0)
+              ? group.children!.reduce((sum, c) => sum + c.entries.length, group.entries?.length || 0)
               : (group.entries?.length || 0);
 
             return (
