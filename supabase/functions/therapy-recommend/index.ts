@@ -290,18 +290,22 @@ serve(async (req) => {
     // Fetch wiki entries (cached) and select only the relevant ones for this query
     const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
 
-    // Optional: Filter nach gewählten Hauptordnern (Top-Level-Kategorien).
+    // Boost-Ordner: gewählte Ordner werden GARANTIERT vollständig in den Kontext aufgenommen
+    // (zusätzlich zur normalen Score-/Map-Reduce-Auswahl auf der GESAMTEN Datenbank).
+    // → Ersetzt das frühere "Filter"-Verhalten. Default = ganze DB wird durchsucht.
     const selectedCats: string[] = Array.isArray(categories)
       ? categories.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
       : [];
-    const filteredByCategory = selectedCats.length === 0
-      ? allEntries
+    // WICHTIG: Suchpool bleibt IMMER die gesamte Datenbank.
+    const filteredByCategory = allEntries;
+    const boostEntries: WikiEntry[] = selectedCats.length === 0
+      ? []
       : allEntries.filter((e) =>
           selectedCats.some((c) => e.category === c || e.category.startsWith(c + " >"))
         );
     console.log(
-      `Category filter: ${selectedCats.length === 0 ? "ALL" : selectedCats.join(", ")} → ` +
-      `${filteredByCategory.length}/${allEntries.length} entries`
+      `Boost folders: ${selectedCats.length === 0 ? "NONE" : selectedCats.join(", ")} → ` +
+      `${boostEntries.length} forced entries (search pool: ${allEntries.length})`
     );
 
     // Pinned remedies: titles to ALWAYS include in context
@@ -333,13 +337,19 @@ serve(async (req) => {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund`);
     }
 
-    // Force-include all pinned wiki entries (manual + auto)
+    // Force-include all pinned wiki entries (manual + auto + boost-folders)
     const manualPinned = pinnedTitles.length > 0
       ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
       : [];
+    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
     const pinnedEntries = [
       ...manualPinned,
-      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => m.title === a.title && m.category === a.category)),
+      ...autoPinnedFromStuhl.filter((a) => !manualPinned.some((m) => sameEntry(m, a))),
+      ...boostEntries.filter(
+        (b) =>
+          !manualPinned.some((m) => sameEntry(m, b)) &&
+          !autoPinnedFromStuhl.some((a) => sameEntry(a, b))
+      ),
     ];
     const pinnedReserveChars = pinnedEntries.reduce(
       (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
@@ -428,17 +438,23 @@ serve(async (req) => {
     const relevantEntries = [...pinnedEntries, ...restRelevant];
     const wikiContext = buildContext(relevantEntries);
     console.log(
-      `Wiki: ${allEntries.length} total → ${filteredByCategory.length} after category → ` +
-      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto) + ${restRelevant.length} relevant, ` +
+      `Wiki: ${allEntries.length} total (full DB search) → ` +
+      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
       `preferredLines=[${preferredLines.join(",")}]`
     );
 
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
+    const reasonFor = (e: WikiEntry) => {
+      if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
+      if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
+      if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
+      return "📌 Pinned";
+    };
     const usedEntries = [
       ...pinnedEntries.map((e) => ({
         title: e.title, category: e.category, score: 9999,
-        reason: manualPinned.some((m) => m.title === e.title) ? "📌 Manuell gepinnt" : "🔬 Auto-Pin (Stuhlbefund)"
+        reason: reasonFor(e)
       })),
       ...restScored.filter((s) => s.included).map((s) => ({
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "✅ Relevant"
@@ -454,7 +470,8 @@ serve(async (req) => {
     const auditPayload = {
       __audit__: {
         totalInDb: allEntries.length,
-        afterCategoryFilter: filteredByCategory.length,
+        afterCategoryFilter: allEntries.length, // legacy field: search pool = full DB
+        boostFolderCount: boostEntries.length,
         pinnedCount: pinnedEntries.length,
         relevantCount: restRelevant.length,
         usedCount: usedEntries.length,
@@ -464,7 +481,8 @@ serve(async (req) => {
         cacheHit,
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
-        selectedCategories: selectedCats,
+        boostCategories: selectedCats,
+        selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
         skippedSample: skippedEntries,
       },
