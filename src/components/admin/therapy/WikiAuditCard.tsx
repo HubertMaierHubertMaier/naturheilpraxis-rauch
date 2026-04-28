@@ -46,6 +46,11 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
           <CardTitle className="text-sm font-serif flex items-center gap-2 text-blue-800 dark:text-blue-300">
             <Database className="h-4 w-4" />
             Wiki-Audit: KI hat {audit.usedCount} von {audit.afterCategoryFilter} Einträgen gelesen
+            {audit.mapReduceUsed && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300">
+                🚀 Map-Reduce (alle bewertet)
+              </Badge>
+            )}
             {isFull ? (
               <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300">
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Vollständig
