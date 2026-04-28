@@ -27,7 +27,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v11";
+const CACHE_VERSION = "v12";
 const FORCE_FULL_WIKI_MAP_REDUCE = true;
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
@@ -317,6 +317,14 @@ function buildContext(entries: WikiEntry[], queryText: string): string {
   }
   if (!context.trim()) context = "(Keine relevanten Wissensdatenbank-Einträge gefunden)";
   return context;
+}
+
+function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
+  const relevant = scored
+    .filter((s) => s.score > 0)
+    .slice(0, maxItems);
+  if (relevant.length === 0) return "";
+  return `### PHASE 1 – Gesamt-Wiki-Sichtung (alle Kategorien)\nDie folgenden Kandidaten wurden aus der gesamten Wissensdatenbank bewertet. Phase 2 muss daraus fachlich auswählen; keine Kategorie oder Produktlinie ist exklusiv.\n${relevant.map((s, idx) => `${idx + 1}. [${s.entry.category}] ${s.entry.title} – ${s.reason || `Score ${s.score}`}${s.included ? " → Volltext in Phase 2" : ""}`).join("\n")}`;
 }
 
 function entryText(e: WikiEntry): string {
