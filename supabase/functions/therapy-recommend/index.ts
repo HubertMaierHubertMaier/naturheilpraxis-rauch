@@ -422,7 +422,8 @@ serve(async (req) => {
     // Mikrobiom-/Stuhl-Stichworte: prüft Titel/Kategorie/Tags UND Content
     // (Probiotika-Produkte listen Stämme oft nur im Content, nicht in Tags – z.B. Vitaplace Biotik Balance)
     const STUHL_REGEX = /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|enterococcus|escherichia|klebsiella|alpha-?1-?antitrypsin|probiotik|präbiotik|praebiotik|symbiose|darmsanier|darmaufbau/i;
-    const autoPinnedFromStuhl: WikiEntry[] = stuhlbefund && stuhlbefund.trim().length > 0
+    const hasMicrobiomeSignal = Boolean(stuhlbefund && stuhlbefund.trim().length > 0) || STUHL_REGEX.test(queryText);
+    const autoPinnedFromStuhl: WikiEntry[] = hasMicrobiomeSignal
       ? filteredByCategory.filter((e) => {
           const text = entryText(e);
           if (STUHL_REGEX.test(text)) return true;
