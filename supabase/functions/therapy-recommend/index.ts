@@ -195,9 +195,14 @@ function selectRelevantEntriesScored(
       s.reason = "Zeichenlimit erreicht – nicht im Kontext";
       continue;
     }
-    if (s.score === 0) {
+    // Mindestrelevanz: mind. ein Tag-Treffer (5) oder Titel-Treffer (10).
+    // Reine Substring-Treffer im Content (Score 1-4) sind zu schwach und blähen
+    // den Kontext mit irrelevanten Einträgen auf.
+    if (s.score < 5) {
       s.included = false;
-      s.reason = "Kein Treffer für die Query-Tokens";
+      s.reason = s.score === 0
+        ? "Kein Treffer für die Query-Tokens"
+        : `Unter Mindestrelevanz (Score ${s.score}, nur schwacher Content-Treffer)`;
       continue;
     }
     selected.push(s.entry);
