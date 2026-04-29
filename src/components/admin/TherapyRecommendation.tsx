@@ -34,6 +34,7 @@ export function TherapyRecommendation() {
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [laborKomplett, setLaborKomplett] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
+  const [metatronHeel, setMetatronHeel] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
