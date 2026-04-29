@@ -256,6 +256,8 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   </div>
 
   ${indication ? `<div class="indication"><strong>Indikation:</strong> ${indication}</div>` : ""}
+  ${nlsNoticePraxis}
+  ${nlsNoticePatient}
 
   ${diagnoseHtml}
   ${introHtml}
