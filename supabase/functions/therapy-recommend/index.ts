@@ -429,20 +429,25 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
   }
 
   if (weight && hasWikiTitle(entries, "Therapeutischer Index: Sonstige")) {
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Hepeel / Arsuraneel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: Hauptmittel bei Abmagerung; passend bei Gewichtsverlust/Appetitverlust." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Hepeel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: Hauptmittel bei Leberbelastung und Abmagerung; passend bei Gewichtsverlust/Appetitverlust." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Arsuraneel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: bei Erschöpfung, Abmagerung und chronischen Schwächezuständen mit Arsen-Symptomatik." });
     items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **China-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Sonstige: Ergänzungsmittel bei Abmagerung und Schwächezuständen." });
   }
   if (digestive && hasWikiTitle(entries, "Therapeutischer Index: Verdauung")) {
     items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Nux vomica-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Verdauung: Haupt-/Ergänzungsmittel bei Blähungen, Darmstauung, Dyspepsie und Verdauungsbeschwerden." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Gastricumeel / Hepeel / Spascupreel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: für Dyspepsie, Hyperazidität, Blähungen, Krämpfe/Koliken und Leber-Galle-Achse." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Gastricumeel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: bei Dyspepsie, Hyperazidität und Magenbeschwerden." });
+    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Spascupreel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: bei Krämpfen, Koliken und spastischen Beschwerden." });
     items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Mucosa compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Repair-Phase prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung/Sonstige: Phasenmittel bei chronischer Schleimhaut-/Verdauungsbelastung." });
   }
   if (fatigue && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Psyche: Hauptmittel bei Erschöpfung/Neurasthenie." });
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum / Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche/Sonstige: Phasenmittel bei Müdigkeit, chronischer Schwäche und Energiestoffwechsel-Belastung." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel zur Aktivierung des Citratzyklus bei Energiestoffwechsel-Belastung." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel bei mitochondrialer Schwäche, Müdigkeit und chronischer Erschöpfung." });
   }
   if (psyche && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel / Ignatia-Homaccord / Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei reaktiver depressiver Stimmung, emotionaler Belastung, Rückzug und nervöser Erschöpfung." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: Tonikum bei nervöser Erschöpfung und reaktiver depressiver Stimmung." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ignatia-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei emotionaler Belastung, Kummer, Rückzug und Trauerreaktionen." });
+    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei nervöser Unruhe, Reizbarkeit und psychovegetativer Belastung." });
   }
 
   if (items.length === 0) return "";
@@ -1029,6 +1034,12 @@ BEISPIEL:
 - **Knoblauch** (Allium sativum) | 1-2 Zehen tgl. roh | mit Speisen | dauerhaft | 🟡 Empfohlen | ~3 € | Antimikrobiell, gefäßprotektiv, blutdrucksenkend
 
 WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel.
+
+🚫 ABSOLUT VERBOTEN – EIN MITTEL PRO ZEILE:
+- NIEMALS mehrere eigenständige Präparate in einem **Mittelname**-Feld zusammenfassen (kein "Hepeel / Arsuraneel", kein "Gastricumeel / Hepeel / Spascupreel", kein "Coenzyme compositum / Ubichinon compositum").
+- Auch wenn mehrere Heel-/Homotoxikologie-Mittel ähnliche Indikationen haben: JEDES Mittel bekommt eine EIGENE Pipe-Zeile mit eigener Dosierung, eigener Priorität und eigener Begründung.
+- Slash "/" im Mittelnamen ist NUR erlaubt, wenn es Teil des offiziellen Produktnamens ist (z.B. "Vitamin B6/B12-Komplex" als ein Produkt). Nicht als Trenner zwischen zwei verschiedenen Präparaten.
+- Klammer-Zusatz "(Latein)" ist erlaubt für die botanische/lateinische Bezeichnung EINES Mittels, nicht für Alternativen.
 
 ## 💰 Kostenübersicht
 - Gesamtkosten Essentiell: ca. XX €/Monat
