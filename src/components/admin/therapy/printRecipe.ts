@@ -69,7 +69,12 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     patient.budget && isPraxis ? `Budget: ${escapeHtml(patient.budget)} €` : null,
   ].filter(Boolean).join(" &nbsp;·&nbsp; ");
 
-  const indication = [patient.belastungen, patient.symptome, patient.erkrankung]
+  // Patienten-PDF: Pathogene/Belastungen werden NICHT angezeigt (rein interne Therapie-Info).
+  // Praxis-PDF: vollständige Indikation inkl. Belastungen.
+  const indicationParts = isPraxis
+    ? [patient.belastungen, patient.symptome, patient.erkrankung]
+    : [patient.symptome, patient.erkrankung];
+  const indication = indicationParts
     .filter((x) => x && x.trim())
     .map((x) => escapeHtml(x!))
     .join(" / ");
@@ -172,16 +177,10 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     ? `<div class="header-subtitle praxis-tag">⚕ Interne Praxis-Akte – nicht für Patient bestimmt</div>`
     : "";
 
-  // NLS-Hinweis: erscheint, sobald Pathogene/Belastungen eingegeben wurden.
-  // Patient bekommt ausführlichen Aufklärungsblock, Praxis-PDF nur eine kurze Fußnote.
+  // NLS-Hinweis: nur im Praxis-PDF als kurze Fußnote.
+  // Im Patienten-PDF werden Pathogene komplett weggelassen, daher entfällt der Aufklärungsblock.
   const hasNlsBefund = !!patient.belastungen?.trim();
-  const nlsNoticePatient = (!isPraxis && hasNlsBefund)
-    ? `<div class="nls-notice">
-        <div class="nls-notice-title">ℹ Hinweis zur Befunderhebung</div>
-        <p>Die in dieser Empfehlung genannten Belastungen (Erreger, Toxine, Organbezüge) wurden mittels <strong>bioenergetischer Resonanz-Analyse</strong> ermittelt (Metapathia / Hospital, Nonlinear Diagnostic System – NLS). Es handelt sich dabei <strong>nicht um einen labormedizinischen Befund</strong> (Blut, Stuhl, Abstrich) und nicht um eine schulmedizinische Diagnose, sondern um Hinweise aus einem energetischen Messverfahren der Komplementärmedizin.</p>
-        <p>Diese Methode ist wissenschaftlich umstritten, wird in meiner Praxis jedoch seit vielen Jahren mit guten Erfahrungen eingesetzt, um individuelle Therapieansätze zu entwickeln. Bei Verdacht auf eine konkrete Erkrankung empfehle ich ergänzend eine weiterführende Abklärung beim Heilpraktiker oder Arzt Ihres Vertrauens (z. B. Labor, bildgebende Verfahren).</p>
-      </div>`
-    : "";
+  const nlsNoticePatient = "";
   const nlsNoticePraxis = (isPraxis && hasNlsBefund)
     ? `<div class="nls-notice-praxis">⚕ Befundgrundlage: NLS / Metapathia (bioenergetische Resonanz-Analyse) – kein laborbasierter Befund.</div>`
     : "";
