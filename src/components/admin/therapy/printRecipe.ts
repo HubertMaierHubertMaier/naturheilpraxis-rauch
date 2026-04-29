@@ -69,7 +69,12 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     patient.budget && isPraxis ? `Budget: ${escapeHtml(patient.budget)} €` : null,
   ].filter(Boolean).join(" &nbsp;·&nbsp; ");
 
-  const indication = [patient.belastungen, patient.symptome, patient.erkrankung]
+  // Patienten-PDF: Pathogene/Belastungen werden NICHT angezeigt (rein interne Therapie-Info).
+  // Praxis-PDF: vollständige Indikation inkl. Belastungen.
+  const indicationParts = isPraxis
+    ? [patient.belastungen, patient.symptome, patient.erkrankung]
+    : [patient.symptome, patient.erkrankung];
+  const indication = indicationParts
     .filter((x) => x && x.trim())
     .map((x) => escapeHtml(x!))
     .join(" / ");
