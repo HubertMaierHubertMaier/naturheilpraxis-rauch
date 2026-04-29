@@ -1030,6 +1030,12 @@ BEISPIEL:
 
 WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel.
 
+🚫 ABSOLUT VERBOTEN – EIN MITTEL PRO ZEILE:
+- NIEMALS mehrere eigenständige Präparate in einem **Mittelname**-Feld zusammenfassen (kein "Hepeel / Arsuraneel", kein "Gastricumeel / Hepeel / Spascupreel", kein "Coenzyme compositum / Ubichinon compositum").
+- Auch wenn mehrere Heel-/Homotoxikologie-Mittel ähnliche Indikationen haben: JEDES Mittel bekommt eine EIGENE Pipe-Zeile mit eigener Dosierung, eigener Priorität und eigener Begründung.
+- Slash "/" im Mittelnamen ist NUR erlaubt, wenn es Teil des offiziellen Produktnamens ist (z.B. "Vitamin B6/B12-Komplex" als ein Produkt). Nicht als Trenner zwischen zwei verschiedenen Präparaten.
+- Klammer-Zusatz "(Latein)" ist erlaubt für die botanische/lateinische Bezeichnung EINES Mittels, nicht für Alternativen.
+
 ## 💰 Kostenübersicht
 - Gesamtkosten Essentiell: ca. XX €/Monat
 - Gesamtkosten mit Empfohlen: ca. XX €/Monat  
