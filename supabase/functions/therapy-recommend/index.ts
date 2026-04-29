@@ -443,7 +443,9 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
     items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Mucosa compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Repair-Phase prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung/Sonstige: Phasenmittel bei chronischer Schleimhaut-/Verdauungsbelastung." });
   }
   if (fatigue && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Psyche: Hauptmittel bei Erschöpfung/Neurasthenie." });
+    if (femaleContext) {
+      items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | 3× tgl. 10 Tropfen, akut stündlich (max. 12×/Tag) | oral, ½ h vor/nach den Mahlzeiten | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie: Frauenmittel bei Schwäche/Anämie/Gebärmuttersenkung – im weiblichen Kontext indiziert." });
+    }
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel zur Aktivierung des Citratzyklus bei Energiestoffwechsel-Belastung." });
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel bei mitochondrialer Schwäche, Müdigkeit und chronischer Erschöpfung." });
   }
