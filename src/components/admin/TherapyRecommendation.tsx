@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -34,6 +34,7 @@ export function TherapyRecommendation() {
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [laborKomplett, setLaborKomplett] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
+  const [metatronHeel, setMetatronHeel] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
@@ -212,6 +213,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt(d.laborErniedrigt || "");
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
+    setMetatronHeel(d.metatronHeel || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
@@ -282,6 +284,7 @@ export function TherapyRecommendation() {
             laborErniedrigt: laborErniedrigt.trim() || undefined,
             laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
+            metatronHeel: metatronHeel.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
@@ -378,6 +381,7 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              metatronHeel,
               selectedCategories,
               useMapReduce,
               bevorzugteLinie,
@@ -424,6 +428,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt("");
     setLaborKomplett("");
     setStuhlbefund("");
+    setMetatronHeel("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
@@ -581,6 +586,21 @@ export function TherapyRecommendation() {
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
+            </div>
+            <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
+                Heel-Mittel aus Metatron-/NLS-Auswertung
+              </label>
+              <Textarea
+                value={metatronHeel}
+                onChange={(e) => setMetatronHeel(e.target.value)}
+                placeholder="z.B. Lymphomyosot, Traumeel S, Hepeel, Nux vomica-Homaccord, Engystol, Mucosa compositum, Coenzyme compositum, Galium-Heel..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">

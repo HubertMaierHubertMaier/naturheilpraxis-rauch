@@ -539,7 +539,8 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, categories, bevorzugteLinie, pinnedMittel, useMapReduce, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, nachschlag, previousResult } = await req.json();
+    const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
@@ -580,7 +581,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeelText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -780,6 +781,7 @@ serve(async (req) => {
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
         symptomAxes: activeSymptomTargets.map((t) => t.label),
+        metatronHeelInput: metatronHeelText || null,
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
@@ -799,6 +801,23 @@ serve(async (req) => {
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
+    if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
+
+    // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
+    // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
+    const metatronHeelDirective = metatronHeelText
+      ? `\n\n🎯 METATRON/NLS HEEL-RESONANZ (ZWINGEND BERÜCKSICHTIGEN):
+Der Therapeut hat aus der Hospital Metatron HR (NLS) Resonanzanalyse folgende Heel-Komplexmittel als energetisch passend identifiziert:
+${metatronHeelText}
+
+VERBINDLICHE REGELN für diese Mittel:
+1. JEDES dieser Mittel MUSS in der finalen Empfehlung unter "💧 Homöopathie & Komplexmittel" als eigene Pipe-Zeile erscheinen.
+2. Wenn das Mittel in der Wissensdatenbank (Homotoxikologie, Therapeutischer Index ...) hinterlegt ist: Übernimm Dosierung, Indikation und Begründung exakt aus dem Wiki-Eintrag und zitiere die Wiki-Quelle.
+3. Wenn keine Dosierung im Wiki hinterlegt ist: Schreibe "Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen" und gib als Standard-Erfahrungswert "3× tgl. 10 Tropfen oral" oder "3× tgl. 1 Tbl. einspeicheln" an, klar als Erfahrungsdosierung markiert.
+4. Begründung MUSS am Ende den Zusatz enthalten: "(aus Metatron/NLS-Resonanzauswertung übernommen)".
+5. Diese Mittel sind NICHT exklusiv – ergänze zusätzlich passende Mittel aus den anderen Wiki-Kategorien (Hausmittel, Vitamine, Mineralstoffe, Probiotika etc.).
+6. Falls eines der Mittel im aktuellen Patientenkontext kontraindiziert wäre (Schwangerschaft, Wechselwirkung), nimm es trotzdem auf, kennzeichne es mit ⚠️ und erkläre die Kontraindikation kurz.`
+      : "";
 
     const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater und arbeitest ALS FACHLICHE UNTERSTÜTZUNG für den Heilpraktiker Peter Rauch (Ing. Elektrotechnik + Heilpraktiker + Physiotherapeut + Hypnotherapeut, 20+ Jahre Erfahrung). Diese Empfehlung wird von IHM in der Praxis verwendet — der Patient ist BEREITS in seiner Behandlung.
 
@@ -852,6 +871,7 @@ ${pinnedTitles.length > 0
   → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
   : "- Keine spezifischen Mittel gepinnt."}
 ${symptomDirective}
+${metatronHeelDirective}
 
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
