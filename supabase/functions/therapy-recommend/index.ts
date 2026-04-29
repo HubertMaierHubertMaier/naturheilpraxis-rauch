@@ -414,6 +414,9 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
   const fatigue = has(/erschöpf|erschoepf|müde|mued|schwäche|schwaeche|energie|kraft|lebensqualität|lebensqualitaet/i);
   const psyche = has(/psyche|depress|angst|unruhe|rückzug|rueckzug|sozial|isolation|belastung/i);
   const sleep = has(/schlaf|insom|nacht|regeneration/i);
+  // Geschlechts-Heuristik: Aletris-Heel ist primär ein Frauenmittel (Gebärmuttersenkung,
+  // Anämie, Menstruation, postpartale Erschöpfung). Nur bei klar weiblichem Kontext forcieren.
+  const femaleContext = has(/\b(frau|weiblich|patientin|gebärmutter|gebaermutter|uterus|menstruation|menstruell|zyklus|menopause|wechseljahr|prämenopaus|praemenopaus|postmenopaus|postpartal|wochenbett|schwanger|stillzeit|pms|dysmenor|amenor|mens(es|truation)|prolaps uteri)\b/i);
 
   if (microbiome) {
     add(items, "Biotik Balance Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Balance Kapseln (Vitaplace)** | abends 2 Kapseln | oral, abends | 8–12 Wochen, Verlauf prüfen | 🔴 Essentiell | laut Bezug | Wiki: enthält Bifidobacterium bifidum/infantis/lactis/longum, Lactobacillus-Stämme, Inulin und resistente Stärke – daher KEINE Bifidobacterium-Substitutionslücke.");
