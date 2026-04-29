@@ -201,6 +201,10 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   .meta { display: flex; justify-content: space-between; gap: 16px; font-size: 9.5pt; color: #444; margin-bottom: 12px; }
   .meta .label { color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-size: 8pt; }
   .indication { background: #f5f1e8; padding: 8px 12px; border-left: 3px solid #c47a5a; margin-bottom: 16px; font-size: 10pt; }
+  .nls-notice { background: #f0f4ee; border: 1px solid #c8d6c0; border-left: 4px solid #6b8e6b; padding: 10px 14px; margin-bottom: 16px; font-size: 9.5pt; line-height: 1.5; page-break-inside: avoid; border-radius: 3px; }
+  .nls-notice-title { font-weight: 600; color: #4a6e4a; margin-bottom: 4px; font-size: 10pt; }
+  .nls-notice p { margin: 4px 0; color: #3d4a3d; }
+  .nls-notice-praxis { background: #fef9ed; border-left: 3px solid #c8a456; padding: 4px 10px; margin-bottom: 12px; font-size: 8.5pt; color: #6b5a2c; font-style: italic; }
   .alert { padding: 8px 12px; margin-bottom: 12px; border-radius: 4px; font-size: 9.5pt; page-break-inside: avoid; }
   .alert-info { background: #eff6ff; border-left: 3px solid #2563eb; }
   .alert-warning { background: #fef3c7; border-left: 3px solid #d97706; }
