@@ -381,6 +381,7 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              metatronHeel,
               selectedCategories,
               useMapReduce,
               bevorzugteLinie,
