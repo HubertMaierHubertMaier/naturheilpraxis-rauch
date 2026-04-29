@@ -870,6 +870,7 @@ ${pinnedTitles.length > 0
   → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
   : "- Keine spezifischen Mittel gepinnt."}
 ${symptomDirective}
+${metatronHeelDirective}
 
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
