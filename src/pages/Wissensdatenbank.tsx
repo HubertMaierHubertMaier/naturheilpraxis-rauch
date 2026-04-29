@@ -6,9 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Bug, Stethoscope } from "lucide-react";
+import { BookOpen, Bug, Stethoscope, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
+import { TherapyPatientOverview } from "@/components/admin/therapy/TherapyPatientOverview";
 
 interface KnowledgeEntry {
   id: string;
@@ -71,6 +72,10 @@ const Wissensdatenbank = () => {
               <Stethoscope className="h-4 w-4" />
               Therapie-Empfehlung
             </TabsTrigger>
+            <TabsTrigger value="patienten" className="gap-2">
+              <Users className="h-4 w-4" />
+              Patientenübersicht
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="wiki">
             <KnowledgeBaseManager />
@@ -80,6 +85,9 @@ const Wissensdatenbank = () => {
           </TabsContent>
           <TabsContent value="therapie">
             <TherapyRecommendation />
+          </TabsContent>
+          <TabsContent value="patienten">
+            <TherapyPatientOverview />
           </TabsContent>
         </Tabs>
       </div>
