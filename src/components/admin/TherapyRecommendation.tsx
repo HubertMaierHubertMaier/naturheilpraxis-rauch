@@ -587,6 +587,21 @@ export function TherapyRecommendation() {
               />
               <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
             </div>
+            <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
+                Heel-Mittel aus Metatron-/NLS-Auswertung
+              </label>
+              <Textarea
+                value={metatronHeel}
+                onChange={(e) => setMetatronHeel(e.target.value)}
+                placeholder="z.B. Lymphomyosot, Traumeel S, Hepeel, Nux vomica-Homaccord, Engystol, Mucosa compositum, Coenzyme compositum, Galium-Heel..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
+              </p>
+            </div>
             <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                 <Pill className="h-3.5 w-3.5 text-emerald-600" />
