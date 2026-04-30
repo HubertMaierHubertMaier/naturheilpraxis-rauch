@@ -12,7 +12,8 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu } from "lucide-react";
+import { AIModelInfo } from "@/components/admin/AIModelInfo";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -79,7 +80,7 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl">
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+            <TabsList className="grid w-full grid-cols-7 max-w-5xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -99,6 +100,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="icd10" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
                 ICD-10
+              </TabsTrigger>
+              <TabsTrigger value="aimodel" className="flex items-center gap-2">
+                <Cpu className="h-4 w-4" />
+                KI-Modell
               </TabsTrigger>
               <TabsTrigger value="audit" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
@@ -162,6 +167,20 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ICD10Generator />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="aimodel">
+              <Card>
+                <CardHeader>
+                  <CardTitle>KI-Modell &amp; Kosten</CardTitle>
+                  <CardDescription>
+                    Übersicht der aktuell eingesetzten KI-Modelle, ihrer Stärken/Schwächen und der ungefähren Kosten pro Anfrage.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AIModelInfo />
                 </CardContent>
               </Card>
             </TabsContent>

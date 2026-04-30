@@ -43,6 +43,7 @@ export function TherapyRecommendation() {
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
   const [useMapReduce, setUseMapReduce] = useState(true);
+  const [useProModel, setUseProModel] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const [result, setResult] = useState("");
@@ -93,6 +94,7 @@ export function TherapyRecommendation() {
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+      if (typeof d?.useProModel === "boolean") setUseProModel(d.useProModel);
     } catch {}
   }, []);
   useEffect(() => {
@@ -102,10 +104,10 @@ export function TherapyRecommendation() {
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel,
-        selectedCategories, bevorzugteLinie, pinnedMittel,
+        selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
@@ -373,6 +375,7 @@ export function TherapyRecommendation() {
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
             useMapReduce: useMapReduce || undefined,
+            useProModel: useProModel || undefined,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
           }),
@@ -892,6 +895,29 @@ export function TherapyRecommendation() {
                 Die schnelle Wort-Treffer-Filterung ist deaktiviert, weil sie Symptom-/Mittel-Einträge übersehen kann.
                 <br />
                 ⏱️ <strong>Dauer:</strong> 30–60 Sek. statt 10 Sek. &nbsp;|&nbsp; 💰 ~1–2 Cent extra pro Empfehlung
+              </p>
+            </div>
+          </label>
+
+          {/* Pro-Modell Schalter */}
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-amber-200 bg-amber-50/60 hover:bg-amber-50 transition-colors mt-3">
+            <input
+              type="checkbox"
+              checked={useProModel}
+              onChange={(e) => setUseProModel(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-amber-600"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-sm flex items-center gap-2">
+                🧠 Tieferes Reasoning-Modell verwenden (Pro)
+                <Badge variant="outline" className="text-[10px] h-4 border-amber-400 text-amber-700">Optional</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>Standard (aus):</strong> schnelles Modell – ca. 20–40 Sek., günstig (Bruchteil eines Cents pro Empfehlung).
+                <br />
+                <strong>Pro (an):</strong> tieferes Reasoning für komplexe Fälle – ca. 60–120 Sek., ungefähr 5–10× teurer pro Empfehlung. ⚠️ Bei sehr großem Kontext besteht Timeout-Risiko (150 s Edge-Limit).
+                <br />
+                Details &amp; aktuelle Preise: Admin-Dashboard → Tab <strong>„KI-Modell &amp; Kosten"</strong>.
               </p>
             </div>
           </label>
