@@ -178,13 +178,17 @@ export function TherapyRecommendation() {
   const draftStageKey = pseudonymId.trim() ? `therapy.workflow.draft.${pseudonymId.trim()}` : "";
   const draftStageLoadedRef = useRef<string>("");
   useEffect(() => {
-    if (!draftStageKey || !result) return;
+    if (!draftStageKey) return;
     if (draftStageLoadedRef.current === draftStageKey) return;
     draftStageLoadedRef.current = draftStageKey;
     try {
       const raw = localStorage.getItem(draftStageKey);
       if (!raw) return;
       const d = JSON.parse(raw);
+      if (typeof d?.result === "string" && d.result.trim() && !result) {
+        lastInitResultRef.current = d.result;
+        setResult(d.result);
+      }
       if (Array.isArray(d?.selectedKeys)) setSelectedKeys(new Set(d.selectedKeys));
       if (Array.isArray(d?.manualMittel)) setManualMittel(d.manualMittel);
       if (Array.isArray(d?.manualDiagnosen)) setManualDiagnosen(d.manualDiagnosen);
@@ -198,6 +202,7 @@ export function TherapyRecommendation() {
     if (!draftStageKey || !result || workflowStage === "finalized") return;
     try {
       localStorage.setItem(draftStageKey, JSON.stringify({
+        result,
         selectedKeys: Array.from(selectedKeys),
         manualMittel,
         manualDiagnosen,
@@ -451,6 +456,8 @@ export function TherapyRecommendation() {
         }
       );
 
+      let completed = false;
+
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Fehler" }));
         if (resp.status === 401) {
@@ -485,7 +492,10 @@ export function TherapyRecommendation() {
           if (!line.startsWith("data: ")) continue;
 
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
+          if (jsonStr === "[DONE]") {
+            completed = true;
+            continue;
+          }
 
           try {
             const parsed = JSON.parse(jsonStr);
@@ -514,6 +524,14 @@ export function TherapyRecommendation() {
             break;
           }
         }
+      }
+
+      if (!completed && accumulated.trim()) {
+        setResult(accumulated);
+        toast({
+          title: "Zwischenstand gesichert",
+          description: "Die Verbindung wurde unterbrochen, aber der bisherige Therapieplan bleibt zur Bearbeitung erhalten.",
+        });
       }
 
       // Auto-Save wenn Pseudonym vorhanden
@@ -1421,8 +1439,11 @@ export function TherapyRecommendation() {
               )}
               {workflowStage === "preview" && (
                 <>
-                  <Button variant="outline" onClick={() => setWorkflowStage("addons")} className="gap-2">
-                    ◂ Nicht OK – zurück bearbeiten
+                  <Button variant="outline" onClick={() => setWorkflowStage("edit")} className="gap-2">
+                    ◂ Häkchen bearbeiten
+                  </Button>
+                  <Button variant="secondary" onClick={() => setWorkflowStage("addons")} className="gap-2">
+                    <Plus className="h-4 w-4" /> Mittel ergänzen
                   </Button>
                   <span className="text-xs text-muted-foreground self-center">
                     Stufe 3 von 3 · Vorschau – stimmt alles?
