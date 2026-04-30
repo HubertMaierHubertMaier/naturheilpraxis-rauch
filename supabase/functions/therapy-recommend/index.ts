@@ -803,6 +803,10 @@ serve(async (req) => {
     // Build patient context
     const patientInfo: string[] = [];
     if (alter) patientInfo.push(`Alter: ${alter} Jahre`);
+    if (geschlecht) patientInfo.push(`Geschlecht: ${geschlecht}`);
+    if (groesseCm) patientInfo.push(`Körpergröße: ${groesseCm} cm`);
+    if (gewichtKg) patientInfo.push(`Körpergewicht: ${gewichtKg} kg`);
+    if (typeof bmi === "number") patientInfo.push(`BMI: ${bmi}${bmiKategorie ? ` (${bmiKategorie})` : ""}`);
     if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
     if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
