@@ -22,6 +22,18 @@ import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRem
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 
+type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
+type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
+
+const extractWikiField = (content: string, labels: string[]) => {
+  const labelPattern = labels.join("|");
+  const match = content.match(new RegExp(`(?:^|\\n)\\s*(?:#{1,4}\\s*)?(?:\\*\\*)?(?:${labelPattern})(?:\\*\\*)?\\s*[:：-]?\\s*([^\\n]{3,220})`, "i"));
+  return match?.[1]?.replace(/^[-–—\s]+/, "").trim().slice(0, 160) || "";
+};
+
+const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
+const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
@@ -59,11 +71,11 @@ export function TherapyRecommendation() {
   const [isNachschlag, setIsNachschlag] = useState(false);
   // Manuelle Ergänzungen
   const [manualDiagnosen, setManualDiagnosen] = useState<DiagnoseEntry[]>([]);
-  const [manualMittel, setManualMittel] = useState<Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>>([]);
+  const [manualMittel, setManualMittel] = useState<ManualRemedyEntry[]>([]);
   // 4-Stufen-Workflow: edit (KI-Auswahl) → addons (eigene Mittel) → preview (Kontrolle) → finalized (gespeichert, Druck)
   const [workflowStage, setWorkflowStage] = useState<"edit" | "addons" | "preview" | "finalized">("edit");
   // Wiki-Autocomplete für manuelle Mittel
-  const [wikiRemedies, setWikiRemedies] = useState<Array<{ name: string; latin?: string; dosage?: string; application?: string }>>([]);
+  const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
@@ -157,18 +169,19 @@ export function TherapyRecommendation() {
         .select("title, content")
         .limit(2000);
       if (!data) return;
-      const items: Array<{ name: string; latin?: string; dosage?: string; application?: string }> = [];
+      const items: WikiRemedyEntry[] = [];
       for (const row of data as Array<{ title: string; content: string }>) {
         const title = row.title?.trim();
         if (!title) continue;
         // Latin-Name aus erster Zeile/Klammer
         const latinMatch = row.content?.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
-        // Erste Dosierung suchen (sehr grob)
-        const doseMatch = row.content?.match(/Dosierung[:\s]+([^\n]{3,80})/i);
+        const content = row.content || "";
         items.push({
           name: title,
           latin: latinMatch?.[1],
-          dosage: doseMatch?.[1]?.trim().slice(0, 60),
+          dosage: extractWikiField(content, ["Dosierung", "Dosis", "Einnahmeempfehlung"]),
+          application: extractWikiField(content, ["Anwendung", "Einnahme", "Applikation"]),
+          reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Eigenschaften", "Geeignet für", "Anwendungsgebiet", "Anwendungsgebiete"]),
         });
       }
       setWikiRemedies(items);
@@ -236,7 +249,14 @@ export function TherapyRecommendation() {
     });
   };
 
-  const createEmptyManualRemedy = () => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+  const createEmptyManualRemedy = (): ManualRemedyEntry => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+
+  const goToPreviewFromAddons = () => {
+    setManualMittel((arr) => arr.filter((m) => m.name.trim() || m.dosage.trim() || m.application.trim() || m.duration.trim() || m.reason.trim()));
+    setWorkflowStage("preview");
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    toast({ title: "Ergänzungen übernommen", description: "Die Vorschau enthält jetzt die zusätzlich eingetragenen Mittel." });
+  };
 
   const openManualAddons = (ensureInputRow = false) => {
     if (ensureInputRow) {
@@ -1359,7 +1379,7 @@ export function TherapyRecommendation() {
                 {manualMittel.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt. Klick auf „Mittel hinzufügen" – tippe im Namensfeld, um Wiki-Vorschläge zu bekommen.</p>
                 )}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {manualMittel.map((m, idx) => (
                     <ManualRemedyRow
                       key={idx}
@@ -1378,6 +1398,11 @@ export function TherapyRecommendation() {
                 >
                   <Plus className="h-4 w-4" /> Mittel hinzufügen
                 </Button>
+                <div className="flex justify-end border-t pt-3 mt-2">
+                  <Button onClick={goToPreviewFromAddons} className="gap-2">
+                    ✓ Ergänzungen übernehmen und Vorschau anzeigen
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -1448,8 +1473,8 @@ export function TherapyRecommendation() {
                   <span className="text-xs text-muted-foreground self-center">
                     Stufe 2 von 3 · {manualMittel.filter((m) => m.name.trim()).length} eigene Mittel
                   </span>
-                  <Button onClick={() => setWorkflowStage("preview")} className="gap-2">
-                    Weiter zur Vorschau ▸
+                  <Button onClick={goToPreviewFromAddons} className="gap-2">
+                    ✓ Ergänzungen übernehmen
                   </Button>
                 </>
               )}
@@ -1515,8 +1540,8 @@ function ManualRemedyRow({
   onChange,
   onRemove,
 }: {
-  entry: { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
-  wikiRemedies: Array<{ name: string; latin?: string; dosage?: string; application?: string }>;
+  entry: ManualRemedyEntry;
+  wikiRemedies: WikiRemedyEntry[];
   onChange: (patch: Partial<typeof entry>) => void;
   onRemove: () => void;
 }) {
@@ -1529,9 +1554,20 @@ function ManualRemedyRow({
       .slice(0, 8);
   }, [entry.name, wikiRemedies]);
 
+  const applyDosageSelect = (unit: string) => {
+    if (!unit) return;
+    onChange({ dosage: entry.dosage ? `${entry.dosage} · ${unit}` : unit });
+  };
+
+  const applyIntakePattern = (pattern: string) => {
+    if (!pattern) return;
+    onChange({ application: entry.application ? `${entry.application} · ${pattern}` : pattern });
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-2 items-start relative">
-      <div className="col-span-3 relative">
+    <div className="rounded-md border bg-background/80 p-3 space-y-2 relative">
+      <div className="grid grid-cols-12 gap-2 items-start">
+      <div className="col-span-12 md:col-span-3 relative">
         <Input
           placeholder="Mittelname (Wiki-Suche)"
           value={entry.name}
@@ -1551,6 +1587,8 @@ function ManualRemedyRow({
                   onChange({
                     name: s.name,
                     dosage: entry.dosage || s.dosage || "",
+                    application: entry.application || s.application || "",
+                    reason: entry.reason || s.reason || s.application || "",
                   });
                   setShowSuggestions(false);
                 }}
@@ -1558,31 +1596,32 @@ function ManualRemedyRow({
                 <span className="font-medium">{s.name}</span>
                 {s.latin && <span className="italic text-muted-foreground ml-1">({s.latin})</span>}
                 {s.dosage && <span className="block text-[10px] text-muted-foreground">{s.dosage}</span>}
+                {s.reason && <span className="block text-[10px] text-muted-foreground">Indikation: {s.reason}</span>}
               </button>
             ))}
           </div>
         )}
       </div>
       <Input
-        className="col-span-2 font-mono text-sm"
+        className="col-span-12 md:col-span-2 font-mono text-sm"
         placeholder="Dosierung"
         value={entry.dosage}
         onChange={(e) => onChange({ dosage: e.target.value })}
       />
       <Input
-        className="col-span-2"
+        className="col-span-12 md:col-span-2"
         placeholder="Anwendung"
         value={entry.application}
         onChange={(e) => onChange({ application: e.target.value })}
       />
       <Input
-        className="col-span-1"
+        className="col-span-10 md:col-span-1"
         placeholder="Dauer"
         value={entry.duration}
         onChange={(e) => onChange({ duration: e.target.value })}
       />
       <Input
-        className="col-span-3"
+        className="col-span-12 md:col-span-3"
         placeholder="Begründung / Indikation"
         value={entry.reason}
         onChange={(e) => onChange({ reason: e.target.value })}
@@ -1590,6 +1629,29 @@ function ManualRemedyRow({
       <Button variant="ghost" size="icon" className="col-span-1 h-9 w-9 text-destructive" onClick={onRemove}>
         <X className="h-4 w-4" />
       </Button>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        <Select onValueChange={applyDosageSelect}>
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue placeholder="Dosierungsart auswählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {DOSAGE_UNITS.map((unit) => (
+              <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={applyIntakePattern}>
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue placeholder="Einnahmeschema auswählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {INTAKE_PATTERNS.map((pattern) => (
+              <SelectItem key={pattern} value={pattern}>{pattern}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
