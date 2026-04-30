@@ -178,13 +178,17 @@ export function TherapyRecommendation() {
   const draftStageKey = pseudonymId.trim() ? `therapy.workflow.draft.${pseudonymId.trim()}` : "";
   const draftStageLoadedRef = useRef<string>("");
   useEffect(() => {
-    if (!draftStageKey || !result) return;
+    if (!draftStageKey) return;
     if (draftStageLoadedRef.current === draftStageKey) return;
     draftStageLoadedRef.current = draftStageKey;
     try {
       const raw = localStorage.getItem(draftStageKey);
       if (!raw) return;
       const d = JSON.parse(raw);
+      if (typeof d?.result === "string" && d.result.trim() && !result) {
+        lastInitResultRef.current = d.result;
+        setResult(d.result);
+      }
       if (Array.isArray(d?.selectedKeys)) setSelectedKeys(new Set(d.selectedKeys));
       if (Array.isArray(d?.manualMittel)) setManualMittel(d.manualMittel);
       if (Array.isArray(d?.manualDiagnosen)) setManualDiagnosen(d.manualDiagnosen);
@@ -198,6 +202,7 @@ export function TherapyRecommendation() {
     if (!draftStageKey || !result || workflowStage === "finalized") return;
     try {
       localStorage.setItem(draftStageKey, JSON.stringify({
+        result,
         selectedKeys: Array.from(selectedKeys),
         manualMittel,
         manualDiagnosen,
