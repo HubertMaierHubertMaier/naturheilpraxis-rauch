@@ -1379,7 +1379,7 @@ export function TherapyRecommendation() {
                 {manualMittel.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt. Klick auf „Mittel hinzufügen" – tippe im Namensfeld, um Wiki-Vorschläge zu bekommen.</p>
                 )}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {manualMittel.map((m, idx) => (
                     <ManualRemedyRow
                       key={idx}
@@ -1398,6 +1398,11 @@ export function TherapyRecommendation() {
                 >
                   <Plus className="h-4 w-4" /> Mittel hinzufügen
                 </Button>
+                <div className="flex justify-end border-t pt-3 mt-2">
+                  <Button onClick={goToPreviewFromAddons} className="gap-2">
+                    ✓ Ergänzungen übernehmen und Vorschau anzeigen
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
