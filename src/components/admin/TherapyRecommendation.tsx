@@ -22,6 +22,18 @@ import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRem
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 
+type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
+type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
+
+const extractWikiField = (content: string, labels: string[]) => {
+  const labelPattern = labels.join("|");
+  const match = content.match(new RegExp(`(?:^|\\n)\\s*(?:#{1,4}\\s*)?(?:\\*\\*)?(?:${labelPattern})(?:\\*\\*)?\\s*[:：-]?\\s*([^\\n]{3,220})`, "i"));
+  return match?.[1]?.replace(/^[-–—\s]+/, "").trim().slice(0, 160) || "";
+};
+
+const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap.-Tabl. pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
+const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
