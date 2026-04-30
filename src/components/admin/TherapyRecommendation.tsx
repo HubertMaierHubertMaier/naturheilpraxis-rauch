@@ -94,6 +94,7 @@ export function TherapyRecommendation() {
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+      if (typeof d?.useProModel === "boolean") setUseProModel(d.useProModel);
     } catch {}
   }, []);
   useEffect(() => {
