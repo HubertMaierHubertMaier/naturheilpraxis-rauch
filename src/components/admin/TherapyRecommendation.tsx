@@ -456,6 +456,8 @@ export function TherapyRecommendation() {
         }
       );
 
+      let completed = false;
+
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Fehler" }));
         if (resp.status === 401) {
@@ -490,7 +492,10 @@ export function TherapyRecommendation() {
           if (!line.startsWith("data: ")) continue;
 
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
+          if (jsonStr === "[DONE]") {
+            completed = true;
+            continue;
+          }
 
           try {
             const parsed = JSON.parse(jsonStr);
@@ -519,6 +524,14 @@ export function TherapyRecommendation() {
             break;
           }
         }
+      }
+
+      if (!completed && accumulated.trim()) {
+        setResult(accumulated);
+        toast({
+          title: "Zwischenstand gesichert",
+          description: "Die Verbindung wurde unterbrochen, aber der bisherige Therapieplan bleibt zur Bearbeitung erhalten.",
+        });
       }
 
       // Auto-Save wenn Pseudonym vorhanden
