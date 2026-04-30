@@ -192,6 +192,25 @@ export function TherapyRecommendation() {
       manualMittel: manualMittel.filter((m) => m.name.trim()),
     });
   };
+  // BMI-Berechnung & Klassifikation
+  const bmiInfo = useMemo(() => {
+    const h = parseFloat(groesseCm);
+    const w = parseFloat(gewichtKg);
+    if (!h || !w || h < 50 || h > 250 || w < 10 || w > 400) return null;
+    const m = h / 100;
+    const bmi = w / (m * m);
+    let kategorie = "";
+    let tone: "ok" | "warn" | "danger" = "ok";
+    let hinweis = "";
+    if (bmi < 16) { kategorie = "Starkes Untergewicht"; tone = "danger"; hinweis = "Mangelernährung, Sarkopenie, Immunschwäche – Aufbaukost & Mikronährstoffe zwingend"; }
+    else if (bmi < 18.5) { kategorie = "Untergewicht"; tone = "warn"; hinweis = "Aufbau-/Mitochondrien-Strategie, Eiweiß & B-Vitamine"; }
+    else if (bmi < 25) { kategorie = "Normalgewicht"; tone = "ok"; hinweis = ""; }
+    else if (bmi < 30) { kategorie = "Übergewicht"; tone = "warn"; hinweis = "Insulinresistenz möglich – LOGI/Low-Carb, Bewegung, Leberentlastung"; }
+    else if (bmi < 35) { kategorie = "Adipositas Grad I"; tone = "danger"; hinweis = "Metabolisches Syndrom Risiko – Stoffwechsel-/Schilddrüsen-Check, NAFLD, HbA1c"; }
+    else if (bmi < 40) { kategorie = "Adipositas Grad II"; tone = "danger"; hinweis = "Hohes kardiometabolisches Risiko – konsequente Ernährungsumstellung & Begleitlabor"; }
+    else { kategorie = "Adipositas Grad III"; tone = "danger"; hinweis = "Sehr hohes Risiko – multimodale Begleitung, ärztliche Mitbeurteilung sinnvoll"; }
+    return { bmi: Math.round(bmi * 10) / 10, kategorie, tone, hinweis };
+  }, [groesseCm, gewichtKg]);
 
 
   const handleGeneratePseudonym = async () => {
