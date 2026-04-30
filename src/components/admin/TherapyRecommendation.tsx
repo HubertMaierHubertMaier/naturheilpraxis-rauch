@@ -1564,6 +1564,32 @@ function ManualRemedyRow({
     onChange({ application: entry.application ? `${entry.application} · ${pattern}` : pattern });
   };
 
+  // Merken, welcher Reason/Application zuletzt aus der Wiki gesetzt wurde.
+  // Solange der Wert unverändert ist, dürfen wir ihn beim Mittel-Wechsel überschreiben.
+  const wikiSetRef = useRef<{ reason: string; application: string; dosage: string }>({ reason: "", application: "", dosage: "" });
+
+  const applyWikiRemedy = (s: WikiRemedyEntry) => {
+    const newReason = s.reason || s.application || "";
+    const newApplication = s.application || "";
+    const newDosage = s.dosage || "";
+    // Nur überschreiben, wenn das Feld leer ist ODER noch den letzten Wiki-Wert enthält
+    // (d.h. der User hat es nicht selbst geändert).
+    const keepReason = entry.reason && entry.reason !== wikiSetRef.current.reason;
+    const keepApplication = entry.application && entry.application !== wikiSetRef.current.application;
+    const keepDosage = entry.dosage && entry.dosage !== wikiSetRef.current.dosage;
+    onChange({
+      name: s.name,
+      dosage: keepDosage ? entry.dosage : newDosage,
+      application: keepApplication ? entry.application : newApplication,
+      reason: keepReason ? entry.reason : newReason,
+    });
+    wikiSetRef.current = {
+      reason: keepReason ? entry.reason : newReason,
+      application: keepApplication ? entry.application : newApplication,
+      dosage: keepDosage ? entry.dosage : newDosage,
+    };
+  };
+
   return (
     <div className="rounded-md border bg-background/80 p-3 space-y-2 relative">
       <div className="grid grid-cols-12 gap-2 items-start">
@@ -1571,7 +1597,14 @@ function ManualRemedyRow({
         <Input
           placeholder="Mittelname (Wiki-Suche)"
           value={entry.name}
-          onChange={(e) => { onChange({ name: e.target.value }); setShowSuggestions(true); }}
+          onChange={(e) => {
+            const val = e.target.value;
+            onChange({ name: val });
+            setShowSuggestions(true);
+            // Exakter Wiki-Treffer? -> automatisch Felder synchronisieren
+            const exact = wikiRemedies.find((r) => r.name.toLowerCase() === val.trim().toLowerCase());
+            if (exact) applyWikiRemedy(exact);
+          }}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
         />
@@ -1584,12 +1617,7 @@ function ManualRemedyRow({
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent border-b last:border-b-0"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onChange({
-                    name: s.name,
-                    dosage: entry.dosage || s.dosage || "",
-                    application: entry.application || s.application || "",
-                    reason: entry.reason || s.reason || s.application || "",
-                  });
+                  applyWikiRemedy(s);
                   setShowSuggestions(false);
                 }}
               >
