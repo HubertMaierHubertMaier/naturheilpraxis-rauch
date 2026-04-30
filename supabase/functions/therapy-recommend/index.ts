@@ -1151,12 +1151,14 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        // gemini-2.5-flash: ~3-5x schneller als pro, hält 150s Edge-Limit ein.
+        // Pro brauchte bei 64KB Prompt + 16k Tokens regelmäßig >150s → IDLE_TIMEOUT.
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: safeSystem },
           { role: "user", content: safeUser },
         ],
-        max_tokens: 16384,
+        max_tokens: 8192,
         stream: true,
       }),
     });
