@@ -1152,7 +1152,22 @@ export function TherapyRecommendation() {
               PDF Praxis
               {diagnosen.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{diagnosen.length} Dx</Badge>}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setWorkflowStage("edit")} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setWorkflowStage("edit");
+                // Kurz warten, bis der Edit-View gerendert ist, dann zur Empfehlungsliste scrollen
+                setTimeout(() => {
+                  resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+                toast({
+                  title: "Bearbeitung wieder geöffnet",
+                  description: "Häkchen anpassen, dann mit „Auswahl übernehmen ▸\" zurück zur Vorschau.",
+                });
+              }}
+              className="gap-2"
+            >
               ◂ Zurück zur Bearbeitung
             </Button>
           </>
