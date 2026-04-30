@@ -230,6 +230,14 @@ export function TherapyRecommendation() {
     setGeschlecht(d.geschlecht || "");
     setGroesseCm(d.groesseCm || "");
     setGewichtKg(d.gewichtKg || "");
+    // Hinweis, falls die alte Sitzung die neuen Felder noch nicht enthielt
+    const missingNew = !d.geschlecht && !d.groesseCm && !d.gewichtKg;
+    if (missingNew) {
+      toast({
+        title: "Ältere Sitzung – bitte Konstitution ergänzen",
+        description: "Geschlecht, Größe und Gewicht waren in dieser Sitzung noch nicht erfasst. Bitte erneut eingeben – die nächste Generierung speichert sie dauerhaft mit.",
+      });
+    }
     setSchwanger(d.schwanger || "nein");
     setMedikamente(d.medikamente || "");
     setBisherigeMittel(d.bisherigeMittel || "");
