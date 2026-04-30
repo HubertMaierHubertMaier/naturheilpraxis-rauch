@@ -898,6 +898,29 @@ export function TherapyRecommendation() {
               </p>
             </div>
           </label>
+
+          {/* Pro-Modell Schalter */}
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-amber-200 bg-amber-50/60 hover:bg-amber-50 transition-colors mt-3">
+            <input
+              type="checkbox"
+              checked={useProModel}
+              onChange={(e) => setUseProModel(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-amber-600"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-sm flex items-center gap-2">
+                🧠 Tieferes Reasoning-Modell verwenden (Pro)
+                <Badge variant="outline" className="text-[10px] h-4 border-amber-400 text-amber-700">Optional</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>Standard (aus):</strong> schnelles Modell – ca. 20–40 Sek., günstig (Bruchteil eines Cents pro Empfehlung).
+                <br />
+                <strong>Pro (an):</strong> tieferes Reasoning für komplexe Fälle – ca. 60–120 Sek., ungefähr 5–10× teurer pro Empfehlung. ⚠️ Bei sehr großem Kontext besteht Timeout-Risiko (150 s Edge-Limit).
+                <br />
+                Details &amp; aktuelle Preise: Admin-Dashboard → Tab <strong>„KI-Modell &amp; Kosten"</strong>.
+              </p>
+            </div>
+          </label>
         </CardContent>
       </Card>
 
