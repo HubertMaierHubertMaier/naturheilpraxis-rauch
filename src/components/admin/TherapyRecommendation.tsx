@@ -1439,8 +1439,11 @@ export function TherapyRecommendation() {
               )}
               {workflowStage === "preview" && (
                 <>
-                  <Button variant="outline" onClick={() => setWorkflowStage("addons")} className="gap-2">
-                    ◂ Nicht OK – zurück bearbeiten
+                  <Button variant="outline" onClick={() => setWorkflowStage("edit")} className="gap-2">
+                    ◂ Häkchen bearbeiten
+                  </Button>
+                  <Button variant="secondary" onClick={() => setWorkflowStage("addons")} className="gap-2">
+                    <Plus className="h-4 w-4" /> Mittel ergänzen
                   </Button>
                   <span className="text-xs text-muted-foreground self-center">
                     Stufe 3 von 3 · Vorschau – stimmt alles?
