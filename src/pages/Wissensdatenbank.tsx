@@ -10,6 +10,7 @@ import { BookOpen, Bug, Stethoscope, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
 import { TherapyPatientOverview } from "@/components/admin/therapy/TherapyPatientOverview";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface KnowledgeEntry {
   id: string;
@@ -93,7 +94,9 @@ const Wissensdatenbank = () => {
             <PathogenIndex entries={entries} loading={entriesLoading} />
           </TabsContent>
           <TabsContent value="therapie">
-            <TherapyRecommendation />
+            <ErrorBoundary label="Therapie-Empfehlung">
+              <TherapyRecommendation />
+            </ErrorBoundary>
           </TabsContent>
           <TabsContent value="patienten">
             <TherapyPatientOverview />
