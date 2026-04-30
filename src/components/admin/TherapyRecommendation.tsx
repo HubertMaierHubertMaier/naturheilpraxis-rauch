@@ -818,7 +818,11 @@ export function TherapyRecommendation() {
         </Card>
       </div>
 
+      {/* Live-Übersicht der erfassten Eingaben (Pathogene, Symptome, Erkrankung) */}
+      <LiveInputSummary pathogens={pathogens} symptome={symptome} erkrankung={erkrankung} />
+
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
+
       <Card className="border-blue-300/50 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
         <CardContent className="pt-4 pb-4">
           <label className="flex items-start gap-3 cursor-pointer">
