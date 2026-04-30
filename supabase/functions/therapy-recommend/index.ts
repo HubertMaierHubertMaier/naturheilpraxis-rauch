@@ -549,7 +549,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
@@ -803,6 +803,10 @@ serve(async (req) => {
     // Build patient context
     const patientInfo: string[] = [];
     if (alter) patientInfo.push(`Alter: ${alter} Jahre`);
+    if (geschlecht) patientInfo.push(`Geschlecht: ${geschlecht}`);
+    if (groesseCm) patientInfo.push(`Körpergröße: ${groesseCm} cm`);
+    if (gewichtKg) patientInfo.push(`Körpergewicht: ${gewichtKg} kg`);
+    if (typeof bmi === "number") patientInfo.push(`BMI: ${bmi}${bmiKategorie ? ` (${bmiKategorie})` : ""}`);
     if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
     if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
@@ -894,6 +898,19 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 2. **Schwangerschaft/Stillzeit**: ${schwanger || "Nicht angegeben"}
    - Falls schwanger/stillend: KEIN Wermut (Artemisia), KEINE Schwarzwalnuss, KEIN Beifuß, KEIN Rainfarn, generell KEINE antiparasitären Kuren, KEIN hochdosiertes Vitamin A
    - Nur absolut sichere Mittel empfehlen
+
+2b. **Geschlecht**: ${geschlecht || "Nicht angegeben"}
+   - Bei "weiblich": gynäkologische Mittel (Aletris-Heel, Sepia, Pulsatilla, Lachesis, Cimicifuga, Mönchspfeffer/Vitex) bei passender Indikation berücksichtigen.
+   - Bei "männlich": KEINE primär gynäkologischen Mittel (z.B. Aletris-Heel) – bei Erschöpfung stattdessen China-Homaccord, Nux vomica-Homaccord, Coenzyme/Ubichinon compositum.
+   - Männerspezifika: Prostata (Sabal, Brennnesselwurzel, Kürbiskern, Lycopin), Testosteron-Stützung (Zink, Maca) bei passender Indikation.
+
+2c. **Körperkonstitution & BMI**: ${typeof bmi === "number" ? `BMI ${bmi} (${bmiKategorie})` : (groesseCm && gewichtKg ? `Größe ${groesseCm} cm, Gewicht ${gewichtKg} kg` : "Nicht angegeben")}
+   - **BMI < 18.5 (Untergewicht)**: Aufbau-/Mitochondrienstrategie, Eiweiß (Whey/Lupinen), B-Komplex, Coenzyme compositum, Zink, kein zusätzliches Fasten/Detox, KEINE appetithemmenden Bitterstoffe in hoher Dosis. Eigene Sektion "🥗 Ernährung & Aufbau" mit konkreten Empfehlungen (3–5 Mahlzeiten, kalorisch dichte gesunde Fette, Eiweißanteil ≥1.2 g/kg).
+   - **BMI 25–29.9 (Übergewicht)**: Insulinresistenz prüfen, LOGI/Low-Carb-Empfehlung, Bitterstoffe (Amara), Berberin, Mariendistel zur Leberentlastung, Bewegungsempfehlung. Sektion "🥗 Ernährung & Stoffwechsel".
+   - **BMI 30–34.9 (Adipositas I)**: zusätzlich Hinweis auf metabolisches Syndrom (HbA1c, Lipidstatus, Leberenzyme prüfen), NAFLD-Risiko, Schilddrüse (TSH, fT3/fT4) abklären lassen.
+   - **BMI ≥ 35 (Adipositas II/III)**: hohe kardiometabolische Gefahr – konsequente Ernährungsumstellung, Empfehlung zur engmaschigen praxisinternen Begleitung; Bildgebung/Diagnostik nur bei zusätzlichem Verdacht.
+   - **BMI ≥ 25 + Hashimoto/SD-Verdacht**: explizit Selen, Zink, Tyrosin, Jodstatus prüfen.
+   - Falls BMI nicht angegeben: KEINE Annahmen treffen, kein Ernährungsblock erzwingen.
 
 3. **Medikamente**: ${medikamente || "Keine angegeben"}
    - Blutverdünner (Marcumar, Warfarin, Eliquis, Xarelto etc.): KEINE Gewürznelke, KEIN Ingwer hochdosiert, KEIN Kurkuma hochdosiert, KEIN Omega-3 hochdosiert, KEIN Ginkgo

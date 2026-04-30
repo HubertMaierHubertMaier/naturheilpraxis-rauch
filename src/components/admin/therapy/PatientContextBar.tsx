@@ -1,8 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound } from "lucide-react";
+import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound, Scale } from "lucide-react";
 
 interface Props {
   alter?: string;
+  geschlecht?: string;
+  bmi?: number;
+  bmiKategorie?: string;
+  bmiTone?: "ok" | "warn" | "danger";
   schwanger?: string;
   medikamente?: string;
   budget?: string;
@@ -11,7 +15,7 @@ interface Props {
   stuhlbefund?: string;
 }
 
-export function PatientContextBar({ alter, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
+export function PatientContextBar({ alter, geschlecht, bmi, bmiKategorie, bmiTone, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
   const items: Array<{ icon: React.ReactNode; label: string; value: string; tone?: "warn" | "danger" | "ok" }> = [];
 
   if (alter) {
@@ -21,6 +25,18 @@ export function PatientContextBar({ alter, schwanger, medikamente, budget, labor
       label: "Alter",
       value: `${alter} J.`,
       tone: isMinor ? "warn" : "ok",
+    });
+  }
+  if (geschlecht) {
+    const label = geschlecht === "weiblich" ? "♀ Weiblich" : geschlecht === "maennlich" ? "♂ Männlich" : "⚧ Divers";
+    items.push({ icon: <User className="h-3.5 w-3.5" />, label: "Sex", value: label, tone: "ok" });
+  }
+  if (typeof bmi === "number") {
+    items.push({
+      icon: <Scale className="h-3.5 w-3.5" />,
+      label: "BMI",
+      value: `${bmi} ${bmiKategorie ? "· " + bmiKategorie : ""}`,
+      tone: bmiTone || "ok",
     });
   }
   if (schwanger && schwanger !== "nein") {
