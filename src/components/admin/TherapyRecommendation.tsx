@@ -31,7 +31,7 @@ const extractWikiField = (content: string, labels: string[]) => {
   return match?.[1]?.replace(/^[-–—\s]+/, "").trim().slice(0, 160) || "";
 };
 
-const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap.-Tabl. pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
+const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
 const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
 
 export function TherapyRecommendation() {
@@ -181,7 +181,7 @@ export function TherapyRecommendation() {
           latin: latinMatch?.[1],
           dosage: extractWikiField(content, ["Dosierung", "Dosis", "Einnahmeempfehlung"]),
           application: extractWikiField(content, ["Anwendung", "Einnahme", "Applikation"]),
-          reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Anwendungsgebiet"]),
+          reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Eigenschaften", "Geeignet für", "Anwendungsgebiet", "Anwendungsgebiete"]),
         });
       }
       setWikiRemedies(items);
