@@ -71,11 +71,11 @@ export function TherapyRecommendation() {
   const [isNachschlag, setIsNachschlag] = useState(false);
   // Manuelle Ergänzungen
   const [manualDiagnosen, setManualDiagnosen] = useState<DiagnoseEntry[]>([]);
-  const [manualMittel, setManualMittel] = useState<Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>>([]);
+  const [manualMittel, setManualMittel] = useState<ManualRemedyEntry[]>([]);
   // 4-Stufen-Workflow: edit (KI-Auswahl) → addons (eigene Mittel) → preview (Kontrolle) → finalized (gespeichert, Druck)
   const [workflowStage, setWorkflowStage] = useState<"edit" | "addons" | "preview" | "finalized">("edit");
   // Wiki-Autocomplete für manuelle Mittel
-  const [wikiRemedies, setWikiRemedies] = useState<Array<{ name: string; latin?: string; dosage?: string; application?: string }>>([]);
+  const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
@@ -169,18 +169,19 @@ export function TherapyRecommendation() {
         .select("title, content")
         .limit(2000);
       if (!data) return;
-      const items: Array<{ name: string; latin?: string; dosage?: string; application?: string }> = [];
+      const items: WikiRemedyEntry[] = [];
       for (const row of data as Array<{ title: string; content: string }>) {
         const title = row.title?.trim();
         if (!title) continue;
         // Latin-Name aus erster Zeile/Klammer
         const latinMatch = row.content?.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
-        // Erste Dosierung suchen (sehr grob)
-        const doseMatch = row.content?.match(/Dosierung[:\s]+([^\n]{3,80})/i);
+        const content = row.content || "";
         items.push({
           name: title,
           latin: latinMatch?.[1],
-          dosage: doseMatch?.[1]?.trim().slice(0, 60),
+          dosage: extractWikiField(content, ["Dosierung", "Dosis", "Einnahmeempfehlung"]),
+          application: extractWikiField(content, ["Anwendung", "Einnahme", "Applikation"]),
+          reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Anwendungsgebiet"]),
         });
       }
       setWikiRemedies(items);
