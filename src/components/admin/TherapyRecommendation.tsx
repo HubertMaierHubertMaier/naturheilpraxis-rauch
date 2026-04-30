@@ -525,6 +525,7 @@ export function TherapyRecommendation() {
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
+    try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
   };
 
   return (
