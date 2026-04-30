@@ -556,9 +556,14 @@ export function TherapyRecommendation() {
       {/* Input Form */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Left: Main inputs */}
-        <Card>
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Patientenbefund</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
+                Patientenbefund
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
