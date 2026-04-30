@@ -62,6 +62,51 @@ export function TherapyRecommendation() {
   const resultRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
+  // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
+  const DRAFT_KEY = "therapy.draftInputs.v1";
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    if (draftLoadedRef.current) return;
+    draftLoadedRef.current = true;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (typeof d?.pseudonymId === "string") setPseudonymId(d.pseudonymId);
+      if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
+      if (typeof d?.symptome === "string") setSymptome(d.symptome);
+      if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
+      if (typeof d?.alter === "string") setAlter(d.alter);
+      if (typeof d?.geschlecht === "string") setGeschlecht(d.geschlecht);
+      if (typeof d?.groesseCm === "string") setGroesseCm(d.groesseCm);
+      if (typeof d?.gewichtKg === "string") setGewichtKg(d.gewichtKg);
+      if (typeof d?.schwanger === "string") setSchwanger(d.schwanger);
+      if (typeof d?.medikamente === "string") setMedikamente(d.medikamente);
+      if (typeof d?.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
+      if (typeof d?.budget === "string") setBudget(d.budget);
+      if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
+      if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
+      if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
+      if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
+      if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
+      if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
+      if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
+      if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
+        groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
+        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel,
+        selectedCategories, bevorzugteLinie, pinnedMittel,
+      }));
+    } catch {}
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel]);
+
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
   // - Nachschlag: bisherige Häkchen erhalten, neu hinzugekommene Keys automatisch anhaken.
@@ -480,6 +525,7 @@ export function TherapyRecommendation() {
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
+    try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
   };
 
   return (

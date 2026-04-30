@@ -21,9 +21,18 @@ interface KnowledgeEntry {
   updated_at: string;
 }
 
+const TAB_STORAGE_KEY = "wissensdatenbank.activeTab";
+
 const Wissensdatenbank = () => {
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState("wiki");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === "undefined") return "wiki";
+    return sessionStorage.getItem(TAB_STORAGE_KEY) || "wiki";
+  });
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    try { sessionStorage.setItem(TAB_STORAGE_KEY, val); } catch {}
+  };
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
 
@@ -58,7 +67,7 @@ const Wissensdatenbank = () => {
   return (
     <Layout>
       <div className="container py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-6 sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
             <TabsTrigger value="wiki" className="gap-2">
               <BookOpen className="h-4 w-4" />
