@@ -66,6 +66,7 @@ export function TherapyRecommendation() {
   const [wikiRemedies, setWikiRemedies] = useState<Array<{ name: string; latin?: string; dosage?: string; application?: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
@@ -233,6 +234,21 @@ export function TherapyRecommendation() {
       });
       return next;
     });
+  };
+
+  const createEmptyManualRemedy = () => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+
+  const openManualAddons = (ensureInputRow = false) => {
+    if (ensureInputRow) {
+      setManualMittel((arr) => {
+        const hasBlankRow = arr.some((m) => !m.name.trim() && !m.dosage.trim() && !m.application.trim() && !m.duration.trim() && !m.reason.trim());
+        return hasBlankRow ? arr : [...arr, createEmptyManualRemedy()];
+      });
+    }
+    setWorkflowStage("addons");
+    setTimeout(() => {
+      manualAddonsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const fetchDiagnosen = async (): Promise<DiagnoseEntry[]> => {
