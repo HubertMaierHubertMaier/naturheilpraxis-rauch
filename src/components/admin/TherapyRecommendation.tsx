@@ -19,6 +19,7 @@ import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
+import { LiveInputSummary } from "./therapy/LiveInputSummary";
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
@@ -230,6 +231,14 @@ export function TherapyRecommendation() {
     setGeschlecht(d.geschlecht || "");
     setGroesseCm(d.groesseCm || "");
     setGewichtKg(d.gewichtKg || "");
+    // Hinweis, falls die alte Sitzung die neuen Felder noch nicht enthielt
+    const missingNew = !d.geschlecht && !d.groesseCm && !d.gewichtKg;
+    if (missingNew) {
+      toast({
+        title: "Ältere Sitzung – bitte Konstitution ergänzen",
+        description: "Geschlecht, Größe und Gewicht waren in dieser Sitzung noch nicht erfasst. Bitte erneut eingeben – die nächste Generierung speichert sie dauerhaft mit.",
+      });
+    }
     setSchwanger(d.schwanger || "nein");
     setMedikamente(d.medikamente || "");
     setBisherigeMittel(d.bisherigeMittel || "");
@@ -810,7 +819,11 @@ export function TherapyRecommendation() {
         </Card>
       </div>
 
+      {/* Live-Übersicht der erfassten Eingaben (Pathogene, Symptome, Erkrankung) */}
+      <LiveInputSummary pathogens={pathogens} symptome={symptome} erkrankung={erkrankung} />
+
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
+
       <Card className="border-blue-300/50 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
         <CardContent className="pt-4 pb-4">
           <label className="flex items-start gap-3 cursor-pointer">
