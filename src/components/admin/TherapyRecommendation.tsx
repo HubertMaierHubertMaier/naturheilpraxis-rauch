@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -908,9 +909,70 @@ export function TherapyRecommendation() {
               className="mt-1 h-4 w-4 accent-amber-600"
             />
             <div className="flex-1">
-              <div className="font-medium text-sm flex items-center gap-2">
+              <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
                 🧠 Tieferes Reasoning-Modell verwenden (Pro)
                 <Badge variant="outline" className="text-[10px] h-4 border-amber-400 text-amber-700">Optional</Badge>
+                <Popover>
+                  <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      className="ml-auto inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-amber-300 bg-white hover:bg-amber-100 text-amber-800 transition-colors"
+                    >
+                      <Lightbulb className="h-3 w-3" />
+                      Welches Modell wann?
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[420px] text-xs"
+                    align="end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="space-y-3">
+                      <div className="font-semibold text-sm flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-amber-600" />
+                        KI-Empfehlung pro Arbeitsschritt
+                      </div>
+
+                      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2">
+                        <div className="font-semibold text-emerald-800">Stufe 1 · Wiki-Sichtung (Map-Reduce)</div>
+                        <div className="text-emerald-900/80 mt-0.5">
+                          <strong>Gemini 2.5 Flash-Lite</strong> – bewertet alle 280 Wiki-Einträge in Batches.
+                          Schnell &amp; sehr günstig, fest verdrahtet (kein Schalter nötig).
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
+                        <div className="font-semibold text-sky-800">Stufe 2 · Standard-Empfehlung</div>
+                        <div className="text-sky-900/80 mt-0.5">
+                          <strong>Gemini 2.5 Flash</strong> (Pro-Schalter <em>aus</em>) – empfohlen für
+                          ~90% der Fälle: einfache bis mittlere Anamnesen, klare Pathogen-Liste, Standard-Symptome.
+                          <br />⏱ 20–40 Sek &nbsp;|&nbsp; 💰 Bruchteil eines Cents
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
+                        <div className="font-semibold text-amber-800">Stufe 2 · Pro-Empfehlung</div>
+                        <div className="text-amber-900/80 mt-0.5">
+                          <strong>Gemini 2.5 Pro</strong> (Pro-Schalter <em>an</em>) – empfohlen bei:
+                          <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                            <li>multimorbiden Patienten (≥ 4 Diagnosen)</li>
+                            <li>vielen Pathogenen (&gt; 8) oder komplexer Stuhl-/Laborlage</li>
+                            <li>Schwangerschaft, Kindern, vielen Medikamenten (Interaktionen)</li>
+                            <li>widersprüchlichen Vorbefunden / Therapieversagen</li>
+                          </ul>
+                          ⏱ 60–120 Sek &nbsp;|&nbsp; 💰 ca. 5–10× teurer
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-muted bg-muted/40 p-2 text-muted-foreground">
+                        <strong className="text-foreground">Faustregel:</strong> Erst <em>Flash</em> probieren.
+                        Wenn die Empfehlung zu oberflächlich oder widersprüchlich wirkt → erneut mit <em>Pro</em>.
+                        <br />Vollständige Preisliste: Admin-Dashboard → Tab <strong>„KI-Modell &amp; Kosten"</strong>.
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 <strong>Standard (aus):</strong> schnelles Modell – ca. 20–40 Sek., günstig (Bruchteil eines Cents pro Empfehlung).
