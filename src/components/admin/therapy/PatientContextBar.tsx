@@ -1,8 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound } from "lucide-react";
+import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound, Scale, Venus, Mars, Transgender } from "lucide-react";
 
 interface Props {
   alter?: string;
+  geschlecht?: string;
+  bmi?: number;
+  bmiKategorie?: string;
+  bmiTone?: "ok" | "warn" | "danger";
   schwanger?: string;
   medikamente?: string;
   budget?: string;
