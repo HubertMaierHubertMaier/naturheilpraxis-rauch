@@ -1540,8 +1540,8 @@ function ManualRemedyRow({
   onChange,
   onRemove,
 }: {
-  entry: { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
-  wikiRemedies: Array<{ name: string; latin?: string; dosage?: string; application?: string }>;
+  entry: ManualRemedyEntry;
+  wikiRemedies: WikiRemedyEntry[];
   onChange: (patch: Partial<typeof entry>) => void;
   onRemove: () => void;
 }) {
@@ -1554,9 +1554,20 @@ function ManualRemedyRow({
       .slice(0, 8);
   }, [entry.name, wikiRemedies]);
 
+  const applyDosageSelect = (unit: string) => {
+    if (!unit) return;
+    onChange({ dosage: entry.dosage ? `${entry.dosage} · ${unit}` : unit });
+  };
+
+  const applyIntakePattern = (pattern: string) => {
+    if (!pattern) return;
+    onChange({ application: entry.application ? `${entry.application} · ${pattern}` : pattern });
+  };
+
   return (
-    <div className="grid grid-cols-12 gap-2 items-start relative">
-      <div className="col-span-3 relative">
+    <div className="rounded-md border bg-background/80 p-3 space-y-2 relative">
+      <div className="grid grid-cols-12 gap-2 items-start">
+      <div className="col-span-12 md:col-span-3 relative">
         <Input
           placeholder="Mittelname (Wiki-Suche)"
           value={entry.name}
@@ -1576,6 +1587,8 @@ function ManualRemedyRow({
                   onChange({
                     name: s.name,
                     dosage: entry.dosage || s.dosage || "",
+                    application: entry.application || s.application || "",
+                    reason: entry.reason || s.reason || s.application || "",
                   });
                   setShowSuggestions(false);
                 }}
@@ -1583,31 +1596,32 @@ function ManualRemedyRow({
                 <span className="font-medium">{s.name}</span>
                 {s.latin && <span className="italic text-muted-foreground ml-1">({s.latin})</span>}
                 {s.dosage && <span className="block text-[10px] text-muted-foreground">{s.dosage}</span>}
+                {s.reason && <span className="block text-[10px] text-muted-foreground">Indikation: {s.reason}</span>}
               </button>
             ))}
           </div>
         )}
       </div>
       <Input
-        className="col-span-2 font-mono text-sm"
+        className="col-span-12 md:col-span-2 font-mono text-sm"
         placeholder="Dosierung"
         value={entry.dosage}
         onChange={(e) => onChange({ dosage: e.target.value })}
       />
       <Input
-        className="col-span-2"
+        className="col-span-12 md:col-span-2"
         placeholder="Anwendung"
         value={entry.application}
         onChange={(e) => onChange({ application: e.target.value })}
       />
       <Input
-        className="col-span-1"
+        className="col-span-10 md:col-span-1"
         placeholder="Dauer"
         value={entry.duration}
         onChange={(e) => onChange({ duration: e.target.value })}
       />
       <Input
-        className="col-span-3"
+        className="col-span-12 md:col-span-3"
         placeholder="Begründung / Indikation"
         value={entry.reason}
         onChange={(e) => onChange({ reason: e.target.value })}
@@ -1615,6 +1629,29 @@ function ManualRemedyRow({
       <Button variant="ghost" size="icon" className="col-span-1 h-9 w-9 text-destructive" onClick={onRemove}>
         <X className="h-4 w-4" />
       </Button>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        <Select onValueChange={applyDosageSelect}>
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue placeholder="Dosierungsart auswählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {DOSAGE_UNITS.map((unit) => (
+              <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={applyIntakePattern}>
+          <SelectTrigger className="h-9 text-xs">
+            <SelectValue placeholder="Einnahmeschema auswählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {INTAKE_PATTERNS.map((pattern) => (
+              <SelectItem key={pattern} value={pattern}>{pattern}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
