@@ -453,6 +453,9 @@ export function TherapyRecommendation() {
     setSymptome("");
     setErkrankung("");
     setAlter("");
+    setGeschlecht("");
+    setGroesseCm("");
+    setGewichtKg("");
     setSchwanger("nein");
     setMedikamente("");
     setBisherigeMittel("");
