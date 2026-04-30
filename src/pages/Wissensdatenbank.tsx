@@ -21,9 +21,18 @@ interface KnowledgeEntry {
   updated_at: string;
 }
 
+const TAB_STORAGE_KEY = "wissensdatenbank.activeTab";
+
 const Wissensdatenbank = () => {
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState("wiki");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === "undefined") return "wiki";
+    return sessionStorage.getItem(TAB_STORAGE_KEY) || "wiki";
+  });
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    try { sessionStorage.setItem(TAB_STORAGE_KEY, val); } catch {}
+  };
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
 
