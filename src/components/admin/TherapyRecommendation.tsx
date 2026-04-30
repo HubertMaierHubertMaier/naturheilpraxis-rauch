@@ -66,6 +66,7 @@ export function TherapyRecommendation() {
   const [wikiRemedies, setWikiRemedies] = useState<Array<{ name: string; latin?: string; dosage?: string; application?: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
@@ -233,6 +234,21 @@ export function TherapyRecommendation() {
       });
       return next;
     });
+  };
+
+  const createEmptyManualRemedy = () => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+
+  const openManualAddons = (ensureInputRow = false) => {
+    if (ensureInputRow) {
+      setManualMittel((arr) => {
+        const hasBlankRow = arr.some((m) => !m.name.trim() && !m.dosage.trim() && !m.application.trim() && !m.duration.trim() && !m.reason.trim());
+        return hasBlankRow ? arr : [...arr, createEmptyManualRemedy()];
+      });
+    }
+    setWorkflowStage("addons");
+    setTimeout(() => {
+      manualAddonsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const fetchDiagnosen = async (): Promise<DiagnoseEntry[]> => {
@@ -1278,7 +1294,7 @@ export function TherapyRecommendation() {
 
           {/* ➕ Manuelle Diagnosen – nur in Stage 'addons' */}
           {result && !isStreaming && workflowStage === "addons" && (
-            <Card className="border-secondary/40 bg-secondary/[0.04]">
+            <Card ref={manualAddonsRef} className="border-secondary/40 bg-secondary/[0.04] scroll-mt-24">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
                   🩺 Eigene Diagnosen ergänzen <span className="text-xs font-normal text-muted-foreground">(nur Praxis-PDF, kombiniert mit KI-Diagnosen)</span>
@@ -1358,7 +1374,7 @@ export function TherapyRecommendation() {
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => setManualMittel((arr) => [...arr, { name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" }])}
+                  onClick={() => setManualMittel((arr) => [...arr, createEmptyManualRemedy()])}
                 >
                   <Plus className="h-4 w-4" /> Mittel hinzufügen
                 </Button>
@@ -1419,7 +1435,7 @@ export function TherapyRecommendation() {
                   <span className="text-xs text-muted-foreground self-center">
                     Stufe 1 von 3 · {selectedKeys.size} Mittel angehakt
                   </span>
-                  <Button onClick={() => setWorkflowStage("addons")} className="gap-2">
+                  <Button onClick={() => openManualAddons(true)} className="gap-2">
                     Auswahl übernehmen ▸
                   </Button>
                 </>
@@ -1442,7 +1458,7 @@ export function TherapyRecommendation() {
                   <Button variant="outline" onClick={() => setWorkflowStage("edit")} className="gap-2">
                     ◂ Häkchen bearbeiten
                   </Button>
-                  <Button variant="secondary" onClick={() => setWorkflowStage("addons")} className="gap-2">
+                  <Button variant="secondary" onClick={() => openManualAddons(true)} className="gap-2">
                     <Plus className="h-4 w-4" /> Mittel ergänzen
                   </Button>
                   <span className="text-xs text-muted-foreground self-center">
