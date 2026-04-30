@@ -144,7 +144,70 @@ export function TherapyRecommendation() {
       });
       return next;
     });
+    // Bei neuer KI-Generierung: zurück zur ersten Workflow-Stufe
+    if (isFirstInit) setWorkflowStage("edit");
   }, [result]);
+
+  // ---- Wiki-Mittel für Autocomplete laden (einmalig) ----
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("admin_knowledge_base")
+        .select("title, content")
+        .limit(2000);
+      if (!data) return;
+      const items: Array<{ name: string; latin?: string; dosage?: string; application?: string }> = [];
+      for (const row of data as Array<{ title: string; content: string }>) {
+        const title = row.title?.trim();
+        if (!title) continue;
+        // Latin-Name aus erster Zeile/Klammer
+        const latinMatch = row.content?.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
+        // Erste Dosierung suchen (sehr grob)
+        const doseMatch = row.content?.match(/Dosierung[:\s]+([^\n]{3,80})/i);
+        items.push({
+          name: title,
+          latin: latinMatch?.[1],
+          dosage: doseMatch?.[1]?.trim().slice(0, 60),
+        });
+      }
+      setWikiRemedies(items);
+    })();
+  }, []);
+
+  // ---- Auto-Draft pro Pseudonym in localStorage (überlebt Tab-Schließen) ----
+  const draftStageKey = pseudonymId.trim() ? `therapy.workflow.draft.${pseudonymId.trim()}` : "";
+  const draftStageLoadedRef = useRef<string>("");
+  useEffect(() => {
+    if (!draftStageKey || !result) return;
+    if (draftStageLoadedRef.current === draftStageKey) return;
+    draftStageLoadedRef.current = draftStageKey;
+    try {
+      const raw = localStorage.getItem(draftStageKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (Array.isArray(d?.selectedKeys)) setSelectedKeys(new Set(d.selectedKeys));
+      if (Array.isArray(d?.manualMittel)) setManualMittel(d.manualMittel);
+      if (Array.isArray(d?.manualDiagnosen)) setManualDiagnosen(d.manualDiagnosen);
+      if (typeof d?.therapieNotiz === "string") setTherapieNotiz(d.therapieNotiz);
+      if (typeof d?.workflowStage === "string") setWorkflowStage(d.workflowStage);
+      toast({ title: "Entwurf wiederhergestellt", description: "Deine Bearbeitungen aus der letzten Sitzung wurden geladen." });
+    } catch {}
+  }, [draftStageKey, result]);
+
+  useEffect(() => {
+    if (!draftStageKey || !result || workflowStage === "finalized") return;
+    try {
+      localStorage.setItem(draftStageKey, JSON.stringify({
+        selectedKeys: Array.from(selectedKeys),
+        manualMittel,
+        manualDiagnosen,
+        therapieNotiz,
+        workflowStage,
+      }));
+    } catch {}
+  }, [draftStageKey, selectedKeys, manualMittel, manualDiagnosen, therapieNotiz, workflowStage, result]);
+
+
 
   const toggleRemedy = (key: string) => {
     setSelectedKeys((prev) => {
