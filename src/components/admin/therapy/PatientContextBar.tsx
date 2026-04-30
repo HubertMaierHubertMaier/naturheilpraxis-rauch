@@ -27,6 +27,18 @@ export function PatientContextBar({ alter, geschlecht, bmi, bmiKategorie, bmiTon
       tone: isMinor ? "warn" : "ok",
     });
   }
+  if (geschlecht) {
+    const label = geschlecht === "weiblich" ? "♀ Weiblich" : geschlecht === "maennlich" ? "♂ Männlich" : "⚧ Divers";
+    items.push({ icon: <User className="h-3.5 w-3.5" />, label: "Sex", value: label, tone: "ok" });
+  }
+  if (typeof bmi === "number") {
+    items.push({
+      icon: <Scale className="h-3.5 w-3.5" />,
+      label: "BMI",
+      value: `${bmi} ${bmiKategorie ? "· " + bmiKategorie : ""}`,
+      tone: bmiTone || "ok",
+    });
+  }
   if (schwanger && schwanger !== "nein") {
     items.push({
       icon: <Heart className="h-3.5 w-3.5" />,
