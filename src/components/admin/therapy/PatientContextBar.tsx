@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound, Scale, Venus, Mars, Transgender } from "lucide-react";
+import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound, Scale } from "lucide-react";
 
 interface Props {
   alter?: string;
