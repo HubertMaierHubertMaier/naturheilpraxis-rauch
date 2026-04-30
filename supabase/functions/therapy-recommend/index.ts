@@ -910,7 +910,11 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - **BMI 30–34.9 (Adipositas I)**: zusätzlich Hinweis auf metabolisches Syndrom (HbA1c, Lipidstatus, Leberenzyme prüfen), NAFLD-Risiko, Schilddrüse (TSH, fT3/fT4) abklären lassen.
    - **BMI ≥ 35 (Adipositas II/III)**: hohe kardiometabolische Gefahr – konsequente Ernährungsumstellung, Empfehlung zur engmaschigen praxisinternen Begleitung; Bildgebung/Diagnostik nur bei zusätzlichem Verdacht.
    - **BMI ≥ 25 + Hashimoto/SD-Verdacht**: explizit Selen, Zink, Tyrosin, Jodstatus prüfen.
-   - Falls BMI nicht angegeben: KEINE Annahmen treffen, kein Ernährungsblock erzwingen.
+   - **PFLICHT bei BMI ≥ 25**: In der Sektion "🥗 Ernährung & Stoffwechsel" (oder im Begleitmaßnahmen-Block) MUSS folgender Patientenhinweis stehen:
+     > "Bitte lesen Sie zur Ernährungsumstellung die Patienteninfos in unserer Infothek – insbesondere **LOGI-Kost & Mitochondrien**: https://naturheilpraxis-rauch.lovable.app/logi-ernaehrung-mitochondrien.html sowie das **Diabetes-Handout** https://naturheilpraxis-rauch.lovable.app/diabetes-handout.html"
+     Zusätzlich passende Vitaplace-Mittel prüfen: **Vitaplace Komplex FiguWo** (Gewichtsregulation) und **Vitaplace Darm + Leber Pulver** (Mikrobiom, Hungergefühl, Leberentlastung).
+   - **Allgemein (jede BMI-Kategorie)**: Am Ende der Empfehlung im Block "🔄 Begleitmaßnahmen" einen kurzen Verweis auf die Patienten-Infothek (https://naturheilpraxis-rauch.lovable.app) ergänzen, damit der Patient weiterführende Informationen selbständig nachlesen kann.
+   - Falls BMI nicht angegeben: KEINE Annahmen treffen, kein Ernährungsblock erzwingen – aber den allgemeinen Infothek-Verweis dennoch im Begleitmaßnahmen-Block aufnehmen.
 
 3. **Medikamente**: ${medikamente || "Keine angegeben"}
    - Blutverdünner (Marcumar, Warfarin, Eliquis, Xarelto etc.): KEINE Gewürznelke, KEIN Ingwer hochdosiert, KEIN Kurkuma hochdosiert, KEIN Omega-3 hochdosiert, KEIN Ginkgo
