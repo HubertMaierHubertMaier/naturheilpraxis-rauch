@@ -596,8 +596,87 @@ export function TherapyRecommendation() {
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
+    setManualMittel([]);
+    setManualDiagnosen([]);
+    setTherapieNotiz("");
+    setWorkflowStage("edit");
     try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
+    if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
   };
+
+  // Kombinierter Markdown-String (KI-Auswahl + manuelle Mittel) für finale Speicherung
+  const buildFinalMarkdown = (): string => {
+    const parsed = parseTherapyMarkdown(result);
+    const filteredCategories = parsed.categories
+      .map((g, ci) => ({
+        ...g,
+        remedies: g.remedies.filter((_, ri) => selectedKeys.has(`${ci}|${ri}`)),
+      }))
+      .filter((g) => g.remedies.length > 0);
+    const lines: string[] = [];
+    parsed.intro.forEach((s) => {
+      lines.push(`## ${s.emoji} ${s.title}`, s.content, "");
+    });
+    filteredCategories.forEach((g) => {
+      lines.push(`## ${g.emoji} ${g.title}`);
+      g.remedies.forEach((r) => {
+        const name = r.latin ? `**${r.name}** (${r.latin})` : `**${r.name}**`;
+        lines.push(`- ${name} | ${r.dosage} | ${r.application} | ${r.duration} | ${r.priorityRaw} | ${r.cost} | ${r.reason}`);
+      });
+      lines.push("");
+    });
+    const mm = manualMittel.filter((m) => m.name.trim());
+    if (mm.length) {
+      lines.push(`## ✍️ Manuell ergänzte Mittel (Therapeut)`);
+      mm.forEach((m) => {
+        lines.push(`- **${m.name}** | ${m.dosage || "—"} | ${m.application || "—"} | ${m.duration || "—"} | manuell | — | ${m.reason || ""}`);
+      });
+      lines.push("");
+    }
+    parsed.outro.forEach((s) => {
+      lines.push(`## ${s.emoji} ${s.title}`, s.content, "");
+    });
+    if (therapieNotiz.trim()) {
+      lines.push(`## 📝 Notiz Therapeut`, therapieNotiz.trim(), "");
+    }
+    return lines.join("\n");
+  };
+
+  const handleFinalize = async () => {
+    if (!pseudonymId.trim()) {
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte oben eine Pseudonym-ID vergeben oder generieren.", variant: "destructive" });
+      return;
+    }
+    const finalMd = buildFinalMarkdown();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Nicht angemeldet", variant: "destructive" });
+      return;
+    }
+    const { error } = await (supabase as any).from("therapy_sessions").insert({
+      pseudonym_id: pseudonymId.trim(),
+      created_by: user.id,
+      eingabe_daten: {
+        pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg,
+        schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt,
+        laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie,
+        pinnedMittel, manualMittel, manualDiagnosen,
+        belastungen: formatPathogensForAI(pathogens),
+        finalized: true,
+      },
+      empfehlung: finalMd,
+      notiz: therapieNotiz,
+    });
+    if (error) {
+      toast({ title: "Speichern fehlgeschlagen", description: error.message, variant: "destructive" });
+      return;
+    }
+    setWorkflowStage("finalized");
+    setHistoryRefresh((n) => n + 1);
+    if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
+    toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${pseudonymId.trim()}. Druck jetzt verfügbar.` });
+  };
+
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
