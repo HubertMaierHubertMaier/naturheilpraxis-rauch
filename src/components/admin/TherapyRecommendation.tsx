@@ -26,6 +26,9 @@ export function TherapyRecommendation() {
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
   const [alter, setAlter] = useState("");
+  const [geschlecht, setGeschlecht] = useState("");
+  const [groesseCm, setGroesseCm] = useState("");
+  const [gewichtKg, setGewichtKg] = useState("");
   const [schwanger, setSchwanger] = useState("nein");
   const [medikamente, setMedikamente] = useState("");
   const [bisherigeMittel, setBisherigeMittel] = useState("");
