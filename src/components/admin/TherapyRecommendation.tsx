@@ -1584,11 +1584,13 @@ function ManualRemedyRow({
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent border-b last:border-b-0"
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  // Beim Wechsel des Mittels: Wiki-Daten überschreiben alte Werte,
+                  // damit nicht die Begründung/Indikation eines vorher gewählten Mittels stehen bleibt.
                   onChange({
                     name: s.name,
-                    dosage: entry.dosage || s.dosage || "",
-                    application: entry.application || s.application || "",
-                    reason: entry.reason || s.reason || s.application || "",
+                    dosage: s.dosage || "",
+                    application: s.application || "",
+                    reason: s.reason || s.application || "",
                   });
                   setShowSuggestions(false);
                 }}
