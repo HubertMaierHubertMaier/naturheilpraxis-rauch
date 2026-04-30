@@ -1186,7 +1186,7 @@ export function TherapyRecommendation() {
             stuhlbefund={stuhlbefund}
           />
           {auditInfo && <WikiAuditCard audit={auditInfo} />}
-          {result && !isStreaming && (
+          {result && !isStreaming && workflowStage !== "finalized" && (
             <Card className="border-primary/30 bg-primary/[0.02]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -1202,8 +1202,8 @@ export function TherapyRecommendation() {
             </Card>
           )}
 
-          {/* 🔄 Nachschlag-Modus: KI-gestützte Erweiterung mit Kontext-Erhalt */}
-          {result && !isStreaming && (
+          {/* 🔄 Nachschlag-Modus: nur in Stage 'edit' */}
+          {result && !isStreaming && workflowStage === "edit" && (
             <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/10">
               <CardContent className="pt-4 pb-4 space-y-3">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -1243,8 +1243,8 @@ export function TherapyRecommendation() {
             </Card>
           )}
 
-          {/* ➕ Manuelle Diagnosen (kommen aufs Praxis-PDF) */}
-          {result && !isStreaming && (
+          {/* ➕ Manuelle Diagnosen – nur in Stage 'addons' */}
+          {result && !isStreaming && workflowStage === "addons" && (
             <Card className="border-secondary/40 bg-secondary/[0.04]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -1297,58 +1297,28 @@ export function TherapyRecommendation() {
             </Card>
           )}
 
-          {/* ➕ Manuelle Mittel (kommen auf BEIDE PDFs sofern angehakt im Patienten-PDF) */}
-          {result && !isStreaming && (
+          {/* ➕ Manuelle Mittel – nur in Stage 'addons' (mit Wiki-Autocomplete) */}
+          {result && !isStreaming && workflowStage === "addons" && (
             <Card className="border-accent/30 bg-accent/[0.03]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
-                  💊 Eigene Mittel ergänzen <span className="text-xs font-normal text-muted-foreground">(erscheinen auf beiden PDFs als &quot;Manuell ergänzt&quot;)</span>
+                  💊 Eigene Mittel ergänzen
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (Wiki-Suche oder freie Eingabe – {wikiRemedies.length} Wiki-Einträge verfügbar)
+                  </span>
                 </label>
                 {manualMittel.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt.</p>
+                  <p className="text-xs text-muted-foreground italic">Noch keine eigenen Mittel ergänzt. Klick auf „Mittel hinzufügen" – tippe im Namensfeld, um Wiki-Vorschläge zu bekommen.</p>
                 )}
                 <div className="space-y-2">
                   {manualMittel.map((m, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-start">
-                      <Input
-                        className="col-span-3"
-                        placeholder="Mittelname"
-                        value={m.name}
-                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, name: e.target.value } : x))}
-                      />
-                      <Input
-                        className="col-span-2 font-mono text-sm"
-                        placeholder="Dosierung"
-                        value={m.dosage}
-                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, dosage: e.target.value } : x))}
-                      />
-                      <Input
-                        className="col-span-2"
-                        placeholder="Anwendung"
-                        value={m.application}
-                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, application: e.target.value } : x))}
-                      />
-                      <Input
-                        className="col-span-1"
-                        placeholder="Dauer"
-                        value={m.duration}
-                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, duration: e.target.value } : x))}
-                      />
-                      <Input
-                        className="col-span-3"
-                        placeholder="Begründung / Indikation"
-                        value={m.reason}
-                        onChange={(e) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, reason: e.target.value } : x))}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="col-span-1 h-9 w-9 text-destructive"
-                        onClick={() => setManualMittel((arr) => arr.filter((_, i) => i !== idx))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <ManualRemedyRow
+                      key={idx}
+                      entry={m}
+                      wikiRemedies={wikiRemedies}
+                      onChange={(patch) => setManualMittel((arr) => arr.map((x, i) => i === idx ? { ...x, ...patch } : x))}
+                      onRemove={() => setManualMittel((arr) => arr.filter((_, i) => i !== idx))}
+                    />
                   ))}
                 </div>
                 <Button
@@ -1362,19 +1332,299 @@ export function TherapyRecommendation() {
               </CardContent>
             </Card>
           )}
-          <ParsedResultView
-            result={result}
-            isStreaming={isStreaming}
-            stuhlbefund={stuhlbefund}
-            selectedKeys={selectedKeys}
-            onToggleRemedy={toggleRemedy}
-            onToggleAll={toggleAllInCategory}
-          />
+
+          {/* Stage 'edit' & 'addons': interaktive Empfehlungs-Liste mit Häkchen */}
+          {workflowStage !== "preview" && workflowStage !== "finalized" && (
+            <ParsedResultView
+              result={result}
+              isStreaming={isStreaming}
+              stuhlbefund={stuhlbefund}
+              selectedKeys={selectedKeys}
+              onToggleRemedy={toggleRemedy}
+              onToggleAll={toggleAllInCategory}
+            />
+          )}
+
+          {/* Stage 'preview': read-only kombinierte Vorschau */}
+          {workflowStage === "preview" && (
+            <TherapyPreview
+              result={result}
+              selectedKeys={selectedKeys}
+              manualMittel={manualMittel.filter((m) => m.name.trim())}
+              manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
+              therapieNotiz={therapieNotiz}
+            />
+          )}
+
+          {/* Stage 'finalized': Erfolg + read-only Vorschau */}
+          {workflowStage === "finalized" && (
+            <>
+              <Card className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
+                <CardContent className="pt-4 pb-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">✓</div>
+                  <div>
+                    <div className="font-semibold text-emerald-900 dark:text-emerald-200">Therapieplan finalisiert &amp; gespeichert</div>
+                    <div className="text-xs text-emerald-800/80 dark:text-emerald-300/80">Pseudonym {pseudonymId.trim()} – Druck oben verfügbar.</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <TherapyPreview
+                result={result}
+                selectedKeys={selectedKeys}
+                manualMittel={manualMittel.filter((m) => m.name.trim())}
+                manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
+                therapieNotiz={therapieNotiz}
+              />
+            </>
+          )}
+
+          {/* Stage-Navigation am Ende */}
+          {result && !isStreaming && (
+            <div className="sticky bottom-2 z-20 flex justify-between gap-3 bg-background/95 backdrop-blur border border-primary/30 rounded-lg p-3 shadow-elevated">
+              {workflowStage === "edit" && (
+                <>
+                  <span className="text-xs text-muted-foreground self-center">
+                    Stufe 1 von 3 · {selectedKeys.size} Mittel angehakt
+                  </span>
+                  <Button onClick={() => setWorkflowStage("addons")} className="gap-2">
+                    Auswahl übernehmen ▸
+                  </Button>
+                </>
+              )}
+              {workflowStage === "addons" && (
+                <>
+                  <Button variant="outline" onClick={() => setWorkflowStage("edit")} className="gap-2">
+                    ◂ Zurück zur Auswahl
+                  </Button>
+                  <span className="text-xs text-muted-foreground self-center">
+                    Stufe 2 von 3 · {manualMittel.filter((m) => m.name.trim()).length} eigene Mittel
+                  </span>
+                  <Button onClick={() => setWorkflowStage("preview")} className="gap-2">
+                    Weiter zur Vorschau ▸
+                  </Button>
+                </>
+              )}
+              {workflowStage === "preview" && (
+                <>
+                  <Button variant="outline" onClick={() => setWorkflowStage("addons")} className="gap-2">
+                    ◂ Nicht OK – zurück bearbeiten
+                  </Button>
+                  <span className="text-xs text-muted-foreground self-center">
+                    Stufe 3 von 3 · Vorschau – stimmt alles?
+                  </span>
+                  <Button onClick={handleFinalize} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                    ✓ Plan ist OK – speichern
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+// --- Workflow-Stepper-Indikator ---
+function WorkflowStepper({ stage }: { stage: "edit" | "addons" | "preview" | "finalized" }) {
+  const steps: Array<{ key: typeof stage; label: string }> = [
+    { key: "edit", label: "1. KI-Auswahl" },
+    { key: "addons", label: "2. Eigene Ergänzungen" },
+    { key: "preview", label: "3. Vorschau" },
+    { key: "finalized", label: "✓ Gespeichert" },
+  ];
+  const activeIdx = steps.findIndex((s) => s.key === stage);
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      {steps.map((s, i) => (
+        <div key={s.key} className="flex items-center gap-2">
+          <span
+            className={`px-3 py-1 rounded-full border font-medium ${
+              i === activeIdx
+                ? "bg-primary text-primary-foreground border-primary"
+                : i < activeIdx
+                ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200"
+                : "bg-muted text-muted-foreground border-border"
+            }`}
+          >
+            {s.label}
+          </span>
+          {i < steps.length - 1 && <span className="text-muted-foreground">›</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// --- Wiki-Autocomplete-Zeile für manuelle Mittel ---
+function ManualRemedyRow({
+  entry,
+  wikiRemedies,
+  onChange,
+  onRemove,
+}: {
+  entry: { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
+  wikiRemedies: Array<{ name: string; latin?: string; dosage?: string; application?: string }>;
+  onChange: (patch: Partial<typeof entry>) => void;
+  onRemove: () => void;
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestions = useMemo(() => {
+    const q = entry.name.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return wikiRemedies
+      .filter((r) => r.name.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [entry.name, wikiRemedies]);
+
+  return (
+    <div className="grid grid-cols-12 gap-2 items-start relative">
+      <div className="col-span-3 relative">
+        <Input
+          placeholder="Mittelname (Wiki-Suche)"
+          value={entry.name}
+          onChange={(e) => { onChange({ name: e.target.value }); setShowSuggestions(true); }}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent border-b last:border-b-0"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange({
+                    name: s.name,
+                    dosage: entry.dosage || s.dosage || "",
+                  });
+                  setShowSuggestions(false);
+                }}
+              >
+                <span className="font-medium">{s.name}</span>
+                {s.latin && <span className="italic text-muted-foreground ml-1">({s.latin})</span>}
+                {s.dosage && <span className="block text-[10px] text-muted-foreground">{s.dosage}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <Input
+        className="col-span-2 font-mono text-sm"
+        placeholder="Dosierung"
+        value={entry.dosage}
+        onChange={(e) => onChange({ dosage: e.target.value })}
+      />
+      <Input
+        className="col-span-2"
+        placeholder="Anwendung"
+        value={entry.application}
+        onChange={(e) => onChange({ application: e.target.value })}
+      />
+      <Input
+        className="col-span-1"
+        placeholder="Dauer"
+        value={entry.duration}
+        onChange={(e) => onChange({ duration: e.target.value })}
+      />
+      <Input
+        className="col-span-3"
+        placeholder="Begründung / Indikation"
+        value={entry.reason}
+        onChange={(e) => onChange({ reason: e.target.value })}
+      />
+      <Button variant="ghost" size="icon" className="col-span-1 h-9 w-9 text-destructive" onClick={onRemove}>
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+// --- Read-only Vorschau des kombinierten Plans ---
+function TherapyPreview({
+  result,
+  selectedKeys,
+  manualMittel,
+  manualDiagnosen,
+  therapieNotiz,
+}: {
+  result: string;
+  selectedKeys: Set<string>;
+  manualMittel: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>;
+  manualDiagnosen: DiagnoseEntry[];
+  therapieNotiz: string;
+}) {
+  const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
+  const filteredCats = parsed.categories
+    .map((g, ci) => ({ ...g, remedies: g.remedies.filter((_, ri) => selectedKeys.has(`${ci}|${ri}`)) }))
+    .filter((g) => g.remedies.length > 0);
+
+  return (
+    <Card className="border-2 border-primary/40 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" />
+          Vorschau – kombinierter Therapieplan
+          <Badge variant="secondary" className="text-[10px]">{filteredCats.reduce((n, g) => n + g.remedies.length, 0) + manualMittel.length} Mittel</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {manualDiagnosen.length > 0 && (
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">🩺 Eigene Diagnosen</h3>
+            <ul className="space-y-1 text-xs">
+              {manualDiagnosen.map((d, i) => (
+                <li key={i}>
+                  <span className="font-mono text-muted-foreground">{d.icd10 || "—"}</span> · <strong>{d.diagnose}</strong>
+                  {d.begruendung && <span className="text-muted-foreground"> – {d.begruendung}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {filteredCats.map((g, i) => (
+          <section key={i}>
+            <h3 className="font-semibold text-primary mb-1">{g.emoji} {g.title}</h3>
+            <ul className="space-y-1 text-xs">
+              {g.remedies.map((r, j) => (
+                <li key={j} className="border-l-2 border-primary/30 pl-2">
+                  <strong>{r.name}</strong>{r.latin && <em className="text-muted-foreground"> ({r.latin})</em>}
+                  <span className="text-muted-foreground"> · {r.dosage} · {r.application} · {r.duration}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+        {manualMittel.length > 0 && (
+          <section>
+            <h3 className="font-semibold text-accent-foreground mb-1">✍️ Manuell ergänzte Mittel</h3>
+            <ul className="space-y-1 text-xs">
+              {manualMittel.map((m, i) => (
+                <li key={i} className="border-l-2 border-accent/40 pl-2">
+                  <strong>{m.name}</strong>
+                  <span className="text-muted-foreground"> · {m.dosage || "—"} · {m.application || "—"} · {m.duration || "—"}</span>
+                  {m.reason && <span className="text-muted-foreground italic"> – {m.reason}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {therapieNotiz.trim() && (
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">📝 Notiz Therapeut</h3>
+            <p className="text-xs whitespace-pre-wrap text-muted-foreground">{therapieNotiz}</p>
+          </section>
+        )}
+        {filteredCats.length === 0 && manualMittel.length === 0 && (
+          <p className="text-muted-foreground italic">Keine Mittel ausgewählt.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function ParsedResultView({
   result,
