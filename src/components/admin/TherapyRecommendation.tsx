@@ -871,6 +871,10 @@ export function TherapyRecommendation() {
         <div ref={resultRef} className="space-y-4">
           <PatientContextBar
             alter={alter}
+            geschlecht={geschlecht}
+            bmi={bmiInfo?.bmi}
+            bmiKategorie={bmiInfo?.kategorie}
+            bmiTone={bmiInfo?.tone}
             schwanger={schwanger}
             medikamente={medikamente}
             budget={budget}
