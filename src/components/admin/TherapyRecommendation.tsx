@@ -227,6 +227,9 @@ export function TherapyRecommendation() {
     setSymptome(d.symptome || "");
     setErkrankung(d.erkrankung || "");
     setAlter(d.alter || "");
+    setGeschlecht(d.geschlecht || "");
+    setGroesseCm(d.groesseCm || "");
+    setGewichtKg(d.gewichtKg || "");
     setSchwanger(d.schwanger || "nein");
     setMedikamente(d.medikamente || "");
     setBisherigeMittel(d.bisherigeMittel || "");
