@@ -171,6 +171,20 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
+            <TabsContent value="aimodel">
+              <Card>
+                <CardHeader>
+                  <CardTitle>KI-Modell &amp; Kosten</CardTitle>
+                  <CardDescription>
+                    Übersicht der aktuell eingesetzten KI-Modelle, ihrer Stärken/Schwächen und der ungefähren Kosten pro Anfrage.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AIModelInfo />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="audit">
               <Card>
                 <CardHeader>
