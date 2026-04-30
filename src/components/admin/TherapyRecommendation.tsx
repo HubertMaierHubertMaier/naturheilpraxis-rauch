@@ -1468,8 +1468,8 @@ export function TherapyRecommendation() {
                   <span className="text-xs text-muted-foreground self-center">
                     Stufe 2 von 3 · {manualMittel.filter((m) => m.name.trim()).length} eigene Mittel
                   </span>
-                  <Button onClick={() => setWorkflowStage("preview")} className="gap-2">
-                    Weiter zur Vorschau ▸
+                  <Button onClick={goToPreviewFromAddons} className="gap-2">
+                    ✓ Ergänzungen übernehmen
                   </Button>
                 </>
               )}
