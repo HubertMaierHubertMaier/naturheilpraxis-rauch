@@ -15,7 +15,7 @@ interface Props {
   stuhlbefund?: string;
 }
 
-export function PatientContextBar({ alter, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
+export function PatientContextBar({ alter, geschlecht, bmi, bmiKategorie, bmiTone, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
   const items: Array<{ icon: React.ReactNode; label: string; value: string; tone?: "warn" | "danger" | "ok" }> = [];
 
   if (alter) {
