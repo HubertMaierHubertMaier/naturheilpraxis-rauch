@@ -94,7 +94,9 @@ const Wissensdatenbank = () => {
             <PathogenIndex entries={entries} loading={entriesLoading} />
           </TabsContent>
           <TabsContent value="therapie">
-            <TherapyRecommendation />
+            <ErrorBoundary label="Therapie-Empfehlung">
+              <TherapyRecommendation />
+            </ErrorBoundary>
           </TabsContent>
           <TabsContent value="patienten">
             <TherapyPatientOverview />
