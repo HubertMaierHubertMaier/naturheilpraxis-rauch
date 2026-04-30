@@ -655,75 +655,151 @@ export function TherapyRecommendation() {
         </Card>
 
         {/* Right: Safety checks */}
-        <Card className="border-orange-200 dark:border-orange-900/30">
+        <Card className="border-orange-300/60 bg-gradient-to-br from-orange-50/40 via-background to-rose-50/30 dark:from-orange-950/10 dark:via-background dark:to-rose-950/10 dark:border-orange-900/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-500" />
-              Sicherheitsabfrage
+              <Heart className="h-4 w-4 text-rose-500" />
+              <span className="bg-gradient-to-r from-rose-600 to-orange-600 bg-clip-text text-transparent font-semibold">
+                Patientenprofil & Sicherheit
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <Baby className="h-3.5 w-3.5 text-blue-500" />
-                Alter des Patienten
-              </label>
-              <Input
-                type="number"
-                value={alter}
-                onChange={(e) => setAlter(e.target.value)}
-                placeholder="Alter in Jahren"
-                min={0}
-                max={120}
-              />
+          <CardContent className="space-y-4">
+            {/* Block 1: Konstitution */}
+            <div className="rounded-lg border border-sky-300/60 bg-sky-50/60 dark:bg-sky-950/15 dark:border-sky-900/40 p-3 space-y-3">
+              <div className="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+                <Baby className="h-3.5 w-3.5" /> Konstitution
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Alter (Jahre)</label>
+                  <Input
+                    type="number"
+                    value={alter}
+                    onChange={(e) => setAlter(e.target.value)}
+                    placeholder="z.B. 45"
+                    min={0}
+                    max={120}
+                    className="bg-background"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Geschlecht</label>
+                  <Select value={geschlecht} onValueChange={setGeschlecht}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weiblich">♀ Weiblich</SelectItem>
+                      <SelectItem value="maennlich">♂ Männlich</SelectItem>
+                      <SelectItem value="divers">⚧ Divers</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Größe (cm)</label>
+                  <Input
+                    type="number"
+                    value={groesseCm}
+                    onChange={(e) => setGroesseCm(e.target.value)}
+                    placeholder="z.B. 175"
+                    min={50}
+                    max={250}
+                    className="bg-background"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Gewicht (kg)</label>
+                  <Input
+                    type="number"
+                    value={gewichtKg}
+                    onChange={(e) => setGewichtKg(e.target.value)}
+                    placeholder="z.B. 78"
+                    min={10}
+                    max={400}
+                    step="0.1"
+                    className="bg-background"
+                  />
+                </div>
+              </div>
+
+              {bmiInfo && (
+                <div className={`rounded-md px-3 py-2 text-xs flex items-start gap-2 border ${
+                  bmiInfo.tone === "danger"
+                    ? "bg-destructive/10 border-destructive/30 text-destructive"
+                    : bmiInfo.tone === "warn"
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                }`}>
+                  <span className="font-bold text-sm">BMI {bmiInfo.bmi}</span>
+                  <div className="flex-1">
+                    <div className="font-semibold">{bmiInfo.kategorie}</div>
+                    {bmiInfo.hinweis && <div className="opacity-90 mt-0.5">{bmiInfo.hinweis}</div>}
+                  </div>
+                </div>
+              )}
+
               {alter && parseInt(alter) < 12 && (
-                <p className="text-xs text-orange-600 mt-1">⚠️ Pädiatrische Einschränkungen werden berücksichtigt</p>
+                <p className="text-xs text-orange-700 dark:text-orange-300 bg-orange-100/70 dark:bg-orange-950/30 rounded px-2 py-1">⚠️ Pädiatrische Einschränkungen werden berücksichtigt</p>
               )}
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Schwangerschaft / Stillzeit</label>
+
+            {/* Block 2: Reproduktion (nur weiblich) */}
+            <div className="rounded-lg border border-pink-300/60 bg-pink-50/60 dark:bg-pink-950/15 dark:border-pink-900/40 p-3 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
+                <Heart className="h-3.5 w-3.5" /> Schwangerschaft / Stillzeit
+              </div>
               <Select value={schwanger} onValueChange={setSchwanger}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nein">Nein</SelectItem>
+                  <SelectItem value="nein">Nein / nicht relevant</SelectItem>
                   <SelectItem value="schwanger">Schwanger</SelectItem>
                   <SelectItem value="stillend">Stillend</SelectItem>
                   <SelectItem value="kinderwunsch">Kinderwunsch</SelectItem>
                 </SelectContent>
               </Select>
               {schwanger !== "nein" && (
-                <p className="text-xs text-red-600 mt-1">⚠️ Viele Naturheilmittel sind kontraindiziert!</p>
+                <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Viele Naturheilmittel sind kontraindiziert!</p>
               )}
             </div>
-            <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <Pill className="h-3.5 w-3.5 text-purple-500" />
-                Aktuelle Medikamente
-              </label>
+
+            {/* Block 3: Medikation */}
+            <div className="rounded-lg border border-violet-300/60 bg-violet-50/60 dark:bg-violet-950/15 dark:border-violet-900/40 p-3 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300 flex items-center gap-1.5">
+                <Pill className="h-3.5 w-3.5" /> Aktuelle Medikamente
+              </div>
               <Textarea
                 value={medikamente}
                 onChange={(e) => setMedikamente(e.target.value)}
                 placeholder="z.B. Marcumar, Metformin, L-Thyroxin, SSRI..."
                 rows={3}
+                className="bg-background"
               />
               {medikamente.toLowerCase().match(/marcumar|warfarin|eliquis|xarelto|pradaxa|blutverdün/i) && (
-                <p className="text-xs text-red-600 mt-1">⚠️ Blutverdünner erkannt – strenge Einschränkungen!</p>
+                <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Blutverdünner erkannt – strenge Einschränkungen!</p>
               )}
             </div>
-            <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                💰 Maximales Budget
-              </label>
+
+            {/* Block 4: Budget */}
+            <div className="rounded-lg border border-emerald-300/60 bg-emerald-50/60 dark:bg-emerald-950/15 dark:border-emerald-900/40 p-3 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                💰 Maximales Budget (€)
+              </div>
               <Input
                 type="number"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                placeholder="z.B. 150 (in Euro)"
+                placeholder="z.B. 150"
                 min={0}
+                className="bg-background"
               />
-              <p className="text-xs text-muted-foreground mt-1">NutraMedix-Produkte kosten ca. 40 €/30ml. Bei knappem Budget werden günstige Alternativen (Gewürze, Hausmittel) bevorzugt.</p>
+              <p className="text-xs text-muted-foreground">NutraMedix-Produkte ≈ 40 €/30ml. Bei knappem Budget werden günstige Alternativen (Gewürze, Hausmittel) bevorzugt.</p>
             </div>
           </CardContent>
         </Card>
