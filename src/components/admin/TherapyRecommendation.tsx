@@ -249,7 +249,14 @@ export function TherapyRecommendation() {
     });
   };
 
-  const createEmptyManualRemedy = () => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+  const createEmptyManualRemedy = (): ManualRemedyEntry => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+
+  const goToPreviewFromAddons = () => {
+    setManualMittel((arr) => arr.filter((m) => m.name.trim() || m.dosage.trim() || m.application.trim() || m.duration.trim() || m.reason.trim()));
+    setWorkflowStage("preview");
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    toast({ title: "Ergänzungen übernommen", description: "Die Vorschau enthält jetzt die zusätzlich eingetragenen Mittel." });
+  };
 
   const openManualAddons = (ensureInputRow = false) => {
     if (ensureInputRow) {
