@@ -1133,7 +1133,7 @@ export function TherapyRecommendation() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <Button onClick={() => handleSubmit()} disabled={isStreaming} className="gap-2">
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
@@ -1141,7 +1141,7 @@ export function TherapyRecommendation() {
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
-        {result && !isStreaming && (
+        {result && !isStreaming && workflowStage === "finalized" && (
           <>
             <Button onClick={handlePrintPatient} className="gap-2 bg-primary hover:bg-primary/90">
               <FileText className="h-4 w-4" /> PDF Patient
@@ -1152,12 +1152,22 @@ export function TherapyRecommendation() {
               PDF Praxis
               {diagnosen.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px]">{diagnosen.length} Dx</Badge>}
             </Button>
-            <Button variant="outline" onClick={handleReset} className="gap-2">
-              <RotateCcw className="h-4 w-4" /> Zurücksetzen
+            <Button variant="outline" size="sm" onClick={() => setWorkflowStage("edit")} className="gap-2">
+              ◂ Zurück zur Bearbeitung
             </Button>
           </>
         )}
+        {result && !isStreaming && (
+          <Button variant="outline" onClick={handleReset} className="gap-2 ml-auto">
+            <RotateCcw className="h-4 w-4" /> Neue Sitzung
+          </Button>
+        )}
       </div>
+
+      {/* Workflow-Stage-Indikator */}
+      {result && !isStreaming && (
+        <WorkflowStepper stage={workflowStage} />
+      )}
 
       {/* Result – Card layout */}
       {(result || isStreaming) && (
