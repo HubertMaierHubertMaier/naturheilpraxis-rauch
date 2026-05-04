@@ -34,6 +34,7 @@ import Wissensdatenbank from "./pages/Wissensdatenbank";
 import Raucherentwoehnung from "./pages/Raucherentwoehnung";
 import SchilddrueseHypnose from "./pages/SchilddrueseHypnose";
 import Infothek from "./pages/Infothek";
+import Reizdarm from "./pages/Reizdarm";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/raucherentwoehnung" element={<Raucherentwoehnung />} />
               <Route path="/schilddruese-hypnose" element={<SchilddrueseHypnose />} />
               <Route path="/infothek" element={<Infothek />} />
+              <Route path="/reizdarm" element={<Reizdarm />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />

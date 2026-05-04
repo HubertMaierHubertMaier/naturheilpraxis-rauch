@@ -15,6 +15,7 @@ import {
   Leaf,
   Microscope,
   Milk,
+  Pill,
   Radio,
   Route,
   Salad,
@@ -224,6 +225,23 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/schilddruese-hypnose",
         icon: Wind,
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
+      },
+    ],
+  },
+  {
+    title: {
+      de: "Symptome und naturheilkundliche Mittel",
+      en: "Symptoms and Naturopathic Remedies",
+    },
+    items: [
+      {
+        label: { de: "Reizdarm", en: "Irritable Bowel Syndrome" },
+        href: "/reizdarm",
+        icon: Pill,
+        description: {
+          de: "Symptomübersicht & naturheilkundliche Behandlungsoptionen inkl. Probiotika",
+          en: "Symptom overview & naturopathic treatment options including probiotics",
+        },
       },
     ],
   },
