@@ -245,6 +245,8 @@ export const infothekGroups: InfothekGroup[] = [
       },
     ],
   },
+  {
+    title: { de: "Praktisches", en: "Practical Info" },
     items: [
       {
         label: { de: "GebÜH", en: "Fee Schedule" },
