@@ -226,14 +226,16 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Wind,
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
       },
-    ],
-  },
-  {
-    title: {
-      de: "Symptome und naturheilkundliche Mittel",
-      en: "Symptoms and Naturopathic Remedies",
-    },
-    items: [
+      {
+        label: { de: "↓ Symptome und naturheilkundliche Mittel ↓", en: "↓ Symptoms and Naturopathic Remedies ↓" },
+        href: "#symptome-mittel",
+        icon: Pill,
+        description: {
+          de: "Untergruppe – siehe folgende Einträge",
+          en: "Subgroup – see entries below",
+        },
+        showInOverview: false,
+      },
       {
         label: { de: "Reizdarm", en: "Irritable Bowel Syndrome" },
         href: "/reizdarm",
