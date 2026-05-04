@@ -243,6 +243,15 @@ export const infothekGroups: InfothekGroup[] = [
           en: "Symptom overview & naturopathic treatment options including probiotics",
         },
       },
+      {
+        label: { de: "Knieschwellung ohne Befund", en: "Knee Swelling without Findings" },
+        href: "/knieschwellung",
+        icon: Droplets,
+        description: {
+          de: "Homöopathie, Phytotherapie & Hausmittel bei unklarer Knieschwellung",
+          en: "Homeopathy, phytotherapy & home remedies for unexplained knee swelling",
+        },
+      },
     ],
   },
   {
