@@ -235,13 +235,6 @@ export const infothekGroups: InfothekGroup[] = [
         label: { de: "GebÜH", en: "Fee Schedule" },
         href: "/gebueh",
         icon: Euro,
-  {
-    title: { de: "Praktisches", en: "Practical Info" },
-    items: [
-      {
-        label: { de: "GebÜH", en: "Fee Schedule" },
-        href: "/gebueh",
-        icon: Euro,
         description: { de: "Gebührenordnung für Heilpraktiker", en: "Fee schedule for practitioners" },
       },
       {
