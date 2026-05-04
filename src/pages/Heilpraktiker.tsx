@@ -2,8 +2,10 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Stethoscope, BookOpen, Heart, Shield, Scale, Leaf, GraduationCap, FileCheck, Users } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const Heilpraktiker = () => {
+  useContentProtection();
   return (
     <Layout>
       <SEOHead

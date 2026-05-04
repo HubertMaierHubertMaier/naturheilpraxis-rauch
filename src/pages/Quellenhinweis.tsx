@@ -13,8 +13,10 @@ import {
   FileWarning,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const Quellenhinweis = () => {
+  useContentProtection();
   return (
     <Layout>
       <SEOHead

@@ -17,6 +17,7 @@ import {
   Microscope,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 /* ─── Calcium-Quellen ─── */
 const calciumQuellen = [
@@ -64,6 +65,7 @@ const SlideWrapper = ({ children, slideNumber, totalSlides }: { children: React.
 );
 
 const MilchKnochengesundheit = () => {
+  useContentProtection();
   const totalSlides = 6;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start", containScroll: "trimSnaps" });
   const [currentSlide, setCurrentSlide] = useState(0);

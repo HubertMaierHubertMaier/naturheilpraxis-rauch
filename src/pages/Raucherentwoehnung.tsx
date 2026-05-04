@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const audioFiles = [
   {
@@ -34,6 +35,7 @@ const audioFiles = [
 ];
 
 const Raucherentwoehnung = () => {
+  useContentProtection();
   return (
     <Layout>
       <SEOHead

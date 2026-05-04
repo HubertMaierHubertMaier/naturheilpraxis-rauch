@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 /* ─── Pathogene ─── */
 const pathogeneData = [
@@ -58,6 +59,7 @@ const SlideWrapper = ({ children, slideNumber, totalSlides }: { children: React.
 );
 
 const RohmilchMikrobiologie = () => {
+  useContentProtection();
   const totalSlides = 5;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start", containScroll: "trimSnaps" });
   const [currentSlide, setCurrentSlide] = useState(0);

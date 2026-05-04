@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 /* ─── Statistik-Daten ─── */
 const prevalenceData = [
@@ -155,6 +156,7 @@ const SlideWrapper = ({ children, slideNumber, totalSlides }: { children: React.
 );
 
 const MilchUnvertraeglichkeit = () => {
+  useContentProtection();
   const totalSlides = 9;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: "start", containScroll: "trimSnaps" });
   const [currentSlide, setCurrentSlide] = useState(0);

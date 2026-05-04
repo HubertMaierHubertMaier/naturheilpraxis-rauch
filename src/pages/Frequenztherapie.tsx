@@ -8,8 +8,10 @@ import SEOHead from "@/components/seo/SEOHead";
 import heroImg from "@/assets/frequenztherapie-hero.jpg";
 import behandlungImg from "@/assets/frequenztherapie-behandlung.jpg";
 import zellenImg from "@/assets/frequenztherapie-zellen.jpg";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const Frequenztherapie = () => {
+  useContentProtection();
   const { t } = useLanguage();
 
   const benefits = [

@@ -4,8 +4,10 @@ import { Layout } from "@/components/layout/Layout";
 import SEOHead from "@/components/seo/SEOHead";
 import { BookOpen, ExternalLink } from "lucide-react";
 import { infothekOverviewGroups as groups } from "@/lib/infothekContent";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 export default function Infothek() {
+  useContentProtection();
   const { t } = useLanguage();
 
   return (

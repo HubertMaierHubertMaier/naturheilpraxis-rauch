@@ -32,6 +32,7 @@ const audioFiles = [
   },
 ];
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const documents = [
   {
@@ -53,6 +54,7 @@ const documents = [
 ];
 
 const SchilddrueseHypnose = () => {
+  useContentProtection();
   return (
     <Layout>
       <SEOHead

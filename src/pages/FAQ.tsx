@@ -16,8 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const FAQ = () => {
+  useContentProtection();
   const { language, t } = useLanguage();
   const tr = translations.faq;
 

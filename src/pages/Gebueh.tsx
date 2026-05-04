@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Euro, Info, FileText, HelpCircle, ExternalLink } from "lucide-react";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const beispielLeistungen = [
   { ziffer: "1", beschreibung: "Beratung", betrag: "8,74" },
@@ -14,6 +15,7 @@ const beispielLeistungen = [
 ];
 
 const Gebueh = () => {
+  useContentProtection();
   return (
     <Layout>
       <div className="bg-sage-50 py-12 md:py-16">
