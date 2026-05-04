@@ -15,6 +15,7 @@ import {
   Leaf,
   Microscope,
   Milk,
+  Pill,
   Radio,
   Route,
   Salad,
