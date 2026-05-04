@@ -9,6 +9,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 interface SymptomRow {
   symptom: string;
@@ -84,6 +85,7 @@ const symptomRows: SymptomRow[] = [
 ];
 
 const Reizdarm = () => {
+  useContentProtection();
   return (
     <Layout>
       <SEOHead

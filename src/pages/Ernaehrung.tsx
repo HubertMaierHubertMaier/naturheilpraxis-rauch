@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Apple, Droplets, Leaf, Sun, Moon, Heart, AlertTriangle, CheckCircle } from "lucide-react";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const tipps = [
   {
@@ -37,6 +38,7 @@ const empfehlungen = [
 ];
 
 const Ernaehrung = () => {
+  useContentProtection();
   return (
     <Layout>
       <div className="bg-sage-50 py-12 md:py-16">

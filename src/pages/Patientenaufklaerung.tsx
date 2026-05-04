@@ -8,8 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import SEOHead from "@/components/seo/SEOHead";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 const Patientenaufklaerung = () => {
+  useContentProtection();
   const { t, language } = useLanguage();
 
   const { data: pricing, isLoading } = useQuery({
