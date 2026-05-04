@@ -226,34 +226,6 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Wind,
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
       },
-      {
-        label: { de: "↓ Symptome und naturheilkundliche Mittel ↓", en: "↓ Symptoms and Naturopathic Remedies ↓" },
-        href: "#symptome-mittel",
-        icon: Pill,
-        description: {
-          de: "Untergruppe – siehe folgende Einträge",
-          en: "Subgroup – see entries below",
-        },
-        showInOverview: false,
-      },
-      {
-        label: { de: "Reizdarm", en: "Irritable Bowel Syndrome" },
-        href: "/reizdarm",
-        icon: Pill,
-        description: {
-          de: "Symptomübersicht & naturheilkundliche Behandlungsoptionen inkl. Probiotika",
-          en: "Symptom overview & naturopathic treatment options including probiotics",
-        },
-      },
-      {
-        label: { de: "Knieschwellung ohne Befund", en: "Knee Swelling without Findings" },
-        href: "/knieschwellung",
-        icon: Droplets,
-        description: {
-          de: "Homöopathie, Phytotherapie & Hausmittel bei unklarer Knieschwellung",
-          en: "Homeopathy, phytotherapy & home remedies for unexplained knee swelling",
-        },
-      },
     ],
   },
   {
