@@ -229,7 +229,22 @@ export const infothekGroups: InfothekGroup[] = [
     ],
   },
   {
-    title: { de: "Praktisches", en: "Practical Info" },
+    title: {
+      de: "Symptome und naturheilkundliche Mittel",
+      en: "Symptoms and Naturopathic Remedies",
+    },
+    items: [
+      {
+        label: { de: "Reizdarm", en: "Irritable Bowel Syndrome" },
+        href: "/reizdarm",
+        icon: Pill,
+        description: {
+          de: "Symptomübersicht & naturheilkundliche Behandlungsoptionen inkl. Probiotika",
+          en: "Symptom overview & naturopathic treatment options including probiotics",
+        },
+      },
+    ],
+  },
     items: [
       {
         label: { de: "GebÜH", en: "Fee Schedule" },
