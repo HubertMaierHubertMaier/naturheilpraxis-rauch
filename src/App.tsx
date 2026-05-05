@@ -37,6 +37,7 @@ import Infothek from "./pages/Infothek";
 import Reizdarm from "./pages/Reizdarm";
 import Knieschwellung from "./pages/Knieschwellung";
 import PatientenBibliothek from "./pages/PatientenBibliothek";
+import AppUebersicht from "./pages/AppUebersicht";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<PatientDashboard />} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute><PatientenBibliothek /></ProtectedRoute>} />
+              <Route path="/app-uebersicht" element={<AppUebersicht />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
