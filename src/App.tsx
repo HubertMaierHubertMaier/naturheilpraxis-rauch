@@ -36,6 +36,7 @@ import SchilddrueseHypnose from "./pages/SchilddrueseHypnose";
 import Infothek from "./pages/Infothek";
 import Reizdarm from "./pages/Reizdarm";
 import Knieschwellung from "./pages/Knieschwellung";
+import PatientenBibliothek from "./pages/PatientenBibliothek";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<PatientDashboard />} />
+              <Route path="/patienten-bibliothek" element={<ProtectedRoute><PatientenBibliothek /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
