@@ -186,6 +186,21 @@ const Auth: React.FC = () => {
     setLoading(true);
 
     try {
+      // Check global lock for patient registration
+      const { data: setting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'patient_login_enabled')
+        .maybeSingle();
+      const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
+      if (!loginEnabled) {
+        throw new Error(
+          language === 'de'
+            ? 'Die Patienten-Registrierung ist derzeit nicht möglich. Bitte kontaktieren Sie die Praxis telefonisch.'
+            : 'Patient registration is currently disabled. Please contact the practice by phone.'
+        );
+      }
+
       // Request verification code - this also creates the unconfirmed user
       const response = await supabase.functions.invoke('request-verification-code', {
         body: { email, type: 'registration', password },
