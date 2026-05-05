@@ -130,93 +130,80 @@ export function Header() {
           {user ? (
             <div className="ml-2 flex items-center gap-2">
               {isAdmin && (
-                <Link
-                  to="/dashboard"
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-                    location.pathname === "/dashboard"
-                      ? "bg-sage-100 text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
-                  <User className="h-4 w-4" />
-                  {t("Dashboard", "Dashboard")}
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  to="/wissensdatenbank"
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-                    location.pathname === "/wissensdatenbank"
-                      ? "bg-sage-100 text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
-                  <BookOpen className="h-4 w-4" />
-                  Wiki
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  to="/patienten-bibliothek"
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-                    location.pathname === "/patienten-bibliothek"
-                      ? "bg-sage-100 text-primary"
-                      : "text-muted-foreground"
-                  )}
-                  title="Patienten-Bibliothek (in Arbeit)"
-                >
-                  <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
-                  <Library className="h-4 w-4" />
-                  Bibliothek
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-                    location.pathname === "/admin"
-                      ? "bg-sage-100 text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </Link>
-              )}
-              {isAdmin && (
-                <a
-                  href="/datenschutz-fahrplan.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
-                >
-                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
-                  <ShieldCheck className="h-4 w-4" />
-                  Datensicherheit
-                </a>
-              )}
-              {isAdmin && (
-                <Link
-                  to="/app-uebersicht"
-                  className={cn(
-                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-                    location.pathname === "/app-uebersicht"
-                      ? "bg-sage-100 text-primary"
-                      : "text-muted-foreground"
-                  )}
-                  title="Übersicht aller Buttons der App"
-                >
-                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
-                  <LayoutGrid className="h-4 w-4" />
-                  Übersicht der APP
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                      <Shield className="h-4 w-4" />
+                      Admin
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-background">
+                    <DropdownMenuLabel>Admin-Bereich</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
+                        <User className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/patienten?dev=true" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                        <User className="h-4 w-4" />
+                        Patienten
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                        <Shield className="h-4 w-4" />
+                        Admin-Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/wissensdatenbank" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                        <BookOpen className="h-4 w-4" />
+                        Wiki
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/patienten-bibliothek" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
+                        <Library className="h-4 w-4" />
+                        Bibliothek
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <a
+                        href="/datenschutz-fahrplan.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                        <ShieldCheck className="h-4 w-4" />
+                        Datensicherheit
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/app-uebersicht" className="flex items-center gap-2 cursor-pointer">
+                        <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                        <LayoutGrid className="h-4 w-4" />
+                        Übersicht der APP
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               <Button
                 variant="outline"
