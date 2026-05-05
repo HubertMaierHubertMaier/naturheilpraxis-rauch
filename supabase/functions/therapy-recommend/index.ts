@@ -205,6 +205,23 @@ const SYMPTOM_TARGETS: SymptomTarget[] = [
     wikiTitles: ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"],
     keywords: ["haut", "ekzem", "allergie", "schleimhaut", "rhinitis", "mucosa compositum", "lymphomyosot", "galium-heel"],
   },
+  {
+    label: "Onkologie/Krebs/Metastasen",
+    terms: /\b(krebs|karzinom|carcinom|tumor|metasta|onko|cancer|mamma[\s-]?ca|brustkrebs|endometrium|prostata[\s-]?ca|leuk[äa]m|lymphom|sarkom|z\.?n\.?\s*mamma|zn\.?\s*mamma|rezidiv)\b/i,
+    wikiTitles: [
+      "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)",
+      "Diamond Shield – Begleitprotokoll bei Cancer",
+      "Cancer",
+    ],
+    keywords: [
+      "cancer", "krebs", "karzinom", "tumor", "metastasen", "onkologie",
+      "malonsäure", "papain", "wermut", "l-cystein",
+      "mannavan antioxi", "mannavan vit c", "mannavan beta", "mannavan b6", "mannavan glucan", "mannavan curcu", "mannavan oligo",
+      "vitamin c hochdosis", "glutathion", "selen", "zink", "q10", "coenzym q10",
+      "mistel", "viscum", "diamond shield", "fve-chipcard", "br-chipcard", "tum-chipcard", "clst-chipcard",
+      "nk-zellen", "interferon", "papainkur",
+    ],
+  },
 ];
 
 function getActiveSymptomTargets(queryText: string): SymptomTarget[] {
@@ -453,6 +470,27 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: Tonikum bei nervöser Erschöpfung und reaktiver depressiver Stimmung." });
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ignatia-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei emotionaler Belastung, Kummer, Rückzug und Trauerreaktionen." });
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei nervöser Unruhe, Reizbarkeit und psychovegetativer Belastung." });
+  }
+
+  // === Onkologie / Krebs / Metastasen ===
+  const oncology = has(/\b(krebs|karzinom|carcinom|tumor|metasta|onko|cancer|mamma[\s-]?ca|brustkrebs|endometrium|prostata[\s-]?ca|leuk[äa]m|lymphom|sarkom|z\.?n\.?\s*mamma|zn\.?\s*mamma|rezidiv)\b/i);
+  if (oncology) {
+    const oncGroup = "### 🧬 Onkologische Begleittherapie (Cancer-Protokoll)";
+    if (hasWikiTitle(entries, "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)")) {
+      items.push({ group: oncGroup, line: "- **Vitamin C + Glutathion (Malonsäure-Ausleitung)** | nach Praxisstandard (Wiki: hochdosiert) | oral/infusionsbegleitend | Daueranwendung im Therapiezyklus | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 1: Ausleitung der Malonsäure." });
+      items.push({ group: oncGroup, line: "- **Mega-Papainkur (Papain 1000 mg + L-Cystein 500 mg + Wermut 300 mg)** | stündlich über 6 h, 6 Tage Kur / 6 Tage Pause, Wiederholung | oral, 2 h nüchtern, danach eiweißarm | Zyklen austesten | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 2 (Spulwurm-/Tumorbiologie). ⚠️ Wermut nicht in Schwangerschaft." });
+      items.push({ group: oncGroup, line: "- **Mannavan Antioxi+ (Q10 100 mg + Selen 200 µg + Zink 4 mg)** | 1-0-1 | oral | begleitend dauerhaft | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 3: antioxidative Basis." });
+      items.push({ group: oncGroup, line: "- **Mannavan Vit C+ (500 mg Vit C + 160 mg Bioflavonoide)** | 1-0-1 | oral | begleitend | 🔴 Essentiell | laut Bezug | Wiki: reduziert Metastasenaktivität, ca. 600 % wirksamer, 13 h Verweildauer." });
+      items.push({ group: oncGroup, line: "- **Mannavan Beta+ (Polyphenol-/Carotinoid-Komplex)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki Cancer-Protokoll: Pinienrinde, Heidelbeere, Lutein, Lycopin, Brokkoli, grüner Tee." });
+      items.push({ group: oncGroup, line: "- **Mannavan B6+** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: obligater Bestandteil jeder Krebstherapie – Interferon-Synthese, Leber-Phase-2." });
+      items.push({ group: oncGroup, line: "- **Mannavan Glucan (Beta-Glucan)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: aktiviert NK-Zellen und CD8+-Zellen gegen Tumor-/Virusbelastung." });
+      items.push({ group: oncGroup, line: "- **Mannavan Curcu forte+ / Oligo+ (2. Stufe)** | nach Praxisstandard | oral | Steigerungsphase | 🟢 Optional | laut Bezug | Wiki Cancer-Stufe 2: Curcumin antiviral/antitumoral, Oligo+ als 50× Vit C / 20× Vit E Verstärker." });
+    }
+    if (hasWikiTitle(entries, "Diamond Shield – Begleitprotokoll bei Cancer")) {
+      items.push({ group: oncGroup, line: "- **Diamond Shield Grundprogramm + Impuls-Entladung** | 2–7×/Woche | bioenergetisch | Daueranwendung | 🟡 Empfohlen | laut Bezug | Wiki Diamond-Shield-Cancer-Protokoll plus tägliches Erden ≥ 50 min." });
+      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards (BR täglich, TUM jeden 2. Tag, CLST 3–7×/Woche, FvE lokal 7 min auf Tumor/Metastasen)** | wie Wiki | bioenergetisch | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: ⚠️ FvE-ChipCard NICHT am Tag vor schulmedizinischer Therapie." });
+      items.push({ group: oncGroup, line: "- **Milchsauer vergorene Gemüsesäfte (Sauerkraut-/Rote-Bete-Saft) nach FvE-Anwendung** | täglich 1 Glas | oral | begleitend | 🟢 Optional | laut Bezug | Wiki Diamond-Shield-Protokoll: Darmmilieu/Ausleitung." });
+    }
   }
 
   if (items.length === 0) return "";
@@ -874,6 +912,14 @@ ZWINGENDE BALANCE-REGEL:
 - Bei Symptomtreffern wie Erschöpfung, Appetitlosigkeit, Gewichtsverlust, Schwäche, Psyche/Isolation oder Verdauungsbeschwerden: Extrahiere die dort genannten **Hauptmittel**, **Ergänzungsmittel** und ggf. **Phasenmittel** aus dem Wiki-Kontext und ordne sie unter "Homöopathie & Komplexmittel" ein.
 - Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
 - Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
+
+🧬 ONKOLOGIE-REGEL (ZWINGEND, wenn Krebs/Karzinom/Tumor/Metastasen/"z.n. Mamma-Ca"/"Z.n. Endometrium-Ca" etc. in Erkrankung, Symptomen oder Belastungen vorkommen):
+- Du MUSST eine eigene Sektion "## 🧬 Onkologische Begleittherapie" erzeugen, in der die Wiki-Einträge "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)" und "Diamond Shield – Begleitprotokoll bei Cancer" 1:1 in strukturierte Mittelzeilen überführt werden (Vitamin C/Glutathion-Ausleitung, Mega-Papainkur, Mannavan Antioxi+/Vit C+/Beta+/B6+/Glucan, Stufe 2 Curcu forte+/Oligo+, Diamond-Shield-Grundprogramm + ChipCards BR/TUM/CLST/FvE, milchsauer vergorene Säfte).
+- Auch bei "Z.n." (Zustand nach) Brustkrebs/Endometriumkarzinom mit Knochenmetastasen oder unter laufender CDK4/6-/Aromatase-/Bisphosphonat-Therapie (Abemaciclib, Letrozol, Zometa) MUSS diese Begleittherapie erscheinen – als naturheilkundliche Begleitung, nicht als Ersatz.
+- Wechselwirkungen explizit kennzeichnen: hochdosiertes Vit C / Glutathion / Antioxidantien können mit laufender zytostatischer/zielgerichteter Therapie interagieren → Hinweis "Zeitliche Abstimmung mit onkologischer Therapie in der Praxis besprechen". KEIN pauschales "bitte ärztlich abklären".
+- Wermut/Schwarzwalnuss in der Papainkur: Kontraindikation Schwangerschaft/Stillzeit prüfen.
+- FvE-ChipCard: Hinweis "nicht am Tag vor schulmedizinischer Therapie" mitgeben.
+- Diese Onkologie-Sektion darf NICHT durch eine Darm-/Symptomstrategie verdrängt werden.
 
 🔬 METATRON/NLS INDEX-INTERPRETATION (ZWINGEND – HÄUFIGE FEHLERQUELLE!):
 Bei Pathogenen mit "Index"-Wert aus der Hospital Metatron HR / NLS-Resonanzanalyse gilt eine INVERSE Skala:
