@@ -913,6 +913,14 @@ ZWINGENDE BALANCE-REGEL:
 - Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
 - Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
 
+🧬 ONKOLOGIE-REGEL (ZWINGEND, wenn Krebs/Karzinom/Tumor/Metastasen/"z.n. Mamma-Ca"/"Z.n. Endometrium-Ca" etc. in Erkrankung, Symptomen oder Belastungen vorkommen):
+- Du MUSST eine eigene Sektion "## 🧬 Onkologische Begleittherapie" erzeugen, in der die Wiki-Einträge "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)" und "Diamond Shield – Begleitprotokoll bei Cancer" 1:1 in strukturierte Mittelzeilen überführt werden (Vitamin C/Glutathion-Ausleitung, Mega-Papainkur, Mannavan Antioxi+/Vit C+/Beta+/B6+/Glucan, Stufe 2 Curcu forte+/Oligo+, Diamond-Shield-Grundprogramm + ChipCards BR/TUM/CLST/FvE, milchsauer vergorene Säfte).
+- Auch bei "Z.n." (Zustand nach) Brustkrebs/Endometriumkarzinom mit Knochenmetastasen oder unter laufender CDK4/6-/Aromatase-/Bisphosphonat-Therapie (Abemaciclib, Letrozol, Zometa) MUSS diese Begleittherapie erscheinen – als naturheilkundliche Begleitung, nicht als Ersatz.
+- Wechselwirkungen explizit kennzeichnen: hochdosiertes Vit C / Glutathion / Antioxidantien können mit laufender zytostatischer/zielgerichteter Therapie interagieren → Hinweis "Zeitliche Abstimmung mit onkologischer Therapie in der Praxis besprechen". KEIN pauschales "bitte ärztlich abklären".
+- Wermut/Schwarzwalnuss in der Papainkur: Kontraindikation Schwangerschaft/Stillzeit prüfen.
+- FvE-ChipCard: Hinweis "nicht am Tag vor schulmedizinischer Therapie" mitgeben.
+- Diese Onkologie-Sektion darf NICHT durch eine Darm-/Symptomstrategie verdrängt werden.
+
 🔬 METATRON/NLS INDEX-INTERPRETATION (ZWINGEND – HÄUFIGE FEHLERQUELLE!):
 Bei Pathogenen mit "Index"-Wert aus der Hospital Metatron HR / NLS-Resonanzanalyse gilt eine INVERSE Skala:
   • KLEINER Wert = HOHE Wahrscheinlichkeit für materielles/aktives Vorhandensein
