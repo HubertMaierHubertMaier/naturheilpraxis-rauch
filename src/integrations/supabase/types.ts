@@ -173,6 +173,54 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_resources: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          is_published: boolean
+          sort_order: number
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          is_published?: boolean
+          sort_order?: number
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       practice_info: {
         Row: {
           content_de: string
@@ -413,6 +461,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "patient"
