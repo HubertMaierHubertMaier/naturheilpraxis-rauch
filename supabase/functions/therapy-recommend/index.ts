@@ -1193,22 +1193,32 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
       throw new Error(`KI-Gateway Fehler (${response.status}): ${t.slice(0, 300)}`);
     }
 
-    const aiText = sanitizeRecommendation(await readAiStreamText(response.body!));
-    const sanitizedText = forcedWikiRemedySection
-      ? `${forcedWikiRemedySection}\n\n---\n\n${aiText}`
-      : aiText;
-
-    // Prepend audit info as the FIRST SSE-Frame so the client can show
-    // exactly which wiki entries the AI saw. Then send the sanitized result.
-    const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
+    // SSE-Stream der KI direkt durchreichen → vermeidet 150s IDLE_TIMEOUT bei langen Pro-Antworten.
+    // Audit-Info + ggf. erzwungene Wiki-Mittelsektion als allererste SSE-Frames vorangestellt.
     const encoder = new TextEncoder();
+    const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
+    const forcedFrame = forcedWikiRemedySection
+      ? `data: ${JSON.stringify({ choices: [{ delta: { content: `${forcedWikiRemedySection}\n\n---\n\n` } }] })}\n\n`
+      : "";
+
+    const upstream = response.body!.getReader();
     const wrapped = new ReadableStream({
-      start(controller) {
+      async start(controller) {
         controller.enqueue(encoder.encode(auditLine));
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sanitizedText } }] })}\n\n`));
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
+        if (forcedFrame) controller.enqueue(encoder.encode(forcedFrame));
+        try {
+          while (true) {
+            const { done, value } = await upstream.read();
+            if (done) break;
+            if (value) controller.enqueue(value);
+          }
+        } catch (err) {
+          console.error("Stream-Fehler beim Durchreichen:", err);
+        } finally {
+          controller.close();
+        }
       },
+      cancel() { upstream.cancel().catch(() => {}); },
     });
 
     return new Response(wrapped, {
