@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -186,9 +186,26 @@ export function Header() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
                 >
+                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                   <ShieldCheck className="h-4 w-4" />
                   Datensicherheit
                 </a>
+              )}
+              {isAdmin && (
+                <Link
+                  to="/app-uebersicht"
+                  className={cn(
+                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+                    location.pathname === "/app-uebersicht"
+                      ? "bg-sage-100 text-primary"
+                      : "text-muted-foreground"
+                  )}
+                  title="Übersicht aller Buttons der App"
+                >
+                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+                  <LayoutGrid className="h-4 w-4" />
+                  Übersicht der APP
+                </Link>
               )}
               <Button
                 variant="outline"
