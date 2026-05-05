@@ -875,6 +875,18 @@ ZWINGENDE BALANCE-REGEL:
 - Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
 - Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
 
+🔬 METATRON/NLS INDEX-INTERPRETATION (ZWINGEND – HÄUFIGE FEHLERQUELLE!):
+Bei Pathogenen mit "Index"-Wert aus der Hospital Metatron HR / NLS-Resonanzanalyse gilt eine INVERSE Skala:
+  • KLEINER Wert = HOHE Wahrscheinlichkeit für materielles/aktives Vorhandensein
+  • GROSSER Wert = GERINGE Wahrscheinlichkeit (nur Hintergrundbelastung oder rein informativ)
+Konkrete Schwellen:
+  - 0.000 – 0.250 → sehr hohe Wahrscheinlichkeit (akut/materiell) → ZWINGEND priorisieren, Hauptmittel
+  - 0.251 – 0.425 → hohe Wahrscheinlichkeit (klinisch relevant) → behandeln, eigenes Mittel pro Pathogen
+  - 0.426 – 0.600 → mittlere Wahrscheinlichkeit → berücksichtigen, ggf. zusammenfassen
+  - 0.601 – 0.700 → geringe Wahrscheinlichkeit → nur ergänzend / Drainage
+  - > 0.700      → sehr gering, nur informativ → NICHT als aktive Belastung behandeln, NICHT priorisieren
+Reihenfolge der Mittelempfehlung pro Pathogen MUSS dieser Priorität folgen. Pathogene mit Index > 0.700 dürfen nur erwähnt werden, wenn sie das klinische Bild plausibel ergänzen – nicht als Hauptindikation.
+
 ⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
 ${preferredLines.length > 0
   ? `- Bevorzugte Produktlinien: ${preferredLines.join(", ")}.\n  → Bei vergleichbarer Wirkung MUSST du Mittel aus diesen Linien priorisieren (vor anderen Marken). Nenne die Linie explizit im Mittelnamen (z.B. "Biotik Balance (Vitaplace)").`

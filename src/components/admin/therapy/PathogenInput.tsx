@@ -20,18 +20,49 @@ const newId = () => Math.random().toString(36).slice(2, 9);
 export const emptyEntry = (): PathogenEntry => ({ id: newId(), name: "", organe: "", index: "" });
 
 /**
+ * Klassifiziert den Metatron/NLS-Resonanz-Index.
+ * Skala (Hospital Metatron HR / NLS): kleiner Wert = hohe Wahrscheinlichkeit
+ * für materielles/aktives Vorliegen des Pathogens.
+ *   0.000 – 0.250 → sehr hoch (akut/materiell)
+ *   0.251 – 0.425 → hoch (klinisch relevant)
+ *   0.426 – 0.600 → mittel (Belastung wahrscheinlich)
+ *   0.601 – 0.700 → gering (Hintergrundbelastung / Hinweis)
+ *   > 0.700      → sehr gering (nur informativ, meist nicht aktiv)
+ */
+export function classifyPathogenIndex(rawIndex: string): {
+  level: "sehr hoch" | "hoch" | "mittel" | "gering" | "sehr gering" | "unbekannt";
+  hint: string;
+  numeric: number | null;
+} {
+  const n = parseFloat((rawIndex || "").replace(",", "."));
+  if (!isFinite(n)) return { level: "unbekannt", hint: "ohne Index", numeric: null };
+  if (n <= 0.25) return { level: "sehr hoch", hint: "akut/materiell vorhanden – PRIORITÄT", numeric: n };
+  if (n <= 0.425) return { level: "hoch", hint: "klinisch relevant – behandeln", numeric: n };
+  if (n <= 0.6) return { level: "mittel", hint: "Belastung wahrscheinlich – berücksichtigen", numeric: n };
+  if (n <= 0.7) return { level: "gering", hint: "Hintergrundbelastung – nur ergänzend", numeric: n };
+  return { level: "sehr gering", hint: "nur informativ – meist nicht aktiv", numeric: n };
+}
+
+/**
  * Wandelt strukturierte Einträge in einen lesbaren Text für die KI um.
+ * Inkl. Interpretation des Metatron/NLS-Index (kleiner Wert = höhere Wahrscheinlichkeit).
  */
 export function formatPathogensForAI(entries: PathogenEntry[]): string {
-  return entries
-    .filter((e) => e.name.trim())
-    .map((e) => {
-      const parts = [e.name.trim()];
-      if (e.organe.trim()) parts.push(`Organe: ${e.organe.trim().replace(/\n+/g, ", ")}`);
-      if (e.index.trim()) parts.push(`Index: ${e.index.trim()}`);
-      return "- " + parts.join(" | ");
-    })
-    .join("\n");
+  const filled = entries.filter((e) => e.name.trim());
+  if (filled.length === 0) return "";
+  const header =
+    "Hinweis zur Index-Skala (Hospital Metatron HR / NLS): KLEINER Wert = HOHE Wahrscheinlichkeit für materielles/aktives Vorhandensein. " +
+    "0.000–0.250 sehr hoch, 0.251–0.425 hoch, 0.426–0.600 mittel, 0.601–0.700 gering (nur ergänzend), >0.700 sehr gering (nur informativ, NICHT priorisieren).";
+  const lines = filled.map((e) => {
+    const parts = [e.name.trim()];
+    if (e.organe.trim()) parts.push(`Organe: ${e.organe.trim().replace(/\n+/g, ", ")}`);
+    if (e.index.trim()) {
+      const c = classifyPathogenIndex(e.index);
+      parts.push(`Index: ${e.index.trim()} → Wahrscheinlichkeit ${c.level} (${c.hint})`);
+    }
+    return "- " + parts.join(" | ");
+  });
+  return header + "\n" + lines.join("\n");
 }
 
 /**
