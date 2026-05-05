@@ -472,6 +472,27 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
     items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei nervöser Unruhe, Reizbarkeit und psychovegetativer Belastung." });
   }
 
+  // === Onkologie / Krebs / Metastasen ===
+  const oncology = has(/\b(krebs|karzinom|carcinom|tumor|metasta|onko|cancer|mamma[\s-]?ca|brustkrebs|endometrium|prostata[\s-]?ca|leuk[äa]m|lymphom|sarkom|z\.?n\.?\s*mamma|zn\.?\s*mamma|rezidiv)\b/i);
+  if (oncology) {
+    const oncGroup = "### 🧬 Onkologische Begleittherapie (Cancer-Protokoll)";
+    if (hasWikiTitle(entries, "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)")) {
+      items.push({ group: oncGroup, line: "- **Vitamin C + Glutathion (Malonsäure-Ausleitung)** | nach Praxisstandard (Wiki: hochdosiert) | oral/infusionsbegleitend | Daueranwendung im Therapiezyklus | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 1: Ausleitung der Malonsäure." });
+      items.push({ group: oncGroup, line: "- **Mega-Papainkur (Papain 1000 mg + L-Cystein 500 mg + Wermut 300 mg)** | stündlich über 6 h, 6 Tage Kur / 6 Tage Pause, Wiederholung | oral, 2 h nüchtern, danach eiweißarm | Zyklen austesten | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 2 (Spulwurm-/Tumorbiologie). ⚠️ Wermut nicht in Schwangerschaft." });
+      items.push({ group: oncGroup, line: "- **Mannavan Antioxi+ (Q10 100 mg + Selen 200 µg + Zink 4 mg)** | 1-0-1 | oral | begleitend dauerhaft | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 3: antioxidative Basis." });
+      items.push({ group: oncGroup, line: "- **Mannavan Vit C+ (500 mg Vit C + 160 mg Bioflavonoide)** | 1-0-1 | oral | begleitend | 🔴 Essentiell | laut Bezug | Wiki: reduziert Metastasenaktivität, ca. 600 % wirksamer, 13 h Verweildauer." });
+      items.push({ group: oncGroup, line: "- **Mannavan Beta+ (Polyphenol-/Carotinoid-Komplex)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki Cancer-Protokoll: Pinienrinde, Heidelbeere, Lutein, Lycopin, Brokkoli, grüner Tee." });
+      items.push({ group: oncGroup, line: "- **Mannavan B6+** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: obligater Bestandteil jeder Krebstherapie – Interferon-Synthese, Leber-Phase-2." });
+      items.push({ group: oncGroup, line: "- **Mannavan Glucan (Beta-Glucan)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: aktiviert NK-Zellen und CD8+-Zellen gegen Tumor-/Virusbelastung." });
+      items.push({ group: oncGroup, line: "- **Mannavan Curcu forte+ / Oligo+ (2. Stufe)** | nach Praxisstandard | oral | Steigerungsphase | 🟢 Optional | laut Bezug | Wiki Cancer-Stufe 2: Curcumin antiviral/antitumoral, Oligo+ als 50× Vit C / 20× Vit E Verstärker." });
+    }
+    if (hasWikiTitle(entries, "Diamond Shield – Begleitprotokoll bei Cancer")) {
+      items.push({ group: oncGroup, line: "- **Diamond Shield Grundprogramm + Impuls-Entladung** | 2–7×/Woche | bioenergetisch | Daueranwendung | 🟡 Empfohlen | laut Bezug | Wiki Diamond-Shield-Cancer-Protokoll plus tägliches Erden ≥ 50 min." });
+      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards (BR täglich, TUM jeden 2. Tag, CLST 3–7×/Woche, FvE lokal 7 min auf Tumor/Metastasen)** | wie Wiki | bioenergetisch | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: ⚠️ FvE-ChipCard NICHT am Tag vor schulmedizinischer Therapie." });
+      items.push({ group: oncGroup, line: "- **Milchsauer vergorene Gemüsesäfte (Sauerkraut-/Rote-Bete-Saft) nach FvE-Anwendung** | täglich 1 Glas | oral | begleitend | 🟢 Optional | laut Bezug | Wiki Diamond-Shield-Protokoll: Darmmilieu/Ausleitung." });
+    }
+  }
+
   if (items.length === 0) return "";
   const groups = Array.from(new Set(items.map((i) => i.group)));
   return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht. Diese Sicherung ist NICHT exklusiv: Die KI muss zusätzlich alle in Phase 1 gefundenen Kandidaten aus ALLEN Wiki-Kategorien prüfen und daraus auswählen.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
