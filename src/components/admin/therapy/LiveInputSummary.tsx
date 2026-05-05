@@ -64,19 +64,26 @@ export function LiveInputSummary({ pathogens, symptome, erkrankung }: Props) {
               Pathogene / Belastungen ({filledPathogens.length})
             </div>
             <ol className="space-y-1.5 list-decimal list-inside">
-              {filledPathogens.map((p) => (
-                <li key={p.id} className="leading-snug">
-                  <span className="font-medium text-foreground">{p.name.trim()}</span>
-                  {p.organe.trim() && (
-                    <span className="text-muted-foreground"> · Organe: <em>{p.organe.trim().replace(/\n+/g, ", ")}</em></span>
-                  )}
-                  {p.index.trim() && (
-                    <Badge variant="outline" className="ml-1.5 text-[10px] py-0 px-1.5 font-mono">
-                      Index {p.index.trim()}
-                    </Badge>
-                  )}
-                </li>
-              ))}
+              {filledPathogens.map((p) => {
+                const c = p.index.trim() ? classifyPathogenIndex(p.index) : null;
+                return (
+                  <li key={p.id} className="leading-snug">
+                    <span className="font-medium text-foreground">{p.name.trim()}</span>
+                    {p.organe.trim() && (
+                      <span className="text-muted-foreground"> · Organe: <em>{p.organe.trim().replace(/\n+/g, ", ")}</em></span>
+                    )}
+                    {c && (
+                      <Badge
+                        variant="outline"
+                        className={`ml-1.5 text-[10px] py-0 px-1.5 font-mono ${indexBadgeClass(c.level)}`}
+                        title={`Metatron/NLS-Index ${p.index.trim()} – Wahrscheinlichkeit ${c.level}: ${c.hint}`}
+                      >
+                        {p.index.trim()} · {c.level}
+                      </Badge>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           </div>
         )}
