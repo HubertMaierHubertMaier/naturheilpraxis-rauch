@@ -12,8 +12,9 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library } from "lucide-react";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
+import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -80,7 +81,7 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl">
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+            <TabsList className="grid w-full grid-cols-8 max-w-5xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -96,6 +97,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <Euro className="h-4 w-4" />
                 Preise
+              </TabsTrigger>
+              <TabsTrigger value="library" className="flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                Bibliothek
               </TabsTrigger>
               <TabsTrigger value="icd10" className="flex items-center gap-2">
                 <Brain className="h-4 w-4" />
@@ -195,6 +200,19 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <AuditLogManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="library">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Patienten-Bibliothek</CardTitle>
+                  <CardDescription>
+                    PDF-Skripte und MP3-Audios für verifizierte Patientinnen und Patienten. Dateien sind nur nach Login und Verifizierung zugänglich.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PatientLibraryManager />
                 </CardContent>
               </Card>
             </TabsContent>
