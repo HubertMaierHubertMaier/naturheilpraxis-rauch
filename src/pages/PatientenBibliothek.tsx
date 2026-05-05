@@ -25,7 +25,7 @@ interface Resource {
 const BUCKET = "patient-library";
 
 const PatientenBibliothek = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,12 +35,13 @@ const PatientenBibliothek = () => {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      setLoading(true);
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_verified_patient")
         .eq("user_id", user.id)
         .maybeSingle();
-      const isVerified = !!profile?.is_verified_patient;
+      const isVerified = !!profile?.is_verified_patient || isAdmin;
       setVerified(isVerified);
 
       if (isVerified) {
@@ -56,7 +57,7 @@ const PatientenBibliothek = () => {
       }
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
