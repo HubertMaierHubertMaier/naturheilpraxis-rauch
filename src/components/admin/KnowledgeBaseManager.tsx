@@ -248,6 +248,19 @@ export function KnowledgeBaseManager() {
     return result;
   }, [entries, categoryFilter, tagFilter, searchQuery, searchPhrases]);
 
+  const expandToEntry = (entry: KnowledgeEntry) => {
+    const parsed = parseCategory(entry.category);
+    setExpandedParents((prev) => new Set(prev).add(parsed.parent));
+    if (parsed.child) {
+      setExpandedChildren((prev) => new Set(prev).add(`${parsed.parent}>${parsed.child}`));
+    }
+    setExpandedId(entry.id);
+  };
+
+  useEffect(() => {
+    if (filtered.length === 1) expandToEntry(filtered[0]);
+  }, [filtered]);
+
   // Compute match counts per entry (how many distinct phrases match)
   const matchCounts = useMemo(() => {
     if (!hasMultiplePhrases) return new Map<string, number>();
