@@ -1216,7 +1216,9 @@ Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensda
           { role: "system", content: safeSystem },
           { role: "user", content: safeUser },
         ],
-        max_tokens: useProModel === true ? 12288 : 8192,
+        // Pro: Gemini 2.5 Pro verbraucht intern viel "Thinking"-Tokens; daher großzügig dimensionieren,
+        // sonst wird die sichtbare Ausgabe abgeschnitten (z. B. fehlende Onkologie-Sektion am Ende).
+        max_tokens: useProModel === true ? 32768 : 8192,
         stream: true,
       }),
     });
