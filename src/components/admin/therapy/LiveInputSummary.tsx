@@ -1,7 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ListChecks, Bug, Activity, Stethoscope } from "lucide-react";
-import type { PathogenEntry } from "./PathogenInput";
+import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
+
+const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
+  switch (level) {
+    case "sehr hoch": return "border-red-500 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30";
+    case "hoch": return "border-orange-500 text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/30";
+    case "mittel": return "border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30";
+    case "gering": return "border-sky-400 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30";
+    case "sehr gering": return "border-muted text-muted-foreground bg-muted/40";
+    default: return "";
+  }
+};
 
 interface Props {
   pathogens: PathogenEntry[];
