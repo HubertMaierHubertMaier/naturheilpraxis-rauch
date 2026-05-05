@@ -94,7 +94,7 @@ const Auth: React.FC = () => {
         );
       }
 
-      // Check if user is admin – admins skip 2FA
+      // Check if user is admin – admins skip 2FA AND bypass login lock
       const { data: isAdminData } = await supabase.rpc('has_role', {
         _user_id: signInData.user?.id,
         _role: 'admin',
@@ -108,6 +108,23 @@ const Auth: React.FC = () => {
         });
         navigate('/');
         return;
+      }
+
+      // Non-admin: check global lock
+      const { data: setting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'patient_login_enabled')
+        .maybeSingle();
+      const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
+
+      if (!loginEnabled) {
+        await supabase.auth.signOut();
+        throw new Error(
+          language === 'de'
+            ? 'Die Patienten-Anmeldung ist derzeit nicht möglich. Bitte kontaktieren Sie die Praxis telefonisch.'
+            : 'Patient login is currently disabled. Please contact the practice by phone.'
+        );
       }
 
       // Non-admin: Sign out and require 2FA
