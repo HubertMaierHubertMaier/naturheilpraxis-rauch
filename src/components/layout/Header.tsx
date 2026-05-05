@@ -43,7 +43,6 @@ export function Header() {
 
   const navItems = [
     ...(isAdmin ? [{ label: "👥 Patienten", href: "/patienten?dev=true" }] : []),
-    ...(isAdmin ? [{ label: "📚 Wiki", href: "/wissensdatenbank" }] : []),
   ];
 
   const handleSignOut = async () => {
