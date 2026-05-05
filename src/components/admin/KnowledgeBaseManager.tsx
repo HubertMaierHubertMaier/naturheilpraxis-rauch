@@ -621,7 +621,10 @@ export function KnowledgeBaseManager() {
                           return (
                             <div key={childKey}>
                               <button
-                                onClick={() => toggleChild(childKey)}
+                                onClick={() => {
+                                  toggleChild(childKey);
+                                  if (!isChildExpanded && child.entries.length === 1) expandToEntry(child.entries[0]);
+                                }}
                                 className="flex items-center gap-2 w-full text-left py-2 hover:text-primary transition-colors"
                               >
                                 {isChildExpanded ? (
