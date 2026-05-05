@@ -132,6 +132,7 @@ export function Header() {
                       : "text-muted-foreground"
                   )}
                 >
+                  <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                   <User className="h-4 w-4" />
                   {t("Dashboard", "Dashboard")}
                 </Link>
@@ -146,6 +147,7 @@ export function Header() {
                       : "text-muted-foreground"
                   )}
                 >
+                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                   <BookOpen className="h-4 w-4" />
                   Wiki
                 </Link>
@@ -161,6 +163,7 @@ export function Header() {
                   )}
                   title="Patienten-Bibliothek (in Arbeit)"
                 >
+                  <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                   <Library className="h-4 w-4" />
                   Bibliothek
                 </Link>
@@ -175,6 +178,7 @@ export function Header() {
                       : "text-muted-foreground"
                   )}
                 >
+                  <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                   <Shield className="h-4 w-4" />
                   Admin
                 </Link>
