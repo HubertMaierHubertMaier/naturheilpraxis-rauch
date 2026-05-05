@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
   FileText, Download, Eye, Calendar, Clock, User, Shield, Loader2,
-  BookOpen, PenTool, Plus, ArrowRight,
+  BookOpen, PenTool, Plus, ArrowRight, Library,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateEnhancedAnamnesePdf } from "@/lib/pdfExportEnhanced";
@@ -211,6 +211,28 @@ const PatientDashboard = () => {
                 </p>
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
                   {t("Ansehen", "View")}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Patienten-Bibliothek */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/patienten-bibliothek")}>
+            <CardContent className="p-6 flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                <Library className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">{t("Patienten-Bibliothek", "Patient Library")}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {t(
+                    "Persönliche Skripte, Selbsthypnose-Audios und Begleitmaterialien",
+                    "Personal scripts, self-hypnosis audios and companion materials"
+                  )}
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
+                  {t("Materialien öffnen", "Open materials")}
                   <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
