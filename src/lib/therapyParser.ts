@@ -45,6 +45,7 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
   { match: /probiotika|präbiotika|darmaufbau/i, tone: "mist", emoji: "🧫", title: "Probiotika & Darmaufbau" },
   { match: /spezialpräparate/i, tone: "neutral", emoji: "💎", title: "Spezialpräparate" },
   { match: /apparativ|klinische therap/i, tone: "neutral", emoji: "🩺", title: "Apparative & klinische Therapien" },
+  { match: /onkolog|krebs|cancer|tumor|metasta|karzinom/i, tone: "terracotta", emoji: "🧬", title: "Onkologische Begleittherapie" },
 ];
 
 const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"]; emoji: string; title: string; placement: "intro" | "outro" }> = [
