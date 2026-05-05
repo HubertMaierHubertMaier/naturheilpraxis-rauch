@@ -205,6 +205,23 @@ const SYMPTOM_TARGETS: SymptomTarget[] = [
     wikiTitles: ["Therapeutischer Index: Haut", "Therapeutischer Index: HNO", "Therapeutischer Index: Atemwege"],
     keywords: ["haut", "ekzem", "allergie", "schleimhaut", "rhinitis", "mucosa compositum", "lymphomyosot", "galium-heel"],
   },
+  {
+    label: "Onkologie/Krebs/Metastasen",
+    terms: /\b(krebs|karzinom|carcinom|tumor|metasta|onko|cancer|mamma[\s-]?ca|brustkrebs|endometrium|prostata[\s-]?ca|leuk[äa]m|lymphom|sarkom|z\.?n\.?\s*mamma|zn\.?\s*mamma|rezidiv)\b/i,
+    wikiTitles: [
+      "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)",
+      "Diamond Shield – Begleitprotokoll bei Cancer",
+      "Cancer",
+    ],
+    keywords: [
+      "cancer", "krebs", "karzinom", "tumor", "metastasen", "onkologie",
+      "malonsäure", "papain", "wermut", "l-cystein",
+      "mannavan antioxi", "mannavan vit c", "mannavan beta", "mannavan b6", "mannavan glucan", "mannavan curcu", "mannavan oligo",
+      "vitamin c hochdosis", "glutathion", "selen", "zink", "q10", "coenzym q10",
+      "mistel", "viscum", "diamond shield", "fve-chipcard", "br-chipcard", "tum-chipcard", "clst-chipcard",
+      "nk-zellen", "interferon", "papainkur",
+    ],
+  },
 ];
 
 function getActiveSymptomTargets(queryText: string): SymptomTarget[] {
