@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -148,6 +148,21 @@ export function Header() {
                 >
                   <BookOpen className="h-4 w-4" />
                   Wiki
+                </Link>
+              )}
+              {isAdmin && (
+                <Link
+                  to="/patienten-bibliothek"
+                  className={cn(
+                    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+                    location.pathname === "/patienten-bibliothek"
+                      ? "bg-sage-100 text-primary"
+                      : "text-muted-foreground"
+                  )}
+                  title="Patienten-Bibliothek (in Arbeit)"
+                >
+                  <Library className="h-4 w-4" />
+                  Bibliothek
                 </Link>
               )}
               {isAdmin && (
