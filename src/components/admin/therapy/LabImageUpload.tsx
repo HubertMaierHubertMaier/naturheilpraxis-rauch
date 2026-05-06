@@ -48,6 +48,8 @@ export function LabImageUpload({ onExtracted }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<string[]>([]); // data URLs queued
+  const [askMore, setAskMore] = useState(false);
+  const [lastAddedAt, setLastAddedAt] = useState<number | null>(null);
   const { toast } = useToast();
 
   const addBlobs = async (blobs: (File | Blob)[]) => {
@@ -58,7 +60,9 @@ export function LabImageUpload({ onExtracted }: Props) {
     }
     if (added.length) {
       setPending((prev) => [...prev, ...added]);
-      toast({ title: `${added.length} Bild(er) hinzugefügt`, description: "Beliebig viele Ausschnitte einfügen, dann auf 'Extrahieren' klicken." });
+      setLastAddedAt(Date.now());
+      setAskMore(true);
+      toast({ title: `✓ ${added.length} Bild(er) hinzugefügt`, description: "Ausschnitt wurde der Sammlung hinzugefügt." });
     }
   };
 
