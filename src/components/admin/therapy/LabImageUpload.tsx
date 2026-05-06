@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2, ClipboardPaste } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,7 +8,7 @@ interface Props {
   onExtracted: (text: string) => void;
 }
 
-const fileToDataUrl = (f: File) =>
+const fileToDataUrl = (f: File | Blob) =>
   new Promise<string>((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(r.result as string);
@@ -17,7 +17,7 @@ const fileToDataUrl = (f: File) =>
   });
 
 // Bild auf max. 1600px Kantenlänge runterskalieren (JPEG q=0.85), spart Tokens.
-const downscale = async (file: File): Promise<string> => {
+const downscale = async (file: File | Blob): Promise<string> => {
   const dataUrl = await fileToDataUrl(file);
   if (!file.type.startsWith("image/")) return dataUrl;
   const img = new Image();
@@ -40,12 +40,12 @@ export function LabImageUpload({ onExtracted }: Props) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || !files.length) return;
+  const processBlobs = async (blobs: (File | Blob)[]) => {
+    if (!blobs.length) return;
     setLoading(true);
     try {
       const imgs: string[] = [];
-      for (const f of Array.from(files).slice(0, 8)) {
+      for (const f of blobs.slice(0, 8)) {
         imgs.push(await downscale(f));
       }
       const { data: { session } } = await supabase.auth.getSession();
@@ -85,8 +85,58 @@ export function LabImageUpload({ onExtracted }: Props) {
     }
   };
 
+  const handleFiles = (files: FileList | null) => {
+    if (!files || !files.length) return;
+    processBlobs(Array.from(files));
+  };
+
+  const pasteFromClipboard = async () => {
+    try {
+      // @ts-ignore – Clipboard API
+      if (!navigator.clipboard?.read) {
+        toast({ title: "Zwischenablage nicht verfügbar", description: "Bitte Strg+V direkt in dieses Fenster nutzen.", variant: "destructive" });
+        return;
+      }
+      // @ts-ignore
+      const items: ClipboardItem[] = await navigator.clipboard.read();
+      const blobs: Blob[] = [];
+      for (const it of items) {
+        const type = it.types.find((t) => t.startsWith("image/"));
+        if (type) blobs.push(await it.getType(type));
+      }
+      if (!blobs.length) {
+        toast({ title: "Kein Bild in der Zwischenablage", description: "Bitte zuerst in Adobe/Windows ein Bild kopieren.", variant: "destructive" });
+        return;
+      }
+      await processBlobs(blobs);
+    } catch (e: any) {
+      toast({ title: "Einfügen fehlgeschlagen", description: e.message + " — Tipp: Strg+V direkt im Fenster nutzen.", variant: "destructive" });
+    }
+  };
+
+  // Globaler Strg+V Listener: nimmt Bilder aus der Zwischenablage entgegen
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const blobs: Blob[] = [];
+      for (const item of Array.from(items)) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const b = item.getAsFile();
+          if (b) blobs.push(b);
+        }
+      }
+      if (blobs.length) {
+        e.preventDefault();
+        processBlobs(blobs);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
   return (
-    <>
+    <div className="flex flex-wrap gap-2">
       <input
         ref={inputRef}
         type="file"
@@ -100,6 +150,10 @@ export function LabImageUpload({ onExtracted }: Props) {
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
         {loading ? "Extrahiere…" : "Labor als Foto/Scan"}
       </Button>
-    </>
+      <Button type="button" variant="outline" size="sm" disabled={loading} onClick={pasteFromClipboard} className="gap-1.5">
+        <ClipboardPaste className="h-3.5 w-3.5" />
+        Aus Zwischenablage einfügen
+      </Button>
+    </div>
   );
 }
