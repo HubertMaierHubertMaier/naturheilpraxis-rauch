@@ -48,11 +48,17 @@ const downscale = async (file: File | Blob): Promise<string> => {
 export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
   const isDoctor = mode === "doctor";
   const inputRef = useRef<HTMLInputElement>(null);
+  const pasteZoneRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<string[]>([]); // data URLs queued
   const [askMore, setAskMore] = useState(false);
   const [lastAddedAt, setLastAddedAt] = useState<number | null>(null);
   const { toast } = useToast();
+
+  const focusPasteZone = () => {
+    pasteZoneRef.current?.focus();
+    toast({ title: "Einfügefeld ist aktiv", description: "Bitte jetzt Strg+V drücken. Danach erscheint „Ausschnitt wurde hinzugefügt“." });
+  };
 
   const addBlobs = async (blobs: (File | Blob)[]) => {
     if (!blobs.length) return;
@@ -121,30 +127,6 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const pasteFromClipboard = async () => {
-    try {
-      // @ts-ignore
-      if (!navigator.clipboard?.read) {
-        toast({ title: "Bitte Strg+V im Fenster nutzen", variant: "destructive" });
-        return;
-      }
-      // @ts-ignore
-      const items: ClipboardItem[] = await navigator.clipboard.read();
-      const blobs: Blob[] = [];
-      for (const it of items) {
-        const type = it.types.find((t) => t.startsWith("image/"));
-        if (type) blobs.push(await it.getType(type));
-      }
-      if (!blobs.length) {
-        toast({ title: "Kein Bild in der Zwischenablage", variant: "destructive" });
-        return;
-      }
-      await addBlobs(blobs);
-    } catch (e: any) {
-      toast({ title: "Einfügen fehlgeschlagen", description: e.message + " — Tipp: Strg+V direkt im Fenster nutzen.", variant: "destructive" });
-    }
-  };
-
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -181,9 +163,9 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
           <Camera className="h-3.5 w-3.5" />
           Foto/Scan hinzufügen
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={pasteFromClipboard} className="gap-1.5">
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={focusPasteZone} className="gap-1.5">
           <ClipboardPaste className="h-3.5 w-3.5" />
-          Aus Zwischenablage einfügen
+          Einfügefeld aktivieren
         </Button>
         {pending.length > 0 && (
           <>
@@ -201,7 +183,7 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
       {pending.length > 0 ? (
         <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2">
           <div className="text-xs text-muted-foreground mb-2">
-            {pending.length} Ausschnitt(e) bereit. Du kannst weitere mit Strg+V oder „Aus Zwischenablage einfügen" hinzufügen, danach auf „Jetzt extrahieren" klicken.
+            {pending.length} Ausschnitt(e) bereit. Du kannst weitere mit Strg+V im Einfügefeld hinzufügen, danach auf „Jetzt extrahieren" klicken.
           </div>
           <div className="flex flex-wrap gap-2">
             {pending.map((src, i) => (
@@ -228,6 +210,7 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
 
       {/* Dedizierte Paste-Zone — funktioniert auch wenn der Browser navigator.clipboard.read() blockiert */}
       <div
+        ref={pasteZoneRef}
         tabIndex={0}
         onPaste={(e) => {
           const items = e.clipboardData?.items;
@@ -273,11 +256,11 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={async () => { setAskMore(false); await pasteFromClipboard(); }}
+              onClick={() => { setAskMore(false); window.setTimeout(focusPasteZone, 0); }}
               className="gap-1.5"
             >
               <ClipboardPaste className="h-4 w-4" />
-              Zwischenablage
+              Einfügefeld aktivieren
             </Button>
             <AlertDialogAction
               onClick={() => { setAskMore(false); inputRef.current?.click(); }}
