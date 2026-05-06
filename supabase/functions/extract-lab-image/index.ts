@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return new Response(JSON.stringify({ error: "Nur für Administratoren" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { images } = await req.json();
+    const { images, mode } = await req.json();
     if (!Array.isArray(images) || images.length === 0) {
       return new Response(JSON.stringify({ error: "Keine Bilder übergeben" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -32,7 +32,9 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return new Response(JSON.stringify({ error: "AI Gateway nicht konfiguriert" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const systemPrompt = `Du extrahierst aus Fotos/Scans eines klassischen Laborbefunds (Blut, Urin, Stuhl) ALLE sichtbaren Laborwerte.
+    const isDoctor = mode === "doctor";
+
+    const labPrompt = `Du extrahierst aus Fotos/Scans eines klassischen Laborbefunds (Blut, Urin, Stuhl) ALLE sichtbaren Laborwerte.
 Format pro Zeile: "Parameter: Wert Einheit (Referenzbereich) [↑/↓/normal]"
 Beispiel:
 - LDL-Cholesterin: 185 mg/dl (<130) ↑
@@ -44,6 +46,34 @@ Regeln:
 - Datum/Labor-Name (falls erkennbar) in eine erste Zeile "BEFUND VOM: ..." schreiben.
 - Gruppiere thematisch (Blutbild, Leber, Niere, Stoffwechsel, Hormone, Vitamine/Mineralien, Entzündung, Lipide, etc.) mit ## Überschriften.
 - Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.`;
+
+    const doctorPrompt = `Du extrahierst aus Fotos/Scans eines ärztlichen Berichts (Arztbrief, Entlassbrief, Facharzt-Befund, Bildgebungsbefund, OP-Bericht, Histologie) ALLE relevanten medizinischen Informationen wortgetreu.
+
+Struktur (Markdown, ## Überschriften):
+## BERICHT VOM
+Datum, Klinik/Praxis, Facharzt-Disziplin (falls erkennbar)
+## DIAGNOSEN
+Alle Diagnosen mit ICD-10 (sofern angegeben)
+## ANAMNESE / VORGESCHICHTE
+Relevante Vorerkrankungen, OPs, Familienanamnese
+## BEFUND
+Klinischer Befund, Bildgebung, Labor (knapp), Histologie
+## BEURTEILUNG
+Zusammenfassung des Arztes
+## THERAPIE / EMPFEHLUNG
+Medikation (mit Dosis), Verlaufskontrollen, weitere Maßnahmen
+
+Regeln:
+- Nichts erfinden, nichts interpretieren. Was unleserlich ist: "(unleserlich)" notieren.
+- Mehrere Seiten in der Reihenfolge zusammenführen.
+- Persönliche Daten (Name, Geburtsdatum, Adresse) NICHT übernehmen – nur "(Patientendaten anonymisiert)".
+- Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.`;
+
+    const systemPrompt = isDoctor ? doctorPrompt : labPrompt;
+
+    const userText = isDoctor
+      ? "Extrahiere bitte den vollständigen Inhalt dieses ärztlichen Berichts:"
+      : "Extrahiere bitte alle Laborwerte aus diesem/diesen Befund(en):";
 
     const content: any[] = [{ type: "text", text: "Extrahiere bitte alle Laborwerte aus diesem/diesen Befund(en):" }];
     for (const img of images) {
