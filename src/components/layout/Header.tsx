@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { translations } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
+import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,29 +29,25 @@ export function Header() {
   const nav = translations.nav;
   const header = translations.header;
 
-  // Non-production detection for showing dev activate button
-  // SECURITY: Explicitly blocked on published production domains
-  const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
-  const isPublishedProduction = window.location.hostname === 'naturheilpraxis-rauch.lovable.app' || window.location.hostname === 'www.rauch-heilpraktiker.de' || window.location.hostname === 'rauch-heilpraktiker.de';
-  const allowDevMode = isNonProduction && !isPublishedProduction;
-  const devActive = sessionStorage.getItem('dev_admin_bypass') === 'true';
+  const allowDevMode = isDevHost();
+  const devActive = isDevAdminBypassActive();
   const showDevButton = allowDevMode && !isAdmin && !devActive;
   // Show dev logout whenever dev bypass is active (independent of Supabase user)
   const showDevLogout = allowDevMode && devActive;
   
   const activateDevMode = useCallback(() => {
-    sessionStorage.setItem('dev_admin_bypass', 'true');
+    activateDevAdminBypass();
     window.location.search = '?dev=true';
   }, []);
 
   const deactivateDevMode = useCallback(() => {
-    sessionStorage.removeItem('dev_admin_bypass');
+    clearDevAdminBypass();
     // Strip ?dev=true from URL and reload
     window.location.href = window.location.pathname;
   }, []);
 
   const navItems = [
-    ...(isAdmin ? [{ label: "👥 Patienten", href: "/patienten?dev=true" }] : []),
+    ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
   ];
 
   const handleSignOut = async () => {
