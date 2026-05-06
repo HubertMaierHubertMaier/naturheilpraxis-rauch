@@ -862,6 +862,17 @@ export function TherapyRecommendation() {
               Bei vorhandener Pseudonym-ID wird die Empfehlung automatisch im Verlauf gespeichert.
             </span>
           </div>
+          {pseudonymId.trim() && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant={autoSaveStatus === "error" ? "destructive" : "secondary"} className="h-5">
+                {autoSaveStatus === "saving" && "Auto-Sicherung läuft…"}
+                {autoSaveStatus === "saved" && "Auto-Sicherung gespeichert"}
+                {autoSaveStatus === "error" && "Auto-Sicherung fehlgeschlagen"}
+                {autoSaveStatus === "idle" && "Auto-Sicherung bereit"}
+              </Badge>
+              <span>Labor, Arztbericht und alle Eingaben werden laufend unter diesem Pseudonym gesichert.</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
