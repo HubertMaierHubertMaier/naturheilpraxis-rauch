@@ -484,6 +484,8 @@ export function TherapyRecommendation() {
 
   const handleLoadSession = (session: TherapySession) => {
     const d = session.eingabe_daten || {};
+    autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
+    lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
     setSymptome(d.symptome || "");
     setErkrankung(d.erkrankung || "");
     setAlter(d.alter || "");
@@ -686,32 +688,7 @@ export function TherapyRecommendation() {
           const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
             pseudonym_id: pseudonymId.trim(),
             created_by: user.id,
-            eingabe_daten: {
-              pathogens,
-              symptome,
-              erkrankung,
-              alter,
-              geschlecht,
-              groesseCm,
-              gewichtKg,
-              schwanger,
-              medikamente,
-              bisherigeMittel,
-              budget,
-              laborErhoeht,
-              laborErniedrigt,
-              laborKomplett,
-              laborDatum,
-              stuhlbefund,
-              arztbericht,
-              arztberichtDatum,
-              metatronHeel,
-              selectedCategories,
-              useMapReduce,
-              bevorzugteLinie,
-              pinnedMittel,
-              belastungen: formatPathogensForAI(pathogens),
-            },
+            eingabe_daten: buildInputData({ autoSavedDraft: false }),
             empfehlung: accumulated,
             notiz: "",
           });
@@ -825,14 +802,7 @@ export function TherapyRecommendation() {
     const { error } = await (supabase as any).from("therapy_sessions").insert({
       pseudonym_id: pseudonymId.trim(),
       created_by: user.id,
-      eingabe_daten: {
-        pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg,
-        schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt,
-        laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie,
-        pinnedMittel, manualMittel, manualDiagnosen,
-        belastungen: formatPathogensForAI(pathogens),
-        finalized: true,
-      },
+      eingabe_daten: buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false }),
       empfehlung: finalMd,
       notiz: therapieNotiz,
     });
