@@ -144,7 +144,7 @@ export function Header() {
                     <DropdownMenuLabel>Admin-Bereich</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/dashboard")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                         <User className="h-4 w-4" />
                         Dashboard
