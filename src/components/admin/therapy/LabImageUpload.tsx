@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, ClipboardPaste } from "lucide-react";
+import { Camera, Loader2, ClipboardPaste, X, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,7 +16,6 @@ const fileToDataUrl = (f: File | Blob) =>
     r.readAsDataURL(f);
   });
 
-// Bild auf max. 1600px Kantenlänge runterskalieren (JPEG q=0.85), spart Tokens.
 const downscale = async (file: File | Blob): Promise<string> => {
   const dataUrl = await fileToDataUrl(file);
   if (!file.type.startsWith("image/")) return dataUrl;
@@ -38,16 +37,31 @@ const downscale = async (file: File | Blob): Promise<string> => {
 export function LabImageUpload({ onExtracted }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<string[]>([]); // data URLs queued
   const { toast } = useToast();
 
-  const processBlobs = async (blobs: (File | Blob)[]) => {
+  const addBlobs = async (blobs: (File | Blob)[]) => {
     if (!blobs.length) return;
+    const added: string[] = [];
+    for (const b of blobs) {
+      try { added.push(await downscale(b)); } catch {}
+    }
+    if (added.length) {
+      setPending((prev) => [...prev, ...added]);
+      toast({ title: `${added.length} Bild(er) hinzugefügt`, description: "Beliebig viele Ausschnitte einfügen, dann auf 'Extrahieren' klicken." });
+    }
+  };
+
+  const removeAt = (i: number) => setPending((p) => p.filter((_, idx) => idx !== i));
+  const clearAll = () => setPending([]);
+
+  const extractNow = async () => {
+    if (!pending.length) {
+      toast({ title: "Keine Bilder", description: "Bitte zuerst Ausschnitte einfügen.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      const imgs: string[] = [];
-      for (const f of blobs.slice(0, 8)) {
-        imgs.push(await downscale(f));
-      }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({ title: "Nicht angemeldet", variant: "destructive" });
@@ -62,7 +76,7 @@ export function LabImageUpload({ onExtracted }: Props) {
             Authorization: `Bearer ${session.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ images: imgs }),
+          body: JSON.stringify({ images: pending.slice(0, 8) }),
         },
       );
       const json = await resp.json();
@@ -76,25 +90,26 @@ export function LabImageUpload({ onExtracted }: Props) {
         return;
       }
       onExtracted(text);
-      toast({ title: "Laborwerte extrahiert", description: `${imgs.length} Bild(er) ausgewertet.` });
+      toast({ title: "Laborwerte extrahiert", description: `${pending.length} Bild(er) ausgewertet.` });
+      setPending([]);
     } catch (e: any) {
       toast({ title: "Fehler", description: e.message, variant: "destructive" });
     } finally {
       setLoading(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
   const handleFiles = (files: FileList | null) => {
     if (!files || !files.length) return;
-    processBlobs(Array.from(files));
+    addBlobs(Array.from(files));
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const pasteFromClipboard = async () => {
     try {
-      // @ts-ignore – Clipboard API
+      // @ts-ignore
       if (!navigator.clipboard?.read) {
-        toast({ title: "Zwischenablage nicht verfügbar", description: "Bitte Strg+V direkt in dieses Fenster nutzen.", variant: "destructive" });
+        toast({ title: "Bitte Strg+V im Fenster nutzen", variant: "destructive" });
         return;
       }
       // @ts-ignore
@@ -105,16 +120,15 @@ export function LabImageUpload({ onExtracted }: Props) {
         if (type) blobs.push(await it.getType(type));
       }
       if (!blobs.length) {
-        toast({ title: "Kein Bild in der Zwischenablage", description: "Bitte zuerst in Adobe/Windows ein Bild kopieren.", variant: "destructive" });
+        toast({ title: "Kein Bild in der Zwischenablage", variant: "destructive" });
         return;
       }
-      await processBlobs(blobs);
+      await addBlobs(blobs);
     } catch (e: any) {
       toast({ title: "Einfügen fehlgeschlagen", description: e.message + " — Tipp: Strg+V direkt im Fenster nutzen.", variant: "destructive" });
     }
   };
 
-  // Globaler Strg+V Listener: nimmt Bilder aus der Zwischenablage entgegen
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -128,7 +142,7 @@ export function LabImageUpload({ onExtracted }: Props) {
       }
       if (blobs.length) {
         e.preventDefault();
-        processBlobs(blobs);
+        addBlobs(blobs);
       }
     };
     window.addEventListener("paste", onPaste);
@@ -136,24 +150,65 @@ export function LabImageUpload({ onExtracted }: Props) {
   }, []);
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-      <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => inputRef.current?.click()} className="gap-1.5">
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-        {loading ? "Extrahiere…" : "Labor als Foto/Scan"}
-      </Button>
-      <Button type="button" variant="outline" size="sm" disabled={loading} onClick={pasteFromClipboard} className="gap-1.5">
-        <ClipboardPaste className="h-3.5 w-3.5" />
-        Aus Zwischenablage einfügen
-      </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => inputRef.current?.click()} className="gap-1.5">
+          <Camera className="h-3.5 w-3.5" />
+          Foto/Scan hinzufügen
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={pasteFromClipboard} className="gap-1.5">
+          <ClipboardPaste className="h-3.5 w-3.5" />
+          Aus Zwischenablage einfügen
+        </Button>
+        {pending.length > 0 && (
+          <>
+            <Button type="button" size="sm" disabled={loading} onClick={extractNow} className="gap-1.5">
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {loading ? "Extrahiere…" : `Jetzt extrahieren (${pending.length})`}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" disabled={loading} onClick={clearAll}>
+              Alle entfernen
+            </Button>
+          </>
+        )}
+      </div>
+
+      {pending.length > 0 ? (
+        <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2">
+          <div className="text-xs text-muted-foreground mb-2">
+            {pending.length} Ausschnitt(e) bereit. Du kannst weitere mit Strg+V oder „Aus Zwischenablage einfügen" hinzufügen, danach auf „Jetzt extrahieren" klicken.
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {pending.map((src, i) => (
+              <div key={i} className="relative group">
+                <img src={src} alt={`Ausschnitt ${i + 1}`} className="h-20 w-auto rounded border border-border object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeAt(i)}
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
+                  title="Entfernen"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <span className="absolute bottom-0 left-0 right-0 text-[10px] bg-black/60 text-white text-center rounded-b">#{i + 1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground">
+          Tipp: Markier in Adobe einen Bereich → kopieren → hier mit Strg+V einfügen. Mehrere Ausschnitte sind möglich, danach gemeinsam extrahieren.
+        </div>
+      )}
     </div>
   );
 }
