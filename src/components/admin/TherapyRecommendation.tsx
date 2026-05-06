@@ -754,6 +754,7 @@ export function TherapyRecommendation() {
   };
 
   const handleReset = () => {
+    const currentInputDraftKey = inputDraftKey;
     setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
@@ -785,6 +786,7 @@ export function TherapyRecommendation() {
     setTherapieNotiz("");
     setWorkflowStage("edit");
     try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
+    if (currentInputDraftKey) { try { localStorage.removeItem(currentInputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
   };
 
@@ -850,6 +852,7 @@ export function TherapyRecommendation() {
     }
     setWorkflowStage("finalized");
     setHistoryRefresh((n) => n + 1);
+    if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${pseudonymId.trim()}. Druck jetzt verfügbar.` });
   };
