@@ -587,7 +587,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
@@ -629,7 +629,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeelText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -853,6 +853,7 @@ serve(async (req) => {
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
+    if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
@@ -997,6 +998,13 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind.
 
 6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
+
+6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)**: ${arztbericht || "Nicht angegeben"}
+   - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
+   - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
+   - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
+   - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
+
    
    **ZWINGENDE QUELLENREGEL für Labor-/Stuhlwerte:**
    - Für jeden im Befund genannten Parameter MUSST du prüfen, ob in der oben gelieferten WISSENSDATENBANK ein Eintrag aus der Kategorie "Labordiagnostik" zu genau diesem Parameter existiert (z.B. "Calprotectin", "Zonulin", "sIgA", "Pankreas-Elastase", "Lactobacillus", "Bifidobacterium", "Akkermansia muciniphila", "Faecalibacterium prausnitzii", "alpha-1-Antitrypsin", "Stuhl-pH" usw.).
@@ -1156,6 +1164,7 @@ Symptome: ${symptome || "Nicht angegeben"}
 Erkrankung: ${erkrankung || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 🔄 NACHSCHLAG-MODUS – ERWEITERUNG EINER BESTEHENDEN EMPFEHLUNG
@@ -1185,6 +1194,7 @@ Symptome: ${symptome || "Nicht angegeben"}
 Erkrankung: ${erkrankung || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;

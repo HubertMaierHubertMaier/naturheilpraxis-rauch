@@ -16,6 +16,7 @@ import {
 
 interface Props {
   onExtracted: (text: string) => void;
+  mode?: "lab" | "doctor";
 }
 
 const fileToDataUrl = (f: File | Blob) =>
@@ -44,7 +45,8 @@ const downscale = async (file: File | Blob): Promise<string> => {
   return canvas.toDataURL("image/jpeg", 0.85);
 };
 
-export function LabImageUpload({ onExtracted }: Props) {
+export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
+  const isDoctor = mode === "doctor";
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<string[]>([]); // data URLs queued
@@ -90,7 +92,7 @@ export function LabImageUpload({ onExtracted }: Props) {
             Authorization: `Bearer ${session.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ images: pending.slice(0, 8) }),
+          body: JSON.stringify({ images: pending.slice(0, 8), mode }),
         },
       );
       const json = await resp.json();
@@ -104,7 +106,7 @@ export function LabImageUpload({ onExtracted }: Props) {
         return;
       }
       onExtracted(text);
-      toast({ title: "Laborwerte extrahiert", description: `${pending.length} Bild(er) ausgewertet.` });
+      toast({ title: isDoctor ? "Arztbericht extrahiert" : "Laborwerte extrahiert", description: `${pending.length} Bild(er) ausgewertet.` });
       setPending([]);
     } catch (e: any) {
       toast({ title: "Fehler", description: e.message, variant: "destructive" });

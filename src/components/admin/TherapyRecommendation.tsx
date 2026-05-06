@@ -52,6 +52,7 @@ export function TherapyRecommendation() {
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [laborKomplett, setLaborKomplett] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
+  const [arztbericht, setArztbericht] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
@@ -109,6 +110,7 @@ export function TherapyRecommendation() {
       if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
       if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
       if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
+      if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
@@ -122,11 +124,11 @@ export function TherapyRecommendation() {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel,
+        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
@@ -404,6 +406,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt(d.laborErniedrigt || "");
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
+    setArztbericht(d.arztbericht || "");
     setMetatronHeel(d.metatronHeel || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
@@ -480,6 +483,7 @@ export function TherapyRecommendation() {
             laborErniedrigt: laborErniedrigt.trim() || undefined,
             laborKomplett: laborKomplett.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
+            arztbericht: arztbericht.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
@@ -594,6 +598,7 @@ export function TherapyRecommendation() {
               laborErniedrigt,
               laborKomplett,
               stuhlbefund,
+              arztbericht,
               metatronHeel,
               selectedCategories,
               useMapReduce,
@@ -644,6 +649,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt("");
     setLaborKomplett("");
     setStuhlbefund("");
+    setArztbericht("");
     setMetatronHeel("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
@@ -890,6 +896,19 @@ export function TherapyRecommendation() {
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
+                <LabImageUpload mode="doctor" onExtracted={(t) => setArztbericht((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+              </div>
+              <Textarea
+                value={arztbericht}
+                onChange={(e) => setArztbericht(e.target.value)}
+                placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
             </div>
             <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
