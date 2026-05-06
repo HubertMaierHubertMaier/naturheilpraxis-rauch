@@ -92,7 +92,7 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
             Authorization: `Bearer ${session.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ images: pending.slice(0, 8) }),
+          body: JSON.stringify({ images: pending.slice(0, 8), mode }),
         },
       );
       const json = await resp.json();
