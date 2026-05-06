@@ -78,7 +78,7 @@ export function LiveInputSummary({
             Erfasste Eingaben – Übersicht
           </span>
           <Badge variant="secondary" className="ml-auto text-xs">
-            {filledPathogens.length + symptomList.length + erkrankungList.length} Einträge
+            {totalCount} Einträge
           </Badge>
         </CardTitle>
       </CardHeader>
