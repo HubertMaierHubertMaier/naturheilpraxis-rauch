@@ -132,11 +132,25 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                 hour: "2-digit",
                 minute: "2-digit",
               });
+              const e = s.eingabe_daten || {};
               const summary =
-                s.eingabe_daten?.symptome?.slice(0, 60) ||
-                s.eingabe_daten?.erkrankung?.slice(0, 60) ||
-                s.eingabe_daten?.belastungen?.slice(0, 60) ||
+                e.symptome?.slice(0, 60) ||
+                e.erkrankung?.slice(0, 60) ||
+                e.belastungen?.slice(0, 60) ||
                 "—";
+              const labParts: string[] = [];
+              if (e.laborKomplett?.trim()) labParts.push(`Labor (${String(e.laborKomplett).split(/\n+/).filter(Boolean).length} Werte)`);
+              else {
+                if (e.laborErhoeht?.trim()) labParts.push(`Labor↑ (${String(e.laborErhoeht).split(/[\n,;]+/).filter((x:string)=>x.trim()).length})`);
+                if (e.laborErniedrigt?.trim()) labParts.push(`Labor↓ (${String(e.laborErniedrigt).split(/[\n,;]+/).filter((x:string)=>x.trim()).length})`);
+              }
+              if (e.stuhlbefund?.trim()) labParts.push("Stuhlbefund");
+              if (e.arztbericht?.trim()) labParts.push("Arztbericht");
+              if (e.metatronHeel?.trim()) labParts.push("Metatron/HEEL");
+              const labPreview =
+                e.laborKomplett?.trim() ||
+                [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
+                "";
 
               return (
                 <div key={s.id} className="border border-border rounded-md p-3 hover:bg-muted/30 transition">
