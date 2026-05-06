@@ -2021,6 +2021,37 @@ function ParsedResultView({
     : parsed.intro;
   const hasParsed = introSections.length + parsed.categories.length + parsed.outro.length > 0;
 
+  // Sichtbarkeits-Filter (Toggle-Chips). Standard: alles an.
+  const allKeys = useMemo(() => {
+    const keys: string[] = [];
+    introSections.forEach((s) => keys.push(`intro:${s.title}`));
+    parsed.categories.forEach((g) => keys.push(`cat:${g.title}`));
+    parsed.outro.forEach((s) => keys.push(`outro:${s.title}`));
+    return keys;
+  }, [introSections, parsed.categories, parsed.outro]);
+
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  // Neue Schlüssel automatisch sichtbar lassen, verschwundene aufräumen
+  useEffect(() => {
+    setHidden((prev) => {
+      const next = new Set<string>();
+      prev.forEach((k) => { if (allKeys.includes(k)) next.add(k); });
+      return next;
+    });
+  }, [allKeys.join("|")]);
+
+  const isVisible = (k: string) => !hidden.has(k);
+  const toggle = (k: string) =>
+    setHidden((prev) => {
+      const n = new Set(prev);
+      if (n.has(k)) n.delete(k); else n.add(k);
+      return n;
+    });
+
+  const visibleIntro = introSections.filter((s) => isVisible(`intro:${s.title}`));
+  const visibleCats = parsed.categories.filter((g) => isVisible(`cat:${g.title}`));
+  const visibleOutro = parsed.outro.filter((s) => isVisible(`outro:${s.title}`));
+
   if (isStreaming && !hasParsed) {
     return (
       <Card>
@@ -2032,17 +2063,68 @@ function ParsedResultView({
     );
   }
 
+  const Chip = ({ k, label, emoji }: { k: string; label: string; emoji: string }) => {
+    const active = isVisible(k);
+    return (
+      <button
+        type="button"
+        onClick={() => toggle(k)}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition ${
+          active
+            ? "bg-primary/10 border-primary/40 text-foreground"
+            : "bg-muted/40 border-border text-muted-foreground line-through opacity-70 hover:opacity-100"
+        }`}
+        aria-pressed={active}
+        title={active ? "Klicken zum Ausblenden" : "Klicken zum Einblenden"}
+      >
+        <span aria-hidden>{emoji}</span>
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   return (
     <>
-      {introSections.length > 0 && (
+      {hasParsed && !isStreaming && (
+        <Card className="border-dashed">
+          <CardContent className="py-3">
+            <div className="flex items-start gap-3 flex-wrap">
+              <div className="text-xs font-medium text-muted-foreground mt-1 mr-1 whitespace-nowrap">
+                👁️ Anzeige filtern:
+              </div>
+              <div className="flex flex-wrap gap-1.5 flex-1">
+                {introSections.map((s) => (
+                  <Chip key={`c-intro-${s.title}`} k={`intro:${s.title}`} label={s.title} emoji={s.emoji} />
+                ))}
+                {parsed.categories.map((g) => (
+                  <Chip key={`c-cat-${g.title}`} k={`cat:${g.title}`} label={g.title} emoji={g.emoji} />
+                ))}
+                {parsed.outro.map((s) => (
+                  <Chip key={`c-outro-${s.title}`} k={`outro:${s.title}`} label={s.title} emoji={s.emoji} />
+                ))}
+              </div>
+              {hidden.size > 0 && (
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setHidden(new Set())}>
+                  Alle anzeigen
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Per Klick aus-/einblenden. Ausgeblendete Bereiche werden auch im Druck/PDF nicht mehr angezeigt.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {visibleIntro.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          {introSections.map((s, i) => (
-            <FreeSectionCard key={`intro-${i}`} section={s} />
+          {visibleIntro.map((s, i) => (
+            <FreeSectionCard key={`intro-${i}-${s.title}`} section={s} />
           ))}
         </div>
       )}
 
-      {parsed.categories.length > 0 && (
+      {visibleCats.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-serif text-foreground flex items-center gap-2 mt-2">
             <Pill className="h-4 w-4 text-primary" />
@@ -2054,23 +2136,26 @@ function ParsedResultView({
               </span>
             )}
           </h2>
-          {parsed.categories.map((g, i) => (
-            <CategoryCard
-              key={`cat-${i}-${g.title}`}
-              group={g}
-              categoryIndex={isStreaming ? undefined : i}
-              selectedKeys={isStreaming ? undefined : selectedKeys}
-              onToggleRemedy={onToggleRemedy}
-              onToggleAll={onToggleAll}
-            />
-          ))}
+          {visibleCats.map((g) => {
+            const originalIndex = parsed.categories.findIndex((c) => c.title === g.title);
+            return (
+              <CategoryCard
+                key={`cat-${originalIndex}-${g.title}`}
+                group={g}
+                categoryIndex={isStreaming ? undefined : originalIndex}
+                selectedKeys={isStreaming ? undefined : selectedKeys}
+                onToggleRemedy={onToggleRemedy}
+                onToggleAll={onToggleAll}
+              />
+            );
+          })}
         </div>
       )}
 
-      {parsed.outro.length > 0 && (
+      {visibleOutro.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2 mt-2">
-          {parsed.outro.map((s, i) => (
-            <FreeSectionCard key={`outro-${i}`} section={s} />
+          {visibleOutro.map((s, i) => (
+            <FreeSectionCard key={`outro-${i}-${s.title}`} section={s} />
           ))}
         </div>
       )}
