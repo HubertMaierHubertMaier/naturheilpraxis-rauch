@@ -868,14 +868,17 @@ export function TherapyRecommendation() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">🧪 Alle Laborwerte (Klassisches Labor)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
+                <LabImageUpload onExtracted={(t) => setLaborKomplett((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+              </div>
               <Textarea
                 value={laborKomplett}
                 onChange={(e) => setLaborKomplett(e.target.value)}
                 placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
                 rows={4}
               />
-              <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) für Mustererkennung & Plausibilitätsprüfung.</p>
+              <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
