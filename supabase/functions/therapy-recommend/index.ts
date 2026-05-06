@@ -853,6 +853,7 @@ serve(async (req) => {
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
+    if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
