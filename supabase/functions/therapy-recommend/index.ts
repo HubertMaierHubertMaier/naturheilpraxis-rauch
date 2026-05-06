@@ -1194,6 +1194,7 @@ Symptome: ${symptome || "Nicht angegeben"}
 Erkrankung: ${erkrankung || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
 Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
