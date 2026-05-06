@@ -45,7 +45,8 @@ const downscale = async (file: File | Blob): Promise<string> => {
   return canvas.toDataURL("image/jpeg", 0.85);
 };
 
-export function LabImageUpload({ onExtracted }: Props) {
+export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
+  const isDoctor = mode === "doctor";
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<string[]>([]); // data URLs queued
