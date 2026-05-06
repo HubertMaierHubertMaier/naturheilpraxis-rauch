@@ -658,8 +658,10 @@ export function TherapyRecommendation() {
     setLaborErhoeht("");
     setLaborErniedrigt("");
     setLaborKomplett("");
+    setLaborDatum("");
     setStuhlbefund("");
     setArztbericht("");
+    setArztberichtDatum("");
     setMetatronHeel("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
