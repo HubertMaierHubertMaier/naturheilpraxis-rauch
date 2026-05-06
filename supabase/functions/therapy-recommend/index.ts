@@ -994,12 +994,12 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 5. **Laborwerte**: 
    - Erhöhte Werte: ${laborErhoeht || "Keine angegeben"}
    - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
-   - Komplettes klassisches Labor (Gesamtübersicht inkl. unauffälliger Werte): ${laborKomplett || "Nicht angegeben"}
-   - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind.
+    - Komplettes klassisches Labor (Gesamtübersicht inkl. unauffälliger Werte)${laborDatum ? ` – Befunddatum: ${laborDatum}` : ""}: ${laborKomplett || "Nicht angegeben"}
+    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind. Berücksichtige das Befunddatum (alte Werte ggf. nicht mehr aktuell – Verlaufskontrolle empfehlen).
 
 6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
 
-6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)**: ${arztbericht || "Nicht angegeben"}
+6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)${arztberichtDatum ? ` – Berichtsdatum: ${arztberichtDatum}` : ""}**: ${arztbericht || "Nicht angegeben"}
    - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
    - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
    - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
