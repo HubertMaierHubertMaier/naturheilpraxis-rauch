@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Bug, Activity, Stethoscope } from "lucide-react";
+import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio } from "lucide-react";
 import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
 
 const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
@@ -18,29 +18,55 @@ interface Props {
   pathogens: PathogenEntry[];
   symptome: string;
   erkrankung: string;
+  laborErhoeht?: string;
+  laborErniedrigt?: string;
+  laborKomplett?: string;
+  laborDatum?: string;
+  stuhlbefund?: string;
+  arztbericht?: string;
+  arztberichtDatum?: string;
+  metatronHeel?: string;
 }
 
+const splitLines = (s?: string) =>
+  (s || "")
+    .split(/\n+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
 /**
- * Live-Übersicht der erfassten Pathogene + Symptome + Erkrankung.
+ * Live-Übersicht der erfassten Pathogene + Symptome + Erkrankung + Labor + Arztbericht.
  * Wird direkt unter den Eingabefeldern angezeigt, damit der Therapeut
  * jederzeit sieht, was wirklich an die KI übergeben wird.
  */
-export function LiveInputSummary({ pathogens, symptome, erkrankung }: Props) {
+export function LiveInputSummary({
+  pathogens, symptome, erkrankung,
+  laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "",
+}: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
-  // Symptome zeilen-/komma-/semikolon-basiert in Liste splitten
-  const symptomList = symptome
-    .split(/[\n;,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const symptomList = symptome.split(/[\n;,]+/).map((s) => s.trim()).filter(Boolean);
+  const erkrankungList = erkrankung.split(/[\n;,]+/).map((s) => s.trim()).filter(Boolean);
 
-  // Erkrankungen ggf. mehrere durch Komma/Semikolon getrennt
-  const erkrankungList = erkrankung
-    .split(/[\n;,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const laborErhoehtList = splitLines(laborErhoeht);
+  const laborErniedrigtList = splitLines(laborErniedrigt);
+  const laborKomplettList = splitLines(laborKomplett);
+  const stuhlList = splitLines(stuhlbefund);
+  const arztberichtList = splitLines(arztbericht);
+  const metatronList = splitLines(metatronHeel);
 
-  const hasAny = filledPathogens.length > 0 || symptomList.length > 0 || erkrankungList.length > 0;
+  const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
+  const hasStuhl = stuhlList.length > 0;
+  const hasArzt = arztberichtList.length > 0;
+  const hasMetatron = metatronList.length > 0;
+
+  const totalCount =
+    filledPathogens.length + symptomList.length + erkrankungList.length +
+    laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
+    stuhlList.length + arztberichtList.length + metatronList.length;
+
+  const hasAny = totalCount > 0;
   if (!hasAny) return null;
 
   return (
@@ -52,7 +78,7 @@ export function LiveInputSummary({ pathogens, symptome, erkrankung }: Props) {
             Erfasste Eingaben – Übersicht
           </span>
           <Badge variant="secondary" className="ml-auto text-xs">
-            {filledPathogens.length + symptomList.length + erkrankungList.length} Einträge
+            {totalCount} Einträge
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -113,6 +139,65 @@ export function LiveInputSummary({ pathogens, symptome, erkrankung }: Props) {
                 <li key={i} className="leading-snug text-foreground">{s}</li>
               ))}
             </ol>
+          </div>
+        )}
+
+        {hasLabor && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+              <FlaskConical className="h-3.5 w-3.5" />
+              Laborwerte
+              {laborDatum && <span className="font-normal text-muted-foreground normal-case">· Befund vom {laborDatum}</span>}
+            </div>
+            {laborErhoehtList.length > 0 && (
+              <div className="mb-2">
+                <div className="text-[11px] font-semibold text-red-700 dark:text-red-300 mb-0.5">↑ Erhöht ({laborErhoehtList.length})</div>
+                <ul className="text-xs whitespace-pre-wrap pl-3 border-l-2 border-red-200 dark:border-red-900/40">{laborErhoehtList.join("\n")}</ul>
+              </div>
+            )}
+            {laborErniedrigtList.length > 0 && (
+              <div className="mb-2">
+                <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 mb-0.5">↓ Erniedrigt ({laborErniedrigtList.length})</div>
+                <ul className="text-xs whitespace-pre-wrap pl-3 border-l-2 border-blue-200 dark:border-blue-900/40">{laborErniedrigtList.join("\n")}</ul>
+              </div>
+            )}
+            {laborKomplettList.length > 0 && (
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground mb-0.5">🧪 Komplettes Labor ({laborKomplettList.length} Zeilen)</div>
+                <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{laborKomplett}</pre>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasStuhl && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+              <Microscope className="h-3.5 w-3.5" />
+              Stuhlbefund / Mikrobiom ({stuhlList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{stuhlbefund}</pre>
+          </div>
+        )}
+
+        {hasArzt && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+              <FileText className="h-3.5 w-3.5" />
+              Arztbericht / Arztbrief ({arztberichtList.length} Zeilen)
+              {arztberichtDatum && <span className="font-normal text-muted-foreground normal-case">· Bericht vom {arztberichtDatum}</span>}
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{arztbericht}</pre>
+          </div>
+        )}
+
+        {hasMetatron && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-fuchsia-700 dark:text-fuchsia-300">
+              <Radio className="h-3.5 w-3.5" />
+              Metatron / NLS / HEEL ({metatronList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
           </div>
         )}
       </CardContent>
