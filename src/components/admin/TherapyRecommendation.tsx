@@ -21,6 +21,7 @@ import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./th
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
+import { LabImageUpload } from "./therapy/LabImageUpload";
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
 type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
