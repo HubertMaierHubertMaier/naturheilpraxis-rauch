@@ -241,7 +241,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                       {(e.laborKomplett?.trim() || e.laborErhoeht?.trim() || e.laborErniedrigt?.trim()) && (
                         <details open>
                           <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
-                            🧪 Laborwerte
+                            🧪 Laborwerte{e.laborDatum ? ` (Befund vom ${e.laborDatum})` : ""}
                           </summary>
                           <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">
                             {e.laborKomplett?.trim() ? e.laborKomplett : [
@@ -259,7 +259,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                       )}
                       {e.arztbericht?.trim() && (
                         <details>
-                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht</summary>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht{e.arztberichtDatum ? ` (Bericht vom ${e.arztberichtDatum})` : ""}</summary>
                           <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.arztbericht}</div>
                         </details>
                       )}

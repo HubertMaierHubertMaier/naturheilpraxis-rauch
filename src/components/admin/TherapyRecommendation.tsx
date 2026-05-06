@@ -51,8 +51,10 @@ export function TherapyRecommendation() {
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [laborKomplett, setLaborKomplett] = useState("");
+  const [laborDatum, setLaborDatum] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [arztbericht, setArztbericht] = useState("");
+  const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
@@ -109,8 +111,10 @@ export function TherapyRecommendation() {
       if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
       if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
       if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
+      if (typeof d?.laborDatum === "string") setLaborDatum(d.laborDatum);
       if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
       if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
+      if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
@@ -124,11 +128,11 @@ export function TherapyRecommendation() {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
@@ -405,8 +409,10 @@ export function TherapyRecommendation() {
     setLaborErhoeht(d.laborErhoeht || "");
     setLaborErniedrigt(d.laborErniedrigt || "");
     setLaborKomplett(d.laborKomplett || "");
+    setLaborDatum(d.laborDatum || "");
     setStuhlbefund(d.stuhlbefund || "");
     setArztbericht(d.arztbericht || "");
+    setArztberichtDatum(d.arztberichtDatum || "");
     setMetatronHeel(d.metatronHeel || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
@@ -482,8 +488,10 @@ export function TherapyRecommendation() {
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
             laborKomplett: laborKomplett.trim() || undefined,
+            laborDatum: laborDatum.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             arztbericht: arztbericht.trim() || undefined,
+            arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
@@ -597,8 +605,10 @@ export function TherapyRecommendation() {
               laborErhoeht,
               laborErniedrigt,
               laborKomplett,
+              laborDatum,
               stuhlbefund,
               arztbericht,
+              arztberichtDatum,
               metatronHeel,
               selectedCategories,
               useMapReduce,
@@ -648,8 +658,10 @@ export function TherapyRecommendation() {
     setLaborErhoeht("");
     setLaborErniedrigt("");
     setLaborKomplett("");
+    setLaborDatum("");
     setStuhlbefund("");
     setArztbericht("");
+    setArztberichtDatum("");
     setMetatronHeel("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
@@ -885,6 +897,18 @@ export function TherapyRecommendation() {
                 placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
                 rows={4}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Labor erstellt am:</label>
+                <Input
+                  type="date"
+                  value={laborDatum}
+                  onChange={(e) => setLaborDatum(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+                {laborDatum && (
+                  <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
             </div>
             <div>
@@ -908,6 +932,18 @@ export function TherapyRecommendation() {
                 placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
                 rows={4}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Arztbericht erstellt am:</label>
+                <Input
+                  type="date"
+                  value={arztberichtDatum}
+                  onChange={(e) => setArztberichtDatum(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+                {arztberichtDatum && (
+                  <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
             </div>
             <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">

@@ -587,7 +587,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
@@ -851,9 +851,9 @@ serve(async (req) => {
     if (budget) patientInfo.push(`Maximales Budget: ${budget} Euro`);
     if (laborErhoeht) patientInfo.push(`Erhöhte Laborwerte: ${laborErhoeht}`);
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
-    if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor: ${laborKomplett}`);
+    if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor${laborDatum ? ` (Befunddatum: ${laborDatum})` : ""}: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
-    if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
+    if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
@@ -994,12 +994,12 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 5. **Laborwerte**: 
    - Erhöhte Werte: ${laborErhoeht || "Keine angegeben"}
    - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
-   - Komplettes klassisches Labor (Gesamtübersicht inkl. unauffälliger Werte): ${laborKomplett || "Nicht angegeben"}
-   - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind.
+    - Komplettes klassisches Labor (Gesamtübersicht inkl. unauffälliger Werte)${laborDatum ? ` – Befunddatum: ${laborDatum}` : ""}: ${laborKomplett || "Nicht angegeben"}
+    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind. Berücksichtige das Befunddatum (alte Werte ggf. nicht mehr aktuell – Verlaufskontrolle empfehlen).
 
 6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
 
-6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)**: ${arztbericht || "Nicht angegeben"}
+6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)${arztberichtDatum ? ` – Berichtsdatum: ${arztberichtDatum}` : ""}**: ${arztbericht || "Nicht angegeben"}
    - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
    - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
    - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
