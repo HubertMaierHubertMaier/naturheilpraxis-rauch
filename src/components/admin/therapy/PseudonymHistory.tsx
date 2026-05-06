@@ -238,6 +238,37 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
 
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {(e.laborKomplett?.trim() || e.laborErhoeht?.trim() || e.laborErniedrigt?.trim()) && (
+                        <details open>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
+                            🧪 Laborwerte
+                          </summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">
+                            {e.laborKomplett?.trim() ? e.laborKomplett : [
+                              e.laborErhoeht?.trim() && `↑ Erhöht:\n${e.laborErhoeht}`,
+                              e.laborErniedrigt?.trim() && `↓ Erniedrigt:\n${e.laborErniedrigt}`,
+                            ].filter(Boolean).join("\n\n")}
+                          </div>
+                        </details>
+                      )}
+                      {e.stuhlbefund?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">💩 Stuhlbefund</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.stuhlbefund}</div>
+                        </details>
+                      )}
+                      {e.arztbericht?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.arztbericht}</div>
+                        </details>
+                      )}
+                      {e.metatronHeel?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🔬 Metatron / HEEL</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.metatronHeel}</div>
+                        </details>
+                      )}
                       <details>
                         <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
                           Eingabe-Daten
