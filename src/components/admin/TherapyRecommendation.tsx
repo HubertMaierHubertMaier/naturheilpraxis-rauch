@@ -406,6 +406,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt(d.laborErniedrigt || "");
     setLaborKomplett(d.laborKomplett || "");
     setStuhlbefund(d.stuhlbefund || "");
+    setArztbericht(d.arztbericht || "");
     setMetatronHeel(d.metatronHeel || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
