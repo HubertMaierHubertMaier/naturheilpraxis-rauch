@@ -897,6 +897,18 @@ export function TherapyRecommendation() {
                 placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
                 rows={4}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Labor erstellt am:</label>
+                <Input
+                  type="date"
+                  value={laborDatum}
+                  onChange={(e) => setLaborDatum(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+                {laborDatum && (
+                  <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
             </div>
             <div>
