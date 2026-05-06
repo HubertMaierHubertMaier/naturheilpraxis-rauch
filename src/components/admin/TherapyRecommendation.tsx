@@ -116,7 +116,9 @@ export function TherapyRecommendation() {
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
   const DRAFT_KEY = "therapy.draftInputs.v1";
+  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
+  const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
     if (draftLoadedRef.current) return;
     draftLoadedRef.current = true;
@@ -153,14 +155,50 @@ export function TherapyRecommendation() {
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     try {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+      const draftPayload = {
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
-      }));
+      };
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+      if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
+
+  useEffect(() => {
+    const pid = pseudonymId.trim();
+    if (!pid || loadedInputDraftForPidRef.current === pid) return;
+    loadedInputDraftForPidRef.current = pid;
+    try {
+      const raw = localStorage.getItem(`therapy.inputs.draft.${pid}`);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
+      if (typeof d?.symptome === "string") setSymptome(d.symptome);
+      if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
+      if (typeof d?.alter === "string") setAlter(d.alter);
+      if (typeof d?.geschlecht === "string") setGeschlecht(d.geschlecht);
+      if (typeof d?.groesseCm === "string") setGroesseCm(d.groesseCm);
+      if (typeof d?.gewichtKg === "string") setGewichtKg(d.gewichtKg);
+      if (typeof d?.schwanger === "string") setSchwanger(d.schwanger);
+      if (typeof d?.medikamente === "string") setMedikamente(d.medikamente);
+      if (typeof d?.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
+      if (typeof d?.budget === "string") setBudget(d.budget);
+      if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
+      if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
+      if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
+      if (typeof d?.laborDatum === "string") setLaborDatum(d.laborDatum);
+      if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
+      if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
+      if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
+      if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
+      if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
+      if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
+      if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+      toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+    } catch {}
+  }, [pseudonymId, toast]);
 
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
@@ -223,7 +261,7 @@ export function TherapyRecommendation() {
       } catch {
         setAutoSaveStatus("error");
       }
-    }, 1200);
+    }, 250);
 
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
@@ -716,6 +754,7 @@ export function TherapyRecommendation() {
   };
 
   const handleReset = () => {
+    const currentInputDraftKey = inputDraftKey;
     setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
@@ -747,6 +786,7 @@ export function TherapyRecommendation() {
     setTherapieNotiz("");
     setWorkflowStage("edit");
     try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
+    if (currentInputDraftKey) { try { localStorage.removeItem(currentInputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
   };
 
@@ -812,6 +852,7 @@ export function TherapyRecommendation() {
     }
     setWorkflowStage("finalized");
     setHistoryRefresh((n) => n + 1);
+    if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${pseudonymId.trim()}. Druck jetzt verfügbar.` });
   };
