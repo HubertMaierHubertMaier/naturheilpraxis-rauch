@@ -261,7 +261,7 @@ export function TherapyRecommendation() {
       } catch {
         setAutoSaveStatus("error");
       }
-    }, 1200);
+    }, 250);
 
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
