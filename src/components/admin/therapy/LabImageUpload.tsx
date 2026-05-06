@@ -106,7 +106,7 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
         return;
       }
       onExtracted(text);
-      toast({ title: "Laborwerte extrahiert", description: `${pending.length} Bild(er) ausgewertet.` });
+      toast({ title: isDoctor ? "Arztbericht extrahiert" : "Laborwerte extrahiert", description: `${pending.length} Bild(er) ausgewertet.` });
       setPending([]);
     } catch (e: any) {
       toast({ title: "Fehler", description: e.message, variant: "destructive" });
