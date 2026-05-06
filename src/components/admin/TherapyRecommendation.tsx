@@ -1287,7 +1287,19 @@ export function TherapyRecommendation() {
       </div>
 
       {/* Live-Übersicht der erfassten Eingaben (Pathogene, Symptome, Erkrankung) */}
-      <LiveInputSummary pathogens={pathogens} symptome={symptome} erkrankung={erkrankung} />
+      <LiveInputSummary
+        pathogens={pathogens}
+        symptome={symptome}
+        erkrankung={erkrankung}
+        laborErhoeht={laborErhoeht}
+        laborErniedrigt={laborErniedrigt}
+        laborKomplett={laborKomplett}
+        laborDatum={laborDatum}
+        stuhlbefund={stuhlbefund}
+        arztbericht={arztbericht}
+        arztberichtDatum={arztberichtDatum}
+        metatronHeel={metatronHeel}
+      />
 
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
 
