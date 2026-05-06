@@ -41,9 +41,12 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
   { match: /phytotherapie|tinktur/i, tone: "sage", emoji: "🌱", title: "Phytotherapie & Tinkturen" },
   { match: /heilpilze|mykotherapie/i, tone: "sage", emoji: "🍄", title: "Heilpilze (Mykotherapie)" },
   { match: /sanum|isopathie|enderlein/i, tone: "sage", emoji: "🧪", title: "Sanum-Therapie" },
+  { match: /pascoe|heel|komplexhom/i, tone: "mist", emoji: "💼", title: "Pascoe & Heel (Komplexhomöopathie)" },
+  { match: /vitaplace/i, tone: "terracotta", emoji: "🏭", title: "Vitaplace" },
   { match: /homöopathie|komplexmittel/i, tone: "mist", emoji: "💧", title: "Homöopathie & Komplexmittel" },
   { match: /probiotika|präbiotika|darmaufbau/i, tone: "mist", emoji: "🧫", title: "Probiotika & Darmaufbau" },
   { match: /spezialpräparate/i, tone: "neutral", emoji: "💎", title: "Spezialpräparate" },
+  { match: /zapper|frequenztherapie|bioresonanz/i, tone: "neutral", emoji: "⚡", title: "Zapper & Frequenztherapie" },
   { match: /apparativ|klinische therap/i, tone: "neutral", emoji: "🩺", title: "Apparative & klinische Therapien" },
   { match: /onkolog|krebs|cancer|tumor|metasta|karzinom/i, tone: "terracotta", emoji: "🧬", title: "Onkologische Begleittherapie" },
 ];
