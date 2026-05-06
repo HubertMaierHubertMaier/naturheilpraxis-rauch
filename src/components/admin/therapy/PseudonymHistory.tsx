@@ -147,6 +147,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
               if (e.stuhlbefund?.trim()) labParts.push("Stuhlbefund");
               if (e.arztbericht?.trim()) labParts.push("Arztbericht");
               if (e.metatronHeel?.trim()) labParts.push("Metatron/HEEL");
+              if (e.autoSavedDraft) labParts.push("Auto-Sicherung");
               const labPreview =
                 e.laborKomplett?.trim() ||
                 [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
@@ -164,7 +165,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                       {labParts.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {labParts.map((l, i) => (
-                            <Badge key={i} variant="outline" className="text-[10px] py-0 h-4">{l}</Badge>
+                            <Badge key={i} variant={l === "Auto-Sicherung" ? "secondary" : "outline"} className="text-[10px] py-0 h-4">{l}</Badge>
                           ))}
                         </div>
                       )}
