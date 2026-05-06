@@ -259,7 +259,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                       )}
                       {e.arztbericht?.trim() && (
                         <details>
-                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht</summary>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht{e.arztberichtDatum ? ` (Bericht vom ${e.arztberichtDatum})` : ""}</summary>
                           <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.arztbericht}</div>
                         </details>
                       )}
