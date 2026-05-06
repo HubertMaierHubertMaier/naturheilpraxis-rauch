@@ -16,6 +16,7 @@ import {
 
 interface Props {
   onExtracted: (text: string) => void;
+  mode?: "lab" | "doctor";
 }
 
 const fileToDataUrl = (f: File | Blob) =>
