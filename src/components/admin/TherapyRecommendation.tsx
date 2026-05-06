@@ -649,6 +649,7 @@ export function TherapyRecommendation() {
     setLaborErniedrigt("");
     setLaborKomplett("");
     setStuhlbefund("");
+    setArztbericht("");
     setMetatronHeel("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
