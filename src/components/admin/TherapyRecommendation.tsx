@@ -124,11 +124,11 @@ export function TherapyRecommendation() {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel,
+        laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
