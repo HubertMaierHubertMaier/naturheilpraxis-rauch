@@ -161,6 +161,13 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                         <span className="text-xs font-medium text-foreground">{date}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{summary}</p>
+                      {labParts.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {labParts.map((l, i) => (
+                            <Badge key={i} variant="outline" className="text-[10px] py-0 h-4">{l}</Badge>
+                          ))}
+                        </div>
+                      )}
                       {s.notiz && (
                         <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
                           📝 {s.notiz}
