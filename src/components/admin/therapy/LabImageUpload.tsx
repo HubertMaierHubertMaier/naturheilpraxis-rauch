@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, ClipboardPaste, X, Sparkles } from "lucide-react";
+import { Camera, Loader2, ClipboardPaste, X, Sparkles, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   onExtracted: (text: string) => void;
@@ -38,6 +48,8 @@ export function LabImageUpload({ onExtracted }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<string[]>([]); // data URLs queued
+  const [askMore, setAskMore] = useState(false);
+  const [lastAddedAt, setLastAddedAt] = useState<number | null>(null);
   const { toast } = useToast();
 
   const addBlobs = async (blobs: (File | Blob)[]) => {
@@ -48,7 +60,9 @@ export function LabImageUpload({ onExtracted }: Props) {
     }
     if (added.length) {
       setPending((prev) => [...prev, ...added]);
-      toast({ title: `${added.length} Bild(er) hinzugefügt`, description: "Beliebig viele Ausschnitte einfügen, dann auf 'Extrahieren' klicken." });
+      setLastAddedAt(Date.now());
+      setAskMore(true);
+      toast({ title: `✓ ${added.length} Bild(er) hinzugefügt`, description: "Ausschnitt wurde der Sammlung hinzugefügt." });
     }
   };
 
@@ -209,6 +223,44 @@ export function LabImageUpload({ onExtracted }: Props) {
           Tipp: Markier in Adobe einen Bereich → kopieren → hier mit Strg+V einfügen. Mehrere Ausschnitte sind möglich, danach gemeinsam extrahieren.
         </div>
       )}
+
+      {lastAddedAt && pending.length > 0 && (
+        <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>Ausschnitt wurde hinzugefügt ({pending.length} insgesamt).</span>
+        </div>
+      )}
+
+      <AlertDialog open={askMore} onOpenChange={setAskMore}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Weiteres Bild hinzufügen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie noch einen Ausschnitt aus der Zwischenablage oder ein weiteres Foto hinzufügen?
+              Aktuell sind <strong>{pending.length}</strong> Ausschnitt(e) gesammelt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-wrap gap-2">
+            <AlertDialogCancel onClick={() => setAskMore(false)}>Nein, fertig</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => { setAskMore(false); await pasteFromClipboard(); }}
+              className="gap-1.5"
+            >
+              <ClipboardPaste className="h-4 w-4" />
+              Zwischenablage
+            </Button>
+            <AlertDialogAction
+              onClick={() => { setAskMore(false); inputRef.current?.click(); }}
+              className="gap-1.5"
+            >
+              <Camera className="h-4 w-4" />
+              Foto/Scan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
