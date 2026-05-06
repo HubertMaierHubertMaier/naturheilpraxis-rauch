@@ -151,14 +151,14 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/patienten?dev=true" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/patienten")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <User className="h-4 w-4" />
                         Patienten
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/admin")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <Shield className="h-4 w-4" />
                         Admin-Dashboard
@@ -166,14 +166,14 @@ export function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/wissensdatenbank" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/wissensdatenbank")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <BookOpen className="h-4 w-4" />
                         Wiki
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/patienten-bibliothek" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/patienten-bibliothek")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                         <Library className="h-4 w-4" />
                         Bibliothek
@@ -193,7 +193,7 @@ export function Header() {
                       </a>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/app-uebersicht" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/app-uebersicht")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <LayoutGrid className="h-4 w-4" />
                         Übersicht der APP
