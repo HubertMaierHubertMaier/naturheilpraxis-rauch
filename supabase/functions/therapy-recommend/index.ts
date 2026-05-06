@@ -998,6 +998,13 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind.
 
 6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
+
+6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)**: ${arztbericht || "Nicht angegeben"}
+   - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
+   - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
+   - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
+   - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
+
    
    **ZWINGENDE QUELLENREGEL für Labor-/Stuhlwerte:**
    - Für jeden im Befund genannten Parameter MUSST du prüfen, ob in der oben gelieferten WISSENSDATENBANK ein Eintrag aus der Kategorie "Labordiagnostik" zu genau diesem Parameter existiert (z.B. "Calprotectin", "Zonulin", "sIgA", "Pankreas-Elastase", "Lactobacillus", "Bifidobacterium", "Akkermansia muciniphila", "Faecalibacterium prausnitzii", "alpha-1-Antitrypsin", "Stuhl-pH" usw.).
