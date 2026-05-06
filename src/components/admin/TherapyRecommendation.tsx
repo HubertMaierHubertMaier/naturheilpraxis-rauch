@@ -51,8 +51,10 @@ export function TherapyRecommendation() {
   const [laborErhoeht, setLaborErhoeht] = useState("");
   const [laborErniedrigt, setLaborErniedrigt] = useState("");
   const [laborKomplett, setLaborKomplett] = useState("");
+  const [laborDatum, setLaborDatum] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [arztbericht, setArztbericht] = useState("");
+  const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
