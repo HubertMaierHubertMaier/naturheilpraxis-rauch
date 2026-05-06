@@ -141,7 +141,65 @@ export function LiveInputSummary({
             </ol>
           </div>
         )}
-      </CardContent>
+
+        {hasLabor && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+              <FlaskConical className="h-3.5 w-3.5" />
+              Laborwerte
+              {laborDatum && <span className="font-normal text-muted-foreground normal-case">· Befund vom {laborDatum}</span>}
+            </div>
+            {laborErhoehtList.length > 0 && (
+              <div className="mb-2">
+                <div className="text-[11px] font-semibold text-red-700 dark:text-red-300 mb-0.5">↑ Erhöht ({laborErhoehtList.length})</div>
+                <ul className="text-xs whitespace-pre-wrap pl-3 border-l-2 border-red-200 dark:border-red-900/40">{laborErhoehtList.join("\n")}</ul>
+              </div>
+            )}
+            {laborErniedrigtList.length > 0 && (
+              <div className="mb-2">
+                <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 mb-0.5">↓ Erniedrigt ({laborErniedrigtList.length})</div>
+                <ul className="text-xs whitespace-pre-wrap pl-3 border-l-2 border-blue-200 dark:border-blue-900/40">{laborErniedrigtList.join("\n")}</ul>
+              </div>
+            )}
+            {laborKomplettList.length > 0 && (
+              <div>
+                <div className="text-[11px] font-semibold text-muted-foreground mb-0.5">🧪 Komplettes Labor ({laborKomplettList.length} Zeilen)</div>
+                <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{laborKomplett}</pre>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasStuhl && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+              <Microscope className="h-3.5 w-3.5" />
+              Stuhlbefund / Mikrobiom ({stuhlList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{stuhlbefund}</pre>
+          </div>
+        )}
+
+        {hasArzt && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+              <FileText className="h-3.5 w-3.5" />
+              Arztbericht / Arztbrief ({arztberichtList.length} Zeilen)
+              {arztberichtDatum && <span className="font-normal text-muted-foreground normal-case">· Bericht vom {arztberichtDatum}</span>}
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{arztbericht}</pre>
+          </div>
+        )}
+
+        {hasMetatron && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-fuchsia-700 dark:text-fuchsia-300">
+              <Radio className="h-3.5 w-3.5" />
+              Metatron / NLS / HEEL ({metatronList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
+          </div>
+        )}
     </Card>
   );
 }
