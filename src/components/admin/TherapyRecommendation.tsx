@@ -932,6 +932,18 @@ export function TherapyRecommendation() {
                 placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
                 rows={4}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Arztbericht erstellt am:</label>
+                <Input
+                  type="date"
+                  value={arztberichtDatum}
+                  onChange={(e) => setArztberichtDatum(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+                {arztberichtDatum && (
+                  <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
             </div>
             <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
