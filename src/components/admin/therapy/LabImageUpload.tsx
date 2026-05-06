@@ -226,6 +226,32 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
         </div>
       )}
 
+      {/* Dedizierte Paste-Zone — funktioniert auch wenn der Browser navigator.clipboard.read() blockiert */}
+      <div
+        tabIndex={0}
+        onPaste={(e) => {
+          const items = e.clipboardData?.items;
+          if (!items) return;
+          const blobs: Blob[] = [];
+          for (const item of Array.from(items)) {
+            if (item.kind === "file" && item.type.startsWith("image/")) {
+              const b = item.getAsFile();
+              if (b) blobs.push(b);
+            }
+          }
+          if (blobs.length) {
+            e.preventDefault();
+            addBlobs(blobs);
+          } else {
+            toast({ title: "Kein Bild erkannt", description: "Bitte zuerst in Adobe/Snipping Tool ein Bild kopieren.", variant: "destructive" });
+          }
+        }}
+        className="rounded-md border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 focus:bg-primary/10 focus:border-primary focus:outline-none px-3 py-4 text-center text-sm text-primary cursor-text transition"
+        title="Klick hier rein und drück dann Strg+V"
+      >
+        📋 <strong>Hier klicken</strong> und dann <kbd className="px-1.5 py-0.5 rounded bg-background border text-xs">Strg</kbd> + <kbd className="px-1.5 py-0.5 rounded bg-background border text-xs">V</kbd> drücken, um das kopierte Bild einzufügen
+      </div>
+
       {lastAddedAt && pending.length > 0 && (
         <div className="flex items-center gap-2 rounded-md border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
           <CheckCircle2 className="h-4 w-4 shrink-0" />

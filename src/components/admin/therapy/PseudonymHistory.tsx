@@ -132,11 +132,25 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                 hour: "2-digit",
                 minute: "2-digit",
               });
+              const e = s.eingabe_daten || {};
               const summary =
-                s.eingabe_daten?.symptome?.slice(0, 60) ||
-                s.eingabe_daten?.erkrankung?.slice(0, 60) ||
-                s.eingabe_daten?.belastungen?.slice(0, 60) ||
+                e.symptome?.slice(0, 60) ||
+                e.erkrankung?.slice(0, 60) ||
+                e.belastungen?.slice(0, 60) ||
                 "—";
+              const labParts: string[] = [];
+              if (e.laborKomplett?.trim()) labParts.push(`Labor (${String(e.laborKomplett).split(/\n+/).filter(Boolean).length} Werte)`);
+              else {
+                if (e.laborErhoeht?.trim()) labParts.push(`Labor↑ (${String(e.laborErhoeht).split(/[\n,;]+/).filter((x:string)=>x.trim()).length})`);
+                if (e.laborErniedrigt?.trim()) labParts.push(`Labor↓ (${String(e.laborErniedrigt).split(/[\n,;]+/).filter((x:string)=>x.trim()).length})`);
+              }
+              if (e.stuhlbefund?.trim()) labParts.push("Stuhlbefund");
+              if (e.arztbericht?.trim()) labParts.push("Arztbericht");
+              if (e.metatronHeel?.trim()) labParts.push("Metatron/HEEL");
+              const labPreview =
+                e.laborKomplett?.trim() ||
+                [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
+                "";
 
               return (
                 <div key={s.id} className="border border-border rounded-md p-3 hover:bg-muted/30 transition">
@@ -147,6 +161,13 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                         <span className="text-xs font-medium text-foreground">{date}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{summary}</p>
+                      {labParts.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {labParts.map((l, i) => (
+                            <Badge key={i} variant="outline" className="text-[10px] py-0 h-4">{l}</Badge>
+                          ))}
+                        </div>
+                      )}
                       {s.notiz && (
                         <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
                           📝 {s.notiz}
@@ -217,6 +238,37 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
 
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {(e.laborKomplett?.trim() || e.laborErhoeht?.trim() || e.laborErniedrigt?.trim()) && (
+                        <details open>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
+                            🧪 Laborwerte
+                          </summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">
+                            {e.laborKomplett?.trim() ? e.laborKomplett : [
+                              e.laborErhoeht?.trim() && `↑ Erhöht:\n${e.laborErhoeht}`,
+                              e.laborErniedrigt?.trim() && `↓ Erniedrigt:\n${e.laborErniedrigt}`,
+                            ].filter(Boolean).join("\n\n")}
+                          </div>
+                        </details>
+                      )}
+                      {e.stuhlbefund?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">💩 Stuhlbefund</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.stuhlbefund}</div>
+                        </details>
+                      )}
+                      {e.arztbericht?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🩺 Arztbericht</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.arztbericht}</div>
+                        </details>
+                      )}
+                      {e.metatronHeel?.trim() && (
+                        <details>
+                          <summary className="text-xs font-medium cursor-pointer text-muted-foreground">🔬 Metatron / HEEL</summary>
+                          <div className="text-xs bg-muted/50 p-2 rounded mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap">{e.metatronHeel}</div>
+                        </details>
+                      )}
                       <details>
                         <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
                           Eingabe-Daten
