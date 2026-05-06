@@ -409,8 +409,10 @@ export function TherapyRecommendation() {
     setLaborErhoeht(d.laborErhoeht || "");
     setLaborErniedrigt(d.laborErniedrigt || "");
     setLaborKomplett(d.laborKomplett || "");
+    setLaborDatum(d.laborDatum || "");
     setStuhlbefund(d.stuhlbefund || "");
     setArztbericht(d.arztbericht || "");
+    setArztberichtDatum(d.arztberichtDatum || "");
     setMetatronHeel(d.metatronHeel || "");
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
