@@ -166,39 +166,79 @@ export function TherapyRecommendation() {
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
+  const applyDraftPayload = useCallback((d: any) => {
+    if (!d || typeof d !== "object") return;
+    if (Array.isArray(d.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
+    if (typeof d.symptome === "string") setSymptome(d.symptome);
+    if (typeof d.erkrankung === "string") setErkrankung(d.erkrankung);
+    if (typeof d.alter === "string") setAlter(d.alter);
+    if (typeof d.geschlecht === "string") setGeschlecht(d.geschlecht);
+    if (typeof d.groesseCm === "string") setGroesseCm(d.groesseCm);
+    if (typeof d.gewichtKg === "string") setGewichtKg(d.gewichtKg);
+    if (typeof d.schwanger === "string") setSchwanger(d.schwanger);
+    if (typeof d.medikamente === "string") setMedikamente(d.medikamente);
+    if (typeof d.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
+    if (typeof d.budget === "string") setBudget(d.budget);
+    if (typeof d.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
+    if (typeof d.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
+    if (typeof d.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
+    if (typeof d.laborDatum === "string") setLaborDatum(d.laborDatum);
+    if (typeof d.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
+    if (typeof d.arztbericht === "string") setArztbericht(d.arztbericht);
+    if (typeof d.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
+    if (typeof d.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
+    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
+    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
+    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+  }, []);
+
   useEffect(() => {
     const pid = pseudonymId.trim();
     if (!pid || loadedInputDraftForPidRef.current === pid) return;
     loadedInputDraftForPidRef.current = pid;
+
+    // 1) Lokale Sicherung sofort laden (falls vorhanden)
+    let localTs = 0;
+    let localData: any = null;
     try {
       const raw = localStorage.getItem(`therapy.inputs.draft.${pid}`);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
-      if (typeof d?.symptome === "string") setSymptome(d.symptome);
-      if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
-      if (typeof d?.alter === "string") setAlter(d.alter);
-      if (typeof d?.geschlecht === "string") setGeschlecht(d.geschlecht);
-      if (typeof d?.groesseCm === "string") setGroesseCm(d.groesseCm);
-      if (typeof d?.gewichtKg === "string") setGewichtKg(d.gewichtKg);
-      if (typeof d?.schwanger === "string") setSchwanger(d.schwanger);
-      if (typeof d?.medikamente === "string") setMedikamente(d.medikamente);
-      if (typeof d?.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
-      if (typeof d?.budget === "string") setBudget(d.budget);
-      if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
-      if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
-      if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
-      if (typeof d?.laborDatum === "string") setLaborDatum(d.laborDatum);
-      if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
-      if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
-      if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
-      if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
-      if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
-      if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-      if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
-      toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+      if (raw) {
+        localData = JSON.parse(raw);
+        localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
+      }
     } catch {}
-  }, [pseudonymId, toast]);
+    if (localData) applyDraftPayload(localData);
+
+    // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from("therapy_sessions")
+          .select("id, eingabe_daten, updated_at")
+          .eq("pseudonym_id", pid)
+          .order("updated_at", { ascending: false })
+          .limit(5);
+        if (!Array.isArray(data) || !data.length) {
+          if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+          return;
+        }
+        // Neueste Auto-Sicherung bevorzugen, sonst neueste Session überhaupt
+        const draftRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft) || data[0];
+        const cloudTs = draftRow?.updated_at ? new Date(draftRow.updated_at).getTime() : 0;
+        if (cloudTs > localTs && draftRow?.eingabe_daten) {
+          applyDraftPayload(draftRow.eingabe_daten);
+          if (draftRow?.eingabe_daten?.autoSavedDraft) {
+            autoSaveSessionIdRef.current = draftRow.id;
+          }
+          toast({ title: "Eingaben wiederhergestellt", description: `Cloud-Sicherung für ${pid} geladen (${new Date(cloudTs).toLocaleString("de-DE")}).` });
+        } else if (localData) {
+          toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+        }
+      } catch {
+        if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+      }
+    })();
+  }, [pseudonymId, toast, applyDraftPayload]);
 
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
