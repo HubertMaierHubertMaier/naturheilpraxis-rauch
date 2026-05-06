@@ -75,7 +75,7 @@ Regeln:
       ? "Extrahiere bitte den vollständigen Inhalt dieses ärztlichen Berichts:"
       : "Extrahiere bitte alle Laborwerte aus diesem/diesen Befund(en):";
 
-    const content: any[] = [{ type: "text", text: "Extrahiere bitte alle Laborwerte aus diesem/diesen Befund(en):" }];
+    const content: any[] = [{ type: "text", text: userText }];
     for (const img of images) {
       content.push({ type: "image_url", image_url: { url: img } });
     }
