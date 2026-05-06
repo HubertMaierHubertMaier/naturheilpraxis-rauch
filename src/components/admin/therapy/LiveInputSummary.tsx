@@ -200,6 +200,7 @@ export function LiveInputSummary({
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
           </div>
         )}
+      </CardContent>
     </Card>
   );
 }
