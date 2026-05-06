@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { isDevAdminBypassActive } from '@/lib/devAdminBypass';
@@ -11,9 +11,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
 
-  const devBypass = isDevAdminBypassActive() || searchParams.get('dev') === 'true';
+  const devBypass = isDevAdminBypassActive();
 
   if (devBypass) {
     // Development mode bypass - only works in non-production builds
