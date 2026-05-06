@@ -291,7 +291,7 @@ export function Header() {
               <div className="mt-2 space-y-2">
                 {isAdmin && (
                   <Link
-                    to="/dashboard"
+                    to={withDevParam("/dashboard")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
@@ -306,7 +306,7 @@ export function Header() {
                 )}
                 {isAdmin && (
                   <Link
-                    to="/wissensdatenbank"
+                    to={withDevParam("/wissensdatenbank")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
@@ -321,7 +321,7 @@ export function Header() {
                 )}
                 {isAdmin && (
                   <Link
-                    to="/admin"
+                    to={withDevParam("/admin")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
