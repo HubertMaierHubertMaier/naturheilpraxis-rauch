@@ -1,7 +1,8 @@
 import React from 'react';
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { isDevAdminBypassActive } from '@/lib/devAdminBypass';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,13 +11,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
 
-  // Development bypass: Available in dev mode AND preview environments
-  // SECURITY: Explicitly blocked on published production domains
-  const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
-  const isPublishedProduction = window.location.hostname === 'naturheilpraxis-rauch.lovable.app' || window.location.hostname === 'www.rauch-heilpraktiker.de' || window.location.hostname === 'rauch-heilpraktiker.de';
-  const devBypass = isNonProduction && !isPublishedProduction && searchParams.get('dev') === 'true';
+  const devBypass = isDevAdminBypassActive();
 
   if (devBypass) {
     // Development mode bypass - only works in non-production builds

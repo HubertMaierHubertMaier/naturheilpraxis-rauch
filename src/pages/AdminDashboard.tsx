@@ -16,14 +16,17 @@ import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, C
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
+import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin: contextIsAdmin } = useAuth();
+  const devBypass = isDevAdminBypassActive();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'patients' ? 'patients' : 'faqs';
+  const hasAdminAccess = devBypass || contextIsAdmin || isAdmin;
 
-  if (authLoading || adminLoading) {
+  if (authLoading || (!devBypass && adminLoading)) {
     return (
       <Layout>
         <div className="container py-12">
@@ -36,11 +39,11 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user) {
+  if (!user && !devBypass) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin) {
+  if (!hasAdminAccess) {
     return (
       <Layout>
         <div className="container py-12">
@@ -127,7 +130,7 @@ const AdminDashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <PatientManager />
+                  <PatientManager devBypass={devBypass} />
                 </CardContent>
               </Card>
             </TabsContent>

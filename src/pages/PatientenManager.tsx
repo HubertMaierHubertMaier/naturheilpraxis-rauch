@@ -3,18 +3,13 @@ import { PatientManager } from "@/components/admin/PatientManager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const PatientenManagerPage = () => {
   const { user, loading, isAdmin } = useAuth();
-  const [searchParams] = useSearchParams();
 
-  // Same dev bypass logic as ProtectedRoute / Test button
-  // SECURITY: Explicitly blocked on published production domains
-  const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
-  const isPublishedProduction = window.location.hostname === 'naturheilpraxis-rauch.lovable.app' || window.location.hostname === 'www.rauch-heilpraktiker.de' || window.location.hostname === 'rauch-heilpraktiker.de';
-  const devBypass = isNonProduction && !isPublishedProduction && searchParams.get('dev') === 'true';
+  const devBypass = isDevAdminBypassActive();
 
   const hasAccess = devBypass || isAdmin;
 

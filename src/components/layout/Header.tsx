@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { translations } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
+import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,29 +29,25 @@ export function Header() {
   const nav = translations.nav;
   const header = translations.header;
 
-  // Non-production detection for showing dev activate button
-  // SECURITY: Explicitly blocked on published production domains
-  const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
-  const isPublishedProduction = window.location.hostname === 'naturheilpraxis-rauch.lovable.app' || window.location.hostname === 'www.rauch-heilpraktiker.de' || window.location.hostname === 'rauch-heilpraktiker.de';
-  const allowDevMode = isNonProduction && !isPublishedProduction;
-  const devActive = sessionStorage.getItem('dev_admin_bypass') === 'true';
+  const allowDevMode = isDevHost();
+  const devActive = isDevAdminBypassActive();
   const showDevButton = allowDevMode && !isAdmin && !devActive;
   // Show dev logout whenever dev bypass is active (independent of Supabase user)
   const showDevLogout = allowDevMode && devActive;
   
   const activateDevMode = useCallback(() => {
-    sessionStorage.setItem('dev_admin_bypass', 'true');
+    activateDevAdminBypass();
     window.location.search = '?dev=true';
   }, []);
 
   const deactivateDevMode = useCallback(() => {
-    sessionStorage.removeItem('dev_admin_bypass');
+    clearDevAdminBypass();
     // Strip ?dev=true from URL and reload
     window.location.href = window.location.pathname;
   }, []);
 
   const navItems = [
-    ...(isAdmin ? [{ label: "👥 Patienten", href: "/patienten?dev=true" }] : []),
+    ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
   ];
 
   const handleSignOut = async () => {
@@ -147,21 +144,21 @@ export function Header() {
                     <DropdownMenuLabel>Admin-Bereich</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/dashboard")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                         <User className="h-4 w-4" />
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/patienten?dev=true" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/patienten")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <User className="h-4 w-4" />
                         Patienten
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/admin")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <Shield className="h-4 w-4" />
                         Admin-Dashboard
@@ -169,14 +166,14 @@ export function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/wissensdatenbank" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/wissensdatenbank")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <BookOpen className="h-4 w-4" />
                         Wiki
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/patienten-bibliothek" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/patienten-bibliothek")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
                         <Library className="h-4 w-4" />
                         Bibliothek
@@ -196,7 +193,7 @@ export function Header() {
                       </a>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/app-uebersicht" className="flex items-center gap-2 cursor-pointer">
+                      <Link to={withDevParam("/app-uebersicht")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <LayoutGrid className="h-4 w-4" />
                         Übersicht der APP
@@ -294,7 +291,7 @@ export function Header() {
               <div className="mt-2 space-y-2">
                 {isAdmin && (
                   <Link
-                    to="/dashboard"
+                    to={withDevParam("/dashboard")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
@@ -309,7 +306,7 @@ export function Header() {
                 )}
                 {isAdmin && (
                   <Link
-                    to="/wissensdatenbank"
+                    to={withDevParam("/wissensdatenbank")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
@@ -324,7 +321,7 @@ export function Header() {
                 )}
                 {isAdmin && (
                   <Link
-                    to="/admin"
+                    to={withDevParam("/admin")}
                     onClick={() => setIsMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
