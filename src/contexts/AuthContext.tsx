@@ -143,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     if (!devBypass) setIsAdmin(false);
     sessionStorage.removeItem('dev_admin_bypass');
+    localStorage.removeItem('dev_admin_bypass');
   };
 
   return (
