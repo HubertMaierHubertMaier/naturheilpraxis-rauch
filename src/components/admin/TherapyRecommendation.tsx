@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,34 @@ export function TherapyRecommendation() {
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
+    pathogens,
+    symptome,
+    erkrankung,
+    alter,
+    geschlecht,
+    groesseCm,
+    gewichtKg,
+    schwanger,
+    medikamente,
+    bisherigeMittel,
+    budget,
+    laborErhoeht,
+    laborErniedrigt,
+    laborKomplett,
+    laborDatum,
+    stuhlbefund,
+    arztbericht,
+    arztberichtDatum,
+    metatronHeel,
+    selectedCategories,
+    useMapReduce,
+    bevorzugteLinie,
+    pinnedMittel,
+    belastungen: formatPathogensForAI(pathogens),
+    ...extra,
+  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
   const DRAFT_KEY = "therapy.draftInputs.v1";
@@ -133,6 +161,74 @@ export function TherapyRecommendation() {
       }));
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel]);
+
+  // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
+  // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const autoSaveSessionIdRef = useRef<string | null>(null);
+  const lastAutoSavedPayloadRef = useRef("");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const hasMeaningfulInput = useMemo(() => {
+    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel];
+    return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
+  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
+
+  useEffect(() => {
+    const pid = pseudonymId.trim();
+    if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
+
+    const payload = JSON.stringify(buildInputData({
+      autoSavedDraft: true,
+      finalized: false,
+    }));
+    if (payload === lastAutoSavedPayloadRef.current) return;
+
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = window.setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Nicht angemeldet");
+        const eingabe_daten = JSON.parse(payload);
+        const updateBody = {
+          pseudonym_id: pid,
+          created_by: user.id,
+          eingabe_daten: { ...eingabe_daten, lastAutoSaveAt: new Date().toISOString() },
+          empfehlung: "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.",
+          notiz: "Auto-Sicherung der Eingaben",
+        };
+
+        if (autoSaveSessionIdRef.current) {
+          const { error } = await (supabase as any)
+            .from("therapy_sessions")
+            .update(updateBody)
+            .eq("id", autoSaveSessionIdRef.current);
+          if (!error) {
+            lastAutoSavedPayloadRef.current = payload;
+            setAutoSaveStatus("saved");
+            return;
+          }
+        }
+
+        const { data, error } = await (supabase as any)
+          .from("therapy_sessions")
+          .insert(updateBody)
+          .select("id")
+          .single();
+        if (error) throw error;
+        autoSaveSessionIdRef.current = data?.id ?? null;
+        lastAutoSavedPayloadRef.current = payload;
+        setAutoSaveStatus("saved");
+        setHistoryRefresh((n) => n + 1);
+      } catch {
+        setAutoSaveStatus("error");
+      }
+    }, 1200);
+
+    return () => {
+      if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
