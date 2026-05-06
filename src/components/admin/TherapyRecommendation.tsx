@@ -897,6 +897,19 @@ export function TherapyRecommendation() {
               />
               <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
             </div>
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
+                <LabImageUpload mode="doctor" onExtracted={(t) => setArztbericht((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+              </div>
+              <Textarea
+                value={arztbericht}
+                onChange={(e) => setArztbericht(e.target.value)}
+                placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
+            </div>
             <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                 <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
