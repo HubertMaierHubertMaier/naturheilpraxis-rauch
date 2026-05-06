@@ -49,6 +49,11 @@ export function PatientManager({ devBypass = false }: PatientManagerProps) {
   const fetchPatients = async () => {
     setLoading(true);
     try {
+      if (devBypass) {
+        setPatients([]);
+        return;
+      }
+
       // Use edge function to fetch patients (bypasses RLS with service role)
       const headers: Record<string, string> = {};
 
