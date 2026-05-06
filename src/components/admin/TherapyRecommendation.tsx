@@ -111,8 +111,10 @@ export function TherapyRecommendation() {
       if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
       if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
       if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
+      if (typeof d?.laborDatum === "string") setLaborDatum(d.laborDatum);
       if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
       if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
+      if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
