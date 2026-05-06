@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { clearDevAdminBypass, isDevAdminBypassActive } from '@/lib/devAdminBypass';
 
 interface AuthContextType {
   user: User | null;
@@ -23,36 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Dev bypass: In non-production environments with ?dev=true, grant admin access
-  // This solves the problem that the Lovable platform login is separate from the app's Supabase auth
-  // Once activated, it persists for the browser session via sessionStorage
-  const isNonProduction = typeof window !== 'undefined' && (
-    window.location.hostname.includes('preview') || 
-    window.location.hostname.includes('lovableproject.com') || 
-    window.location.hostname.includes('localhost') ||
-    import.meta.env.DEV
-  );
-  
-  const getDevBypass = () => {
-    if (!isNonProduction) return false;
-    try {
-      const urlHasDev = new URLSearchParams(window.location.search).get('dev') === 'true';
-      if (urlHasDev) {
-        localStorage.setItem('dev_admin_bypass', 'true');
-        sessionStorage.setItem('dev_admin_bypass', 'true');
-        return true;
-      }
-      // Persist across iframe reloads (HMR / sandbox restarts) by using localStorage
-      return (
-        localStorage.getItem('dev_admin_bypass') === 'true' ||
-        sessionStorage.getItem('dev_admin_bypass') === 'true'
-      );
-    } catch {
-      return false;
-    }
-  };
-  
-  const devBypass = getDevBypass();
+  const devBypass = isDevAdminBypassActive();
   
   const [isAdmin, setIsAdmin] = useState(devBypass);
 
@@ -142,8 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSession(null);
     if (!devBypass) setIsAdmin(false);
-    sessionStorage.removeItem('dev_admin_bypass');
-    localStorage.removeItem('dev_admin_bypass');
+    clearDevAdminBypass();
   };
 
   return (
