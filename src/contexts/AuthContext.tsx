@@ -35,12 +35,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const getDevBypass = () => {
     if (!isNonProduction) return false;
-    const urlHasDev = new URLSearchParams(window.location.search).get('dev') === 'true';
-    if (urlHasDev) {
-      sessionStorage.setItem('dev_admin_bypass', 'true');
-      return true;
+    try {
+      const urlHasDev = new URLSearchParams(window.location.search).get('dev') === 'true';
+      if (urlHasDev) {
+        localStorage.setItem('dev_admin_bypass', 'true');
+        sessionStorage.setItem('dev_admin_bypass', 'true');
+        return true;
+      }
+      // Persist across iframe reloads (HMR / sandbox restarts) by using localStorage
+      return (
+        localStorage.getItem('dev_admin_bypass') === 'true' ||
+        sessionStorage.getItem('dev_admin_bypass') === 'true'
+      );
+    } catch {
+      return false;
     }
-    return sessionStorage.getItem('dev_admin_bypass') === 'true';
   };
   
   const devBypass = getDevBypass();
@@ -134,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     if (!devBypass) setIsAdmin(false);
     sessionStorage.removeItem('dev_admin_bypass');
+    localStorage.removeItem('dev_admin_bypass');
   };
 
   return (
