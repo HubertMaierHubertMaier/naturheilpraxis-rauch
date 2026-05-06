@@ -18,29 +18,55 @@ interface Props {
   pathogens: PathogenEntry[];
   symptome: string;
   erkrankung: string;
+  laborErhoeht?: string;
+  laborErniedrigt?: string;
+  laborKomplett?: string;
+  laborDatum?: string;
+  stuhlbefund?: string;
+  arztbericht?: string;
+  arztberichtDatum?: string;
+  metatronHeel?: string;
 }
 
+const splitLines = (s?: string) =>
+  (s || "")
+    .split(/\n+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
 /**
- * Live-Übersicht der erfassten Pathogene + Symptome + Erkrankung.
+ * Live-Übersicht der erfassten Pathogene + Symptome + Erkrankung + Labor + Arztbericht.
  * Wird direkt unter den Eingabefeldern angezeigt, damit der Therapeut
  * jederzeit sieht, was wirklich an die KI übergeben wird.
  */
-export function LiveInputSummary({ pathogens, symptome, erkrankung }: Props) {
+export function LiveInputSummary({
+  pathogens, symptome, erkrankung,
+  laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "",
+}: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
-  // Symptome zeilen-/komma-/semikolon-basiert in Liste splitten
-  const symptomList = symptome
-    .split(/[\n;,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const symptomList = symptome.split(/[\n;,]+/).map((s) => s.trim()).filter(Boolean);
+  const erkrankungList = erkrankung.split(/[\n;,]+/).map((s) => s.trim()).filter(Boolean);
 
-  // Erkrankungen ggf. mehrere durch Komma/Semikolon getrennt
-  const erkrankungList = erkrankung
-    .split(/[\n;,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const laborErhoehtList = splitLines(laborErhoeht);
+  const laborErniedrigtList = splitLines(laborErniedrigt);
+  const laborKomplettList = splitLines(laborKomplett);
+  const stuhlList = splitLines(stuhlbefund);
+  const arztberichtList = splitLines(arztbericht);
+  const metatronList = splitLines(metatronHeel);
 
-  const hasAny = filledPathogens.length > 0 || symptomList.length > 0 || erkrankungList.length > 0;
+  const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
+  const hasStuhl = stuhlList.length > 0;
+  const hasArzt = arztberichtList.length > 0;
+  const hasMetatron = metatronList.length > 0;
+
+  const totalCount =
+    filledPathogens.length + symptomList.length + erkrankungList.length +
+    laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
+    stuhlList.length + arztberichtList.length + metatronList.length;
+
+  const hasAny = totalCount > 0;
   if (!hasAny) return null;
 
   return (
