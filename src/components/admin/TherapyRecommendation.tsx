@@ -210,35 +210,62 @@ export function TherapyRecommendation() {
     if (localData) applyDraftPayload(localData);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
-    (async () => {
-      try {
-        const { data } = await (supabase as any)
-          .from("therapy_sessions")
-          .select("id, eingabe_daten, updated_at")
-          .eq("pseudonym_id", pid)
-          .order("updated_at", { ascending: false })
-          .limit(5);
-        if (!Array.isArray(data) || !data.length) {
-          if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-          return;
-        }
-        // Neueste Auto-Sicherung bevorzugen, sonst neueste Session überhaupt
-        const draftRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft) || data[0];
-        const cloudTs = draftRow?.updated_at ? new Date(draftRow.updated_at).getTime() : 0;
-        if (cloudTs > localTs && draftRow?.eingabe_daten) {
-          applyDraftPayload(draftRow.eingabe_daten);
-          if (draftRow?.eingabe_daten?.autoSavedDraft) {
-            autoSaveSessionIdRef.current = draftRow.id;
-          }
-          toast({ title: "Eingaben wiederhergestellt", description: `Cloud-Sicherung für ${pid} geladen (${new Date(cloudTs).toLocaleString("de-DE")}).` });
-        } else if (localData) {
-          toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-        }
-      } catch {
-        if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-      }
-    })();
+    loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId, toast, applyDraftPayload]);
+
+  const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
+    try {
+      const { data } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, eingabe_daten, updated_at")
+        .eq("pseudonym_id", pid)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (!Array.isArray(data) || !data.length) {
+        if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+        return;
+      }
+      // Strategie: Jüngste Sitzung gewinnt. Fehlende Felder werden aus den
+      // nächstälteren Sitzungen ergänzt (z. B. Labor in Sitzung A, Arztbericht in Sitzung B).
+      const merged: any = {};
+      const stringKeys = [
+        "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
+        "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
+        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel",
+      ];
+      const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
+      for (const row of data) {
+        const e = row?.eingabe_daten || {};
+        for (const k of stringKeys) {
+          if (!merged[k] && typeof e[k] === "string" && e[k].trim()) merged[k] = e[k];
+        }
+        for (const k of arrayKeys) {
+          if ((!merged[k] || (Array.isArray(merged[k]) && merged[k].length === 0)) && Array.isArray(e[k]) && e[k].length) {
+            merged[k] = e[k];
+          }
+        }
+      }
+      const newest = data[0];
+      const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
+      if (cloudTs >= localTs) {
+        applyDraftPayload(merged);
+        const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
+        if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
+        const filledFields = Object.keys(merged).filter((k) => {
+          const v = (merged as any)[k];
+          return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
+        }).length;
+        toast({
+          title: "Eingaben wiederhergestellt",
+          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt (neueste: ${new Date(cloudTs).toLocaleString("de-DE")}).`,
+        });
+      } else if (localData) {
+        toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+      }
+    } catch {
+      if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+    }
+  }, [applyDraftPayload, toast]);
 
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
