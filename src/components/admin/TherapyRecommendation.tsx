@@ -125,6 +125,11 @@ export function TherapyRecommendation() {
   const resultRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const autoSaveRunIdRef = useRef(0);
+  const autoSaveSessionIdRef = useRef<string | null>(null);
+  const lastAutoSavedPayloadRef = useRef("");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
     pathogens,
@@ -160,6 +165,11 @@ export function TherapyRecommendation() {
       toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
       return;
     }
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     setAutoSaveStatus("saving");
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -175,6 +185,7 @@ export function TherapyRecommendation() {
       const { data, error } = await (supabase as any).from("therapy_sessions").insert(saveBody).select("id").single();
       if (error) throw error;
       autoSaveSessionIdRef.current = data?.id ?? autoSaveSessionIdRef.current;
+      lastAutoSavedPayloadRef.current = JSON.stringify({ ...payload, lastAutoSaveAt: undefined });
       setAutoSaveStatus("saved");
       setHistoryRefresh((n) => n + 1);
       toast({ title: "Sofort gespeichert", description: `${label} wurde für ${pid} in der Cloud gesichert.` });
@@ -348,10 +359,6 @@ export function TherapyRecommendation() {
 
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
-  const autoSaveTimerRef = useRef<number | null>(null);
-  const autoSaveSessionIdRef = useRef<string | null>(null);
-  const lastAutoSavedPayloadRef = useRef("");
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const hasMeaningfulInput = useMemo(() => {
     const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel];
     return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
@@ -360,6 +367,8 @@ export function TherapyRecommendation() {
   useEffect(() => {
     const pid = pseudonymId.trim();
     if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
+    const runId = autoSaveRunIdRef.current + 1;
+    autoSaveRunIdRef.current = runId;
 
     const payload = JSON.stringify(buildInputData({
       autoSavedDraft: true,
@@ -369,6 +378,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
+      if (runId !== autoSaveRunIdRef.current) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -387,6 +397,7 @@ export function TherapyRecommendation() {
             .from("therapy_sessions")
             .update(updateBody)
             .eq("id", autoSaveSessionIdRef.current);
+          if (runId !== autoSaveRunIdRef.current) return;
           if (!error) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
@@ -400,6 +411,7 @@ export function TherapyRecommendation() {
           .select("id")
           .single();
         if (error) throw error;
+        if (runId !== autoSaveRunIdRef.current) return;
         autoSaveSessionIdRef.current = data?.id ?? null;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
