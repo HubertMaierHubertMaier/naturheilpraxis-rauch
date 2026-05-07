@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart } from "lucide-react";
+import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import jsPDF from "jspdf";
@@ -41,6 +43,10 @@ export default function MannayanPriceManager() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [patientName, setPatientName] = useState("");
+  const [orderNumber, setOrderNumber] = useState<string>("");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNotes, setOrderNotes] = useState("");
+  const [showOrders, setShowOrders] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["mannayan-products"],
@@ -160,27 +166,104 @@ export default function MannayanPriceManager() {
   const formatPrice = (n: number) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   const today = new Date().toLocaleDateString("de-DE");
 
-  const exportPDF = () => {
+  const { data: savedOrders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ["mannayan-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("mannayan_orders" as any).select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const saveOrder = async (): Promise<string | undefined> => {
+    if (cart.length === 0) { toast({ title: "Leere Bestellung", variant: "destructive" }); return; }
+    const itemsPayload = cart.map(c => ({
+      product_id: c.product.id, name: c.product.name, unit: c.product.unit,
+      sku: c.product.sku, price_eur: c.product.price_eur, quantity: c.quantity,
+    }));
+    const { data: userRes } = await supabase.auth.getUser();
+    const userId = userRes.user?.id;
+    if (!userId) { toast({ title: "Nicht angemeldet", variant: "destructive" }); return; }
+
+    if (orderId) {
+      const { error } = await supabase.from("mannayan_orders" as any)
+        .update({ patient_label: patientName, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+      toast({ title: `Bestellung ${orderNumber} aktualisiert` });
+      refetchOrders();
+      return orderNumber;
+    }
+    const { data: numData, error: numErr } = await supabase.rpc("next_mannayan_order_number" as any);
+    if (numErr) { toast({ title: "Nummern-Fehler", description: numErr.message, variant: "destructive" }); return; }
+    const newNum = numData as unknown as string;
+    const { data: inserted, error } = await supabase.from("mannayan_orders" as any).insert([{
+      order_number: newNum, patient_label: patientName, items: itemsPayload,
+      total_eur: total, notes: orderNotes, created_by: userId,
+    }]).select().single();
+    if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+    setOrderId((inserted as any).id);
+    setOrderNumber(newNum);
+    toast({ title: `Bestellung ${newNum} gespeichert` });
+    refetchOrders();
+    return newNum;
+  };
+
+  const loadOrder = (o: any) => {
+    setOrderId(o.id); setOrderNumber(o.order_number);
+    setPatientName(o.patient_label || ""); setOrderNotes(o.notes || "");
+    setCart((o.items || []).map((it: any) => ({
+      product: {
+        id: it.product_id || it.name, name: it.name, price_eur: Number(it.price_eur) || 0,
+        unit: it.unit || "", sku: it.sku || "", category: "", is_active: true,
+      },
+      quantity: it.quantity,
+    })));
+    setShowOrders(false);
+    toast({ title: `Bestellung ${o.order_number} geladen` });
+  };
+
+  const newOrder = () => { setCart([]); setOrderId(null); setOrderNumber(""); setPatientName(""); setOrderNotes(""); };
+
+  const deleteOrder = async (id: string, num: string) => {
+    if (!confirm(`Bestellung ${num} wirklich löschen?`)) return;
+    const { error } = await supabase.from("mannayan_orders" as any).delete().eq("id", id);
+    if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Bestellung gelöscht" });
+    if (orderId === id) newOrder();
+    refetchOrders();
+  };
+
+
+  const exportPDF = async () => {
     if (cart.length === 0) return;
+    const num = orderNumber || (await saveOrder()) || "—";
     const doc = new jsPDF();
-    let y = 20;
+    let y = 18;
     doc.setFontSize(16);
     doc.text("Naturheilpraxis Peter Rauch", 20, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.text("Mannayan-Produktempfehlung", 20, y);
     y += 6;
-    doc.text(`Datum: ${today}`, 20, y);
-    if (patientName) { y += 6; doc.text(`Patient: ${patientName}`, 20, y); }
+    doc.setFontSize(9);
+    doc.text("Friedrich-Deffner-Str. 19a · 86163 Augsburg · Tel. 0821-2621462", 20, y);
     y += 10;
+    doc.setFontSize(13);
+    doc.setFont(undefined, "bold");
+    doc.text(`Bestellung Mannayan – ${num}`, 20, y);
+    doc.setFont(undefined, "normal");
+    y += 7;
+    doc.setFontSize(10);
+    doc.text(`Augsburg, den ${today}`, 20, y);
+    if (patientName) { y += 6; doc.text(`Patient/Kunde: ${patientName}`, 20, y); }
+    y += 8;
+    doc.setFontSize(9);
+    doc.text("Hiermit bestelle ich die unten aufgeführten Produkte über die Naturheilpraxis Peter Rauch", 20, y);
+    y += 4; doc.text("zur Weiterleitung an die Firma Mannayan GmbH & Co. KG, Julbach.", 20, y);
+    y += 8;
+
     doc.setFontSize(11);
-    doc.text("Menge", 20, y);
-    doc.text("Produkt", 45, y);
-    doc.text("Einzelpreis", 130, y);
-    doc.text("Summe", 170, y);
-    y += 2;
-    doc.line(20, y, 195, y);
-    y += 6;
+    doc.text("Menge", 20, y); doc.text("Produkt", 45, y);
+    doc.text("Einzelpreis", 130, y); doc.text("Summe", 170, y);
+    y += 2; doc.line(20, y, 195, y); y += 6;
     doc.setFontSize(10);
     cart.forEach(c => {
       const lineSum = c.product.price_eur * c.quantity;
@@ -190,24 +273,32 @@ export default function MannayanPriceManager() {
       doc.text(formatPrice(c.product.price_eur), 130, y);
       doc.text(formatPrice(lineSum), 170, y);
       y += 6 * Math.max(1, nameLines.length);
-      if (y > 270) { doc.addPage(); y = 20; }
+      if (y > 250) { doc.addPage(); y = 20; }
     });
-    y += 4;
-    doc.line(20, y, 195, y);
-    y += 8;
-    doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
-    doc.text("Gesamtsumme:", 130, y);
-    doc.text(formatPrice(total), 170, y);
+    y += 4; doc.line(20, y, 195, y); y += 8;
+    doc.setFontSize(12); doc.setFont(undefined, "bold");
+    doc.text("Gesamtsumme:", 130, y); doc.text(formatPrice(total), 170, y);
     doc.setFont(undefined, "normal");
-    y += 12;
+    y += 14;
+    doc.setFontSize(9);
+    doc.text("Endkundenpreise inkl. MwSt. gemäß Mannayan-Preisliste, Änderungen vorbehalten.", 20, y);
+    y += 14;
+    if (y > 240) { doc.addPage(); y = 30; }
+    doc.setFontSize(10);
+    doc.text("Mit meiner Unterschrift bestätige ich die oben aufgeführte Bestellung verbindlich.", 20, y);
+    y += 20;
+    doc.line(20, y, 100, y);
+    doc.line(115, y, 195, y);
+    y += 5;
     doc.setFontSize(8);
-    doc.text("Endkundenpreise inkl. MwSt. Preise gemäß Mannayan-Preisliste, Änderungen vorbehalten.", 20, y);
-    doc.save(`Mannayan-Empfehlung-${today.replace(/\./g, "-")}.pdf`);
+    doc.text("Ort, Datum", 20, y);
+    doc.text("Unterschrift Patient/Kunde", 115, y);
+    doc.save(`Mannayan-Bestellung-${num}.pdf`);
   };
 
   const exportDocx = async () => {
     if (cart.length === 0) return;
+    const num = orderNumber || (await saveOrder()) || "—";
     const cellBorder = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
     const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
     const headerCell = (text: string, width: number) => new DocxCell({
@@ -218,25 +309,32 @@ export default function MannayanPriceManager() {
       borders, width: { size: width, type: WidthType.DXA },
       children: [new Paragraph({ alignment: align, children: [new TextRun(text)] })],
     });
+    const noBorderCell = (text: string, width: number, bold = false) => new DocxCell({
+      borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+      width: { size: width, type: WidthType.DXA },
+      children: [new Paragraph({ children: [new TextRun({ text, bold })] })],
+    });
 
     const doc = new Document({
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
         children: [
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "Naturheilpraxis Peter Rauch", bold: true, size: 32 })] }),
-          new Paragraph({ children: [new TextRun({ text: "Mannayan-Produktempfehlung", size: 24 })] }),
-          new Paragraph({ children: [new TextRun(`Datum: ${today}`)] }),
-          ...(patientName ? [new Paragraph({ children: [new TextRun(`Patient: ${patientName}`)] })] : []),
+          new Paragraph({ children: [new TextRun({ text: "Friedrich-Deffner-Str. 19a · 86163 Augsburg · Tel. 0821-2621462", size: 18 })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun({ text: `Bestellung Mannayan – ${num}`, bold: true, size: 28 })] }),
+          new Paragraph({ children: [new TextRun(`Augsburg, den ${today}`)] }),
+          ...(patientName ? [new Paragraph({ children: [new TextRun(`Patient/Kunde: ${patientName}`)] })] : []),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("Hiermit bestelle ich die unten aufgeführten Produkte über die Naturheilpraxis Peter Rauch zur Weiterleitung an die Firma Mannayan GmbH & Co. KG, Julbach.")] }),
           new Paragraph({ children: [new TextRun("")] }),
           new DocxTable({
             width: { size: 9026, type: WidthType.DXA },
             columnWidths: [1000, 4500, 1763, 1763],
             rows: [
               new DocxRow({ children: [
-                headerCell("Menge", 1000),
-                headerCell("Produkt", 4500),
-                headerCell("Einzelpreis", 1763),
-                headerCell("Summe", 1763),
+                headerCell("Menge", 1000), headerCell("Produkt", 4500),
+                headerCell("Einzelpreis", 1763), headerCell("Summe", 1763),
               ]}),
               ...cart.map(c => new DocxRow({ children: [
                 dataCell(String(c.quantity), 1000),
@@ -255,13 +353,35 @@ export default function MannayanPriceManager() {
             ],
           }),
           new Paragraph({ children: [new TextRun("")] }),
-          new Paragraph({ children: [new TextRun({ text: "Endkundenpreise inkl. MwSt. Preise gemäß Mannayan-Preisliste, Änderungen vorbehalten.", size: 16, italics: true })] }),
+          new Paragraph({ children: [new TextRun({ text: "Endkundenpreise inkl. MwSt. gemäß Mannayan-Preisliste, Änderungen vorbehalten.", size: 16, italics: true })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("Mit meiner Unterschrift bestätige ich die oben aufgeführte Bestellung verbindlich.")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new DocxTable({
+            width: { size: 9026, type: WidthType.DXA },
+            columnWidths: [4500, 526, 4000],
+            rows: [
+              new DocxRow({ children: [
+                noBorderCell("", 4500),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 526, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun("")] })] }),
+                noBorderCell("", 4000),
+              ]}),
+              new DocxRow({ children: [
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 4500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Ort, Datum", size: 16 })] })] }),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 526, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun("")] })] }),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 4000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Unterschrift Patient/Kunde", size: 16 })] })] }),
+              ]}),
+            ],
+          }),
         ],
       }],
     });
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `Mannayan-Empfehlung-${today.replace(/\./g, "-")}.docx`);
+    saveAs(blob, `Mannayan-Bestellung-${num}.docx`);
   };
+
 
   return (
     <Tabs defaultValue="recipe" className="space-y-4">
@@ -273,13 +393,25 @@ export default function MannayanPriceManager() {
       <TabsContent value="recipe" className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Mannayan-Empfehlung erstellen</CardTitle>
-            <CardDescription>Produkte suchen, Mengen festlegen und als PDF/Word exportieren.</CardDescription>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="font-serif">
+                  Mannayan-Bestellung {orderNumber && <span className="text-primary">· {orderNumber}</span>}
+                </CardTitle>
+                <CardDescription>
+                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – wird beim Export oder Speichern fortlaufend nummeriert (P-JJJJ-XXXX)."}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={newOrder}><Plus className="h-4 w-4 mr-1" />Neue Bestellung</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowOrders(true)}><Archive className="h-4 w-4 mr-1" />Gespeicherte ({savedOrders.length})</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label>Patient (optional)</Label>
+                <Label>Patient / Kunde</Label>
                 <Input value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Name oder Pseudonym" />
               </div>
               <div>
@@ -347,13 +479,56 @@ export default function MannayanPriceManager() {
               </Table>
             </div>
 
+            <div>
+              <Label>Notiz (intern, wird mitgespeichert)</Label>
+              <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} rows={2} placeholder="Optionale interne Notiz zur Bestellung" />
+            </div>
+
             <div className="flex flex-wrap gap-2">
-              <Button onClick={exportPDF} disabled={cart.length === 0}><FileText className="h-4 w-4 mr-2" />PDF exportieren</Button>
-              <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx) exportieren</Button>
-              <Button variant="outline" onClick={() => setCart([])} disabled={cart.length === 0}>Liste leeren</Button>
+              <Button onClick={saveOrder} disabled={cart.length === 0}><Save className="h-4 w-4 mr-2" />{orderId ? "Aktualisieren" : "Bestellung speichern"}</Button>
+              <Button onClick={exportPDF} disabled={cart.length === 0} variant="secondary"><FileText className="h-4 w-4 mr-2" />PDF (mit Unterschrift)</Button>
+              <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx)</Button>
+              <Button variant="outline" onClick={newOrder} disabled={cart.length === 0 && !orderId}>Liste leeren</Button>
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={showOrders} onOpenChange={setShowOrders}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gespeicherte Bestellungen</DialogTitle>
+              <DialogDescription>Klicken Sie auf eine Bestellung zum Laden.</DialogDescription>
+            </DialogHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nr.</TableHead>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead className="text-right">Summe</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {savedOrders.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
+                )}
+                {savedOrders.map((o: any) => (
+                  <TableRow key={o.id} className="cursor-pointer hover:bg-sage-50">
+                    <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
+                    <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
+                    <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
+                    <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       <TabsContent value="manage" className="space-y-4">
