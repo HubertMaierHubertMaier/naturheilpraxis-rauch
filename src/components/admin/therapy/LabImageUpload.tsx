@@ -127,25 +127,11 @@ export function LabImageUpload({ onExtracted, mode = "lab" }: Props) {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  useEffect(() => {
-    const onPaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      const blobs: Blob[] = [];
-      for (const item of Array.from(items)) {
-        if (item.kind === "file" && item.type.startsWith("image/")) {
-          const b = item.getAsFile();
-          if (b) blobs.push(b);
-        }
-      }
-      if (blobs.length) {
-        e.preventDefault();
-        addBlobs(blobs);
-      }
-    };
-    window.addEventListener("paste", onPaste);
-    return () => window.removeEventListener("paste", onPaste);
-  }, []);
+  // WICHTIG: Kein globaler window-Paste-Listener!
+  // Sonst würde EIN Paste-Event in BEIDEN Instanzen (Labor + Arztbrief)
+  // gleichzeitig landen und der Inhalt würde sich vermischen.
+  // Paste wird ausschließlich über die dezidierte Paste-Zone unten
+  // entgegengenommen — die ist eindeutig dem jeweiligen Modus zugeordnet.
 
   return (
     <div className="space-y-2">
