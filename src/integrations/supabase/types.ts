@@ -194,6 +194,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mannayan_orders: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          items: Json
+          notes: string | null
+          order_number: string
+          patient_label: string | null
+          total_eur: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number: string
+          patient_label?: string | null
+          total_eur?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number?: string
+          patient_label?: string | null
+          total_eur?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mannayan_products: {
         Row: {
           category: string | null
@@ -519,6 +555,7 @@ export type Database = {
         Returns: undefined
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
+      next_mannayan_order_number: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "patient"
