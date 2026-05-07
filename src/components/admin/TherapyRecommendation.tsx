@@ -35,6 +35,38 @@ const extractWikiField = (content: string, labels: string[]) => {
 const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
 const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
 
+const textFromClinicalValue = (value: unknown): string => {
+  if (typeof value === "string") return value.trim() ? value : "";
+  if (Array.isArray(value)) return value.map(textFromClinicalValue).filter(Boolean).join("\n");
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["text", "content", "markdown", "value", "raw", "extractedText", "befund", "bericht", "labor", "laborKomplett", "arztbericht"]) {
+      const found = textFromClinicalValue(obj[key]);
+      if (found) return found;
+    }
+  }
+  return "";
+};
+
+const pickClinicalText = (source: Record<string, unknown>, keys: string[]) => {
+  for (const key of keys) {
+    const value = textFromClinicalValue(source[key]);
+    if (value) return value;
+  }
+  return "";
+};
+
+const normalizeTherapyInput = (input: unknown) => {
+  const d = input && typeof input === "object" ? { ...(input as Record<string, unknown>) } : {};
+  const laborText = pickClinicalText(d, ["laborKomplett", "labordaten", "laborDaten", "laborwerte", "laborWerte", "labor", "laborText", "extractedLaborText"]);
+  const arztText = pickClinicalText(d, ["arztbericht", "arztbrief", "arztBrief", "arztBefund", "doctorReport", "doctorText", "extractedDoctorText"]);
+  if (!textFromClinicalValue(d.laborKomplett) && laborText) d.laborKomplett = laborText;
+  if (!textFromClinicalValue(d.arztbericht) && arztText) d.arztbericht = arztText;
+  return d;
+};
+
+const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
@@ -62,6 +94,13 @@ export function TherapyRecommendation() {
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<{
+    pid: string;
+    sessionCount: number;
+    laborLines: number;
+    arztChars: number;
+    loadedAt: string;
+  } | null>(null);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
