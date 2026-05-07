@@ -367,6 +367,8 @@ export function TherapyRecommendation() {
   useEffect(() => {
     const pid = pseudonymId.trim();
     if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
+    const runId = autoSaveRunIdRef.current + 1;
+    autoSaveRunIdRef.current = runId;
 
     const payload = JSON.stringify(buildInputData({
       autoSavedDraft: true,
@@ -376,6 +378,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
+      if (runId !== autoSaveRunIdRef.current) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -394,6 +397,7 @@ export function TherapyRecommendation() {
             .from("therapy_sessions")
             .update(updateBody)
             .eq("id", autoSaveSessionIdRef.current);
+          if (runId !== autoSaveRunIdRef.current) return;
           if (!error) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
@@ -407,6 +411,7 @@ export function TherapyRecommendation() {
           .select("id")
           .single();
         if (error) throw error;
+        if (runId !== autoSaveRunIdRef.current) return;
         autoSaveSessionIdRef.current = data?.id ?? null;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
