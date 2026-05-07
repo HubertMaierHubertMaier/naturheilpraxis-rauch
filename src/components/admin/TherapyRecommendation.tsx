@@ -696,11 +696,11 @@ export function TherapyRecommendation() {
     setArztbericht(asText(d.arztbericht));
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
-    if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
-    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
-    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
-    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
+    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
+    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
+    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie as string[]);
+    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel as PinnedRemedy[]);
     setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
