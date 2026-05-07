@@ -961,6 +961,24 @@ export function TherapyRecommendation() {
               <Sparkles className="h-3.5 w-3.5" />
               Auto-ID
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const pid = pseudonymId.trim();
+                if (!pid) {
+                  toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine Pseudonym-ID eingeben.", variant: "destructive" });
+                  return;
+                }
+                loadedInputDraftForPidRef.current = "";
+                loadCloudDraft(pid);
+              }}
+              className="gap-1.5"
+              disabled={!pseudonymId.trim()}
+              title="Alle bisher gespeicherten Eingaben (Labor, Arztbericht, etc.) für diese Pseudonym-ID erneut zusammenführen und ins Formular laden"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Daten neu laden
+            </Button>
           </div>
           <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
