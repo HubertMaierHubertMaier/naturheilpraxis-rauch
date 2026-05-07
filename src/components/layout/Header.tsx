@@ -24,7 +24,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, loading, signOut, isAdmin } = useAuth();
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
@@ -49,6 +49,19 @@ export function Header() {
   const navItems = [
     ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
   ];
+
+  const quickAccessItems = isAdmin
+    ? [
+        { label: "Admin", href: withDevParam("/admin"), icon: Shield },
+        { label: "Wiki", href: withDevParam("/wissensdatenbank"), icon: BookOpen },
+        { label: "Bibliothek", href: withDevParam("/patienten-bibliothek"), icon: Library },
+      ]
+    : user
+      ? [
+          { label: "Dashboard", href: "/dashboard", icon: User },
+          { label: "Bibliothek", href: "/patienten-bibliothek", icon: Library },
+        ]
+      : [];
 
   const handleSignOut = async () => {
     await signOut();
@@ -225,6 +238,8 @@ export function Header() {
           )}
         </nav>
 
+        <div className="hidden" aria-hidden />
+
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 lg:hidden">
           <LanguageSwitcher />
@@ -236,6 +251,44 @@ export function Header() {
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
+        </div>
+      </div>
+
+      <div className="border-t border-border/50 bg-muted/60">
+        <div className="container flex min-h-12 flex-wrap items-center gap-2 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Schnellzugriff
+          </span>
+          {loading ? (
+            <span className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground">
+              Zugang wird geprüft …
+            </span>
+          ) : (
+            quickAccessItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button key={item.href} asChild variant="outline" size="sm" className="h-9 gap-2">
+                  <Link to={item.href}>
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                </Button>
+              );
+            })
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {user ? (
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="h-9 gap-2">
+                <LogOut className="h-4 w-4" />
+                {t("Abmelden", "Logout")}
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => navigate("/auth")} className="h-9 gap-2">
+                <LogIn className="h-4 w-4" />
+                {t("Anmelden", "Login")}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
