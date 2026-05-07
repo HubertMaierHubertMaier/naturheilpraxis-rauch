@@ -35,6 +35,40 @@ const extractWikiField = (content: string, labels: string[]) => {
 const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
 const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
 
+const textFromClinicalValue = (value: unknown): string => {
+  if (typeof value === "string") return value.trim() ? value : "";
+  if (Array.isArray(value)) return value.map(textFromClinicalValue).filter(Boolean).join("\n");
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["text", "content", "markdown", "value", "raw", "extractedText", "befund", "bericht", "labor", "laborKomplett", "arztbericht"]) {
+      const found = textFromClinicalValue(obj[key]);
+      if (found) return found;
+    }
+  }
+  return "";
+};
+
+const pickClinicalText = (source: Record<string, unknown>, keys: string[]) => {
+  for (const key of keys) {
+    const value = textFromClinicalValue(source[key]);
+    if (value) return value;
+  }
+  return "";
+};
+
+const normalizeTherapyInput = (input: unknown) => {
+  const d = input && typeof input === "object" ? { ...(input as Record<string, unknown>) } : {};
+  const laborText = pickClinicalText(d, ["laborKomplett", "labordaten", "laborDaten", "laborwerte", "laborWerte", "labor", "laborText", "extractedLaborText"]);
+  const arztText = pickClinicalText(d, ["arztbericht", "arztbrief", "arztBrief", "arztBefund", "doctorReport", "doctorText", "extractedDoctorText"]);
+  if (!textFromClinicalValue(d.laborKomplett) && laborText) d.laborKomplett = laborText;
+  if (!textFromClinicalValue(d.arztbericht) && arztText) d.arztbericht = arztText;
+  return d;
+};
+
+const asText = (value: unknown, fallback = "") => (typeof value === "string" ? value : fallback);
+
+const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
@@ -62,6 +96,13 @@ export function TherapyRecommendation() {
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<{
+    pid: string;
+    sessionCount: number;
+    laborLines: number;
+    arztChars: number;
+    loadedAt: string;
+  } | null>(null);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
@@ -112,6 +153,36 @@ export function TherapyRecommendation() {
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
   }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+
+  const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
+    const pid = pseudonymId.trim();
+    if (!pid) {
+      toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
+      return;
+    }
+    setAutoSaveStatus("saving");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
+      const saveBody = {
+        pseudonym_id: pid,
+        created_by: user.id,
+        eingabe_daten: payload,
+        empfehlung: "Automatische Eingabe-Sicherung – Labor/Arztbrief sofort gespeichert.",
+        notiz: `Sofort-Sicherung: ${label}`,
+      };
+      const { data, error } = await (supabase as any).from("therapy_sessions").insert(saveBody).select("id").single();
+      if (error) throw error;
+      autoSaveSessionIdRef.current = data?.id ?? autoSaveSessionIdRef.current;
+      setAutoSaveStatus("saved");
+      setHistoryRefresh((n) => n + 1);
+      toast({ title: "Sofort gespeichert", description: `${label} wurde für ${pid} in der Cloud gesichert.` });
+    } catch (error: any) {
+      setAutoSaveStatus("error");
+      toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
+    }
+  }, [pseudonymId, buildInputData, toast]);
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
@@ -167,29 +238,30 @@ export function TherapyRecommendation() {
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any) => {
-    if (!d || typeof d !== "object") return;
-    if (Array.isArray(d.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
-    if (typeof d.symptome === "string") setSymptome(d.symptome);
-    if (typeof d.erkrankung === "string") setErkrankung(d.erkrankung);
-    if (typeof d.alter === "string") setAlter(d.alter);
-    if (typeof d.geschlecht === "string") setGeschlecht(d.geschlecht);
-    if (typeof d.groesseCm === "string") setGroesseCm(d.groesseCm);
-    if (typeof d.gewichtKg === "string") setGewichtKg(d.gewichtKg);
-    if (typeof d.schwanger === "string") setSchwanger(d.schwanger);
-    if (typeof d.medikamente === "string") setMedikamente(d.medikamente);
-    if (typeof d.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
-    if (typeof d.budget === "string") setBudget(d.budget);
-    if (typeof d.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
-    if (typeof d.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
-    if (typeof d.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
-    if (typeof d.laborDatum === "string") setLaborDatum(d.laborDatum);
-    if (typeof d.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
-    if (typeof d.arztbericht === "string") setArztbericht(d.arztbericht);
-    if (typeof d.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
-    if (typeof d.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
-    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
-    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    const data = normalizeTherapyInput(d);
+    if (!Object.keys(data).length) return;
+    if (Array.isArray(data.pathogens) && data.pathogens.length) setPathogens(data.pathogens as PathogenEntry[]);
+    if (typeof data.symptome === "string") setSymptome(data.symptome);
+    if (typeof data.erkrankung === "string") setErkrankung(data.erkrankung);
+    if (typeof data.alter === "string") setAlter(data.alter);
+    if (typeof data.geschlecht === "string") setGeschlecht(data.geschlecht);
+    if (typeof data.groesseCm === "string") setGroesseCm(data.groesseCm);
+    if (typeof data.gewichtKg === "string") setGewichtKg(data.gewichtKg);
+    if (typeof data.schwanger === "string") setSchwanger(data.schwanger);
+    if (typeof data.medikamente === "string") setMedikamente(data.medikamente);
+    if (typeof data.bisherigeMittel === "string") setBisherigeMittel(data.bisherigeMittel);
+    if (typeof data.budget === "string") setBudget(data.budget);
+    if (typeof data.laborErhoeht === "string") setLaborErhoeht(data.laborErhoeht);
+    if (typeof data.laborErniedrigt === "string") setLaborErniedrigt(data.laborErniedrigt);
+    if (typeof data.laborKomplett === "string") setLaborKomplett(data.laborKomplett);
+    if (typeof data.laborDatum === "string") setLaborDatum(data.laborDatum);
+    if (typeof data.stuhlbefund === "string") setStuhlbefund(data.stuhlbefund);
+    if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
+    if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
+    if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
+    if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
+    if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
+    if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
   }, []);
 
   useEffect(() => {
@@ -235,7 +307,7 @@ export function TherapyRecommendation() {
       ];
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
-        const e = row?.eingabe_daten || {};
+        const e = normalizeTherapyInput(row?.eingabe_daten);
         for (const k of stringKeys) {
           if (!merged[k] && typeof e[k] === "string" && e[k].trim()) merged[k] = e[k];
         }
@@ -255,9 +327,16 @@ export function TherapyRecommendation() {
           const v = (merged as any)[k];
           return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
         }).length;
+        setClinicalLoadInfo({
+          pid,
+          sessionCount: data.length,
+          laborLines: countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n")),
+          arztChars: typeof merged.arztbericht === "string" ? merged.arztbericht.trim().length : 0,
+          loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+        });
         toast({
           title: "Eingaben wiederhergestellt",
-          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt (neueste: ${new Date(cloudTs).toLocaleString("de-DE")}).`,
+          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt · Labor: ${countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n"))} Zeilen · Arztbrief: ${typeof merged.arztbericht === "string" && merged.arztbericht.trim() ? "geladen" : "nicht vorhanden"}.`,
         });
       } else if (localData) {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
@@ -588,15 +667,15 @@ export function TherapyRecommendation() {
   };
 
   const handleLoadSession = (session: TherapySession) => {
-    const d = session.eingabe_daten || {};
+    const d = normalizeTherapyInput(session.eingabe_daten || {});
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
-    setSymptome(d.symptome || "");
-    setErkrankung(d.erkrankung || "");
-    setAlter(d.alter || "");
-    setGeschlecht(d.geschlecht || "");
-    setGroesseCm(d.groesseCm || "");
-    setGewichtKg(d.gewichtKg || "");
+    setSymptome(asText(d.symptome));
+    setErkrankung(asText(d.erkrankung));
+    setAlter(asText(d.alter));
+    setGeschlecht(asText(d.geschlecht));
+    setGroesseCm(asText(d.groesseCm));
+    setGewichtKg(asText(d.gewichtKg));
     // Hinweis, falls die alte Sitzung die neuen Felder noch nicht enthielt
     const missingNew = !d.geschlecht && !d.groesseCm && !d.gewichtKg;
     if (missingNew) {
@@ -605,26 +684,33 @@ export function TherapyRecommendation() {
         description: "Geschlecht, Größe und Gewicht waren in dieser Sitzung noch nicht erfasst. Bitte erneut eingeben – die nächste Generierung speichert sie dauerhaft mit.",
       });
     }
-    setSchwanger(d.schwanger || "nein");
-    setMedikamente(d.medikamente || "");
-    setBisherigeMittel(d.bisherigeMittel || "");
-    setBudget(d.budget || "");
-    setLaborErhoeht(d.laborErhoeht || "");
-    setLaborErniedrigt(d.laborErniedrigt || "");
-    setLaborKomplett(d.laborKomplett || "");
-    setLaborDatum(d.laborDatum || "");
-    setStuhlbefund(d.stuhlbefund || "");
-    setArztbericht(d.arztbericht || "");
-    setArztberichtDatum(d.arztberichtDatum || "");
-    setMetatronHeel(d.metatronHeel || "");
-    if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
-    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
-    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
-    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    setSchwanger(asText(d.schwanger, "nein"));
+    setMedikamente(asText(d.medikamente));
+    setBisherigeMittel(asText(d.bisherigeMittel));
+    setBudget(asText(d.budget));
+    setLaborErhoeht(asText(d.laborErhoeht));
+    setLaborErniedrigt(asText(d.laborErniedrigt));
+    setLaborKomplett(asText(d.laborKomplett));
+    setLaborDatum(asText(d.laborDatum));
+    setStuhlbefund(asText(d.stuhlbefund));
+    setArztbericht(asText(d.arztbericht));
+    setArztberichtDatum(asText(d.arztberichtDatum));
+    setMetatronHeel(asText(d.metatronHeel));
+    if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
+    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
+    else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
+    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie as string[]);
+    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel as PinnedRemedy[]);
     setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
+    setClinicalLoadInfo({
+      pid: session.pseudonym_id,
+      sessionCount: 1,
+      laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+      arztChars: typeof d.arztbericht === "string" ? d.arztbericht.trim().length : 0,
+      loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+    });
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
@@ -999,6 +1085,30 @@ export function TherapyRecommendation() {
               <span>Labor, Arztbericht und alle Eingaben werden laufend unter diesem Pseudonym gesichert.</span>
             </div>
           )}
+          {clinicalLoadInfo?.pid === pseudonymId.trim() && (
+            <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div>
+                  <span className="text-muted-foreground">Zusammengeführt:</span>{" "}
+                  <strong>{clinicalLoadInfo.sessionCount}</strong> Sitzung{clinicalLoadInfo.sessionCount !== 1 ? "en" : ""}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Labor geladen:</span>{" "}
+                  <strong>{clinicalLoadInfo.laborLines}</strong> Zeile{clinicalLoadInfo.laborLines !== 1 ? "n" : ""}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Arztbrief:</span>{" "}
+                  <strong>{clinicalLoadInfo.arztChars > 0 ? `${clinicalLoadInfo.arztChars} Zeichen` : "nicht gespeichert"}</strong>
+                  <span className="text-muted-foreground"> · {clinicalLoadInfo.loadedAt}</span>
+                </div>
+              </div>
+              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && (
+                <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
+                  Für diese Pseudonym-ID sind aktuell keine Labor- oder Arztbriefdaten in der Cloud gespeichert.
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1092,7 +1202,11 @@ export function TherapyRecommendation() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                <LabImageUpload onExtracted={(t) => setLaborKomplett((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+                <LabImageUpload onExtracted={(t) => {
+                  const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                  setLaborKomplett(next);
+                  saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                }} />
               </div>
               <Textarea
                 value={laborKomplett}
@@ -1127,7 +1241,11 @@ export function TherapyRecommendation() {
             <div>
               <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
                 <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
-                <LabImageUpload mode="doctor" onExtracted={(t) => setArztbericht((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+                <LabImageUpload mode="doctor" onExtracted={(t) => {
+                  const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
+                  setArztbericht(next);
+                  saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                }} />
               </div>
               <Textarea
                 value={arztbericht}
