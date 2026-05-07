@@ -1055,6 +1055,23 @@ export function TherapyRecommendation() {
               <span>Labor, Arztbericht und alle Eingaben werden laufend unter diesem Pseudonym gesichert.</span>
             </div>
           )}
+          {clinicalLoadInfo?.pid === pseudonymId.trim() && (
+            <div className="grid gap-2 sm:grid-cols-3 rounded-md border border-border bg-muted/30 p-2 text-xs">
+              <div>
+                <span className="text-muted-foreground">Zusammengeführt:</span>{" "}
+                <strong>{clinicalLoadInfo.sessionCount}</strong> Sitzung{clinicalLoadInfo.sessionCount !== 1 ? "en" : ""}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Labor geladen:</span>{" "}
+                <strong>{clinicalLoadInfo.laborLines}</strong> Zeile{clinicalLoadInfo.laborLines !== 1 ? "n" : ""}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Arztbrief:</span>{" "}
+                <strong>{clinicalLoadInfo.arztChars > 0 ? `${clinicalLoadInfo.arztChars} Zeichen` : "nicht gespeichert"}</strong>
+                <span className="text-muted-foreground"> · {clinicalLoadInfo.loadedAt}</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
