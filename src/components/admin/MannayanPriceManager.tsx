@@ -420,7 +420,7 @@ export default function MannayanPriceManager() {
                             <TableCell><Input value={editData.name || ""} onChange={e => setEditData(p => ({ ...p, name: e.target.value }))} /></TableCell>
                             <TableCell><Input value={editData.unit || ""} onChange={e => setEditData(p => ({ ...p, unit: e.target.value }))} /></TableCell>
                             <TableCell><Input value={editData.sku || ""} onChange={e => setEditData(p => ({ ...p, sku: e.target.value }))} /></TableCell>
-                            <TableCell><Input type="number" step="0.01" value={editData.price_eur || 0} onChange={e => setEditData(p => ({ ...p, price_eur: parseFloat(e.target.value) || 0 }))} className="text-right" /></TableCell>
+                            <TableCell><Input type="number" step="0.01" min="0" value={editData.price_eur ?? ""} placeholder="0,00" onChange={e => setEditData(p => ({ ...p, price_eur: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 }))} className="text-right" /></TableCell>
                             <TableCell><Switch checked={editData.is_active} onCheckedChange={v => setEditData(p => ({ ...p, is_active: v }))} /></TableCell>
                             <TableCell>
                               <Button size="icon" variant="ghost" onClick={() => updateMutation.mutate({ id: editingId, ...editData })}><Save className="h-4 w-4" /></Button>
