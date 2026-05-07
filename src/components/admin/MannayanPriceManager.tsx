@@ -384,7 +384,7 @@ export default function MannayanPriceManager() {
                 <CardContent className="pt-4 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2"><Label>Name *</Label><Input value={newItem.name || ""} onChange={e => setNewItem(p => ({ ...p, name: e.target.value }))} /></div>
-                    <div><Label>Preis (€) *</Label><Input type="number" step="0.01" value={newItem.price_eur || 0} onChange={e => setNewItem(p => ({ ...p, price_eur: parseFloat(e.target.value) || 0 }))} /></div>
+                    <div><Label>Preis (€) *</Label><Input type="number" step="0.01" min="0" value={newItem.price_eur ? newItem.price_eur : ""} placeholder="0,00" onChange={e => setNewItem(p => ({ ...p, price_eur: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 }))} /></div>
                     <div><Label>Einheit</Label><Input value={newItem.unit || ""} onChange={e => setNewItem(p => ({ ...p, unit: e.target.value }))} placeholder="z.B. 30 Kapseln" /></div>
                     <div><Label>Artikelnr.</Label><Input value={newItem.sku || ""} onChange={e => setNewItem(p => ({ ...p, sku: e.target.value }))} /></div>
                     <div><Label>Kategorie</Label><Input value={newItem.category || ""} onChange={e => setNewItem(p => ({ ...p, category: e.target.value }))} /></div>
