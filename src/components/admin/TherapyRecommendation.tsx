@@ -640,12 +640,12 @@ export function TherapyRecommendation() {
     const d = normalizeTherapyInput(session.eingabe_daten || {});
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
-    setSymptome(d.symptome || "");
-    setErkrankung(d.erkrankung || "");
-    setAlter(d.alter || "");
-    setGeschlecht(d.geschlecht || "");
-    setGroesseCm(d.groesseCm || "");
-    setGewichtKg(d.gewichtKg || "");
+    setSymptome(asText(d.symptome));
+    setErkrankung(asText(d.erkrankung));
+    setAlter(asText(d.alter));
+    setGeschlecht(asText(d.geschlecht));
+    setGroesseCm(asText(d.groesseCm));
+    setGewichtKg(asText(d.gewichtKg));
     // Hinweis, falls die alte Sitzung die neuen Felder noch nicht enthielt
     const missingNew = !d.geschlecht && !d.groesseCm && !d.gewichtKg;
     if (missingNew) {
@@ -654,18 +654,18 @@ export function TherapyRecommendation() {
         description: "Geschlecht, Größe und Gewicht waren in dieser Sitzung noch nicht erfasst. Bitte erneut eingeben – die nächste Generierung speichert sie dauerhaft mit.",
       });
     }
-    setSchwanger(d.schwanger || "nein");
-    setMedikamente(d.medikamente || "");
-    setBisherigeMittel(d.bisherigeMittel || "");
-    setBudget(d.budget || "");
-    setLaborErhoeht(d.laborErhoeht || "");
-    setLaborErniedrigt(d.laborErniedrigt || "");
-    setLaborKomplett(d.laborKomplett || "");
-    setLaborDatum(d.laborDatum || "");
-    setStuhlbefund(d.stuhlbefund || "");
-    setArztbericht(d.arztbericht || "");
-    setArztberichtDatum(d.arztberichtDatum || "");
-    setMetatronHeel(d.metatronHeel || "");
+    setSchwanger(asText(d.schwanger, "nein"));
+    setMedikamente(asText(d.medikamente));
+    setBisherigeMittel(asText(d.bisherigeMittel));
+    setBudget(asText(d.budget));
+    setLaborErhoeht(asText(d.laborErhoeht));
+    setLaborErniedrigt(asText(d.laborErniedrigt));
+    setLaborKomplett(asText(d.laborKomplett));
+    setLaborDatum(asText(d.laborDatum));
+    setStuhlbefund(asText(d.stuhlbefund));
+    setArztbericht(asText(d.arztbericht));
+    setArztberichtDatum(asText(d.arztberichtDatum));
+    setMetatronHeel(asText(d.metatronHeel));
     if (d.pathogens && Array.isArray(d.pathogens)) setPathogens(d.pathogens);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories);
