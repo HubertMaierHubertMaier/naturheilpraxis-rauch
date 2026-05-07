@@ -172,6 +172,10 @@ const AdminDashboard = () => {
               <PricingManager />
             </TabsContent>
 
+            <TabsContent value="mannayan">
+              <MannayanPriceManager />
+            </TabsContent>
+
             <TabsContent value="icd10">
               <Card>
                 <CardHeader>
