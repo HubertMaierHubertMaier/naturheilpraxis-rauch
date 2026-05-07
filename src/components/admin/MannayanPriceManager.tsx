@@ -393,13 +393,25 @@ export default function MannayanPriceManager() {
       <TabsContent value="recipe" className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Mannayan-Empfehlung erstellen</CardTitle>
-            <CardDescription>Produkte suchen, Mengen festlegen und als PDF/Word exportieren.</CardDescription>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="font-serif">
+                  Mannayan-Bestellung {orderNumber && <span className="text-primary">· {orderNumber}</span>}
+                </CardTitle>
+                <CardDescription>
+                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – wird beim Export oder Speichern fortlaufend nummeriert (P-JJJJ-XXXX)."}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={newOrder}><Plus className="h-4 w-4 mr-1" />Neue Bestellung</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowOrders(true)}><Archive className="h-4 w-4 mr-1" />Gespeicherte ({savedOrders.length})</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label>Patient (optional)</Label>
+                <Label>Patient / Kunde</Label>
                 <Input value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Name oder Pseudonym" />
               </div>
               <div>
