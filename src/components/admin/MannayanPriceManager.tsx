@@ -166,6 +166,75 @@ export default function MannayanPriceManager() {
   const formatPrice = (n: number) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   const today = new Date().toLocaleDateString("de-DE");
 
+  const { data: savedOrders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ["mannayan-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("mannayan_orders" as any).select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const saveOrder = async (): Promise<string | undefined> => {
+    if (cart.length === 0) { toast({ title: "Leere Bestellung", variant: "destructive" }); return; }
+    const itemsPayload = cart.map(c => ({
+      product_id: c.product.id, name: c.product.name, unit: c.product.unit,
+      sku: c.product.sku, price_eur: c.product.price_eur, quantity: c.quantity,
+    }));
+    const { data: userRes } = await supabase.auth.getUser();
+    const userId = userRes.user?.id;
+    if (!userId) { toast({ title: "Nicht angemeldet", variant: "destructive" }); return; }
+
+    if (orderId) {
+      const { error } = await supabase.from("mannayan_orders" as any)
+        .update({ patient_label: patientName, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+      toast({ title: `Bestellung ${orderNumber} aktualisiert` });
+      refetchOrders();
+      return orderNumber;
+    }
+    const { data: numData, error: numErr } = await supabase.rpc("next_mannayan_order_number" as any);
+    if (numErr) { toast({ title: "Nummern-Fehler", description: numErr.message, variant: "destructive" }); return; }
+    const newNum = numData as unknown as string;
+    const { data: inserted, error } = await supabase.from("mannayan_orders" as any).insert([{
+      order_number: newNum, patient_label: patientName, items: itemsPayload,
+      total_eur: total, notes: orderNotes, created_by: userId,
+    }]).select().single();
+    if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+    setOrderId((inserted as any).id);
+    setOrderNumber(newNum);
+    toast({ title: `Bestellung ${newNum} gespeichert` });
+    refetchOrders();
+    return newNum;
+  };
+
+  const loadOrder = (o: any) => {
+    setOrderId(o.id); setOrderNumber(o.order_number);
+    setPatientName(o.patient_label || ""); setOrderNotes(o.notes || "");
+    setCart((o.items || []).map((it: any) => ({
+      product: {
+        id: it.product_id || it.name, name: it.name, price_eur: Number(it.price_eur) || 0,
+        unit: it.unit || "", sku: it.sku || "", category: "", is_active: true,
+      },
+      quantity: it.quantity,
+    })));
+    setShowOrders(false);
+    toast({ title: `Bestellung ${o.order_number} geladen` });
+  };
+
+  const newOrder = () => { setCart([]); setOrderId(null); setOrderNumber(""); setPatientName(""); setOrderNotes(""); };
+
+  const deleteOrder = async (id: string, num: string) => {
+    if (!confirm(`Bestellung ${num} wirklich löschen?`)) return;
+    const { error } = await supabase.from("mannayan_orders" as any).delete().eq("id", id);
+    if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Bestellung gelöscht" });
+    if (orderId === id) newOrder();
+    refetchOrders();
+  };
+
+
   const exportPDF = () => {
     if (cart.length === 0) return;
     const doc = new jsPDF();
