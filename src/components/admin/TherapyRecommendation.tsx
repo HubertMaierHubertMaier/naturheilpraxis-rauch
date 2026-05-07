@@ -275,7 +275,7 @@ export function TherapyRecommendation() {
       ];
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
-        const e = row?.eingabe_daten || {};
+        const e = normalizeTherapyInput(row?.eingabe_daten);
         for (const k of stringKeys) {
           if (!merged[k] && typeof e[k] === "string" && e[k].trim()) merged[k] = e[k];
         }
@@ -295,9 +295,16 @@ export function TherapyRecommendation() {
           const v = (merged as any)[k];
           return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
         }).length;
+        setClinicalLoadInfo({
+          pid,
+          sessionCount: data.length,
+          laborLines: countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n")),
+          arztChars: typeof merged.arztbericht === "string" ? merged.arztbericht.trim().length : 0,
+          loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+        });
         toast({
           title: "Eingaben wiederhergestellt",
-          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt (neueste: ${new Date(cloudTs).toLocaleString("de-DE")}).`,
+          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt · Labor: ${countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n"))} Zeilen · Arztbrief: ${typeof merged.arztbericht === "string" && merged.arztbericht.trim() ? "geladen" : "nicht vorhanden"}.`,
         });
       } else if (localData) {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
