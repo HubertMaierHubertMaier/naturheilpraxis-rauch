@@ -479,13 +479,56 @@ export default function MannayanPriceManager() {
               </Table>
             </div>
 
+            <div>
+              <Label>Notiz (intern, wird mitgespeichert)</Label>
+              <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} rows={2} placeholder="Optionale interne Notiz zur Bestellung" />
+            </div>
+
             <div className="flex flex-wrap gap-2">
-              <Button onClick={exportPDF} disabled={cart.length === 0}><FileText className="h-4 w-4 mr-2" />PDF exportieren</Button>
-              <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx) exportieren</Button>
-              <Button variant="outline" onClick={() => setCart([])} disabled={cart.length === 0}>Liste leeren</Button>
+              <Button onClick={saveOrder} disabled={cart.length === 0}><Save className="h-4 w-4 mr-2" />{orderId ? "Aktualisieren" : "Bestellung speichern"}</Button>
+              <Button onClick={exportPDF} disabled={cart.length === 0} variant="secondary"><FileText className="h-4 w-4 mr-2" />PDF (mit Unterschrift)</Button>
+              <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx)</Button>
+              <Button variant="outline" onClick={newOrder} disabled={cart.length === 0 && !orderId}>Liste leeren</Button>
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={showOrders} onOpenChange={setShowOrders}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Gespeicherte Bestellungen</DialogTitle>
+              <DialogDescription>Klicken Sie auf eine Bestellung zum Laden.</DialogDescription>
+            </DialogHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nr.</TableHead>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead className="text-right">Summe</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {savedOrders.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
+                )}
+                {savedOrders.map((o: any) => (
+                  <TableRow key={o.id} className="cursor-pointer hover:bg-sage-50">
+                    <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
+                    <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
+                    <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
+                    <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       <TabsContent value="manage" className="space-y-4">
