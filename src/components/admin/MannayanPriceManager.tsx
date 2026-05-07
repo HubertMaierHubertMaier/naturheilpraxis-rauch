@@ -235,27 +235,35 @@ export default function MannayanPriceManager() {
   };
 
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (cart.length === 0) return;
+    const num = orderNumber || (await saveOrder()) || "—";
     const doc = new jsPDF();
-    let y = 20;
+    let y = 18;
     doc.setFontSize(16);
     doc.text("Naturheilpraxis Peter Rauch", 20, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.text("Mannayan-Produktempfehlung", 20, y);
     y += 6;
-    doc.text(`Datum: ${today}`, 20, y);
-    if (patientName) { y += 6; doc.text(`Patient: ${patientName}`, 20, y); }
+    doc.setFontSize(9);
+    doc.text("Friedrich-Deffner-Str. 19a · 86163 Augsburg · Tel. 0821-2621462", 20, y);
     y += 10;
+    doc.setFontSize(13);
+    doc.setFont(undefined, "bold");
+    doc.text(`Bestellung Mannayan – ${num}`, 20, y);
+    doc.setFont(undefined, "normal");
+    y += 7;
+    doc.setFontSize(10);
+    doc.text(`Augsburg, den ${today}`, 20, y);
+    if (patientName) { y += 6; doc.text(`Patient/Kunde: ${patientName}`, 20, y); }
+    y += 8;
+    doc.setFontSize(9);
+    doc.text("Hiermit bestelle ich die unten aufgeführten Produkte über die Naturheilpraxis Peter Rauch", 20, y);
+    y += 4; doc.text("zur Weiterleitung an die Firma Mannayan GmbH & Co. KG, Julbach.", 20, y);
+    y += 8;
+
     doc.setFontSize(11);
-    doc.text("Menge", 20, y);
-    doc.text("Produkt", 45, y);
-    doc.text("Einzelpreis", 130, y);
-    doc.text("Summe", 170, y);
-    y += 2;
-    doc.line(20, y, 195, y);
-    y += 6;
+    doc.text("Menge", 20, y); doc.text("Produkt", 45, y);
+    doc.text("Einzelpreis", 130, y); doc.text("Summe", 170, y);
+    y += 2; doc.line(20, y, 195, y); y += 6;
     doc.setFontSize(10);
     cart.forEach(c => {
       const lineSum = c.product.price_eur * c.quantity;
@@ -265,24 +273,32 @@ export default function MannayanPriceManager() {
       doc.text(formatPrice(c.product.price_eur), 130, y);
       doc.text(formatPrice(lineSum), 170, y);
       y += 6 * Math.max(1, nameLines.length);
-      if (y > 270) { doc.addPage(); y = 20; }
+      if (y > 250) { doc.addPage(); y = 20; }
     });
-    y += 4;
-    doc.line(20, y, 195, y);
-    y += 8;
-    doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
-    doc.text("Gesamtsumme:", 130, y);
-    doc.text(formatPrice(total), 170, y);
+    y += 4; doc.line(20, y, 195, y); y += 8;
+    doc.setFontSize(12); doc.setFont(undefined, "bold");
+    doc.text("Gesamtsumme:", 130, y); doc.text(formatPrice(total), 170, y);
     doc.setFont(undefined, "normal");
-    y += 12;
+    y += 14;
+    doc.setFontSize(9);
+    doc.text("Endkundenpreise inkl. MwSt. gemäß Mannayan-Preisliste, Änderungen vorbehalten.", 20, y);
+    y += 14;
+    if (y > 240) { doc.addPage(); y = 30; }
+    doc.setFontSize(10);
+    doc.text("Mit meiner Unterschrift bestätige ich die oben aufgeführte Bestellung verbindlich.", 20, y);
+    y += 20;
+    doc.line(20, y, 100, y);
+    doc.line(115, y, 195, y);
+    y += 5;
     doc.setFontSize(8);
-    doc.text("Endkundenpreise inkl. MwSt. Preise gemäß Mannayan-Preisliste, Änderungen vorbehalten.", 20, y);
-    doc.save(`Mannayan-Empfehlung-${today.replace(/\./g, "-")}.pdf`);
+    doc.text("Ort, Datum", 20, y);
+    doc.text("Unterschrift Patient/Kunde", 115, y);
+    doc.save(`Mannayan-Bestellung-${num}.pdf`);
   };
 
   const exportDocx = async () => {
     if (cart.length === 0) return;
+    const num = orderNumber || (await saveOrder()) || "—";
     const cellBorder = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
     const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
     const headerCell = (text: string, width: number) => new DocxCell({
@@ -293,25 +309,32 @@ export default function MannayanPriceManager() {
       borders, width: { size: width, type: WidthType.DXA },
       children: [new Paragraph({ alignment: align, children: [new TextRun(text)] })],
     });
+    const noBorderCell = (text: string, width: number, bold = false) => new DocxCell({
+      borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+      width: { size: width, type: WidthType.DXA },
+      children: [new Paragraph({ children: [new TextRun({ text, bold })] })],
+    });
 
     const doc = new Document({
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
         children: [
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "Naturheilpraxis Peter Rauch", bold: true, size: 32 })] }),
-          new Paragraph({ children: [new TextRun({ text: "Mannayan-Produktempfehlung", size: 24 })] }),
-          new Paragraph({ children: [new TextRun(`Datum: ${today}`)] }),
-          ...(patientName ? [new Paragraph({ children: [new TextRun(`Patient: ${patientName}`)] })] : []),
+          new Paragraph({ children: [new TextRun({ text: "Friedrich-Deffner-Str. 19a · 86163 Augsburg · Tel. 0821-2621462", size: 18 })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun({ text: `Bestellung Mannayan – ${num}`, bold: true, size: 28 })] }),
+          new Paragraph({ children: [new TextRun(`Augsburg, den ${today}`)] }),
+          ...(patientName ? [new Paragraph({ children: [new TextRun(`Patient/Kunde: ${patientName}`)] })] : []),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("Hiermit bestelle ich die unten aufgeführten Produkte über die Naturheilpraxis Peter Rauch zur Weiterleitung an die Firma Mannayan GmbH & Co. KG, Julbach.")] }),
           new Paragraph({ children: [new TextRun("")] }),
           new DocxTable({
             width: { size: 9026, type: WidthType.DXA },
             columnWidths: [1000, 4500, 1763, 1763],
             rows: [
               new DocxRow({ children: [
-                headerCell("Menge", 1000),
-                headerCell("Produkt", 4500),
-                headerCell("Einzelpreis", 1763),
-                headerCell("Summe", 1763),
+                headerCell("Menge", 1000), headerCell("Produkt", 4500),
+                headerCell("Einzelpreis", 1763), headerCell("Summe", 1763),
               ]}),
               ...cart.map(c => new DocxRow({ children: [
                 dataCell(String(c.quantity), 1000),
@@ -330,13 +353,35 @@ export default function MannayanPriceManager() {
             ],
           }),
           new Paragraph({ children: [new TextRun("")] }),
-          new Paragraph({ children: [new TextRun({ text: "Endkundenpreise inkl. MwSt. Preise gemäß Mannayan-Preisliste, Änderungen vorbehalten.", size: 16, italics: true })] }),
+          new Paragraph({ children: [new TextRun({ text: "Endkundenpreise inkl. MwSt. gemäß Mannayan-Preisliste, Änderungen vorbehalten.", size: 16, italics: true })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("Mit meiner Unterschrift bestätige ich die oben aufgeführte Bestellung verbindlich.")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new DocxTable({
+            width: { size: 9026, type: WidthType.DXA },
+            columnWidths: [4500, 526, 4000],
+            rows: [
+              new DocxRow({ children: [
+                noBorderCell("", 4500),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 526, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun("")] })] }),
+                noBorderCell("", 4000),
+              ]}),
+              new DocxRow({ children: [
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 4500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Ort, Datum", size: 16 })] })] }),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 526, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun("")] })] }),
+                new DocxCell({ borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } }, width: { size: 4000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Unterschrift Patient/Kunde", size: 16 })] })] }),
+              ]}),
+            ],
+          }),
         ],
       }],
     });
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `Mannayan-Empfehlung-${today.replace(/\./g, "-")}.docx`);
+    saveAs(blob, `Mannayan-Bestellung-${num}.docx`);
   };
+
 
   return (
     <Tabs defaultValue="recipe" className="space-y-4">
