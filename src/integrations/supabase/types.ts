@@ -194,6 +194,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mannayan_products: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price_eur: number
+          sku: string | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price_eur?: number
+          sku?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_eur?: number
+          sku?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patient_resources: {
         Row: {
           category: string
