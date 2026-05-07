@@ -1195,7 +1195,11 @@ export function TherapyRecommendation() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                <LabImageUpload onExtracted={(t) => setLaborKomplett((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+                <LabImageUpload onExtracted={(t) => {
+                  const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                  setLaborKomplett(next);
+                  saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                }} />
               </div>
               <Textarea
                 value={laborKomplett}
@@ -1230,7 +1234,11 @@ export function TherapyRecommendation() {
             <div>
               <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
                 <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
-                <LabImageUpload mode="doctor" onExtracted={(t) => setArztbericht((prev) => prev ? prev.trim() + "\n\n" + t : t)} />
+                <LabImageUpload mode="doctor" onExtracted={(t) => {
+                  const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
+                  setArztbericht(next);
+                  saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                }} />
               </div>
               <Textarea
                 value={arztbericht}
