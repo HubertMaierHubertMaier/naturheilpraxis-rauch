@@ -214,7 +214,7 @@ export default function MannayanPriceManager() {
       borders, width: { size: width, type: WidthType.DXA },
       children: [new Paragraph({ children: [new TextRun({ text, bold: true })] })],
     });
-    const dataCell = (text: string, width: number, align?: AlignmentType) => new DocxCell({
+    const dataCell = (text: string, width: number, align?: typeof AlignmentType[keyof typeof AlignmentType]) => new DocxCell({
       borders, width: { size: width, type: WidthType.DXA },
       children: [new Paragraph({ alignment: align, children: [new TextRun(text)] })],
     });
