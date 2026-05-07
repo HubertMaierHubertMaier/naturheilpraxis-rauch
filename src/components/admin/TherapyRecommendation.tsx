@@ -65,6 +65,8 @@ const normalizeTherapyInput = (input: unknown) => {
   return d;
 };
 
+const asText = (value: unknown, fallback = "") => (typeof value === "string" ? value : fallback);
+
 const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
 
 export function TherapyRecommendation() {
