@@ -87,7 +87,7 @@ const AdminDashboard = () => {
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8 max-w-5xl">
+            <TabsList className="grid w-full grid-cols-9 max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -103,6 +103,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <Euro className="h-4 w-4" />
                 Preise
+              </TabsTrigger>
+              <TabsTrigger value="mannayan" className="flex items-center gap-2">
+                <Pill className="h-4 w-4" />
+                Mannayan
               </TabsTrigger>
               <TabsTrigger value="library" className="flex items-center gap-2">
                 <Library className="h-4 w-4" />
