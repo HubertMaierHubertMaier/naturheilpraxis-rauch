@@ -206,29 +206,30 @@ export function TherapyRecommendation() {
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any) => {
-    if (!d || typeof d !== "object") return;
-    if (Array.isArray(d.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
-    if (typeof d.symptome === "string") setSymptome(d.symptome);
-    if (typeof d.erkrankung === "string") setErkrankung(d.erkrankung);
-    if (typeof d.alter === "string") setAlter(d.alter);
-    if (typeof d.geschlecht === "string") setGeschlecht(d.geschlecht);
-    if (typeof d.groesseCm === "string") setGroesseCm(d.groesseCm);
-    if (typeof d.gewichtKg === "string") setGewichtKg(d.gewichtKg);
-    if (typeof d.schwanger === "string") setSchwanger(d.schwanger);
-    if (typeof d.medikamente === "string") setMedikamente(d.medikamente);
-    if (typeof d.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
-    if (typeof d.budget === "string") setBudget(d.budget);
-    if (typeof d.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
-    if (typeof d.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
-    if (typeof d.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
-    if (typeof d.laborDatum === "string") setLaborDatum(d.laborDatum);
-    if (typeof d.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
-    if (typeof d.arztbericht === "string") setArztbericht(d.arztbericht);
-    if (typeof d.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
-    if (typeof d.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
-    if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories);
-    if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-    if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
+    const data = normalizeTherapyInput(d);
+    if (!Object.keys(data).length) return;
+    if (Array.isArray(data.pathogens) && data.pathogens.length) setPathogens(data.pathogens as PathogenEntry[]);
+    if (typeof data.symptome === "string") setSymptome(data.symptome);
+    if (typeof data.erkrankung === "string") setErkrankung(data.erkrankung);
+    if (typeof data.alter === "string") setAlter(data.alter);
+    if (typeof data.geschlecht === "string") setGeschlecht(data.geschlecht);
+    if (typeof data.groesseCm === "string") setGroesseCm(data.groesseCm);
+    if (typeof data.gewichtKg === "string") setGewichtKg(data.gewichtKg);
+    if (typeof data.schwanger === "string") setSchwanger(data.schwanger);
+    if (typeof data.medikamente === "string") setMedikamente(data.medikamente);
+    if (typeof data.bisherigeMittel === "string") setBisherigeMittel(data.bisherigeMittel);
+    if (typeof data.budget === "string") setBudget(data.budget);
+    if (typeof data.laborErhoeht === "string") setLaborErhoeht(data.laborErhoeht);
+    if (typeof data.laborErniedrigt === "string") setLaborErniedrigt(data.laborErniedrigt);
+    if (typeof data.laborKomplett === "string") setLaborKomplett(data.laborKomplett);
+    if (typeof data.laborDatum === "string") setLaborDatum(data.laborDatum);
+    if (typeof data.stuhlbefund === "string") setStuhlbefund(data.stuhlbefund);
+    if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
+    if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
+    if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
+    if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
+    if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
+    if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
   }, []);
 
   useEffect(() => {
