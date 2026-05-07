@@ -154,6 +154,36 @@ export function TherapyRecommendation() {
     ...extra,
   }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
+  const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
+    const pid = pseudonymId.trim();
+    if (!pid) {
+      toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
+      return;
+    }
+    setAutoSaveStatus("saving");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Nicht angemeldet");
+      const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
+      const saveBody = {
+        pseudonym_id: pid,
+        created_by: user.id,
+        eingabe_daten: payload,
+        empfehlung: "Automatische Eingabe-Sicherung – Labor/Arztbrief sofort gespeichert.",
+        notiz: `Sofort-Sicherung: ${label}`,
+      };
+      const { data, error } = await (supabase as any).from("therapy_sessions").insert(saveBody).select("id").single();
+      if (error) throw error;
+      autoSaveSessionIdRef.current = data?.id ?? autoSaveSessionIdRef.current;
+      setAutoSaveStatus("saved");
+      setHistoryRefresh((n) => n + 1);
+      toast({ title: "Sofort gespeichert", description: `${label} wurde für ${pid} in der Cloud gesichert.` });
+    } catch (error: any) {
+      setAutoSaveStatus("error");
+      toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
+    }
+  }, [pseudonymId, buildInputData, toast]);
+
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
   const DRAFT_KEY = "therapy.draftInputs.v1";
