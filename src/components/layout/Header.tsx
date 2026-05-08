@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library, LayoutGrid, ChevronDown } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
