@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library, LayoutGrid, ChevronDown } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, ShieldCheck, Library, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -107,6 +107,20 @@ export function Header() {
           
           {/* Infothek Dropdown */}
           <InfothekDropdown />
+
+          {/* Anamnesebogen */}
+          <Link
+            to="/anamnesebogen"
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+              location.pathname === "/anamnesebogen"
+                ? "bg-sage-100 text-primary"
+                : "text-muted-foreground"
+            )}
+          >
+            <ClipboardList className="h-4 w-4" />
+            {t("Anamnesebogen", "Anamnesis Form")}
+          </Link>
           
           <LanguageSwitcher className="ml-2" />
 
@@ -314,6 +328,21 @@ export function Header() {
             
             {/* Infothek Dropdown Mobile */}
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
+
+            {/* Anamnesebogen Mobile */}
+            <Link
+              to="/anamnesebogen"
+              onClick={() => setIsMenuOpen(false)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                location.pathname === "/anamnesebogen"
+                  ? "bg-sage-100 text-primary"
+                  : "text-muted-foreground hover:bg-sage-50 hover:text-primary"
+              )}
+            >
+              <ClipboardList className="h-4 w-4" />
+              {t("Anamnesebogen", "Anamnesis Form")}
+            </Link>
             
             {/* Dev Mode Activate Button Mobile */}
             {showDevButton && (
