@@ -328,6 +328,21 @@ export function Header() {
             
             {/* Infothek Dropdown Mobile */}
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
+
+            {/* Anamnesebogen Mobile */}
+            <Link
+              to="/anamnesebogen"
+              onClick={() => setIsMenuOpen(false)}
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                location.pathname === "/anamnesebogen"
+                  ? "bg-sage-100 text-primary"
+                  : "text-muted-foreground hover:bg-sage-50 hover:text-primary"
+              )}
+            >
+              <ClipboardList className="h-4 w-4" />
+              {t("Anamnesebogen", "Anamnesis Form")}
+            </Link>
             
             {/* Dev Mode Activate Button Mobile */}
             {showDevButton && (
