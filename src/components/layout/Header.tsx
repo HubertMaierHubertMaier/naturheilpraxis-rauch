@@ -107,6 +107,20 @@ export function Header() {
           
           {/* Infothek Dropdown */}
           <InfothekDropdown />
+
+          {/* Anamnesebogen */}
+          <Link
+            to="/anamnesebogen"
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+              location.pathname === "/anamnesebogen"
+                ? "bg-sage-100 text-primary"
+                : "text-muted-foreground"
+            )}
+          >
+            <ClipboardList className="h-4 w-4" />
+            {t("Anamnesebogen", "Anamnesis Form")}
+          </Link>
           
           <LanguageSwitcher className="ml-2" />
 
