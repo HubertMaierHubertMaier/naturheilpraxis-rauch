@@ -933,7 +933,16 @@ pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
 pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
 
 pdf.h1("XXIV. IAA-Fragebogen")
-pdf.note("Individuelle Austestung und Analyse (IAA). Bitte zutreffende Fragen ankreuzen; Bemerkungen/Intensität optional ergänzen.")
+pdf.note(
+    "Warum noch ein zusätzlicher Symptombogen? Der IAA-Fragebogen (Individuelle Austestung und Analyse) ist speziell auf das "
+    "Trikombin-Behandlungsgerät zugeschnitten. Er fragt einzelne Symptome auf einer Intensitätsskala ab und ergänzt die "
+    "klassische Anamnese um genau die Informationen, die für die individuelle Geräteeinstellung benötigt werden – also keine "
+    "Doppelung, sondern eine gezielte Vertiefung."
+)
+pdf.note(
+    "Bitte nur zutreffende Fragen ankreuzen. In der Spalte 'Details / Bemerkung' können Sie optional Intensität (1 sehr leicht – "
+    "6 sehr stark) und Auslöser ergänzen. Nicht zutreffende Fragen bitte leer lassen."
+)
 iaa_categories = parse_iaa_categories()
 for cat in iaa_categories:
     pdf.h2(cat["title"])
