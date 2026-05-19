@@ -496,3 +496,30 @@ pdf.note(
     "ausgefüllten Anamnesebogen Bestandteil Ihrer Behandlungsakte."
 )
 pdf.save()
+
+
+# ---------------------------------------------------------------------------
+# PDF 3: KOMBI-PAKET  (Anamnese + Vertrag + Datenschutz in einer Datei)
+# ---------------------------------------------------------------------------
+try:
+    from pypdf import PdfWriter
+
+    parts = [
+        OUT_DIR / "anamnesebogen-blanko.pdf",
+        OUT_DIR / "patientenvertrag-blanko.pdf",
+        OUT_DIR / "datenschutz-einwilligung-blanko.pdf",
+    ]
+    missing = [p for p in parts if not p.exists()]
+    if missing:
+        print(f"WARN: fehlende Quellen, Kombi-PDF übersprungen: {missing}")
+    else:
+        writer = PdfWriter()
+        for p in parts:
+            # append() übernimmt Seiten inkl. AcroForm-Feldern
+            writer.append(str(p))
+        combo_path = OUT_DIR / "patientenpaket-blanko.pdf"
+        with open(combo_path, "wb") as f:
+            writer.write(f)
+        print(f"Erstellt: {combo_path}")
+except ImportError:
+    print("Hinweis: pypdf nicht installiert – Kombi-PDF nicht erstellt.")
