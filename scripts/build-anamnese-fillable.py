@@ -13,7 +13,9 @@ from typing import Iterable
 
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from pypdf import PdfReader
 
@@ -31,6 +33,18 @@ INK = HexColor("#222222")
 MUTED = HexColor("#666666")
 BORDER = HexColor("#8a8a8a")
 PALE = HexColor("#faf8f4")
+
+FONT_DIR = Path("/nix/store/0hdgmcjy7q8zn7h3amz8nf96l9qh7wv0-liberation-fonts-2.1.5/share/fonts/truetype")
+try:
+    pdfmetrics.registerFont(TTFont("PraxisSans", str(FONT_DIR / "LiberationSans-Regular.ttf")))
+    pdfmetrics.registerFont(TTFont("PraxisSans-Bold", str(FONT_DIR / "LiberationSans-Bold.ttf")))
+    pdfmetrics.registerFont(TTFont("PraxisSans-Italic", str(FONT_DIR / "LiberationSans-Italic.ttf")))
+except Exception:
+    pass
+
+FONT = "PraxisSans"
+BOLD = "PraxisSans-Bold"
+ITALIC = "PraxisSans-Italic"
 
 
 def sanitize_name(value: str) -> str:
@@ -76,13 +90,13 @@ class PdfForm:
         self.c.setFillColor(SAGE)
         self.c.rect(0, H - 58, W, 58, fill=1, stroke=0)
         self.c.setFillColor(white)
-        self.c.setFont("Helvetica-Bold", 13)
+        self.c.setFont(BOLD, 13)
         self.c.drawString(M, H - 25, "Naturheilpraxis Peter Rauch")
-        self.c.setFont("Helvetica", 8.5)
+        self.c.setFont(FONT, 8.5)
         self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · info@rauch-heilpraktiker.de")
-        self.c.setFont("Helvetica-Bold", 10.5)
+        self.c.setFont(BOLD, 10.5)
         self.c.drawRightString(W - M, H - 25, "ANAMNESEBOGEN")
-        self.c.setFont("Helvetica", 8)
+        self.c.setFont(FONT, 8)
         self.c.drawRightString(W - M, H - 41, "vollständig · ausfüllbares PDF")
         self.y = H - 76
 
