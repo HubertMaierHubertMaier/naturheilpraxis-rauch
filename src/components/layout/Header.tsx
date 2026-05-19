@@ -349,7 +349,7 @@ export function Header() {
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
 
             {/* Anamnesebogen Mobile */}
-            {showAnamnese && (
+            {showAnamnese && (user || isAdmin ? (
               <Link
                 to="/anamnesebogen"
                 onClick={() => setIsMenuOpen(false)}
@@ -366,7 +366,18 @@ export function Header() {
                   <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
                 )}
               </Link>
-            )}
+            ) : (
+              <a
+                href="/anamnesebogen-blanko.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary"
+              >
+                <ClipboardList className="h-4 w-4" />
+                {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
+              </a>
+            ))}
             
             {/* Dev Mode Activate Button Mobile */}
             {showDevButton && (
