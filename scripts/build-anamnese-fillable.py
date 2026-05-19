@@ -258,11 +258,22 @@ class PdfForm:
             parts = [v.strip() for v in re.split(r"[,/;]", rhs) if v.strip()]
             if len(parts) >= 2:
                 return m.group(1).strip(), parts
-        # Slash-Muster (auch mit Leerzeichen): "Kopfschmerzen / Migräne / Spannung / Cluster"
-        if re.search(r"\s*/\s*", label) and label.count("/") >= 1:
-            parts = [p.strip() for p in re.split(r"\s*/\s*", label) if p.strip()]
-            if len(parts) >= 2:
-                return parts[0], parts[1:] if len(parts[0].split()) > 1 else parts
+        # Slash-Muster: "X a/b/c" (kompakt, ohne Spaces)
+        m = re.match(r"^(.+?)\s+([A-Za-zÄÖÜäöüß0-9.\-]+(?:/[A-Za-zÄÖÜäöüß0-9.\-]+){1,})$", label)
+        if m:
+            parts = [p.strip() for p in m.group(2).split("/") if p.strip()]
+            return m.group(1).strip(), parts
+        # Slash mit Spaces: "Sinusitis / Nebenhöhlenentzündung" — splitten,
+        # außer es enthält Platzhalterwörter (Stadium/Rasse/Anzahl/...)
+        PLACEHOLDER = {"stadium", "rasse", "kontakt", "anzahl", "datum", "grund",
+                       "dosis", "lokalisation", "farbe", "typ", "art", "symptome",
+                       "menge", "dauer", "psa", "bemerkung", "frequenz"}
+        if " / " in label:
+            parts = [p.strip() for p in label.split(" / ") if p.strip()]
+            if len(parts) >= 2 and not any(
+                any(w.lower() in PLACEHOLDER for w in re.split(r"\s+", p)) for p in parts
+            ):
+                return parts[0], parts
         return label, []
 
     def condition_table(self, prefix: str, rows: Iterable[tuple[str, str]], with_since=True, with_details=True):
