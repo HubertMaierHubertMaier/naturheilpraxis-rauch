@@ -258,11 +258,11 @@ class PdfForm:
             parts = [v.strip() for v in re.split(r"[,/;]", rhs) if v.strip()]
             if len(parts) >= 2:
                 return m.group(1).strip(), parts
-        # Slash-Muster nur am Ende: "Schulter rechts/links/beidseitig"
-        m = re.match(r"^(.+?)\s+([A-Za-zÄÖÜäöüß0-9.\-]+(?:/[A-Za-zÄÖÜäöüß0-9.\-]+){1,})$", label)
-        if m:
-            parts = [p.strip() for p in m.group(2).split("/") if p.strip()]
-            return m.group(1).strip(), parts
+        # Slash-Muster (auch mit Leerzeichen): "Kopfschmerzen / Migräne / Spannung / Cluster"
+        if re.search(r"\s*/\s*", label) and label.count("/") >= 1:
+            parts = [p.strip() for p in re.split(r"\s*/\s*", label) if p.strip()]
+            if len(parts) >= 2:
+                return parts[0], parts[1:] if len(parts[0].split()) > 1 else parts
         return label, []
 
     def condition_table(self, prefix: str, rows: Iterable[tuple[str, str]], with_since=True, with_details=True):
