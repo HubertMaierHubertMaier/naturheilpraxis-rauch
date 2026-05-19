@@ -18,6 +18,7 @@ import { translations } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
+import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,6 +29,8 @@ export function Header() {
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
+  const { enabled: anamneseEnabled } = useAnamneseEnabled();
+  const showAnamnese = anamneseEnabled || isAdmin;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
@@ -109,18 +112,23 @@ export function Header() {
           <InfothekDropdown />
 
           {/* Anamnesebogen */}
-          <Link
-            to="/anamnesebogen"
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
-              location.pathname === "/anamnesebogen"
-                ? "bg-sage-100 text-primary"
-                : "text-muted-foreground"
-            )}
-          >
-            <ClipboardList className="h-4 w-4" />
-            {t("Anamnesebogen", "Anamnesis Form")}
-          </Link>
+          {showAnamnese && (
+            <Link
+              to="/anamnesebogen"
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-sage-100 hover:text-primary",
+                location.pathname === "/anamnesebogen"
+                  ? "bg-sage-100 text-primary"
+                  : "text-muted-foreground"
+              )}
+            >
+              <ClipboardList className="h-4 w-4" />
+              {t("Anamnesebogen", "Anamnesis Form")}
+              {!anamneseEnabled && isAdmin && (
+                <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
+              )}
+            </Link>
+          )}
           
           <LanguageSwitcher className="ml-2" />
 
@@ -330,19 +338,24 @@ export function Header() {
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
 
             {/* Anamnesebogen Mobile */}
-            <Link
-              to="/anamnesebogen"
-              onClick={() => setIsMenuOpen(false)}
-              className={cn(
-                "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                location.pathname === "/anamnesebogen"
-                  ? "bg-sage-100 text-primary"
-                  : "text-muted-foreground hover:bg-sage-50 hover:text-primary"
-              )}
-            >
-              <ClipboardList className="h-4 w-4" />
-              {t("Anamnesebogen", "Anamnesis Form")}
-            </Link>
+            {showAnamnese && (
+              <Link
+                to="/anamnesebogen"
+                onClick={() => setIsMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                  location.pathname === "/anamnesebogen"
+                    ? "bg-sage-100 text-primary"
+                    : "text-muted-foreground hover:bg-sage-50 hover:text-primary"
+                )}
+              >
+                <ClipboardList className="h-4 w-4" />
+                {t("Anamnesebogen", "Anamnesis Form")}
+                {!anamneseEnabled && isAdmin && (
+                  <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
+                )}
+              </Link>
+            )}
             
             {/* Dev Mode Activate Button Mobile */}
             {showDevButton && (
