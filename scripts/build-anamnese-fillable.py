@@ -319,13 +319,14 @@ class PdfForm:
         for key, label in rows:
             main_label, variants = self._parse_variants(label)
             if variants:
-                # Sub-Header (nur Label, ohne Felder)
-                self.ensure(14)
+                # Sub-Header + alle Varianten zusammen: kein neues Symptom am Seitenende
+                needed = 14 + len(variants) * 18
+                if self.y - needed < M + 34:
+                    self.new_page()
                 self.c.setFillColor(SAGE_DARK)
                 self.c.setFont(BOLD, 7.8)
                 self.c.drawString(M + 3, self.y - 9, main_label)
                 self.y -= 12
-                # Jede Variante eigene Zeile mit Ja / Jahr / Details
                 for v in variants:
                     draw_row(f"{key}_{sanitize_name(v)}", v, indent=10)
             else:
