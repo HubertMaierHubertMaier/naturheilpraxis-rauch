@@ -319,13 +319,14 @@ class PdfForm:
         for key, label in rows:
             main_label, variants = self._parse_variants(label)
             if variants:
-                # Sub-Header (nur Label, ohne Felder)
-                self.ensure(14)
+                # Sub-Header + alle Varianten zusammen: kein neues Symptom am Seitenende
+                needed = 14 + len(variants) * 18
+                if self.y - needed < M + 34:
+                    self.new_page()
                 self.c.setFillColor(SAGE_DARK)
                 self.c.setFont(BOLD, 7.8)
                 self.c.drawString(M + 3, self.y - 9, main_label)
                 self.y -= 12
-                # Jede Variante eigene Zeile mit Ja / Jahr / Details
                 for v in variants:
                     draw_row(f"{key}_{sanitize_name(v)}", v, indent=10)
             else:
@@ -383,16 +384,16 @@ family_rows = [
 ]
 
 kopf_rows = [
-    ("augenerkrankung", "Augenerkrankung inkl. Netzhaut, Katarakt, Glaukom, Makula, Entzündungen"),
+    ("augenerkrankung", "Augenerkrankung inkl. Netzhaut, Katarakt (Grauer Star), Glaukom (Grüner Star), Makuladegeneration, Entzündungen"),
     ("schwerhoerig", "Schwerhörigkeit links/rechts/beidseitig"),
-    ("ohrenerkrankung", "Ohrenerkrankung inkl. Tinnitus, Hörsturz, Mittelohr, Morbus Menière"),
-    ("sinusitis", "Sinusitis / Nebenhöhlenentzündung"),
-    ("mandelentzuendung", "Mandelentzündung"),
-    ("kopfschmerzen", "Kopfschmerzen / Migräne / Spannung / Cluster"),
-    ("schwindel", "Schwindel: Lagerungs-, Dreh-, Schwankschwindel"),
-    ("geruchsminderung", "Geruchsminderung / Geruchsverlust"),
-    ("geschmacksminderung", "Geschmacksminderung"),
-    ("neuralgien", "Neuralgien: Trigeminus, Glossopharyngeus, Occipitalis, Post-Zoster"),
+    ("ohrenerkrankung", "Ohrenerkrankung inkl. Tinnitus (Ohrgeräusche), Hörsturz, Mittelohrentzündung, Morbus Menière"),
+    ("sinusitis", "Sinusitis (Nebenhöhlenentzündung)"),
+    ("mandelentzuendung", "Mandelentzündung (Tonsillitis)"),
+    ("kopfschmerzen", "Kopfschmerzen / Migräne / Spannungskopfschmerz / Cluster-Kopfschmerz"),
+    ("schwindel", "Schwindel: Lagerungsschwindel, Drehschwindel, Schwankschwindel"),
+    ("geruchsminderung", "Geruchsminderung / Geruchsverlust (Anosmie/Hyposmie)"),
+    ("geschmacksminderung", "Geschmacksminderung (Hypogeusie)"),
+    ("neuralgien", "Neuralgien (Nervenschmerzen): Trigeminus, Glossopharyngeus, Occipitalis, Post-Zoster (nach Gürtelrose)"),
 ]
 
 sleep_rows = [
@@ -480,16 +481,27 @@ women_rows = [
 ]
 
 men_rows = [
-    ("prostata", "Prostata: BPH, Prostatitis, Karzinom, PSA"), ("hoden", "Hoden: Entzündung, Torsion, Krebs, Varikozele, Hydrozele"),
-    ("nebenhoden", "Nebenhoden: Epididymitis, Zyste"), ("erektionsstoerung", "Erektionsstörung"),
+    ("prostata", "Prostata: BPH (gutartige Prostatavergrößerung), Prostatitis (Prostataentzündung), Karzinom (Prostatakrebs), PSA-Wert erhöht"),
+    ("hoden", "Hoden: Entzündung (Orchitis), Torsion (Hodenverdrehung), Krebs (Hodenkrebs), Varikozele (Krampfader am Hoden), Hydrozele (Wasserbruch)"),
+    ("nebenhoden", "Nebenhoden: Epididymitis (Nebenhodenentzündung), Zyste (Spermatozele)"),
+    ("erektionsstoerung", "Erektionsstörung"),
 ]
 
 surgery_rows = [
     ("unfall", "Unfall"), ("knochenbruch", "Knochenbruch"), ("kopfverletzung", "Kopfverletzung"),
     ("krankenhausaufenthalt", "Krankenhausaufenthalt"), ("kuraufenthalt", "Kuraufenthalt"),
-    ("bluttransfusion", "Bluttransfusion"), ("chemotherapie", "Chemotherapie"),
-    ("strahlentherapie", "Strahlentherapie"), ("szintigraphie", "Szintigraphie"),
-    ("petCt", "PET-CT"), ("radioiodtherapie", "Radioiodtherapie / Datum / Grund / Dosis"),
+    ("bluttransfusion", "Bluttransfusion"),
+]
+
+# Radiologische / nuklearmedizinische / onkologische Verfahren – eigene Tabelle mit Abstand zum Termin
+radio_procedures = [
+    ("chemotherapie", "Chemotherapie"),
+    ("strahlentherapie", "Strahlentherapie (Radiotherapie)"),
+    ("szintigraphie", "Szintigraphie (nuklearmedizinische Bildgebung)"),
+    ("petCt", "PET-CT (Positronen-Emissions-Tomographie)"),
+    ("radioiodtherapie", "Radioiodtherapie (RIT, Schilddrüse)"),
+    ("rontgen", "Röntgen / CT (Computertomographie) gehäuft"),
+    ("mrt", "MRT (Magnetresonanztomographie) mit Kontrastmittel"),
 ]
 
 cancer_rows = [
@@ -541,7 +553,8 @@ pdf = PdfForm(OUT)
 pdf.h1("Willkommen / Anleitung")
 pdf.note("Dies ist der vollständige ausfüllbare PDF-Anamnesebogen als Alternative zum Online-Formular. Er ist für Adobe Reader, Adobe Fill & Sign und kompatible PDF-Apps vorgesehen.")
 pdf.note("Bitte speichern Sie das ausgefüllte PDF lokal auf Ihrem Gerät. Die Bearbeitung erfolgt ohne Ausfüllen über den Lovable-Server.")
-pdf.note("Bei Fragen, die nicht zutreffen, lassen Sie die Felder leer. Pflichtfelder aus dem Onlinebogen sind im PDF fachlich wichtig, werden technisch aber nicht erzwungen.")
+pdf.note("Mit Stern (*) markierte Felder sind Pflichtangaben (wie im Online-Bogen). Bei Fragen, die nicht zutreffen, lassen Sie die Felder leer.")
+pdf.note("Hinweis: Medizinische Fachbegriffe / lateinische Bezeichnungen werden, wenn möglich, mit deutscher Erklärung in Klammern ergänzt.")
 pdf.long_text("intro", "Aktueller Anlass / wichtigste Anliegen in eigenen Worten:", "freitext_anlass", 4)
 
 pdf.h1("I. Patientendaten")
@@ -558,7 +571,8 @@ pdf.h2("D. Versicherung")
 pdf.checkboxes("versicherung", "Versicherungstyp", ["privat", "gesetzlich", "Beihilfe", "Zusatzversicherung"], 4)
 pdf.text_row("versicherung", [("Versicherungsname", "versicherungsname", 190), ("Versicherungsnummer", "versicherungsnummer", 145), ("Tarif", "tarif", 120)])
 pdf.checkboxes("versicherung", "Kostenübernahme Naturheilkunde", ["bekannt ja", "bekannt nein", "bitte selbst klären"], 3)
-pdf.h2("E. Berufliche Situation")
+pdf.h2("E. Berufliche Situation (optional)")
+pdf.note("Diese Angaben sind freiwillig und nur relevant, wenn beruflicher Stress / Belastungen Teil des Anliegens sind.")
 pdf.text_row("beruf", [("Beruf", "beruf", 150), ("Arbeitgeber", "arbeitgeber", 170), ("Branche", "branche", 130)])
 pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentner seit", "berentnerSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
 pdf.h2("F. Sorgeberechtigte bei Minderjährigen")
@@ -566,7 +580,7 @@ pdf.text_row("sorge", [("Mutter/Vater/Sorgeberechtigte/r", "typ", 175), ("Vornam
 pdf.text_row("sorge", [("Straße", "strasse", 175), ("PLZ", "plz", 70), ("Ort", "ort", 160), ("Telefon", "telefon", 120)])
 pdf.text_row("sorge", [("E-Mail", "email", 220), ("Festnetz bei abweichender Adresse", "festnetz", 220)])
 pdf.h2("G. Informationsquelle und Vorbehandler")
-pdf.checkboxes("infoquelle", "Wie sind Sie auf die Praxis aufmerksam geworden?", ["Empfehlung", "Internet", "Google", "Arzt/Heilpraktiker", "Social Media", "Sonstiges"], 3)
+pdf.checkboxes("infoquelle", "Wie sind Sie auf die Praxis aufmerksam geworden?", ["Empfehlung", "BNI (Business Network)", "Internet", "Google", "Arzt/Heilpraktiker", "Social Media", "Sonstiges"], 3)
 pdf.text_row("infoquelle", [("Empfohlen von", "empfehlungVon", 220)])
 pdf.text_row("vorbehandler", [("Hausarzt", "hausarzt", 170), ("Fachärzte", "fachaerzte", 170), ("Heilpraktiker", "heilpraktiker", 170)])
 pdf.text_row("vorbehandler", [("Physiotherapeut", "physiotherapeut", 170), ("Psychotherapeut", "psychotherapeut", 170), ("Sonstige Therapeuten", "sonstige", 170)])
@@ -579,66 +593,87 @@ pdf.condition_table("familie", family_rows, with_since=False, with_details=True)
 pdf.h1("III. Kopf & Sinne")
 pdf.h2("Kopf, Augen, Ohren, Nebenhöhlen, Neuralgien")
 pdf.condition_table("kopf", kopf_rows)
-pdf.h2("Schlaf und psychovegetative Symptome")
+pdf.long_text("kopf", "Sonstige Bemerkungen zu Kopf & Sinnen:", "sonstige", 6)
+
+pdf.h1("III-b. Schlaf und psychovegetative Symptome")
 pdf.condition_table("schlaf", sleep_rows)
-pdf.h2("Psychische Erkrankungen / Belastungen")
+pdf.long_text("schlaf", "Sonstige Bemerkungen zu Schlaf / Vegetativum:", "sonstige", 6)
+
+pdf.h1("III-c. Psychische Erkrankungen / Belastungen")
 pdf.condition_table("psyche", psy_rows)
+pdf.long_text("psyche", "Sonstige psychische Bemerkungen:", "sonstige", 6)
 
 pdf.h1("IV. Herz & Kreislauf")
 pdf.condition_table("herz", heart_rows)
-pdf.long_text("herz", "Sonstige Herz-/Kreislauf-Bemerkungen:", "sonstige", 2)
+pdf.long_text("herz", "Sonstige Herz-/Kreislauf-Bemerkungen:", "sonstige", 6)
 
 pdf.h1("V. Lunge & Atmung")
 pdf.condition_table("lunge", lung_rows)
-pdf.long_text("lunge", "Sonstige Lungen-/Atemwegs-Bemerkungen:", "sonstige", 2)
+pdf.long_text("lunge", "Sonstige Lungen-/Atemwegs-Bemerkungen:", "sonstige", 6)
 
 pdf.h1("VI. Magen & Darm")
 pdf.condition_table("magenDarm", digestive_rows)
-pdf.text_row("magenDarm", [("Durst", "durst", 120), ("Appetit", "appetit", 140), ("Ernährungstyp", "ernaehrungstyp", 200)])
-pdf.long_text("magenDarm", "Sonstige Magen-Darm-Bemerkungen:", "sonstige", 2)
+pdf.checkboxes("magenDarm", "Durst", ["gar nicht", "wenig", "mittel", "viel", "übermäßig"], 5)
+pdf.checkboxes("magenDarm", "Appetit", ["gar nicht", "wenig", "mittel", "viel", "übermäßig"], 5)
+pdf.checkboxes("magenDarm", "Ernährungstyp", ["Mischkost", "Vegetarisch", "Vegan", "Pescetarisch", "Low-Carb / Keto", "LOGI", "Paleo", "Rohkost", "Mediterran", "Trennkost", "Intervallfasten", "Sonstiges"], 3)
+pdf.long_text("magenDarm", "Sonstige Magen-Darm-Bemerkungen / Ernährungsbesonderheiten:", "sonstige", 6)
 
 pdf.h1("VII. Leber & Galle")
 pdf.condition_table("leberGalle", liver_rows)
-pdf.long_text("leberGalle", "Sonstige Leber-/Galle-Bemerkungen:", "sonstige", 2)
+pdf.long_text("leberGalle", "Sonstige Leber-/Galle-Bemerkungen:", "sonstige", 6)
 
 pdf.h1("VIII. Niere & Blase")
 pdf.condition_table("niereBlase", kidney_rows)
 pdf.text_row("niereBlase", [("Miktionsfrequenz tagsüber", "miktionsfrequenz", 180)])
-pdf.long_text("niereBlase", "Sonstige Niere-/Blase-Bemerkungen:", "sonstige", 2)
+pdf.long_text("niereBlase", "Sonstige Niere-/Blase-Bemerkungen:", "sonstige", 6)
 
 pdf.h1("IX. Hormone")
 pdf.condition_table("hormone", hormone_rows)
-pdf.long_text("hormone", "Sonstige hormonelle Themen:", "sonstige", 2)
+pdf.long_text("hormone", "Sonstige hormonelle Themen:", "sonstige", 6)
 
 pdf.h1("X. Bewegungsapparat")
 pdf.condition_table("bewegungsapparat", msk_rows)
-pdf.long_text("bewegungsapparat", "Sonstige Beschwerden am Bewegungsapparat:", "sonstige", 3)
+pdf.long_text("bewegungsapparat", "Sonstige Beschwerden am Bewegungsapparat:", "sonstige", 6)
 
 pdf.h1("XI. Frauengesundheit")
 pdf.note("Nur ausfüllen, soweit zutreffend.")
 pdf.text_row("frauen", [("Geburtsgewicht", "geburtsgewicht", 130)])
 pdf.condition_table("frauen", women_rows)
-pdf.long_text("frauen", "Sonstige frauengesundheitliche Angaben:", "sonstige", 2)
+pdf.long_text("frauen", "Sonstige frauengesundheitliche Angaben:", "sonstige", 6)
 
 pdf.h1("XI. Männergesundheit")
 pdf.note("Nur ausfüllen, soweit zutreffend.")
 pdf.condition_table("maenner", men_rows)
-pdf.long_text("maenner", "Sonstige männergesundheitliche Angaben:", "sonstige", 2)
+pdf.long_text("maenner", "Sonstige männergesundheitliche Angaben:", "sonstige", 6)
 
 pdf.h1("XII. Unfälle & OPs")
 pdf.condition_table("unfaelleOps", surgery_rows)
 pdf.mini_table("operationen", "Operationen im Detail", [("Jahr", 70), ("Grund / Art der Operation", 360)], 6)
+pdf.h2("Radiologische / nuklearmedizinische / onkologische Verfahren")
+pdf.note("Bitte für jedes Verfahren Datum, Grund und ggf. Dosis angeben. Hinweis: Zwischen bestimmten Untersuchungen (z.B. Szintigraphie, Radioiodtherapie, PET-CT) und einem Termin bei uns ist ein zeitlicher Abstand erforderlich – bitte vorab telefonisch klären.")
+for key, label in radio_procedures:
+    pdf.ensure(34)
+    pdf.c.setFillColor(SAGE_DARK); pdf.c.setFont(BOLD, 8)
+    pdf.c.drawString(M, pdf.y - 9, label)
+    pdf.y -= 13
+    pdf.text_row(f"radio_{key}", [("Datum", "datum", 100), ("Grund / Art", "grund", 230), ("Dosis", "dosis", 110)])
+pdf.long_text("radio", "Sonstige radiologische / nuklearmedizinische Untersuchungen oder Hinweise:", "sonstige", 5)
 
 pdf.h1("XIII. Krebs")
 pdf.note("Nur ausfüllen, wenn relevant. Bei akuter/onkologischer Behandlung bitte Unterlagen mitbringen.")
 pdf.condition_table("krebs", cancer_rows)
 pdf.text_row("krebs", [("Welche Krebsart", "welche", 180), ("Typ", "welcheTyp", 140), ("Diagnosejahr", "diagnoseJahr", 100)])
 pdf.text_row("krebs", [("Betroffene Organe", "betroffeneOrgane", 240), ("TNM T", "tnm_t", 60), ("N", "tnm_n", 60), ("M", "tnm_m", 60)])
-pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 4)
+pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 6)
+pdf.h2("Zusätzliche Bestätigung Krebserkrankung")
+pdf.note("Ich bestätige, dass die obigen Angaben zu meiner Krebserkrankung nach bestem Wissen korrekt sind und ich verstanden habe, dass naturheilkundliche Behandlung eine schulmedizinisch-onkologische Therapie nicht ersetzt, sondern ergänzend / komplementär erfolgt.")
+pdf.checkboxes("krebs", "", ["Ich bestätige die Krebsangaben und die komplementärtherapeutische Aufklärung"], 1)
+pdf.text_row("krebsUnterschrift", [("Ort", "ort", 180), ("Datum", "datum", 120), ("Name in Druckbuchstaben", "name", 220)])
+pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung")
 
 pdf.h1("XIV. Allergien")
 pdf.condition_table("allergien", allergy_rows)
-pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen:", "sonstigeUnvertraeglichkeit", 3)
+pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen:", "sonstigeUnvertraeglichkeit", 6)
 
 pdf.h1("XV. Medikamente")
 pdf.text_row("medikamente", [("In Behandlung bei", "inAerztlicherBehandlung_beiWem", 220), ("Fachärzte", "fachaerzte", 220)])
@@ -651,14 +686,14 @@ pdf.text_row("lebensweise", [("Passivrauchen", "passivRauchen", 125), ("Alkohol 
 pdf.text_row("lebensweise", [("Sport ja/nein", "sport_ja", 95), ("pro Woche", "sport_proWoche", 90), ("Art", "sport_art", 170), ("tägliche Bewegung", "taeglicheBewegung", 140)])
 pdf.text_row("lebensweise", [("Spaziergang/Woche", "spaziergang_proWoche", 130), ("Dauer Min.", "spaziergang_dauer", 90), ("Meter zu Fuß/Tag", "meterZuFuss", 130)])
 pdf.text_row("lebensweise", [("Schlafqualität", "schlafQualitaet", 130), ("Schlafdauer", "schlafDauer", 100), ("Stress-Level", "stressLevel", 110)])
-pdf.long_text("lebensweise", "Ernährungsgewohnheiten / Besonderheiten:", "ernaehrungsgewohnheiten", 3)
+pdf.long_text("lebensweise", "Ernährungsgewohnheiten / Besonderheiten:", "ernaehrungsgewohnheiten", 6)
 
 pdf.h1("XVII. Zahngesundheit")
 pdf.checkboxes("zahn", "Gebisstyp / Prothese", ["vollständig", "Teilprothese", "Vollprothese", "Oberkiefer", "Unterkiefer", "beide Kiefer"], 3)
 pdf.text_row("zahn", [("Prothese seit", "protheseSeit", 120), ("Letzter Zahnarztbesuch", "letzterZahnarztbesuch", 160), ("Zahnarzt Name/Ort", "zahnarztName", 220)])
 pdf.mini_table("zahnbefunde", "Zahnbefunde / Zahnnummern", [("Zahnnummer", 80), ("Befund/Diagnose", 200), ("seit", 80), ("Bemerkung", 170)], 10)
 pdf.condition_table("zahn", [("parodontitis", "Parodontitis"), ("zahnfleischbluten", "Zahnfleischbluten"), ("kiefergelenk", "Kiefergelenk: Knacken, Schmerzen, eingeschränkt"), ("bruxismus", "Bruxismus nachts/tagsüber/Schiene")])
-pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 3)
+pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 6)
 
 pdf.h1("XVIII. Umwelt")
 pdf.h2("Chemosensibilität / Reizstoffe")
@@ -674,19 +709,19 @@ pdf.condition_table("impfungen", vaccine_rows)
 pdf.h2("COVID-19")
 pdf.checkboxes("covid", "COVID", ["geimpft", "Infektion durchgemacht", "Long-COVID", "Impfreaktionen"], 4)
 pdf.mini_table("covidDosen", "COVID-Impfungen", [("Dosis", 70), ("Datum", 105), ("Hersteller", 150), ("Reaktion/Bemerkung", 220)], 4)
-pdf.long_text("covid", "COVID-Infektion, Long-COVID, Impfreaktionen:", "details", 3)
+pdf.long_text("covid", "COVID-Infektion, Long-COVID, Impfreaktionen:", "details", 6)
 
 pdf.h1("XXI. Beschwerden")
-pdf.long_text("beschwerden", "Hauptbeschwerde:", "hauptbeschwerde", 4)
-pdf.long_text("beschwerden", "Weitere Beschwerden:", "weitereBeschwerden", 3)
+pdf.long_text("beschwerden", "Hauptbeschwerde:", "hauptbeschwerde", 6)
+pdf.long_text("beschwerden", "Weitere Beschwerden:", "weitereBeschwerden", 6)
 pdf.text_row("beschwerden", [("Beginn der Beschwerden", "beginn", 140), ("Verlauf", "verlauf", 120), ("Schmerzintensität 0–10", "schmerzintensitaet", 130)])
 pdf.checkboxes("beschwerden", "Auftreten", ["ständig", "tagsüber", "nachts", "nach Mahlzeiten", "bei Belastung", "in Ruhe", "unregelmäßig"], 3)
 pdf.checkboxes("beschwerden", "Art / Qualität", ["Schmerz", "körperliche Störung", "Funktionsstörung", "psychische Belastung", "dumpf", "stechend", "brennend", "ziehend", "krampfartig", "elektrisierend"], 3)
-pdf.long_text("beschwerden", "Ausstrahlung:", "ausstrahlung", 2)
-pdf.long_text("beschwerden", "Was verschlimmert die Beschwerden?", "verschlimmerung", 2)
-pdf.long_text("beschwerden", "Was verbessert die Beschwerden?", "verbesserung", 2)
-pdf.long_text("beschwerden", "Bisherige Behandlungen:", "bisherigeBehandlungen", 3)
-pdf.long_text("beschwerden", "Ergebnis bisheriger Behandlungen:", "ergebnisBisherigerBehandlungen", 2)
+pdf.long_text("beschwerden", "Ausstrahlung:", "ausstrahlung", 4)
+pdf.long_text("beschwerden", "Was verschlimmert die Beschwerden?", "verschlimmerung", 4)
+pdf.long_text("beschwerden", "Was verbessert die Beschwerden?", "verbesserung", 4)
+pdf.long_text("beschwerden", "Bisherige Behandlungen:", "bisherigeBehandlungen", 6)
+pdf.long_text("beschwerden", "Ergebnis bisheriger Behandlungen:", "ergebnisBisherigerBehandlungen", 4)
 
 pdf.h1("XXII. Präferenzen")
 pdf.note("Bitte jeweils Interesse / bereits Erfahrung ankreuzen oder ergänzen.")
@@ -700,14 +735,14 @@ for opt in preference_options:
     pdf.checkbox_field(pdf.field_name("praeferenz", f"{key}_erfahren"), M + 330, y, 9)
     pdf.c.drawString(M + 343, y + 2, "Erfahrung")
     pdf.y -= 16
-pdf.long_text("praeferenz", "Therapieerwartungen:", "therapieerwartungen", 3)
-pdf.long_text("praeferenz", "Gesundheitsziele:", "gesundheitsziele", 3)
+pdf.long_text("praeferenz", "Therapieerwartungen:", "therapieerwartungen", 6)
+pdf.long_text("praeferenz", "Gesundheitsziele:", "gesundheitsziele", 6)
 
 pdf.h1("XXIII. Persönliches")
 pdf.text_row("soziales", [("Familienstand", "familienstand", 120), ("Kinder Anzahl", "kinderAnzahl", 90), ("Kinder Alter", "kinderAlter", 160)])
 pdf.text_row("soziales", [("Wohnumfeld", "wohnumfeld", 120), ("Wohntyp", "wohntyp", 120), ("Beruflicher Stress", "berufStress", 130), ("Finanzielle Belastung", "finanzBelastung", 140)])
 pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
-pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 4)
+pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
 
 pdf.h1("XXIV. IAA-Fragebogen")
 pdf.note("Individuelle Austestung und Analyse (IAA). Bitte zutreffende Fragen ankreuzen; Bemerkungen/Intensität optional ergänzen.")
@@ -717,8 +752,8 @@ for cat in iaa_categories:
     pdf.condition_table(f"iaa_{cat['id']}", [(q["id"].replace('.', '_'), f"{q['id']}  {q['text']}") for q in cat["questions"]], with_since=False, with_details=True)
 
 pdf.h1("XXV. Unterschrift")
-pdf.long_text("abschluss", "Weitere Erkrankungen/Symptome, die bisher nicht abgefragt wurden:", "weitereErkrankungen", 4)
-pdf.long_text("abschluss", "Zusätzliche Informationen, die für die Behandlung relevant sein könnten:", "zusaetzlicheInfos", 4)
+pdf.long_text("abschluss", "Weitere Erkrankungen/Symptome, die bisher nicht abgefragt wurden:", "weitereErkrankungen", 10)
+pdf.long_text("abschluss", "Zusätzliche Informationen, die für die Behandlung relevant sein könnten:", "zusaetzlicheInfos", 10)
 pdf.note("Datenschutz: Ich erlaube, dass meine Gesundheitsdaten für meine Behandlung gespeichert werden. E-Mail-Kommunikation (Rechnungen, Termine, Fragen, Bewertungsanfrage) ist ok. Ich habe die Datenschutzinformationen gelesen und stimme zu.")
 pdf.note("Patientenaufklärung: Ich habe die Patientenaufklärung zu Leistungserstattung, Preisen und Terminregelung gelesen und bin damit einverstanden.")
 pdf.checkboxes("abschluss", "Bestätigungen", ["Ich bestätige die Richtigkeit meiner Angaben", "Datenschutz-Einwilligung", "Patientenaufklärung akzeptiert"], 1)
