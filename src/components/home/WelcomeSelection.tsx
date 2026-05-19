@@ -7,11 +7,11 @@ const options = [
     id: "new_patient",
     icon: UserPlus,
     title: "Ich bin Neupatient",
-    subtitle: "Erstmalige Registrierung",
+    subtitle: "Erstkontakt in 3 Schritten",
     description:
-      "Registrieren Sie sich mit E-Mail und Passwort, um Ihren Anamnesebogen online auszufüllen und einen Termin zu vereinbaren.",
-    cta: "Jetzt registrieren",
-    href: "/auth?type=new_patient",
+      "Lade Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung als Komplettpaket herunter — oder fülle online aus. Ein klarer Fahrplan zum ersten Termin.",
+    cta: "Zum Neupatienten-Fahrplan",
+    href: "/neupatient",
     accent: true,
   },
   {

@@ -54,24 +54,23 @@ const Patientenaufklaerung = () => {
               )}
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="/patientenpaket-blanko.pdf"
-                download
+              <Link
+                to="/neupatient"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
                 <FileText className="h-4 w-4" />
                 {t(
-                  "Komplettpaket herunterladen (Anamnese + Vertrag + Datenschutz)",
-                  "Download complete package (Anamnesis + Contract + Privacy)"
+                  "Neupatient? Zum Onboarding-Fahrplan",
+                  "New patient? Go to onboarding"
                 )}
-              </a>
+              </Link>
               <a
                 href="/patientenvertrag-blanko.pdf"
                 download
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
               >
                 <FileText className="h-4 w-4" />
-                {t("Nur Patientenvertrag", "Contract only")}
+                {t("Nur Patientenvertrag (PDF)", "Contract only (PDF)")}
               </a>
             </div>
           </div>
