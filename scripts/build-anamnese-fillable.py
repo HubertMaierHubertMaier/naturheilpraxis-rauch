@@ -144,7 +144,10 @@ class PdfForm:
         return len(lines) * leading
 
     def h1(self, title: str):
-        self.ensure(32)
+        # Jede neue Sektion beginnt grundsätzlich auf einer neuen Seite,
+        # ausgenommen die allererste Sektion direkt nach dem Header.
+        if self.y < H - 80:
+            self.new_page()
         self.c.setFillColor(SAGE_LIGHT)
         self.c.rect(M, self.y - 22, W - 2 * M, 22, fill=1, stroke=0)
         self.c.setFillColor(SAGE_DARK)
