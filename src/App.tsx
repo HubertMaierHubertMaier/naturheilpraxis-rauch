@@ -39,6 +39,7 @@ import Reizdarm from "./pages/Reizdarm";
 import Knieschwellung from "./pages/Knieschwellung";
 import PatientenBibliothek from "./pages/PatientenBibliothek";
 import AppUebersicht from "./pages/AppUebersicht";
+import Neupatient from "./pages/Neupatient";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/praxis-info" element={<PraxisInfo />} />
               <Route path="/impressum" element={<Impressum />} />
               <Route path="/patientenaufklaerung" element={<Patientenaufklaerung />} />
+              <Route path="/neupatient" element={<Neupatient />} />
               <Route path="/quellenhinweis" element={<Quellenhinweis />} />
               <Route path="/raucherentwoehnung" element={<Raucherentwoehnung />} />
               <Route path="/schilddruese-hypnose" element={<SchilddrueseHypnose />} />
