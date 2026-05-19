@@ -149,14 +149,24 @@ export default function Datenschutz() {
           <p className="mt-4 text-lg text-muted-foreground">
             {t("Naturheilpraxis Peter Rauch", "Naturheilpraxis Peter Rauch")}
           </p>
-          <Button 
-            onClick={handleDownloadPdf}
-            variant="outline"
-            className="mt-6 gap-2"
-          >
-            <Download className="h-4 w-4" />
-            {t("Als PDF herunterladen", "Download as PDF")}
-          </Button>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button 
+              onClick={handleDownloadPdf}
+              variant="outline"
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {t("Info als PDF herunterladen", "Download info as PDF")}
+            </Button>
+            <a
+              href="/datenschutz-einwilligung-blanko.pdf"
+              download
+              className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
+            >
+              <FileText className="h-4 w-4" />
+              {t("Einwilligung als ausfüllbares PDF", "Consent as fillable PDF")}
+            </a>
+          </div>
         </div>
 
         {/* Practice Info */}

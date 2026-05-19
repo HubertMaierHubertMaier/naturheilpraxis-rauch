@@ -53,6 +53,14 @@ const Patientenaufklaerung = () => {
                 "Fee Reimbursement, Pricing & Treatment Agreement"
               )}
             </p>
+            <a
+              href="/patientenvertrag-blanko.pdf"
+              download
+              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
+            >
+              <FileText className="h-4 w-4" />
+              {t("Patientenvertrag als ausfüllbares PDF herunterladen", "Download patient contract as fillable PDF")}
+            </a>
           </div>
         </div>
       </div>
