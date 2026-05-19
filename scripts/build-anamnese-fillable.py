@@ -833,18 +833,64 @@ pdf.long_text("lebensweise", "Ernährungsgewohnheiten / Besonderheiten:", "ernae
 pdf.h1("XVII. Zahngesundheit")
 pdf.checkboxes("zahn", "Gebisstyp / Prothese", ["vollständig", "Teilprothese", "Vollprothese", "Oberkiefer", "Unterkiefer", "beide Kiefer"], 3)
 pdf.text_row("zahn", [("Prothese seit", "protheseSeit", 120), ("Letzter Zahnarztbesuch", "letzterZahnarztbesuch", 160), ("Zahnarzt Name/Ort", "zahnarztName", 220)])
-pdf.mini_table("zahnbefunde", "Zahnbefunde / Zahnnummern", [("Zahnnummer", 80), ("Befund/Diagnose", 200), ("seit", 80), ("Bemerkung", 170)], 10)
-pdf.condition_table("zahn", [("parodontitis", "Parodontitis"), ("zahnfleischbluten", "Zahnfleischbluten"), ("kiefergelenk", "Kiefergelenk: Knacken, Schmerzen, eingeschränkt"), ("bruxismus", "Bruxismus nachts/tagsüber/Schiene")])
-pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 6)
+pdf.h2("Zahnschema (FDI-Nummern) – betroffene Zähne ankreuzen")
+pdf.note("Zähne sind nach internationalem FDI-System nummeriert. Reihenfolge wie beim Blick in den Mund: Patient rechts ↔ links. Zusätzliche Befunde bitte in der Tabelle unten eintragen.")
+pdf.tooth_chart()
+pdf.mini_table("zahnbefunde", "Zahnbefunde / Auffälligkeiten – freie Eintragung", [("FDI-Nr.", 60), ("Befund/Diagnose", 220), ("seit", 70), ("Bemerkung", 180)], 8)
 
-pdf.h1("XVIII. Umwelt")
+pdf.h2("Wurzelbehandlungen")
+pdf.note("Wurzelbehandelte (devitale) Zähne können Störherde sein. Bitte FDI-Zahnnummer und Jahr angeben.")
+pdf.mini_table("wurzelbehandlung", "Wurzelbehandelte Zähne", [("FDI-Nr.", 60), ("Jahr", 70), ("Beschwerden ja/nein", 110), ("Bemerkung", 290)], 6)
+
+pdf.h2("Implantate")
+pdf.note("Pro Implantat bitte Zahnnummer (FDI), Jahr und Material angeben (Titan oder Keramik / Zirkonoxid).")
+pdf.mini_table("implantate", "Implantate", [("FDI-Nr.", 60), ("Jahr", 70), ("Material (Titan / Keramik)", 160), ("Bemerkung", 240)], 5)
+
+pdf.h2("Metalle und Werkstoffe im Mund")
+pdf.checkboxes("zahnMetalle", "Vorhandene Werkstoffe", [
+    "Amalgam-Füllungen",
+    "Goldinlays / Gold-Kronen",
+    "Titan (Implantat/Schraube)",
+    "Keramik / Zirkonoxid",
+    "Komposit-Kunststoff",
+    "Stahl (Brücken, Klammern)",
+    "Palladium / Edelmetall-Legierung",
+    "Kobalt-Chrom",
+    "Andere Metalle / Legierungen",
+], 3)
+pdf.text_row("zahnMetalle", [("Amalgam entfernt im Jahr", "amalgamEntferntJahr", 150), ("Beschwerden seit Material-Wechsel?", "beschwerdenWechsel", 280)])
+
+pdf.condition_table("zahn", [("parodontitis", "Parodontitis"), ("zahnfleischbluten", "Zahnfleischbluten"), ("kiefergelenk", "Kiefergelenk: Knacken, Schmerzen, eingeschränkt"), ("bruxismus", "Bruxismus nachts/tagsüber/Schiene"), ("zahnherd", "Bekannte Zahnherde / chronische Entzündungen")])
+pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 8)
+
+pdf.h1("XVIII. Umwelt & Belastungen")
 pdf.h2("Chemosensibilität / Reizstoffe")
 pdf.condition_table("umweltChemie", [(sanitize_name(x), x) for x in environment_chem], with_since=False, with_details=True)
-pdf.h2("Körperbelastungen / Störfelder")
+pdf.h2("Körperliche Störfelder")
+pdf.note("Klassische Störfelder (chronische lokale Reizungen, Narben, Tonsillen, Nebenhöhlen, Strahlung).")
 pdf.condition_table("umweltKoerper", [(sanitize_name(x), x) for x in environment_body], with_since=False, with_details=True)
 
-pdf.h1("XIX. Infektionen")
+pdf.h2("Mangelzustände – Vitamine")
+pdf.note("Bekannte oder vermutete Mängel (z. B. Laborwert, Symptome). Diese gehören zu den Defiziten, nicht zu den Belastungen.")
+pdf.condition_table("mangelVitamine", vitamin_rows, with_since=False, with_details=True)
+pdf.h2("Mangelzustände – Mineralstoffe")
+pdf.condition_table("mangelMineralien", mineral_rows, with_since=False, with_details=True)
+pdf.h2("Mangelzustände – Spurenelemente")
+pdf.condition_table("mangelSpuren", trace_rows, with_since=False, with_details=True)
+pdf.long_text("mangel", "Sonstige Mangelzustände (Enzyme, Aminosäuren, Flüssigkeit, sonstiges) / vorliegende Laborwerte:", "sonstige", 8)
+
+pdf.h2("Belastungen – Mikroorganismen & Toxine")
+pdf.note("Belastungen sind keine Mangelzustände. Bitte hier bekannte oder vermutete Belastungen ankreuzen.")
+pdf.condition_table("belastungen", load_rows, with_since=False, with_details=True)
+pdf.long_text("belastungen", "Sonstige Belastungen / Verdachtsmomente:", "sonstige", 6)
+
+pdf.h1("XIX. Infektionen & Tierkontakt")
+pdf.note("Hier geht es um durchgemachte Infektionen und Tierkontakt (Zoonose-Risiko). Impfungen werden in der nächsten Sektion (Impfstatus) erfasst.")
+pdf.h2("Reisen, Zecken & durchgemachte Infektionen")
 pdf.condition_table("infektionen", infection_rows)
+pdf.h2("Haustiere / Tierkontakt")
+pdf.condition_table("haustiere", pet_rows, with_since=False, with_details=True)
+pdf.long_text("infektionen", "Sonstige Hinweise zu Infektionen / Reisen / Tierkontakt:", "sonstige", 6)
 
 pdf.h1("XX. Impfstatus")
 pdf.condition_table("impfungen", vaccine_rows)
