@@ -140,15 +140,16 @@ export function Header() {
               )}
             </Link>
           ) : (
-            <a
-              href="/anamnesebogen-blanko.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={downloadBlankAnamnesePdf}
               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
-              title={t("PDF-Anamnesebogen herunterladen", "Download PDF anamnesis form")}
+              title={t("Vollständigen Blanko-Anamnesebogen als PDF herunterladen", "Download complete blank anamnesis form as PDF")}
             >
               <ClipboardList className="h-4 w-4" />
               {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
+            </button>
+          ))}
             </a>
           ))}
           
