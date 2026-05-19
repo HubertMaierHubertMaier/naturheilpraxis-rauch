@@ -18,6 +18,7 @@ import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
+import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
@@ -88,6 +89,7 @@ const AdminDashboard = () => {
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
           <AnamneseToggle />
+          <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-9 max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
