@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 import CookieBanner from "@/components/CookieBanner";
 import SchemaOrg from "@/components/seo/SchemaOrg";
 import Index from "./pages/Index";

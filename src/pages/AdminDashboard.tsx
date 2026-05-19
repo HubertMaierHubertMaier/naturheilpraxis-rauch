@@ -18,6 +18,7 @@ import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
+import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
