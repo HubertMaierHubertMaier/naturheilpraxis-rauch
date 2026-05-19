@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
+import { generateEnhancedAnamnesePdf } from "@/lib/pdfExportEnhanced";
+import { initialFormData } from "@/lib/anamneseFormData";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
