@@ -195,6 +195,7 @@ class PdfForm:
             fillColor=white,
             textColor=black,
             fontSize=font_size,
+            maxlen=0,
         )
         if multiline:
             kwargs["fieldFlags"] = "multiline"
@@ -235,7 +236,7 @@ class PdfForm:
         self.ensure(h + 24)
         self.draw_wrapped(label, M, self.y - 8, W - 2 * M, size=8.4, leading=9)
         self.y -= 14
-        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=9)
+        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=7)
         self.y -= h + 8
 
     def checkboxes(self, prefix: str, title: str, options: list[str], cols: int = 3):
