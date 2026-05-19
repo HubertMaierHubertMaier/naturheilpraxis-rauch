@@ -378,16 +378,14 @@ export function Header() {
                 )}
               </Link>
             ) : (
-              <a
-                href="/anamnesebogen-blanko.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary"
+              <button
+                type="button"
+                onClick={() => { setIsMenuOpen(false); downloadBlankAnamnesePdf(); }}
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary text-left"
               >
                 <ClipboardList className="h-4 w-4" />
                 {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
-              </a>
+              </button>
             ))}
             
             {/* Dev Mode Activate Button Mobile */}
