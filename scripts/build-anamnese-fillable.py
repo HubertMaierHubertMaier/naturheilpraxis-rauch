@@ -490,9 +490,18 @@ men_rows = [
 surgery_rows = [
     ("unfall", "Unfall"), ("knochenbruch", "Knochenbruch"), ("kopfverletzung", "Kopfverletzung"),
     ("krankenhausaufenthalt", "Krankenhausaufenthalt"), ("kuraufenthalt", "Kuraufenthalt"),
-    ("bluttransfusion", "Bluttransfusion"), ("chemotherapie", "Chemotherapie"),
-    ("strahlentherapie", "Strahlentherapie"), ("szintigraphie", "Szintigraphie"),
-    ("petCt", "PET-CT"), ("radioiodtherapie", "Radioiodtherapie / Datum / Grund / Dosis"),
+    ("bluttransfusion", "Bluttransfusion"),
+]
+
+# Radiologische / nuklearmedizinische / onkologische Verfahren – eigene Tabelle mit Abstand zum Termin
+radio_procedures = [
+    ("chemotherapie", "Chemotherapie"),
+    ("strahlentherapie", "Strahlentherapie (Radiotherapie)"),
+    ("szintigraphie", "Szintigraphie (nuklearmedizinische Bildgebung)"),
+    ("petCt", "PET-CT (Positronen-Emissions-Tomographie)"),
+    ("radioiodtherapie", "Radioiodtherapie (RIT, Schilddrüse)"),
+    ("rontgen", "Röntgen / CT (Computertomographie) gehäuft"),
+    ("mrt", "MRT (Magnetresonanztomographie) mit Kontrastmittel"),
 ]
 
 cancer_rows = [
