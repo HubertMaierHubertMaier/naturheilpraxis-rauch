@@ -228,27 +228,36 @@ class PdfForm:
             x += width + 8
         self.y -= 18
 
-    def long_text(self, prefix: str, label: str, key: str, lines: int = 3):
-        h = lines * 12
+    def long_text(self, prefix: str, label: str, key: str, lines: int = 10):
+        # Multiline AcroForm-Felder erlauben beliebig viel Text (scrollbar).
+        # Wir vergrößern die sichtbare Fläche deutlich, damit Patienten ausführlich schreiben können.
+        h = lines * 13
         self.ensure(h + 24)
-        self.draw_wrapped(label, M, self.y - 8, W - 2 * M, size=8.2, leading=9)
+        self.draw_wrapped(label, M, self.y - 8, W - 2 * M, size=8.4, leading=9)
         self.y -= 14
-        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=8)
+        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=9)
         self.y -= h + 8
 
     def checkboxes(self, prefix: str, title: str, options: list[str], cols: int = 3):
         if title:
             self.h2(title)
         col_w = (W - 2 * M) / cols
+        row_h = 17
         rows = (len(options) + cols - 1) // cols
-        self.ensure(rows * 15 + 6)
+        self.ensure(rows * row_h + 8)
         for i, label in enumerate(options):
             row, col = divmod(i, cols)
             x = M + col * col_w
-            y = self.y - 10 - row * 15
-            self.checkbox_field(self.field_name(prefix, label), x, y, 9)
-            self.draw_wrapped(label, x + 13, y + 7, col_w - 15, size=7.6, leading=8)
-        self.y -= rows * 15 + 8
+            # Top der Zeile
+            row_top = self.y - row * row_h
+            # Checkbox 9px hoch, Label Schrift 8 (Aufstieg ~6). Mittellinie ausrichten.
+            cb_y = row_top - 12
+            label_baseline = row_top - 10  # so dass Mitte des Glyphen ≈ Mitte der Checkbox
+            self.checkbox_field(self.field_name(prefix, label), x, cb_y, 9)
+            self.c.setFillColor(INK)
+            self.c.setFont(FONT, 8)
+            self.draw_wrapped(label, x + 14, label_baseline, col_w - 16, size=8, leading=9)
+        self.y -= rows * row_h + 8
 
     def _parse_variants(self, label: str) -> tuple[str, list[str]]:
         """Splittet 'Hauptbegriff inkl./: A, B, C' oder 'Begriff a/b/c' in (Haupt, [Varianten])."""
