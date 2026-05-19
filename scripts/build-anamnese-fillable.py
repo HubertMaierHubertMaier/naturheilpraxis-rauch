@@ -105,7 +105,7 @@ class PdfForm:
         self.c.setLineWidth(0.45)
         self.c.line(M, 31, W - M, 31)
         self.c.setFillColor(MUTED)
-        self.c.setFont("Helvetica", 7.5)
+        self.c.setFont(FONT, 7.5)
         self.c.drawString(M, 19, "Heilpraktiker Peter Rauch · Naturheilpraxis Augsburg")
         self.c.drawRightString(W - M, 19, f"Seite {self.page}")
 
@@ -119,7 +119,7 @@ class PdfForm:
         if self.y - height < M + 34:
             self.new_page()
 
-    def wrap(self, text: str, width: float, font="Helvetica", size=8.5) -> list[str]:
+    def wrap(self, text: str, width: float, font=FONT, size=8.5) -> list[str]:
         words = text.replace("\n", " ").split()
         lines: list[str] = []
         current = ""
@@ -135,7 +135,7 @@ class PdfForm:
             lines.append(current)
         return lines or [""]
 
-    def draw_wrapped(self, text: str, x: float, y: float, width: float, font="Helvetica", size=8.5, leading=10, color=INK) -> float:
+    def draw_wrapped(self, text: str, x: float, y: float, width: float, font=FONT, size=8.5, leading=10, color=INK) -> float:
         self.c.setFillColor(color)
         self.c.setFont(font, size)
         lines = self.wrap(text, width, font, size)
@@ -148,25 +148,25 @@ class PdfForm:
         self.c.setFillColor(SAGE_LIGHT)
         self.c.rect(M, self.y - 22, W - 2 * M, 22, fill=1, stroke=0)
         self.c.setFillColor(SAGE_DARK)
-        self.c.setFont("Helvetica-Bold", 10.5)
+        self.c.setFont(BOLD, 10.5)
         self.c.drawString(M + 7, self.y - 15, title)
         self.y -= 30
 
     def h2(self, title: str):
         self.ensure(20)
         self.c.setFillColor(TERRACOTTA)
-        self.c.setFont("Helvetica-Bold", 9)
+        self.c.setFont(BOLD, 9)
         self.c.drawString(M, self.y - 10, title)
         self.y -= 15
 
     def note(self, text: str, lines: int | None = None):
         font_size = 7.8
-        wrapped = self.wrap(text, W - 2 * M, "Helvetica-Oblique", font_size)
+        wrapped = self.wrap(text, W - 2 * M, ITALIC, font_size)
         if lines:
             wrapped = wrapped[:lines]
         self.ensure(len(wrapped) * 9 + 4)
         self.c.setFillColor(MUTED)
-        self.c.setFont("Helvetica-Oblique", font_size)
+        self.c.setFont(ITALIC, font_size)
         for line in wrapped:
             self.c.drawString(M, self.y - 8, line)
             self.y -= 9
