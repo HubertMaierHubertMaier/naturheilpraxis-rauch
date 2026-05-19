@@ -596,16 +596,61 @@ environment_chem = [
 ]
 
 environment_body = [
-    "Strahlung: Geopathie, Elektrosmog, Hochspannung, Funkmasten, WLAN", "Zahnherde / Wurzelbehandlungen",
-    "Quecksilber / Amalgam", "Zahnbeschwerden", "Metalle im Mund", "Implantate", "Nebenhöhlen",
-    "Tonsillen", "Narben", "Mangelzustände: Vitamine, Mineralien, Spurenelemente, Enzyme, Flüssigkeit",
-    "Mikroorganismen: Viren, Bakterien, Pilze, Parasiten", "Toxisch: Schwermetalle, Chemikalien, Pestizide, Erbtoxine",
+    "Strahlung: Geopathie, Elektrosmog, Hochspannung, Funkmasten, WLAN",
+    "Nebenhöhlen (chronische Reizung / Herd)",
+    "Tonsillen (chronische Reizung / Herd)",
+    "Narben (störende oder verziehende Narben)",
+]
+
+# Mangelzustände – separat aufgelistet, weil es keine Belastung, sondern ein Defizit ist
+vitamin_rows = [
+    ("vitA", "Vitamin A (Retinol)"), ("vitB1", "Vitamin B1 (Thiamin)"),
+    ("vitB2", "Vitamin B2 (Riboflavin)"), ("vitB3", "Vitamin B3 (Niacin)"),
+    ("vitB5", "Vitamin B5 (Pantothensäure)"), ("vitB6", "Vitamin B6 (Pyridoxin)"),
+    ("vitB7", "Vitamin B7 / H (Biotin)"), ("vitB9", "Vitamin B9 (Folsäure)"),
+    ("vitB12", "Vitamin B12 (Cobalamin)"), ("vitC", "Vitamin C (Ascorbinsäure)"),
+    ("vitD", "Vitamin D (Cholecalciferol)"), ("vitE", "Vitamin E (Tocopherol)"),
+    ("vitK", "Vitamin K (Phyllochinon)"),
+]
+mineral_rows = [
+    ("calcium", "Calcium"), ("magnesium", "Magnesium"), ("kalium", "Kalium"),
+    ("natrium", "Natrium"), ("phosphor", "Phosphor"), ("eisen", "Eisen (Ferritin)"),
+]
+trace_rows = [
+    ("zink", "Zink"), ("selen", "Selen"), ("jod", "Jod"), ("kupfer", "Kupfer"),
+    ("mangan", "Mangan"), ("chrom", "Chrom"), ("molybdaen", "Molybdän"),
+    ("silicium", "Silicium"),
+]
+
+# Belastungen (Mikroorganismen / Toxisch) – eigene Sektion
+load_rows = [
+    ("viren", "Viren (z. B. EBV, CMV, HSV, HHV-6, Influenza)"),
+    ("bakterien", "Bakterien (z. B. Borrelien, Streptokokken, Helicobacter)"),
+    ("pilze", "Pilze (z. B. Candida, Aspergillus, Schimmelpilze)"),
+    ("parasiten", "Parasiten (z. B. Würmer, Protozoen)"),
+    ("schwermetalle", "Schwermetalle (Quecksilber, Blei, Cadmium, Aluminium, Arsen)"),
+    ("chemikalien", "Chemikalien / Lösungsmittel"),
+    ("pestizide", "Pestizide / Herbizide"),
+    ("erbtoxine", "Erbtoxine / pränatale Belastungen"),
 ]
 
 infection_rows = [
-    ("tropenReise", "Tropenreise / Länder"), ("zeckenbiss", "Zeckenbiss / roter Hof"),
-    ("borreliose", "Borreliose"), ("fsmeImpfung", "FSME-Impfung"), ("hund", "Hund / Rasse"),
-    ("katze", "Katze / Rasse"), ("pferd", "Pferd / Kontakt"), ("andereHaustiere", "Andere Haustiere"),
+    ("tropenReise", "Tropenreise / Länder"),
+    ("zeckenbiss", "Zeckenbiss / roter Hof (Wanderröte)"),
+    ("borreliose", "Borreliose diagnostiziert"),
+    ("ebv", "Epstein-Barr-Virus (EBV / Pfeiffersches Drüsenfieber)"),
+    ("cmv", "CMV (Cytomegalievirus)"),
+    ("herpes", "Herpes simplex / Zoster (Gürtelrose)"),
+    ("hepatitis", "Hepatitis A/B/C"),
+    ("hiv", "HIV"),
+    ("hpv", "HPV"),
+    ("tuberkulose", "Tuberkulose"),
+    ("covid", "COVID-19 / Long-COVID"),
+    ("sonstige", "Sonstige durchgemachte Infektionen"),
+]
+pet_rows = [
+    ("hund", "Hund / Rasse"), ("katze", "Katze / Rasse"),
+    ("pferd", "Pferd / Kontakt"), ("andereHaustiere", "Andere Haustiere / Tierkontakt"),
 ]
 
 vaccine_rows = [
