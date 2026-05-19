@@ -111,8 +111,8 @@ export function Header() {
           {/* Infothek Dropdown */}
           <InfothekDropdown />
 
-          {/* Anamnesebogen */}
-          {showAnamnese && (
+          {/* Anamnesebogen – eingeloggte Patienten: Online-Form; sonst: PDF-Download */}
+          {showAnamnese && (user || isAdmin ? (
             <Link
               to="/anamnesebogen"
               className={cn(
@@ -128,7 +128,18 @@ export function Header() {
                 <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
               )}
             </Link>
-          )}
+          ) : (
+            <a
+              href="/anamnesebogen-blanko.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
+              title={t("PDF-Anamnesebogen herunterladen", "Download PDF anamnesis form")}
+            >
+              <ClipboardList className="h-4 w-4" />
+              {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
+            </a>
+          ))}
           
           <LanguageSwitcher className="ml-2" />
 
