@@ -366,19 +366,64 @@ class PdfForm:
             self.y -= 17
         self.y -= 5
 
-    def signature_box(self, prefix: str, title: str):
-        self.ensure(76)
+    def signature_box(self, prefix: str, title: str, height: float = 48):
+        self.ensure(height + 28)
         self.c.setFillColor(INK)
         self.c.setFont(BOLD, 8.5)
         self.c.drawString(M, self.y - 8, title)
         self.y -= 14
         self.c.setStrokeColor(BORDER)
         self.c.setLineWidth(0.7)
-        self.c.rect(M, self.y - 48, W - 2 * M, 48, fill=0, stroke=1)
+        self.c.rect(M, self.y - height, W - 2 * M, height, fill=0, stroke=1)
         self.c.setFillColor(MUTED)
         self.c.setFont(ITALIC, 7.5)
-        self.c.drawString(M + 6, self.y - 43, "Signatur hier in Adobe Reader / Fill & Sign platzieren oder nach Ausdruck handschriftlich unterschreiben")
-        self.y -= 58
+        self.c.drawString(M + 6, self.y - height + 6, "Signatur hier in Adobe Reader / Fill & Sign platzieren oder nach Ausdruck handschriftlich unterschreiben")
+        self.y -= height + 10
+
+    def tooth_chart(self):
+        """FDI-Zahnschema als visuelles Raster mit Zahnnummern und Ankreuz-Feldern."""
+        upper_right = ["18","17","16","15","14","13","12","11"]
+        upper_left  = ["21","22","23","24","25","26","27","28"]
+        lower_right = ["48","47","46","45","44","43","42","41"]
+        lower_left  = ["31","32","33","34","35","36","37","38"]
+        cell_w = (W - 2 * M) / 16
+        cell_h = 22
+        total_h = cell_h * 2 + 14
+        self.ensure(total_h + 20)
+        top = self.y
+        # Beschriftung Quadranten
+        self.c.setFillColor(MUTED); self.c.setFont(ITALIC, 7)
+        self.c.drawString(M, top - 6, "Patient: rechts")
+        self.c.drawRightString(W - M, top - 6, "Patient: links")
+        self.y -= 10
+        # Oberkiefer
+        y_row = self.y
+        self.c.setStrokeColor(BORDER); self.c.setLineWidth(0.5)
+        for i, t in enumerate(upper_right + upper_left):
+            x = M + i * cell_w
+            self.c.rect(x, y_row - cell_h, cell_w, cell_h, fill=0, stroke=1)
+            self.c.setFillColor(INK); self.c.setFont(BOLD, 7.5)
+            self.c.drawCentredString(x + cell_w / 2, y_row - 8, t)
+            self.checkbox_field(sanitize_name(f"zahnSchema_{t}_betroffen"), x + cell_w / 2 - 4, y_row - cell_h + 3, 8)
+            self.field_count += 1
+        self.y = y_row - cell_h
+        # Trennlinie Ober-/Unterkiefer
+        self.c.setStrokeColor(SAGE); self.c.setLineWidth(0.7)
+        self.c.line(M, self.y - 4, W - M, self.y - 4)
+        self.c.setFillColor(MUTED); self.c.setFont(ITALIC, 6.5)
+        self.c.drawCentredString(W / 2, self.y - 11, "Oberkiefer ↑  /  Unterkiefer ↓  ·  Bitte betroffene Zähne ankreuzen")
+        self.y -= 16
+        # Unterkiefer
+        y_row = self.y
+        self.c.setStrokeColor(BORDER); self.c.setLineWidth(0.5)
+        for i, t in enumerate(lower_right + lower_left):
+            x = M + i * cell_w
+            self.c.rect(x, y_row - cell_h, cell_w, cell_h, fill=0, stroke=1)
+            self.c.setFillColor(INK); self.c.setFont(BOLD, 7.5)
+            self.c.drawCentredString(x + cell_w / 2, y_row - 8, t)
+            self.checkbox_field(sanitize_name(f"zahnSchema_{t}_betroffen"), x + cell_w / 2 - 4, y_row - cell_h + 3, 8)
+            self.field_count += 1
+        self.y = y_row - cell_h - 6
 
     def save(self):
         self._footer()
