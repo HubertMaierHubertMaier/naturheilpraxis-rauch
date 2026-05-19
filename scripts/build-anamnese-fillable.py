@@ -384,16 +384,16 @@ family_rows = [
 ]
 
 kopf_rows = [
-    ("augenerkrankung", "Augenerkrankung inkl. Netzhaut, Katarakt, Glaukom, Makula, Entzündungen"),
+    ("augenerkrankung", "Augenerkrankung inkl. Netzhaut, Katarakt (Grauer Star), Glaukom (Grüner Star), Makuladegeneration, Entzündungen"),
     ("schwerhoerig", "Schwerhörigkeit links/rechts/beidseitig"),
-    ("ohrenerkrankung", "Ohrenerkrankung inkl. Tinnitus, Hörsturz, Mittelohr, Morbus Menière"),
-    ("sinusitis", "Sinusitis / Nebenhöhlenentzündung"),
-    ("mandelentzuendung", "Mandelentzündung"),
-    ("kopfschmerzen", "Kopfschmerzen / Migräne / Spannung / Cluster"),
-    ("schwindel", "Schwindel: Lagerungs-, Dreh-, Schwankschwindel"),
-    ("geruchsminderung", "Geruchsminderung / Geruchsverlust"),
-    ("geschmacksminderung", "Geschmacksminderung"),
-    ("neuralgien", "Neuralgien: Trigeminus, Glossopharyngeus, Occipitalis, Post-Zoster"),
+    ("ohrenerkrankung", "Ohrenerkrankung inkl. Tinnitus (Ohrgeräusche), Hörsturz, Mittelohrentzündung, Morbus Menière"),
+    ("sinusitis", "Sinusitis (Nebenhöhlenentzündung)"),
+    ("mandelentzuendung", "Mandelentzündung (Tonsillitis)"),
+    ("kopfschmerzen", "Kopfschmerzen / Migräne / Spannungskopfschmerz / Cluster-Kopfschmerz"),
+    ("schwindel", "Schwindel: Lagerungsschwindel, Drehschwindel, Schwankschwindel"),
+    ("geruchsminderung", "Geruchsminderung / Geruchsverlust (Anosmie/Hyposmie)"),
+    ("geschmacksminderung", "Geschmacksminderung (Hypogeusie)"),
+    ("neuralgien", "Neuralgien (Nervenschmerzen): Trigeminus, Glossopharyngeus, Occipitalis, Post-Zoster (nach Gürtelrose)"),
 ]
 
 sleep_rows = [
