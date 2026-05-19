@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
+import { generateEnhancedAnamnesePdf } from "@/lib/pdfExportEnhanced";
+import { initialFormData } from "@/lib/anamneseFormData";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,6 +50,15 @@ export function Header() {
     // Strip ?dev=true from URL and reload
     window.location.href = window.location.pathname;
   }, []);
+
+  const downloadBlankAnamnesePdf = useCallback(async () => {
+    try {
+      await generateEnhancedAnamnesePdf({ formData: initialFormData as any, language: "de" });
+    } catch (e) {
+      console.error("Blanko-PDF Fehler:", e);
+      toast({ title: "Fehler", description: "PDF konnte nicht erzeugt werden.", variant: "destructive" });
+    }
+  }, [toast]);
 
   const navItems = [
     ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
@@ -129,17 +140,17 @@ export function Header() {
               )}
             </Link>
           ) : (
-            <a
-              href="/anamnesebogen-blanko.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={downloadBlankAnamnesePdf}
               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
-              title={t("PDF-Anamnesebogen herunterladen", "Download PDF anamnesis form")}
+              title={t("Vollständigen Blanko-Anamnesebogen als PDF herunterladen", "Download complete blank anamnesis form as PDF")}
             >
               <ClipboardList className="h-4 w-4" />
               {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
-            </a>
+            </button>
           ))}
+
           
           <LanguageSwitcher className="ml-2" />
 
@@ -367,16 +378,14 @@ export function Header() {
                 )}
               </Link>
             ) : (
-              <a
-                href="/anamnesebogen-blanko.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary"
+              <button
+                type="button"
+                onClick={() => { setIsMenuOpen(false); downloadBlankAnamnesePdf(); }}
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary text-left"
               >
                 <ClipboardList className="h-4 w-4" />
                 {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
-              </a>
+              </button>
             ))}
             
             {/* Dev Mode Activate Button Mobile */}
