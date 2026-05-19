@@ -50,15 +50,17 @@ class Form:
         self.c.setFillColor(SAGE)
         self.c.rect(0, H - 58, W, 58, fill=1, stroke=0)
         self.c.setFillColor(white)
-        self.c.setFont(BOLD, 13)
-        self.c.drawString(M, H - 25, "Naturheilpraxis Peter Rauch")
-        self.c.setFont(FONT, 8.5)
-        self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · info@rauch-heilpraktiker.de")
-        self.c.setFont(BOLD, 10.5)
-        self.c.drawRightString(W - M, H - 25, self.title.upper())
-        self.c.setFont(FONT, 8)
-        self.c.drawRightString(W - M, H - 41, self.subtitle)
+        self.c.setFont(BOLD, 12.5)
+        self.c.drawString(M, H - 24, "Naturheilpraxis Peter Rauch")
+        self.c.setFont(FONT, 7.8)
+        self.c.drawString(M, H - 39, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462")
+        self.c.drawString(M, H - 50, "info@rauch-heilpraktiker.de")
+        self.c.setFont(BOLD, 11)
+        self.c.drawRightString(W - M, H - 24, self.title.upper())
+        self.c.setFont(FONT, 7.8)
+        self.c.drawRightString(W - M, H - 39, self.subtitle)
         self.y = H - 76
+
 
     def _footer(self):
         self.c.setStrokeColor(SAGE)
