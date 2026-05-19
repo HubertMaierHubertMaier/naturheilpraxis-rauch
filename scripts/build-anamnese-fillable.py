@@ -214,7 +214,7 @@ class PdfForm:
         self.ensure(31)
         x = M
         self.c.setFillColor(INK)
-        self.c.setFont("Helvetica", 8)
+        self.c.setFont(FONT, 8)
         for label, _, width in fields:
             self.c.drawString(x, self.y - 8, label)
             x += width + 8
@@ -257,7 +257,7 @@ class PdfForm:
         self.c.setFillColor(PALE)
         self.c.rect(M, self.y - header_h, W - 2 * M, header_h, fill=1, stroke=0)
         self.c.setFillColor(MUTED)
-        self.c.setFont("Helvetica-Bold", 7.5)
+        self.c.setFont(BOLD, 7.5)
         self.c.drawString(M + 3, self.y - 10, "Beschwerde / Erkrankung")
         self.c.drawString(M + label_w + 5, self.y - 10, "Ja")
         if with_since:
@@ -294,7 +294,7 @@ class PdfForm:
         self.c.setFillColor(PALE)
         self.c.rect(M, self.y - 14, W - 2 * M, 14, fill=1, stroke=0)
         self.c.setFillColor(MUTED)
-        self.c.setFont("Helvetica-Bold", 7.2)
+        self.c.setFont(BOLD, 7.2)
         for label, w in cols:
             self.c.drawString(x + 2, self.y - 9, label[:22])
             x += w
@@ -311,14 +311,14 @@ class PdfForm:
     def signature_box(self, prefix: str, title: str):
         self.ensure(76)
         self.c.setFillColor(INK)
-        self.c.setFont("Helvetica-Bold", 8.5)
+        self.c.setFont(BOLD, 8.5)
         self.c.drawString(M, self.y - 8, title)
         self.y -= 14
         self.c.setStrokeColor(BORDER)
         self.c.setLineWidth(0.7)
         self.c.rect(M, self.y - 48, W - 2 * M, 48, fill=0, stroke=1)
         self.c.setFillColor(MUTED)
-        self.c.setFont("Helvetica-Oblique", 7.5)
+        self.c.setFont(ITALIC, 7.5)
         self.c.drawString(M + 6, self.y - 43, "Signatur hier in Adobe Reader / Fill & Sign platzieren oder nach Ausdruck handschriftlich unterschreiben")
         self.y -= 58
 
@@ -648,7 +648,7 @@ for opt in preference_options:
     y = pdf.y - 10
     pdf.draw_wrapped(opt, M, y + 5, 230, size=8.2, leading=9)
     pdf.checkbox_field(pdf.field_name("praeferenz", f"{key}_interesse"), M + 250, y, 9)
-    pdf.c.setFillColor(MUTED); pdf.c.setFont("Helvetica", 7.5); pdf.c.drawString(M + 263, y + 2, "Interesse")
+    pdf.c.setFillColor(MUTED); pdf.c.setFont(FONT, 7.5); pdf.c.drawString(M + 263, y + 2, "Interesse")
     pdf.checkbox_field(pdf.field_name("praeferenz", f"{key}_erfahren"), M + 330, y, 9)
     pdf.c.drawString(M + 343, y + 2, "Erfahrung")
     pdf.y -= 16
