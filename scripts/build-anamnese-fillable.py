@@ -144,7 +144,10 @@ class PdfForm:
         return len(lines) * leading
 
     def h1(self, title: str):
-        self.ensure(32)
+        # Jede neue Sektion beginnt grundsätzlich auf einer neuen Seite,
+        # ausgenommen die allererste Sektion direkt nach dem Header.
+        if self.y < H - 80:
+            self.new_page()
         self.c.setFillColor(SAGE_LIGHT)
         self.c.rect(M, self.y - 22, W - 2 * M, 22, fill=1, stroke=0)
         self.c.setFillColor(SAGE_DARK)
@@ -287,61 +290,46 @@ class PdfForm:
         self.c.rect(M, self.y - header_h, W - 2 * M, header_h, fill=1, stroke=0)
         self.c.setFillColor(MUTED)
         self.c.setFont(BOLD, 7.5)
-        self.c.drawString(M + 3, self.y - 10, "Beschwerde / Erkrankung   ·   Varianten ankreuzen")
+        self.c.drawString(M + 3, self.y - 10, "Beschwerde / Erkrankung")
         self.c.drawString(M + label_w + 5, self.y - 10, "Ja")
         if with_since:
             self.c.drawString(M + label_w + 31, self.y - 10, "Jahr/seit")
         if with_details:
             self.c.drawString(M + label_w + 31 + since_w + 9, self.y - 10, "Details / Bemerkung")
         self.y -= header_h + 2
-        for key, label in rows:
-            main_label, variants = self._parse_variants(label)
-            label_lines = self.wrap(main_label, label_w - 5, size=7.6)
-            base_h = max(16, len(label_lines) * 8 + 5)
-            # Varianten in Zeilen umbrechen (Breite label_w - 8)
-            variant_rows: list[list[str]] = []
-            if variants:
-                cur: list[str] = []
-                cur_w = 0.0
-                for v in variants:
-                    chip_w = stringWidth(v, FONT, 6.8) + 14  # Checkbox + Padding
-                    if cur and cur_w + chip_w > label_w - 8:
-                        variant_rows.append(cur)
-                        cur = [v]
-                        cur_w = chip_w
-                    else:
-                        cur.append(v)
-                        cur_w += chip_w + 4
-                if cur:
-                    variant_rows.append(cur)
-            variant_h = len(variant_rows) * 11 + (3 if variant_rows else 0)
-            rh = base_h + variant_h
+
+        def draw_row(row_key: str, row_label: str, indent: float = 0.0):
+            label_lines = self.wrap(row_label, label_w - 5 - indent, size=7.6)
+            rh = max(16, len(label_lines) * 8 + 5)
             self.ensure(rh + 2)
             y_top = self.y
             self.c.setStrokeColor(HexColor("#dddddd"))
             self.c.setLineWidth(0.25)
             self.c.line(M, y_top - rh, W - M, y_top - rh)
-            self.draw_wrapped(main_label, M + 3, y_top - 10, label_w - 5, size=7.6, leading=8)
-            # Varianten-Chips zeichnen
-            if variant_rows:
-                vy = y_top - base_h
-                for vr in variant_rows:
-                    vx = M + 6
-                    for v in vr:
-                        self.checkbox_field(self.field_name(prefix, f"{key}_{sanitize_name(v)}"), vx, vy - 8, 7)
-                        self.c.setFillColor(INK)
-                        self.c.setFont(FONT, 6.8)
-                        self.c.drawString(vx + 9, vy - 6, v)
-                        vx += stringWidth(v, FONT, 6.8) + 18
-                    vy -= 11
-            self.checkbox_field(self.field_name(prefix, f"{key}_ja"), M + label_w + 7, y_top - 12, 9)
+            self.draw_wrapped(row_label, M + 3 + indent, y_top - 10, label_w - 5 - indent, size=7.6, leading=8)
+            self.checkbox_field(self.field_name(prefix, f"{row_key}_ja"), M + label_w + 7, y_top - 12, 9)
             next_x = M + label_w + 31
             if with_since:
-                self.text_field(self.field_name(prefix, f"{key}_seit"), next_x, y_top - 13, since_w, 12, font_size=7.5)
+                self.text_field(self.field_name(prefix, f"{row_key}_seit"), next_x, y_top - 13, since_w, 12, font_size=7.5)
                 next_x += since_w + 9
             if with_details:
-                self.text_field(self.field_name(prefix, f"{key}_details"), next_x, y_top - 13, detail_w, 12, font_size=7.5)
+                self.text_field(self.field_name(prefix, f"{row_key}_details"), next_x, y_top - 13, detail_w, 12, font_size=7.5)
             self.y -= rh
+
+        for key, label in rows:
+            main_label, variants = self._parse_variants(label)
+            if variants:
+                # Sub-Header (nur Label, ohne Felder)
+                self.ensure(14)
+                self.c.setFillColor(SAGE_DARK)
+                self.c.setFont(BOLD, 7.8)
+                self.c.drawString(M + 3, self.y - 9, main_label)
+                self.y -= 12
+                # Jede Variante eigene Zeile mit Ja / Jahr / Details
+                for v in variants:
+                    draw_row(f"{key}_{sanitize_name(v)}", v, indent=10)
+            else:
+                draw_row(key, main_label)
         self.y -= 6
 
     def mini_table(self, prefix: str, title: str, columns: list[tuple[str, float]], rows: int):
@@ -432,7 +420,7 @@ heart_rows = [
 ]
 
 lung_rows = [
-    ("asthma", "Asthma allergisch/nicht-allergisch"), ("lungenentzuendung", "Lungenentzündung"),
+    ("asthma", "Asthma allergisch/nicht-allergisch/Belastungsasthma"), ("lungenentzuendung", "Lungenentzündung"),
     ("rippenfellentzuendung", "Rippenfellentzündung"), ("bronchitis", "Bronchitis akut/chronisch"),
     ("tuberkulose", "Tuberkulose"), ("sarkoidose", "Sarkoidose"), ("husten", "Husten trocken/mit Auswurf"),
     ("auswurf", "Auswurf / Farbe"), ("atemnot", "Atemnot bei Belastung/Ruhe"), ("copd", "COPD"),
