@@ -51,6 +51,15 @@ export function Header() {
     window.location.href = window.location.pathname;
   }, []);
 
+  const downloadBlankAnamnesePdf = useCallback(async () => {
+    try {
+      await generateEnhancedAnamnesePdf({ formData: initialFormData as any, language: "de" });
+    } catch (e) {
+      console.error("Blanko-PDF Fehler:", e);
+      toast({ title: "Fehler", description: "PDF konnte nicht erzeugt werden.", variant: "destructive" });
+    }
+  }, [toast]);
+
   const navItems = [
     ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
   ];
