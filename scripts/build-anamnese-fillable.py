@@ -342,6 +342,51 @@ class PdfForm:
                 draw_row(key, main_label)
         self.y -= 6
 
+    def iaa_table(self, prefix: str, rows: list[tuple[str, str]]):
+        """IAA-Tabelle: pro Frage 6 Intensitäts-Checkboxen (1=sehr leicht … 6=sehr stark) + Bemerkungsfeld."""
+        rows = list(rows)
+        header_h = 16
+        # Spalten-Layout
+        scale_total_w = 6 * 12 + 5 * 2  # 6 Boxen à 12px + Lücken
+        bem_w = 150
+        label_w = (W - 2 * M) - scale_total_w - bem_w - 14
+        scale_x0 = M + label_w + 6
+        bem_x = scale_x0 + scale_total_w + 8
+
+        self.ensure(header_h + 5)
+        self.c.setFillColor(PALE)
+        self.c.rect(M, self.y - header_h, W - 2 * M, header_h, fill=1, stroke=0)
+        self.c.setFillColor(MUTED)
+        self.c.setFont(BOLD, 7.3)
+        self.c.drawString(M + 3, self.y - 10, "Symptom / Frage")
+        # Skalenbeschriftung
+        self.c.setFont(FONT, 6.5)
+        self.c.drawString(scale_x0 - 2, self.y - 5, "1 sehr leicht")
+        self.c.drawRightString(scale_x0 + scale_total_w + 2, self.y - 5, "6 sehr stark")
+        self.c.setFont(BOLD, 7.3)
+        for i in range(6):
+            self.c.drawString(scale_x0 + i * 14 + 3, self.y - 13, str(i + 1))
+        self.c.drawString(bem_x, self.y - 10, "Bemerkung / Auslöser")
+        self.y -= header_h + 2
+
+        for key, label in rows:
+            label_lines = self.wrap(label, label_w - 5, size=7.5)
+            rh = max(16, len(label_lines) * 8 + 5)
+            # Kein Orphan: prüfen ob die Zeile noch passt
+            if self.y - rh < M + 34:
+                self.new_page()
+            y_top = self.y
+            self.c.setStrokeColor(HexColor("#dddddd"))
+            self.c.setLineWidth(0.25)
+            self.c.line(M, y_top - rh, W - M, y_top - rh)
+            self.draw_wrapped(label, M + 3, y_top - 10, label_w - 5, size=7.5, leading=8)
+            cb_y = y_top - 13
+            for i in range(6):
+                self.checkbox_field(self.field_name(prefix, f"{key}_lvl{i+1}"), scale_x0 + i * 14, cb_y, 9)
+            self.text_field(self.field_name(prefix, f"{key}_bem"), bem_x, y_top - 13, bem_w, 12, font_size=7.3)
+            self.y -= rh
+        self.y -= 6
+
     def mini_table(self, prefix: str, title: str, columns: list[tuple[str, float]], rows: int):
         self.h2(title)
         total = sum(w for _, w in columns)
