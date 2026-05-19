@@ -98,14 +98,16 @@ class Form:
         return lines
 
     def h1(self, title: str):
-        if self.y < H - 80:
-            self.new_page()
+        # Vertrag/DSGVO sollen fließen – nur dann umbrechen, wenn nicht
+        # genug Platz für Titel + ~3 Zeilen Folgetext bleibt.
+        self.ensure(60)
         self.c.setFillColor(SAGE_LIGHT)
         self.c.rect(M, self.y - 22, W - 2 * M, 22, fill=1, stroke=0)
         self.c.setFillColor(SAGE_DARK)
         self.c.setFont(BOLD, 11)
         self.c.drawString(M + 7, self.y - 15, title)
         self.y -= 30
+
 
     def h2(self, title: str):
         self.ensure(22)
