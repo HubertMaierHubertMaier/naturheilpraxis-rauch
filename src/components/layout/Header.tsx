@@ -50,6 +50,7 @@ export function Header() {
   }, []);
 
   const navItems = [
+    { label: "✨ Neupatient", href: "/neupatient" },
     ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
   ];
 
