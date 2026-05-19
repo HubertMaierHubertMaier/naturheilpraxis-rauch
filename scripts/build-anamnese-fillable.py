@@ -788,16 +788,34 @@ pdf.note("Nur ausfüllen, wenn relevant. Bei akuter/onkologischer Behandlung bit
 pdf.condition_table("krebs", cancer_rows)
 pdf.text_row("krebs", [("Welche Krebsart", "welche", 180), ("Typ", "welcheTyp", 140), ("Diagnosejahr", "diagnoseJahr", 100)])
 pdf.text_row("krebs", [("Betroffene Organe", "betroffeneOrgane", 240), ("TNM T", "tnm_t", 60), ("N", "tnm_n", 60), ("M", "tnm_m", 60)])
-pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 6)
+pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 8)
+pdf.spacer(10)
 pdf.h2("Zusätzliche Bestätigung Krebserkrankung")
-pdf.note("Ich bestätige, dass die obigen Angaben zu meiner Krebserkrankung nach bestem Wissen korrekt sind und ich verstanden habe, dass naturheilkundliche Behandlung eine schulmedizinisch-onkologische Therapie nicht ersetzt, sondern ergänzend / komplementär erfolgt.")
-pdf.checkboxes("krebs", "", ["Ich bestätige die Krebsangaben und die komplementärtherapeutische Aufklärung"], 1)
+pdf.note("Naturheilkundliche Behandlung ersetzt eine schulmedizinisch-onkologische Therapie nicht – sie erfolgt ausschließlich ergänzend / komplementär. Bitte bestätigen Sie diese Aufklärung gesondert.")
+pdf.spacer(4)
+# Bestätigung mit großer Checkbox auf eigener Zeile + ausreichend Platz für Text
+pdf.ensure(40)
+cb_y = pdf.y - 18
+pdf.checkbox_field(pdf.field_name("krebs", "bestaetigung_komplementaer"), M, cb_y, 11)
+pdf.draw_wrapped(
+    "Ich bestätige, dass meine Angaben zur Krebserkrankung nach bestem Wissen korrekt sind, und habe verstanden, "
+    "dass die naturheilkundliche Behandlung eine schulmedizinisch-onkologische Therapie nicht ersetzt, sondern "
+    "ergänzend / komplementär erfolgt.",
+    M + 18, cb_y + 8, W - 2 * M - 18, size=8.4, leading=10,
+)
+pdf.y -= 38
 pdf.text_row("krebsUnterschrift", [("Ort", "ort", 180), ("Datum", "datum", 120), ("Name in Druckbuchstaben", "name", 220)])
-pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung")
+pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung", height=60)
 
 pdf.h1("XIV. Allergien")
+pdf.h2("Inhalationsallergien – Pollen")
+pdf.note("Bitte bei zutreffenden Pollengruppen ankreuzen und ggf. die Saison/Region ergänzen.")
+pdf.condition_table("allergienPollen", pollen_rows)
+pdf.h2("Inhalationsallergien – sonstige")
+pdf.condition_table("allergienInhalativ", inhalation_other_rows)
+pdf.h2("Weitere Allergien & Unverträglichkeiten")
 pdf.condition_table("allergien", allergy_rows)
-pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen:", "sonstigeUnvertraeglichkeit", 6)
+pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen (z. B. anaphylaktischer Schock, Quincke-Ödem):", "sonstigeUnvertraeglichkeit", 8)
 
 pdf.h1("XV. Medikamente")
 pdf.text_row("medikamente", [("In Behandlung bei", "inAerztlicherBehandlung_beiWem", 220), ("Fachärzte", "fachaerzte", 220)])
