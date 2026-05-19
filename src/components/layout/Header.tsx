@@ -150,8 +150,7 @@ export function Header() {
               {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
             </button>
           ))}
-            </a>
-          ))}
+
           
           <LanguageSwitcher className="ml-2" />
 
