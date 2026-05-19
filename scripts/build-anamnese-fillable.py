@@ -247,6 +247,24 @@ class PdfForm:
             self.draw_wrapped(label, x + 13, y + 7, col_w - 15, size=7.6, leading=8)
         self.y -= rows * 15 + 8
 
+    def _parse_variants(self, label: str) -> tuple[str, list[str]]:
+        """Splittet 'Hauptbegriff inkl./: A, B, C' oder 'Begriff a/b/c' in (Haupt, [Varianten])."""
+        m = re.match(r"^(.+?)\s+inkl\.\s+(.+)$", label)
+        if m:
+            return m.group(1).strip(), [v.strip() for v in re.split(r"[,;]", m.group(2)) if v.strip()]
+        m = re.match(r"^(.+?):\s+(.+)$", label)
+        if m and ("," in m.group(2) or "/" in m.group(2)):
+            rhs = m.group(2)
+            parts = [v.strip() for v in re.split(r"[,/;]", rhs) if v.strip()]
+            if len(parts) >= 2:
+                return m.group(1).strip(), parts
+        # Slash-Muster nur am Ende: "Schulter rechts/links/beidseitig"
+        m = re.match(r"^(.+?)\s+([A-Za-zÄÖÜäöüß0-9.\-]+(?:/[A-Za-zÄÖÜäöüß0-9.\-]+){1,})$", label)
+        if m:
+            parts = [p.strip() for p in m.group(2).split("/") if p.strip()]
+            return m.group(1).strip(), parts
+        return label, []
+
     def condition_table(self, prefix: str, rows: Iterable[tuple[str, str]], with_since=True, with_details=True):
         rows = list(rows)
         header_h = 15
@@ -258,7 +276,7 @@ class PdfForm:
         self.c.rect(M, self.y - header_h, W - 2 * M, header_h, fill=1, stroke=0)
         self.c.setFillColor(MUTED)
         self.c.setFont(BOLD, 7.5)
-        self.c.drawString(M + 3, self.y - 10, "Beschwerde / Erkrankung")
+        self.c.drawString(M + 3, self.y - 10, "Beschwerde / Erkrankung   ·   Varianten ankreuzen")
         self.c.drawString(M + label_w + 5, self.y - 10, "Ja")
         if with_since:
             self.c.drawString(M + label_w + 31, self.y - 10, "Jahr/seit")
@@ -266,14 +284,45 @@ class PdfForm:
             self.c.drawString(M + label_w + 31 + since_w + 9, self.y - 10, "Details / Bemerkung")
         self.y -= header_h + 2
         for key, label in rows:
-            label_lines = self.wrap(label, label_w - 5, size=7.6)
-            rh = max(16, len(label_lines) * 8 + 5)
+            main_label, variants = self._parse_variants(label)
+            label_lines = self.wrap(main_label, label_w - 5, size=7.6)
+            base_h = max(16, len(label_lines) * 8 + 5)
+            # Varianten in Zeilen umbrechen (Breite label_w - 8)
+            variant_rows: list[list[str]] = []
+            if variants:
+                cur: list[str] = []
+                cur_w = 0.0
+                for v in variants:
+                    chip_w = stringWidth(v, FONT, 6.8) + 14  # Checkbox + Padding
+                    if cur and cur_w + chip_w > label_w - 8:
+                        variant_rows.append(cur)
+                        cur = [v]
+                        cur_w = chip_w
+                    else:
+                        cur.append(v)
+                        cur_w += chip_w + 4
+                if cur:
+                    variant_rows.append(cur)
+            variant_h = len(variant_rows) * 11 + (3 if variant_rows else 0)
+            rh = base_h + variant_h
             self.ensure(rh + 2)
             y_top = self.y
             self.c.setStrokeColor(HexColor("#dddddd"))
             self.c.setLineWidth(0.25)
             self.c.line(M, y_top - rh, W - M, y_top - rh)
-            self.draw_wrapped(label, M + 3, y_top - 10, label_w - 5, size=7.6, leading=8)
+            self.draw_wrapped(main_label, M + 3, y_top - 10, label_w - 5, size=7.6, leading=8)
+            # Varianten-Chips zeichnen
+            if variant_rows:
+                vy = y_top - base_h
+                for vr in variant_rows:
+                    vx = M + 6
+                    for v in vr:
+                        self.checkbox_field(self.field_name(prefix, f"{key}_{sanitize_name(v)}"), vx, vy - 8, 7)
+                        self.c.setFillColor(INK)
+                        self.c.setFont(FONT, 6.8)
+                        self.c.drawString(vx + 9, vy - 6, v)
+                        vx += stringWidth(v, FONT, 6.8) + 18
+                    vy -= 11
             self.checkbox_field(self.field_name(prefix, f"{key}_ja"), M + label_w + 7, y_top - 12, 9)
             next_x = M + label_w + 31
             if with_since:
