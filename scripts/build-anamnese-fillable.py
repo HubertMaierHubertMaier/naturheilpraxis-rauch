@@ -654,9 +654,13 @@ pet_rows = [
 ]
 
 vaccine_rows = [
-    ("mmr", "MMR"), ("tetanus", "Tetanus"), ("diphtherie", "Diphtherie"), ("keuchhusten", "Keuchhusten"),
-    ("polio", "Polio"), ("hepatitisA", "Hepatitis A"), ("hepatitisB", "Hepatitis B"),
-    ("windpocken", "Windpocken"), ("influenza", "Influenza"), ("pneumokokken", "Pneumokokken"),
+    ("mmr", "MMR (Masern, Mumps, Röteln)"), ("tetanus", "Tetanus"), ("diphtherie", "Diphtherie"),
+    ("keuchhusten", "Keuchhusten (Pertussis)"), ("polio", "Polio (Kinderlähmung)"),
+    ("hepatitisA", "Hepatitis A"), ("hepatitisB", "Hepatitis B"),
+    ("windpocken", "Windpocken (Varizellen)"), ("influenza", "Influenza (Grippe)"),
+    ("pneumokokken", "Pneumokokken"), ("fsme", "FSME (Zeckenimpfung)"),
+    ("hpv", "HPV"), ("meningokokken", "Meningokokken"), ("rotaviren", "Rotaviren"),
+    ("herpesZoster", "Herpes Zoster (Gürtelrose)"),
 ]
 
 preference_options = [
