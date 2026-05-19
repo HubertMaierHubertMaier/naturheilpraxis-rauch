@@ -46,10 +46,10 @@ export function AnamnesePublicToggle() {
               ) : (
                 <Lock className="h-5 w-5 text-muted-foreground" />
               )}
-              Anamnesebogen ohne Login (Test-Modus)
+              Online-Anamnesebogen – Test-Modus
             </CardTitle>
             <CardDescription>
-              Schaltet <code>/anamnesebogen</code> kurzzeitig öffentlich frei – zum reinen Ausprobieren der UI ohne Anmeldung.
+              Schaltet <code>/anamnesebogen</code> kurzzeitig ohne Login frei – nur zum Ausprobieren der Online-Form.
             </CardDescription>
           </div>
           <div className="flex items-center gap-3">

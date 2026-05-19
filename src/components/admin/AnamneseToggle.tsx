@@ -46,10 +46,10 @@ export function AnamneseToggle() {
               ) : (
                 <Lock className="h-5 w-5 text-red-600" />
               )}
-              Anamnesebogen-Freigabe
+              PDF Anamnesebogen – Freigabe
             </CardTitle>
             <CardDescription>
-              Steuert die Sichtbarkeit für Patienten. Admins haben immer Zugriff.
+              Steuert Sichtbarkeit &amp; Download des ausfüllbaren PDFs für Patienten.
             </CardDescription>
           </div>
           <div className="flex items-center gap-3">
@@ -79,8 +79,8 @@ export function AnamneseToggle() {
       <CardContent>
         <p className="text-sm text-muted-foreground">
           {enabled
-            ? "🟢 Patienten können den Anamnesebogen über Menü und Dashboard öffnen."
-            : "🔴 Patienten sehen den Anamnesebogen nicht. Nützlich beim Testen oder bei Wartung."}
+            ? "🟢 Patienten können das PDF über Menü und Dashboard herunterladen."
+            : "🔴 PDF ist für Patienten ausgeblendet. Nützlich bei Wartung oder Test."}
         </p>
       </CardContent>
     </Card>
