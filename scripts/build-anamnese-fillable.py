@@ -481,8 +481,10 @@ women_rows = [
 ]
 
 men_rows = [
-    ("prostata", "Prostata: BPH, Prostatitis, Karzinom, PSA"), ("hoden", "Hoden: Entzündung, Torsion, Krebs, Varikozele, Hydrozele"),
-    ("nebenhoden", "Nebenhoden: Epididymitis, Zyste"), ("erektionsstoerung", "Erektionsstörung"),
+    ("prostata", "Prostata: BPH (gutartige Prostatavergrößerung), Prostatitis (Prostataentzündung), Karzinom (Prostatakrebs), PSA-Wert erhöht"),
+    ("hoden", "Hoden: Entzündung (Orchitis), Torsion (Hodenverdrehung), Krebs (Hodenkrebs), Varikozele (Krampfader am Hoden), Hydrozele (Wasserbruch)"),
+    ("nebenhoden", "Nebenhoden: Epididymitis (Nebenhodenentzündung), Zyste (Spermatozele)"),
+    ("erektionsstoerung", "Erektionsstörung"),
 ]
 
 surgery_rows = [
