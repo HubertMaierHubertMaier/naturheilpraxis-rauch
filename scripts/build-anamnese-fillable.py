@@ -617,7 +617,7 @@ pdf.text_row("patient", [("Nachname *", "nachname", 155), ("Vorname *", "vorname
 pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Zivilstand", "zivilstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
 pdf.h2("B. Kontaktdaten")
 pdf.text_row("kontakt", [("Straße, Hausnummer *", "strasse", 230), ("PLZ *", "plz", 70), ("Wohnort *", "wohnort", 190)])
-pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil", "mobil", 150)])
+pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil *", "mobil", 150)])
 pdf.text_row("kontakt", [("E-Mail *", "email", 250)])
 pdf.h2("C. Mitversicherte / Angehörige")
 pdf.mini_table("mitversicherte", "Mitversicherte Personen", [("Name", 190), ("Verhältnis", 120), ("Geburtsdatum", 120)], 3)
