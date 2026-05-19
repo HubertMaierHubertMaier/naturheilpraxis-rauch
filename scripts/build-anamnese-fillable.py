@@ -420,7 +420,7 @@ heart_rows = [
 ]
 
 lung_rows = [
-    ("asthma", "Asthma allergisch/nicht-allergisch"), ("lungenentzuendung", "Lungenentzündung"),
+    ("asthma", "Asthma allergisch/nicht-allergisch/Belastungsasthma"), ("lungenentzuendung", "Lungenentzündung"),
     ("rippenfellentzuendung", "Rippenfellentzündung"), ("bronchitis", "Bronchitis akut/chronisch"),
     ("tuberkulose", "Tuberkulose"), ("sarkoidose", "Sarkoidose"), ("husten", "Husten trocken/mit Auswurf"),
     ("auswurf", "Auswurf / Farbe"), ("atemnot", "Atemnot bei Belastung/Ruhe"), ("copd", "COPD"),
