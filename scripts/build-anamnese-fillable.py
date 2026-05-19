@@ -977,21 +977,23 @@ pdf.text_row("soziales", [("Wohnumfeld", "wohnumfeld", 120), ("Wohntyp", "wohnty
 pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
 pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
 
-pdf.h1("XXIV. IAA-Fragebogen")
+pdf.h1("XXIV. IAA-Fragebogen (Individuelle Austestung und Analyse)")
 pdf.note(
-    "Warum noch ein zusätzlicher Symptombogen? Der IAA-Fragebogen (Individuelle Austestung und Analyse) ist speziell auf das "
-    "Trikombin-Behandlungsgerät zugeschnitten. Er fragt einzelne Symptome auf einer Intensitätsskala ab und ergänzt die "
-    "klassische Anamnese um genau die Informationen, die für die individuelle Geräteeinstellung benötigt werden – also keine "
-    "Doppelung, sondern eine gezielte Vertiefung."
+    "Warum noch ein zusätzlicher Symptom-Fragebogen? Der IAA-Fragebogen ergänzt die klassische Anamnese um genau die Informationen, "
+    "die für die individuelle Einstellung des Trikombin-Behandlungsgeräts (Bioresonanz/Frequenztherapie) benötigt werden. Die Fragen "
+    "wirken teilweise ungewöhnlich oder wiederholen Themen aus der Anamnese – das ist gewollt: Erst aus dem Symptomprofil ergibt sich "
+    "das passende Frequenzmuster. Es geht hier nicht um eine medizinische Diagnose."
 )
 pdf.note(
-    "Bitte nur zutreffende Fragen ankreuzen. In der Spalte 'Details / Bemerkung' können Sie optional Intensität (1 sehr leicht – "
-    "6 sehr stark) und Auslöser ergänzen. Nicht zutreffende Fragen bitte leer lassen."
+    "Ausfüllen: Bitte NUR Symptome ankreuzen, die tatsächlich auf Dich zutreffen. Wähle dann die Intensität auf einer Skala von "
+    "1 (sehr leicht) bis 6 (sehr stark). Nicht zutreffende Fragen einfach leer lassen. In der Spalte 'Bemerkung / Auslöser' kannst "
+    "Du optional ergänzen, wann/wodurch das Symptom auftritt. Die Sektion ist freiwillig – je vollständiger sie ausgefüllt ist, "
+    "desto präziser kann die Geräteeinstellung erfolgen."
 )
 iaa_categories = parse_iaa_categories()
 for cat in iaa_categories:
     pdf.h2(cat["title"])
-    pdf.condition_table(f"iaa_{cat['id']}", [(q["id"].replace('.', '_'), f"{q['id']}  {q['text']}") for q in cat["questions"]], with_since=False, with_details=True)
+    pdf.iaa_table(f"iaa_{cat['id']}", [(q["id"].replace('.', '_'), f"{q['id']}  {q['text']}") for q in cat["questions"]])
 
 pdf.h1("XXV. Unterschrift")
 pdf.long_text("abschluss", "Weitere Erkrankungen/Symptome, die bisher nicht abgefragt wurden:", "weitereErkrankungen", 10)
