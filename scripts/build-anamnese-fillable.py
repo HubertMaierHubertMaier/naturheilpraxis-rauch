@@ -565,11 +565,29 @@ cancer_rows = [
 ]
 
 allergy_rows = [
-    ("inhalation", "Inhalationsallergien: Pollen, Staub, Tierhaare, Schimmel"),
-    ("tierepithelien", "Tierepithelien: Hund, Katze, Pferd"),
     ("nahrungsmittel", "Nahrungsmittelallergien"), ("medikamente", "Medikamentenallergien"),
     ("kontakt", "Kontaktallergien: Nickel, Latex, sonstige"), ("laktose", "Laktoseintoleranz"),
     ("gluten", "Gluten / Zöliakie"), ("fruktose", "Fruktose"), ("histamin", "Histamin"),
+    ("insektengift", "Insektengift (Bienen, Wespen)"),
+]
+
+# Inhalationsallergien werden separat detailliert abgefragt
+pollen_rows = [
+    ("graeser", "Gräser (Wiesengräser, Roggen, Lieschgras)"),
+    ("baeume_frueh", "Bäume früh (Hasel, Erle, Birke)"),
+    ("baeume_spaet", "Bäume spät (Eiche, Buche, Esche)"),
+    ("kraeuter", "Kräuter (Beifuß, Ambrosia, Wegerich)"),
+    ("getreidepollen", "Getreidepollen"),
+]
+inhalation_other_rows = [
+    ("hausstaub", "Hausstaubmilben"),
+    ("schimmelpilze", "Schimmelpilze (innen/außen)"),
+    ("tier_hund", "Tierhaare Hund"),
+    ("tier_katze", "Tierhaare Katze"),
+    ("tier_pferd", "Tierhaare Pferd"),
+    ("tier_andere", "Tierhaare andere Tiere"),
+    ("federn", "Federn / Daunen"),
+    ("latex_inhalativ", "Latex inhalativ"),
 ]
 
 environment_chem = [
