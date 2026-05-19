@@ -228,27 +228,36 @@ class PdfForm:
             x += width + 8
         self.y -= 18
 
-    def long_text(self, prefix: str, label: str, key: str, lines: int = 3):
-        h = lines * 12
+    def long_text(self, prefix: str, label: str, key: str, lines: int = 10):
+        # Multiline AcroForm-Felder erlauben beliebig viel Text (scrollbar).
+        # Wir vergrößern die sichtbare Fläche deutlich, damit Patienten ausführlich schreiben können.
+        h = lines * 13
         self.ensure(h + 24)
-        self.draw_wrapped(label, M, self.y - 8, W - 2 * M, size=8.2, leading=9)
+        self.draw_wrapped(label, M, self.y - 8, W - 2 * M, size=8.4, leading=9)
         self.y -= 14
-        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=8)
+        self.text_field(self.field_name(prefix, key), M, self.y - h, W - 2 * M, h, multiline=True, font_size=9)
         self.y -= h + 8
 
     def checkboxes(self, prefix: str, title: str, options: list[str], cols: int = 3):
         if title:
             self.h2(title)
         col_w = (W - 2 * M) / cols
+        row_h = 17
         rows = (len(options) + cols - 1) // cols
-        self.ensure(rows * 15 + 6)
+        self.ensure(rows * row_h + 8)
         for i, label in enumerate(options):
             row, col = divmod(i, cols)
             x = M + col * col_w
-            y = self.y - 10 - row * 15
-            self.checkbox_field(self.field_name(prefix, label), x, y, 9)
-            self.draw_wrapped(label, x + 13, y + 7, col_w - 15, size=7.6, leading=8)
-        self.y -= rows * 15 + 8
+            # Top der Zeile
+            row_top = self.y - row * row_h
+            # Checkbox 9px hoch, Label Schrift 8 (Aufstieg ~6). Mittellinie ausrichten.
+            cb_y = row_top - 12
+            label_baseline = row_top - 10  # so dass Mitte des Glyphen ≈ Mitte der Checkbox
+            self.checkbox_field(self.field_name(prefix, label), x, cb_y, 9)
+            self.c.setFillColor(INK)
+            self.c.setFont(FONT, 8)
+            self.draw_wrapped(label, x + 14, label_baseline, col_w - 16, size=8, leading=9)
+        self.y -= rows * row_h + 8
 
     def _parse_variants(self, label: str) -> tuple[str, list[str]]:
         """Splittet 'Hauptbegriff inkl./: A, B, C' oder 'Begriff a/b/c' in (Haupt, [Varianten])."""
@@ -357,19 +366,64 @@ class PdfForm:
             self.y -= 17
         self.y -= 5
 
-    def signature_box(self, prefix: str, title: str):
-        self.ensure(76)
+    def signature_box(self, prefix: str, title: str, height: float = 48):
+        self.ensure(height + 28)
         self.c.setFillColor(INK)
         self.c.setFont(BOLD, 8.5)
         self.c.drawString(M, self.y - 8, title)
         self.y -= 14
         self.c.setStrokeColor(BORDER)
         self.c.setLineWidth(0.7)
-        self.c.rect(M, self.y - 48, W - 2 * M, 48, fill=0, stroke=1)
+        self.c.rect(M, self.y - height, W - 2 * M, height, fill=0, stroke=1)
         self.c.setFillColor(MUTED)
         self.c.setFont(ITALIC, 7.5)
-        self.c.drawString(M + 6, self.y - 43, "Signatur hier in Adobe Reader / Fill & Sign platzieren oder nach Ausdruck handschriftlich unterschreiben")
-        self.y -= 58
+        self.c.drawString(M + 6, self.y - height + 6, "Signatur hier in Adobe Reader / Fill & Sign platzieren oder nach Ausdruck handschriftlich unterschreiben")
+        self.y -= height + 10
+
+    def tooth_chart(self):
+        """FDI-Zahnschema als visuelles Raster mit Zahnnummern und Ankreuz-Feldern."""
+        upper_right = ["18","17","16","15","14","13","12","11"]
+        upper_left  = ["21","22","23","24","25","26","27","28"]
+        lower_right = ["48","47","46","45","44","43","42","41"]
+        lower_left  = ["31","32","33","34","35","36","37","38"]
+        cell_w = (W - 2 * M) / 16
+        cell_h = 22
+        total_h = cell_h * 2 + 14
+        self.ensure(total_h + 20)
+        top = self.y
+        # Beschriftung Quadranten
+        self.c.setFillColor(MUTED); self.c.setFont(ITALIC, 7)
+        self.c.drawString(M, top - 6, "Patient: rechts")
+        self.c.drawRightString(W - M, top - 6, "Patient: links")
+        self.y -= 10
+        # Oberkiefer
+        y_row = self.y
+        self.c.setStrokeColor(BORDER); self.c.setLineWidth(0.5)
+        for i, t in enumerate(upper_right + upper_left):
+            x = M + i * cell_w
+            self.c.rect(x, y_row - cell_h, cell_w, cell_h, fill=0, stroke=1)
+            self.c.setFillColor(INK); self.c.setFont(BOLD, 7.5)
+            self.c.drawCentredString(x + cell_w / 2, y_row - 8, t)
+            self.checkbox_field(sanitize_name(f"zahnSchema_{t}_betroffen"), x + cell_w / 2 - 4, y_row - cell_h + 3, 8)
+            self.field_count += 1
+        self.y = y_row - cell_h
+        # Trennlinie Ober-/Unterkiefer
+        self.c.setStrokeColor(SAGE); self.c.setLineWidth(0.7)
+        self.c.line(M, self.y - 4, W - M, self.y - 4)
+        self.c.setFillColor(MUTED); self.c.setFont(ITALIC, 6.5)
+        self.c.drawCentredString(W / 2, self.y - 11, "Oberkiefer ↑  /  Unterkiefer ↓  ·  Bitte betroffene Zähne ankreuzen")
+        self.y -= 16
+        # Unterkiefer
+        y_row = self.y
+        self.c.setStrokeColor(BORDER); self.c.setLineWidth(0.5)
+        for i, t in enumerate(lower_right + lower_left):
+            x = M + i * cell_w
+            self.c.rect(x, y_row - cell_h, cell_w, cell_h, fill=0, stroke=1)
+            self.c.setFillColor(INK); self.c.setFont(BOLD, 7.5)
+            self.c.drawCentredString(x + cell_w / 2, y_row - 8, t)
+            self.checkbox_field(sanitize_name(f"zahnSchema_{t}_betroffen"), x + cell_w / 2 - 4, y_row - cell_h + 3, 8)
+            self.field_count += 1
+        self.y = y_row - cell_h - 6
 
     def save(self):
         self._footer()
@@ -511,11 +565,29 @@ cancer_rows = [
 ]
 
 allergy_rows = [
-    ("inhalation", "Inhalationsallergien: Pollen, Staub, Tierhaare, Schimmel"),
-    ("tierepithelien", "Tierepithelien: Hund, Katze, Pferd"),
     ("nahrungsmittel", "Nahrungsmittelallergien"), ("medikamente", "Medikamentenallergien"),
     ("kontakt", "Kontaktallergien: Nickel, Latex, sonstige"), ("laktose", "Laktoseintoleranz"),
     ("gluten", "Gluten / Zöliakie"), ("fruktose", "Fruktose"), ("histamin", "Histamin"),
+    ("insektengift", "Insektengift (Bienen, Wespen)"),
+]
+
+# Inhalationsallergien werden separat detailliert abgefragt
+pollen_rows = [
+    ("graeser", "Gräser (Wiesengräser, Roggen, Lieschgras)"),
+    ("baeume_frueh", "Bäume früh (Hasel, Erle, Birke)"),
+    ("baeume_spaet", "Bäume spät (Eiche, Buche, Esche)"),
+    ("kraeuter", "Kräuter (Beifuß, Ambrosia, Wegerich)"),
+    ("getreidepollen", "Getreidepollen"),
+]
+inhalation_other_rows = [
+    ("hausstaub", "Hausstaubmilben"),
+    ("schimmelpilze", "Schimmelpilze (innen/außen)"),
+    ("tier_hund", "Tierhaare Hund"),
+    ("tier_katze", "Tierhaare Katze"),
+    ("tier_pferd", "Tierhaare Pferd"),
+    ("tier_andere", "Tierhaare andere Tiere"),
+    ("federn", "Federn / Daunen"),
+    ("latex_inhalativ", "Latex inhalativ"),
 ]
 
 environment_chem = [
@@ -524,22 +596,71 @@ environment_chem = [
 ]
 
 environment_body = [
-    "Strahlung: Geopathie, Elektrosmog, Hochspannung, Funkmasten, WLAN", "Zahnherde / Wurzelbehandlungen",
-    "Quecksilber / Amalgam", "Zahnbeschwerden", "Metalle im Mund", "Implantate", "Nebenhöhlen",
-    "Tonsillen", "Narben", "Mangelzustände: Vitamine, Mineralien, Spurenelemente, Enzyme, Flüssigkeit",
-    "Mikroorganismen: Viren, Bakterien, Pilze, Parasiten", "Toxisch: Schwermetalle, Chemikalien, Pestizide, Erbtoxine",
+    "Strahlung: Geopathie, Elektrosmog, Hochspannung, Funkmasten, WLAN",
+    "Nebenhöhlen (chronische Reizung / Herd)",
+    "Tonsillen (chronische Reizung / Herd)",
+    "Narben (störende oder verziehende Narben)",
+]
+
+# Mangelzustände – separat aufgelistet, weil es keine Belastung, sondern ein Defizit ist
+vitamin_rows = [
+    ("vitA", "Vitamin A (Retinol)"), ("vitB1", "Vitamin B1 (Thiamin)"),
+    ("vitB2", "Vitamin B2 (Riboflavin)"), ("vitB3", "Vitamin B3 (Niacin)"),
+    ("vitB5", "Vitamin B5 (Pantothensäure)"), ("vitB6", "Vitamin B6 (Pyridoxin)"),
+    ("vitB7", "Vitamin B7 / H (Biotin)"), ("vitB9", "Vitamin B9 (Folsäure)"),
+    ("vitB12", "Vitamin B12 (Cobalamin)"), ("vitC", "Vitamin C (Ascorbinsäure)"),
+    ("vitD", "Vitamin D (Cholecalciferol)"), ("vitE", "Vitamin E (Tocopherol)"),
+    ("vitK", "Vitamin K (Phyllochinon)"),
+]
+mineral_rows = [
+    ("calcium", "Calcium"), ("magnesium", "Magnesium"), ("kalium", "Kalium"),
+    ("natrium", "Natrium"), ("phosphor", "Phosphor"), ("eisen", "Eisen (Ferritin)"),
+]
+trace_rows = [
+    ("zink", "Zink"), ("selen", "Selen"), ("jod", "Jod"), ("kupfer", "Kupfer"),
+    ("mangan", "Mangan"), ("chrom", "Chrom"), ("molybdaen", "Molybdän"),
+    ("silicium", "Silicium"),
+]
+
+# Belastungen (Mikroorganismen / Toxisch) – eigene Sektion
+load_rows = [
+    ("viren", "Viren (z. B. EBV, CMV, HSV, HHV-6, Influenza)"),
+    ("bakterien", "Bakterien (z. B. Borrelien, Streptokokken, Helicobacter)"),
+    ("pilze", "Pilze (z. B. Candida, Aspergillus, Schimmelpilze)"),
+    ("parasiten", "Parasiten (z. B. Würmer, Protozoen)"),
+    ("schwermetalle", "Schwermetalle (Quecksilber, Blei, Cadmium, Aluminium, Arsen)"),
+    ("chemikalien", "Chemikalien / Lösungsmittel"),
+    ("pestizide", "Pestizide / Herbizide"),
+    ("erbtoxine", "Erbtoxine / pränatale Belastungen"),
 ]
 
 infection_rows = [
-    ("tropenReise", "Tropenreise / Länder"), ("zeckenbiss", "Zeckenbiss / roter Hof"),
-    ("borreliose", "Borreliose"), ("fsmeImpfung", "FSME-Impfung"), ("hund", "Hund / Rasse"),
-    ("katze", "Katze / Rasse"), ("pferd", "Pferd / Kontakt"), ("andereHaustiere", "Andere Haustiere"),
+    ("tropenReise", "Tropenreise / Länder"),
+    ("zeckenbiss", "Zeckenbiss / roter Hof (Wanderröte)"),
+    ("borreliose", "Borreliose diagnostiziert"),
+    ("ebv", "Epstein-Barr-Virus (EBV / Pfeiffersches Drüsenfieber)"),
+    ("cmv", "CMV (Cytomegalievirus)"),
+    ("herpes", "Herpes simplex / Zoster (Gürtelrose)"),
+    ("hepatitis", "Hepatitis A/B/C"),
+    ("hiv", "HIV"),
+    ("hpv", "HPV"),
+    ("tuberkulose", "Tuberkulose"),
+    ("covid", "COVID-19 / Long-COVID"),
+    ("sonstige", "Sonstige durchgemachte Infektionen"),
+]
+pet_rows = [
+    ("hund", "Hund / Rasse"), ("katze", "Katze / Rasse"),
+    ("pferd", "Pferd / Kontakt"), ("andereHaustiere", "Andere Haustiere / Tierkontakt"),
 ]
 
 vaccine_rows = [
-    ("mmr", "MMR"), ("tetanus", "Tetanus"), ("diphtherie", "Diphtherie"), ("keuchhusten", "Keuchhusten"),
-    ("polio", "Polio"), ("hepatitisA", "Hepatitis A"), ("hepatitisB", "Hepatitis B"),
-    ("windpocken", "Windpocken"), ("influenza", "Influenza"), ("pneumokokken", "Pneumokokken"),
+    ("mmr", "MMR (Masern, Mumps, Röteln)"), ("tetanus", "Tetanus"), ("diphtherie", "Diphtherie"),
+    ("keuchhusten", "Keuchhusten (Pertussis)"), ("polio", "Polio (Kinderlähmung)"),
+    ("hepatitisA", "Hepatitis A"), ("hepatitisB", "Hepatitis B"),
+    ("windpocken", "Windpocken (Varizellen)"), ("influenza", "Influenza (Grippe)"),
+    ("pneumokokken", "Pneumokokken"), ("fsme", "FSME (Zeckenimpfung)"),
+    ("hpv", "HPV"), ("meningokokken", "Meningokokken"), ("rotaviren", "Rotaviren"),
+    ("herpesZoster", "Herpes Zoster (Gürtelrose)"),
 ]
 
 preference_options = [
@@ -563,7 +684,7 @@ pdf.text_row("patient", [("Nachname *", "nachname", 155), ("Vorname *", "vorname
 pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Zivilstand", "zivilstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
 pdf.h2("B. Kontaktdaten")
 pdf.text_row("kontakt", [("Straße, Hausnummer *", "strasse", 230), ("PLZ *", "plz", 70), ("Wohnort *", "wohnort", 190)])
-pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil", "mobil", 150)])
+pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil *", "mobil", 150)])
 pdf.text_row("kontakt", [("E-Mail *", "email", 250)])
 pdf.h2("C. Mitversicherte / Angehörige")
 pdf.mini_table("mitversicherte", "Mitversicherte Personen", [("Name", 190), ("Verhältnis", 120), ("Geburtsdatum", 120)], 3)
@@ -576,9 +697,12 @@ pdf.note("Diese Angaben sind freiwillig und nur relevant, wenn beruflicher Stres
 pdf.text_row("beruf", [("Beruf", "beruf", 150), ("Arbeitgeber", "arbeitgeber", 170), ("Branche", "branche", 130)])
 pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentner seit", "berentnerSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
 pdf.h2("F. Sorgeberechtigte bei Minderjährigen")
-pdf.text_row("sorge", [("Mutter/Vater/Sorgeberechtigte/r", "typ", 175), ("Vorname", "vorname", 145), ("Nachname", "nachname", 145)])
-pdf.text_row("sorge", [("Straße", "strasse", 175), ("PLZ", "plz", 70), ("Ort", "ort", 160), ("Telefon", "telefon", 120)])
-pdf.text_row("sorge", [("E-Mail", "email", 220), ("Festnetz bei abweichender Adresse", "festnetz", 220)])
+pdf.note("Bei minderjährigen Patient:innen sind die folgenden Angaben Pflicht. Bitte zuerst das Verhältnis ankreuzen.")
+pdf.checkboxes("sorge", "Verhältnis zur/zum Patient:in *", ["Mutter", "Vater", "Sorgeberechtigte/r", "Vormund / Pfleger:in", "Sonstige/r"], 5)
+pdf.text_row("sorge", [("Vorname *", "vorname", 235), ("Nachname *", "nachname", 235)])
+pdf.text_row("sorge", [("Straße, Hausnummer *", "strasse", 235), ("PLZ *", "plz", 70), ("Ort *", "ort", 155)])
+pdf.text_row("sorge", [("Telefon *", "telefon", 175), ("Mobil *", "mobil", 175), ("E-Mail *", "email", 175)])
+pdf.text_row("sorge", [("Bei abweichender Adresse / Bemerkung", "festnetz", 470)])
 pdf.h2("G. Informationsquelle und Vorbehandler")
 pdf.checkboxes("infoquelle", "Wie sind Sie auf die Praxis aufmerksam geworden?", ["Empfehlung", "BNI (Business Network)", "Internet", "Google", "Arzt/Heilpraktiker", "Social Media", "Sonstiges"], 3)
 pdf.text_row("infoquelle", [("Empfohlen von", "empfehlungVon", 220)])
@@ -664,16 +788,34 @@ pdf.note("Nur ausfüllen, wenn relevant. Bei akuter/onkologischer Behandlung bit
 pdf.condition_table("krebs", cancer_rows)
 pdf.text_row("krebs", [("Welche Krebsart", "welche", 180), ("Typ", "welcheTyp", 140), ("Diagnosejahr", "diagnoseJahr", 100)])
 pdf.text_row("krebs", [("Betroffene Organe", "betroffeneOrgane", 240), ("TNM T", "tnm_t", 60), ("N", "tnm_n", 60), ("M", "tnm_m", 60)])
-pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 6)
+pdf.long_text("krebs", "Therapien, Metastasen, aktuelle Tumortherapie, Besonderheiten:", "details", 8)
+pdf.spacer(10)
 pdf.h2("Zusätzliche Bestätigung Krebserkrankung")
-pdf.note("Ich bestätige, dass die obigen Angaben zu meiner Krebserkrankung nach bestem Wissen korrekt sind und ich verstanden habe, dass naturheilkundliche Behandlung eine schulmedizinisch-onkologische Therapie nicht ersetzt, sondern ergänzend / komplementär erfolgt.")
-pdf.checkboxes("krebs", "", ["Ich bestätige die Krebsangaben und die komplementärtherapeutische Aufklärung"], 1)
+pdf.note("Naturheilkundliche Behandlung ersetzt eine schulmedizinisch-onkologische Therapie nicht – sie erfolgt ausschließlich ergänzend / komplementär. Bitte bestätigen Sie diese Aufklärung gesondert.")
+pdf.spacer(4)
+# Bestätigung mit großer Checkbox auf eigener Zeile + ausreichend Platz für Text
+pdf.ensure(40)
+cb_y = pdf.y - 18
+pdf.checkbox_field(pdf.field_name("krebs", "bestaetigung_komplementaer"), M, cb_y, 11)
+pdf.draw_wrapped(
+    "Ich bestätige, dass meine Angaben zur Krebserkrankung nach bestem Wissen korrekt sind, und habe verstanden, "
+    "dass die naturheilkundliche Behandlung eine schulmedizinisch-onkologische Therapie nicht ersetzt, sondern "
+    "ergänzend / komplementär erfolgt.",
+    M + 18, cb_y + 8, W - 2 * M - 18, size=8.4, leading=10,
+)
+pdf.y -= 38
 pdf.text_row("krebsUnterschrift", [("Ort", "ort", 180), ("Datum", "datum", 120), ("Name in Druckbuchstaben", "name", 220)])
-pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung")
+pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung", height=60)
 
 pdf.h1("XIV. Allergien")
+pdf.h2("Inhalationsallergien – Pollen")
+pdf.note("Bitte bei zutreffenden Pollengruppen ankreuzen und ggf. die Saison/Region ergänzen.")
+pdf.condition_table("allergienPollen", pollen_rows)
+pdf.h2("Inhalationsallergien – sonstige")
+pdf.condition_table("allergienInhalativ", inhalation_other_rows)
+pdf.h2("Weitere Allergien & Unverträglichkeiten")
 pdf.condition_table("allergien", allergy_rows)
-pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen:", "sonstigeUnvertraeglichkeit", 6)
+pdf.long_text("allergien", "Sonstige Allergien / Unverträglichkeiten / Reaktionen (z. B. anaphylaktischer Schock, Quincke-Ödem):", "sonstigeUnvertraeglichkeit", 8)
 
 pdf.h1("XV. Medikamente")
 pdf.text_row("medikamente", [("In Behandlung bei", "inAerztlicherBehandlung_beiWem", 220), ("Fachärzte", "fachaerzte", 220)])
@@ -691,18 +833,64 @@ pdf.long_text("lebensweise", "Ernährungsgewohnheiten / Besonderheiten:", "ernae
 pdf.h1("XVII. Zahngesundheit")
 pdf.checkboxes("zahn", "Gebisstyp / Prothese", ["vollständig", "Teilprothese", "Vollprothese", "Oberkiefer", "Unterkiefer", "beide Kiefer"], 3)
 pdf.text_row("zahn", [("Prothese seit", "protheseSeit", 120), ("Letzter Zahnarztbesuch", "letzterZahnarztbesuch", 160), ("Zahnarzt Name/Ort", "zahnarztName", 220)])
-pdf.mini_table("zahnbefunde", "Zahnbefunde / Zahnnummern", [("Zahnnummer", 80), ("Befund/Diagnose", 200), ("seit", 80), ("Bemerkung", 170)], 10)
-pdf.condition_table("zahn", [("parodontitis", "Parodontitis"), ("zahnfleischbluten", "Zahnfleischbluten"), ("kiefergelenk", "Kiefergelenk: Knacken, Schmerzen, eingeschränkt"), ("bruxismus", "Bruxismus nachts/tagsüber/Schiene")])
-pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 6)
+pdf.h2("Zahnschema (FDI-Nummern) – betroffene Zähne ankreuzen")
+pdf.note("Zähne sind nach internationalem FDI-System nummeriert. Reihenfolge wie beim Blick in den Mund: Patient rechts ↔ links. Zusätzliche Befunde bitte in der Tabelle unten eintragen.")
+pdf.tooth_chart()
+pdf.mini_table("zahnbefunde", "Zahnbefunde / Auffälligkeiten – freie Eintragung", [("FDI-Nr.", 60), ("Befund/Diagnose", 220), ("seit", 70), ("Bemerkung", 180)], 8)
 
-pdf.h1("XVIII. Umwelt")
+pdf.h2("Wurzelbehandlungen")
+pdf.note("Wurzelbehandelte (devitale) Zähne können Störherde sein. Bitte FDI-Zahnnummer und Jahr angeben.")
+pdf.mini_table("wurzelbehandlung", "Wurzelbehandelte Zähne", [("FDI-Nr.", 60), ("Jahr", 70), ("Beschwerden ja/nein", 110), ("Bemerkung", 290)], 6)
+
+pdf.h2("Implantate")
+pdf.note("Pro Implantat bitte Zahnnummer (FDI), Jahr und Material angeben (Titan oder Keramik / Zirkonoxid).")
+pdf.mini_table("implantate", "Implantate", [("FDI-Nr.", 60), ("Jahr", 70), ("Material (Titan / Keramik)", 160), ("Bemerkung", 240)], 5)
+
+pdf.h2("Metalle und Werkstoffe im Mund")
+pdf.checkboxes("zahnMetalle", "Vorhandene Werkstoffe", [
+    "Amalgam-Füllungen",
+    "Goldinlays / Gold-Kronen",
+    "Titan (Implantat/Schraube)",
+    "Keramik / Zirkonoxid",
+    "Komposit-Kunststoff",
+    "Stahl (Brücken, Klammern)",
+    "Palladium / Edelmetall-Legierung",
+    "Kobalt-Chrom",
+    "Andere Metalle / Legierungen",
+], 3)
+pdf.text_row("zahnMetalle", [("Amalgam entfernt im Jahr", "amalgamEntferntJahr", 150), ("Beschwerden seit Material-Wechsel?", "beschwerdenWechsel", 280)])
+
+pdf.condition_table("zahn", [("parodontitis", "Parodontitis"), ("zahnfleischbluten", "Zahnfleischbluten"), ("kiefergelenk", "Kiefergelenk: Knacken, Schmerzen, eingeschränkt"), ("bruxismus", "Bruxismus nachts/tagsüber/Schiene"), ("zahnherd", "Bekannte Zahnherde / chronische Entzündungen")])
+pdf.long_text("zahn", "Weitere zahnärztliche / kieferbezogene Bemerkungen:", "bemerkungen", 8)
+
+pdf.h1("XVIII. Umwelt & Belastungen")
 pdf.h2("Chemosensibilität / Reizstoffe")
 pdf.condition_table("umweltChemie", [(sanitize_name(x), x) for x in environment_chem], with_since=False, with_details=True)
-pdf.h2("Körperbelastungen / Störfelder")
+pdf.h2("Körperliche Störfelder")
+pdf.note("Klassische Störfelder (chronische lokale Reizungen, Narben, Tonsillen, Nebenhöhlen, Strahlung).")
 pdf.condition_table("umweltKoerper", [(sanitize_name(x), x) for x in environment_body], with_since=False, with_details=True)
 
-pdf.h1("XIX. Infektionen")
+pdf.h2("Mangelzustände – Vitamine")
+pdf.note("Bekannte oder vermutete Mängel (z. B. Laborwert, Symptome). Diese gehören zu den Defiziten, nicht zu den Belastungen.")
+pdf.condition_table("mangelVitamine", vitamin_rows, with_since=False, with_details=True)
+pdf.h2("Mangelzustände – Mineralstoffe")
+pdf.condition_table("mangelMineralien", mineral_rows, with_since=False, with_details=True)
+pdf.h2("Mangelzustände – Spurenelemente")
+pdf.condition_table("mangelSpuren", trace_rows, with_since=False, with_details=True)
+pdf.long_text("mangel", "Sonstige Mangelzustände (Enzyme, Aminosäuren, Flüssigkeit, sonstiges) / vorliegende Laborwerte:", "sonstige", 8)
+
+pdf.h2("Belastungen – Mikroorganismen & Toxine")
+pdf.note("Belastungen sind keine Mangelzustände. Bitte hier bekannte oder vermutete Belastungen ankreuzen.")
+pdf.condition_table("belastungen", load_rows, with_since=False, with_details=True)
+pdf.long_text("belastungen", "Sonstige Belastungen / Verdachtsmomente:", "sonstige", 6)
+
+pdf.h1("XIX. Infektionen & Tierkontakt")
+pdf.note("Hier geht es um durchgemachte Infektionen und Tierkontakt (Zoonose-Risiko). Impfungen werden in der nächsten Sektion (Impfstatus) erfasst.")
+pdf.h2("Reisen, Zecken & durchgemachte Infektionen")
 pdf.condition_table("infektionen", infection_rows)
+pdf.h2("Haustiere / Tierkontakt")
+pdf.condition_table("haustiere", pet_rows, with_since=False, with_details=True)
+pdf.long_text("infektionen", "Sonstige Hinweise zu Infektionen / Reisen / Tierkontakt:", "sonstige", 6)
 
 pdf.h1("XX. Impfstatus")
 pdf.condition_table("impfungen", vaccine_rows)
@@ -745,7 +933,16 @@ pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
 pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
 
 pdf.h1("XXIV. IAA-Fragebogen")
-pdf.note("Individuelle Austestung und Analyse (IAA). Bitte zutreffende Fragen ankreuzen; Bemerkungen/Intensität optional ergänzen.")
+pdf.note(
+    "Warum noch ein zusätzlicher Symptombogen? Der IAA-Fragebogen (Individuelle Austestung und Analyse) ist speziell auf das "
+    "Trikombin-Behandlungsgerät zugeschnitten. Er fragt einzelne Symptome auf einer Intensitätsskala ab und ergänzt die "
+    "klassische Anamnese um genau die Informationen, die für die individuelle Geräteeinstellung benötigt werden – also keine "
+    "Doppelung, sondern eine gezielte Vertiefung."
+)
+pdf.note(
+    "Bitte nur zutreffende Fragen ankreuzen. In der Spalte 'Details / Bemerkung' können Sie optional Intensität (1 sehr leicht – "
+    "6 sehr stark) und Auslöser ergänzen. Nicht zutreffende Fragen bitte leer lassen."
+)
 iaa_categories = parse_iaa_categories()
 for cat in iaa_categories:
     pdf.h2(cat["title"])
