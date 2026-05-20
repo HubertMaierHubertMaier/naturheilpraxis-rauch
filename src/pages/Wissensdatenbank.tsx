@@ -51,7 +51,7 @@ const Wissensdatenbank = () => {
     fetchEntries();
   }, [isAdmin]);
 
-  if (authLoading) {
+  if (authLoading || (user && !roleChecked)) {
     return (
       <Layout>
         <div className="container py-12">
