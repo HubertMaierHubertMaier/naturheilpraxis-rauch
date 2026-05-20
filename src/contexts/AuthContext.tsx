@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setUser(null);
       if (!devBypass) setIsAdmin(false);
+      setRoleChecked(true);
     };
 
     const confirmMissingSession = () => {
@@ -73,7 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAdminRole = async (userId: string) => {
       // In preview/dev mode, keep admin bypass active even if token/role RPC fails.
       if (devBypass) {
-        if (isMounted) setIsAdmin(true);
+        if (isMounted) {
+          setIsAdmin(true);
+          setRoleChecked(true);
+        }
         return;
       }
 
@@ -85,6 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isMounted) setIsAdmin(!error && data === true);
       } catch (e) {
         if (isMounted) setIsAdmin(false);
+      } finally {
+        if (isMounted) setRoleChecked(true);
       }
     };
 
