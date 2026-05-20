@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  roleChecked: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isAdmin: false,
+  roleChecked: false,
   signOut: async () => {},
 });
 
@@ -30,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const devBypass = isDevAdminBypassActive();
   
   const [isAdmin, setIsAdmin] = useState(devBypass);
+  const [roleChecked, setRoleChecked] = useState(devBypass);
 
   useEffect(() => {
     let isMounted = true;
@@ -45,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setUser(null);
       if (!devBypass) setIsAdmin(false);
+      setRoleChecked(true);
     };
 
     const confirmMissingSession = () => {
@@ -70,7 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAdminRole = async (userId: string) => {
       // In preview/dev mode, keep admin bypass active even if token/role RPC fails.
       if (devBypass) {
-        if (isMounted) setIsAdmin(true);
+        if (isMounted) {
+          setIsAdmin(true);
+          setRoleChecked(true);
+        }
         return;
       }
 
@@ -82,6 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isMounted) setIsAdmin(!error && data === true);
       } catch (e) {
         if (isMounted) setIsAdmin(false);
+      } finally {
+        if (isMounted) setRoleChecked(true);
       }
     };
 
@@ -97,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (nextSession?.user) {
           applySession(nextSession);
           setLoading(false);
+          setRoleChecked(false);
           setTimeout(() => checkAdminRole(nextSession.user.id), 0);
 
            // Log sign-in events for DSGVO audit trail
@@ -166,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, roleChecked, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,13 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const PatientenManagerPage = () => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, roleChecked } = useAuth();
 
   const devBypass = isDevAdminBypassActive();
 
   const hasAccess = devBypass || isAdmin;
 
-  if (loading) {
+  if (loading || (user && !roleChecked && !devBypass)) {
     return (
       <Layout>
         <div className="container py-12">
