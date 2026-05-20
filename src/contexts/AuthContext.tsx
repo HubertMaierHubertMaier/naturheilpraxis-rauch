@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const devBypass = isDevAdminBypassActive();
   
   const [isAdmin, setIsAdmin] = useState(devBypass);
+  const [roleChecked, setRoleChecked] = useState(devBypass);
 
   useEffect(() => {
     let isMounted = true;
