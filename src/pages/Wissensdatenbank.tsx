@@ -25,7 +25,7 @@ interface KnowledgeEntry {
 const TAB_STORAGE_KEY = "wissensdatenbank.activeTab";
 
 const Wissensdatenbank = () => {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window === "undefined") return "wiki";
     return sessionStorage.getItem(TAB_STORAGE_KEY) || "wiki";
