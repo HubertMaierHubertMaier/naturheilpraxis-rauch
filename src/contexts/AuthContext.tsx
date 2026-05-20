@@ -106,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (nextSession?.user) {
           applySession(nextSession);
           setLoading(false);
+          setRoleChecked(false);
           setTimeout(() => checkAdminRole(nextSession.user.id), 0);
 
            // Log sign-in events for DSGVO audit trail
