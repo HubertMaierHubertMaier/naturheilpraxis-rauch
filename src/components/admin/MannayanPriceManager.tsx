@@ -300,6 +300,81 @@ export default function MannayanPriceManager() {
     doc.setFontSize(8);
     doc.text("Ort, Datum", 20, y);
     doc.text("Unterschrift Patient/Kunde", 115, y);
+
+    // ===== Seite 2: Einverständniserklärung Mannayan (DSGVO) =====
+    if (includeConsent) {
+      doc.addPage();
+      let cy = 20;
+      doc.setFontSize(10);
+      doc.text("Sehr geehrte/r Patient/in,", 20, cy); cy += 6;
+      const intro = doc.splitTextToSize(
+        "damit wir Sie mit den Produkten der Firma Mannayan GmbH & Co. KG unterstützen können, bedarf es gemäß der Datenschutz-Grundverordnung Ihrer Einwilligung in die Weitergabe bestimmter personenbezogener Daten. Daher bitten wir Sie, dieses Formular auszufüllen. Die Sicherheit Ihrer Daten ist gewährleistet. Eine Weitergabe an unbeteiligte Dritte ist ausgeschlossen. Sie haben das Recht, Ihre Einwilligung jederzeit zu widerrufen.",
+        175
+      );
+      doc.text(intro, 20, cy); cy += intro.length * 4 + 4;
+
+      doc.setFontSize(12); doc.setFont(undefined, "bold");
+      doc.text("Einverständniserklärung – Lieferung von Produkten/Informationen", 20, cy);
+      doc.setFont(undefined, "normal"); cy += 8;
+
+      // Patientendaten
+      doc.setFontSize(10); doc.setFont(undefined, "bold");
+      doc.text("Adressdaten Patient/in:", 20, cy); cy += 6;
+      doc.setFont(undefined, "normal");
+      const drawField = (label: string, value: string) => {
+        doc.setFontSize(8); doc.setTextColor(120);
+        doc.text(label, 20, cy);
+        doc.setFontSize(10); doc.setTextColor(0);
+        doc.text(value || " ", 20, cy + 5);
+        doc.line(20, cy + 6, 195, cy + 6);
+        cy += 11;
+      };
+      drawField("Titel, Vorname, Name", patientName);
+      drawField("Straße, Hausnummer", patientStreet);
+      drawField("PLZ, Ort", patientZipCity);
+      drawField("E-Mail", patientEmail);
+      drawField("Telefon", patientPhone);
+
+      cy += 2;
+      doc.setFont(undefined, "bold");
+      doc.text("Therapeut:", 20, cy); cy += 5;
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(9);
+      doc.text("Peter Rauch · Friedrich-Deffner-Str. 19a · 86163 Augsburg · Tel. 0821-2621462", 20, cy);
+      cy += 8;
+
+      doc.setFontSize(9);
+      const body = doc.splitTextToSize(
+        "Hiermit beauftrage ich den o. g. Therapeuten, die für meine Behandlung notwendigen Produkte/Informationen über das Unternehmen Mannayan GmbH & Co. KG zu bestellen und liefern zu lassen, sowie die für die Lieferung erforderlichen Daten an die Mannayan GmbH & Co. KG zu übermitteln. Mein/e Therapeut/in hat mich darüber aufgeklärt, dass die Lieferung und/oder eine Rechnungsstellung an meine Adresse erfolgen kann.",
+        175
+      );
+      doc.text(body, 20, cy); cy += body.length * 4 + 4;
+
+      doc.text("Zudem möchte ich zukünftig durch Mannayan informiert werden:", 20, cy); cy += 6;
+      const box = (x: number, checked: boolean) => {
+        doc.rect(x, cy - 3.5, 4, 4);
+        if (checked) { doc.setFont(undefined, "bold"); doc.text("X", x + 0.6, cy + 0.2); doc.setFont(undefined, "normal"); }
+      };
+      box(20, contactPref === "mail");  doc.text("per E-Mail oder per Post", 27, cy); cy += 6;
+      box(20, contactPref === "phone"); doc.text("telefonisch", 27, cy); cy += 6;
+      box(20, contactPref === "none");  doc.text("Ich möchte nicht kontaktiert werden und keinerlei Informationen erhalten.", 27, cy); cy += 8;
+
+      doc.setFontSize(8); doc.setTextColor(90);
+      const footer = doc.splitTextToSize(
+        "Das unterschriebene Formular verbleibt bei dem/der Therapeuten/in. Die Mannayan GmbH & Co. KG übernimmt keine Haftung für die Richtigkeit dieses Formulars.",
+        175
+      );
+      doc.text(footer, 20, cy); cy += footer.length * 3.5 + 10;
+      doc.setTextColor(0);
+
+      doc.line(20, cy, 100, cy);
+      doc.line(115, cy, 195, cy);
+      cy += 5;
+      doc.setFontSize(8);
+      doc.text("Ort, Datum", 20, cy);
+      doc.text("Unterschrift Patient/in", 115, cy);
+    }
+
     doc.save(`Mannayan-Bestellung-${num}.pdf`);
   };
 
