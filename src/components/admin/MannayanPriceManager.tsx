@@ -567,10 +567,77 @@ export default function MannayanPriceManager() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+            <div>
+              <Label>Notiz (intern, wird mitgespeichert)</Label>
+              <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} rows={2} placeholder="Optionale interne Notiz zur Bestellung" />
+            </div>
+
+            {/* ===== Datenschutz-Einverständniserklärung ===== */}
+            <Card className="border-primary/20 bg-sage-50/40">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base font-serif">DSGVO-Einverständniserklärung Mannayan</CardTitle>
+                    <CardDescription className="text-xs">
+                      Wird als 2. Seite an die Bestell-PDF angehängt – Patient unterschreibt einmal beide Dokumente.
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={includeConsent} onCheckedChange={setIncludeConsent} id="consent-toggle" />
+                    <Label htmlFor="consent-toggle" className="text-sm cursor-pointer">anhängen</Label>
+                  </div>
+                </div>
+              </CardHeader>
+              {includeConsent && (
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="md:col-span-2">
+                      <Label className="text-xs">Straße, Hausnummer</Label>
+                      <Input value={patientStreet} onChange={e => setPatientStreet(e.target.value)} placeholder="z.B. Musterstraße 12" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">PLZ, Ort</Label>
+                      <Input value={patientZipCity} onChange={e => setPatientZipCity(e.target.value)} placeholder="z.B. 86163 Augsburg" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Telefon</Label>
+                      <Input value={patientPhone} onChange={e => setPatientPhone(e.target.value)} placeholder="optional" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-xs">E-Mail</Label>
+                      <Input value={patientEmail} onChange={e => setPatientEmail(e.target.value)} placeholder="optional" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">Kontaktwunsch Patient gegenüber Mannayan</Label>
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" checked={contactPref === "mail"} onChange={() => setContactPref("mail")} />
+                        E-Mail / Post
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" checked={contactPref === "phone"} onChange={() => setContactPref("phone")} />
+                        Telefonisch
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" checked={contactPref === "none"} onChange={() => setContactPref("none")} />
+                        Keine Kontaktaufnahme
+                      </label>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Felder leer lassen ist OK – sie werden dann als Leerzeile zum handschriftlichen Ausfüllen gedruckt.
+                  </p>
+                </CardContent>
+              )}
+            </Card>
+
+            <div className="flex flex-wrap gap-2">
               <Button onClick={saveOrder} disabled={cart.length === 0}><Save className="h-4 w-4 mr-2" />{orderId ? "Aktualisieren" : "Bestellung speichern"}</Button>
-              <Button onClick={exportPDF} disabled={cart.length === 0} variant="secondary"><FileText className="h-4 w-4 mr-2" />PDF (mit Unterschrift)</Button>
+              <Button onClick={exportPDF} disabled={cart.length === 0} variant="secondary"><FileText className="h-4 w-4 mr-2" />PDF {includeConsent ? "(Bestellung + Einverständnis)" : "(nur Bestellung)"}</Button>
               <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx)</Button>
               <Button variant="outline" onClick={newOrder} disabled={cart.length === 0 && !orderId}>Liste leeren</Button>
+            </div>
             </div>
           </CardContent>
         </Card>
