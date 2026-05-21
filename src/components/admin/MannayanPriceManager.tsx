@@ -632,7 +632,6 @@ export default function MannayanPriceManager() {
               <Button onClick={exportDocx} disabled={cart.length === 0} variant="secondary"><FileType className="h-4 w-4 mr-2" />Word (.docx)</Button>
               <Button variant="outline" onClick={newOrder} disabled={cart.length === 0 && !orderId}>Liste leeren</Button>
             </div>
-            </div>
           </CardContent>
         </Card>
 
