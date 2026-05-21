@@ -566,12 +566,6 @@ export default function MannayanPriceManager() {
               <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} rows={2} placeholder="Optionale interne Notiz zur Bestellung" />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-            <div>
-              <Label>Notiz (intern, wird mitgespeichert)</Label>
-              <Textarea value={orderNotes} onChange={e => setOrderNotes(e.target.value)} rows={2} placeholder="Optionale interne Notiz zur Bestellung" />
-            </div>
-
             {/* ===== Datenschutz-Einverständniserklärung ===== */}
             <Card className="border-primary/20 bg-sage-50/40">
               <CardHeader className="pb-3">
