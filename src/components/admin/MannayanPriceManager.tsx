@@ -47,6 +47,13 @@ export default function MannayanPriceManager() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
   const [showOrders, setShowOrders] = useState(false);
+  // Adress- & Kontaktdaten für die Einverständniserklärung
+  const [patientStreet, setPatientStreet] = useState("");
+  const [patientZipCity, setPatientZipCity] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
+  const [patientPhone, setPatientPhone] = useState("");
+  const [contactPref, setContactPref] = useState<"mail" | "phone" | "none">("none");
+  const [includeConsent, setIncludeConsent] = useState(true);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["mannayan-products"],
