@@ -2,6 +2,7 @@ import type { ElementType } from "react";
 import {
   Activity,
   AlertTriangle,
+  Brain,
   Bug,
   Cigarette,
   ClipboardList,
@@ -24,6 +25,7 @@ import {
   Sprout,
   Stethoscope,
   Syringe,
+  Waves,
   Wind,
   Zap,
 } from "lucide-react";
@@ -214,8 +216,16 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" },
         external: true,
       },
+    ],
+  },
+  {
+    title: {
+      de: "Hypnose – nur für Patienten der Naturheilpraxis Peter Rauch",
+      en: "Hypnosis – only for Patients of Naturheilpraxis Peter Rauch",
+    },
+    items: [
       {
-        label: { de: "Raucherentwöhnung", en: "Smoking Cessation" },
+        label: { de: "Raucherentwöhnung / E-Zigarette", en: "Smoking Cessation / E-Cigarette" },
         href: "/raucherentwoehnung",
         icon: Cigarette,
         description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" },
@@ -225,6 +235,12 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/schilddruese-hypnose",
         icon: Wind,
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
+      },
+      {
+        label: { de: "Reizdarm-Hypnose", en: "IBS Hypnosis" },
+        href: "/reizdarm-hypnose",
+        icon: Waves,
+        description: { de: "Tiefenentspannung bei spastischem Darm & imperativem Stuhldrang", en: "Deep relaxation for spastic bowel & urgent stool urge" },
       },
     ],
   },
