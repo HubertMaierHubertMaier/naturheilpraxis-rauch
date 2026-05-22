@@ -33,6 +33,7 @@ const audioFiles = [
 ];
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { HypnoseAudioPlayer } from "@/components/hypnose/HypnoseAudioPlayer";
 
 const documents = [
   {
@@ -164,28 +165,13 @@ const SchilddrueseHypnose = () => {
             </div>
 
             {audioFiles.map((audio) => (
-              <Card key={audio.file} className="shadow-card">
-                <CardContent className="p-5 md:p-6 space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-foreground">{audio.title}</h3>
-                    <p className="text-xs text-muted-foreground">{audio.description}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                      <Clock className="h-3 w-3" />
-                      {audio.duration}
-                    </div>
-                  </div>
-                  <audio controls className="w-full" preload="none">
-                    <source src={audio.file} type="audio/mpeg" />
-                    Ihr Browser unterstützt kein Audio-Element.
-                  </audio>
-                  <a href={audio.file} download>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-3.5 w-3.5" />
-                      Herunterladen
-                    </Button>
-                  </a>
-                </CardContent>
-              </Card>
+              <HypnoseAudioPlayer
+                key={audio.file}
+                title={audio.title}
+                description={audio.description}
+                duration={audio.duration}
+                fileMale={audio.file}
+              />
             ))}
           </div>
 

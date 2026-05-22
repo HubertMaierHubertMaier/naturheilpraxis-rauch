@@ -11,25 +11,27 @@ import {
   ClipboardList,
   HeartPulse,
   Headphones,
-  Clock,
   AlertTriangle,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { HypnoseAudioPlayer } from "@/components/hypnose/HypnoseAudioPlayer";
 
 const audioFiles = [
   {
     title: "Selbsthypnose – Tägliche Kurzversion",
     description:
       "Sanfte Bauchatmung, Vagus-Aktivierung und wohlige Wärme im Bauchraum. Ideal morgens, abends oder als Mini-Pause am Tag.",
-    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich.mp3",
+    fileMale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich.mp3",
+    fileFemale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich-Frau.mp3",
     duration: "ca. 6 Minuten",
   },
   {
     title: "Selbsthypnose – Tiefe Sitzung",
     description:
       "Vollständige Tiefenentspannung mit sicherem Ort, Lösung im Bauch- und Beckenbodenbereich, Affirmationen und verankerter 3-Atemzüge-Reflex für unruhige Momente. 2–3× pro Woche in ungestörter Umgebung.",
-    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief.mp3",
+    fileMale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief.mp3",
+    fileFemale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief-Frau.mp3",
     duration: "ca. 11 Minuten",
   },
 ];
@@ -173,28 +175,14 @@ const ReizdarmHypnose = () => {
             </div>
 
             {audioFiles.map((audio) => (
-              <Card key={audio.file} className="shadow-card">
-                <CardContent className="p-5 md:p-6 space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-foreground">{audio.title}</h3>
-                    <p className="text-xs text-muted-foreground">{audio.description}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                      <Clock className="h-3 w-3" />
-                      {audio.duration}
-                    </div>
-                  </div>
-                  <audio controls className="w-full" preload="none">
-                    <source src={audio.file} type="audio/mpeg" />
-                    Ihr Browser unterstützt kein Audio-Element.
-                  </audio>
-                  <a href={audio.file} download>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-3.5 w-3.5" />
-                      Herunterladen
-                    </Button>
-                  </a>
-                </CardContent>
-              </Card>
+              <HypnoseAudioPlayer
+                key={audio.fileMale}
+                title={audio.title}
+                description={audio.description}
+                duration={audio.duration}
+                fileMale={audio.fileMale}
+                fileFemale={audio.fileFemale}
+              />
             ))}
           </div>
 
