@@ -21,15 +21,15 @@ const audioFiles = [
   {
     title: "Selbsthypnose – Tägliche Kurzversion",
     description:
-      "Sanfte Bauchatmung, Vagus-Aktivierung und Wärme im Bauchraum. Ideal morgens, abends oder als Mini-Pause am Tag.",
-    file: "/therapie/reizdarm/Selbsthypnose-Reizdarm-Taeglich.mp3",
+      "Sanfte Bauchatmung, Vagus-Aktivierung und wohlige Wärme im Bauchraum. Ideal morgens, abends oder als Mini-Pause am Tag.",
+    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich.mp3",
     duration: "ca. 6 Minuten",
   },
   {
     title: "Selbsthypnose – Tiefe Sitzung",
     description:
-      "Vollständige Tiefenentspannung mit sicherem Ort, Darm- und Beckenboden-Lösung, Affirmationen und verankerter 3-Atemzüge-Reflex für Drang-Episoden. 2–3× pro Woche in ungestörter Umgebung.",
-    file: "/therapie/reizdarm/Selbsthypnose-Reizdarm-Tief.mp3",
+      "Vollständige Tiefenentspannung mit sicherem Ort, Lösung im Bauch- und Beckenbodenbereich, Affirmationen und verankerter 3-Atemzüge-Reflex für unruhige Momente. 2–3× pro Woche in ungestörter Umgebung.",
+    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief.mp3",
     duration: "ca. 11 Minuten",
   },
 ];
@@ -38,16 +38,16 @@ const documents = [
   {
     title: "Verlaufstagebuch zum Ausdrucken",
     description:
-      "Druckbares Tagebuch mit Bristol-Stuhlskala, Drang- und Stress-Skala 0–10, Ruhepuls-Spalte und Wochenrückblick. Mindestens 4 Wochen führen.",
-    file: "/therapie/reizdarm/Verlaufstagebuch-Reizdarm.pdf",
+      "Druckbares Tagebuch mit Bristol-Skala, Drang- und Stress-Skala 0–10, Ruhepuls-Spalte und Wochenrückblick. Mindestens 4 Wochen führen.",
+    file: "/therapie/reizdarm/Verlaufstagebuch-Bauchwohl.pdf",
     pages: "2 Seiten",
     icon: ClipboardList,
   },
   {
     title: "Begleitskript",
     description:
-      "Anwendung der Selbsthypnose, der 3-Atemzüge-Anker für plötzlichen Stuhldrang, Beckenboden-Hinweise und Warnzeichen, bei denen Du Dich melden solltest.",
-    file: "/therapie/reizdarm/Begleitskript-Reizdarm.pdf",
+      "Anwendung der Selbsthypnose, der 3-Atemzüge-Anker für unruhige Momente, Beckenboden-Hinweise und Warnzeichen, bei denen Du Dich melden solltest.",
+    file: "/therapie/reizdarm/Begleitskript-Bauchwohl.pdf",
     pages: "1 Seite",
     icon: FileText,
   },
@@ -58,8 +58,8 @@ const ReizdarmHypnose = () => {
   return (
     <Layout>
       <SEOHead
-        title="Reizdarm-Hypnose – Therapiematerialien"
-        description="Begleitende Materialien zur Hypnose-Behandlung bei spastischem Darm und imperativem Stuhldrang: Selbsthypnose-Audios, 3-Atemzüge-Anker, Verlaufstagebuch und Begleitskript."
+        title="Bauchwohl-Hypnose – Innere Ruhe & Gelassenheit"
+        description="Begleitende Materialien zur Hypnose-Behandlung für einen ruhigen, entspannten Bauch: Selbsthypnose-Audios, 3-Atemzüge-Anker, Verlaufstagebuch und Begleitskript."
       />
 
       {/* Hero */}
@@ -71,11 +71,11 @@ const ReizdarmHypnose = () => {
               Nur für Patienten
             </Badge>
             <h1 className="mb-4 font-serif text-3xl font-semibold text-foreground md:text-5xl leading-tight">
-              Reizdarm-Hypnose
+              Bauchwohl-Hypnose
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground leading-relaxed">
-              Tiefenentspannung für Körper, Vegetativum und Darm – bei spastischem Darm,
-              imperativem Stuhldrang und hohem Stresspegel.
+              Innere Ruhe & Gelassenheit – Tiefenentspannung für Bauch, vegetatives
+              Nervensystem und Beckenboden.
             </p>
           </div>
         </div>
@@ -95,17 +95,17 @@ const ReizdarmHypnose = () => {
                   {
                     icon: HeartPulse,
                     title: "Vegetative Beruhigung",
-                    text: "Hypnose senkt Ruhepuls & Sympathikotonus – der Darm bekommt wieder Pausen",
+                    text: "Hypnose senkt Ruhepuls & Sympathikotonus – Dein Bauch bekommt wieder Pausen",
                   },
                   {
                     icon: Wind,
                     title: "3-Atemzüge-Anker",
-                    text: "Bei plötzlichem Drang: 4 Sek. ein, 8 Sek. aus – aktiviert den Vagusnerv sofort",
+                    text: "In unruhigen Momenten: 4 Sek. ein, 8 Sek. aus – aktiviert den Vagusnerv sofort",
                   },
                   {
                     icon: ClipboardList,
                     title: "Verlaufstagebuch",
-                    text: "Bristol-Skala, Drang-Episoden, Ruhepuls – wir machen Veränderung sichtbar",
+                    text: "Beobachten, was sich verändert – wir machen Fortschritte sichtbar",
                   },
                 ].map(({ icon: Icon, title, text }) => (
                   <div
@@ -134,20 +134,22 @@ const ReizdarmHypnose = () => {
               </div>
               <div className="space-y-3 text-foreground leading-relaxed">
                 <p>
-                  Ein spastischer Darm reagiert direkt auf das vegetative Nervensystem. Steht der
-                  Körper dauerhaft unter Sympathikus-Spannung – sichtbar etwa an einem erhöhten
-                  Ruhepuls – wird die Darmmuskulatur unruhig, krampft und sendet imperativen
-                  Stuhldrang, oft ohne tatsächliche Entleerung.
+                  Dein Bauch reagiert direkt auf das vegetative Nervensystem. Steht der
+                  Körper dauerhaft unter Anspannung – sichtbar etwa an einem erhöhten
+                  Ruhepuls – wird die Bauchmuskulatur unruhig, und es können plötzliche,
+                  unangenehme Impulse auftreten.
                 </p>
                 <p>
-                  Die Hypnose arbeitet genau hier: Sie aktiviert den Vagusnerv (Deinen Ruhenerv),
-                  entspannt die glatte Darmmuskulatur und löst die antrainierte Anspannung im
-                  Beckenboden. Sie <strong>kann</strong> die Beschwerden deutlich reduzieren und
-                  Dir das Sicherheitsgefühl im Alltag zurückgeben.
+                  Die Hypnose arbeitet genau hier: Sie aktiviert den Vagusnerv (Deinen
+                  Ruhenerv), entspannt die glatte Muskulatur im Bauchraum und löst die
+                  antrainierte Anspannung im Beckenboden. Sie <strong>kann</strong> die
+                  Beschwerden deutlich reduzieren und Dir das Sicherheitsgefühl im
+                  Alltag zurückgeben.
                 </p>
                 <p>
-                  Über mehrere Wochen entsteht eine neue Konditionierung – Dein Körper lernt
-                  wieder, dass Drang kein Notfall ist, sondern reguliert werden kann.
+                  Über mehrere Wochen entsteht eine neue Konditionierung – Dein Körper
+                  lernt wieder, in Ruhe zu sein, und Du gewinnst Vertrauen und
+                  Bewegungsfreiheit zurück.
                 </p>
               </div>
             </CardContent>

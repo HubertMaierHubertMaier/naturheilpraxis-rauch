@@ -237,10 +237,10 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
       },
       {
-        label: { de: "Reizdarm-Hypnose", en: "IBS Hypnosis" },
+        label: { de: "Bauchwohl-Hypnose", en: "Belly Calm Hypnosis" },
         href: "/reizdarm-hypnose",
         icon: Waves,
-        description: { de: "Tiefenentspannung bei spastischem Darm & imperativem Stuhldrang", en: "Deep relaxation for spastic bowel & urgent stool urge" },
+        description: { de: "Tiefenentspannung für Bauch, Vegetativum und Beckenboden – innere Ruhe & Gelassenheit", en: "Deep relaxation for belly, vagus nerve and pelvic floor – inner calm & ease" },
       },
     ],
   },

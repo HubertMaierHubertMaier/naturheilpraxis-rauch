@@ -1,5 +1,5 @@
 """
-Generiert die Selbsthypnose-MP3s und PDFs für die Reizdarm-/spastischer-Darm-Hypnose.
+Generiert die Selbsthypnose-MP3s und PDFs für die Bauchwohl-Hypnose.
 Edge-TTS, Stimme de-DE-FlorianMultilingualNeural, Rate -50%, Pitch ±0 Hz (Hypnose-Standard).
 """
 import asyncio
@@ -203,9 +203,9 @@ async def synth(text: str, out_file: Path):
 
 async def main_tts():
     print("TTS: Kurzversion ...")
-    await synth(KURZ, OUT / "Selbsthypnose-Reizdarm-Taeglich.mp3")
+    await synth(KURZ, OUT / "Selbsthypnose-Bauchwohl-Taeglich.mp3")
     print("TTS: Tiefe Sitzung ...")
-    await synth(TIEF, OUT / "Selbsthypnose-Reizdarm-Tief.mp3")
+    await synth(TIEF, OUT / "Selbsthypnose-Bauchwohl-Tief.mp3")
     print("OK")
 
 # ---------------------------------------------------------------------------
@@ -223,24 +223,24 @@ def build_begleitskript():
     small = ParagraphStyle("small", parent=body, fontSize=9, textColor=colors.HexColor("#666"))
 
     doc = SimpleDocTemplate(
-        str(OUT / "Begleitskript-Reizdarm.pdf"),
+        str(OUT / "Begleitskript-Bauchwohl.pdf"),
         pagesize=A4,
         leftMargin=2*cm, rightMargin=2*cm, topMargin=1.8*cm, bottomMargin=1.8*cm,
-        title="Begleitskript Reizdarm-Hypnose",
+        title="Begleitskript Bauchwohl-Hypnose",
         author="Naturheilpraxis Peter Rauch",
     )
     s = []
-    s.append(Paragraph("Begleitskript zur Reizdarm-Hypnose", h1))
-    s.append(Paragraph("Selbsthypnose, Atemanker und Alltagshinweise bei spastischem Darm und imperativem Stuhldrang", small))
+    s.append(Paragraph("Begleitskript zur Bauchwohl-Hypnose", h1))
+    s.append(Paragraph("Selbsthypnose, Atemanker und Alltagshinweise für mehr Ruhe und Gelassenheit im Bauch", small))
 
     s.append(Paragraph("Worum es geht", h2))
     s.append(Paragraph(
-        "Ein spastischer Darm reagiert empfindlich auf Stress. Das vegetative Nervensystem steht "
-        "dauerhaft unter Sympathikus-Spannung – der Darm wird unruhig, krampft, der Stuhldrang "
-        "kommt plötzlich und imperativ, oft ohne tatsächliche Entleerung. Die Hypnose arbeitet "
-        "genau dort: sie aktiviert den Vagusnerv (Ruhenerv), entspannt die glatte Darmmuskulatur "
-        "und löst die antrainierte Anspannung im Beckenboden. Sie <b>kann</b> Beschwerden "
-        "deutlich reduzieren und das Sicherheitsgefühl im Alltag zurückbringen.", body))
+        "Ein empfindlicher Bauch reagiert direkt auf Stress. Das vegetative Nervensystem steht "
+        "dauerhaft unter Sympathikus-Spannung – die Bauchorgane werden unruhig, und es kommt zu "
+        "plötzlichen, oft unangenehmen Impulsen. Die Hypnose arbeitet genau dort: sie aktiviert "
+        "den Vagusnerv (deinen Ruhenerv), entspannt die glatte Muskulatur im Bauchraum "
+        "und löst die antrainierte Anspannung im Beckenboden. Sie <b>kann</b> deine "
+        "Beschwerden deutlich verringern und dir das Sicherheitsgefühl im Alltag zurückbringen.", body))
 
     s.append(Paragraph("Anwendung der Audios", h2))
     s.append(Paragraph("<b>Tägliche Kurzversion</b> (ca. 5 Min.) – morgens nach dem Aufwachen oder "
@@ -266,7 +266,7 @@ def build_begleitskript():
 
     s.append(Paragraph("Beckenboden-Hinweis", h2))
     s.append(Paragraph(
-        "Viele Reizdarm-Betroffene halten den Beckenboden tagsüber unbewusst dauerhaft angespannt. "
+        "Viele Menschen mit empfindlichem Bauch halten den Beckenboden tagsüber unbewusst dauerhaft angespannt. "
         "Das verstärkt den Drang und kann paradoxerweise eine vollständige Entleerung verhindern. "
         "Lege dir am Smartphone 3–4 stille Erinnerungen pro Tag: <i>„Beckenboden weich, "
         "Sitzbeine breit, Atem in den Bauch.\u201c</i> – jeweils 3 Atemzüge lang.", body))
@@ -310,10 +310,10 @@ def build_verlaufstagebuch():
     small = ParagraphStyle("small", parent=body, fontSize=8.5, textColor=colors.HexColor("#555"))
 
     doc = SimpleDocTemplate(
-        str(OUT / "Verlaufstagebuch-Reizdarm.pdf"),
+        str(OUT / "Verlaufstagebuch-Bauchwohl.pdf"),
         pagesize=landscape(A4),
         leftMargin=1.2*cm, rightMargin=1.2*cm, topMargin=1.2*cm, bottomMargin=1.2*cm,
-        title="Verlaufstagebuch Reizdarm",
+        title="Verlaufstagebuch Bauchwohl",
         author="Naturheilpraxis Peter Rauch",
     )
 
@@ -326,7 +326,7 @@ def build_verlaufstagebuch():
         return Paragraph(text, head_style)
 
     s = []
-    s.append(Paragraph("Verlaufstagebuch – Reizdarm / spastischer Darm", h1))
+    s.append(Paragraph("Verlaufstagebuch – Bauchwohl", h1))
     s.append(Paragraph("Bitte täglich ausfüllen und zum nächsten Termin mitbringen. &nbsp;&nbsp; "
                        "Name: __________________________ &nbsp;&nbsp; Therapiebeginn: __________", small))
 
@@ -420,7 +420,7 @@ def build_verlaufstagebuch():
     s.append(Paragraph("Naturheilpraxis Peter Rauch · Heilpraktiker, Physiotherapeut, Hypnotherapeut", small))
 
     doc.build(s)
-    print("PDF: Verlaufstagebuch-Reizdarm.pdf")
+    print("PDF: Verlaufstagebuch-Bauchwohl.pdf")
 
 if __name__ == "__main__":
     build_begleitskript()
