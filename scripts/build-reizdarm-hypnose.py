@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 import edge_tts
 
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.lib import colors
@@ -311,15 +311,24 @@ def build_verlaufstagebuch():
 
     doc = SimpleDocTemplate(
         str(OUT / "Verlaufstagebuch-Reizdarm.pdf"),
-        pagesize=A4,
-        leftMargin=1.5*cm, rightMargin=1.5*cm, topMargin=1.2*cm, bottomMargin=1.2*cm,
+        pagesize=landscape(A4),
+        leftMargin=1.2*cm, rightMargin=1.2*cm, topMargin=1.2*cm, bottomMargin=1.2*cm,
         title="Verlaufstagebuch Reizdarm",
         author="Naturheilpraxis Peter Rauch",
     )
+
+    # Style für Kopfzeilen (Paragraph -> bricht automatisch um)
+    head_style = ParagraphStyle(
+        "th", fontName="Helvetica-Bold", fontSize=9, leading=11,
+        alignment=TA_CENTER, textColor=colors.HexColor("#1f3a25"),
+    )
+    def th(text: str) -> Paragraph:
+        return Paragraph(text, head_style)
+
     s = []
     s.append(Paragraph("Verlaufstagebuch – Reizdarm / spastischer Darm", h1))
-    s.append(Paragraph("Bitte täglich ausfüllen und zum nächsten Termin mitbringen. "
-                       "Name: __________________________   Therapiebeginn: __________", small))
+    s.append(Paragraph("Bitte täglich ausfüllen und zum nächsten Termin mitbringen. &nbsp;&nbsp; "
+                       "Name: __________________________ &nbsp;&nbsp; Therapiebeginn: __________", small))
 
     # Erklärung Bristol
     s.append(Paragraph("Bristol-Stuhlskala (Konsistenz)", h2))
@@ -333,7 +342,7 @@ def build_verlaufstagebuch():
         ["6", "Breiig, unförmig – leichter Durchfall"],
         ["7", "Flüssig, ohne feste Anteile – Durchfall"],
     ]
-    t = Table(bristol, colWidths=[1.2*cm, 14*cm])
+    t = Table(bristol, colWidths=[1.2*cm, 22*cm])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dde5d4")),
         ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
@@ -345,32 +354,43 @@ def build_verlaufstagebuch():
     ]))
     s.append(t)
     s.append(Spacer(1, 6))
-    s.append(Paragraph("<b>Drang-Skala:</b> 0 = kein Drang · 5 = mittel · 10 = imperativ, kaum kontrollierbar &nbsp;&nbsp;|&nbsp;&nbsp; "
-                       "<b>Stress:</b> 0 = entspannt · 10 = überfordert &nbsp;&nbsp;|&nbsp;&nbsp; "
-                       "<b>Puls:</b> Ruhepuls morgens, vor dem Aufstehen", small))
+    s.append(Paragraph(
+        "<b>Drang-Skala:</b> 0 = kein Drang · 5 = mittel · 10 = imperativ, kaum kontrollierbar "
+        "&nbsp;&nbsp;|&nbsp;&nbsp; <b>Stress:</b> 0 = entspannt · 10 = überfordert "
+        "&nbsp;&nbsp;|&nbsp;&nbsp; <b>Ruhepuls:</b> morgens, vor dem Aufstehen messen "
+        "&nbsp;&nbsp;|&nbsp;&nbsp; <b>Hypnose:</b> k = Kurz · t = Tief · – = keine", small))
     s.append(Spacer(1, 8))
 
-    # Tagestabelle
-    header = ["Datum", "Wochentag", "Stuhl­frequenz", "Bristol-Typ (1–7)", "Drang-Episoden (0–10)",
-              "Inkonti­nenz? (j/n)", "Stress (0–10)", "Ruhe­puls", "Hypnose? (k/t)", "Notiz / Auslöser"]
-
+    # Tagestabelle – Header als Paragraph (umbruchfähig)
+    header = [
+        th("Datum"),
+        th("Wochen-<br/>tag"),
+        th("Stuhl-<br/>frequenz"),
+        th("Bristol<br/>(1–7)"),
+        th("Drang-<br/>Episoden<br/>(0–10)"),
+        th("Inkonti-<br/>nenz<br/>(j/n)"),
+        th("Stress<br/>(0–10)"),
+        th("Ruhe-<br/>puls"),
+        th("Hypnose<br/>(k/t/–)"),
+        th("Notiz / Auslöser"),
+    ]
     rows = [header] + [[""] * len(header) for _ in range(14)]
-    col_widths = [1.7*cm, 1.5*cm, 1.6*cm, 1.5*cm, 1.6*cm, 1.4*cm, 1.4*cm, 1.3*cm, 1.5*cm, 4.5*cm]
-    tbl = Table(rows, colWidths=col_widths, rowHeights=[1.1*cm] + [1.0*cm]*14)
+    # Gesamt nutzbare Breite ~ 25.5 cm in Landscape
+    col_widths = [2.2*cm, 1.8*cm, 2.0*cm, 1.6*cm, 2.0*cm, 1.7*cm, 1.7*cm, 1.6*cm, 1.8*cm, 9.0*cm]
+    tbl = Table(rows, colWidths=col_widths, rowHeights=[1.7*cm] + [1.0*cm]*14, repeatRows=1)
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#dde5d4")),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE", (0,0), (-1,0), 7.5),
         ("FONTSIZE", (0,1), (-1,-1), 9),
-        ("ALIGN", (0,0), (-1,0), "CENTER"),
+        ("ALIGN", (0,1), (-1,-1), "CENTER"),
+        ("ALIGN", (-1,1), (-1,-1), "LEFT"),
         ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#777")),
-        ("LEFTPADDING", (0,0), (-1,-1), 2),
-        ("RIGHTPADDING", (0,0), (-1,-1), 2),
+        ("LEFTPADDING", (0,0), (-1,-1), 3),
+        ("RIGHTPADDING", (0,0), (-1,-1), 3),
+        ("TOPPADDING", (0,0), (-1,0), 4),
+        ("BOTTOMPADDING", (0,0), (-1,0), 4),
     ]))
     s.append(tbl)
-    s.append(Spacer(1, 4))
-    s.append(Paragraph("Hypnose-Spalte: <b>k</b> = Kurzversion gehört · <b>t</b> = Tiefe Sitzung gehört · <b>–</b> = keine", small))
 
     # zweite Seite – Wochenrückblick
     s.append(PageBreak())
