@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { HypnoseAudioPlayer } from "@/components/hypnose/HypnoseAudioPlayer";
 
 const audioFiles = [
   {
