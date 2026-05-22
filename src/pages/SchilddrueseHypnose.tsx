@@ -21,6 +21,7 @@ const audioFiles = [
     description:
       "Sanfte Selbsthypnose mit goldenem Licht im Halsbereich. Ideal zur täglichen Anwendung — morgens, abends oder zur Mittagspause.",
     file: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Taeglich.mp3",
+    fileFemale: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Taeglich-Frau.mp3",
     duration: "ca. 4–5 Minuten",
   },
   {
@@ -28,6 +29,7 @@ const audioFiles = [
     description:
       "Vollständige Tiefenentspannung mit Countdown, sicherem Ort, Heilungsaffirmationen und sanfter Rückführung. Ideal 2–3× pro Woche in ungestörter Umgebung.",
     file: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Tief.mp3",
+    fileFemale: "/therapie/schilddruese/Selbsthypnose-Schilddruese-Tief-Frau.mp3",
     duration: "ca. 8–9 Minuten",
   },
 ];
@@ -50,6 +52,14 @@ const documents = [
       "Anwendung der Selbsthypnose, Anleitung zur Bhramari-Atmung (Bienenatem) und Hinweise, wann du dich in der Praxis melden solltest.",
     file: "/therapie/schilddruese/Begleitskript-Schilddruese.pdf",
     pages: "2 Seiten",
+    icon: FileText,
+  },
+  {
+    title: "Wortlaut der Hypnose-Audios",
+    description:
+      "Vollständiger Text beider Hypnosen zum Mitlesen oder als reine Lese-Hypnose – wenn du an einem Tag nicht hören magst.",
+    file: "/therapie/schilddruese/Selbsthypnose-Skript-Wortlaut.pdf",
+    pages: "4 Seiten",
     icon: FileText,
   },
 ];
@@ -171,6 +181,7 @@ const SchilddrueseHypnose = () => {
                 description={audio.description}
                 duration={audio.duration}
                 fileMale={audio.file}
+                fileFemale={audio.fileFemale}
               />
             ))}
           </div>
