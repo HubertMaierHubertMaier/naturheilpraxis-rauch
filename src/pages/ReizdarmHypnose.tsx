@@ -11,25 +11,27 @@ import {
   ClipboardList,
   HeartPulse,
   Headphones,
-  Clock,
   AlertTriangle,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { HypnoseAudioPlayer } from "@/components/hypnose/HypnoseAudioPlayer";
 
 const audioFiles = [
   {
     title: "Selbsthypnose – Tägliche Kurzversion",
     description:
       "Sanfte Bauchatmung, Vagus-Aktivierung und wohlige Wärme im Bauchraum. Ideal morgens, abends oder als Mini-Pause am Tag.",
-    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich.mp3",
+    fileMale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich.mp3",
+    fileFemale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Taeglich-Frau.mp3",
     duration: "ca. 6 Minuten",
   },
   {
     title: "Selbsthypnose – Tiefe Sitzung",
     description:
       "Vollständige Tiefenentspannung mit sicherem Ort, Lösung im Bauch- und Beckenbodenbereich, Affirmationen und verankerter 3-Atemzüge-Reflex für unruhige Momente. 2–3× pro Woche in ungestörter Umgebung.",
-    file: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief.mp3",
+    fileMale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief.mp3",
+    fileFemale: "/therapie/reizdarm/Selbsthypnose-Bauchwohl-Tief-Frau.mp3",
     duration: "ca. 11 Minuten",
   },
 ];
