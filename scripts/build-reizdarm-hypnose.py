@@ -396,24 +396,29 @@ def build_verlaufstagebuch():
     s.append(PageBreak())
     s.append(Paragraph("Wochenrückblick", h1))
     s.append(Spacer(1, 8))
+    rk_style = ParagraphStyle("rk", fontName="Helvetica-Bold", fontSize=10, leading=13,
+                              textColor=colors.HexColor("#1f3a25"))
+    def lc(t): return Paragraph(t, rk_style)
     rk = [
-        ["Woche von – bis", ""],
-        ["Wie viele Tage Hypnose gehört?", ""],
-        ["Anzahl ungewollter Stuhlabgänge / Woche", ""],
-        ["Anzahl „falscher Alarm\u201c-Toilettengänge / Woche", ""],
-        ["Konnte ich Termine / Ausflüge wahrnehmen, die ich vorher gemieden hätte?", ""],
-        ["Wie hat sich mein Ruhepuls im Wochenmittel verändert?", ""],
-        ["Was hat besonders geholfen?", ""],
-        ["Was hat besonders belastet?", ""],
+        [lc("Woche von – bis"), ""],
+        [lc("Wie viele Tage Hypnose gehört?"), ""],
+        [lc("Anzahl ungewollter Stuhlabgänge / Woche"), ""],
+        [lc("Anzahl „falscher Alarm\u201c-Toilettengänge / Woche"), ""],
+        [lc("Konnte ich Termine / Ausflüge wahrnehmen, die ich vorher gemieden hätte?"), ""],
+        [lc("Wie hat sich mein Ruhepuls im Wochenmittel verändert?"), ""],
+        [lc("Was hat besonders geholfen?"), ""],
+        [lc("Was hat besonders belastet?"), ""],
     ]
-    rt = Table(rk, colWidths=[8*cm, 10*cm], rowHeights=[1.5*cm]*len(rk))
+    rt = Table(rk, colWidths=[10*cm, 15*cm], rowHeights=[1.8*cm]*len(rk))
     rt.setStyle(TableStyle([
-        ("FONTNAME", (0,0), (0,-1), "Helvetica-Bold"),
         ("FONTSIZE", (0,0), (-1,-1), 10),
-        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
         ("GRID", (0,0), (-1,-1), 0.3, colors.HexColor("#777")),
-        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
         ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("BACKGROUND", (0,0), (0,-1), colors.HexColor("#f3f6ee")),
     ]))
     s.append(rt)
     s.append(Spacer(1, 10))

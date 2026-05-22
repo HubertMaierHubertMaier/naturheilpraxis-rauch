@@ -20,18 +20,20 @@ import { HypnoseAudioPlayer } from "@/components/hypnose/HypnoseAudioPlayer";
 
 const audioFiles = [
   {
-    title: "Selbsthypnose – Tiefenentspannung",
+    title: "Selbsthypnose – Tägliche Kurzversion",
     description:
-      "Geführte Selbsthypnose zur tiefen Entspannung und Loslösung von der E-Zigarette. Ideal für die tägliche Anwendung.",
-    file: "/therapie/raucherentwoehnung/Selbsthypnose-Tiefenentspannung.mp3",
-    duration: "ca. 8 Minuten",
+      "Sanfte tägliche Hypnose mit Atemführung und Affirmationen für freies Atmen und innere Klarheit.",
+    file: "/therapie/raucherentwoehnung/Selbsthypnose-Freiheit-Taeglich.mp3",
+    fileFemale: "/therapie/raucherentwoehnung/Selbsthypnose-Freiheit-Taeglich-Frau.mp3",
+    duration: "ca. 4–5 Minuten",
   },
   {
-    title: "Selbsthypnose – Zielarbeit & Freiheit",
+    title: "Selbsthypnose – Tiefe Sitzung",
     description:
-      "Hypnotische Reise mit Metaphern zur inneren Freiheit. Unterstützt die Neuausrichtung Ihres Unterbewusstseins.",
-    file: "/therapie/raucherentwoehnung/Selbsthypnose-Zielarbeit-Freiheit.mp3",
-    duration: "ca. 10 Minuten",
+      "Tiefenentspannung mit sicherem Ort, Tür-Metapher, Lungen-Regeneration und Notfall-Anker für Verlangen.",
+    file: "/therapie/raucherentwoehnung/Selbsthypnose-Freiheit-Tief.mp3",
+    fileFemale: "/therapie/raucherentwoehnung/Selbsthypnose-Freiheit-Tief-Frau.mp3",
+    duration: "ca. 9–10 Minuten",
   },
 ];
 
@@ -127,8 +129,16 @@ const Raucherentwoehnung = () => {
                 description={audio.description}
                 duration={audio.duration}
                 fileMale={audio.file}
+                fileFemale={audio.fileFemale}
               />
             ))}
+            <a
+              href="/therapie/raucherentwoehnung/Selbsthypnose-Wortlaut-Audio.pdf"
+              download
+              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+            >
+              <Download className="h-4 w-4" /> Wortlaut der Audios als PDF
+            </a>
           </div>
 
           {/* Begleitskript PDF */}
