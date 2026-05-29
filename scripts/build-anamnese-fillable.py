@@ -730,7 +730,7 @@ pdf.long_text("intro", "Aktueller Anlass / wichtigste Anliegen in eigenen Worten
 pdf.h1("I. Patientendaten")
 pdf.h2("A. Personalia")
 pdf.text_row("patient", [("Nachname *", "nachname", 155), ("Vorname *", "vorname", 155), ("Geburtsdatum *", "geburtsdatum", 100), ("Nationalität", "nationalitaet", 105)])
-pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Zivilstand", "zivilstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
+pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Familienstand", "familienstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
 pdf.h2("B. Kontaktdaten")
 pdf.text_row("kontakt", [("Straße, Hausnummer *", "strasse", 230), ("PLZ *", "plz", 70), ("Wohnort *", "wohnort", 190)])
 pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil *", "mobil", 150)])
