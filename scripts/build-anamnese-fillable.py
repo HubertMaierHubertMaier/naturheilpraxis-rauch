@@ -403,7 +403,7 @@ class PdfForm:
         self.c.setFillColor(MUTED)
         self.c.setFont(BOLD, 7.2)
         for label, w in cols:
-            self.c.drawString(x + 2, self.y - 9, label[:22])
+            self.c.drawString(x + 2, self.y - 9, label[:40])
             x += w
         self.y -= 17
         for r in range(rows):
