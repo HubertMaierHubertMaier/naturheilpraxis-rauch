@@ -744,7 +744,7 @@ pdf.checkboxes("versicherung", "Kostenübernahme Naturheilkunde", ["bekannt ja",
 pdf.h2("E. Berufliche Situation (optional)")
 pdf.note("Diese Angaben sind freiwillig und nur relevant, wenn beruflicher Stress / Belastungen Teil des Anliegens sind.")
 pdf.text_row("beruf", [("Beruf", "beruf", 150), ("Arbeitgeber", "arbeitgeber", 170), ("Branche", "branche", 130)])
-pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentner seit", "berentnerSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
+pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentet seit", "berentetSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
 pdf.h2("F. Sorgeberechtigte bei Minderjährigen")
 pdf.note("Bei minderjährigen Patient:innen sind die folgenden Angaben Pflicht. Bitte zuerst das Verhältnis ankreuzen.")
 pdf.checkboxes("sorge", "Verhältnis zur/zum Patient:in *", ["Mutter", "Vater", "Sorgeberechtigte/r", "Vormund / Pfleger:in", "Sonstige/r"], 5)
