@@ -722,7 +722,7 @@ pdf = PdfForm(OUT)
 
 pdf.h1("Willkommen / Anleitung")
 pdf.note("Dies ist der vollständige ausfüllbare PDF-Anamnesebogen als Alternative zum Online-Formular. Er ist für Adobe Reader, Adobe Fill & Sign und kompatible PDF-Apps vorgesehen.")
-pdf.note("Bitte speichern Sie das ausgefüllte PDF lokal auf Ihrem Gerät. Die Bearbeitung erfolgt ohne Ausfüllen über den Lovable-Server.")
+pdf.note("Bitte speichern Sie das ausgefüllte PDF lokal auf Ihrem Gerät. Die Bearbeitung erfolgt offline – es werden beim Ausfüllen keine Daten an einen Server übertragen.")
 pdf.note("Mit Stern (*) markierte Felder sind Pflichtangaben (wie im Online-Bogen). Bei Fragen, die nicht zutreffen, lassen Sie die Felder leer.")
 pdf.note("Hinweis: Medizinische Fachbegriffe / lateinische Bezeichnungen werden, wenn möglich, mit deutscher Erklärung in Klammern ergänzt.")
 pdf.long_text("intro", "Aktueller Anlass / wichtigste Anliegen in eigenen Worten:", "freitext_anlass", 4)
