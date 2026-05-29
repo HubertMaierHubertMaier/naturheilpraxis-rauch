@@ -481,7 +481,7 @@ class PdfForm:
 
 family_rows = [
     ("hoherBlutdruck", "Hoher Blutdruck"), ("herzinfarkt", "Herzinfarkt"), ("schlaganfall", "Schlaganfall"),
-    ("diabetes", "Diabetes"), ("gicht", "Gicht"), ("lungenasthma", "Lungenasthma"),
+    ("diabetes", "Diabetes"), ("gicht", "Gicht"), ("asthma", "Asthma"),
     ("lungentuberkulose", "Lungentuberkulose"), ("nervenleiden", "Nervenleiden"), ("krebs", "Krebserkrankungen"),
     ("allergien", "Allergien"), ("sucht", "Suchterkrankungen"), ("autoimmun", "Autoimmun-Erkrankungen"),
 ]
