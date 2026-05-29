@@ -989,9 +989,9 @@ pdf.note(
     "das passende Frequenzmuster. Es geht hier nicht um eine medizinische Diagnose."
 )
 pdf.note(
-    "Ausfüllen: Bitte NUR Symptome ankreuzen, die tatsächlich auf Dich zutreffen. Wähle dann die Intensität auf einer Skala von "
-    "1 (sehr leicht) bis 6 (sehr stark). Nicht zutreffende Fragen einfach leer lassen. In der Spalte 'Bemerkung / Auslöser' kannst "
-    "Du optional ergänzen, wann/wodurch das Symptom auftritt. Die Sektion ist freiwillig – je vollständiger sie ausgefüllt ist, "
+    "Ausfüllen: Bitte NUR Symptome ankreuzen, die tatsächlich auf Sie zutreffen. Wählen Sie dann die Intensität auf einer Skala von "
+    "1 (sehr leicht) bis 6 (sehr stark). Nicht zutreffende Fragen einfach leer lassen. In der Spalte 'Bemerkung / Auslöser' können "
+    "Sie optional ergänzen, wann/wodurch das Symptom auftritt. Die Sektion ist freiwillig – je vollständiger sie ausgefüllt ist, "
     "desto präziser kann die Geräteeinstellung erfolgen."
 )
 iaa_categories = parse_iaa_categories()
