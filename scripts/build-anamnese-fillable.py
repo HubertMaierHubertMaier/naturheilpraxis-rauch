@@ -242,6 +242,9 @@ class PdfForm:
     def checkboxes(self, prefix: str, title: str, options: list[str], cols: int = 3):
         if title:
             self.h2(title)
+        # Titel wird Teil des Feldnamens, damit unterschiedliche Skalen mit gleichen
+        # Optionen (z.B. Durst vs. Appetit) keine kollidierenden Feldnamen erzeugen.
+        scoped_prefix = sanitize_name(f"{prefix}_{title}") if title else prefix
         col_w = (W - 2 * M) / cols
         row_h = 17
         rows = (len(options) + cols - 1) // cols
@@ -249,12 +252,10 @@ class PdfForm:
         for i, label in enumerate(options):
             row, col = divmod(i, cols)
             x = M + col * col_w
-            # Top der Zeile
             row_top = self.y - row * row_h
-            # Checkbox 9px hoch, Label Schrift 8 (Aufstieg ~6). Mittellinie ausrichten.
             cb_y = row_top - 12
-            label_baseline = row_top - 10  # so dass Mitte des Glyphen ≈ Mitte der Checkbox
-            self.checkbox_field(self.field_name(prefix, label), x, cb_y, 9)
+            label_baseline = row_top - 10
+            self.checkbox_field(self.field_name(scoped_prefix, label), x, cb_y, 9)
             self.c.setFillColor(INK)
             self.c.setFont(FONT, 8)
             self.draw_wrapped(label, x + 14, label_baseline, col_w - 16, size=8, leading=9)
