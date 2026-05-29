@@ -808,14 +808,14 @@ pdf.h1("X. Bewegungsapparat")
 pdf.condition_table("bewegungsapparat", msk_rows)
 pdf.long_text("bewegungsapparat", "Sonstige Beschwerden am Bewegungsapparat:", "sonstige", 6)
 
-pdf.h1("XI. Frauengesundheit")
-pdf.note("Nur ausfüllen, soweit zutreffend.")
-pdf.text_row("frauen", [("Geburtsgewicht", "geburtsgewicht", 130)])
+pdf.h1("XI. Geschlechtsspezifische Anamnese")
+pdf.note("Bitte nur den für Sie zutreffenden Abschnitt ausfüllen.")
+
+pdf.h2("XI-a. Frauengesundheit")
 pdf.condition_table("frauen", women_rows)
 pdf.long_text("frauen", "Sonstige frauengesundheitliche Angaben:", "sonstige", 6)
 
-pdf.h1("XI. Männergesundheit")
-pdf.note("Nur ausfüllen, soweit zutreffend.")
+pdf.h2("XI-b. Männergesundheit")
 pdf.condition_table("maenner", men_rows)
 pdf.long_text("maenner", "Sonstige männergesundheitliche Angaben:", "sonstige", 6)
 
