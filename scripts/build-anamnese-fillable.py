@@ -976,7 +976,7 @@ pdf.long_text("praeferenz", "Therapieerwartungen:", "therapieerwartungen", 6)
 pdf.long_text("praeferenz", "Gesundheitsziele:", "gesundheitsziele", 6)
 
 pdf.h1("XXIII. Persönliches")
-pdf.text_row("soziales", [("Familienstand", "familienstand", 120), ("Kinder Anzahl", "kinderAnzahl", 90), ("Kinder Alter", "kinderAlter", 160)])
+pdf.text_row("soziales", [("Kinder Anzahl", "kinderAnzahl", 90), ("Kinder Alter", "kinderAlter", 160), ("Partnerschaft", "partnerschaft", 160)])
 pdf.text_row("soziales", [("Wohnumfeld", "wohnumfeld", 120), ("Wohntyp", "wohntyp", 120), ("Beruflicher Stress", "berufStress", 130), ("Finanzielle Belastung", "finanzBelastung", 140)])
 pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
 pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
