@@ -278,11 +278,13 @@ class PdfForm:
             parts = [p.strip() for p in m.group(2).split("/") if p.strip()]
             return m.group(1).strip(), parts
         # Slash mit Spaces: "Sinusitis / Nebenhöhlenentzündung" — splitten,
-        # außer es enthält Platzhalterwörter (Stadium/Rasse/Anzahl/...)
+        # NIE splitten wenn Klammern im Label vorkommen (sonst zerreißt
+        # "Nebenhöhlen (chronische Reizung / Herd)" oder "(EBV / Pfeiffersches…)"),
+        # und ebenfalls nicht bei Platzhalterwörtern.
         PLACEHOLDER = {"stadium", "rasse", "kontakt", "anzahl", "datum", "grund",
                        "dosis", "lokalisation", "farbe", "typ", "art", "symptome",
                        "menge", "dauer", "psa", "bemerkung", "frequenz"}
-        if " / " in label:
+        if " / " in label and "(" not in label and ")" not in label:
             parts = [p.strip() for p in label.split(" / ") if p.strip()]
             if len(parts) >= 2 and not any(
                 any(w.lower() in PLACEHOLDER for w in re.split(r"\s+", p)) for p in parts
