@@ -25,7 +25,7 @@ export const iaaCategories: IAACategory[] = [
       { id: "1.1.3", textDe: "Bei Bewegung und/oder Trinken Verstopfung besser?", textEn: "Constipation better with exercise and/or drinking?" },
       { id: "1.2.1", textDe: "Ist es fettiger Stuhl? (schwimmt auf)", textEn: "Is it fatty stool? (floats)" },
       { id: "1.2.2", textDe: "Ist es breiiger Stuhl?", textEn: "Is it mushy stool?" },
-      { id: "2.1.7", textDe: "Ist es schmieriger Stuhl? (viel Klopapier)", textEn: "Is it greasy stool? (lots of toilet paper)" },
+      { id: "1.2.7", textDe: "Ist es schmieriger Stuhl? (viel Klopapier)", textEn: "Is it greasy stool? (lots of toilet paper)" },
       { id: "1.2.3", textDe: "Stuhl riecht säuerlich?", textEn: "Stool smells sour?" },
       { id: "1.2.4", textDe: "Darmprobleme allgemein? Stressbedingt?", textEn: "General intestinal problems? Stress-related?" },
       { id: "1.2.5", textDe: "Untere Rückenprobleme, die sich nach dem Stuhlgang besser anfühlen?", textEn: "Lower back problems that feel better after bowel movement?" },

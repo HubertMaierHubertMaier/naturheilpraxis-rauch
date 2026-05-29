@@ -242,6 +242,9 @@ class PdfForm:
     def checkboxes(self, prefix: str, title: str, options: list[str], cols: int = 3):
         if title:
             self.h2(title)
+        # Titel wird Teil des Feldnamens, damit unterschiedliche Skalen mit gleichen
+        # Optionen (z.B. Durst vs. Appetit) keine kollidierenden Feldnamen erzeugen.
+        scoped_prefix = sanitize_name(f"{prefix}_{title}") if title else prefix
         col_w = (W - 2 * M) / cols
         row_h = 17
         rows = (len(options) + cols - 1) // cols
@@ -249,12 +252,10 @@ class PdfForm:
         for i, label in enumerate(options):
             row, col = divmod(i, cols)
             x = M + col * col_w
-            # Top der Zeile
             row_top = self.y - row * row_h
-            # Checkbox 9px hoch, Label Schrift 8 (Aufstieg ~6). Mittellinie ausrichten.
             cb_y = row_top - 12
-            label_baseline = row_top - 10  # so dass Mitte des Glyphen ≈ Mitte der Checkbox
-            self.checkbox_field(self.field_name(prefix, label), x, cb_y, 9)
+            label_baseline = row_top - 10
+            self.checkbox_field(self.field_name(scoped_prefix, label), x, cb_y, 9)
             self.c.setFillColor(INK)
             self.c.setFont(FONT, 8)
             self.draw_wrapped(label, x + 14, label_baseline, col_w - 16, size=8, leading=9)
@@ -277,11 +278,13 @@ class PdfForm:
             parts = [p.strip() for p in m.group(2).split("/") if p.strip()]
             return m.group(1).strip(), parts
         # Slash mit Spaces: "Sinusitis / Nebenhöhlenentzündung" — splitten,
-        # außer es enthält Platzhalterwörter (Stadium/Rasse/Anzahl/...)
+        # NIE splitten wenn Klammern im Label vorkommen (sonst zerreißt
+        # "Nebenhöhlen (chronische Reizung / Herd)" oder "(EBV / Pfeiffersches…)"),
+        # und ebenfalls nicht bei Platzhalterwörtern.
         PLACEHOLDER = {"stadium", "rasse", "kontakt", "anzahl", "datum", "grund",
                        "dosis", "lokalisation", "farbe", "typ", "art", "symptome",
                        "menge", "dauer", "psa", "bemerkung", "frequenz"}
-        if " / " in label:
+        if " / " in label and "(" not in label and ")" not in label:
             parts = [p.strip() for p in label.split(" / ") if p.strip()]
             if len(parts) >= 2 and not any(
                 any(w.lower() in PLACEHOLDER for w in re.split(r"\s+", p)) for p in parts
@@ -400,7 +403,7 @@ class PdfForm:
         self.c.setFillColor(MUTED)
         self.c.setFont(BOLD, 7.2)
         for label, w in cols:
-            self.c.drawString(x + 2, self.y - 9, label[:22])
+            self.c.drawString(x + 2, self.y - 9, label[:40])
             x += w
         self.y -= 17
         for r in range(rows):
@@ -478,7 +481,7 @@ class PdfForm:
 
 family_rows = [
     ("hoherBlutdruck", "Hoher Blutdruck"), ("herzinfarkt", "Herzinfarkt"), ("schlaganfall", "Schlaganfall"),
-    ("diabetes", "Diabetes"), ("gicht", "Gicht"), ("lungenasthma", "Lungenasthma"),
+    ("diabetes", "Diabetes"), ("gicht", "Gicht"), ("asthma", "Asthma"),
     ("lungentuberkulose", "Lungentuberkulose"), ("nervenleiden", "Nervenleiden"), ("krebs", "Krebserkrankungen"),
     ("allergien", "Allergien"), ("sucht", "Suchterkrankungen"), ("autoimmun", "Autoimmun-Erkrankungen"),
 ]
@@ -719,7 +722,7 @@ pdf = PdfForm(OUT)
 
 pdf.h1("Willkommen / Anleitung")
 pdf.note("Dies ist der vollständige ausfüllbare PDF-Anamnesebogen als Alternative zum Online-Formular. Er ist für Adobe Reader, Adobe Fill & Sign und kompatible PDF-Apps vorgesehen.")
-pdf.note("Bitte speichern Sie das ausgefüllte PDF lokal auf Ihrem Gerät. Die Bearbeitung erfolgt ohne Ausfüllen über den Lovable-Server.")
+pdf.note("Bitte speichern Sie das ausgefüllte PDF lokal auf Ihrem Gerät. Die Bearbeitung erfolgt offline – es werden beim Ausfüllen keine Daten an einen Server übertragen.")
 pdf.note("Mit Stern (*) markierte Felder sind Pflichtangaben (wie im Online-Bogen). Bei Fragen, die nicht zutreffen, lassen Sie die Felder leer.")
 pdf.note("Hinweis: Medizinische Fachbegriffe / lateinische Bezeichnungen werden, wenn möglich, mit deutscher Erklärung in Klammern ergänzt.")
 pdf.long_text("intro", "Aktueller Anlass / wichtigste Anliegen in eigenen Worten:", "freitext_anlass", 4)
@@ -727,7 +730,7 @@ pdf.long_text("intro", "Aktueller Anlass / wichtigste Anliegen in eigenen Worten
 pdf.h1("I. Patientendaten")
 pdf.h2("A. Personalia")
 pdf.text_row("patient", [("Nachname *", "nachname", 155), ("Vorname *", "vorname", 155), ("Geburtsdatum *", "geburtsdatum", 100), ("Nationalität", "nationalitaet", 105)])
-pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Zivilstand", "zivilstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
+pdf.text_row("patient", [("Geschlecht", "geschlecht", 120), ("Familienstand", "familienstand", 120), ("Körpergröße (cm)", "koerpergroesse", 105), ("Gewicht (kg)", "gewicht", 105)])
 pdf.h2("B. Kontaktdaten")
 pdf.text_row("kontakt", [("Straße, Hausnummer *", "strasse", 230), ("PLZ *", "plz", 70), ("Wohnort *", "wohnort", 190)])
 pdf.text_row("kontakt", [("Telefon privat", "telefonPrivat", 150), ("Telefon beruflich", "telefonBeruflich", 150), ("Mobil *", "mobil", 150)])
@@ -741,7 +744,7 @@ pdf.checkboxes("versicherung", "Kostenübernahme Naturheilkunde", ["bekannt ja",
 pdf.h2("E. Berufliche Situation (optional)")
 pdf.note("Diese Angaben sind freiwillig und nur relevant, wenn beruflicher Stress / Belastungen Teil des Anliegens sind.")
 pdf.text_row("beruf", [("Beruf", "beruf", 150), ("Arbeitgeber", "arbeitgeber", 170), ("Branche", "branche", 130)])
-pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentner seit", "berentnerSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
+pdf.text_row("beruf", [("Arbeitsunfähig seit", "arbeitsunfaehigSeit", 135), ("Berentet seit", "berentetSeit", 120), ("Unfallrente %", "unfallrenteProzent", 95), ("Schwerbehinderung %", "schwerbehinderungProzent", 115)])
 pdf.h2("F. Sorgeberechtigte bei Minderjährigen")
 pdf.note("Bei minderjährigen Patient:innen sind die folgenden Angaben Pflicht. Bitte zuerst das Verhältnis ankreuzen.")
 pdf.checkboxes("sorge", "Verhältnis zur/zum Patient:in *", ["Mutter", "Vater", "Sorgeberechtigte/r", "Vormund / Pfleger:in", "Sonstige/r"], 5)
@@ -805,14 +808,14 @@ pdf.h1("X. Bewegungsapparat")
 pdf.condition_table("bewegungsapparat", msk_rows)
 pdf.long_text("bewegungsapparat", "Sonstige Beschwerden am Bewegungsapparat:", "sonstige", 6)
 
-pdf.h1("XI. Frauengesundheit")
-pdf.note("Nur ausfüllen, soweit zutreffend.")
-pdf.text_row("frauen", [("Geburtsgewicht", "geburtsgewicht", 130)])
+pdf.h1("XI. Geschlechtsspezifische Anamnese")
+pdf.note("Bitte nur den für Sie zutreffenden Abschnitt ausfüllen.")
+
+pdf.h2("XI-a. Frauengesundheit")
 pdf.condition_table("frauen", women_rows)
 pdf.long_text("frauen", "Sonstige frauengesundheitliche Angaben:", "sonstige", 6)
 
-pdf.h1("XI. Männergesundheit")
-pdf.note("Nur ausfüllen, soweit zutreffend.")
+pdf.h2("XI-b. Männergesundheit")
 pdf.condition_table("maenner", men_rows)
 pdf.long_text("maenner", "Sonstige männergesundheitliche Angaben:", "sonstige", 6)
 
@@ -973,7 +976,7 @@ pdf.long_text("praeferenz", "Therapieerwartungen:", "therapieerwartungen", 6)
 pdf.long_text("praeferenz", "Gesundheitsziele:", "gesundheitsziele", 6)
 
 pdf.h1("XXIII. Persönliches")
-pdf.text_row("soziales", [("Familienstand", "familienstand", 120), ("Kinder Anzahl", "kinderAnzahl", 90), ("Kinder Alter", "kinderAlter", 160)])
+pdf.text_row("soziales", [("Kinder Anzahl", "kinderAnzahl", 90), ("Kinder Alter", "kinderAlter", 160), ("Partnerschaft", "partnerschaft", 160)])
 pdf.text_row("soziales", [("Wohnumfeld", "wohnumfeld", 120), ("Wohntyp", "wohntyp", 120), ("Beruflicher Stress", "berufStress", 130), ("Finanzielle Belastung", "finanzBelastung", 140)])
 pdf.text_row("soziales", [("Soziales Netzwerk", "sozialesNetzwerk", 150)])
 pdf.long_text("soziales", "Hobbys / Ressourcen / persönliche Umstände:", "hobbys", 8)
@@ -986,9 +989,9 @@ pdf.note(
     "das passende Frequenzmuster. Es geht hier nicht um eine medizinische Diagnose."
 )
 pdf.note(
-    "Ausfüllen: Bitte NUR Symptome ankreuzen, die tatsächlich auf Dich zutreffen. Wähle dann die Intensität auf einer Skala von "
-    "1 (sehr leicht) bis 6 (sehr stark). Nicht zutreffende Fragen einfach leer lassen. In der Spalte 'Bemerkung / Auslöser' kannst "
-    "Du optional ergänzen, wann/wodurch das Symptom auftritt. Die Sektion ist freiwillig – je vollständiger sie ausgefüllt ist, "
+    "Ausfüllen: Bitte NUR Symptome ankreuzen, die tatsächlich auf Sie zutreffen. Wählen Sie dann die Intensität auf einer Skala von "
+    "1 (sehr leicht) bis 6 (sehr stark). Nicht zutreffende Fragen einfach leer lassen. In der Spalte 'Bemerkung / Auslöser' können "
+    "Sie optional ergänzen, wann/wodurch das Symptom auftritt. Die Sektion ist freiwillig – je vollständiger sie ausgefüllt ist, "
     "desto präziser kann die Geräteeinstellung erfolgen."
 )
 iaa_categories = parse_iaa_categories()
