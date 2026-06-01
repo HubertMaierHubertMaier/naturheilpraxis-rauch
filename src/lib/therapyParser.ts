@@ -52,6 +52,8 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
 ];
 
 const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"]; emoji: string; title: string; placement: "intro" | "outro" }> = [
+  { match: /umfassende anamnese|anamnese/i, variant: "info", emoji: "🧾", title: "Umfassende Anamnese", placement: "intro" },
+  { match: /folge.?termine|woche\s*4|evaluierung|anpassung|phase\s*2/i, variant: "info", emoji: "📅", title: "Phase 2: Folge-Termine", placement: "intro" },
   { match: /analyse.*belastung/i, variant: "info", emoji: "🔍", title: "Analyse der Belastungen", placement: "intro" },
   { match: /bewertung.*bisherig|bewertung der bisherigen/i, variant: "info", emoji: "📊", title: "Bewertung der bisherigen Therapie", placement: "intro" },
   { match: /laborwert/i, variant: "info", emoji: "🔬", title: "Laborwert-Analyse", placement: "intro" },
@@ -176,6 +178,15 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
       };
       if (block.def.placement === "intro") result.intro.push(section);
       else result.outro.push(section);
+    } else if (block.kind === "unknown") {
+      const content = block.lines.join("\n").trim();
+      if (!content) continue;
+      result.intro.push({
+        emoji: "🧾",
+        title: block.heading,
+        content,
+        variant: "info",
+      });
     }
   }
 
