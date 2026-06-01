@@ -331,6 +331,15 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   .outro { margin-top: 14px; page-break-inside: avoid; font-size: 9.5pt; }
   .outro h3 { font-size: 11pt; color: #5a4a35; margin-bottom: 4px; border-bottom: 1px solid #e5d9c0; padding-bottom: 2px; }
   .outro-content { padding-left: 4px; }
+  .alert-body, .outro-content { margin-top: 4px; }
+  .alert-body p, .outro-content p { margin: 4px 0; }
+  .md-sub { font-family: 'Playfair Display', Georgia, serif; font-size: 10.5pt; color: #4a6e4a; margin: 8px 0 3px 0; }
+  .md-ul, .md-ol { margin: 4px 0 6px 18px; padding: 0; }
+  .md-ul li, .md-ol li { margin: 1px 0; font-size: 9.5pt; }
+  .md-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 6px 0 8px 0; page-break-inside: avoid; }
+  .md-table th { background: #f5f1e8; padding: 4px 6px; text-align: left; border-bottom: 1px solid #c8b89e; font-weight: 600; color: #5a4a35; }
+  .md-table td { padding: 3px 6px; border-bottom: 1px solid #ececec; vertical-align: top; }
+  code { font-family: 'JetBrains Mono', Menlo, monospace; font-size: 9pt; background: #f4f4f4; padding: 1px 4px; border-radius: 2px; }
   .notiz { margin-top: 14px; padding: 10px 12px; background: #f9f7f2; border-left: 3px solid #6b8e6b; font-size: 9.5pt; page-break-inside: avoid; }
   .notiz h3 { font-size: 11pt; margin-bottom: 4px; color: #4a6e4a; }
   .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 8.5pt; color: #777; }
