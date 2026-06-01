@@ -34,8 +34,106 @@ const escapeHtml = (s: unknown) => {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 };
 
-const mdInline = (s: unknown) =>
-  escapeHtml(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+const mdInlineRaw = (s: string) =>
+  s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+   .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+/**
+ * Vollwertiger Markdown→HTML-Renderer für Intro-/Outro-Blöcke.
+ * Unterstützt: ### Sub-Headings, Bullet-Listen (-, *), nummerierte Listen,
+ * GFM-Tabellen (| col | col |), **bold**, `code`, Zeilenumbrüche.
+ */
+const mdBlock = (s: unknown): string => {
+  if (s === null || s === undefined) return "";
+  const raw = String(s);
+  const lines = raw.split("\n");
+  const out: string[] = [];
+  let i = 0;
+
+  const flushParaBuf = (buf: string[]) => {
+    if (!buf.length) return;
+    const txt = buf.join(" ").trim();
+    if (txt) out.push(`<p>${mdInlineRaw(escapeHtml(txt))}</p>`);
+    buf.length = 0;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Leere Zeile → Absatz-Ende
+    if (!trimmed) { i++; continue; }
+
+    // Sub-Heading ### / #### / #####
+    const hMatch = trimmed.match(/^(#{3,5})\s+(.+?)\s*$/);
+    if (hMatch) {
+      const level = Math.min(6, hMatch[1].length + 1); // ### → h4
+      out.push(`<h${level} class="md-sub">${mdInlineRaw(escapeHtml(hMatch[2]))}</h${level}>`);
+      i++; continue;
+    }
+
+    // GFM-Tabelle: Zeile mit | und nächste Zeile ist Separator |---|---|
+    if (trimmed.includes("|") && i + 1 < lines.length) {
+      const sep = lines[i + 1].trim();
+      if (/^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(sep)) {
+        const headerCells = trimmed.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+        i += 2;
+        const bodyRows: string[][] = [];
+        while (i < lines.length && lines[i].trim().includes("|")) {
+          const row = lines[i].trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+          bodyRows.push(row);
+          i++;
+        }
+        const thead = `<thead><tr>${headerCells.map(c => `<th>${mdInlineRaw(escapeHtml(c))}</th>`).join("")}</tr></thead>`;
+        const tbody = `<tbody>${bodyRows.map(r => `<tr>${r.map(c => `<td>${mdInlineRaw(escapeHtml(c))}</td>`).join("")}</tr>`).join("")}</tbody>`;
+        out.push(`<table class="md-table">${thead}${tbody}</table>`);
+        continue;
+      }
+    }
+
+    // Bullet-Liste
+    if (/^[-*]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*]\s+/, ""));
+        i++;
+      }
+      out.push(`<ul class="md-ul">${items.map(it => `<li>${mdInlineRaw(escapeHtml(it))}</li>`).join("")}</ul>`);
+      continue;
+    }
+
+    // Nummerierte Liste
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+        i++;
+      }
+      out.push(`<ol class="md-ol">${items.map(it => `<li>${mdInlineRaw(escapeHtml(it))}</li>`).join("")}</ol>`);
+      continue;
+    }
+
+    // Absatz (greedy bis zur nächsten Leerzeile / Spezialzeile)
+    const paraBuf: string[] = [trimmed];
+    i++;
+    while (i < lines.length) {
+      const nxt = lines[i].trim();
+      if (!nxt) break;
+      if (/^(#{3,5})\s+/.test(nxt)) break;
+      if (/^[-*]\s+/.test(nxt)) break;
+      if (/^\d+\.\s+/.test(nxt)) break;
+      if (nxt.includes("|")) break;
+      paraBuf.push(nxt);
+      i++;
+    }
+    flushParaBuf(paraBuf);
+  }
+
+  return out.join("\n");
+};
+
+// Backward-compat alias for any inline use (z.B. einzeilige Strings)
+const mdInline = (s: unknown) => mdInlineRaw(escapeHtml(s ?? ""));
 
 function filterCategoriesBySelection(
   categories: CategoryGroup[],
