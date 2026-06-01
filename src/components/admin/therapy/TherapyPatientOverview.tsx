@@ -58,6 +58,8 @@ export function TherapyPatientOverview() {
   const loadOverview = useCallback(async () => {
     setLoading(true);
     setSessionsByPid({});
+    setOpenId(null);
+    setExpandedSessionId(null);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) {
@@ -108,7 +110,7 @@ export function TherapyPatientOverview() {
       return;
     }
     setOpenId(pid);
-    await loadSessionsFor(pid);
+    await loadSessionsFor(pid, true);
   };
 
   const refreshPid = async (pid: string) => {
