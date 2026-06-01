@@ -82,19 +82,23 @@ export function TherapyPatientOverview() {
   const loadSessionsFor = async (pid: string, force = false): Promise<SessionRow[]> => {
     if (!force && sessionsByPid[pid]) return sessionsByPid[pid];
     setLoadingSessions(pid);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
-    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
-      body: { pseudonym_id: pid },
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
-      return [];
-    } else {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return [];
+      }
+
       const sessions = ((data as any)?.sessions ?? []) as SessionRow[];
       setSessionsByPid((p) => ({ ...p, [pid]: sessions }));
       return sessions;
+    } finally {
+      setLoadingSessions(null);
     }
   };
 
