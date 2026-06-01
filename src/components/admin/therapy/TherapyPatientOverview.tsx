@@ -57,6 +57,9 @@ export function TherapyPatientOverview() {
 
   const loadOverview = useCallback(async () => {
     setLoading(true);
+    setSessionsByPid({});
+    setOpenId(null);
+    setExpandedSessionId(null);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) {
@@ -78,21 +81,27 @@ export function TherapyPatientOverview() {
 
   useEffect(() => { loadOverview(); }, [loadOverview]);
 
-  const loadSessionsFor = async (pid: string) => {
-    if (sessionsByPid[pid]) return;
+  const loadSessionsFor = async (pid: string, force = false): Promise<SessionRow[]> => {
+    if (!force && sessionsByPid[pid]) return sessionsByPid[pid];
     setLoadingSessions(pid);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
-    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
-      body: { pseudonym_id: pid },
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (error) {
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
-    } else {
-      setSessionsByPid((p) => ({ ...p, [pid]: (data as any)?.sessions ?? [] }));
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+        return [];
+      }
+
+      const sessions = ((data as any)?.sessions ?? []) as SessionRow[];
+      setSessionsByPid((p) => ({ ...p, [pid]: sessions }));
+      return sessions;
+    } finally {
+      setLoadingSessions(null);
     }
-    setLoadingSessions(null);
   };
 
   const togglePid = async (pid: string) => {
@@ -101,7 +110,11 @@ export function TherapyPatientOverview() {
       return;
     }
     setOpenId(pid);
-    await loadSessionsFor(pid);
+    await loadSessionsFor(pid, true);
+  };
+
+  const refreshPid = async (pid: string) => {
+    return loadSessionsFor(pid, true);
   };
 
   const handleDelete = async (sessionId: string, pid: string) => {
@@ -265,6 +278,7 @@ export function TherapyPatientOverview() {
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                                     <span className="text-xs font-medium">{fmtDate(s.created_at)}</span>
+                                    <span className="text-[11px] text-muted-foreground">aktualisiert: {fmtDate(s.updated_at || s.created_at)}</span>
                                     {s.eingabe_daten?.erkrankung && (
                                       <Badge variant="outline" className="text-xs">
                                         {s.eingabe_daten.erkrankung}
@@ -292,7 +306,11 @@ export function TherapyPatientOverview() {
                                     </Button>
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                      onClick={() => handlePrint(s, "praxis")}
+                                      onClick={async () => {
+                                        const freshSessions = await refreshPid(p.pseudonym_id);
+                                        const fresh = freshSessions.find((row) => row.id === s.id) || s;
+                                        handlePrint(fresh, "praxis");
+                                      }}
                                     >
                                       <Printer className="h-3 w-3" />
                                       Praxis-PDF
