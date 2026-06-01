@@ -34,8 +34,106 @@ const escapeHtml = (s: unknown) => {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 };
 
-const mdInline = (s: unknown) =>
-  escapeHtml(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+const mdInlineRaw = (s: string) =>
+  s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+   .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+/**
+ * Vollwertiger Markdown→HTML-Renderer für Intro-/Outro-Blöcke.
+ * Unterstützt: ### Sub-Headings, Bullet-Listen (-, *), nummerierte Listen,
+ * GFM-Tabellen (| col | col |), **bold**, `code`, Zeilenumbrüche.
+ */
+const mdBlock = (s: unknown): string => {
+  if (s === null || s === undefined) return "";
+  const raw = String(s);
+  const lines = raw.split("\n");
+  const out: string[] = [];
+  let i = 0;
+
+  const flushParaBuf = (buf: string[]) => {
+    if (!buf.length) return;
+    const txt = buf.join(" ").trim();
+    if (txt) out.push(`<p>${mdInlineRaw(escapeHtml(txt))}</p>`);
+    buf.length = 0;
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Leere Zeile → Absatz-Ende
+    if (!trimmed) { i++; continue; }
+
+    // Sub-Heading ### / #### / #####
+    const hMatch = trimmed.match(/^(#{3,5})\s+(.+?)\s*$/);
+    if (hMatch) {
+      const level = Math.min(6, hMatch[1].length + 1); // ### → h4
+      out.push(`<h${level} class="md-sub">${mdInlineRaw(escapeHtml(hMatch[2]))}</h${level}>`);
+      i++; continue;
+    }
+
+    // GFM-Tabelle: Zeile mit | und nächste Zeile ist Separator |---|---|
+    if (trimmed.includes("|") && i + 1 < lines.length) {
+      const sep = lines[i + 1].trim();
+      if (/^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(sep)) {
+        const headerCells = trimmed.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+        i += 2;
+        const bodyRows: string[][] = [];
+        while (i < lines.length && lines[i].trim().includes("|")) {
+          const row = lines[i].trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+          bodyRows.push(row);
+          i++;
+        }
+        const thead = `<thead><tr>${headerCells.map(c => `<th>${mdInlineRaw(escapeHtml(c))}</th>`).join("")}</tr></thead>`;
+        const tbody = `<tbody>${bodyRows.map(r => `<tr>${r.map(c => `<td>${mdInlineRaw(escapeHtml(c))}</td>`).join("")}</tr>`).join("")}</tbody>`;
+        out.push(`<table class="md-table">${thead}${tbody}</table>`);
+        continue;
+      }
+    }
+
+    // Bullet-Liste
+    if (/^[-*]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*]\s+/, ""));
+        i++;
+      }
+      out.push(`<ul class="md-ul">${items.map(it => `<li>${mdInlineRaw(escapeHtml(it))}</li>`).join("")}</ul>`);
+      continue;
+    }
+
+    // Nummerierte Liste
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+        i++;
+      }
+      out.push(`<ol class="md-ol">${items.map(it => `<li>${mdInlineRaw(escapeHtml(it))}</li>`).join("")}</ol>`);
+      continue;
+    }
+
+    // Absatz (greedy bis zur nächsten Leerzeile / Spezialzeile)
+    const paraBuf: string[] = [trimmed];
+    i++;
+    while (i < lines.length) {
+      const nxt = lines[i].trim();
+      if (!nxt) break;
+      if (/^(#{3,5})\s+/.test(nxt)) break;
+      if (/^[-*]\s+/.test(nxt)) break;
+      if (/^\d+\.\s+/.test(nxt)) break;
+      if (nxt.includes("|")) break;
+      paraBuf.push(nxt);
+      i++;
+    }
+    flushParaBuf(paraBuf);
+  }
+
+  return out.join("\n");
+};
+
+// Backward-compat alias for any inline use (z.B. einzeilige Strings)
+const mdInline = (s: unknown) => mdInlineRaw(escapeHtml(s ?? ""));
 
 function filterCategoriesBySelection(
   categories: CategoryGroup[],
@@ -87,7 +185,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     ? parsed.intro
         .map((s) => {
           const cls = s.variant === "danger" ? "alert-danger" : s.variant === "warning" ? "alert-warning" : "alert-info";
-          return `<div class="alert ${cls}"><strong>${s.emoji} ${escapeHtml(s.title)}</strong><div>${mdInline(s.content).replace(/\n/g, "<br/>")}</div></div>`;
+          return `<div class="alert ${cls}"><div class="alert-title"><strong>${s.emoji} ${escapeHtml(s.title)}</strong></div><div class="alert-body">${mdBlock(s.content)}</div></div>`;
         })
         .join("")
     : "";
@@ -167,7 +265,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     : parsed.outro.filter((s) => s.variant !== "danger" && s.variant !== "warning");
 
   const outroHtml = outroSections
-    .map((s) => `<section class="outro"><h3>${s.emoji} ${escapeHtml(s.title)}</h3><div class="outro-content">${mdInline(s.content).replace(/\n/g, "<br/>")}</div></section>`)
+    .map((s) => `<section class="outro"><h3>${s.emoji} ${escapeHtml(s.title)}</h3><div class="outro-content">${mdBlock(s.content)}</div></section>`)
     .join("");
 
   const notizHtml = (isPraxis && patient.notiz?.trim())
@@ -233,6 +331,15 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   .outro { margin-top: 14px; page-break-inside: avoid; font-size: 9.5pt; }
   .outro h3 { font-size: 11pt; color: #5a4a35; margin-bottom: 4px; border-bottom: 1px solid #e5d9c0; padding-bottom: 2px; }
   .outro-content { padding-left: 4px; }
+  .alert-body, .outro-content { margin-top: 4px; }
+  .alert-body p, .outro-content p { margin: 4px 0; }
+  .md-sub { font-family: 'Playfair Display', Georgia, serif; font-size: 10.5pt; color: #4a6e4a; margin: 8px 0 3px 0; }
+  .md-ul, .md-ol { margin: 4px 0 6px 18px; padding: 0; }
+  .md-ul li, .md-ol li { margin: 1px 0; font-size: 9.5pt; }
+  .md-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 6px 0 8px 0; page-break-inside: avoid; }
+  .md-table th { background: #f5f1e8; padding: 4px 6px; text-align: left; border-bottom: 1px solid #c8b89e; font-weight: 600; color: #5a4a35; }
+  .md-table td { padding: 3px 6px; border-bottom: 1px solid #ececec; vertical-align: top; }
+  code { font-family: 'JetBrains Mono', Menlo, monospace; font-size: 9pt; background: #f4f4f4; padding: 1px 4px; border-radius: 2px; }
   .notiz { margin-top: 14px; padding: 10px 12px; background: #f9f7f2; border-left: 3px solid #6b8e6b; font-size: 9.5pt; page-break-inside: avoid; }
   .notiz h3 { font-size: 11pt; margin-bottom: 4px; color: #4a6e4a; }
   .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 8.5pt; color: #777; }
