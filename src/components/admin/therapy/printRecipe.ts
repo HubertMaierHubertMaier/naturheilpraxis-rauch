@@ -29,10 +29,12 @@ interface PrintArgs {
   manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string }>;
 }
 
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const escapeHtml = (s: unknown) => {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+};
 
-const mdInline = (s: string) =>
+const mdInline = (s: unknown) =>
   escapeHtml(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
 function filterCategoriesBySelection(
