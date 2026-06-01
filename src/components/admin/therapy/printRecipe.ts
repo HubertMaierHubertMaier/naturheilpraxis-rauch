@@ -265,7 +265,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     : parsed.outro.filter((s) => s.variant !== "danger" && s.variant !== "warning");
 
   const outroHtml = outroSections
-    .map((s) => `<section class="outro"><h3>${s.emoji} ${escapeHtml(s.title)}</h3><div class="outro-content">${mdInline(s.content).replace(/\n/g, "<br/>")}</div></section>`)
+    .map((s) => `<section class="outro"><h3>${s.emoji} ${escapeHtml(s.title)}</h3><div class="outro-content">${mdBlock(s.content)}</div></section>`)
     .join("");
 
   const notizHtml = (isPraxis && patient.notiz?.trim())
