@@ -78,8 +78,8 @@ export function TherapyPatientOverview() {
 
   useEffect(() => { loadOverview(); }, [loadOverview]);
 
-  const loadSessionsFor = async (pid: string) => {
-    if (sessionsByPid[pid]) return;
+  const loadSessionsFor = async (pid: string, force = false) => {
+    if (!force && sessionsByPid[pid]) return;
     setLoadingSessions(pid);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
@@ -102,6 +102,10 @@ export function TherapyPatientOverview() {
     }
     setOpenId(pid);
     await loadSessionsFor(pid);
+  };
+
+  const refreshPid = async (pid: string) => {
+    await loadSessionsFor(pid, true);
   };
 
   const handleDelete = async (sessionId: string, pid: string) => {
@@ -265,6 +269,7 @@ export function TherapyPatientOverview() {
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                                     <span className="text-xs font-medium">{fmtDate(s.created_at)}</span>
+                                    <span className="text-[11px] text-muted-foreground">aktualisiert: {fmtDate(s.updated_at || s.created_at)}</span>
                                     {s.eingabe_daten?.erkrankung && (
                                       <Badge variant="outline" className="text-xs">
                                         {s.eingabe_daten.erkrankung}
@@ -292,7 +297,11 @@ export function TherapyPatientOverview() {
                                     </Button>
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                      onClick={() => handlePrint(s, "praxis")}
+                                      onClick={async () => {
+                                        await refreshPid(p.pseudonym_id);
+                                        const fresh = (sessionsByPid[p.pseudonym_id] || sessions).find((row) => row.id === s.id) || s;
+                                        handlePrint(fresh, "praxis");
+                                      }}
                                     >
                                       <Printer className="h-3 w-3" />
                                       Praxis-PDF
