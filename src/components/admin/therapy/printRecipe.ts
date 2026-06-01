@@ -185,7 +185,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
     ? parsed.intro
         .map((s) => {
           const cls = s.variant === "danger" ? "alert-danger" : s.variant === "warning" ? "alert-warning" : "alert-info";
-          return `<div class="alert ${cls}"><strong>${s.emoji} ${escapeHtml(s.title)}</strong><div>${mdInline(s.content).replace(/\n/g, "<br/>")}</div></div>`;
+          return `<div class="alert ${cls}"><div class="alert-title"><strong>${s.emoji} ${escapeHtml(s.title)}</strong></div><div class="alert-body">${mdBlock(s.content)}</div></div>`;
         })
         .join("")
     : "";
