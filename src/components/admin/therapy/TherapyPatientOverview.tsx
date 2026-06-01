@@ -57,6 +57,7 @@ export function TherapyPatientOverview() {
 
   const loadOverview = useCallback(async () => {
     setLoading(true);
+    setSessionsByPid({});
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) {
@@ -78,8 +79,8 @@ export function TherapyPatientOverview() {
 
   useEffect(() => { loadOverview(); }, [loadOverview]);
 
-  const loadSessionsFor = async (pid: string, force = false) => {
-    if (!force && sessionsByPid[pid]) return;
+  const loadSessionsFor = async (pid: string, force = false): Promise<SessionRow[]> => {
+    if (!force && sessionsByPid[pid]) return sessionsByPid[pid];
     setLoadingSessions(pid);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
@@ -89,10 +90,12 @@ export function TherapyPatientOverview() {
     });
     if (error) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      return [];
     } else {
-      setSessionsByPid((p) => ({ ...p, [pid]: (data as any)?.sessions ?? [] }));
+      const sessions = ((data as any)?.sessions ?? []) as SessionRow[];
+      setSessionsByPid((p) => ({ ...p, [pid]: sessions }));
+      return sessions;
     }
-    setLoadingSessions(null);
   };
 
   const togglePid = async (pid: string) => {
@@ -105,7 +108,7 @@ export function TherapyPatientOverview() {
   };
 
   const refreshPid = async (pid: string) => {
-    await loadSessionsFor(pid, true);
+    return loadSessionsFor(pid, true);
   };
 
   const handleDelete = async (sessionId: string, pid: string) => {
@@ -298,8 +301,8 @@ export function TherapyPatientOverview() {
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
                                       onClick={async () => {
-                                        await refreshPid(p.pseudonym_id);
-                                        const fresh = (sessionsByPid[p.pseudonym_id] || sessions).find((row) => row.id === s.id) || s;
+                                        const freshSessions = await refreshPid(p.pseudonym_id);
+                                        const fresh = freshSessions.find((row) => row.id === s.id) || s;
                                         handlePrint(fresh, "praxis");
                                       }}
                                     >
