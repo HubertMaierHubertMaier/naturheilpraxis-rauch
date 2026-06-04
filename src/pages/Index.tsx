@@ -6,7 +6,7 @@ import SEOHead from "@/components/seo/SEOHead";
 
 const Index = () => {
   return (
-    <Layout>
+    <Layout mainAriaLabel="Startseite">
       <SEOHead />
       <HeroSection />
       <WelcomeSelection />
