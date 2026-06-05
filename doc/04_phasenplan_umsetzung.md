@@ -71,6 +71,20 @@ Jeder Entwickler und jede CI/CD-Umgebung kann das Projekt identisch installieren
 - `npm run build` grün.
 - Lockfile ist committed.
 
+### Abschlussstatus 2026-06-05
+
+Phase 1 wurde lokal abschlussgeprüft:
+
+- `package-lock.json` wurde mit `package.json` synchronisiert.
+- `npm ci` läuft lokal grün.
+- `npm test` läuft lokal grün.
+- `npm run build` läuft lokal grün.
+- `npx tsc --noEmit` läuft lokal grün.
+- `npm run lint` bleibt bekannte Bestandsschuld-Baseline mit `332 problems (300 errors, 32 warnings)` und wird in Phase 7 separat bearbeitet.
+- `npm audit` meldet sicherheitsrelevante Dependency-Schuld; diese wird nach Phase-1-Sicherung als separate Security-/Dependency-Miniphase empfohlen.
+
+Detaildokument: `doc/20260605-phase-1-final-verification.md`
+
 ## Phase 2 — Testsystem reparieren
 
 ### Ziel
