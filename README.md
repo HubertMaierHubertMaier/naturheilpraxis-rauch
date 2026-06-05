@@ -1,73 +1,101 @@
-# Welcome to your Lovable project
+# Naturheilpraxis Rauch
 
-## Project info
+Lokales Frontend-/Praxisprojekt auf Basis von Vite, React, TypeScript, shadcn-ui und Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Projektstatus / Arbeitsweise
 
-## How can I edit this code?
+Dieses Repository ist mit GitHub/Lovable verbunden. Pushes können daher Live-/Builder-Folgen haben.
 
-There are several ways of editing your application.
+Verbindliche lokale Arbeitsregeln:
 
-**Use Lovable**
+- Vor substantiellen Änderungen lokale ShadowCopy außerhalb des Repositorys erstellen.
+- Änderungen phasenweise und klein halten.
+- Lokale Gates vor Commit/Push ausführen.
+- Kein Push, kein Pull Request, kein Merge ohne ausdrückliche separate Freigabe.
+- Keine echten Patientendaten oder Anamnese-Daten in Logs, Tests, Commits, Screenshots oder unsicheren digitalen Flows verwenden.
+- Automatischer Versand oder interaktive Übertragung von Anamnesedaten bleibt bis zur rechtlichen Prüfung deaktiviert.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Die neue Analyse- und Stabilisierungdokumentation liegt bewusst unter `doc/`.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Lokales Setup
 
-**Use your preferred IDE**
+Voraussetzungen des zuletzt verifizierten lokalen Phase-1-Standes:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js: `v20.20.0`
+- npm: `10.8.2`
+- Lockfile: `package-lock.json`
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Reproduzierbare Installation:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm ci
 ```
 
-**Edit a file directly in GitHub**
+Lokale Prüfungen:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+npm test
+npm run build
+npx tsc --noEmit
+npm run lint
+```
 
-**Use GitHub Codespaces**
+Hinweis zum Lint-Status:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- `npm run lint` ist aktuell eine bekannte Bestandsschuld-Baseline und schlägt noch fehl.
+- Zuletzt dokumentierte Baseline: `332 problems (300 errors, 32 warnings)`.
+- Diese Lint-Schuld wird später separat strukturiert bearbeitet und blockiert Phase 1 nicht, solange sie nicht schlimmer wird.
 
-## What technologies are used for this project?
+## Devserver / Port-Regel
 
-This project is built with:
+Für Stabilisierungsarbeit wird kein Devserver automatisch gestartet.
+
+Falls ein Devserver für Browserprüfung notwendig ist:
+
+1. Vorher freie Ports prüfen, z. B. mit:
+
+   ```sh
+   ss -ltnp
+   ```
+
+2. Einen explizit freien lokalen Port wählen.
+3. Bevorzugt strikt und lokal starten, z. B.:
+
+   ```sh
+   npm run dev -- --host 127.0.0.1 --port <freier-port> --strictPort
+   ```
+
+Bekannte belegte Ports können u. a. `80`, `443`, `8000`, `8080`, `4321`, `8443`, `3001` und `9090` sein; immer aktuell prüfen.
+
+## Verfügbare npm-Skripte
+
+```sh
+npm run dev       # Vite-Devserver, nur nach Portprüfung starten
+npm run build     # Produktionsbuild
+npm run build:dev # Development-Build
+npm run lint      # ESLint-Baseline
+npm test          # Vitest einmalig
+npm run test:watch
+npm run preview
+```
+
+## Technologien
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Vitest / Testing Library
+- Supabase-Client / Supabase Edge Functions
 
-## How can I deploy this project?
+## GitHub/Lovable
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Remote:
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+https://github.com/reddy67/naturheilpraxis-rauch.git
+```
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Lokale Commits sind erlaubt, nachdem ein kleiner Schritt getestet und dokumentiert wurde.
+Pushes zu GitHub/Lovable sind gesperrt, bis sie ausdrücklich separat freigegeben werden.
