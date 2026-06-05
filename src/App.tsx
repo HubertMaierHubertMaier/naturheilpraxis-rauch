@@ -52,7 +52,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <SchemaOrg />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <CookieBanner />
             <Routes>
               <Route path="/" element={<Index />} />
