@@ -28,4 +28,21 @@ describe("App public route smoke tests", () => {
 
     await expectNoAppSmokeConsoleWarnings();
   });
+
+  it("renders the public legal notice page at /impressum with an accessible main landmark", async () => {
+    renderAppAtRoute("/impressum");
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /Impressum/i,
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("main", { name: /Impressum/i })
+    ).toBeInTheDocument();
+
+    await expectNoAppSmokeConsoleWarnings();
+  });
 });

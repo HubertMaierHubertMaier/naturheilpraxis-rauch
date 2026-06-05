@@ -7,7 +7,7 @@ const Impressum = () => {
   const { t } = useLanguage();
 
   return (
-    <Layout>
+    <Layout mainAriaLabel="Impressum">
       <div className="bg-sage-50 py-12 md:py-16">
         <div className="container">
           <div className="mx-auto max-w-3xl text-center">

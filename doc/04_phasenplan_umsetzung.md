@@ -9,9 +9,11 @@ Dieser Plan priorisiert Stabilisierung, Datensicherheit, Workflow-Verbesserung u
 1. Vor sicherheits- oder patientendatenrelevanten Änderungen wird eine lokale Sicherheitskopie erstellt.
 2. Nach jeder finalisierten und getesteten funktionalen Phase wird eine akkurate lokale Kopie unter `/home/klaus999/project-backups/naturheilpraxis-rauch/` erstellt.
 3. Jede Phase wird lokal verifiziert, bevor sie committed wird.
-4. GitHub-Push und Merge erfolgen erst nach sauberem lokalen Stand und, falls erforderlich, persönlicher Freigabe.
-5. Features zum automatischen Versand oder zur interaktiven Übertragung von Anamnesedaten bleiben bis zur rechtlichen Klärung vorbereitet, aber deaktiviert.
-6. Patientensensible Echtdaten dürfen nicht in Tests, Logs, Commits, Screenshots oder ungesicherten E-Mails landen.
+4. Phase 1 wird erst als abgeschlossen betrachtet, wenn sie lokal vollständig funktional getestet ist.
+5. Nach vollständig getesteter Phase 1 wird zusätzlich zu den normalen ShadowCopies eine komplette Phase-1-Gesamtsicherung in einem gesonderten zusätzlichen Ordner erstellt.
+6. GitHub-/Lovable-Push und Merge erfolgen erst nach sauberem lokalem Stand, vollständiger Phase-1-Gesamtsicherung und ausdrücklicher separater persönlicher Freigabe.
+7. Features zum automatischen Versand oder zur interaktiven Übertragung von Anamnesedaten bleiben bis zur rechtlichen Klärung vorbereitet, aber deaktiviert.
+8. Patientensensible Echtdaten dürfen nicht in Tests, Logs, Commits, Screenshots oder ungesicherten E-Mails landen.
 
 Weitere Details:
 
