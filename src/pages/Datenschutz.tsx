@@ -136,7 +136,7 @@ export default function Datenschutz() {
   ];
 
   return (
-    <Layout>
+    <Layout mainAriaLabel="Datenschutz">
       <div className="container py-12 md:py-16">
         {/* Header */}
         <div className="mb-12 text-center">

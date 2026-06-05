@@ -1,20 +1,19 @@
-import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import App from "@/App";
-
-const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-const flushPendingAuthEffects = () => new Promise((resolve) => window.setTimeout(resolve, 0));
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  clearAppSmokeConsoleSpies,
+  expectNoAppSmokeConsoleWarnings,
+  renderAppAtRoute,
+} from "./appSmokeTestUtils";
 
 afterEach(() => {
-  consoleErrorSpy.mockClear();
-  consoleWarnSpy.mockClear();
+  clearAppSmokeConsoleSpies();
+  window.history.pushState({}, "", "/");
 });
 
 describe("App start page smoke test", () => {
   it("renders the public start page with the main practice headline and visitor choices without React act warnings", async () => {
-    render(<App />);
+    renderAppAtRoute("/");
 
     expect(
       screen.getByRole("heading", {
@@ -37,13 +36,6 @@ describe("App start page smoke test", () => {
       screen.getByRole("main", { name: /Startseite/i })
     ).toBeInTheDocument();
 
-    await flushPendingAuthEffects();
-
-    expect(consoleErrorSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining("not wrapped in act")
-    );
-    expect(consoleWarnSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining("React Router Future Flag Warning")
-    );
+    await expectNoAppSmokeConsoleWarnings();
   });
 });
