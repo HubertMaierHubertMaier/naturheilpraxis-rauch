@@ -28,9 +28,9 @@ export function AnamnesePublicToggle() {
     }
     await refresh();
     toast({
-      title: next ? "Öffentlicher Testzugang aktiv" : "Öffentlicher Testzugang deaktiviert",
+      title: next ? "Öffentliche Online-Übermittlung aktiv" : "Öffentliche Online-Übermittlung deaktiviert",
       description: next
-        ? "/anamnesebogen ist jetzt OHNE Login erreichbar (nur zum Ausprobieren)."
+        ? "/anamnesebogen ist jetzt ohne Login erreichbar und kann den E-Mail-Code-Verifizierungspfad starten."
         : "/anamnesebogen erfordert wieder Login.",
     });
   };
@@ -46,10 +46,10 @@ export function AnamnesePublicToggle() {
               ) : (
                 <Lock className="h-5 w-5 text-muted-foreground" />
               )}
-              Online-Anamnesebogen – Test-Modus
+              Online-Anamnesebogen – Öffentliche Online-Übermittlung
             </CardTitle>
             <CardDescription>
-              Schaltet <code>/anamnesebogen</code> kurzzeitig ohne Login frei – nur zum Ausprobieren der Online-Form.
+              Öffnet <code>/anamnesebogen</code> ohne Login und ermöglicht die Online-Übermittlung mit E-Mail-Code-Verifizierung.
             </CardDescription>
           </div>
           <div className="flex items-center gap-3">
@@ -80,11 +80,10 @@ export function AnamnesePublicToggle() {
         {enabled ? (
           <>
             <p className="text-amber-700 font-medium">
-              ⚠️ Achtung: Jeder mit dem Link kann die Form öffnen. Absenden/Speichern funktioniert ohne Login NICHT –
-              es lassen sich nur Felder ausprobieren.
+              ⚠️ Achtung: Jeder mit dem Link kann die Form öffnen und den Übermittlungspfad starten.
             </p>
             <p className="text-muted-foreground">
-              Nach dem Test bitte wieder deaktivieren.
+              Nur nach fachlicher Freigabe und DSGVO-/Rechtsprüfung aktiviert lassen.
             </p>
           </>
         ) : (
