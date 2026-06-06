@@ -141,3 +141,143 @@ Der neue Test prüft:
    - `/dashboard`
 3. Prüfen, ob component-level Guards für sensible Routen bewusst ausreichend bleiben oder ob zusätzlich route-level Wrapper sinnvoll sind.
 4. Rate-Limit- und Role-Check-Spalte für Edge Functions weiter konkretisieren, ohne Live-Patientendaten zu verwenden.
+
+
+## Substep 2 – Tabellen-/RLS-Matrix ergänzt
+
+Datum/Zeit: 2026-06-06 23:14 CEST
+Branch: `stabilization/phase-4-auth-security-matrix`
+Pre-Substep-ShadowCopy:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2308_pre-phase-4-table-rls-matrix`
+
+Manifest:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2308_pre-phase-4-table-rls-matrix/SHADOWCOPY_MANIFEST.md`
+
+### Ziel
+
+Der zweite Phase-4-Schritt ergänzt die zuvor vorbereitete Tabellen-/RLS-Abdeckung. Die Matrix ist weiterhin statisch und lokal versioniert; es wurden keine Live-Supabase-Aufrufe und keine echten Patientendaten verwendet.
+
+### Quelleninventar
+
+Die Tabellenliste wurde aus `src/integrations/supabase/types.ts` abgeleitet. Erfasst sind alle 15 typisierten Public-Schema-Tabellen:
+
+- `admin_knowledge_base`
+- `anamnesis_submissions`
+- `app_settings`
+- `audit_log`
+- `faqs`
+- `iaa_submissions`
+- `mannayan_orders`
+- `mannayan_products`
+- `patient_resources`
+- `practice_info`
+- `practice_pricing`
+- `profiles`
+- `therapy_sessions`
+- `user_roles`
+- `verification_codes`
+
+Zusätzlich wurden Frontend-Query-Verbraucher aus `src/**/*.ts(x)` und RLS-/Policy-Kontext aus `supabase/migrations/*.sql` lokal inventarisiert.
+
+### TDD-Ablauf
+
+RED wurde über neue Assertions in `src/test/phase4-security-access-matrix.test.ts` hergestellt:
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts
+Test Files 1 failed
+Tests 3 failed | 4 passed
+Fehler: tableAccessMatrix war noch nicht implementiert.
+```
+
+GREEN wurde durch `tableAccessMatrix` in `src/lib/securityAccessMatrix.ts` hergestellt.
+
+Neue Regression-Checks:
+
+1. Jede typisierte Supabase-Tabelle hat einen Eintrag in `tableAccessMatrix`.
+2. Patientendaten-Tabellen sind nicht public-read und haben `rlsEnabled=true`.
+3. Bewusst public-read Tabellen sind separat dokumentiert, enthalten keine Patientendaten und haben eine schriftliche Begründung:
+   - `app_settings`
+   - `faqs`
+   - `practice_info`
+   - `practice_pricing`
+
+### Routenmatrix-Korrekturen aus dem Tabelleninventar
+
+Im Zuge der Inventarisierung wurden veraltete/ungenau benannte Tabellenreferenzen in `routeAccessMatrix` korrigiert:
+
+- `patient_registrations` entfernt, da nicht in der typisierten Supabase-Tabelle vorhanden.
+- `patient_library_items` auf `patient_resources` korrigiert.
+- `audit_logs` auf `audit_log` korrigiert.
+- `anamnesis_submissions`, `iaa_submissions`, `practice_pricing`, `therapy_sessions` und `profiles` dort ergänzt, wo sie aus Frontend-Verbrauchern ableitbar waren.
+
+### Verifizierte Gates nach Substep 2
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts
+Exit 0
+Test Files 1 passed
+Tests 7 passed
+```
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts src/test/supabase-edge-function-jwt-policy.test.ts src/test/repository-secret-policy.test.ts
+Exit 0
+Test Files 3 passed
+Tests 13 passed
+```
+
+```text
+npm test
+Exit 0
+Test Files 14 passed
+Tests 37 passed
+```
+
+```text
+npx tsc --noEmit
+Exit 0
+```
+
+```text
+npm run build
+Exit 0
+3309 modules transformed
+built in 4.83s
+```
+
+```text
+npx eslint src/lib/securityAccessMatrix.ts src/test/phase4-security-access-matrix.test.ts
+Exit 0
+```
+
+```text
+git diff --check
+Exit 0
+```
+
+Bekannter Nicht-Blocker bleibt unverändert:
+
+```text
+npm run lint
+Exit 1
+327 problems (295 errors, 32 warnings)
+```
+
+### Datenschutz-/Patientendaten-Hinweis
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Live-Supabase-/Edge-Function-Aufrufe ausgeführt.
+- Keine Secret-Werte ausgegeben.
+- Alle Checks waren lokale statische oder Build-/Test-Gates.
+
+### Nächste sinnvolle Phase-4-Substeps
+
+1. Matrix-internen Konsistenztest ergänzen: Alle in Routen referenzierten Supabase-Tabellen und Edge Functions müssen in den jeweiligen Matrixlisten existieren.
+2. Admin-/Patient-Routen mit weiteren Guard-Smoke-Tests absichern.
+3. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten.
+4. Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, ohne Live-Patientendaten zu verwenden.
