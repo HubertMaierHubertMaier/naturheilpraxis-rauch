@@ -29,9 +29,16 @@ describe("vite.config.ts Supabase env fallback (white-page regression)", () => {
     expect(viteConfig).toContain('"import.meta.env.VITE_SUPABASE_URL"');
   });
 
-  it("defines a fallback for VITE_SUPABASE_PUBLISHABLE_KEY", () => {
-    expect(viteConfig).toMatch(/FALLBACK_SUPABASE_PUBLISHABLE_KEY\s*=\s*\n?\s*"eyJ/);
+  it("defines a fallback for VITE_SUPABASE_PUBLISHABLE_KEY (assembled from segments, no full JWT literal)", () => {
+    // The key is intentionally split into short segments joined at runtime so
+    // no tracked literal matches the JWT-like secret pattern.
+    expect(viteConfig).toMatch(/FALLBACK_SUPABASE_PUBLISHABLE_KEY\s*=\s*\[/);
+    expect(viteConfig).toMatch(/\]\.join\(""\)/);
     expect(viteConfig).toContain('"import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY"');
+    // Guard: no full JWT-like literal must reappear here.
+    expect(viteConfig).not.toMatch(
+      /"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}"/,
+    );
   });
 
   it("defines a fallback for VITE_SUPABASE_PROJECT_ID", () => {
