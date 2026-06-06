@@ -29,3 +29,15 @@ verify_jwt = true
 
 [functions.get-therapy-sessions]
 verify_jwt = true
+
+[functions.list-therapy-pseudonyms]
+verify_jwt = true
+
+[functions.generate-diagnoses]
+verify_jwt = true
+
+[functions.extract-lab-image]
+verify_jwt = true
+
+[functions.enrich-wiki-tags]
+verify_jwt = true

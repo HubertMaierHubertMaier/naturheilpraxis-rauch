@@ -35,6 +35,10 @@ describe("Supabase Edge Function JWT policy", () => {
     "get-patients",
     "therapy-recommend",
     "get-therapy-sessions",
+    "list-therapy-pseudonyms",
+    "generate-diagnoses",
+    "extract-lab-image",
+    "enrich-wiki-tags",
   ];
 
   it("keeps required anonymous verification/anamnesis flows explicitly callable without platform JWT", () => {
