@@ -281,3 +281,99 @@ Exit 1
 2. Admin-/Patient-Routen mit weiteren Guard-Smoke-Tests absichern.
 3. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten.
 4. Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, ohne Live-Patientendaten zu verwenden.
+
+
+## Substep 3 – Matrix-interne Konsistenztests ergänzt
+
+Datum/Zeit: 2026-06-06 23:19 CEST
+Branch: `stabilization/phase-4-auth-security-matrix`
+Pre-Substep-ShadowCopy:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2318_pre-phase-4-matrix-consistency-test`
+
+Manifest:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2318_pre-phase-4-matrix-consistency-test/SHADOWCOPY_MANIFEST.md`
+
+### Ziel
+
+Dieser Substep ergänzt reine Matrix-Konsistenztests, damit Tippfehler oder stale Referenzen zwischen Route-, Tabellen-/RLS- und Edge-Function-Matrix künftig automatisch erkannt werden.
+
+### Charakterisierung statt Produktcode-RED
+
+Neu ergänzt in `src/test/phase4-security-access-matrix.test.ts`:
+
+1. Jede in `routeAccessMatrix.supabaseTables` referenzierte Tabelle muss in `tableAccessMatrix` existieren.
+2. Jede in `routeAccessMatrix.edgeFunctions` referenzierte Edge Function muss in `edgeFunctionAccessMatrix` existieren.
+
+Der fokussierte Testlauf war direkt grün:
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts
+Exit 0
+Test Files 1 passed
+Tests 9 passed
+```
+
+Bewertung: Dies ist bewusst als Charakterisierungs-/Regressionstest dokumentiert. Der vorherige Substep hatte die bekannten stale Tabellenreferenzen bereits korrigiert, daher war keine weitere Produktionscode-Änderung nötig und kein künstlicher Fehler wurde erzeugt.
+
+### Verifizierte Gates nach Substep 3
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts src/test/supabase-edge-function-jwt-policy.test.ts src/test/repository-secret-policy.test.ts
+Exit 0
+Test Files 3 passed
+Tests 15 passed
+```
+
+```text
+npm test
+Exit 0
+Test Files 14 passed
+Tests 39 passed
+```
+
+```text
+npx tsc --noEmit
+Exit 0
+```
+
+```text
+npm run build
+Exit 0
+3309 modules transformed
+built in 4.70s
+```
+
+```text
+npx eslint src/test/phase4-security-access-matrix.test.ts src/lib/securityAccessMatrix.ts
+Exit 0
+```
+
+```text
+git diff --check
+Exit 0
+```
+
+Bekannter Nicht-Blocker bleibt unverändert:
+
+```text
+npm run lint
+Exit 1
+327 problems (295 errors, 32 warnings)
+```
+
+### Datenschutz-/Patientendaten-Hinweis
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Live-Supabase-/Edge-Function-Aufrufe ausgeführt.
+- Keine Secret-Werte ausgegeben.
+- Es wurden nur lokale statische Matrix-/Test-Gates ausgeführt.
+
+### Nächste sinnvolle Phase-4-Substeps
+
+1. Admin-/Patient-Routen mit weiteren Guard-Smoke-Tests absichern.
+2. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten.
+3. Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, ohne Live-Patientendaten zu verwenden.

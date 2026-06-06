@@ -77,4 +77,26 @@ describe("Phase 4 security access matrix", () => {
     expect(publicReadTables).not.toContainEqual(expect.objectContaining({ containsPatientData: true }));
     expect(publicReadTables.every((table) => table.publicReadRationale.length >= 24)).toBe(true);
   });
+
+  it("keeps route table references synchronized with the table/RLS matrix", () => {
+    const documentedTableNames = new Set(tableAccessMatrix.map((table) => table.name));
+    const missingTableReferences = routeAccessMatrix.flatMap((route) =>
+      route.supabaseTables
+        .filter((tableName) => !documentedTableNames.has(tableName))
+        .map((tableName) => `${route.path}: ${tableName}`)
+    );
+
+    expect(missingTableReferences).toEqual([]);
+  });
+
+  it("keeps route Edge Function references synchronized with the Edge Function matrix", () => {
+    const documentedFunctionNames = new Set(edgeFunctionAccessMatrix.map((fn) => fn.name));
+    const missingFunctionReferences = routeAccessMatrix.flatMap((route) =>
+      route.edgeFunctions
+        .filter((functionName) => !documentedFunctionNames.has(functionName))
+        .map((functionName) => `${route.path}: ${functionName}`)
+    );
+
+    expect(missingFunctionReferences).toEqual([]);
+  });
 });
