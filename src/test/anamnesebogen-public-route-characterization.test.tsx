@@ -66,6 +66,15 @@ describe("/anamnesebogen public route characterization", () => {
         name: /Wie möchten Sie das Formular ausfüllen\?/i,
       })
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: /Hinweis zur öffentlichen Online-Übermittlung/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Beim Absenden werden Ihre Angaben an die Naturheilpraxis übermittelt/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Danach erhalten Sie einen E-Mail-Code zur Verifizierung/i)
+    ).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.queryByText(/^Wird geladen\.\.\.$/i)).not.toBeInTheDocument();

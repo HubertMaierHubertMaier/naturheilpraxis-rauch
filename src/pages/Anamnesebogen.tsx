@@ -88,6 +88,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 type LayoutType = "wizard" | "accordion" | null;
 
+type RouteState = {
+  from?: string;
+};
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return "";
+};
+
 // Icon mapping for dynamic icon rendering
 const iconMap: Record<string, LucideIcon> = {
   Sparkles,
@@ -568,7 +581,7 @@ const Anamnesebogen = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const cameFromErstanmeldung = (location.state as any)?.from === "erstanmeldung";
+  const cameFromErstanmeldung = (location.state as RouteState | null)?.from === "erstanmeldung";
   const [autoEditActivated, setAutoEditActivated] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<LayoutType>(null);
   const [wizardStep, setWizardStep] = useState(0);
@@ -711,7 +724,7 @@ const Anamnesebogen = () => {
     };
   }, [draftStorageKey, formData, selectedLayout, wizardStep, openAccordionItems, iaaData]);
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -782,12 +795,12 @@ const Anamnesebogen = () => {
             : `A 6-digit code has been sent to ${formData.email}.`,
         }
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Submit error:", error);
       toast.error(
         language === "de" ? "Fehler beim Absenden" : "Submission error",
         {
-          description: error?.message || (language === "de"
+          description: getErrorMessage(error) || (language === "de"
             ? "Bitte versuchen Sie es später erneut."
             : "Please try again later."),
         }
@@ -863,7 +876,7 @@ const Anamnesebogen = () => {
         try {
           await supabase.from("iaa_submissions").insert([{
             user_id: user.id,
-            form_data: iaaData as any,
+            form_data: iaaData,
             status: "submitted",
           }]);
         } catch (e) {
@@ -885,8 +898,8 @@ const Anamnesebogen = () => {
       if (cameFromErstanmeldung) {
         setTimeout(() => navigate("/erstanmeldung"), 2000);
       }
-    } catch (error: any) {
-      const errorMsg = error?.message || "";
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error);
       if (errorMsg.includes("Ungültiger") || errorMsg.includes("abgelaufen")) {
         toast.error(language === "de" ? "Ungültiger oder abgelaufener Code" : "Invalid or expired code");
       } else {
@@ -1030,6 +1043,34 @@ const Anamnesebogen = () => {
                   ? "Bitte füllen Sie diesen Fragebogen vor Ihrem ersten Termin aus. Ihre Angaben helfen mir, Sie optimal zu behandeln."
                   : "Please complete this questionnaire before your first appointment. Your information helps me to treat you optimally.")}
             </p>
+            {!user && !isEditMode && (
+              <div
+                role="status"
+                aria-label={language === "de" ? "Hinweis zur öffentlichen Online-Übermittlung" : "Notice about public online submission"}
+                className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"
+              >
+                <div className="flex gap-3">
+                  <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
+                  <div className="space-y-2">
+                    <p className="font-medium">
+                      {language === "de"
+                        ? "Öffentlicher Online-Anamnesebogen"
+                        : "Public online medical history form"}
+                    </p>
+                    <p>
+                      {language === "de"
+                        ? "Beim Absenden werden Ihre Angaben an die Naturheilpraxis übermittelt. Gesundheits- und Anamnesedaten sind besonders sensibel."
+                        : "When you submit the form, your information is transmitted to the naturopathic practice. Health and medical-history data are especially sensitive."}
+                    </p>
+                    <p>
+                      {language === "de"
+                        ? "Danach erhalten Sie einen E-Mail-Code zur Verifizierung, bevor die Einreichung abgeschlossen wird."
+                        : "Afterwards, you will receive an email code for verification before the submission is completed."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
