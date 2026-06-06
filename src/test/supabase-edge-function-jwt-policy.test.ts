@@ -4,6 +4,13 @@ import { resolve } from "node:path";
 
 const config = readFileSync(resolve(process.cwd(), "supabase/config.toml"), "utf8");
 
+function readFunctionSource(functionName: string): string {
+  return readFileSync(
+    resolve(process.cwd(), "supabase/functions", functionName, "index.ts"),
+    "utf8",
+  );
+}
+
 function getVerifyJwt(functionName: string): boolean | undefined {
   const sectionPattern = new RegExp(
     String.raw`\[functions\.${functionName}\]\s*\nverify_jwt\s*=\s*(true|false)`,
@@ -39,6 +46,17 @@ describe("Supabase Edge Function JWT policy", () => {
   it("requires platform JWT verification before admin-only service-role functions run", () => {
     for (const functionName of adminOnlyServiceRoleFunctions) {
       expect(getVerifyJwt(functionName), functionName).toBe(true);
+    }
+  });
+
+  it("does not expose admin-only service-role functions with wildcard CORS", () => {
+    for (const functionName of adminOnlyServiceRoleFunctions) {
+      const source = readFunctionSource(functionName);
+
+      expect(source, functionName).not.toMatch(
+        /["']Access-Control-Allow-Origin["']\s*:\s*["']\*["']/,
+      );
+      expect(source, functionName).toMatch(/getCorsHeaders\(req\)/);
     }
   });
 });
