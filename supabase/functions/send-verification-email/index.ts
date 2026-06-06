@@ -13,6 +13,36 @@ interface VerificationEmailRequest {
   type: "login" | "registration";
 }
 
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  record.count += 1;
+  return true;
+}
+
+function cleanupExpiredRateLimits(): void {
+  const now = Date.now();
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,6 +53,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!email || !code) {
       throw new Error("Email and code are required");
+    }
+
+    cleanupExpiredRateLimits();
+    const rateLimitKey = `verification-email:${email}:${type}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[send-verification-email] Rate limit exceeded");
+      return new Response(
+        JSON.stringify({ error: "Zu viele Anfragen. Bitte warten Sie 15 Minuten." }),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     const smtpHost = Deno.env.get("SMTP_HOST");
@@ -112,8 +155,8 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
-  } catch (error: any) {
-    console.error("[send-verification-email] Error:", error);
+  } catch (_error: unknown) {
+    console.error("[send-verification-email] Error while sending verification email");
     return new Response(
       JSON.stringify({ error: "Ein Fehler ist aufgetreten." }),
       {
