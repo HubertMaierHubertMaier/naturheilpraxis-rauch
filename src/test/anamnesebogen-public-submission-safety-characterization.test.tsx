@@ -119,14 +119,14 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 beforeAll(() => {
   if (!("ResizeObserver" in window)) {
-    window.ResizeObserver = class ResizeObserver {
+    (window as any).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
       disconnect() {}
     };
   }
   if (!("elementFromPoint" in document)) {
-    document.elementFromPoint = () => null;
+    (document as any).elementFromPoint = () => null;
   }
 });
 

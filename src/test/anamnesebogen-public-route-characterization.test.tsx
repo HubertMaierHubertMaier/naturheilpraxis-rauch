@@ -30,7 +30,7 @@ vi.mock("@/hooks/useContentProtection", () => ({
 
 beforeAll(() => {
   if (!("ResizeObserver" in window)) {
-    window.ResizeObserver = class ResizeObserver {
+    (window as any).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
       disconnect() {}
