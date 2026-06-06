@@ -9,9 +9,9 @@
 
 ## Environment Variables (.env)
 ```bash
-VITE_SUPABASE_URL="https://jmebqjadlpltnqawoipb.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZWJxamFkbHBsdG5xYXdvaXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NjkwNTcsImV4cCI6MjA4NDI0NTA1N30.l9fm-vpCmz2FUOCxTV7amUP-IE11InHgJHA9hDdRmzY"
-VITE_SUPABASE_PROJECT_ID="jmebqjadlpltnqawoipb"
+VITE_SUPABASE_URL="https://<supabase-project-ref>.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="<supabase-publishable-key>"
+VITE_SUPABASE_PROJECT_ID="<supabase-project-ref>"
 ```
 
 ## Critical Secrets (Supabase Edge Functions)
