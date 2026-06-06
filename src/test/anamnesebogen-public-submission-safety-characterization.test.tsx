@@ -119,6 +119,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 beforeAll(() => {
   if (!("ResizeObserver" in window)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
@@ -126,6 +127,7 @@ beforeAll(() => {
     };
   }
   if (!("elementFromPoint" in document)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (document as any).elementFromPoint = () => null;
   }
 });

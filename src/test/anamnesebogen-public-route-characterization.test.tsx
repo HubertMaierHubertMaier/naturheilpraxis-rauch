@@ -30,6 +30,7 @@ vi.mock("@/hooks/useContentProtection", () => ({
 
 beforeAll(() => {
   if (!("ResizeObserver" in window)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
