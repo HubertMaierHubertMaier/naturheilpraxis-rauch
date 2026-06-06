@@ -247,7 +247,7 @@ serve(async (req) => {
     const parseResult = requestSchema.safeParse(rawBody);
     if (!parseResult.success) {
       const firstError = parseResult.error.errors[0]?.message || "Ungültige Eingabe";
-      console.error("Validation error:", parseResult.error.errors);
+      console.error("Validation error: invalid submit-anamnesis request payload");
       return new Response(JSON.stringify({ error: firstError }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -342,7 +342,7 @@ serve(async (req) => {
 
       const patientName = `${formData.vorname || ""} ${formData.nachname || ""}`.trim() || "Patient";
 
-      console.log(`[SMTP] sending anamnesis verification code to ${email}`);
+      console.log("[SMTP] sending anamnesis verification code");
 
       await sendEmail({
         to: email,
@@ -369,7 +369,7 @@ serve(async (req) => {
 </div></body></html>`,
       });
 
-      console.log("Anamnesis verification code sent for", email);
+      console.log("Anamnesis verification code sent");
 
       return new Response(
         JSON.stringify({
@@ -654,7 +654,7 @@ serve(async (req) => {
       if (storePdfPromises.length > 0) {
         try {
           await Promise.all(storePdfPromises);
-          console.log(`[pdf-store] ${storePdfPromises.length} PDFs stored for ${pdfStoragePath}`);
+          console.log(`[pdf-store] ${storePdfPromises.length} PDFs stored`);
         } catch (e) {
           console.warn('[pdf-store] Error storing PDFs:', e);
         }
@@ -673,7 +673,7 @@ serve(async (req) => {
         },
       });
 
-      console.log("Anamnesis confirmed and emails sent for", email);
+      console.log("Anamnesis confirmed and emails sent");
 
       return new Response(
         JSON.stringify({

@@ -1,21 +1,15 @@
 const DEV_ADMIN_BYPASS_KEY = "dev_admin_bypass";
 
+export const isDevAdminBypassAllowedHost = (hostname: string, isDevBuild: boolean) => {
+  if (!isDevBuild) return false;
+
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+};
+
 export const isDevHost = () => {
   if (typeof window === "undefined") return false;
 
-  const hostname = window.location.hostname;
-  const isNonProduction =
-    import.meta.env.DEV ||
-    hostname.includes("preview") ||
-    hostname.includes("lovableproject.com") ||
-    hostname.includes("localhost");
-
-  const isPublishedProduction =
-    hostname === "naturheilpraxis-rauch.lovable.app" ||
-    hostname === "www.rauch-heilpraktiker.de" ||
-    hostname === "rauch-heilpraktiker.de";
-
-  return isNonProduction && !isPublishedProduction;
+  return isDevAdminBypassAllowedHost(window.location.hostname, import.meta.env.DEV);
 };
 
 export const activateDevAdminBypass = () => {

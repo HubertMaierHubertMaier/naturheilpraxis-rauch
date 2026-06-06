@@ -1,11 +1,45 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail } from "../_shared/smtp.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const allowedCorsHostnames = new Set([
+  "naturheilpraxis-rauch.lovable.app",
+  "rauch-heilpraktiker.de",
+  "www.rauch-heilpraktiker.de",
+]);
+
+function isAllowedCorsOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+
+  try {
+    const url = new URL(origin);
+    const isLocalDev =
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      ["5173", "4173", "5174", "4174"].includes(url.port);
+
+    return (
+      isLocalDev ||
+      allowedCorsHostnames.has(url.hostname) ||
+      url.hostname.endsWith(".lovableproject.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin");
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+
+  if (isAllowedCorsOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin!;
+  }
+
+  return headers;
+}
 
 function escapeHtml(str: string): string {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -184,6 +218,8 @@ function buildICD10HtmlTable(codes: { code: string; descDe: string; category: st
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -271,7 +307,7 @@ Deno.serve(async (req) => {
     const pdfStoragePath = submissionId;
     const pdfNames = ['anamnese-full.pdf', 'anamnese-patient.pdf', 'iaa.pdf'];
     
-    console.log(`[resend] Retrieving PDFs from storage path: ${pdfStoragePath}`);
+    console.log("[resend] Retrieving stored PDFs");
     const pdfResults = await Promise.all(
       pdfNames.map(name => 
         adminClient.storage.from('anamnesis-pdfs').download(`${pdfStoragePath}/${name}`)
@@ -295,7 +331,7 @@ Deno.serve(async (req) => {
     }
 
     if (!anamnesePdfBase64) {
-      console.warn(`[resend] No stored PDFs found for ${pdfStoragePath} – sending without attachments`);
+      console.warn("[resend] No stored PDFs found – sending without attachments");
     }
 
     const pdfFilename = `Anamnesebogen_${patientName.replace(/\s+/g, '_')}_${new Date(submission.submitted_at).toISOString().split('T')[0]}.pdf`;
@@ -418,7 +454,7 @@ Deno.serve(async (req) => {
     await Promise.all(emailPromises);
 
     const pdfInfo = anamnesePdfBase64 ? 'mit PDF-Anhängen' : 'ohne PDF (keine gespeicherten PDFs gefunden)';
-    console.log(`[resend] Emails sent successfully for submission ${submissionId} ${pdfInfo} (incl. patient: ${patientEmail})`);
+    console.log(`[resend] Emails sent successfully ${pdfInfo}`);
 
     return new Response(JSON.stringify({
       success: true,

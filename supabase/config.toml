@@ -13,19 +13,37 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-icd10]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-icd10-report]
-verify_jwt = false
+verify_jwt = true
 
 [functions.resend-submission]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-patients]
-verify_jwt = false
+verify_jwt = true
 
 [functions.therapy-recommend]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-therapy-sessions]
-verify_jwt = false
+verify_jwt = true
+
+[functions.list-therapy-pseudonyms]
+verify_jwt = true
+
+[functions.generate-diagnoses]
+verify_jwt = true
+
+[functions.extract-lab-image]
+verify_jwt = true
+
+[functions.enrich-wiki-tags]
+verify_jwt = true
+
+[functions.elevenlabs-tts]
+verify_jwt = true
+
+[functions.notify-existing-patient]
+verify_jwt = true
