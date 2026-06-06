@@ -377,3 +377,131 @@ Exit 1
 1. Admin-/Patient-Routen mit weiteren Guard-Smoke-Tests absichern.
 2. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten.
 3. Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, ohne Live-Patientendaten zu verwenden.
+
+
+## Substep 4 – Sensible Admin-/Patient-Routen per Guard-Smoke charakterisiert
+
+Datum/Zeit: 2026-06-06 23:24 CEST
+Branch: `stabilization/phase-4-auth-security-matrix`
+Pre-Substep-ShadowCopy:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2322_pre-phase-4-admin-patient-route-guard-smoke`
+
+Manifest:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2322_pre-phase-4-admin-patient-route-guard-smoke/SHADOWCOPY_MANIFEST.md`
+
+### Ziel
+
+Dieser Substep friert die bestehenden component-level Guards für die sensibelsten Admin-/Patient-Routen als lokale Regressionstests ein, bevor eine spätere Entscheidung über zusätzliche route-level Wrapper getroffen wird.
+
+### Neu ergänzt
+
+Neue Testdatei:
+
+`src/test/sensitive-route-guard-smoke.test.tsx`
+
+Abgedeckte Routen und erwartetes bestehendes Verhalten:
+
+1. `/admin`
+   - anonymer Besucher wird nach `/auth` weitergeleitet.
+   - Admin-Dashboard-Inhalt wird nicht gerendert.
+
+2. `/patienten`
+   - authentifizierter Nicht-Admin erhält `Zugriff verweigert`.
+   - Patient-Manager-Inhalt wird nicht gerendert.
+
+3. `/wissensdatenbank`
+   - authentifizierter Nicht-Admin wird zur Startseite `/` weitergeleitet.
+   - Knowledge-Base/Admin-Inhalt wird nicht gerendert.
+
+4. `/dashboard`
+   - anonymer Besucher wird nach `/auth` weitergeleitet.
+   - Patient-Dashboard-Inhalt wird nicht gerendert.
+
+5. `/patienten-bibliothek`
+   - anonymer Besucher wird nach `/auth` weitergeleitet.
+   - Bibliotheksinhalt wird nicht gerendert.
+
+### Charakterisierung statt Produktcode-RED
+
+Der fokussierte Testlauf war direkt grün:
+
+```text
+npx vitest run src/test/sensitive-route-guard-smoke.test.tsx
+Exit 0
+Test Files 1 passed
+Tests 5 passed
+```
+
+Bewertung: Das ist bewusst als Charakterisierungs-/Regressionstest dokumentiert. Die bestehenden Guards erfüllen diese geprüften Grenzen bereits; daher wurde keine Produktcode-Änderung vorgenommen und kein künstlicher Fehler erzeugt.
+
+### Verifizierte Gates nach Substep 4
+
+```text
+npx vitest run src/test/sensitive-route-guard-smoke.test.tsx src/test/protected-route-smoke.test.tsx src/test/phase4-security-access-matrix.test.ts
+Exit 0
+Test Files 3 passed
+Tests 16 passed
+```
+
+```text
+npm test
+Exit 0
+Test Files 15 passed
+Tests 44 passed
+```
+
+```text
+npx tsc --noEmit
+Exit 0
+```
+
+```text
+npm run build
+Exit 0
+3309 modules transformed
+built in 4.81s
+```
+
+```text
+npx eslint src/test/sensitive-route-guard-smoke.test.tsx
+Exit 0
+```
+
+```text
+git diff --check
+Exit 0
+```
+
+Bekannter Nicht-Blocker bleibt unverändert:
+
+```text
+npm run lint
+Exit 1
+327 problems (295 errors, 32 warnings)
+```
+
+### Datenschutz-/Patientendaten-Hinweis
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Live-Supabase-/Edge-Function-Aufrufe ausgeführt.
+- Keine Secret-Werte ausgegeben.
+- Tests nutzen nur synthetische Auth-Zustände und eine `.invalid`-Beispieladresse.
+
+### Beobachtung für spätere Entscheidungen
+
+Die sensiblen Routen verwenden aktuell gemischte Schutzmuster:
+
+- `/patienten-bibliothek` ist route-level über `ProtectedRoute` geschützt.
+- `/admin`, `/patienten`, `/wissensdatenbank` und `/dashboard` schützen sich über Komponentenlogik, Redirects bzw. Access-Denial-UI.
+
+Dieser Substep ändert diese Architektur bewusst nicht. Eine spätere Vereinheitlichung auf zusätzliche route-level Wrapper sollte separat mit RED-Test und hohem Stabilitätsfokus erfolgen.
+
+### Nächste sinnvolle Phase-4-Substeps
+
+1. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten, ohne Verhalten zu brechen.
+2. Falls ja: erst RED-Test für eine konkrete Route, dann minimaler Wrapper-Change.
+3. Alternativ Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, wenn die Route-Guard-Architektur zunächst unverändert bleiben soll.
