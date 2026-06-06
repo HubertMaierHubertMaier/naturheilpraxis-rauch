@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
+import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,7 +31,9 @@ export function Header() {
   const nav = translations.nav;
   const header = translations.header;
   const { enabled: anamneseEnabled } = useAnamneseEnabled();
-  const showAnamnese = anamneseEnabled || isAdmin;
+  const { enabled: anamnesePublic } = useAnamnesePublic();
+  const showAnamnese = anamneseEnabled || anamnesePublic || isAdmin;
+  const showOnlineAnamnese = user || isAdmin || anamnesePublic;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
@@ -112,8 +115,8 @@ export function Header() {
           {/* Infothek Dropdown */}
           <InfothekDropdown />
 
-          {/* Anamnesebogen – eingeloggte Patienten: Online-Form; sonst: PDF-Download */}
-          {showAnamnese && (user || isAdmin ? (
+          {/* Anamnesebogen – eingeloggte Patienten/Admins oder public-enabled: Online-Form; sonst: PDF-Download */}
+          {showAnamnese && (showOnlineAnamnese ? (
             <Link
               to="/anamnesebogen"
               className={cn(
@@ -350,7 +353,7 @@ export function Header() {
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
 
             {/* Anamnesebogen Mobile */}
-            {showAnamnese && (user || isAdmin ? (
+            {showAnamnese && (showOnlineAnamnese ? (
               <Link
                 to="/anamnesebogen"
                 onClick={() => setIsMenuOpen(false)}

@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 
 const mockUseAuth = vi.fn();
 const mockUseAnamneseEnabled = vi.fn();
+const mockUseAnamnesePublic = vi.fn();
 const mockToast = vi.fn();
 const mockIsDevHost = vi.fn();
 const mockIsDevAdminBypassActive = vi.fn();
@@ -24,6 +25,10 @@ vi.mock("@/contexts/AuthContext", () => ({
 
 vi.mock("@/hooks/useAnamneseEnabled", () => ({
   useAnamneseEnabled: () => mockUseAnamneseEnabled(),
+}));
+
+vi.mock("@/hooks/useAnamnesePublic", () => ({
+  useAnamnesePublic: () => mockUseAnamnesePublic(),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -68,6 +73,11 @@ beforeEach(() => {
     loading: false,
     refresh: vi.fn(),
   });
+  mockUseAnamnesePublic.mockReturnValue({
+    enabled: false,
+    loading: false,
+    refresh: vi.fn(),
+  });
   mockUseAuth.mockReturnValue({
     user: null,
     loading: false,
@@ -77,7 +87,7 @@ beforeEach(() => {
 });
 
 describe("Header Anamnese navigation smoke test", () => {
-  it("shows the blank anamnesis PDF download for anonymous visitors when anamnesis is enabled", () => {
+  it("shows the blank anamnesis PDF download for anonymous visitors when anamnesis is enabled and public access is disabled", () => {
     renderHeader();
 
     const pdfDownload = screen.getByRole("link", { name: /Anamnesebogen \(PDF\)/i });
@@ -86,6 +96,24 @@ describe("Header Anamnese navigation smoke test", () => {
     expect(pdfDownload).toHaveAttribute("download");
     expect(
       screen.queryByRole("link", { name: /^Anamnesebogen$/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the online anamnesis link for anonymous visitors when public access is enabled", () => {
+    mockUseAnamnesePublic.mockReturnValue({
+      enabled: true,
+      loading: false,
+      refresh: vi.fn(),
+    });
+
+    renderHeader();
+
+    const onlineLink = screen.getByRole("link", { name: /^Anamnesebogen$/i });
+
+    expect(onlineLink).toHaveAttribute("href", "/anamnesebogen");
+    expect(onlineLink).not.toHaveAttribute("download");
+    expect(
+      screen.queryByRole("link", { name: /Anamnesebogen \(PDF\)/i })
     ).not.toBeInTheDocument();
   });
 
