@@ -505,3 +505,134 @@ Dieser Substep ändert diese Architektur bewusst nicht. Eine spätere Vereinheit
 1. Prüfen, ob sensible component-level Guards zusätzlich route-level Wrapper bekommen sollten, ohne Verhalten zu brechen.
 2. Falls ja: erst RED-Test für eine konkrete Route, dann minimaler Wrapper-Change.
 3. Alternativ Edge-Function-Rollen-/Rate-Limit-Spalten weiter konkretisieren, wenn die Route-Guard-Architektur zunächst unverändert bleiben soll.
+
+
+## Substep 5 – Edge-Function-Rollen- und Rate-Limit-Posture konkretisiert
+
+Datum/Zeit: 2026-06-06 23:32 CEST
+Branch: `stabilization/phase-4-auth-security-matrix`
+Pre-Substep-ShadowCopy:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2329_pre-phase-4-edge-function-role-rate-limit-matrix`
+
+Manifest:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2329_pre-phase-4-edge-function-role-rate-limit-matrix/SHADOWCOPY_MANIFEST.md`
+
+### Ziel
+
+Dieser Substep konkretisiert die Edge-Function-Matrix um zwei statische Sicherheitsdimensionen:
+
+1. konkrete Rollen-/Enforcement-Haltung pro Function,
+2. dokumentierte lokale Rate-Limit-Posture pro Function.
+
+Es wurden keine Laufzeit-Edge-Functions aufgerufen und keine Patientendaten verwendet. Die Klassifikation basiert auf lokaler statischer Quellcodeinspektion der vorhandenen `supabase/functions/*/index.ts`-Dateien.
+
+### RED/GREEN-Ablauf
+
+RED wurde über neue Assertions in `src/test/phase4-security-access-matrix.test.ts` hergestellt:
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts
+Exit 1
+Test Files 1 failed
+Tests 3 failed | 9 passed
+Fehler: roleEnforcement/rateLimitPolicy waren in edgeFunctionAccessMatrix noch nicht dokumentiert.
+```
+
+GREEN wurde durch Erweiterung von `EdgeFunctionAccessMatrixEntry` und `edgeFunctionAccessMatrix` in `src/lib/securityAccessMatrix.ts` hergestellt.
+
+Fokussierter GREEN-Lauf:
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts
+Exit 0
+Test Files 1 passed
+Tests 12 passed
+```
+
+Zusätzlicher fokussierter Policy-Lauf:
+
+```text
+npx vitest run src/test/phase4-security-access-matrix.test.ts src/test/supabase-edge-function-jwt-policy.test.ts src/test/repository-secret-policy.test.ts
+Exit 0
+Test Files 3 passed
+Tests 18 passed
+```
+
+### Verifizierte Gates nach Substep 5
+
+```text
+npm test
+Exit 0
+Test Files 15 passed
+Tests 47 passed
+```
+
+```text
+npx tsc --noEmit
+Exit 0
+```
+
+```text
+npm run build
+Exit 0
+3309 modules transformed
+built in 4.80s
+```
+
+```text
+npx eslint src/lib/securityAccessMatrix.ts src/test/phase4-security-access-matrix.test.ts
+Exit 0
+```
+
+```text
+git diff --check
+Exit 0
+```
+
+Bekannter Nicht-Blocker bleibt unverändert:
+
+```text
+npm run lint
+Exit 1
+327 problems (295 errors, 32 warnings)
+```
+
+### Neue Regression-Checks
+
+Die neuen Tests prüfen:
+
+1. Jede Edge Function dokumentiert eine konkrete `roleEnforcement`-Haltung.
+2. Jede Edge Function dokumentiert eine konkrete `rateLimitPolicy`-Haltung.
+3. Alle Admin-Edge-Functions bleiben an explizite Admin-Enforcement-Mechanismen gebunden:
+   - `has_role` RPC oder
+   - `user_roles`-Lookup.
+4. Public/pre-session Functions dokumentieren ihre lokale Rate-Limit-Posture ohne Live-Aufruf:
+   - `request-verification-code`: lokales in-memory Rate Limit pro E-Mail/Typ.
+   - `submit-anamnesis`: lokale in-memory Submission-Limits.
+   - `verify-code`: lokales in-memory Limit pro E-Mail.
+   - `send-verification-email`: Legacy-Pfad ohne dokumentiertes lokales Rate Limit, bewusst als Legacy-Kompatibilität markiert.
+
+### Beobachtungen aus der statischen Klassifikation
+
+- Admin-/Service-Role-Funktionen sind weiterhin nicht public und haben `verify_jwt=true`.
+- Admin-Rollenprüfungen sind statisch über `has_role` oder `user_roles` dokumentiert.
+- `elevenlabs-tts` und `notify-existing-patient` bleiben nicht-admin, aber JWT-geschützt und CORS-allowlist-begrenzt.
+- Die wichtigsten public/pre-session Patientendaten-Flows haben lokale in-memory Rate Limits; der Legacy-Pfad `send-verification-email` bleibt als bekannte Ausnahme dokumentiert und sollte vor produktiver Ausweitung nicht als neues Muster verwendet werden.
+- Dieser Substep ändert bewusst kein Laufzeitverhalten; er erhöht Matrix-Transparenz und Drift-Schutz.
+
+### Datenschutz-/Patientendaten-Hinweis
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Live-Supabase-/Edge-Function-Aufrufe ausgeführt.
+- Keine Secret-Werte ausgegeben.
+- Analyse und Tests waren lokal/statisch.
+
+### Nächste sinnvolle Phase-4-Substeps
+
+1. Prüfen, ob die Legacy-Function `send-verification-email` weiter nur dokumentiert bleibt oder als eigener, separater Micro-Step mit Rate-Limit-Schutz versehen werden soll.
+2. Alternativ zunächst keine Runtime-Änderung: Phase-4-Matrix als PR-ready vorbereiten, wenn keine weitere Low-Risk-Charakterisierung nötig ist.
+3. Eine spätere route-level Guard-Vereinheitlichung nur separat mit RED-Test und eng begrenztem Verhaltenstest durchführen.

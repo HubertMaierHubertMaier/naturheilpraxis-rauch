@@ -99,4 +99,44 @@ describe("Phase 4 security access matrix", () => {
 
     expect(missingFunctionReferences).toEqual([]);
   });
+
+  it("documents concrete role enforcement and rate-limit posture for every Edge Function", () => {
+    expect(edgeFunctionAccessMatrix.every((fn) => fn.roleEnforcement.length >= 12)).toBe(true);
+    expect(edgeFunctionAccessMatrix.every((fn) => fn.rateLimitPolicy.length >= 12)).toBe(true);
+  });
+
+  it("keeps admin Edge Functions tied to explicit admin role enforcement", () => {
+    const adminFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.audience === "admin");
+
+    expect(adminFunctions.map((fn) => fn.name).sort()).toEqual([
+      "enrich-wiki-tags",
+      "extract-lab-image",
+      "generate-diagnoses",
+      "generate-icd10",
+      "get-patients",
+      "get-therapy-sessions",
+      "list-therapy-pseudonyms",
+      "resend-submission",
+      "send-icd10-report",
+      "therapy-recommend",
+    ]);
+    expect(adminFunctions.every((fn) => fn.roleEnforcement.includes("admin"))).toBe(true);
+    expect(adminFunctions.every((fn) => fn.roleEnforcement.includes("has_role") || fn.roleEnforcement.includes("user_roles"))).toBe(true);
+  });
+
+  it("documents public pre-session rate-limit posture without requiring live calls", () => {
+    const publicPreSessionFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.audience === "public-pre-session");
+
+    expect(publicPreSessionFunctions.map((fn) => fn.name).sort()).toEqual([
+      "request-verification-code",
+      "send-verification-email",
+      "submit-anamnesis",
+      "verify-code",
+    ]);
+    expect(
+      publicPreSessionFunctions.every(
+        (fn) => fn.rateLimitPolicy.includes("in-memory") || fn.rateLimitPolicy.includes("Legacy")
+      )
+    ).toBe(true);
+  });
 });
