@@ -41,20 +41,26 @@ describe("Supabase Edge Function JWT policy", () => {
     "enrich-wiki-tags",
   ];
 
+  const authenticatedNonPublicFunctions = [
+    ...adminOnlyServiceRoleFunctions,
+    "elevenlabs-tts",
+    "notify-existing-patient",
+  ];
+
   it("keeps required anonymous verification/anamnesis flows explicitly callable without platform JWT", () => {
     for (const functionName of anonymousFlowFunctions) {
       expect(getVerifyJwt(functionName), functionName).toBe(false);
     }
   });
 
-  it("requires platform JWT verification before admin-only service-role functions run", () => {
-    for (const functionName of adminOnlyServiceRoleFunctions) {
+  it("requires platform JWT verification before authenticated non-public functions run", () => {
+    for (const functionName of authenticatedNonPublicFunctions) {
       expect(getVerifyJwt(functionName), functionName).toBe(true);
     }
   });
 
-  it("does not expose admin-only service-role functions with wildcard CORS", () => {
-    for (const functionName of adminOnlyServiceRoleFunctions) {
+  it("does not expose authenticated non-public functions with wildcard CORS", () => {
+    for (const functionName of authenticatedNonPublicFunctions) {
       const source = readFunctionSource(functionName);
 
       expect(source, functionName).not.toMatch(
@@ -71,10 +77,11 @@ describe("Supabase Edge Function JWT policy", () => {
       "verify-code",
       "send-verification-email",
       "resend-submission",
+      "notify-existing-patient",
     ];
 
     const directIdentifierLogPattern =
-      /console\.(?:log|warn|error|info)\s*\([^;\n]*(?:\$\{\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId)\s*\}|,\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId)\b|parseResult\.error\.errors)/;
+      /console\.(?:log|warn|error|info)\s*\([^;\n]*(?:\$\{\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId|relayResult)\s*\}|,\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId|relayResult)\b|parseResult\.error\.errors)/;
 
     for (const functionName of highRiskLoggingFunctions) {
       const source = readFunctionSource(functionName);

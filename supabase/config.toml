@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.enrich-wiki-tags]
 verify_jwt = true
+
+[functions.elevenlabs-tts]
+verify_jwt = true
+
+[functions.notify-existing-patient]
+verify_jwt = true

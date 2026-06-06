@@ -1,5 +1,42 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+const allowedCorsHostnames = new Set([
+  "naturheilpraxis-rauch.lovable.app",
+  "rauch-heilpraktiker.de",
+  "www.rauch-heilpraktiker.de",
+]);
+
+function isAllowedCorsOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+
+  try {
+    const url = new URL(origin);
+    const isLocalDev =
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      ["5173", "4173", "5174", "4174"].includes(url.port);
+
+    return (
+      isLocalDev ||
+      allowedCorsHostnames.has(url.hostname) ||
+      url.hostname.endsWith(".lovableproject.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin");
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+
+  if (isAllowedCorsOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin!;
+  }
+
+  return headers;
+}
 
 const SMTP_HOST = Deno.env.get("SMTP_HOST")!;
 const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "587");
@@ -8,6 +45,8 @@ const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD")!;
 const RELAY_SECRET = Deno.env.get("RELAY_SECRET")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -74,17 +113,17 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const relayResult = await relayResponse.text();
-    console.log("Relay response:", relayResult);
+    await relayResponse.text();
+    console.log("Relay notification response received");
 
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Notification error occurred");
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Notification failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
