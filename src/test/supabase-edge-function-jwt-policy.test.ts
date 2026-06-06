@@ -65,6 +65,7 @@ describe("Supabase Edge Function JWT policy", () => {
       "submit-anamnesis",
       "request-verification-code",
       "verify-code",
+      "send-verification-email",
       "resend-submission",
     ];
 
