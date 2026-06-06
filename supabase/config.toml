@@ -13,19 +13,19 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-icd10]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-icd10-report]
-verify_jwt = false
+verify_jwt = true
 
 [functions.resend-submission]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-patients]
-verify_jwt = false
+verify_jwt = true
 
 [functions.therapy-recommend]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-therapy-sessions]
-verify_jwt = false
+verify_jwt = true
