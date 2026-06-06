@@ -123,7 +123,7 @@ async function sendVerificationEmail(email: string, code: string, type: "login" 
     </html>
   `;
 
-  console.log(`[SMTP] sending ${type} verification code to ${email}`);
+  console.log(`[SMTP] sending ${type} verification code`);
   await sendEmail({ to: email, subject, html: htmlContent });
 }
 
@@ -148,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
     const parseResult = verificationRequestSchema.safeParse(rawBody);
     if (!parseResult.success) {
       const firstError = parseResult.error.errors[0]?.message || "Ungültige Eingabe";
-      console.error("Validation error:", parseResult.error.errors);
+      console.error("Validation error: invalid verification-code request payload");
       return new Response(
         JSON.stringify({ error: firstError }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -159,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const rateLimitKey = `${email}:${type}`;
     if (!checkRateLimit(rateLimitKey)) {
-      console.warn(`Rate limit exceeded for ${rateLimitKey}`);
+      console.warn("Rate limit exceeded for verification-code request");
       return new Response(
         JSON.stringify({ error: "Zu viele Anfragen. Bitte warten Sie 15 Minuten." }),
         { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -211,7 +211,7 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
         // Unconfirmed user with profile – clean up and re-create
-        console.log(`Cleaning up unconfirmed user ${existingUserId} for re-registration`);
+        console.log("Cleaning up unconfirmed user for re-registration");
         await supabase.from("verification_codes").delete().eq("user_id", existingUserId);
         await supabase.from("profiles").delete().eq("user_id", existingUserId);
         await supabase.from("user_roles").delete().eq("user_id", existingUserId);

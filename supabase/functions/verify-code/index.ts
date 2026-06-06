@@ -85,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
     const parseResult = verifyCodeSchema.safeParse(rawBody);
     if (!parseResult.success) {
       const firstError = parseResult.error.errors[0]?.message || "Ungültige Eingabe";
-      console.error("Validation error:", parseResult.error.errors);
+      console.error("Validation error: invalid verify-code request payload");
       return new Response(
         JSON.stringify({ error: firstError }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Rate limiting check for verification attempts
     const rateLimitKey = `verify:${email}`;
     if (!checkVerifyRateLimit(rateLimitKey)) {
-      console.warn(`Verify rate limit exceeded for ${email}`);
+      console.warn("Verify rate limit exceeded");
       return new Response(
         JSON.stringify({ error: "Zu viele Versuche. Bitte warten Sie eine Stunde." }),
         { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }

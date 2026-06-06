@@ -59,4 +59,21 @@ describe("Supabase Edge Function JWT policy", () => {
       expect(source, functionName).toMatch(/getCorsHeaders\(req\)/);
     }
   });
+
+  it("does not log direct patient identifiers in high-risk verification/anamnesis functions", () => {
+    const highRiskLoggingFunctions = [
+      "submit-anamnesis",
+      "request-verification-code",
+      "verify-code",
+      "resend-submission",
+    ];
+
+    const directIdentifierLogPattern =
+      /console\.(?:log|warn|error|info)\s*\([^;\n]*(?:\$\{\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId)\s*\}|,\s*(?:email|patientEmail|submissionId|pdfStoragePath|rateLimitKey|existingUserId)\b|parseResult\.error\.errors)/;
+
+    for (const functionName of highRiskLoggingFunctions) {
+      const source = readFunctionSource(functionName);
+      expect(source, functionName).not.toMatch(directIdentifierLogPattern);
+    }
+  });
 });

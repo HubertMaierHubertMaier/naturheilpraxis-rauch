@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
     const pdfStoragePath = submissionId;
     const pdfNames = ['anamnese-full.pdf', 'anamnese-patient.pdf', 'iaa.pdf'];
     
-    console.log(`[resend] Retrieving PDFs from storage path: ${pdfStoragePath}`);
+    console.log("[resend] Retrieving stored PDFs");
     const pdfResults = await Promise.all(
       pdfNames.map(name => 
         adminClient.storage.from('anamnesis-pdfs').download(`${pdfStoragePath}/${name}`)
@@ -331,7 +331,7 @@ Deno.serve(async (req) => {
     }
 
     if (!anamnesePdfBase64) {
-      console.warn(`[resend] No stored PDFs found for ${pdfStoragePath} – sending without attachments`);
+      console.warn("[resend] No stored PDFs found – sending without attachments");
     }
 
     const pdfFilename = `Anamnesebogen_${patientName.replace(/\s+/g, '_')}_${new Date(submission.submitted_at).toISOString().split('T')[0]}.pdf`;
@@ -454,7 +454,7 @@ Deno.serve(async (req) => {
     await Promise.all(emailPromises);
 
     const pdfInfo = anamnesePdfBase64 ? 'mit PDF-Anhängen' : 'ohne PDF (keine gespeicherten PDFs gefunden)';
-    console.log(`[resend] Emails sent successfully for submission ${submissionId} ${pdfInfo} (incl. patient: ${patientEmail})`);
+    console.log(`[resend] Emails sent successfully ${pdfInfo}`);
 
     return new Response(JSON.stringify({
       success: true,
