@@ -636,3 +636,111 @@ Die neuen Tests prüfen:
 1. Prüfen, ob die Legacy-Function `send-verification-email` weiter nur dokumentiert bleibt oder als eigener, separater Micro-Step mit Rate-Limit-Schutz versehen werden soll.
 2. Alternativ zunächst keine Runtime-Änderung: Phase-4-Matrix als PR-ready vorbereiten, wenn keine weitere Low-Risk-Charakterisierung nötig ist.
 3. Eine spätere route-level Guard-Vereinheitlichung nur separat mit RED-Test und eng begrenztem Verhaltenstest durchführen.
+
+
+## Substep 6 – Legacy `send-verification-email` mit lokalem Rate Limit gehärtet
+
+Datum/Zeit: 2026-06-06 23:39 CEST
+Branch: `stabilization/phase-4-auth-security-matrix`
+Pre-Substep-ShadowCopy:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2336_pre-phase-4-send-verification-email-rate-limit`
+
+Manifest:
+
+`/home/klaus999/project-backups/naturheilpraxis-rauch/20260606-2336_pre-phase-4-send-verification-email-rate-limit/SHADOWCOPY_MANIFEST.md`
+
+### Ziel
+
+Der vorherige Matrix-Substep hatte `send-verification-email` als bewusst erhaltenen Legacy-public/pre-session-Pfad ohne lokales Rate Limit dokumentiert. Dieser Substep schließt diese Ausnahme mit einem minimalen lokalen in-memory Rate-Limit-Schutz, ohne den Legacy-Fluss zu entfernen oder neue digitale Patientendatenflüsse einzuführen.
+
+### RED/GREEN-Ablauf
+
+RED wurde zuerst in `src/test/supabase-edge-function-jwt-policy.test.ts` ergänzt:
+
+```text
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+Exit 1
+Test Files 1 failed
+Tests 1 failed | 4 passed
+Fehler: send-verification-email enthielt noch kein rateLimitMap/RATE_LIMIT_WINDOW_MS/checkRateLimit/HTTP 429.
+```
+
+GREEN wurde durch die minimale Ergänzung in `supabase/functions/send-verification-email/index.ts` hergestellt:
+
+- lokales `rateLimitMap`,
+- `RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000`,
+- `RATE_LIMIT_MAX_REQUESTS = 5`,
+- `checkRateLimit(...)`,
+- `cleanupExpiredRateLimits()`,
+- Rate-Limit-Key `verification-email:${email}:${type}`,
+- HTTP `429` mit generischer Fehlermeldung vor SMTP-Versand,
+- kein Logging der E-Mail-Adresse oder des Rate-Limit-Keys.
+
+Zusätzlich wurde das bisherige `catch (error: any)` zu `catch (_error: unknown)` gehärtet und die Fehlerausgabe generisch gehalten. Dadurch wurde ein vorhandener fokussierter Lint-Fehler in dieser Datei entfernt, ohne Secret-/Patientenwerte zu loggen.
+
+Die Edge-Function-Matrix wurde aktualisiert: `send-verification-email` dokumentiert jetzt ebenfalls ein lokales in-memory Rate Limit pro E-Mail/Typ für 15 Minuten mit HTTP-429-Antwort.
+
+### Fokussierte GREEN-Gates
+
+```text
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts
+Exit 0
+Test Files 2 passed
+Tests 17 passed
+```
+
+```text
+npx eslint supabase/functions/send-verification-email/index.ts src/lib/securityAccessMatrix.ts src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts
+Exit 0
+```
+
+### Verifizierte Gates nach Substep 6
+
+```text
+npm test
+Exit 0
+Test Files 15 passed
+Tests 48 passed
+```
+
+```text
+npx tsc --noEmit
+Exit 0
+```
+
+```text
+npm run build
+Exit 0
+3309 modules transformed
+built in 4.93s
+```
+
+```text
+git diff --check
+Exit 0
+```
+
+Full lint bleibt als bekannter Nicht-Blocker rot, ist aber durch diesen Substep leicht verbessert:
+
+```text
+npm run lint
+Exit 1
+326 problems (294 errors, 32 warnings)
+```
+
+### Datenschutz-/Patientendaten-Hinweis
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Live-Supabase-/Edge-Function-Aufrufe ausgeführt.
+- Keine Secret-Werte ausgegeben.
+- Der neue Rate-Limit-Log enthält weder E-Mail-Adresse noch Code noch Rate-Limit-Key.
+- Der allgemeine Fehlerlog wurde generisch gehalten und gibt kein Error-Objekt aus.
+
+### Nächste sinnvolle Phase-4-Substeps
+
+1. Phase 4 ist nun lokal sehr nahe PR-ready.
+2. Vor PR-Gate sollte noch ein finaler Phase-4-Readiness-Check mit Commitliste, Secret-Scan, Status und Handoff-Paket erstellt werden.
+3. Push/PR bleiben separate Gates; ohne ausdrückliches `PR erstellen` wird nicht gepusht und kein PR erstellt.

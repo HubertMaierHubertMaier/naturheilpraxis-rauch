@@ -88,4 +88,14 @@ describe("Supabase Edge Function JWT policy", () => {
       expect(source, functionName).not.toMatch(directIdentifierLogPattern);
     }
   });
+
+  it("keeps legacy verification email protected by local in-memory rate limiting", () => {
+    const source = readFunctionSource("send-verification-email");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(source).toMatch(/const rateLimitKey = `verification-email:\$\{email\}:\$\{type\}`/);
+  });
 });
