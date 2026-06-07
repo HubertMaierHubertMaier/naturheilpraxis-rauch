@@ -8,6 +8,19 @@ const allowedCorsHostnames = new Set([
   "www.rauch-heilpraktiker.de",
 ]);
 
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+type Icd10ReportRequestBody = {
+  patientName?: unknown;
+  submissionDate?: unknown;
+  pdfBase64?: unknown;
+  aiSummary?: unknown;
+  codeCount?: unknown;
+  language?: unknown;
+};
+
 function isAllowedCorsOrigin(origin: string | null): boolean {
   if (!origin) return false;
 
@@ -42,7 +55,35 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
-serve(async (req) => {
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const current = rateLimitMap.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) return false;
+
+  current.count += 1;
+  return true;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
@@ -87,8 +128,22 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { patientName, submissionDate, pdfBase64, aiSummary, codeCount, language } = body;
+    const rateLimitKey = `send-icd10-report:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[send-icd10-report] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json() as Icd10ReportRequestBody;
+    const patientName = getString(body.patientName).trim();
+    const submissionDate = getString(body.submissionDate);
+    const pdfBase64 = getString(body.pdfBase64);
+    const aiSummary = getString(body.aiSummary);
+    const codeCount = typeof body.codeCount === "number" || typeof body.codeCount === "string" ? String(body.codeCount) : "";
+    const lang = getString(body.language) === "en" ? "en" : "de";
 
     if (!pdfBase64 || !patientName) {
       return new Response(JSON.stringify({ error: "PDF-Daten und Patientenname erforderlich" }), {
@@ -97,15 +152,18 @@ serve(async (req) => {
       });
     }
 
-    const lang = language || "de";
+    const safePatientName = escapeHtml(patientName);
+    const safeSubmissionDate = escapeHtml(submissionDate || "-");
+    const safeCodeCount = escapeHtml(codeCount || "-");
+    const safeAiSummary = escapeHtml(aiSummary);
     const dateStr = new Date().toISOString().split("T")[0];
     const filename = `ICD10_${patientName.replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, "").replace(/\s+/g, "_")}_${dateStr}.pdf`;
     const sentAt = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
 
-    const summaryHtml = aiSummary
+    const summaryHtml = safeAiSummary
       ? `<div style="background:#f0f7f0;border:1px solid #4a7c59;border-radius:8px;padding:15px;margin:20px 0;">
            <p style="font-weight:bold;color:#4a7c59;">🧠 ${lang === "de" ? "KI-Zusammenfassung" : "AI Summary"}:</p>
-           <p style="color:#333;font-size:14px;">${aiSummary}</p>
+           <p style="color:#333;font-size:14px;">${safeAiSummary}</p>
          </div>`
       : "";
 
@@ -124,9 +182,9 @@ serve(async (req) => {
   <div class="header"><h1 style="color: #4a7c59; margin: 0;">ICD-10 Diagnoseübersicht</h1></div>
   <p>${lang === "de" ? "Eine neue ICD-10 Auswertung wurde generiert:" : "A new ICD-10 report was generated:"}</p>
   <div class="info-box">
-    <p><span class="label">${lang === "de" ? "Patient" : "Patient"}:</span> ${patientName}</p>
-    <p><span class="label">${lang === "de" ? "Einreichungsdatum" : "Submission date"}:</span> ${submissionDate || "-"}</p>
-    <p><span class="label">${lang === "de" ? "Anzahl Codes" : "Code count"}:</span> ${codeCount || "-"}</p>
+    <p><span class="label">${lang === "de" ? "Patient" : "Patient"}:</span> ${safePatientName}</p>
+    <p><span class="label">${lang === "de" ? "Einreichungsdatum" : "Submission date"}:</span> ${safeSubmissionDate}</p>
+    <p><span class="label">${lang === "de" ? "Anzahl Codes" : "Code count"}:</span> ${safeCodeCount}</p>
     <p><span class="label">${lang === "de" ? "Erstellt am" : "Generated"}:</span> ${sentAt}</p>
   </div>
   ${summaryHtml}
@@ -153,14 +211,14 @@ serve(async (req) => {
       });
     }
 
-    console.log(`ICD-10 report sent for ${patientName} to practice emails`);
+    console.log("[send-icd10-report] report sent to practice emails");
 
     return new Response(
       JSON.stringify({ success: true, message: lang === "de" ? "ICD-10 Bericht per E-Mail versendet" : "ICD-10 report sent via email" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error: unknown) {
-    console.error("Error in send-icd10-report:", error);
+  } catch {
+    console.error("[send-icd10-report] request failed");
     return new Response(
       JSON.stringify({ error: "Fehler beim Versand des ICD-10 Berichts" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

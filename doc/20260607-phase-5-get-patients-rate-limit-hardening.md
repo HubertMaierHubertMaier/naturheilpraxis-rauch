@@ -1476,3 +1476,170 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – send-icd10-report Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 10:43 CEST
+
+## Ziel
+
+Die admin-only Edge Function `send-icd10-report` kann patientenbezogene ICD-10-PDF-Berichte per E-Mail an die Praxis senden. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor Request-Body-Parsing sowie vor E-Mail-Versand.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/send-icd10-report/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 24 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps send-icd10-report admin report/email access behind local per-admin rate limiting before body parsing and email sending`
+  - `does not log or return raw Error objects or direct patient identifiers in send-icd10-report handling`
+
+Erwarteter Grund:
+
+- `send-icd10-report` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `send-icd10-report` loggte einen direkten Patientennamen und ein raw Error-Objekt im Catch-Pfad.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 24 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 38 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `send-icd10-report:admin:${user.id}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem `user_roles`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor `await req.json()`.
+- Damit liegt die Schranke vor PDF-Base64-Body-Parsing und vor `sendEmail`-Aufrufen.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Raw Error-Logging wurde durch stabile nicht-identifizierende Fehlermarkierungen ersetzt.
+- Direkte Patientennamen werden nicht mehr geloggt.
+- Aus HTML-E-Mail-Feldern werden Patient Name, Submission Date, Code Count und AI Summary HTML-escaped eingesetzt.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `send-icd10-report`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten ICD-10-Reports verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine AI-/Provider-Live-Calls ausgeführt.
+- Keine echten E-Mails versendet oder E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/send-icd10-report/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 72 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.93s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 296 problems, 264 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.

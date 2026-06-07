@@ -214,6 +214,35 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
   });
 
+  it("keeps send-icd10-report admin report/email access behind local per-admin rate limiting before body parsing and email sending", () => {
+    const source = readFunctionSource("send-icd10-report");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const emailSendIndex = source.indexOf("sendEmail(");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `send-icd10-report:admin:\$\{user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(emailSendIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(emailSendIndex);
+  });
+
+  it("does not log or return raw Error objects or direct patient identifiers in send-icd10-report handling", () => {
+    const source = readFunctionSource("send-icd10-report");
+
+    expect(source).not.toMatch(/:\s*any\b/);
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*\$\{patientName\}/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
+  });
+
   it("keeps generate-icd10 admin AI calls behind local per-admin rate limiting before body parsing and provider calls", () => {
     const source = readFunctionSource("generate-icd10");
     const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
