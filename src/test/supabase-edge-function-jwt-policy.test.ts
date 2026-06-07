@@ -182,4 +182,30 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/catch \((?:err|aiErr|error): any\)/);
     expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:err|aiErr|error)\b/);
   });
+
+  it("keeps generate-diagnoses admin AI calls behind local per-admin rate limiting before body parsing and provider calls", () => {
+    const source = readFunctionSource("generate-diagnoses");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const providerFetchIndex = source.indexOf("https://ai.gateway.lovable.dev/v1/chat/completions");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `generate-diagnoses:admin:\$\{user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(providerFetchIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(providerFetchIndex);
+  });
+
+  it("does not log or return raw Error objects in generate-diagnoses AI/admin handling", () => {
+    const source = readFunctionSource("generate-diagnoses");
+
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+  });
 });
