@@ -117,6 +117,34 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
   });
 
+  it("keeps elevenlabs-tts provider-cost calls behind local per-auth-user rate limiting before body parsing and provider calls", () => {
+    const source = readFunctionSource("elevenlabs-tts");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const providerFetchIndex = source.indexOf("https://api.elevenlabs.io/v1/text-to-speech/");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `elevenlabs-tts:auth-user:\$\{authenticatedSubject\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(providerFetchIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(providerFetchIndex);
+  });
+
+  it("does not log or return raw Error objects or raw ElevenLabs provider responses in elevenlabs-tts handling", () => {
+    const source = readFunctionSource("elevenlabs-tts");
+
+    expect(source).not.toMatch(/:\s*any\b/);
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error|responseText|providerResponse)\b/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
+  });
+
   it("keeps legacy verification email protected by local in-memory rate limiting", () => {
     const source = readFunctionSource("send-verification-email");
 
