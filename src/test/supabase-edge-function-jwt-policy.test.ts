@@ -234,4 +234,32 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
     expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
   });
+
+  it("keeps enrich-wiki-tags admin AI calls behind local per-admin rate limiting before body parsing and AI enrichment", () => {
+    const source = readFunctionSource("enrich-wiki-tags");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const aiCallIndex = source.indexOf("await callAI(");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `enrich-wiki-tags:admin:\$\{userResult\.user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(aiCallIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(aiCallIndex);
+  });
+
+  it("does not log or return raw Error objects in enrich-wiki-tags AI/admin handling", () => {
+    const source = readFunctionSource("enrich-wiki-tags");
+
+    expect(source).not.toMatch(/:\s*any\b/);
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+    expect(source).not.toMatch(/error:\s*e instanceof Error \? e\.message/);
+  });
 });

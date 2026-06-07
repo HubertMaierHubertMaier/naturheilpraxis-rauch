@@ -979,3 +979,168 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – enrich-wiki-tags Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 10:20 CEST
+
+## Ziel
+
+Die admin-only Edge Function `enrich-wiki-tags` erzeugt AI-Tag-Vorschläge für interne Wissensdatenbankeinträge und kann kosten-/providerrelevante Lovable-AI-Gateway-Aufrufe auslösen. Sie war bereits durch Supabase `verify_jwt`, `auth.getUser`, service-role `user_roles`-Adminprüfung und request-aware CORS geschützt. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor Request-Body-Parsing sowie vor AI-Enrichment-Aufrufen.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/enrich-wiki-tags/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 18 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps enrich-wiki-tags admin AI calls behind local per-admin rate limiting before body parsing and AI enrichment`
+  - `does not log or return raw Error objects in enrich-wiki-tags AI/admin handling`
+
+Erwarteter Grund:
+
+- `enrich-wiki-tags` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `enrich-wiki-tags` enthielt explizite `any`-Typen und gab raw Error-/Provider-Details in Ergebnis-/Fehlerpfaden zurück.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 18 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 32 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `enrich-wiki-tags:admin:${userResult.user.id}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem service-role `user_roles`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor `await req.json()` und vor `await callAI(...)` im Preview-Pfad.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Die allgemeine Catch-Behandlung gibt nur noch eine generische Fehlermeldung zurück.
+- AI-Gateway-Fehler werden nicht mehr als roher Provider-Response-Text oder raw Error-Message an Clients zurückgegeben.
+- Beim berührten Role-/Request-/KnowledgeBase-/AI-Code wurden explizite `any`-Typen durch lokale Typen und Guards ersetzt, sodass fokussiertes ESLint für diese Dateien grün ist.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `enrich-wiki-tags`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine AI-/Provider-Live-Calls ausgeführt.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/enrich-wiki-tags/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 66 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.83s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 306 problems, 274 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.

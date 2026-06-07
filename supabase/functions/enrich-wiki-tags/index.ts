@@ -46,9 +46,102 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+type UserRoleRow = {
+  role?: string | null;
+};
+
+type EnrichWikiTagsRequestBody = {
+  mode?: unknown;
+  ids?: unknown;
+};
+
+type KnowledgeBaseRow = {
+  id: string;
+  title: string | null;
+  category: string | null;
+  tags: string[] | null;
+  content: string | null;
+};
+
+type WikiTagUpdate = {
+  id: string;
+  tags: string[];
+};
+
+type EnrichWikiTagsResult = {
+  id: string;
+  title: string | null;
+  category: string | null;
+  existing: string[];
+  suggested?: string[];
+  added?: string[];
+  merged?: string[];
+  error?: string;
+};
+
+type AiToolCall = {
+  function?: {
+    arguments?: string;
+  };
+};
+
+type AiMessageResponse = {
+  choices?: Array<{
+    message?: {
+      tool_calls?: AiToolCall[];
+    };
+  }>;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isWikiTagUpdate(value: unknown): value is WikiTagUpdate {
+  return isRecord(value) && typeof value.id === "string" && isStringArray(value.tags);
+}
+
+function toStringArray(value: unknown): string[] {
+  return isStringArray(value) ? value : [];
+}
 
 const SYSTEM = `Du bist Tag-Extraktor für eine naturheilkundliche Wissensdatenbank.
 Aus Titel, Kategorie und Inhalt extrahierst du präzise Schlagworte, die für die spätere KI-Suche & Therapie-Empfehlung nützlich sind.
@@ -63,7 +156,7 @@ REGELN:
 
 Antworte AUSSCHLIESSLICH via Tool-Call.`;
 
-async function callAI(title: string, category: string, content: string) {
+async function callAI(title: string, category: string, content: string): Promise<string[]> {
   const trimmed = content.length > 6000 ? content.slice(0, 6000) : content;
   const prompt = `TITEL: ${title}\nKATEGORIE: ${category}\n\nINHALT:\n${trimmed}`;
 
@@ -97,7 +190,7 @@ async function callAI(title: string, category: string, content: string) {
     tool_choice: { type: "function", function: { name: "set_tags" } },
   };
 
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -106,32 +199,34 @@ async function callAI(title: string, category: string, content: string) {
     body: JSON.stringify(body),
   });
 
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`AI ${r.status}: ${t.slice(0, 200)}`);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error("KI-Fehler");
   }
-  const j = await r.json();
-  const call = j.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call) throw new Error("Kein Tool-Call zurück");
-  const args = JSON.parse(call.function.arguments || "{}");
-  const tags: string[] = Array.isArray(args.tags) ? args.tags : [];
+
+  const json = (await response.json()) as AiMessageResponse;
+  const toolCall = json.choices?.[0]?.message?.tool_calls?.[0];
+  if (!toolCall?.function?.arguments) throw new Error("KI-Fehler");
+
+  const args: unknown = JSON.parse(toolCall.function.arguments);
+  const tags = isRecord(args) && isStringArray(args.tags) ? args.tags : [];
   return tags
-    .map((t) => String(t).trim())
-    .filter((t) => t.length > 1 && t.length <= 60);
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 1 && tag.length <= 60);
 }
 
 function mergeTags(existing: string[], suggested: string[]) {
   const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
   const seen = new Set<string>();
   const merged: string[] = [];
-  for (const t of [...(existing || []), ...suggested]) {
-    const k = norm(t);
-    if (!k || seen.has(k)) continue;
-    seen.add(k);
-    merged.push(t);
+  for (const tag of [...existing, ...suggested]) {
+    const key = norm(tag);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(tag);
   }
-  const existingNorm = new Set((existing || []).map(norm));
-  const added = suggested.filter((t) => !existingNorm.has(norm(t)));
+  const existingNorm = new Set(existing.map(norm));
+  const added = suggested.filter((tag) => !existingNorm.has(norm(tag)));
   return { merged, added };
 }
 
@@ -144,36 +239,47 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: auth } },
     });
-    const { data: ures } = await userClient.auth.getUser();
-    if (!ures?.user) {
+    const { data: userResult } = await userClient.auth.getUser();
+    if (!userResult?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { data: roles } = await admin
+    const { data: roleRows } = await admin
       .from("user_roles")
       .select("role")
-      .eq("user_id", ures.user.id);
-    if (!roles?.some((r: any) => r.role === "admin")) {
+      .eq("user_id", userResult.user.id);
+    const roles = (roleRows ?? []) as UserRoleRow[];
+    if (!roles.some((roleRow) => roleRow.role === "admin")) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { mode, ids } = await req.json();
+    const rateLimitKey = `enrich-wiki-tags:admin:${userResult.user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[enrich-wiki-tags] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { mode, ids } = (await req.json()) as EnrichWikiTagsRequestBody;
     // mode: "preview" -> nur Vorschläge | "apply" -> mit übergebenen ids speichern (tags aus Body)
     if (mode === "apply") {
-      const updates: { id: string; tags: string[] }[] = ids;
+      const updates = Array.isArray(ids) ? ids.filter(isWikiTagUpdate) : [];
       let ok = 0;
-      for (const u of updates) {
-        const { error } = await admin
+      for (const update of updates) {
+        const { error: updateError } = await admin
           .from("admin_knowledge_base")
-          .update({ tags: u.tags })
-          .eq("id", u.id);
-        if (!error) ok++;
+          .update({ tags: update.tags })
+          .eq("id", update.id);
+        if (!updateError) ok++;
       }
       return new Response(JSON.stringify({ updated: ok }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -181,35 +287,37 @@ Deno.serve(async (req) => {
     }
 
     // preview
-    const targetIds: string[] = Array.isArray(ids) && ids.length > 0 ? ids : [];
-    let q = admin.from("admin_knowledge_base").select("id,title,category,tags,content");
-    if (targetIds.length > 0) q = q.in("id", targetIds);
-    const { data: rows, error } = await q;
-    if (error) throw error;
+    const targetIds = isStringArray(ids) && ids.length > 0 ? ids : [];
+    let query = admin.from("admin_knowledge_base").select("id,title,category,tags,content");
+    if (targetIds.length > 0) query = query.in("id", targetIds);
+    const { data: rawRows, error: queryError } = await query;
+    if (queryError) throw new Error("Datenbankfehler");
 
-    const results: any[] = [];
-    for (const row of rows || []) {
+    const rows = (rawRows ?? []) as KnowledgeBaseRow[];
+    const results: EnrichWikiTagsResult[] = [];
+    for (const row of rows) {
       try {
-        const suggested = await callAI(row.title, row.category, row.content || "");
-        const { merged, added } = mergeTags(row.tags || [], suggested);
+        const suggested = await callAI(row.title ?? "", row.category ?? "", row.content ?? "");
+        const existing = toStringArray(row.tags);
+        const { merged, added } = mergeTags(existing, suggested);
         results.push({
           id: row.id,
           title: row.title,
           category: row.category,
-          existing: row.tags || [],
+          existing,
           suggested,
           added,
           merged,
         });
         // sanftes Throttling
-        await new Promise((r) => setTimeout(r, 250));
-      } catch (e) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      } catch {
         results.push({
           id: row.id,
           title: row.title,
           category: row.category,
-          existing: row.tags || [],
-          error: e instanceof Error ? e.message : String(e),
+          existing: toStringArray(row.tags),
+          error: "KI-Fehler",
         });
       }
     }
@@ -217,10 +325,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
+  } catch {
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Interner Fehler" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
