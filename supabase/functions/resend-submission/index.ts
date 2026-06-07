@@ -45,6 +45,83 @@ function escapeHtml(str: string): string {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+type JsonRecord = Record<string, unknown>;
+
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+type Icd10Code = {
+  code: string;
+  descDe: string;
+  category: string;
+  source: string;
+};
+
+type AiIcd10Code = Icd10Code & {
+  confidence: number;
+};
+
+type AiIcd10Item = {
+  code?: unknown;
+  descDe?: unknown;
+  category?: unknown;
+  confidence?: unknown;
+};
+
+type ResendSubmissionBody = {
+  submissionId?: unknown;
+};
+
+type AnamnesisSubmission = {
+  form_data: JsonRecord | null;
+  submitted_at: string;
+  user_id: string;
+};
+
+function isRecord(value: unknown): value is JsonRecord {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function getStringField(record: JsonRecord, key: string, fallback = ""): string {
+  const value = record[key];
+  return typeof value === "string" ? value : fallback;
+}
+
+function getOptionalFormRecord(value: unknown): JsonRecord {
+  return isRecord(value) ? value : {};
+}
+
+function isAiIcd10Item(value: unknown): value is AiIcd10Item {
+  return isRecord(value);
+}
+
 // ─── ICD-10 Fixed Mapping (subset for inline use) ───
 const icd10FixedMapping: Record<string, { code: string; descDe: string; category: string }[]> = {
   "kopfErkrankungen.augenerkrankung.grauerStar": [{ code: "H25.9", descDe: "Grauer Star (Katarakt)", category: "Auge" }],
@@ -88,17 +165,17 @@ const icd10FixedMapping: Record<string, { code: string; descDe: string; category
   "maennergesundheit.prostata.bph": [{ code: "N40", descDe: "Prostatahyperplasie", category: "Urologie" }],
 };
 
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: unknown, path: string): unknown {
   const keys = path.split(".");
-  let current = obj;
+  let current: unknown = obj;
   for (const key of keys) {
-    if (current == null || typeof current !== "object") return undefined;
+    if (!isRecord(current)) return undefined;
     current = current[key];
   }
   return current;
 }
 
-function extractFixedICD10(formData: Record<string, any>): { code: string; descDe: string; category: string; source: string }[] {
+function extractFixedICD10(formData: JsonRecord): Icd10Code[] {
   const results: { code: string; descDe: string; category: string; source: string }[] = [];
   const seen = new Set<string>();
   for (const [path, entries] of Object.entries(icd10FixedMapping)) {
@@ -115,7 +192,7 @@ function extractFixedICD10(formData: Record<string, any>): { code: string; descD
   return results;
 }
 
-function collectFreeText(formData: Record<string, any>): string[] {
+function collectFreeText(formData: JsonRecord): string[] {
   const fields = [
     "weitereErkrankungen", "zusaetzlicheInfos",
     "herzKreislauf.sonstige", "lungeAtmung.sonstige", "magenDarm.sonstige",
@@ -131,7 +208,7 @@ function collectFreeText(formData: Record<string, any>): string[] {
   return texts;
 }
 
-async function generateAIICD10(freeTexts: string[]): Promise<{ code: string; descDe: string; category: string; source: string; confidence: number }[]> {
+async function generateAIICD10(freeTexts: string[]): Promise<AiIcd10Code[]> {
   const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableApiKey || freeTexts.length === 0) return [];
 
@@ -169,29 +246,36 @@ REGELN:
     if (!aiResponse.ok) return [];
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
+    const aiRecord = isRecord(aiData) ? aiData : {};
+    const choices = Array.isArray(aiRecord.choices) ? aiRecord.choices : [];
+    const firstChoice = isRecord(choices[0]) ? choices[0] : {};
+    const message = isRecord(firstChoice.message) ? firstChoice.message : {};
+    const content = typeof message.content === "string" ? message.content : "";
     let jsonStr = content;
     const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) jsonStr = codeBlockMatch[1];
 
-    const parsed = JSON.parse(jsonStr.trim());
+    const parsed: unknown = JSON.parse(jsonStr.trim());
     const items = Array.isArray(parsed) ? parsed : [];
     return items
-      .filter((item: any) => item.code && item.confidence >= 0.6)
-      .map((item: any) => ({
-        code: item.code,
-        descDe: item.descDe || item.code,
-        category: item.category || "KI-Analyse",
-        source: `KI-Analyse (${Math.round(item.confidence * 100)}%)`,
-        confidence: item.confidence,
+      .filter((item): item is AiIcd10Item => {
+        if (!isAiIcd10Item(item)) return false;
+        return typeof item.code === "string" && typeof item.confidence === "number" && item.confidence >= 0.6;
+      })
+      .map((item) => ({
+        code: item.code as string,
+        descDe: typeof item.descDe === "string" ? item.descDe : item.code as string,
+        category: typeof item.category === "string" ? item.category : "KI-Analyse",
+        source: `KI-Analyse (${Math.round((item.confidence as number) * 100)}%)`,
+        confidence: item.confidence as number,
       }));
-  } catch (e) {
-    console.error("AI ICD-10 error:", e);
+  } catch {
+    console.error("[resend] AI ICD-10 generation failed");
     return [];
   }
 }
 
-function buildICD10HtmlTable(codes: { code: string; descDe: string; category: string; source: string }[]): string {
+function buildICD10HtmlTable(codes: Icd10Code[]): string {
   if (codes.length === 0) return "<p><em>Keine ICD-10 Codes aus den Angaben ableitbar.</em></p>";
   
   let html = `<table style="width:100%;border-collapse:collapse;margin:15px 0;">
@@ -217,7 +301,7 @@ function buildICD10HtmlTable(codes: { code: string; descDe: string; category: st
   return html;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -228,6 +312,7 @@ Deno.serve(async (req) => {
     
     // Admin auth check
     let isAdmin = false;
+    let adminUserId: string | null = null;
     const authHeader = req.headers.get("authorization");
     
     if (authHeader && authHeader !== `Bearer ${supabaseKey}`) {
@@ -238,14 +323,25 @@ Deno.serve(async (req) => {
       if (user) {
         const { data: adminCheck } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
         isAdmin = !!adminCheck;
+        adminUserId = isAdmin ? user.id : null;
       }
     }
 
-    if (!isAdmin) {
+    if (!isAdmin || !adminUserId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { submissionId } = await req.json();
+    const rateLimitKey = `resend-submission:admin:${adminUserId}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[resend] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json() as ResendSubmissionBody;
+    const submissionId = typeof body.submissionId === "string" ? body.submissionId : "";
     if (!submissionId) {
       return new Response(JSON.stringify({ error: "submissionId required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -264,23 +360,23 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Submission not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const formData = submission.form_data as Record<string, any>;
-    const patientName = `${formData.vorname || ""} ${formData.nachname || ""}`.trim() || "Unbekannt";
-    const patientEmail = String(formData.email || "-");
-    const patientPhone = String(formData.telefon || formData.telefonPrivat || formData.mobil || "-");
-    const patientDob = String(formData.geburtsdatum || "-");
-    const submittedAt = new Date(submission.submitted_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
+    const formData = getOptionalFormRecord((submission as AnamnesisSubmission).form_data);
+    const patientName = `${getStringField(formData, "vorname")} ${getStringField(formData, "nachname")}`.trim() || "Unbekannt";
+    const patientEmail = getStringField(formData, "email", "-");
+    const patientPhone = getStringField(formData, "telefon", getStringField(formData, "telefonPrivat", getStringField(formData, "mobil", "-")));
+    const patientDob = getStringField(formData, "geburtsdatum", "-");
+    const submittedAt = new Date((submission as AnamnesisSubmission).submitted_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
 
     // Fetch IAA data
     const { data: iaaSubmission } = await adminClient
       .from("iaa_submissions")
       .select("form_data")
-      .eq("user_id", submission.user_id)
+      .eq("user_id", (submission as AnamnesisSubmission).user_id)
       .order("submitted_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const iaaData = (iaaSubmission?.form_data || {}) as Record<string, number>;
+    const iaaData = getOptionalFormRecord(iaaSubmission?.form_data);
 
     // Generate ICD-10 codes
     console.log("[resend] Generating ICD-10 codes...");
@@ -334,8 +430,8 @@ Deno.serve(async (req) => {
       console.warn("[resend] No stored PDFs found – sending without attachments");
     }
 
-    const pdfFilename = `Anamnesebogen_${patientName.replace(/\s+/g, '_')}_${new Date(submission.submitted_at).toISOString().split('T')[0]}.pdf`;
-    const iaaPdfFilename = `IAA_${patientName.replace(/\s+/g, '_')}_${new Date(submission.submitted_at).toISOString().split('T')[0]}.pdf`;
+    const pdfFilename = `Anamnesebogen_${patientName.replace(/\s+/g, '_')}_${new Date((submission as AnamnesisSubmission).submitted_at).toISOString().split('T')[0]}.pdf`;
+    const iaaPdfFilename = `IAA_${patientName.replace(/\s+/g, '_')}_${new Date((submission as AnamnesisSubmission).submitted_at).toISOString().split('T')[0]}.pdf`;
 
     // Build IAA summary HTML
     let iaaSummaryHtml = "";
@@ -346,18 +442,20 @@ Deno.serve(async (req) => {
           <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">Frage-Nr.</th>
           <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">Wert (1-6)</th>
         </tr>`;
-      for (const [key, val] of Object.entries(iaaData).sort()) {
-        const bg = val >= 4 ? "#fff3e0" : "#fff";
+      for (const [key, rawVal] of Object.entries(iaaData).sort()) {
+        const val = typeof rawVal === "number" ? rawVal : Number(rawVal);
+        const displayVal = Number.isFinite(val) ? val : "—";
+        const bg = typeof displayVal === "number" && displayVal >= 4 ? "#fff3e0" : "#fff";
         iaaSummaryHtml += `<tr style="background:${bg};">
           <td style="padding:4px 8px;border:1px solid #ddd;">${escapeHtml(key)}</td>
-          <td style="padding:4px 8px;border:1px solid #ddd;font-weight:bold;">${val}</td>
+          <td style="padding:4px 8px;border:1px solid #ddd;font-weight:bold;">${displayVal}</td>
         </tr>`;
       }
       iaaSummaryHtml += "</table>";
     }
 
     // Send emails in parallel
-    const emailPromises: Promise<any>[] = [];
+    const emailPromises: Promise<unknown>[] = [];
 
     // 1. Anamnese to practice (with PDF if available)
     emailPromises.push(sendEmail({
@@ -465,8 +563,8 @@ Deno.serve(async (req) => {
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("[resend] Error:", err);
+  } catch {
+    console.error("[resend] request failed");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

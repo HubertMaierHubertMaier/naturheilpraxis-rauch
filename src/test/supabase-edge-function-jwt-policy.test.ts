@@ -183,6 +183,37 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
   });
 
+  it("keeps resend-submission admin resend/email access behind local per-admin rate limiting before body parsing, submission queries, and email sending", () => {
+    const source = readFunctionSource("resend-submission");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const submissionQueryIndex = source.indexOf('.from("anamnesis_submissions")');
+    const emailSendIndex = source.indexOf("sendEmail(");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `resend-submission:admin:\$\{adminUserId\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(submissionQueryIndex).toBeGreaterThan(-1);
+    expect(emailSendIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(submissionQueryIndex);
+    expect(rateLimitIndex).toBeLessThan(emailSendIndex);
+  });
+
+  it("does not log or return raw Error objects in resend-submission handling", () => {
+    const source = readFunctionSource("resend-submission");
+
+    expect(source).not.toMatch(/:\s*any\b/);
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
+  });
+
   it("keeps generate-icd10 admin AI calls behind local per-admin rate limiting before body parsing and provider calls", () => {
     const source = readFunctionSource("generate-icd10");
     const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");

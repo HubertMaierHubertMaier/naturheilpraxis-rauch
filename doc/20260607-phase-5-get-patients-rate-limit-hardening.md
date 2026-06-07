@@ -1310,3 +1310,169 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – resend-submission Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 10:35 CEST
+
+## Ziel
+
+Die admin-only Edge Function `resend-submission` kann Anamnesis-Submission-Daten lesen, gespeicherte PDFs abrufen, ICD-10-Vorschläge erzeugen und E-Mails erneut versenden. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor Request-Body-Parsing, Submission-Abfragen, PDF-Abruf, AI-ICD-10-Generierung und E-Mail-Versand.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/resend-submission/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 22 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps resend-submission admin resend/email access behind local per-admin rate limiting before body parsing, submission queries, and email sending`
+  - `does not log or return raw Error objects in resend-submission handling`
+
+Erwarteter Grund:
+
+- `resend-submission` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `resend-submission` enthielt explizite `any`-Typen und raw Error-Logging in berührten Pfaden.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 22 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 36 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `resend-submission:admin:${adminUserId}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem `has_role`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor `await req.json()`.
+- Damit liegt die Schranke auch vor `anamnesis_submissions`-/`iaa_submissions`-Abfragen, Storage-PDF-Downloads, AI-ICD-10-Generierung und `sendEmail`-Aufrufen.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Die allgemeine Catch-Behandlung loggt nur noch eine stabile nicht-identifizierende Fehlermarkierung.
+- Der berührte AI-ICD-10-Parsing-Pfad nutzt `unknown`/lokale Guards statt explizitem `any`.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `resend-submission`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten Submission-Daten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine AI-/Provider-Live-Calls ausgeführt.
+- Keine echten E-Mails versendet oder E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/resend-submission/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 70 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.76s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 296 problems, 264 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.
