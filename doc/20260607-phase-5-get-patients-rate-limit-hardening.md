@@ -1643,3 +1643,166 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – notify-existing-patient Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 10:51 CEST
+
+## Ziel
+
+Die authenticated Edge Function `notify-existing-patient` sendet patientenbezogene Registrierungs-/Freischaltungsbenachrichtigungen über das Praxis-Relay. Dieser Microstep ergänzt eine lokale per-authenticated-user Rate-Limit-Schranke nach Plattform-JWT-Kontext und vor Request-Body-Parsing sowie vor Relay-Aufrufen.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/notify-existing-patient/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 26 Tests ausgeführt
+- 1 Test fehlgeschlagen:
+  - `keeps notify-existing-patient authenticated notification emails behind local per-auth-user rate limiting before body parsing and relay calls`
+
+Erwarteter Grund:
+
+- `notify-existing-patient` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 26 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 40 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro authentifiziertem JWT-Subject keyed:
+  `notify-existing-patient:auth-user:${authenticatedSubject}`
+- Der Subject wird aus dem Bearer-JWT-Payload gelesen; die Function bleibt zusätzlich durch Supabase `verify_jwt=true` geschützt.
+- Der Rate-Limit-Check erfolgt vor `await req.json()`.
+- Damit liegt die Schranke vor patientenbezogenem E-Mail-Body-Aufbau und vor `fetch(relayUrl, ...)`.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Raw Error-Logging bleibt vermieden; Catch-Pfade loggen nur stabile nicht-identifizierende Marker.
+- E-Mail-Werte werden beim Einfügen in HTML escaped.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `notify-existing-patient`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine Praxis-Relay-/E-Mail-Live-Calls ausgeführt.
+- Keine echten E-Mails versendet oder E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/notify-existing-patient/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 74 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.78s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 296 problems, 264 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.
