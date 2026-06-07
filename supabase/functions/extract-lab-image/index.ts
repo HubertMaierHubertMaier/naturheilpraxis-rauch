@@ -42,6 +42,53 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+type LabImageRequestBody = {
+  images?: unknown;
+  mode?: unknown;
+};
+
+type AiContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type AiMessageResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+};
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -59,8 +106,14 @@ Deno.serve(async (req) => {
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return new Response(JSON.stringify({ error: "Nur für Administratoren" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { images, mode } = await req.json();
-    if (!Array.isArray(images) || images.length === 0) {
+    const rateLimitKey = `extract-lab-image:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[extract-lab-image] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { images, mode } = (await req.json()) as LabImageRequestBody;
+    if (!Array.isArray(images) || images.length === 0 || !images.every((image): image is string => typeof image === "string")) {
       return new Response(JSON.stringify({ error: "Keine Bilder übergeben" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -110,7 +163,7 @@ Regeln:
       ? "Extrahiere bitte den vollständigen Inhalt dieses ärztlichen Berichts:"
       : "Extrahiere bitte alle Laborwerte aus diesem/diesen Befund(en):";
 
-    const content: any[] = [{ type: "text", text: userText }];
+    const content: AiContentPart[] = [{ type: "text", text: userText }];
     for (const img of images) {
       content.push({ type: "image_url", image_url: { url: img } });
     }
@@ -129,13 +182,13 @@ Regeln:
 
     if (aiResp.status === 402) return new Response(JSON.stringify({ error: "KI-Guthaben aufgebraucht." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!aiResp.ok) {
-      const errText = await aiResp.text();
-      return new Response(JSON.stringify({ error: `KI-Fehler: ${errText}` }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await aiResp.body?.cancel();
+      return new Response(JSON.stringify({ error: "KI-Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const aiJson = await aiResp.json();
+    const aiJson = (await aiResp.json()) as AiMessageResponse;
     const text: string = aiJson.choices?.[0]?.message?.content ?? "";
     return new Response(JSON.stringify({ text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message || "Interner Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch {
+    return new Response(JSON.stringify({ error: "Interner Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
