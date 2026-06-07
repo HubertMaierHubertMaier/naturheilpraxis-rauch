@@ -40,6 +40,60 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+type ProfileRow = {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  street: string | null;
+  postal_code: string | null;
+  city: string | null;
+  date_of_birth: string | null;
+  phone: string | null;
+  created_at: string | null;
+  is_verified_patient: boolean | null;
+};
+
+type AuditLoginRow = {
+  user_id: string | null;
+  action: string | null;
+};
+
+type AnamnesisSubmissionRow = {
+  id: string;
+  user_id: string | null;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 60;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -54,6 +108,7 @@ Deno.serve(async (req) => {
 
     // Validate caller is admin via JWT in Authorization header
     let isAdmin = false;
+    let adminUserId: string | null = null;
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -65,16 +120,26 @@ Deno.serve(async (req) => {
           _role: "admin",
         });
         isAdmin = !!adminCheck;
+        adminUserId = isAdmin ? userData.user.id : null;
       } else {
-        console.log("[get-patients] getUser failed:", userErr?.message);
+        console.log("[get-patients] getUser failed");
       }
     } else {
       console.log("[get-patients] No user token (only anon or missing)");
     }
 
-    if (!isAdmin) {
+    if (!isAdmin || !adminUserId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const rateLimitKey = `get-patients:admin:${adminUserId}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[get-patients] Admin patient-list rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -88,38 +153,42 @@ Deno.serve(async (req) => {
     if (profilesResult.error) throw profilesResult.error;
 
     const countMap: Record<string, number> = {};
-    (loginCountsResult.data || []).forEach((entry: any) => {
-      countMap[entry.user_id] = (countMap[entry.user_id] || 0) + 1;
+    ((loginCountsResult.data || []) as AuditLoginRow[]).forEach((entry) => {
+      if (entry.user_id) {
+        countMap[entry.user_id] = (countMap[entry.user_id] || 0) + 1;
+      }
     });
 
     // Map latest submission per user
     const submissionMap: Record<string, string> = {};
-    (submissionsResult.data || []).forEach((s: any) => {
-      if (!submissionMap[s.user_id]) submissionMap[s.user_id] = s.id;
+    ((submissionsResult.data || []) as AnamnesisSubmissionRow[]).forEach((submission) => {
+      if (submission.user_id && !submissionMap[submission.user_id]) {
+        submissionMap[submission.user_id] = submission.id;
+      }
     });
 
-    const patients = (profilesResult.data || []).map((p: any) => ({
-      user_id: p.user_id,
-      first_name: p.first_name,
-      last_name: p.last_name,
-      email: p.email,
-      street: p.street,
-      postal_code: p.postal_code,
-      city: p.city,
-      date_of_birth: p.date_of_birth,
-      phone: p.phone,
-      created_at: p.created_at,
-      is_verified_patient: p.is_verified_patient || false,
-      login_count: countMap[p.user_id] || 0,
-      submission_id: submissionMap[p.user_id] || null,
+    const patients = ((profilesResult.data || []) as ProfileRow[]).map((profile) => ({
+      user_id: profile.user_id,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      email: profile.email,
+      street: profile.street,
+      postal_code: profile.postal_code,
+      city: profile.city,
+      date_of_birth: profile.date_of_birth,
+      phone: profile.phone,
+      created_at: profile.created_at,
+      is_verified_patient: profile.is_verified_patient || false,
+      login_count: countMap[profile.user_id] || 0,
+      submission_id: submissionMap[profile.user_id] || null,
     }));
 
     return new Response(JSON.stringify({ patients }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    console.error("[get-patients] Error:", error);
+  } catch (_error: unknown) {
+    console.error("[get-patients] Request handling failed");
     return new Response(JSON.stringify({ error: "Ein Fehler ist aufgetreten." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -98,4 +98,20 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).toMatch(/status:\s*429/);
     expect(source).toMatch(/const rateLimitKey = `verification-email:\$\{email\}:\$\{type\}`/);
   });
+
+  it("keeps get-patients admin patient-list access behind local per-admin rate limiting", () => {
+    const source = readFunctionSource("get-patients");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `get-patients:admin:\$\{adminUserId\}`/);
+    expect(source).toMatch(/status:\s*429/);
+  });
+
+  it("does not log raw Error objects in get-patients patient-list handling", () => {
+    const source = readFunctionSource("get-patients");
+
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*error\b/);
+  });
 });
