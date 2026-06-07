@@ -132,4 +132,29 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
     expect(rateLimitIndex).toBeLessThan(aiFetchIndex);
   });
+
+  it("keeps get-therapy-sessions admin session access behind local per-admin rate limiting before session queries", () => {
+    const source = readFunctionSource("get-therapy-sessions");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const sessionQueryIndex = source.indexOf('.from("therapy_sessions")');
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `get-therapy-sessions:admin:\$\{user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(sessionQueryIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(sessionQueryIndex);
+  });
+
+  it("does not log raw Error objects in get-therapy-sessions session handling", () => {
+    const source = readFunctionSource("get-therapy-sessions");
+
+    expect(source).not.toMatch(/catch \(error: any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*error\b/);
+  });
 });

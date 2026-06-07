@@ -321,3 +321,166 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+---
+
+# Phase 5 – get-therapy-sessions Rate-Limit- und Logging-Härtung
+
+## Zeitpunkt
+
+2026-06-07 08:14 CEST
+
+## Ziel
+
+Die admin-only Edge Function `get-therapy-sessions` liest sensible therapiesitzungsbezogene Daten aus `therapy_sessions`. Sie war bereits durch Supabase `verify_jwt`, `auth.getUser`, `has_role` und request-aware CORS geschützt. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor Request-Body-Parsing sowie vor der `therapy_sessions`-Query. Zusätzlich wurde rohes Error-Objekt-Logging aus der Catch-Behandlung entfernt.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/get-therapy-sessions/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 10 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps get-therapy-sessions admin session access behind local per-admin rate limiting before session queries`
+  - `does not log raw Error objects in get-therapy-sessions session handling`
+
+Erwarteter Grund:
+
+- `get-therapy-sessions` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `get-therapy-sessions` nutzte noch `catch (error: any)` und loggte ein rohes Error-Objekt.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 10 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 24 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `get-therapy-sessions:admin:${user.id}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem `has_role`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor `await req.json()` und vor der `therapy_sessions`-Query.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Die Catch-Behandlung verwendet `unknown` statt `any`.
+- Die Konsole loggt nur noch einen stabilen, nicht-identifizierenden Fehler-Marker.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `get-therapy-sessions`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten Therapiesitzungsdaten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/get-therapy-sessions/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 58 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.75s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 318 problems, 286 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL: void 0=false`
+- `VITE_SUPABASE_ANON_KEY: void 0=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.
