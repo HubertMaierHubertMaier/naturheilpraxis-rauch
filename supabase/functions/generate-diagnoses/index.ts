@@ -43,6 +43,68 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+type DiagnosisRequestBody = Partial<Record<
+  | "belastungen"
+  | "symptome"
+  | "erkrankung"
+  | "laborErhoeht"
+  | "laborErniedrigt"
+  | "laborKomplett"
+  | "stuhlbefund"
+  | "medikamente"
+  | "alter"
+  | "schwanger",
+  string
+>>;
+
+type DiagnosisCandidate = Record<string, unknown>;
+
+type AiMessageResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isDiagnosisCandidateArray(value: unknown): value is DiagnosisCandidate[] {
+  return Array.isArray(value) && value.every(isRecord);
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -84,7 +146,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
+    const rateLimitKey = `generate-diagnoses:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[generate-diagnoses] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = (await req.json()) as DiagnosisRequestBody;
     const {
       belastungen = "",
       symptome = "",
@@ -165,42 +236,47 @@ Antworte STRIKT als JSON-Array, kein Markdown, kein Text drumherum:
       });
     }
     if (!aiResp.ok) {
-      const errText = await aiResp.text();
-      return new Response(JSON.stringify({ error: `KI-Fehler: ${errText}` }), {
+      await aiResp.body?.cancel();
+      return new Response(JSON.stringify({ error: "KI-Fehler" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const aiJson = await aiResp.json();
+    const aiJson = (await aiResp.json()) as AiMessageResponse;
     const content: string = aiJson.choices?.[0]?.message?.content ?? "[]";
 
     // Robust parsen – akzeptiert Array oder { diagnosen: [...] }
-    let diagnosen: any[] = [];
+    let diagnosen: DiagnosisCandidate[] = [];
     try {
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) diagnosen = parsed;
-      else if (Array.isArray(parsed.diagnosen)) diagnosen = parsed.diagnosen;
-      else if (Array.isArray(parsed.diagnoses)) diagnosen = parsed.diagnoses;
-      else {
+      const parsed: unknown = JSON.parse(content);
+      if (isDiagnosisCandidateArray(parsed)) diagnosen = parsed;
+      else if (isRecord(parsed) && isDiagnosisCandidateArray(parsed.diagnosen)) diagnosen = parsed.diagnosen;
+      else if (isRecord(parsed) && isDiagnosisCandidateArray(parsed.diagnoses)) diagnosen = parsed.diagnoses;
+      else if (isRecord(parsed)) {
         // Fallback: erste Array-Property finden
         for (const v of Object.values(parsed)) {
-          if (Array.isArray(v)) { diagnosen = v; break; }
+          if (isDiagnosisCandidateArray(v)) { diagnosen = v; break; }
         }
       }
     } catch {
       // Fallback: Markdown-Block extrahieren
       const m = content.match(/\[[\s\S]*\]/);
       if (m) {
-        try { diagnosen = JSON.parse(m[0]); } catch { diagnosen = []; }
+        try {
+          const parsedFallback: unknown = JSON.parse(m[0]);
+          diagnosen = isDiagnosisCandidateArray(parsedFallback) ? parsedFallback : [];
+        } catch {
+          diagnosen = [];
+        }
       }
     }
 
     return new Response(JSON.stringify({ diagnosen }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message || "Interner Fehler" }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "Interner Fehler" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

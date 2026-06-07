@@ -41,6 +41,36 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
 // In-Memory-Cache für die Wiki-Rohdaten (überlebt warm starts).
 // Invalidierung automatisch, sobald sich Anzahl oder max(updated_at) ändert.
 interface WikiEntry {
@@ -113,7 +143,7 @@ async function scoreEntriesViaAI(
       }
       const json = await resp.json();
       const text: string = json?.choices?.[0]?.message?.content || "";
-      const match = text.match(/\[[\d\s,.\-]+\]/);
+      const match = text.match(/\[[\d\s,.-]+\]/);
       if (!match) {
         console.warn(`Batch ${batchIdx}: kein JSON-Array gefunden – Text:`, text.slice(0, 200));
         return;
@@ -138,7 +168,23 @@ async function scoreEntriesViaAI(
   return scoreMap;
 }
 
-async function loadWikiEntries(client: any): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
+type SupabaseQueryError = { message: string };
+type SupabaseQueryResult<T> = {
+  data: T | null;
+  error: SupabaseQueryError | null;
+  count?: number | null;
+};
+type SupabaseQueryBuilder<T> = PromiseLike<SupabaseQueryResult<T>> & {
+  order: (column: string, options?: Record<string, unknown>) => SupabaseQueryBuilder<T>;
+  limit: (count: number) => SupabaseQueryBuilder<T>;
+};
+type SupabaseQueryClient = {
+  from: (table: string) => {
+    select: (...args: unknown[]) => SupabaseQueryBuilder<unknown[]>;
+  };
+};
+
+async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
   const { data: sigRows, error: sigError } = await client
     .from("admin_knowledge_base")
     .select("updated_at")
@@ -622,6 +668,15 @@ serve(async (req) => {
       });
     }
 
+    const rateLimitKey = `therapy-recommend:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[therapy-recommend] Admin AI recommendation rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Zu viele Anfragen. Bitte warten Sie einen Moment." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Parse request
     const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
@@ -656,7 +711,11 @@ serve(async (req) => {
     // Pinned remedies: titles to ALWAYS include in context
     const pinnedTitles: string[] = Array.isArray(pinnedMittel)
       ? pinnedMittel
-          .map((p: any) => (typeof p?.title === "string" ? p.title.trim() : ""))
+          .map((p: unknown) => {
+            if (typeof p !== "object" || p === null || !("title" in p)) return "";
+            const title = (p as { title?: unknown }).title;
+            return typeof title === "string" ? title.trim() : "";
+          })
           .filter((t: string) => t.length > 0)
       : [];
 

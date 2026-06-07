@@ -40,11 +40,71 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const current = rateLimitMap.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractAuthenticatedSubject(req: Request): string | null {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+
+  const [, payloadSegment] = authHeader.replace("Bearer ", "").split(".");
+  if (!payloadSegment) return null;
+
+  try {
+    const normalized = payloadSegment.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as unknown;
+    if (!isRecord(payload) || typeof payload.sub !== "string") return null;
+    return payload.sub;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const authenticatedSubject = extractAuthenticatedSubject(req);
+  if (!authenticatedSubject) {
+    return new Response(JSON.stringify({ error: "Nicht autorisiert" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const rateLimitKey = `elevenlabs-tts:auth-user:${authenticatedSubject}`;
+  if (!checkRateLimit(rateLimitKey)) {
+    console.warn("[elevenlabs-tts] authenticated provider rate limit exceeded");
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -87,9 +147,8 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      await response.text();
       console.error(`ElevenLabs API error [${response.status}]`);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      throw new Error("ElevenLabs provider request failed");
     }
 
     const audioBuffer = await response.arrayBuffer();
