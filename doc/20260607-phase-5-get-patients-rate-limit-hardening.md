@@ -1144,3 +1144,169 @@ Nach `npm run build` geprüft:
 - Kein PR.
 - Kein Merge.
 - Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – list-therapy-pseudonyms Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 10:27 CEST
+
+## Ziel
+
+Die admin-only Edge Function `list-therapy-pseudonyms` liest Therapie-Session-Daten, gruppiert diese nach Pseudonymen und liefert zusammenfassende sessionbezogene Informationen zurück. Sie war bereits durch Supabase `verify_jwt`, `auth.getUser`, `has_role`-Adminprüfung und request-aware CORS geschützt. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor der sensiblen `therapy_sessions`-Abfrage.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/list-therapy-pseudonyms/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 20 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps list-therapy-pseudonyms admin session-summary access behind local per-admin rate limiting before session queries`
+  - `does not log or return raw Error objects in list-therapy-pseudonyms session-summary handling`
+
+Erwarteter Grund:
+
+- `list-therapy-pseudonyms` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `list-therapy-pseudonyms` enthielt explizite `any`-Typen, loggte raw Error-Objekte und gab raw Error-Messages an Clients zurück.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 20 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 34 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `list-therapy-pseudonyms:admin:${user.id}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem `has_role`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor der `.from("therapy_sessions")`-Abfrage.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Die allgemeine Catch-Behandlung loggt nur noch eine stabile nicht-identifizierende Fehlermarkierung.
+- Client-Fehlerantworten enthalten keine raw Error-Message mehr.
+- Explizite `any`-Typen im berührten Function-Code wurden durch lokale Typen ersetzt.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `list-therapy-pseudonyms`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine echten Therapie-Session-Daten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine AI-/Provider-Live-Calls ausgeführt.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/list-therapy-pseudonyms/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 68 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.89s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 304 problems, 272 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.

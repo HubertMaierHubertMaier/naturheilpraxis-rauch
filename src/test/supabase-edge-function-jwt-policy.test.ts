@@ -158,6 +158,31 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*error\b/);
   });
 
+  it("keeps list-therapy-pseudonyms admin session-summary access behind local per-admin rate limiting before session queries", () => {
+    const source = readFunctionSource("list-therapy-pseudonyms");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const sessionQueryIndex = source.indexOf('.from("therapy_sessions")');
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `list-therapy-pseudonyms:admin:\$\{user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(sessionQueryIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(sessionQueryIndex);
+  });
+
+  it("does not log or return raw Error objects in list-therapy-pseudonyms session-summary handling", () => {
+    const source = readFunctionSource("list-therapy-pseudonyms");
+
+    expect(source).not.toMatch(/:\s*any\b/);
+    expect(source).not.toMatch(/catch \((?:e|err|error): any\)/);
+    expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*(?:e|err|error)\b/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\.message/);
+    expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
+  });
+
   it("keeps generate-icd10 admin AI calls behind local per-admin rate limiting before body parsing and provider calls", () => {
     const source = readFunctionSource("generate-icd10");
     const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");

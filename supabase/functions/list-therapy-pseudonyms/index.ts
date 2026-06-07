@@ -40,7 +40,66 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
-Deno.serve(async (req) => {
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 30;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+type TherapySessionRow = {
+  pseudonym_id: string | null;
+  eingabe_daten: {
+    symptome?: string | null;
+    erkrankung?: string | null;
+    belastungen?: string | null;
+  } | null;
+  notiz: string | null;
+  created_at: string;
+};
+
+type PseudonymGroup = {
+  pseudonym_id: string;
+  sessions_count: number;
+  last_session_at: string;
+  first_session_at: string;
+  latest_summary: string;
+  latest_notiz: string | null;
+};
+
+function buildSummary(row: TherapySessionRow): string {
+  return (
+    row.eingabe_daten?.symptome?.slice(0, 100) ||
+    row.eingabe_daten?.erkrankung?.slice(0, 100) ||
+    row.eingabe_daten?.belastungen?.slice(0, 100) ||
+    "—"
+  );
+}
+
+Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -79,33 +138,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    const rateLimitKey = `list-therapy-pseudonyms:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[list-therapy-pseudonyms] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data, error } = await adminClient
       .from("therapy_sessions")
       .select("id, pseudonym_id, eingabe_daten, notiz, created_at, updated_at")
       .order("created_at", { ascending: false });
-    if (error) throw error;
+    if (error) throw new Error("Datenbankfehler");
 
     // Gruppieren nach pseudonym_id
-    const groups = new Map<string, {
-      pseudonym_id: string;
-      sessions_count: number;
-      last_session_at: string;
-      first_session_at: string;
-      latest_summary: string;
-      latest_notiz: string | null;
-    }>();
+    const groups = new Map<string, PseudonymGroup>();
 
-    for (const row of (data ?? []) as any[]) {
-      const pid = row.pseudonym_id;
-      const existing = groups.get(pid);
-      const summary =
-        row.eingabe_daten?.symptome?.slice(0, 100) ||
-        row.eingabe_daten?.erkrankung?.slice(0, 100) ||
-        row.eingabe_daten?.belastungen?.slice(0, 100) ||
-        "—";
+    for (const row of (data ?? []) as TherapySessionRow[]) {
+      if (!row.pseudonym_id) continue;
+
+      const existing = groups.get(row.pseudonym_id);
+      const summary = buildSummary(row);
       if (!existing) {
-        groups.set(pid, {
-          pseudonym_id: pid,
+        groups.set(row.pseudonym_id, {
+          pseudonym_id: row.pseudonym_id,
           sessions_count: 1,
           last_session_at: row.created_at,
           first_session_at: row.created_at,
@@ -120,16 +178,16 @@ Deno.serve(async (req) => {
     }
 
     const list = Array.from(groups.values()).sort((a, b) =>
-      a.last_session_at < b.last_session_at ? 1 : -1
+      a.last_session_at < b.last_session_at ? 1 : -1,
     );
 
     return new Response(JSON.stringify({ pseudonyms: list }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    console.error("[list-therapy-pseudonyms] Error:", error);
-    return new Response(JSON.stringify({ error: error?.message ?? "Fehler" }), {
+  } catch {
+    console.error("[list-therapy-pseudonyms] request failed");
+    return new Response(JSON.stringify({ error: "Fehler" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
