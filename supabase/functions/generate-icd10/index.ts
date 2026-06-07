@@ -40,6 +40,36 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+function checkRateLimit(key: string, now = Date.now()): boolean {
+  for (const [entryKey, entry] of rateLimitMap.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitMap.delete(entryKey);
+    }
+  }
+
+  const current = rateLimitMap.get(key);
+  if (!current) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (current.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
 /**
  * ICD-10 Generation Edge Function
  * 
@@ -73,6 +103,33 @@ interface ICD10Result {
   source: "fixed" | "ai";
   confidence?: number;
   sourceField?: string;
+}
+
+type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+type FormDataRecord = Record<string, JsonValue>;
+
+function isJsonRecord(value: JsonValue | unknown): value is FormDataRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+type AiIcd10Item = {
+  code?: string;
+  descDe?: string;
+  descEn?: string;
+  category?: string;
+  confidence?: number;
+  summary?: string;
+};
+
+function isAiIcd10Item(value: unknown): value is AiIcd10Item {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 const icd10FixedMapping: Record<string, ICD10Entry[]> = {
@@ -119,17 +176,17 @@ const icd10FixedMapping: Record<string, ICD10Entry[]> = {
   "maennergesundheit.prostata.bph": [{ code: "N40", descDe: "Prostatahyperplasie", descEn: "BPH", category: "Urologie" }],
 };
 
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: FormDataRecord, path: string): JsonValue | undefined {
   const keys = path.split(".");
-  let current = obj;
+  let current: JsonValue | undefined = obj;
   for (const key of keys) {
-    if (current == null || typeof current !== "object") return undefined;
+    if (!isJsonRecord(current)) return undefined;
     current = current[key];
   }
   return current;
 }
 
-function extractFixedICD10(formData: Record<string, any>): ICD10Result[] {
+function extractFixedICD10(formData: FormDataRecord): ICD10Result[] {
   const results: ICD10Result[] = [];
   const seen = new Set<string>();
   for (const [path, entries] of Object.entries(icd10FixedMapping)) {
@@ -147,7 +204,7 @@ function extractFixedICD10(formData: Record<string, any>): ICD10Result[] {
   return results;
 }
 
-function collectFreeText(formData: Record<string, any>): string[] {
+function collectFreeText(formData: FormDataRecord): string[] {
   const fields = [
     "weitereErkrankungen", "zusaetzlicheInfos",
     "herzKreislauf.sonstige", "lungeAtmung.sonstige", "magenDarm.sonstige",
@@ -193,6 +250,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden – Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const rateLimitKey = `generate-icd10:admin:${user.id}`;
+    if (!checkRateLimit(rateLimitKey)) {
+      console.warn("[generate-icd10] admin rate limit exceeded");
+      return new Response(JSON.stringify({ error: "Too many requests" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { submissionId } = await req.json();
     if (!submissionId) {
       return new Response(JSON.stringify({ error: "submissionId required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -211,14 +277,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Submission not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const formData = submission.form_data as Record<string, any>;
+    const formData = submission.form_data as FormDataRecord;
 
     // Step 1: Fixed mapping
     const fixedResults = extractFixedICD10(formData);
 
     // Step 2: AI analysis for free-text symptoms
     const freeTexts = collectFreeText(formData);
-    let aiResults: ICD10Result[] = [];
+    const aiResults: ICD10Result[] = [];
     let aiSummary = "";
 
     if (freeTexts.length > 0) {
@@ -268,15 +334,18 @@ REGELN:
             if (codeBlockMatch) jsonStr = codeBlockMatch[1];
             
             try {
-              const parsed = JSON.parse(jsonStr.trim());
+              const parsed: unknown = JSON.parse(jsonStr.trim());
               const items = Array.isArray(parsed) ? parsed : [];
               
               for (const item of items) {
+                if (!isAiIcd10Item(item)) {
+                  continue;
+                }
                 if (item.summary) {
                   aiSummary = item.summary;
                   continue;
                 }
-                if (item.code && item.confidence >= 0.6) {
+                if (item.code && item.confidence !== undefined && item.confidence >= 0.6) {
                   aiResults.push({
                     code: item.code,
                     descDe: item.descDe || item.code,
@@ -292,8 +361,8 @@ REGELN:
               console.warn("Could not parse AI ICD-10 response");
             }
           }
-        } catch (aiErr) {
-          console.error("AI ICD-10 analysis error:", aiErr);
+        } catch {
+          console.error("[generate-icd10] AI analysis failed");
           // Graceful fallback – fixed results still returned
         }
       }
@@ -322,8 +391,8 @@ REGELN:
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("ICD-10 generation error:", err);
+  } catch {
+    console.error("[generate-icd10] generation failed");
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

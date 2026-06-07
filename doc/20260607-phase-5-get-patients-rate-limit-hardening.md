@@ -312,8 +312,8 @@ Nach `npm run build` geprüft:
 
 - `createClient(void 0=false`
 - `createClient(void 0,void 0=false`
-- `VITE_SUPABASE_URL: void 0=false`
-- `VITE_SUPABASE_ANON_KEY: void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
 
 ## Remote-/Live-Gate
 
@@ -475,8 +475,172 @@ Nach `npm run build` geprüft:
 
 - `createClient(void 0=false`
 - `createClient(void 0,void 0=false`
-- `VITE_SUPABASE_URL: void 0=false`
-- `VITE_SUPABASE_ANON_KEY: void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
+
+## Remote-/Live-Gate
+
+- Kein Push.
+- Kein PR.
+- Kein Merge.
+- Keine Lovable-Live-Änderung.
+
+
+---
+
+# Phase 5 – generate-icd10 Rate-Limit-Härtung
+
+## Zeitpunkt
+
+2026-06-07 08:22 CEST
+
+## Ziel
+
+Die admin-only Edge Function `generate-icd10` verarbeitet sensible Anamnesedaten und kann zusätzlich kosten-/providerrelevante KI-ICD-10-Analyse auslösen. Sie war bereits durch Supabase `verify_jwt`, `auth.getUser`, `has_role` und request-aware CORS geschützt. Dieser Microstep ergänzt eine lokale per-admin Rate-Limit-Schranke nach erfolgreichem Admin-Nachweis und vor Request-Body-Parsing sowie vor AI-Provider-Aufrufen.
+
+## Geänderte Dateien in diesem Microstep
+
+- `supabase/functions/generate-icd10/index.ts`
+- `src/test/supabase-edge-function-jwt-policy.test.ts`
+- `src/lib/securityAccessMatrix.ts`
+- `doc/20260607-phase-5-get-patients-rate-limit-hardening.md`
+
+## RED/GREEN-Evidence
+
+### RED
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis vor Produktcode-Änderung:
+
+- Exit 1
+- 12 Tests ausgeführt
+- 2 Tests fehlgeschlagen:
+  - `keeps generate-icd10 admin AI calls behind local per-admin rate limiting before body parsing and provider calls`
+  - `does not log raw Error objects in generate-icd10 AI/admin handling`
+
+Erwarteter Grund:
+
+- `generate-icd10` hatte noch kein lokales `rateLimitMap`/`RATE_LIMIT_WINDOW_MS`/`checkRateLimit`/HTTP-429-Pattern.
+- `generate-icd10` loggte in AI-/Admin-Catch-Pfaden noch rohe Error-Objekte.
+
+### GREEN
+
+Befehl:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts
+```
+
+Ergebnis nach minimaler Änderung:
+
+- Exit 0
+- 1 Test File passed
+- 12 Tests passed
+
+Fokussierte Regression:
+
+```sh
+npx vitest run src/test/supabase-edge-function-jwt-policy.test.ts src/test/phase4-security-access-matrix.test.ts src/test/repository-secret-policy.test.ts
+```
+
+Ergebnis:
+
+- Exit 0
+- 3 Test Files passed
+- 26 Tests passed
+
+## Implementierungsnotizen
+
+- Das Rate Limit ist lokal/in-memory und pro Admin-User-ID keyed:
+  `generate-icd10:admin:${user.id}`
+- Der Rate-Limit-Check erfolgt nach erfolgreichem `has_role`-Admin-Nachweis.
+- Der Rate-Limit-Check erfolgt vor `await req.json()` und vor dem Lovable-AI-Gateway-Aufruf.
+- Bei Überschreitung wird HTTP 429 mit generischer Fehlermeldung zurückgegeben.
+- Rohes Error-Objekt-Logging wurde in den AI-/Admin-Catch-Pfaden durch stabile, nicht-identifizierende Fehler-Marker ersetzt.
+- Beim berührten Helper-Code wurden explizite `any`-Typen durch lokale JSON-/AI-Item-Typen ersetzt, sodass fokussiertes ESLint für diese Dateien grün ist.
+- Die Security-Matrix dokumentiert den neuen Rate-Limit-Status für `generate-icd10`.
+
+## DSGVO-/Patientendaten-Sicherheit
+
+- Keine echten Patientendaten verwendet.
+- Keine echten Anamnesedaten verwendet.
+- Keine Live-Supabase-Function aufgerufen.
+- Keine AI-/Provider-Live-Calls ausgeführt.
+- Keine echten E-Mail-Verifikationen ausgelöst.
+- Keine Secrets ausgegeben oder persistiert.
+- Tests lesen lokale Source-Dateien statisch.
+
+## Gates nach diesem Microstep
+
+```sh
+npx eslint src/test/supabase-edge-function-jwt-policy.test.ts src/lib/securityAccessMatrix.ts supabase/functions/generate-icd10/index.ts
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm test
+```
+
+Ergebnis:
+
+- Exit 0
+- 16 Test Files passed
+- 60 Tests passed
+
+```sh
+npx tsc --noEmit
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run build
+```
+
+Ergebnis:
+
+- Exit 0
+- 3309 modules transformed
+- built in 4.84s
+- bekannter Chunk-size-Hinweis, kein Build-Fehler
+
+```sh
+git diff --check
+```
+
+Ergebnis:
+
+- Exit 0
+
+```sh
+npm run lint
+```
+
+Ergebnis:
+
+- Exit 1
+- Bekannte bestehende Lint-Baseline bleibt rot
+- Aktueller Baseline-Stand nach diesem Microstep: 312 problems, 280 errors, 32 warnings
+- Keine Treffer für die geänderten Dateien im Full-Lint-Output
+
+## Build-Bundle-Regression gegen alten Supabase-void-0-Fehler
+
+Nach `npm run build` geprüft:
+
+- `createClient(void 0=false`
+- `createClient(void 0,void 0=false`
+- `VITE_SUPABASE_URL void-0 probe=false`
+- `VITE_SUPABASE_ANON_KEY void-0 probe=false`
 
 ## Remote-/Live-Gate
 
