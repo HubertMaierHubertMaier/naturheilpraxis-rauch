@@ -114,4 +114,22 @@ describe("Supabase Edge Function JWT policy", () => {
 
     expect(source).not.toMatch(/console\.(?:error|warn|log|info)\s*\([^;\n]*,\s*error\b/);
   });
+
+  it("keeps therapy-recommend admin AI calls behind local per-admin rate limiting before body parsing", () => {
+    const source = readFunctionSource("therapy-recommend");
+    const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
+    const bodyParsingIndex = source.indexOf("await req.json()");
+    const aiFetchIndex = source.lastIndexOf("https://ai.gateway.lovable.dev/v1/chat/completions");
+
+    expect(source).toMatch(/rateLimitMap/);
+    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
+    expect(source).toMatch(/checkRateLimit/);
+    expect(source).toMatch(/const rateLimitKey = `therapy-recommend:admin:\$\{user\.id\}`/);
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(aiFetchIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
+    expect(rateLimitIndex).toBeLessThan(aiFetchIndex);
+  });
 });
