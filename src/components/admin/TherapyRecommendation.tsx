@@ -90,6 +90,7 @@ export function TherapyRecommendation() {
   const [arztbericht, setArztbericht] = useState("");
   const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
+  const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
@@ -151,13 +152,14 @@ export function TherapyRecommendation() {
     arztbericht,
     arztberichtDatum,
     metatronHeel,
+    sonstigeUntersuchungen,
     selectedCategories,
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
@@ -228,6 +230,7 @@ export function TherapyRecommendation() {
       if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
       if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
+      if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
@@ -240,13 +243,13 @@ export function TherapyRecommendation() {
       const draftPayload = {
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any) => {
     const data = normalizeTherapyInput(d);
@@ -270,6 +273,7 @@ export function TherapyRecommendation() {
     if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
+    if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
@@ -314,7 +318,7 @@ export function TherapyRecommendation() {
       const stringKeys = [
         "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
         "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel",
+        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen",
       ];
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
@@ -360,9 +364,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel];
+    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen];
+
     return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
-  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
+  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -708,6 +713,7 @@ export function TherapyRecommendation() {
     setArztbericht(asText(d.arztbericht));
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
+    setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
@@ -794,6 +800,7 @@ export function TherapyRecommendation() {
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
+            sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
@@ -1294,6 +1301,22 @@ export function TherapyRecommendation() {
                 Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
               </p>
             </div>
+            <div className="rounded-md border border-indigo-300/60 bg-indigo-50/40 dark:bg-indigo-950/10 p-3">
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                <ClipboardList className="h-3.5 w-3.5 text-indigo-600" />
+                Sonstige / unsortierte Voruntersuchungen
+              </label>
+              <Textarea
+                value={sonstigeUntersuchungen}
+                onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
+                placeholder="Gemischte Befunde, die NICHT sauber in Labor/Arztbrief/Stuhl trennbar sind: z.B. Bildgebung (MRT, CT, Sono), EKG, Lungenfunktion, Allergietests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, ärztliche Vorbefunde älterer Praxen, Kurberichte, Reha-Berichte, Selbstmessungen (Blutdruck, Puls, HRV, CGM), Funktionstests..."
+                rows={5}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Hierhin gehört alles, was an <strong>gemischten/unstrukturierten Voruntersuchungen</strong> vorliegt und nicht klar in Labor oder Arztbrief gehört. Die KI bekommt diesen Block als eigenen Kontext und ordnet ihn in der Empfehlung passend ein (z.B. Bildgebungs-Befund → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend).
+              </p>
+            </div>
+
             <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                 <Pill className="h-3.5 w-3.5 text-emerald-600" />
@@ -1474,6 +1497,7 @@ export function TherapyRecommendation() {
         arztbericht={arztbericht}
         arztberichtDatum={arztberichtDatum}
         metatronHeel={metatronHeel}
+        sonstigeUntersuchungen={sonstigeUntersuchungen}
       />
 
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
