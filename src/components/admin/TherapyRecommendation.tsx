@@ -1372,13 +1372,7 @@ export function TherapyRecommendation() {
                     <ClipboardList className="h-4 w-4 text-indigo-600" />
                     Sonstige / unsortierte Voruntersuchungen
                     <span className="ml-auto flex items-center gap-2 text-[11px] font-mono">
-                      <span className={
-                        sonstigeUntersuchungen.length > 400_000 ? "text-rose-700 font-bold"
-                        : sonstigeUntersuchungen.length > 150_000 ? "text-amber-700 font-semibold"
-                        : "text-muted-foreground"
-                      }>
-                        {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Z. · ≈{Math.round(sonstigeUntersuchungen.length / 2500)} Seiten
-                      </span>
+                      <WorkloadBadge chars={sonstigeUntersuchungen.length} hint="Mehrere Arzt-Befunde (DE/EN/FR) sichten, einordnen, chronologisch bewerten" />
                       {sonstigeUntersuchungen.length > 80_000 && !useProModel && (
                         <button
                           type="button"
