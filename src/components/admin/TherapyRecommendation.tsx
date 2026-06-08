@@ -1754,10 +1754,16 @@ export function TherapyRecommendation() {
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
+    setExtractedFromDocs(null);
+    setDiagnosen([]);
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
     setWorkflowStage("edit");
+    autoSaveSessionIdRef.current = null;
+    checkpointSessionIdRef.current = null;
+    loadedInputDraftForPidRef.current = "";
+    patientDataOwnerRef.current = "";
     try {
       sessionStorage.removeItem(DRAFT_KEY);
       sessionStorage.removeItem("therapy.draftInputs.v1");
