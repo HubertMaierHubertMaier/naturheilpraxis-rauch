@@ -678,9 +678,15 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
+    const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
+    // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
+    const totalPatientChars = (sonstigeUntersuchungenText.length + perplexityAnalyseText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    if (totalPatientChars > 80_000) {
+      console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
+    }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
