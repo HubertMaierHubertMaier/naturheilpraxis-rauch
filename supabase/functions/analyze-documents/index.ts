@@ -208,36 +208,47 @@ Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCo
 
 VERBINDLICHE OUTPUT-STRUKTUR:
 - Ausschließlich vollständiges HTML: <!DOCTYPE html> ... </html>
-- Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border, h2 mit linker Bordleiste.
+- Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border, h2 mit linker Bordleiste. Belege/Zitate in kleinerer Schrift (font-size:0.85em, color:#5a6b5a, kursiv) darstellen.
 - Keine Therapie-Empfehlung, keine Mittel-Vorschläge. Es geht um Befundübersicht, Einordnung und Vorbereitung des Erstgesprächs.
 - VOLLSTÄNDIGKEIT IST PFLICHT. Jede Sektion + Unterpunkt muss erscheinen, auch wenn leer (dann explizit "In den vorliegenden Unterlagen nicht dokumentiert.").
 - Keine Halluzination bei Anamnese-Inhalten. Pharmakologie (Wirkmechanismus/Nebenwirkungen/Indikation) darf aus medizinischem Standardwissen ergänzt und in Sektion 6 als "(Standard-Pharmakologie)" markiert werden.
 - HWG-konform: "kann unterstützen". Praktiker-Gleichrangigkeit: "Heilpraktiker oder Arzt".
 
+🔎 BELEG-PFLICHT IM HTML:
+- Jeder Eintrag in Sektion 3, 4, 5, 6, 7, 11 bekommt eine zusätzliche Spalte/Zeile "Beleg" mit Quelle + Teilpaket + wörtlichem Kurzzitat (aus den Teilanalysen übernehmen, NICHT umformulieren). Format z. B.: <span class="beleg">📄 Arztbericht 12.03.2025, Teil 4/12: „…wörtliches Zitat…"</span>.
+- Wenn ein Eintrag in mehreren Teilpaketen vorkommt: mehrere Belege auflisten.
+
+🚫 ANTI-HALLUZINATIONS-SELBSTCHECK (vor dem Output zwingend durchführen):
+- Jeder Satz in Sektion 9 (Gesamtbild/Arbeitshypothese) und Sektion 10 (Differentialdiagnosen, Vorgehen) muss entweder:
+  (a) durch mindestens einen Beleg aus den Teilanalysen abgedeckt sein → Beleg direkt anhängen, ODER
+  (b) explizit als "🟡 Hypothese – nicht im Befund dokumentiert" markiert werden.
+- NIEMALS Untersuchungen, Symptome, Ausfälle, Werte erfinden, die nicht in den Teilanalysen vorkommen. Beispielsweise dürfen "neurologische Teilausfälle" nur erwähnt werden, wenn ein Teilpaket sie als Beleg liefert — sonst weglassen oder als offene Frage in Sektion 10 stellen.
+- Vor Ausgabe selbst prüfen: Für jede Aussage in Sektion 9/10 → gibt es einen Beleg? Wenn nein → entfernen oder als Hypothese kennzeichnen.
+
 Pflicht-Sektionen in Reihenfolge:
 1. <h1>Befund-Auswertung</h1> + Datum + Pseudonym
 2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
-3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig?; neueste zuerst, fehlendes Datum: "ohne Datum".
-4. Strukturierte Anamnese-Übersicht — pro Unterkategorie <h3> + Bullet-Liste oder kompakte Tabelle. ALLE folgenden Unterpunkte sind PFLICHT in dieser Reihenfolge (anamnese-Felder aus allen Teilanalysen konsolidieren):
+3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig? | Beleg (Quelle+Teil+Zitat); neueste zuerst.
+4. Strukturierte Anamnese-Übersicht — pro Unterkategorie <h3> + Tabelle mit Spalten: Eintrag | Beleg. ALLE folgenden Unterpunkte sind PFLICHT in dieser Reihenfolge:
    4.1 Aktuelle Beschwerden (Current medical problems)
    4.2 Vorerkrankungen / OPs / Z.n. (Past medical history)
    4.3 Allergien & Unverträglichkeiten (Allergies)
    4.4 Aktuelle Medikation — Kurzliste (Details in Sektion 6)
    4.5 Genussmittel & Lebensgewohnheiten (Habits)
-   4.6 Systemanamnese (Review of systems) — Tabelle System | Befund
+   4.6 Systemanamnese (Review of systems) — Tabelle System | Befund | Beleg
    4.7 Letzte Untersuchungen / Kontrollen (Recent examinations)
    4.8 Impfstatus (Vaccination status)
    4.9 Familienanamnese (Family history)
    4.10 Sozialanamnese (Social status)
    4.11 Körperliche Untersuchung (Physical examination)
    4.12 Weiterführende Untersuchungen (Additional investigations)
-5. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
-6. Medikamente, Präparate & Therapien — DETAIL-Tabelle ALLER in den Teilanalysen erwähnten Mittel (medicationsTherapies aus allen Teilanalysen zusammenführen, Duplikate konsolidieren, NICHTS weglassen). Spalten: Mittel/Wirkstoff (mit Dosis) | von wem (Arzt/Klinik) | Datum | Indikation laut Verordner | Wirkmechanismus (laienverständlich) | Häufige Nebenwirkungen | Grund der Verordnung | Status. Wirkmechanismus/Nebenwirkungen ggf. mit Standard-Pharmakologie ergänzen und als "(Standard-Pharmakologie)" markieren. Homöopathika/Bioresonanz-Mittel: "naturheilkundliches Mittel, keine schulmedizinisch belegte Pharmakologie". Wenn keinerlei Mittel dokumentiert: explizit "Keine Medikamente/Therapien in den Unterlagen dokumentiert." — sonst niemals leer.
-7. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
+5. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status | Beleg.
+6. Medikamente, Präparate & Therapien — DETAIL-Tabelle ALLER Mittel. Spalten: Mittel/Wirkstoff (Dosis) | von wem | Datum | Indikation | Wirkmechanismus | Nebenwirkungen | Grund | Status | Beleg. Standard-Pharmakologie markieren. Wenn keinerlei Mittel: "Keine Medikamente/Therapien in den Unterlagen dokumentiert."
+7. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste mit Beleg pro Punkt.
 8. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung.
-9. Gesamtbild & Arbeitshypothese — 1–3 Absätze, keine Therapie.
-10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen, Priorität.
-11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken.
+9. Gesamtbild & Arbeitshypothese — 1–3 Absätze. JEDER Satz mit Beleg(en) am Ende ODER mit "🟡 Hypothese" markiert. Keine Therapie.
+10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
+11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
