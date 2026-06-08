@@ -147,6 +147,10 @@ export function TherapyRecommendation() {
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
+  const [extractedFromDocs, setExtractedFromDocs] = useState<{
+    diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
+    symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
+  } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
