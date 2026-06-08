@@ -24,6 +24,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
+import { MultiDocUpload } from "./therapy/MultiDocUpload";
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
 type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
@@ -1392,6 +1393,16 @@ export function TherapyRecommendation() {
                       )}
                     </span>
                   </label>
+                  <div className="mb-2">
+                    <MultiDocUpload
+                      ocrMode="doctor"
+                      label="📂 PDFs / Bilder hochladen (auto-extrahieren)"
+                      onExtracted={(t) => {
+                        const next = sonstigeUntersuchungen ? `${sonstigeUntersuchungen.trim()}\n\n${t}` : t;
+                        setSonstigeUntersuchungen(next);
+                      }}
+                    />
+                  </div>
                   <Textarea
                     value={sonstigeUntersuchungen}
                     onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
