@@ -625,13 +625,15 @@ export function TherapyRecommendation() {
         };
 
         if (autoSaveSessionIdRef.current) {
-          const { error } = await (supabase as any)
+          const { data: updatedDraft, error } = await (supabase as any)
             .from("therapy_sessions")
             .update(updateBody)
             .eq("id", autoSaveSessionIdRef.current)
-            .eq("pseudonym_id", pid);
+            .eq("pseudonym_id", pid)
+            .select("id")
+            .maybeSingle();
           if (runId !== autoSaveRunIdRef.current) return;
-          if (!error) {
+          if (!error && updatedDraft?.id) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
             return;
@@ -1162,8 +1164,14 @@ export function TherapyRecommendation() {
           };
           const existingId = checkpointSessionIdRef.current;
           if (existingId) {
-            const { error } = await (supabase as any).from("therapy_sessions").update(row).eq("id", existingId).eq("pseudonym_id", pid);
-            if (!error) return;
+            const { data: updatedCheckpoint, error } = await (supabase as any)
+              .from("therapy_sessions")
+              .update(row)
+              .eq("id", existingId)
+              .eq("pseudonym_id", pid)
+              .select("id")
+              .maybeSingle();
+            if (!error && updatedCheckpoint?.id) return;
           }
           const { data, error } = await (supabase as any).from("therapy_sessions").insert(row).select("id").single();
           if (!error && data?.id) checkpointSessionIdRef.current = data.id;
