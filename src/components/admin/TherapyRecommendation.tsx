@@ -277,6 +277,7 @@ export function TherapyRecommendation() {
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
+    if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
