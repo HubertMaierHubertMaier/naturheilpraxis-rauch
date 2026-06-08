@@ -956,9 +956,21 @@ export function TherapyRecommendation() {
               }),
             });
             const responseText = await chunkResp.text().catch(() => "");
-            if (!chunkResp.ok) throw new Error(responseText ? (JSON.parse(responseText).error || responseText) : `HTTP ${chunkResp.status}`);
+            if (!chunkResp.ok) {
+              let errorMessage = responseText || `HTTP ${chunkResp.status}`;
+              try {
+                const parsedError = JSON.parse(responseText);
+                errorMessage = parsedError.error || parsedError.message || errorMessage;
+              } catch { /* Antwort war kein JSON */ }
+              throw new Error(errorMessage);
+            }
             if (!responseText.trim()) throw new Error("Leere Antwort vom Analyse-Dienst");
-            const chunkJson = JSON.parse(responseText);
+            let chunkJson: { partial?: string };
+            try {
+              chunkJson = JSON.parse(responseText);
+            } catch {
+              throw new Error("Ungültige JSON-Antwort vom Analyse-Dienst");
+            }
             const partial = String(chunkJson.partial || "").trim();
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
             return partial;
