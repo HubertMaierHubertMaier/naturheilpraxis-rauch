@@ -266,6 +266,140 @@ function stripHtmlFence(text: string) {
   return text.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function isCompleteFinalHtml(html: string) {
+  const cleaned = stripHtmlFence(html);
+  const visible = cleaned
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return /<\/?html[\s>]/i.test(cleaned)
+    && /<\/?body[\s>]/i.test(cleaned)
+    && /<\/body>|<\/html>/i.test(cleaned)
+    && /Befund-Auswertung|Diagnosen|Medikamente|Anamnese/i.test(visible)
+    && visible.length > 600;
+}
+
+function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number) {
+  const aggregate: Record<string, unknown[]> = {
+    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+  };
+  const anamneseKeys = [
+    "currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems",
+    "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations",
+  ];
+  const anamnese: Record<string, unknown[]> = Object.fromEntries(anamneseKeys.map((key) => [key, []]));
+
+  for (const partial of partials) {
+    try {
+      const parsed = JSON.parse(extractJsonish(partial));
+      for (const key of Object.keys(aggregate)) {
+        if (Array.isArray(parsed?.[key])) aggregate[key].push(...parsed[key]);
+      }
+      for (const key of anamneseKeys) {
+        if (Array.isArray(parsed?.anamnese?.[key])) anamnese[key].push(...parsed.anamnese[key]);
+      }
+    } catch {
+      aggregate.missingReports.push("Eine Teilanalyse war nicht als JSON lesbar und wurde im Fallback nur als technische Quelle berücksichtigt.");
+    }
+  }
+
+  const beleg = (item: any) => {
+    const b = item?.beleg || {};
+    const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}“` : ""].filter(Boolean).join(" · ");
+    return parts ? `<span class="beleg">📄 ${escapeHtml(parts)}</span>` : `<span class="beleg">Kein Einzelbeleg in der Teilanalyse ausgewiesen.</span>`;
+  };
+  const val = (item: any, key = "text") => escapeHtml(typeof item === "string" ? item : item?.[key] || item?.diagnose || item?.name || "In den vorliegenden Unterlagen nicht dokumentiert.");
+  const rows = (items: unknown[], cells: (item: any) => string) => items.length
+    ? items.map((item) => `<tr>${cells(item)}</tr>`).join("\n")
+    : `<tr><td colspan="9" class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</td></tr>`;
+  const bullets = (items: unknown[]) => items.length
+    ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
+    : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
+  const anamnesisTable = (title: string, key: string, system = false) => `
+    <h3>${escapeHtml(title)}</h3>
+    <table><thead><tr>${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}<th>Beleg</th></tr></thead><tbody>
+      ${rows(anamnese[key], (item: any) => system
+        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td><td>${beleg(item)}</td>`
+        : `<td>${val(item)}</td><td>${beleg(item)}</td>`)}
+    </tbody></table>`;
+
+  const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
+  const today = new Date().toLocaleDateString("de-DE");
+
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Befund-Auswertung</title>
+  <style>
+    @page { size: A4; margin: 1.7cm; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #263128; line-height: 1.48; margin: 0; padding: 28px; background: #fff; }
+    h1 { color: #4f744f; border-bottom: 3px solid #6b8e6b; padding-bottom: 10px; margin: 0 0 12px; }
+    h2 { color: #4f744f; border-left: 5px solid #6b8e6b; padding-left: 10px; margin-top: 28px; page-break-after: avoid; }
+    h3 { color: #52614f; margin: 18px 0 8px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 0.92rem; }
+    th, td { border: 1px solid #d9e1d6; padding: 7px 8px; vertical-align: top; }
+    th { background: #eef4eb; text-align: left; color: #394a37; }
+    .meta, .notice { background: #f7faf4; border: 1px solid #d9e1d6; padding: 10px 12px; margin: 10px 0; }
+    .beleg { display: block; margin-top: 4px; font-size: 0.84em; color: #5a6b5a; font-style: italic; }
+    .empty { color: #6f786c; font-style: italic; }
+    .red { color: #a33; font-weight: 700; }
+    ul, ol { padding-left: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Befund-Auswertung</h1>
+  <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientContext(b))} · <strong>Umfang:</strong> ${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen / ${escapeHtml(chunkCount)} Teilpaket(e)</div>
+  <div class="notice"><strong>Hinweis:</strong> Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde. Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
+
+  <h2>1. Übersicht der eingereichten Unterlagen</h2>
+  <table><tbody><tr><th>Teilpakete</th><td>${escapeHtml(chunkCount)}</td></tr><tr><th>Verarbeiteter Umfang</th><td>${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen</td></tr><tr><th>Duplikate</th><td>${duplicateNotes.length ? duplicateNotes.map(escapeHtml).join("<br>") : "Keine vorab erkannten identischen Duplikate."}</td></tr></tbody></table>
+
+  <h2>2. Chronologische Untersuchungs-Übersicht</h2>
+  <table><thead><tr><th>Datum</th><th>Quelle</th><th>Untersuchung</th><th>Hauptbefund</th><th>Auffällig?</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.documents, (item: any) => `<td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.untersuchung || "—")}</td><td>${escapeHtml(item?.hauptbefund || "—")}</td><td>${escapeHtml(item?.auffaellig || "—")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+
+  <h2>3. Strukturierte Anamnese-Übersicht</h2>
+  ${anamnesisTable("Aktuelle Beschwerden", "currentProblems")}
+  ${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory")}
+  ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
+  ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
+  ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
+  ${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
+  ${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+  ${anamnesisTable("Impfstatus", "vaccinationStatus")}
+  ${anamnesisTable("Familienanamnese", "familyHistory")}
+  ${anamnesisTable("Sozialanamnese", "socialStatus")}
+  ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
+  ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
+
+  <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
+  <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+
+  <h2>5. Medikamente, Präparate & Therapien</h2>
+  <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+
+  <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+  <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
+  <h2>8. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
+  <h2>9. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+  <h2>10. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
+  <h2>11. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
+</body>
+</html>`;
+}
+
 async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2): Promise<string> {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -293,7 +427,7 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
   return String(json.choices?.[0]?.message?.content || "").trim();
 }
 
-async function streamGatewayHtml(apiKey: string, model: string, prompt: string): Promise<ReadableStream<Uint8Array>> {
+async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string): Promise<ReadableStream<Uint8Array>> {
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -321,9 +455,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
   const decoder = new TextDecoder();
   const reader = aiResp.body.getReader();
   let buffer = "";
-  let started = false;
-  let wrapped = false;
-  let emittedChars = 0;
+  let outputBuffer = "";
   let lastFinishReason = "";
 
   return new ReadableStream({
@@ -333,33 +465,25 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
         if (done) {
           if (buffer.length) {
             const tail = stripHtmlFence(buffer);
-            if (tail) { controller.enqueue(encoder.encode(tail)); emittedChars += tail.length; }
+            if (tail) outputBuffer += tail;
           }
-          // Fallback: Stream lieferte kein/zu wenig sichtbares HTML → einmal non-streaming auf Flash retry
-          if (emittedChars < 300) {
-            console.warn(`analyze-documents final stream empty (chars=${emittedChars}, finish=${lastFinishReason}) – fallback to non-stream flash`);
+          let finalHtml = stripHtmlFence(outputBuffer);
+          // Wichtig: unfertiges HTML nicht ausliefern. Sonst speichert der Client eine scheinbar „fertige“, aber leere Seite.
+          if (!isCompleteFinalHtml(finalHtml)) {
+            console.warn(`analyze-documents final stream incomplete (chars=${finalHtml.length}, finish=${lastFinishReason}) – fallback to non-stream flash/deterministic`);
             try {
               const fallback = await callGatewayText(apiKey, "google/gemini-2.5-flash", prompt, 0.2);
               const html = stripHtmlFence(fallback);
-              if (html && html.length > 100) {
-                if (!started) {
-                  if (!/^<!DOCTYPE/i.test(html) && !/^<html/i.test(html)) {
-                    controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
-                    wrapped = true;
-                  }
-                }
-                controller.enqueue(encoder.encode(html));
-              } else {
-                controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Die KI hat keine HTML-Antwort geliefert (finish_reason=${lastFinishReason || "unknown"}). Bitte erneut versuchen oder Umfang reduzieren.</p>`));
-                wrapped = true;
-              }
+              finalHtml = isCompleteFinalHtml(html) ? html : (deterministicFallbackHtml || html);
             } catch (fbErr) {
               console.error("fallback flash failed:", (fbErr as Error).message);
-              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Stream leer und Fallback fehlgeschlagen: ${(fbErr as Error).message.replace(/[<>]/g, "")}</p>`));
-              wrapped = true;
+              finalHtml = deterministicFallbackHtml || `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Stream leer und Fallback fehlgeschlagen: ${escapeHtml((fbErr as Error).message)}</p></body></html>`;
             }
           }
-          if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
+          if (!/^<!DOCTYPE/i.test(finalHtml) && !/^<html/i.test(finalHtml)) {
+            finalHtml = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>${finalHtml}</body></html>`;
+          }
+          controller.enqueue(encoder.encode(finalHtml));
           controller.close();
           return;
         }
@@ -381,16 +505,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
           } catch { /* ignore malformed SSE frame */ }
         }
         if (textOut) {
-          if (!started) {
-            textOut = stripHtmlFence(textOut);
-            if (!/^<!DOCTYPE/i.test(textOut) && !/^<html/i.test(textOut)) {
-              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
-              wrapped = true;
-            }
-            started = true;
-          }
-          controller.enqueue(encoder.encode(textOut));
-          emittedChars += textOut.length;
+          outputBuffer += textOut;
         }
       } catch (err) {
         controller.error(err);
@@ -415,7 +530,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         }
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
-        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt);
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length));
         const reader = htmlStream.getReader();
         while (true) {
           const { value, done } = await reader.read();
@@ -535,7 +650,12 @@ serve(async (req) => {
       const model = body.useProModel || totalChars > 60_000
         ? "google/gemini-2.5-pro"
         : "google/gemini-2.5-flash";
-      const htmlStream = await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length));
+      const htmlStream = await streamGatewayHtml(
+        LOVABLE_API_KEY,
+        model,
+        buildFinalPrompt(partials, body, totalChars, partials.length),
+        buildDeterministicFinalHtml(partials, body, totalChars, partials.length),
+      );
       return new Response(htmlStream, {
         headers: {
           ...corsHeaders,
@@ -565,7 +685,7 @@ serve(async (req) => {
 
     const stream = largeMode
       ? progressStream(chunks, body, LOVABLE_API_KEY, model, totalChars)
-      : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
+        : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
           JSON.stringify({ rawDocument: blocks.map((block) => `### ${block.label}\n${block.text}`).join("\n\n") }),
         ], body, totalChars, 1));
 
