@@ -1271,13 +1271,16 @@ export function TherapyRecommendation() {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
                     <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                    <LabImageUpload onExtracted={(t) => {
-                      const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
-                      setLaborKomplett(next);
-                      saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
-                    }} />
+                    <div className="flex items-center gap-2 ml-auto">
+                      <WorkloadBadge chars={laborKomplett.length} hint="Labor: Werte abgleichen, Referenzbereiche, Verlauf" />
+                      <LabImageUpload onExtracted={(t) => {
+                        const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                        setLaborKomplett(next);
+                        saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                      }} />
+                    </div>
                   </div>
                   <Textarea
                     value={laborKomplett}
