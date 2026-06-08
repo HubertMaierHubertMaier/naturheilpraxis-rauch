@@ -1829,7 +1829,7 @@ export function TherapyRecommendation() {
             <div className="flex-1">
               <Input
                 value={pseudonymId}
-                onChange={(e) => setPseudonymId(e.target.value)}
+                onChange={(e) => handlePseudonymChange(e.target.value)}
                 placeholder="z. B. P-2026-0042 oder eigener Code"
                 className="font-mono"
               />
