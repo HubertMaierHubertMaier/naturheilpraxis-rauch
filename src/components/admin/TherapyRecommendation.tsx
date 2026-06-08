@@ -2082,6 +2082,64 @@ export function TherapyRecommendation() {
         )}
       </div>
 
+      {/* 📎 Weitere Dokumente nachladen */}
+      <div className="rounded-md border border-sage-300/70 bg-sage-50/40 dark:bg-sage-950/10 p-3 flex items-start gap-3 flex-wrap">
+        <div className="flex-1 min-w-[260px]">
+          <div className="text-sm font-semibold flex items-center gap-1.5">
+            <FileUp className="h-4 w-4 text-sage-700" />
+            Weitere Befunde nachladen
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Patient hat zusätzliche Unterlagen geschickt? Hier hochladen — der extrahierte Text wird mit Zeitstempel an „Sonstige Voruntersuchungen" angehängt. Danach erneut <strong>„Nur Befund-Auswertung (HTML)"</strong> klicken, um die Auswertung zu ergänzen.
+          </p>
+        </div>
+        <div className="shrink-0">
+          <MultiDocUpload
+            ocrMode="doctor"
+            label="📎 Nachgereichte PDFs / Bilder hochladen"
+            onExtracted={appendNachgereicht}
+          />
+        </div>
+      </div>
+
+      {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
+      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0) && (
+        <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="flex-1 min-w-[260px]">
+              <div className="text-sm font-semibold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
+                Aus der Befund-Auswertung extrahiert
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n) und <strong>{extractedFromDocs.symptoms.length}</strong> aktuelle(s) Beschwerdebild(er) gefunden — inkl. Quelle (Arztbericht/Labor) und wörtlichem Zitat als Beleg. In die Eingabemaske oben übernehmen?
+              </p>
+              {extractedFromDocs.diagnoses.length > 0 && (
+                <details className="mt-1.5">
+                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Diagnosen</summary>
+                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
+                    {extractedFromDocs.diagnoses.slice(0, 8).map((d, i) => (
+                      <li key={i}>
+                        {d.icd10 && <code className="mr-1">{d.icd10}</code>}
+                        <strong>{d.diagnose}</strong>
+                        {d.quelle && <span className="text-muted-foreground"> · 📄 {d.quelle}</span>}
+                      </li>
+                    ))}
+                    {extractedFromDocs.diagnoses.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.diagnoses.length - 8} weitere</li>}
+                  </ul>
+                </details>
+              )}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" onClick={applyExtractedToInputs} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white">
+                <Plus className="h-3.5 w-3.5" /> In Eingabemaske übernehmen
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setExtractedFromDocs(null)}>verwerfen</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Workflow-Stage-Indikator */}
       {result && !isStreaming && (
         <WorkflowStepper stage={workflowStage} />
