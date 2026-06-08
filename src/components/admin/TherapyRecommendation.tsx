@@ -940,39 +940,69 @@ export function TherapyRecommendation() {
         live.scrollTop = live.scrollHeight;
       };
       const analyzeChunk = async (chunk: AnalysisDocChunk, indexLabel: string, totalLabel: number) => {
-        const headers = await getFreshAuthHeaders();
-        const chunkResp = await fetch(endpoint, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            analysisMode: "chunk",
-            chunk: { ...chunk, index: indexLabel, total: totalLabel },
-            alter: alter.trim() || undefined,
-            geschlecht: geschlecht || undefined,
-            pseudonymId: pseudonymId || undefined,
-          }),
-        });
-        if (!chunkResp.ok) throw new Error(await readAnalysisError(chunkResp));
-        const chunkJson = await chunkResp.json();
-        return String(chunkJson.partial || "");
+        let lastError = "Unbekannter Analysefehler";
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            const headers = await getFreshAuthHeaders();
+            const chunkResp = await fetch(endpoint, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                analysisMode: "chunk",
+                chunk: { ...chunk, index: indexLabel, total: totalLabel },
+                alter: alter.trim() || undefined,
+                geschlecht: geschlecht || undefined,
+                pseudonymId: pseudonymId || undefined,
+              }),
+            });
+            const responseText = await chunkResp.text().catch(() => "");
+            if (!chunkResp.ok) throw new Error(responseText ? (JSON.parse(responseText).error || responseText) : `HTTP ${chunkResp.status}`);
+            if (!responseText.trim()) throw new Error("Leere Antwort vom Analyse-Dienst");
+            const chunkJson = JSON.parse(responseText);
+            const partial = String(chunkJson.partial || "").trim();
+            if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
+            return partial;
+          } catch (err) {
+            lastError = (err as Error).message || String(err);
+            if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);
+            if (attempt === 3 || !isRecoverableAnalysisTimeout(lastError)) break;
+            writeProgress(`  ↳ Versuch ${attempt + 1}/3 nach kurzer Pause…`);
+            await analysisDelay(1200 * attempt);
+          }
+        }
+        throw new Error(lastError);
       };
 
 
-      const partials: string[] = [];
-      for (let i = 0; i < chunks.length; i += 1) {
+      const partials: string[] = checkpoint?.partials?.slice(0, chunks.length) ?? [];
+      const failedChunks: string[] = [];
+      for (let i = partials.length; i < chunks.length; i += 1) {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           partials.push(await analyzeChunk(chunks[i], String(i + 1), chunks.length));
         } catch (error) {
           const message = (error as Error).message || "";
-          if (!isRecoverableAnalysisTimeout(message) || chunks[i].text.length <= ANALYSIS_RETRY_CHUNK_MAX_CHARS) throw error;
+          if (!isRecoverableAnalysisTimeout(message) || chunks[i].text.length <= ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
+            failedChunks.push(`${chunks[i].label}: ${message}`);
+            partials.push(JSON.stringify({ documents: [], anamnese: {}, diagnoses: [], medicationsTherapies: [], findings: [], redFlags: [{ text: `Teilpaket konnte technisch nicht ausgewertet werden: ${chunks[i].label}`, beleg: { quelle: chunks[i].label, teil: `${i + 1}/${chunks.length}`, zitat: message.slice(0, 180) } }], openQuestions: [`Teilpaket erneut prüfen/importieren: ${chunks[i].label}`], missingReports: [`Technisch nicht verarbeitet: ${chunks[i].label}`] }));
+            writeProgress(`⚠ Teil ${i + 1} übersprungen und als technische Lücke dokumentiert: ${message}`);
+            continue;
+          }
           const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
           writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
           for (let r = 0; r < retryChunks.length; r += 1) {
             writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
-            partials.push(await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1));
+            try {
+              partials.push(await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1));
+            } catch (retryError) {
+              const retryMessage = (retryError as Error).message || String(retryError);
+              failedChunks.push(`${retryChunks[r].label}: ${retryMessage}`);
+              partials.push(JSON.stringify({ documents: [], anamnese: {}, diagnoses: [], medicationsTherapies: [], findings: [], redFlags: [{ text: `Unter-Teilpaket konnte technisch nicht ausgewertet werden: ${retryChunks[r].label}`, beleg: { quelle: retryChunks[r].label, teil: `${i + 1}.${r + 1}/${chunks.length}`, zitat: retryMessage.slice(0, 180) } }], openQuestions: [`Unter-Teilpaket erneut prüfen/importieren: ${retryChunks[r].label}`], missingReports: [`Technisch nicht verarbeitet: ${retryChunks[r].label}`] }));
+              writeProgress(`  ⚠ Unter-Teil ${i + 1}.${r + 1} dokumentiert als technische Lücke: ${retryMessage}`);
+            }
           }
         }
+        writeAnalysisCheckpoint(checkpointKey, { version: 2, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, updatedAt: new Date().toISOString() });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
       }
 
