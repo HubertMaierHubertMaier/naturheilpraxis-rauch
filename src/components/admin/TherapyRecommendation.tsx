@@ -841,6 +841,50 @@ export function TherapyRecommendation() {
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
       }
 
+      // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
+      try {
+        const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
+        const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
+        const stripFence = (s: string) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+        for (const p of partials) {
+          if (!p) continue;
+          try {
+            const obj = JSON.parse(stripFence(p));
+            if (Array.isArray(obj?.diagnoses)) {
+              for (const d of obj.diagnoses) {
+                if (!d?.diagnose) continue;
+                extDiag.push({
+                  icd10: d.icd10 || "",
+                  diagnose: String(d.diagnose).trim(),
+                  quelle: d.quelle || d?.beleg?.quelle || "",
+                  status: d.status || "",
+                  datum: d?.beleg?.zitat ? "" : "",
+                  zitat: d?.beleg?.zitat || "",
+                });
+              }
+            }
+            const cp = obj?.anamnese?.currentProblems;
+            if (Array.isArray(cp)) {
+              for (const s of cp) {
+                const text = typeof s === "string" ? s : s?.text;
+                if (!text) continue;
+                extSym.push({
+                  text: String(text).trim(),
+                  quelle: s?.beleg?.quelle || "",
+                  zitat: s?.beleg?.zitat || "",
+                });
+              }
+            }
+          } catch { /* partial war kein JSON – ignorieren */ }
+        }
+        // Duplikate ausdünnen (case-insensitive)
+        const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
+        const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
+        if (dedupDiag.length || dedupSym.length) {
+          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym });
+        }
+      } catch { /* nicht kritisch */ }
+
       writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
       const resp = await fetch(endpoint, {
         method: "POST",
