@@ -24,6 +24,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
+import { MultiDocUpload } from "./therapy/MultiDocUpload";
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
 type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
