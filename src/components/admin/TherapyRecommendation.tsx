@@ -1744,7 +1744,10 @@ export function TherapyRecommendation() {
     setManualDiagnosen([]);
     setTherapieNotiz("");
     setWorkflowStage("edit");
-    try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem("therapy.draftInputs.v1");
+    } catch {}
     if (currentInputDraftKey) { try { localStorage.removeItem(currentInputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
   };
