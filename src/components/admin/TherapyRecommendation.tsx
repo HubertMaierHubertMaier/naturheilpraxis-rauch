@@ -743,8 +743,9 @@ export function TherapyRecommendation() {
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const belastungenText = formatPathogensForAI(pathogens);
-    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim()) {
-      toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome oder Erkrankung", variant: "destructive" });
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse].some((x) => x.trim());
+    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc) {
+      toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
       return;
     }
 
