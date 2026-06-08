@@ -414,8 +414,8 @@ serve(async (req) => {
       const model = body.useProModel || totalChars > 60_000
         ? "google/gemini-2.5-pro"
         : "google/gemini-2.5-flash";
-      const stream = await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length));
-      return new Response(stream, {
+      const html = stripHtmlFence(await callGatewayText(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length), 0.25));
+      return new Response(html, {
         headers: {
           ...corsHeaders,
           "Content-Type": "text/html; charset=utf-8",
