@@ -944,6 +944,68 @@ export function TherapyRecommendation() {
     }
   };
 
+  // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
+  const applyExtractedToInputs = () => {
+    if (!extractedFromDocs) return;
+    const { diagnoses, symptoms } = extractedFromDocs;
+    // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
+    if (diagnoses.length) {
+      setManualDiagnosen((existing) => {
+        const known = new Set(existing.map((d) => d.diagnose.trim().toLowerCase()));
+        const additions: DiagnoseEntry[] = [];
+        for (const d of diagnoses) {
+          const key = d.diagnose.trim().toLowerCase();
+          if (known.has(key)) continue;
+          known.add(key);
+          const begrParts: string[] = [];
+          if (d.quelle) begrParts.push(`📄 ${d.quelle}`);
+          if (d.status) begrParts.push(`Status: ${d.status}`);
+          if (d.zitat) begrParts.push(`„${d.zitat}"`);
+          additions.push({
+            icd10: d.icd10 || "",
+            diagnose: d.diagnose,
+            begruendung: begrParts.join(" · ") || "aus Befund-Auswertung übernommen",
+          });
+        }
+        return [...existing, ...additions];
+      });
+    }
+    // Symptome → Textarea (mit Quelle/Datum) — vorhandenen Text bewahren
+    if (symptoms.length) {
+      setSymptome((prev) => {
+        const existingLines = new Set(
+          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
+        );
+        const newLines: string[] = [];
+        for (const s of symptoms) {
+          if (existingLines.has(s.text.toLowerCase())) continue;
+          existingLines.add(s.text.toLowerCase());
+          const meta: string[] = [];
+          if (s.quelle) meta.push(s.quelle);
+          if (s.zitat) meta.push(`„${s.zitat}"`);
+          newLines.push(`• ${s.text}${meta.length ? ` (📄 ${meta.join(" · ")})` : ""}`);
+        }
+        if (!newLines.length) return prev;
+        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
+      });
+    }
+    toast({
+      title: "In Eingabemaske übernommen",
+      description: `${diagnoses.length} Diagnose(n) und ${symptoms.length} Symptom(e) eingefügt (mit Quelle).`,
+    });
+    setExtractedFromDocs(null);
+  };
+
+  // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
+  const appendNachgereicht = (text: string) => {
+    if (!text.trim()) return;
+    const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
+    setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}${header}${text}` : `${header.trim()}\n${text}`));
+    toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
+  };
+
+
 
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
