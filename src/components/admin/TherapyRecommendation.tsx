@@ -1009,6 +1009,9 @@ export function TherapyRecommendation() {
         live.textContent = `${live.textContent || ""}\n${line}`;
         live.scrollTop = live.scrollHeight;
       };
+      if (checkpoint?.partials?.length) {
+        writeProgress(`✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Zwischen-Sicherung geladen.`);
+      }
       const analyzeChunk = async (chunk: AnalysisDocChunk, indexLabel: string, totalLabel: number) => {
         let lastError = "Unbekannter Analysefehler";
         for (let attempt = 1; attempt <= 3; attempt += 1) {
