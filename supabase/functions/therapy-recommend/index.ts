@@ -678,8 +678,9 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
+    const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
@@ -724,7 +725,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -950,6 +951,7 @@ serve(async (req) => {
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
+    if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte): ${sonstigeUntersuchungenText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
     // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
@@ -1098,6 +1100,12 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
    - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
    - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
+
+6c. **Sonstige / unsortierte Voruntersuchungen (gemischte Befunde)**: ${sonstigeUntersuchungenText || "Nicht angegeben"}
+   - Hier liegen gemischte, NICHT sauber in Labor/Arztbrief getrennte Befunde vor (Bildgebung MRT/CT/Sono, EKG/Lufu, Allergie-/Funktionstests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, Kur-/Reha-Berichte, Selbstmessungen wie RR/HRV/CGM, ältere Fremdbefunde).
+   - Sortiere intern, was davon (a) gesicherter schulmedizinischer Befund, (b) komplementär-/bioenergetische Resonanzaussage oder (c) Verlaufs-/Selbstmessung ist – behandle jede Gruppe entsprechend.
+   - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen.
+   - Bei NLS-/Bioresonanz-Hinweisen: kennzeichne Empfehlungen klar als „resonanz-basiert" und vermische sie nicht mit gesicherten schulmedizinischen Diagnosen.
    - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
 
    
