@@ -211,9 +211,19 @@ export function LiveInputSummary({
           <div>
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
               <ClipboardList className="h-3.5 w-3.5" />
-              Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen)
+              Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen · {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Zeichen)
             </div>
-            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+          </div>
+        )}
+
+        {hasPerplexity && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-300">
+              <Search className="h-3.5 w-3.5" />
+              Perplexity-Recherche / Zusatzauswertung ({perplexityList.length} Zeilen · {perplexityAnalyse.length.toLocaleString("de-DE")} Zeichen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{perplexityAnalyse}</pre>
           </div>
         )}
       </CardContent>
