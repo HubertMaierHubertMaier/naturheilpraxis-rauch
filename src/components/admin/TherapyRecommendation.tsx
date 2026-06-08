@@ -1367,6 +1367,10 @@ export function TherapyRecommendation() {
 
               {/* ===== TAB: Großdaten (Sonstige + Perplexity) — viel Platz, 100+ Seiten ===== */}
               <TabsContent value="grossdaten" className="space-y-4 mt-4">
+                <WorkloadTotal
+                  chars={laborKomplett.length + arztbericht.length + metatronHeel.length + sonstigeUntersuchungen.length + perplexityAnalyse.length}
+                  label="Gesamter Sichtungs-/Auswertungsaufwand (Honorar-Basis 100 €/h)"
+                />
                 <div className="rounded-md border border-indigo-300/70 bg-gradient-to-br from-indigo-50/60 to-background dark:from-indigo-950/15 dark:border-indigo-900/40 p-3">
                   <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
                     <ClipboardList className="h-4 w-4 text-indigo-600" />
