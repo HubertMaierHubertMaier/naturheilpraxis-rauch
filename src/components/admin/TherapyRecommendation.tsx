@@ -112,6 +112,7 @@ export function TherapyRecommendation() {
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
@@ -740,11 +741,80 @@ export function TherapyRecommendation() {
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
+  const handleAnalyzeDocuments = async () => {
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse].some((x) => x.trim());
+    if (!hasAnyDoc) {
+      toast({ title: "Keine Dokumente vorhanden", description: "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
+      return;
+    }
+    setIsAnalyzingDocs(true);
+    // Tab sofort öffnen (Pop-up-Blocker umgehen)
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(`<!DOCTYPE html><html><head><title>Befund-Auswertung lädt…</title><style>body{font-family:system-ui;padding:40px;color:#444}h2{color:#6b8e6b}</style></head><body><h2>⏳ Befund-Auswertung wird erstellt…</h2><p>Bei großen Dokumenten kann das 30–90 Sekunden dauern. Bitte dieses Fenster offen lassen.</p></body></html>`);
+    }
+    try {
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr || !session) throw new Error("Nicht angemeldet");
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            laborKomplett: laborKomplett.trim() || undefined,
+            laborErhoeht: laborErhoeht.trim() || undefined,
+            laborErniedrigt: laborErniedrigt.trim() || undefined,
+            laborDatum: laborDatum.trim() || undefined,
+            stuhlbefund: stuhlbefund.trim() || undefined,
+            arztbericht: arztbericht.trim() || undefined,
+            arztberichtDatum: arztberichtDatum.trim() || undefined,
+            metatronHeel: metatronHeel.trim() || undefined,
+            sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
+            perplexityAnalyse: perplexityAnalyse.trim() || undefined,
+            alter: alter.trim() || undefined,
+            geschlecht: geschlecht || undefined,
+            pseudonymId: pseudonymId || undefined,
+            useProModel: useProModel || undefined,
+          }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+        throw new Error(err.error || `HTTP ${resp.status}`);
+      }
+      const { html, model, inputChars } = await resp.json();
+      if (w) {
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      }
+      toast({ title: "Befund-Auswertung fertig", description: `Modell: ${model} · ${inputChars.toLocaleString("de-DE")} Zeichen ausgewertet` });
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (w) {
+        w.document.open();
+        w.document.write(`<!DOCTYPE html><html><body style="font-family:system-ui;padding:40px;color:#a33"><h2>❌ Fehler</h2><p>${msg.replace(/</g, "&lt;")}</p></body></html>`);
+        w.document.close();
+      }
+      toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+    } finally {
+      setIsAnalyzingDocs(false);
+    }
+  };
+
+
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const belastungenText = formatPathogensForAI(pathogens);
-    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim()) {
-      toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome oder Erkrankung", variant: "destructive" });
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse].some((x) => x.trim());
+    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc) {
+      toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
       return;
     }
 
@@ -1762,6 +1832,16 @@ export function TherapyRecommendation() {
         <Button onClick={() => handleSubmit()} disabled={isStreaming} className="gap-2">
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
+        </Button>
+        <Button
+          onClick={handleAnalyzeDocuments}
+          disabled={isAnalyzingDocs || isStreaming}
+          variant="outline"
+          className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
+          title="Reine Befund-Auswertung der eingereichten Dokumente (ohne Therapie-Empfehlung) — öffnet als HTML in neuem Tab"
+        >
+          {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+          {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
         </Button>
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
