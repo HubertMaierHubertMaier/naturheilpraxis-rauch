@@ -374,6 +374,7 @@ export function TherapyRecommendation() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Nicht angemeldet");
       const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
+      assertPayloadMatchesPseudonym(pid, payload);
       const saveBody = {
         pseudonym_id: pid,
         created_by: user.id,
@@ -392,7 +393,7 @@ export function TherapyRecommendation() {
       setAutoSaveStatus("error");
       toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
     }
-  }, [pseudonymId, buildInputData, toast]);
+  }, [pseudonymId, buildInputData, assertPayloadMatchesPseudonym, toast]);
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
@@ -505,6 +506,7 @@ export function TherapyRecommendation() {
         .from("therapy_sessions")
         .select("id, eingabe_daten, updated_at")
         .eq("pseudonym_id", pid)
+        .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
         .order("updated_at", { ascending: false })
         .limit(10);
       if (!Array.isArray(data) || !data.length) {
@@ -609,6 +611,7 @@ export function TherapyRecommendation() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Nicht angemeldet");
         const eingabe_daten = JSON.parse(payload);
+        assertPayloadMatchesPseudonym(pid, eingabe_daten);
         const updateBody = {
           pseudonym_id: pid,
           created_by: user.id,
