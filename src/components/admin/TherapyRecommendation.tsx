@@ -131,6 +131,10 @@ type PreparedAnalysis = {
   analyzedChars: number;
 };
 
+const normalizePseudonymId = (value: string) => value.trim();
+
+const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
+
 const analysisDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) => {
@@ -318,6 +322,8 @@ export function TherapyRecommendation() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
+    _pseudonym_id: normalizePseudonymId(pseudonymId),
+    pseudonymId: normalizePseudonymId(pseudonymId),
     pathogens,
     symptome,
     erkrankung,
@@ -345,7 +351,12 @@ export function TherapyRecommendation() {
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+
+  const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
+    const embedded = normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
+    if (embedded && embedded !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
+  }, []);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
