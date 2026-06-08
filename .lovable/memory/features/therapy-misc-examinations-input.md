@@ -1,25 +1,28 @@
 ---
 name: Therapie-Empfehlung — Eingabe für gemischte Voruntersuchungen
-description: Zusätzliches Freitext-/Upload-Feld in TherapyRecommendation für unsortierte Patienten-Voruntersuchungen (Labor + sonstige Befunde gemischt)
+description: Freitext-Feld `sonstigeUntersuchungen` in TherapyRecommendation für unsortierte Patienten-Voruntersuchungen (Bildgebung, EAV/NLS, Selbstmessungen, Fremdberichte) — implementiert 2026-06-08
 type: feature
 ---
 
-## Anforderung (Peter, 2026-06-08)
+## Status: IMPLEMENTIERT (2026-06-08)
 
-Im Therapie-Empfehlungs-Tool (`src/components/admin/TherapyRecommendation.tsx`) gibt es bisher:
-- Patienten-Pseudonym laden/neu
-- Beschwerden, Pathogene, Laborwerte (über `LabImageUpload` / `extract-lab-image`)
-- Wiki-Boost, bevorzugte Mittel
-- Generierung via `therapy-recommend` (Gemini)
+Im Therapie-Empfehlungs-Tool (`src/components/admin/TherapyRecommendation.tsx`) gibt es ein neues Eingabefeld `sonstigeUntersuchungen` (Textarea, mehrzeilig, optional) unter dem Metatron/HEEL-Block.
 
-**Fehlt:** Ein zusätzlicher Eingabebereich für **gemischte/unsortierte Voruntersuchungen** des Patienten — Fälle, in denen Befunde NICHT sauber in Labor vs. sonstige Diagnostik (Bildgebung, Funktionstests, Arztbriefe, NLS-Berichte, EAV-Messungen, etc.) getrennt vorliegen.
+**Zweck:** Auffangbecken für gemischte/unstrukturierte Befunde, die nicht sauber in Labor / Stuhlbefund / Arztbrief passen — Bildgebung (MRT/CT/Sono), EKG/Lufu, Allergie-/Funktionstests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, Kur-/Reha-Berichte, Selbstmessungen (RR/HRV/CGM), ältere Fremdbefunde.
 
-## Umsetzungs-Skizze (bei Implementierung)
+## Datenfluss
 
-1. Neues Feld `misc_examinations` (Textarea, mehrzeilig, optional) im Therapy-Form.
-2. Optional: Mehrfach-Upload (PDF/Bild) → OCR/Vision via Gemini → Text-Extrakt einsortieren.
-3. Inhalt fließt als zusätzlicher Kontextblock in den `therapy-recommend`-Prompt ein (eigener Abschnitt "Vorhandene Voruntersuchungen — unstrukturiert").
-4. Persistenz in `therapy_sessions.session_data` (JSON), damit beim Reload der Pseudonym-Session vorhanden.
-5. NLS-Disclosure-Logik (Memory: `nls-befund-disclosure`) prüfen — wenn unsortierte Befunde NLS-Hinweise enthalten, ebenfalls Patienten-PDF-Hinweis triggern.
+1. **State** in TherapyRecommendation: `sonstigeUntersuchungen` (string).
+2. **Persistenz** in `buildInputData`, sessionStorage-Draft, localStorage-Draft pro Pseudonym, Cloud-Draft (`therapy_sessions.eingabe_daten`), `handleLoadSession`, applyDraftPayload, Cloud-merge stringKeys.
+3. **Edge-Function `therapy-recommend`:**
+   - Destructure aus Body
+   - `sonstigeUntersuchungenText` als trimmed string
+   - In `queryText` für Wiki-Suche (Boost auf relevante Wiki-Einträge)
+   - In `patientInfo`-Array
+   - Eigener Prompt-Abschnitt **6c** mit klarer Sortier-Anweisung an die KI (gesicherte Schulmedizin vs. Resonanz vs. Selbstmessung)
+4. **LiveInputSummary** zeigt den Block separat mit `ClipboardList`-Icon (indigo).
 
-**How to apply:** Bei nächster Iteration an TherapyRecommendation diesen Punkt mit-implementieren. Nicht eigenmächtig jetzt schon umsetzen — User signalisiert nur „merken".
+## Wichtig
+
+- NLS-Disclosure-Logik (Memory: `nls-befund-disclosure`) bleibt aktiv — sobald NLS-Hinweise in dem Feld stehen, sollte das Patienten-PDF die Quelle ausweisen.
+- KEIN OCR/Upload in diesem Feld (bewusste Entscheidung — User soll selbst sortieren bzw. abtippen). Falls später OCR gewünscht: separater `LabImageUpload`-Mode `"misc"` möglich.
