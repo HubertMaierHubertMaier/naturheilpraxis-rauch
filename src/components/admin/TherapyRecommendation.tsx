@@ -2151,7 +2151,7 @@ export function TherapyRecommendation() {
       </div>
 
       {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
-      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0) && (
+      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0 || extractedFromDocs.medications.length > 0) && (
         <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3">
           <div className="flex items-start gap-3 flex-wrap">
             <div className="flex-1 min-w-[260px]">
@@ -2160,8 +2160,22 @@ export function TherapyRecommendation() {
                 Aus der Befund-Auswertung extrahiert
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n) und <strong>{extractedFromDocs.symptoms.length}</strong> aktuelle(s) Beschwerdebild(er) gefunden — inkl. Quelle (Arztbericht/Labor) und wörtlichem Zitat als Beleg. In die Eingabemaske oben übernehmen?
+                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n), <strong>{extractedFromDocs.symptoms.length}</strong> Beschwerde(n) und <strong>{extractedFromDocs.medications.length}</strong> ärztlich verordnete(s) Medikament(e) gefunden — inkl. Quelle, Datum (sonst „unbekannt") und wörtlichem Zitat. In die Eingabemaske oben übernehmen?
               </p>
+              {extractedFromDocs.medications.length > 0 && (
+                <details className="mt-1.5">
+                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Medikamente</summary>
+                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
+                    {extractedFromDocs.medications.slice(0, 8).map((m, i) => (
+                      <li key={i}>
+                        <strong>{m.name}</strong>{m.dosis ? ` ${m.dosis}` : ""}
+                        <span className="text-muted-foreground"> · von: {m.vonWem?.trim() || "unbekannt"} · {m.datum?.trim() || "unbekannt"}</span>
+                      </li>
+                    ))}
+                    {extractedFromDocs.medications.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.medications.length - 8} weitere</li>}
+                  </ul>
+                </details>
+              )}
               {extractedFromDocs.diagnoses.length > 0 && (
                 <details className="mt-1.5">
                   <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Diagnosen</summary>
