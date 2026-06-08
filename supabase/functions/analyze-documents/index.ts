@@ -132,12 +132,13 @@ function patientContext(b: AnalyzeBody) {
 }
 
 function buildChunkPrompt(block: DocBlock, index: number, total: number, b: AnalyzeBody): string {
-  return `Du analysierst Teil ${index}/${total} einer großen Vorbefund-Sammlung für Peter Rauch (Heilpraktiker, Physiotherapeut, Hypnotherapeut, Ing. Elektrotechnik).
+  return `Du analysierst Teil ${index}/${total} einer großen Vorbefund-Sammlung für den Heilpraktiker Peter Rauch (Physiotherapeut, Hypnotherapeut, Ing. Elektrotechnik). Peter Rauch ist der BEHANDLER, NICHT der Patient. Der Patient bleibt im Output strikt anonym und wird als "der Patient" / "die Patientin" bezeichnet (niemals "Herr Rauch" o.ä., auch wenn im Quelltext echte Namen auftauchen).
 
 Patientenkontext: ${patientContext(b)}
 
 Wichtig:
-- Es ist eine reine Befund-Auswertung, KEINE Therapie-Empfehlung und KEINE Mittel-Vorschläge.
+- Es ist eine reine Befund-Auswertung, KEINE eigene Therapie-Empfehlung und KEINE neuen Mittel-Vorschläge.
+- ABER: Alle in den Dokumenten genannten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel müssen vollständig in "medicationsTherapies" gelistet werden — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status (laufend/abgesetzt/unklar). Lieber zu viel als zu wenig. Wenn ein Medikament nur am Rande erwähnt wird ("nimmt zusätzlich X"), trotzdem aufnehmen.
 - Extrahiere nur, was im Text steht. Keine Halluzination.
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
 - Anonymisierung respektieren.
@@ -164,7 +165,7 @@ ${block.text}
 }
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
-  return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für Peter Rauch.
+  return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.
 
 Patientenkontext: ${patientContext(b)}
 Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCount} Teilpaketen. Wichtig: Es wurden alle übergebenen Dokumentblöcke verarbeitet; keine künstliche Seitenbegrenzung.
@@ -182,7 +183,7 @@ Pflicht-Sektionen in Reihenfolge:
 2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
 3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig?; neueste zuerst, fehlendes Datum: "ohne Datum".
 4. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
-5. Bereits empfohlene / verordnete Mittel & Therapien — Tabelle: Mittel/Therapie | von wem | Datum | Indikation | Status.
+5. Bereits empfohlene / verordnete Mittel & Therapien — VOLLSTÄNDIGE Tabelle ALLER in den Teilanalysen erwähnten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, Operationen, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel (medicationsTherapies aus allen Teilanalysen zusammenführen, Duplikate konsolidieren, NICHTS weglassen). Spalten: Mittel/Therapie (mit Dosis falls bekannt) | von wem (Arzt/Klinik/Therapeut) | Datum | Indikation | Status (laufend/abgesetzt/unklar). Wenn wirklich kein einziges Mittel in den Quelldokumenten erwähnt wird, schreibe explizit "In den vorliegenden Unterlagen sind keine konkreten Medikamente oder Therapien dokumentiert." — sonst niemals leer lassen.
 6. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
 7. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung; die wichtigsten Begriffe.
 8. Gesamtbild & Arbeitshypothese — 1–3 Absätze aus den Vorbefunden, keine Therapie.
