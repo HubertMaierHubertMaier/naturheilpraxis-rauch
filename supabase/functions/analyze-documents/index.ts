@@ -47,6 +47,7 @@ interface AnalyzeBody {
   analysisMode?: "chunk" | "final";
   chunk?: { label?: string; text?: string; index?: number | string; total?: number | string };
   partials?: string[];
+  duplicateNotes?: string[];
   totalChars?: number;
   laborKomplett?: string;
   laborErhoeht?: string;
@@ -201,6 +202,7 @@ ${block.text}
 
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
+  const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
   return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.
 
 Patientenkontext: ${patientContext(b)}
@@ -217,6 +219,8 @@ VERBINDLICHE OUTPUT-STRUKTUR:
 🔎 BELEG-PFLICHT IM HTML:
 - Jeder Eintrag in Sektion 3, 4, 5, 6, 7, 11 bekommt eine zusätzliche Spalte/Zeile "Beleg" mit Quelle + Teilpaket + wörtlichem Kurzzitat (aus den Teilanalysen übernehmen, NICHT umformulieren). Format z. B.: <span class="beleg">📄 Arztbericht 12.03.2025, Teil 4/12: „…wörtliches Zitat…"</span>.
 - Wenn ein Eintrag in mehreren Teilpaketen vorkommt: mehrere Belege auflisten.
+- Folgende identische Textabschnitte wurden vorab als Duplikate erkannt und nur einmal analysiert. Im HTML in Sektion 2 kurz transparent dokumentieren, aber NICHT als fehlende Daten werten:
+${duplicateNotes.length ? duplicateNotes.map((note) => `  * ${note}`).join("\n") : "  * Keine vorab erkannten identischen Duplikate."}
 
 🚫 ANTI-HALLUZINATIONS-SELBSTCHECK (vor dem Output zwingend durchführen):
 - Jeder Satz in Sektion 9 (Gesamtbild/Arbeitshypothese) und Sektion 10 (Differentialdiagnosen, Vorgehen) muss entweder:
@@ -256,23 +260,6 @@ ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
 
 function extractJsonish(text: string) {
   return text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
-}
-
-function technicalChunkFallback(label: string, index: number, total: number, error: unknown) {
-  const message = String((error as Error)?.message || error || "Technischer Analysefehler").slice(0, 220);
-  return JSON.stringify({
-    documents: [],
-    anamnese: {},
-    diagnoses: [],
-    medicationsTherapies: [],
-    findings: [],
-    redFlags: [{
-      text: `Teilpaket konnte technisch nicht ausgewertet werden: ${label}`,
-      beleg: { quelle: label, teil: `${index}/${total}`, zitat: message },
-    }],
-    openQuestions: [`Teilpaket manuell prüfen oder erneut importieren: ${label}`],
-    missingReports: [`Technisch nicht verarbeitet: ${label}`],
-  });
 }
 
 function stripHtmlFence(text: string) {
@@ -481,7 +468,6 @@ serve(async (req) => {
         });
       }
       let partial = "";
-      let recovered = false;
       try {
         partial = await callGatewayText(
           LOVABLE_API_KEY,
@@ -489,10 +475,12 @@ serve(async (req) => {
           buildChunkPrompt({ label, text }, index, total, body),
         );
       } catch (error) {
-        recovered = true;
-        partial = technicalChunkFallback(label, index, total, error);
+        return new Response(JSON.stringify({ error: String((error as Error)?.message || error || "Teilpaket konnte nicht vollständig ausgewertet werden") }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered }), {
+      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered: false }), {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
