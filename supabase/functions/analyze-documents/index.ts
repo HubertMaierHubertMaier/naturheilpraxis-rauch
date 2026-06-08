@@ -435,7 +435,21 @@ serve(async (req) => {
       });
     }
 
-    const body = (await req.json()) as AnalyzeBody;
+    let body: AnalyzeBody;
+    try {
+      const raw = await req.text();
+      if (!raw || !raw.trim()) {
+        return new Response(JSON.stringify({ error: "Leerer Request-Body" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      body = JSON.parse(raw) as AnalyzeBody;
+    } catch (e) {
+      console.error("analyze-documents: JSON parse error", e);
+      return new Response(JSON.stringify({ error: "Ungültiger JSON-Body" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (body.analysisMode === "chunk") {
       const text = cleanText(body.chunk?.text);
