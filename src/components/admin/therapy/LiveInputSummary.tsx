@@ -58,17 +58,19 @@ export function LiveInputSummary({
   const arztberichtList = splitLines(arztbericht);
   const metatronList = splitLines(metatronHeel);
   const sonstigeList = splitLines(sonstigeUntersuchungen);
+  const perplexityList = splitLines(perplexityAnalyse);
 
   const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
   const hasStuhl = stuhlList.length > 0;
   const hasArzt = arztberichtList.length > 0;
   const hasMetatron = metatronList.length > 0;
   const hasSonstige = sonstigeList.length > 0;
+  const hasPerplexity = perplexityList.length > 0;
 
   const totalCount =
     filledPathogens.length + symptomList.length + erkrankungList.length +
     laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
-    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length;
+    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + perplexityList.length;
 
   const hasAny = totalCount > 0;
   if (!hasAny) return null;
