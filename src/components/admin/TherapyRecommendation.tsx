@@ -322,7 +322,7 @@ export function TherapyRecommendation() {
       const stringKeys = [
         "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
         "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen",
+        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse",
       ];
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
