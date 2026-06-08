@@ -1108,12 +1108,25 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
    - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
 
-6c. **Sonstige / unsortierte Voruntersuchungen (gemischte Befunde)**: ${sonstigeUntersuchungenText || "Nicht angegeben"}
-   - Hier liegen gemischte, NICHT sauber in Labor/Arztbrief getrennte Befunde vor (Bildgebung MRT/CT/Sono, EKG/Lufu, Allergie-/Funktionstests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, Kur-/Reha-Berichte, Selbstmessungen wie RR/HRV/CGM, ältere Fremdbefunde).
-   - Sortiere intern, was davon (a) gesicherter schulmedizinischer Befund, (b) komplementär-/bioenergetische Resonanzaussage oder (c) Verlaufs-/Selbstmessung ist – behandle jede Gruppe entsprechend.
-   - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen.
+6c. **Sonstige / unsortierte Voruntersuchungen (gemischte Befunde, ${sonstigeUntersuchungenText.length} Zeichen)**: ${sonstigeUntersuchungenText || "Nicht angegeben"}
+   - VERBINDLICH: Dieser Block ist VOLLSTÄNDIG zu lesen — auch wenn er sehr lang ist (5–60 Seiten / bis 200.000+ Zeichen). NICHTS überspringen, NICHTS überfliegen, KEINE Stichproben. Wenn du am Limit deines Kontextes ankommst, melde das explizit als "⚠️ Kontextlimit erreicht – folgende Abschnitte konnten nicht ausgewertet werden: [...]" — aber täusche niemals eine vollständige Auswertung vor.
+   - **DATUMS-EXTRAKTION (PFLICHT):** Lies systematisch jedes Untersuchungsdatum aus dem Freitext (Formate: TT.MM.JJJJ, JJJJ-MM-TT, "März 2024", "vor 2 Jahren", "Q1/25" usw.). Ordne JEDEM Befund sein Datum + den Untersuchungstyp zu. Erstelle dazu im Output unter "🗂️ Voruntersuchungen – chronologische Auswertung" eine **chronologisch sortierte Liste** (neueste zuerst) im Format:
+     - **[TT.MM.JJJJ] – [Untersuchungstyp] ([Quelle/Praxis falls genannt])** → Befund: [Kernbefund kurz]. Therapierelevanz: [konkret]. Einordnung: [a/b/c].
+   - Sortiere intern, was davon (a) **gesicherter schulmedizinischer Befund** (Bildgebung, Histologie, Labor mit Arztstempel), (b) **komplementär-/bioenergetische Resonanzaussage** (EAV, NLS, Bioresonanz, Kinesiologie) oder (c) **Verlaufs-/Selbstmessung** (RR, HRV, CGM, Schmerztagebuch) ist – jede Gruppe wird unterschiedlich gewichtet.
+   - **Tiefen-Diff.-Diagnostik (PFLICHT bei diesem Block):** Leite aus den Befunden eine eigene Sektion "## 🔎 Differentialdiagnostik (vertieft)" ab — mindestens 3–6 Differentialdiagnosen mit (i) passenden Befunden DAFÜR, (ii) Befunden DAGEGEN, (iii) zusätzlich nötigen Untersuchungen zur Abklärung, (iv) Wahrscheinlichkeit (gering/mittel/hoch). Verwende ICD-10-Codes wenn möglich. Quelle: Wiki-Einträge + genannte Voruntersuchungen + Perplexity-Recherche (6d), niemals erfundene Werte.
+   - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen, Anamnese-Kontext aus Reha-/Kurberichten.
    - Bei NLS-/Bioresonanz-Hinweisen: kennzeichne Empfehlungen klar als „resonanz-basiert" und vermische sie nicht mit gesicherten schulmedizinischen Diagnosen.
    - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
+
+6d. **Externe Perplexity-/AI-Recherche & Literaturauswertung (${perplexityAnalyseText.length} Zeichen)**: ${perplexityAnalyseText || "Nicht angegeben"}
+   - VERBINDLICH: Auch dieser Block ist VOLLSTÄNDIG zu lesen – egal wie lang. KEIN Trimmen, KEIN Stichprobenlesen.
+   - Inhalt sind in der Regel: Perplexity-Antworten mit Zitaten, PubMed-Treffer, S3-Leitlinien-Auszüge, Cochrane-Reviews, Lehrbuch-Exzerpte, Spezialisten-Forenposts, AI-generierte Differentialdiagnose-Listen.
+   - Verwendung im Therapieplan:
+     1. **Differentialdiagnostik (Sektion 🔎):** Differentialdiagnosen aus der Recherche MÜSSEN in die Liste übernommen und gewichtet werden.
+     2. **Evidenz-Hinweise:** Studien/Leitlinien aus diesem Block dürfen zitiert werden — IMMER mit der Originalquelle ("lt. Perplexity-Recherche: PMID xxxxxxxx" oder "S3-LL DGP 2023").
+     3. **Wiki-Vorrang bleibt:** Wenn die Recherche Mittel nennt, die NICHT in der Wissensdatenbank stehen, gib einen Hinweis "💡 Recherche-Anregung (nicht im Wiki): [Mittel] – [Quelle]. Vor Empfehlung Wiki-Eintrag prüfen/ergänzen." aber EMPFIEHL es nicht als Hauptmittel.
+     4. **Widersprüche zwischen Recherche und Wiki:** Transparent machen ("Wiki sagt X, Perplexity-Recherche sagt Y – Praxis-Entscheidung: ..."). Wiki gewinnt im Zweifel.
+     5. **Anti-Halluzinations-Regel:** Nichts aus dem Modellwissen erfinden, was nicht entweder in Wiki oder in der Perplexity-Recherche steht.
 
    
    **ZWINGENDE QUELLENREGEL für Labor-/Stuhlwerte:**
