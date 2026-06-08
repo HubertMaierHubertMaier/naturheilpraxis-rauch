@@ -44,7 +44,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", perplexityAnalyse = "",
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
