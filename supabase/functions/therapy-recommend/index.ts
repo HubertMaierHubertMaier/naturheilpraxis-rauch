@@ -1171,6 +1171,20 @@ Kurze Zusammenfassung der identifizierten Probleme.
 ## 🧫 Stuhlbefund-Analyse
 (Nur falls Stuhlbefund angegeben) Bewertung von Mikrobiom-Dysbiose, Verdauungs-, Entzündungs- und Barriere-Markern. Konkrete Ableitung der Darmsanierungs-Strategie (4-R-Konzept: Remove – Replace – Reinoculate – Repair).
 
+## 🗂️ Voruntersuchungen – chronologische Auswertung
+(Nur falls "Sonstige Voruntersuchungen" angegeben) Chronologisch sortierte Liste ALLER aus dem Freitext extrahierten Untersuchungen mit Datum, Untersuchungstyp, Kernbefund, Therapierelevanz und Einordnung (a/b/c). Bei fehlendem Datum: "(Datum nicht im Text genannt)". KEINE Befunde überspringen.
+
+## 🔎 Differentialdiagnostik (vertieft)
+(PFLICHT, sobald "Sonstige Voruntersuchungen" ODER "Perplexity-Recherche" Inhalte enthalten — sonst optional)
+Mindestens 3–6 Differentialdiagnosen, jeweils mit:
+- **DD [Nr.]: [Bezeichnung]** (ICD-10: [Code falls möglich]) — Wahrscheinlichkeit: gering/mittel/hoch
+  - **Dafür spricht:** [Befunde aus Anamnese/Labor/Bildgebung/NLS/Perplexity]
+  - **Dagegen spricht:** [...]
+  - **Zusätzlich nötige Abklärung:** [konkrete Untersuchung/Marker]
+  - **Naturheilkundliche Konsequenz wenn zutreffend:** [Wiki-Mittel/Strategie]
+
+
+
 ## 🕳️ Wissensdatenbank-Lücken (ZWINGEND – diesen Abschnitt FRÜH ausgeben, vor den Mittel-Tabellen, damit er nicht durch Längenkürzung verloren geht)
 Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diesen konkreten Fall unvollständig ist. Nichts erfinden – nur melden.
 
