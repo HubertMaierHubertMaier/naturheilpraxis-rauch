@@ -61,7 +61,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
       toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
       setSessions([]);
     } else {
-      const visibleSessions = ((data as any)?.sessions ?? []).filter((session: TherapySession) => session.kind !== "befund_checkpoint");
+      const visibleSessions = ((data as any)?.sessions ?? []).filter((session: TherapySession) => !["befund_checkpoint", "quarantine_patient_mismatch"].includes(String(session.kind || "")));
       setSessions(visibleSessions);
     }
     setLoading(false);
