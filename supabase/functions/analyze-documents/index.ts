@@ -302,10 +302,11 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
     body: JSON.stringify({
       model,
       messages: [
-        { role: "system", content: "Du gibst ausschließlich vollständiges HTML zurück, beginnend mit <!DOCTYPE html>." },
+        { role: "system", content: "Du gibst ausschließlich vollständiges HTML zurück, beginnend mit <!DOCTYPE html>. Keine Vorrede, keine Erklärung, keine Code-Fences." },
         { role: "user", content: prompt },
       ],
       temperature: 0.25,
+      max_tokens: 32000,
       stream: true,
     }),
   });
@@ -321,6 +322,8 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
   let buffer = "";
   let started = false;
   let wrapped = false;
+  let emittedChars = 0;
+  let lastFinishReason = "";
 
   return new ReadableStream({
     async pull(controller) {
@@ -329,7 +332,31 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
         if (done) {
           if (buffer.length) {
             const tail = stripHtmlFence(buffer);
-            if (tail) controller.enqueue(encoder.encode(tail));
+            if (tail) { controller.enqueue(encoder.encode(tail)); emittedChars += tail.length; }
+          }
+          // Fallback: Stream lieferte kein/zu wenig sichtbares HTML → einmal non-streaming auf Flash retry
+          if (emittedChars < 300) {
+            console.warn(`analyze-documents final stream empty (chars=${emittedChars}, finish=${lastFinishReason}) – fallback to non-stream flash`);
+            try {
+              const fallback = await callGatewayText(apiKey, "google/gemini-2.5-flash", prompt, 0.2);
+              const html = stripHtmlFence(fallback);
+              if (html && html.length > 100) {
+                if (!started) {
+                  if (!/^<!DOCTYPE/i.test(html) && !/^<html/i.test(html)) {
+                    controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
+                    wrapped = true;
+                  }
+                }
+                controller.enqueue(encoder.encode(html));
+              } else {
+                controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Die KI hat keine HTML-Antwort geliefert (finish_reason=${lastFinishReason || "unknown"}). Bitte erneut versuchen oder Umfang reduzieren.</p>`));
+                wrapped = true;
+              }
+            } catch (fbErr) {
+              console.error("fallback flash failed:", (fbErr as Error).message);
+              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Stream leer und Fallback fehlgeschlagen: ${(fbErr as Error).message.replace(/[<>]/g, "")}</p>`));
+              wrapped = true;
+            }
           }
           if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
           controller.close();
@@ -347,6 +374,8 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
           try {
             const j = JSON.parse(data);
             const delta = j.choices?.[0]?.delta?.content ?? "";
+            const fr = j.choices?.[0]?.finish_reason;
+            if (fr) lastFinishReason = String(fr);
             if (delta) textOut += delta;
           } catch { /* ignore malformed SSE frame */ }
         }
@@ -360,6 +389,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
             started = true;
           }
           controller.enqueue(encoder.encode(textOut));
+          emittedChars += textOut.length;
         }
       } catch (err) {
         controller.error(err);
@@ -368,6 +398,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
     cancel() { reader.cancel().catch(() => {}); },
   });
 }
+
 
 function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, model: string, totalChars: number) {
   return new ReadableStream<Uint8Array>({
