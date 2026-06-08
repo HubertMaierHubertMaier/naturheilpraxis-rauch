@@ -968,7 +968,7 @@ export function TherapyRecommendation() {
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
   const applyExtractedToInputs = () => {
     if (!extractedFromDocs) return;
-    const { diagnoses, symptoms } = extractedFromDocs;
+    const { diagnoses, symptoms, medications } = extractedFromDocs;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
       setManualDiagnosen((existing) => {
@@ -1010,9 +1010,36 @@ export function TherapyRecommendation() {
         return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
       });
     }
+    // Medikamente → Textarea "medikamente" (mit Arzt/„unbekannt", Datum, Indikation, Wirkmech., NW)
+    if (medications.length) {
+      setMedikamente((prev) => {
+        const existingLines = new Set(
+          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
+        );
+        const newLines: string[] = [];
+        for (const m of medications) {
+          const head = `${m.name}${m.dosis ? ` ${m.dosis}` : ""}`.trim();
+          if (existingLines.has(head.toLowerCase())) continue;
+          existingLines.add(head.toLowerCase());
+          const meta: string[] = [];
+          meta.push(`verordnet von: ${m.vonWem?.trim() || "unbekannt"}`);
+          meta.push(`Datum: ${m.datum?.trim() || "unbekannt"}`);
+          if (m.indikation?.trim()) meta.push(`Indikation: ${m.indikation.trim()}`);
+          if (m.grundVerordnung?.trim()) meta.push(`Grund: ${m.grundVerordnung.trim()}`);
+          if (m.wirkmechanismus?.trim()) meta.push(`Wirkung: ${m.wirkmechanismus.trim()}`);
+          if (m.nebenwirkungen?.trim()) meta.push(`NW: ${m.nebenwirkungen.trim()}`);
+          if (m.status?.trim()) meta.push(`Status: ${m.status.trim()}`);
+          if (m.quelle?.trim()) meta.push(`📄 ${m.quelle.trim()}`);
+          if (m.zitat?.trim()) meta.push(`„${m.zitat.trim()}"`);
+          newLines.push(`• ${head} — ${meta.join(" · ")}`);
+        }
+        if (!newLines.length) return prev;
+        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
+      });
+    }
     toast({
       title: "In Eingabemaske übernommen",
-      description: `${diagnoses.length} Diagnose(n) und ${symptoms.length} Symptom(e) eingefügt (mit Quelle).`,
+      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) eingefügt (mit Quelle).`,
     });
     setExtractedFromDocs(null);
   };
