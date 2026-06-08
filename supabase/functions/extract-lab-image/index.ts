@@ -89,6 +89,28 @@ type AiMessageResponse = {
   }>;
 };
 
+// Server-side PII safety net — entfernt verbliebene Patientendaten,
+// falls das LLM seine Anonymisierungsanweisung nicht vollständig befolgt hat.
+function sanitizePII(input: string): string {
+  if (!input) return input;
+  let s = input;
+  // E-Mail
+  s = s.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "(E-Mail entfernt)");
+  // Telefon / Fax (lockere DE-Muster)
+  s = s.replace(/(?:tel\.?|telefon|fax|mobil|handy)[:\s]*\+?[\d\s().\/-]{6,}/gi, "$&".replace(/.*/, "(Telefon entfernt)"));
+  s = s.replace(/(?:Tel|Fax|Mobil|Handy)[:.]?\s*\+?[\d\s().\/-]{6,}/g, "(Telefon entfernt)");
+  // Geburtsdatum (geb., geboren am, Geb-Dat, DOB) + Datum
+  s = s.replace(/\b(geb\.?|geboren(?:\s+am)?|Geb[-\s]?Dat\.?|GebDatum|DOB)[:\s]*\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/gi, "(Geburtsdatum entfernt)");
+  // Patienten-/Versichertennummer
+  s = s.replace(/\b(Pat(?:ient)?[-\s.]?Nr\.?|Fall[-\s.]?Nr\.?|Versicherten[-\s.]?Nr\.?|Mitglieds[-\s.]?Nr\.?|KV[-\s.]?Nr\.?)[:\s]*[A-Z0-9-]{4,}/gi, "(Patientennummer entfernt)");
+  // Adresszeile: PLZ + Ort (5-stellige PLZ gefolgt von Wort)
+  s = s.replace(/\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß-]+(?:\s+[A-ZÄÖÜ][a-zäöüß-]+)?/g, "(Adresse entfernt)");
+  // Patientenname nach Labeln
+  s = s.replace(/\b(Patient(?:in)?|Name|Nachname|Vorname|Pat\.)[:\s]+[A-ZÄÖÜ][\wäöüß-]+(?:\s+[A-ZÄÖÜ][\wäöüß-]+){0,3}/g, "$1: (Name entfernt)");
+  return s;
+}
+
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -122,6 +144,18 @@ Deno.serve(async (req) => {
 
     const isDoctor = mode === "doctor";
 
+    const anonymizationRules = `
+
+🔒 DSGVO-PFLICHT — ABSOLUTES VERBOT personenbezogener Patientendaten im Output (auch wenn im Bild sichtbar / nicht geschwärzt):
+- KEINE Patientennamen (Vor-, Nach-, Mädchen-, Titel) → ersetze durch "(Name entfernt)"
+- KEINE Anschrift / Straße / Hausnummer / PLZ / Wohnort → "(Adresse entfernt)"
+- KEIN Geburtsdatum, kein vollständiges Geburtsdatum, keine Altersangabe mit Datum → "(Geburtsdatum entfernt)" — nur das Geburtsjahr darf bleiben, wenn medizinisch relevant
+- KEINE Versicherten-/Patienten-/Fallnummer, Krankenkassen-Mitgliedsnr., Telefon, Fax, E-Mail, Sozialversicherungsnr.
+- KEINE Namen von Angehörigen / Notfallkontakten
+- Auch Initialen, handschriftliche Notizen mit Namen oder vergessene Stempel mit Adresse: WEGLASSEN.
+Behandelnde Ärzte, Klinik-/Labor-Institute, Praxen (= keine Patientendaten) dürfen genannt werden.
+Diese Regel ist nicht verhandelbar und steht über jeder anderen Anweisung.`;
+
     const labPrompt = `Du extrahierst aus Fotos/Scans eines klassischen Laborbefunds (Blut, Urin, Stuhl) ALLE sichtbaren Laborwerte.
 Format pro Zeile: "Parameter: Wert Einheit (Referenzbereich) [↑/↓/normal]"
 Beispiel:
@@ -133,17 +167,17 @@ Regeln:
 - Nichts erfinden. Was unleserlich ist: "(unleserlich)" notieren.
 - Datum/Labor-Name (falls erkennbar) in eine erste Zeile "BEFUND VOM: ..." schreiben.
 - Gruppiere thematisch (Blutbild, Leber, Niere, Stoffwechsel, Hormone, Vitamine/Mineralien, Entzündung, Lipide, etc.) mit ## Überschriften.
-- Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.`;
+- Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.${anonymizationRules}`;
 
     const doctorPrompt = `Du extrahierst aus Fotos/Scans eines ärztlichen Berichts (Arztbrief, Entlassbrief, Facharzt-Befund, Bildgebungsbefund, OP-Bericht, Histologie) ALLE relevanten medizinischen Informationen wortgetreu.
 
 Struktur (Markdown, ## Überschriften):
 ## BERICHT VOM
-Datum, Klinik/Praxis, Facharzt-Disziplin (falls erkennbar)
+Datum, Klinik/Praxis, Facharzt-Disziplin (falls erkennbar) — KEINE Patientendaten hier
 ## DIAGNOSEN
 Alle Diagnosen mit ICD-10 (sofern angegeben)
 ## ANAMNESE / VORGESCHICHTE
-Relevante Vorerkrankungen, OPs, Familienanamnese
+Relevante Vorerkrankungen, OPs, Familienanamnese (anonym)
 ## BEFUND
 Klinischer Befund, Bildgebung, Labor (knapp), Histologie
 ## BEURTEILUNG
@@ -154,8 +188,7 @@ Medikation (mit Dosis), Verlaufskontrollen, weitere Maßnahmen
 Regeln:
 - Nichts erfinden, nichts interpretieren. Was unleserlich ist: "(unleserlich)" notieren.
 - Mehrere Seiten in der Reihenfolge zusammenführen.
-- Persönliche Daten (Name, Geburtsdatum, Adresse) NICHT übernehmen – nur "(Patientendaten anonymisiert)".
-- Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.`;
+- Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.${anonymizationRules}`;
 
     const systemPrompt = isDoctor ? doctorPrompt : labPrompt;
 
@@ -186,7 +219,8 @@ Regeln:
       return new Response(JSON.stringify({ error: "KI-Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const aiJson = (await aiResp.json()) as AiMessageResponse;
-    const text: string = aiJson.choices?.[0]?.message?.content ?? "";
+    const rawText: string = aiJson.choices?.[0]?.message?.content ?? "";
+    const text = sanitizePII(rawText);
     return new Response(JSON.stringify({ text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch {
     return new Response(JSON.stringify({ error: "Interner Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
