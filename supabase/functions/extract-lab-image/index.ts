@@ -197,7 +197,8 @@ Regeln:
       return new Response(JSON.stringify({ error: "KI-Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const aiJson = (await aiResp.json()) as AiMessageResponse;
-    const text: string = aiJson.choices?.[0]?.message?.content ?? "";
+    const rawText: string = aiJson.choices?.[0]?.message?.content ?? "";
+    const text = sanitizePII(rawText);
     return new Response(JSON.stringify({ text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch {
     return new Response(JSON.stringify({ error: "Interner Fehler" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
