@@ -265,6 +265,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
+  const pseudonymIdRef = useRef("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
@@ -335,6 +336,10 @@ export function TherapyRecommendation() {
   const lastAutoSavedPayloadRef = useRef("");
   const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    pseudonymIdRef.current = normalizePseudonymId(pseudonymId);
+  }, [pseudonymId]);
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
     _pseudonym_id: normalizePseudonymId(pseudonymId),
@@ -472,9 +477,16 @@ export function TherapyRecommendation() {
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
-  const applyDraftPayload = useCallback((d: any) => {
+  const applyDraftPayload = useCallback((d: any, expectedPid?: string) => {
     const data = normalizeTherapyInput(d);
     if (!Object.keys(data).length) return;
+    if (expectedPid) {
+      const embedded = getEmbeddedPseudonymId(data);
+      if (embedded && embedded !== normalizePseudonymId(expectedPid)) {
+        toast({ title: "Sicherheitsstopp", description: "Gespeicherte Eingaben gehören zu einem anderen Pseudonym und wurden nicht geladen.", variant: "destructive" });
+        return;
+      }
+    }
     if (Array.isArray(data.pathogens) && data.pathogens.length) setPathogens(data.pathogens as PathogenEntry[]);
     if (typeof data.symptome === "string") setSymptome(data.symptome);
     if (typeof data.erkrankung === "string") setErkrankung(data.erkrankung);
@@ -499,7 +511,7 @@ export function TherapyRecommendation() {
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -519,13 +531,14 @@ export function TherapyRecommendation() {
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
-    if (localData) applyDraftPayload(localData);
+    if (localData) applyDraftPayload(localData, pid);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
     loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId, toast, applyDraftPayload]);
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
+    if (!isPatientScopedStorageReady(pid)) return;
     try {
       const { data } = await (supabase as any)
         .from("therapy_sessions")
@@ -534,6 +547,7 @@ export function TherapyRecommendation() {
         .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
         .order("updated_at", { ascending: false })
         .limit(10);
+      if (pseudonymIdRef.current !== pid) return;
       if (!Array.isArray(data) || !data.length) {
         if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
         return;
@@ -551,6 +565,8 @@ export function TherapyRecommendation() {
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
         const e = normalizeTherapyInput(row?.eingabe_daten);
+        const embedded = getEmbeddedPseudonymId(e);
+        if (embedded && embedded !== pid) continue;
         for (const k of stringKeys) {
           if (mergeTextKeys.has(k)) {
             if (typeof e[k] === "string" && e[k].trim()) {
@@ -582,8 +598,9 @@ export function TherapyRecommendation() {
       const newest = data[0];
       const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
       if (cloudTs >= localTs) {
+        if (pseudonymIdRef.current !== pid) return;
         patientDataOwnerRef.current = pid;
-        applyDraftPayload(merged);
+        applyDraftPayload({ ...merged, _pseudonym_id: pid, pseudonymId: pid }, pid);
         const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
         if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
         const filledFields = Object.keys(merged).filter((k) => {
