@@ -1404,11 +1404,9 @@ export function TherapyRecommendation() {
                   <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
                     <Search className="h-4 w-4 text-teal-600" />
                     Perplexity-Recherche / externe AI-Zusatzauswertung
-                    {perplexityAnalyse.length > 0 && (
-                      <span className="ml-auto text-[11px] font-mono text-muted-foreground">
-                        {perplexityAnalyse.length.toLocaleString("de-DE")} Z. · ≈{Math.round(perplexityAnalyse.length / 2500)} Seiten
-                      </span>
-                    )}
+                    <span className="ml-auto">
+                      <WorkloadBadge chars={perplexityAnalyse.length} hint="Recherche-Auswertung lesen, Quellen prüfen, in DDx einarbeiten" />
+                    </span>
                   </label>
                   <Textarea
                     value={perplexityAnalyse}
