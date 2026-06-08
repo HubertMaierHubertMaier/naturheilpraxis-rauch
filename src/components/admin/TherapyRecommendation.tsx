@@ -413,7 +413,7 @@ export function TherapyRecommendation() {
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
   const DRAFT_KEY = "therapy.draftInputs.patientSafe.v2";
-  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
+  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -424,9 +424,11 @@ export function TherapyRecommendation() {
       if (!raw) return;
       const d = JSON.parse(raw);
       if (!d?._pseudonym_id && !d?.pseudonymId) return;
+      const storedPid = normalizePseudonymId(String(d?._pseudonym_id || d?.pseudonymId || ""));
+      if (!isPatientScopedStorageReady(storedPid)) return;
       if (typeof d?.pseudonymId === "string") {
-        patientDataOwnerRef.current = normalizePseudonymId(d.pseudonymId);
-        setPseudonymId(d.pseudonymId);
+        patientDataOwnerRef.current = storedPid;
+        setPseudonymId(storedPid);
       }
       if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
       if (typeof d?.symptome === "string") setSymptome(d.symptome);
@@ -459,12 +461,13 @@ export function TherapyRecommendation() {
     if (!draftLoadedRef.current) return;
     try {
       const draftPayload = {
-        pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
+        _pseudonym_id: normalizePseudonymId(pseudonymId),
+        pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+      if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
