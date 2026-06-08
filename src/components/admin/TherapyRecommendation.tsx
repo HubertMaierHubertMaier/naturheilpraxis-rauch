@@ -132,6 +132,17 @@ type PreparedAnalysis = {
 };
 
 const normalizePseudonymId = (value: string) => value.trim();
+const STANDARD_PSEUDONYM_PATTERN = /^P-\d{4}-\d{4}$/i;
+const isPatientScopedStorageReady = (value: string) => {
+  const pid = normalizePseudonymId(value);
+  if (!pid) return false;
+  // Standard-Pseudonyme erst laden/speichern, wenn sie vollständig sind.
+  // Verhindert Autosaves während des Tippens wie "P", "P-2026-000".
+  if (/^P-/i.test(pid)) return STANDARD_PSEUDONYM_PATTERN.test(pid);
+  // Eigene Codes bleiben möglich, aber erst ab sinnvoller Mindestlänge.
+  return pid.length >= 6;
+};
+const getEmbeddedPseudonymId = (payload: Record<string, unknown>) => normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
 
 const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
 
@@ -358,7 +369,7 @@ export function TherapyRecommendation() {
   }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
-    const embedded = normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
+    const embedded = getEmbeddedPseudonymId(payload);
     if (embedded && embedded !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
   }, []);
 
