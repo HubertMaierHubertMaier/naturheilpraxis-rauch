@@ -806,6 +806,7 @@ export function TherapyRecommendation() {
             arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
+            perplexityAnalyse: perplexityAnalyse.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
