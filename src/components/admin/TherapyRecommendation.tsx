@@ -1019,6 +1019,7 @@ export function TherapyRecommendation() {
       clearPatientScopedState();
     }
     patientDataOwnerRef.current = next;
+    pseudonymIdRef.current = next;
     setPseudonymId(nextValue);
   }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
