@@ -1082,46 +1082,59 @@ export function TherapyRecommendation() {
         }
       } catch { /* nicht kritisch */ }
 
-      writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
-      const finalHeaders = await getFreshAuthHeaders();
-      const resp = await fetch(endpoint, {
-        method: "POST",
-        headers: finalHeaders,
-        body: JSON.stringify({
-          analysisMode: "final",
-          partials,
-          totalChars,
-          alter: alter.trim() || undefined,
-          geschlecht: geschlecht || undefined,
-          pseudonymId: pseudonymId || undefined,
-          useProModel: useProModel || undefined,
-        }),
-      });
-      if (!resp.ok || !resp.body) {
-        throw new Error(await readAnalysisError(resp));
-      }
-      const model = resp.headers.get("x-model") || "?";
-      const analysisMode = resp.headers.get("x-analysis-mode") || "single-pass";
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
       let full = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        full += chunk;
-        if (live) {
-          live.textContent = (live.textContent || "") + chunk;
-          live.scrollTop = live.scrollHeight;
+      let model = "fallback";
+      let analysisMode = "client-checkpoint-fallback";
+      writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
+      try {
+        let resp: Response | null = null;
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          const finalHeaders = await getFreshAuthHeaders();
+          resp = await fetch(endpoint, {
+            method: "POST",
+            headers: finalHeaders,
+            body: JSON.stringify({
+              analysisMode: "final",
+              partials,
+              totalChars,
+              alter: alter.trim() || undefined,
+              geschlecht: geschlecht || undefined,
+              pseudonymId: pseudonymId || undefined,
+              useProModel: useProModel || undefined,
+            }),
+          });
+          if (resp.ok && resp.body) break;
+          const finalError = await readAnalysisError(resp);
+          if (attempt === 2 || !isRecoverableAnalysisTimeout(finalError)) throw new Error(finalError);
+          writeProgress(`⚠ Abschluss-Zusammenführung fehlgeschlagen (${finalError}). Neuer Versuch…`);
+          await supabase.auth.refreshSession().catch(() => null);
+          await analysisDelay(1500);
         }
+        if (!resp?.ok || !resp.body) throw new Error("Abschluss-Zusammenführung fehlgeschlagen");
+        model = resp.headers.get("x-model") || "?";
+        analysisMode = resp.headers.get("x-analysis-mode") || "single-pass";
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          full += chunk;
+          if (live) {
+            live.textContent = (live.textContent || "") + chunk;
+            live.scrollTop = live.scrollHeight;
+          }
+        }
+        full += decoder.decode();
+      } catch (finalError) {
+        writeProgress(`⚠ Finale Zusammenführung nicht stabil (${(finalError as Error).message}). Erstelle speicherbare Ersatz-Auswertung aus den fertigen Teilanalysen…`);
+        full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
       }
-      full += decoder.decode();
       full = sanitizeFinalAnalysisHtml(full);
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
       if (!hasMeaningfulAnalysisContent) {
-        writeProgress("⚠ Abschluss-HTML war leer/unvollständig. Erstelle sichere Ersatz-Auswertung aus den 17 fertigen Teilanalysen…");
+        writeProgress("⚠ Abschluss-HTML war leer/unvollständig. Erstelle sichere Ersatz-Auswertung aus den fertigen Teilanalysen…");
         full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
       }
 
