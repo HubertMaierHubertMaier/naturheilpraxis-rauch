@@ -957,7 +957,8 @@ serve(async (req) => {
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
-    if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte): ${sonstigeUntersuchungenText}`);
+    if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
+    if (perplexityAnalyseText) patientInfo.push(`Externe Perplexity-/AI-Recherche & Literaturauswertung (Zusatzkontext, ${perplexityAnalyseText.length} Zeichen): ${perplexityAnalyseText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
     // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
