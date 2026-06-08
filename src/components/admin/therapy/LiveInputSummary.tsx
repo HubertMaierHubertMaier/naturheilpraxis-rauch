@@ -203,6 +203,16 @@ export function LiveInputSummary({
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
           </div>
         )}
+
+        {hasSonstige && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
