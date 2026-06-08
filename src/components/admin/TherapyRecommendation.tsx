@@ -567,6 +567,7 @@ export function TherapyRecommendation() {
       const newest = data[0];
       const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
       if (cloudTs >= localTs) {
+        patientDataOwnerRef.current = pid;
         applyDraftPayload(merged);
         const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
         if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
@@ -974,18 +975,19 @@ export function TherapyRecommendation() {
   const handlePseudonymChange = useCallback((nextValue: string) => {
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
-    if (previous && next && previous !== next) {
+    const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
+    if (hasPatientScopedData && previous && next && previous !== next) {
       clearPatientScopedState();
       toast({
         title: "Patient gewechselt – Formular geleert",
         description: `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`,
       });
-    } else if (!next) {
+    } else if (hasPatientScopedData && !next) {
       clearPatientScopedState();
     }
     patientDataOwnerRef.current = next;
     setPseudonymId(nextValue);
-  }, [pseudonymId, clearPatientScopedState, toast]);
+  }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
   const handleLoadSession = (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
@@ -993,6 +995,7 @@ export function TherapyRecommendation() {
       return;
     }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
+    patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
     setSymptome(asText(d.symptome));
