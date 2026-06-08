@@ -621,7 +621,8 @@ export function TherapyRecommendation() {
           const { error } = await (supabase as any)
             .from("therapy_sessions")
             .update(updateBody)
-            .eq("id", autoSaveSessionIdRef.current);
+            .eq("id", autoSaveSessionIdRef.current)
+            .eq("pseudonym_id", pid);
           if (runId !== autoSaveRunIdRef.current) return;
           if (!error) {
             lastAutoSavedPayloadRef.current = payload;
@@ -900,10 +901,76 @@ export function TherapyRecommendation() {
       .select("pseudonym_id")
       .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
     const existing = ((data || []) as Array<{ pseudonym_id: string }>).map((r) => r.pseudonym_id);
-    setPseudonymId(generatePseudonymId(existing));
+    handlePseudonymChange(generatePseudonymId(existing));
   };
 
+  const clearPatientScopedState = useCallback(() => {
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    autoSaveSessionIdRef.current = null;
+    checkpointSessionIdRef.current = null;
+    lastAutoSavedPayloadRef.current = "";
+    loadedInputDraftForPidRef.current = "";
+    draftStageLoadedRef.current = "";
+    setPathogens([emptyEntry()]);
+    setSymptome("");
+    setErkrankung("");
+    setAlter("");
+    setGeschlecht("");
+    setGroesseCm("");
+    setGewichtKg("");
+    setSchwanger("nein");
+    setMedikamente("");
+    setBisherigeMittel("");
+    setBudget("");
+    setLaborErhoeht("");
+    setLaborErniedrigt("");
+    setLaborKomplett("");
+    setLaborDatum("");
+    setStuhlbefund("");
+    setArztbericht("");
+    setArztberichtDatum("");
+    setMetatronHeel("");
+    setSonstigeUntersuchungen("");
+    setPerplexityAnalyse("");
+    setSelectedCategories([]);
+    setBevorzugteLinie([]);
+    setPinnedMittel([]);
+    setUseMapReduce(true);
+    setResult("");
+    setAuditInfo(null);
+    setManualMittel([]);
+    setManualDiagnosen([]);
+    setTherapieNotiz("");
+    setExtractedFromDocs(null);
+    setClinicalLoadInfo(null);
+    setWorkflowStage("edit");
+    setAutoSaveStatus("idle");
+  }, []);
+
+  const handlePseudonymChange = useCallback((nextValue: string) => {
+    const previous = normalizePseudonymId(pseudonymId);
+    const next = normalizePseudonymId(nextValue);
+    if (previous && next && previous !== next) {
+      clearPatientScopedState();
+      toast({
+        title: "Patient gewechselt – Formular geleert",
+        description: `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`,
+      });
+    } else if (!next) {
+      clearPatientScopedState();
+    }
+    setPseudonymId(nextValue);
+  }, [pseudonymId, clearPatientScopedState, toast]);
+
   const handleLoadSession = (session: TherapySession) => {
+    if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
+      toast({ title: "Sicherheitsstopp", description: "Diese Sitzung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
+      return;
+    }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
