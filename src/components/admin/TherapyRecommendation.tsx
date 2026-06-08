@@ -974,9 +974,9 @@ export function TherapyRecommendation() {
       };
 
 
-      const partials: string[] = checkpoint?.partials?.slice(0, chunks.length) ?? [];
+      const partials: string[] = checkpoint?.partials?.slice() ?? [];
       const failedChunks: string[] = [];
-      for (let i = partials.length; i < chunks.length; i += 1) {
+      for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           partials.push(await analyzeChunk(chunks[i], String(i + 1), chunks.length));
@@ -986,19 +986,19 @@ export function TherapyRecommendation() {
             failedChunks.push(`${chunks[i].label}: ${message}`);
             partials.push(JSON.stringify({ documents: [], anamnese: {}, diagnoses: [], medicationsTherapies: [], findings: [], redFlags: [{ text: `Teilpaket konnte technisch nicht ausgewertet werden: ${chunks[i].label}`, beleg: { quelle: chunks[i].label, teil: `${i + 1}/${chunks.length}`, zitat: message.slice(0, 180) } }], openQuestions: [`Teilpaket erneut prüfen/importieren: ${chunks[i].label}`], missingReports: [`Technisch nicht verarbeitet: ${chunks[i].label}`] }));
             writeProgress(`⚠ Teil ${i + 1} übersprungen und als technische Lücke dokumentiert: ${message}`);
-            continue;
-          }
-          const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
-          writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
-          for (let r = 0; r < retryChunks.length; r += 1) {
-            writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
-            try {
-              partials.push(await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1));
-            } catch (retryError) {
-              const retryMessage = (retryError as Error).message || String(retryError);
-              failedChunks.push(`${retryChunks[r].label}: ${retryMessage}`);
-              partials.push(JSON.stringify({ documents: [], anamnese: {}, diagnoses: [], medicationsTherapies: [], findings: [], redFlags: [{ text: `Unter-Teilpaket konnte technisch nicht ausgewertet werden: ${retryChunks[r].label}`, beleg: { quelle: retryChunks[r].label, teil: `${i + 1}.${r + 1}/${chunks.length}`, zitat: retryMessage.slice(0, 180) } }], openQuestions: [`Unter-Teilpaket erneut prüfen/importieren: ${retryChunks[r].label}`], missingReports: [`Technisch nicht verarbeitet: ${retryChunks[r].label}`] }));
-              writeProgress(`  ⚠ Unter-Teil ${i + 1}.${r + 1} dokumentiert als technische Lücke: ${retryMessage}`);
+          } else {
+            const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
+            writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
+            for (let r = 0; r < retryChunks.length; r += 1) {
+              writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
+              try {
+                partials.push(await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1));
+              } catch (retryError) {
+                const retryMessage = (retryError as Error).message || String(retryError);
+                failedChunks.push(`${retryChunks[r].label}: ${retryMessage}`);
+                partials.push(JSON.stringify({ documents: [], anamnese: {}, diagnoses: [], medicationsTherapies: [], findings: [], redFlags: [{ text: `Unter-Teilpaket konnte technisch nicht ausgewertet werden: ${retryChunks[r].label}`, beleg: { quelle: retryChunks[r].label, teil: `${i + 1}.${r + 1}/${chunks.length}`, zitat: retryMessage.slice(0, 180) } }], openQuestions: [`Unter-Teilpaket erneut prüfen/importieren: ${retryChunks[r].label}`], missingReports: [`Technisch nicht verarbeitet: ${retryChunks[r].label}`] }));
+                writeProgress(`  ⚠ Unter-Teil ${i + 1}.${r + 1} dokumentiert als technische Lücke: ${retryMessage}`);
+              }
             }
           }
         }
