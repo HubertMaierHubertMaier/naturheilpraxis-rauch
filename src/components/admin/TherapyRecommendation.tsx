@@ -846,6 +846,7 @@ export function TherapyRecommendation() {
       try {
         const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
         const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
+        const extMed: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }> = [];
         const stripFence = (s: string) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
         for (const p of partials) {
           if (!p) continue;
@@ -876,13 +877,32 @@ export function TherapyRecommendation() {
                 });
               }
             }
+            if (Array.isArray(obj?.medicationsTherapies)) {
+              for (const m of obj.medicationsTherapies) {
+                if (!m?.name) continue;
+                extMed.push({
+                  name: String(m.name).trim(),
+                  dosis: m.dosis || "",
+                  vonWem: m.vonWem || "",
+                  datum: m.datum || "",
+                  indikation: m.indikation || "",
+                  wirkmechanismus: m.wirkmechanismus || "",
+                  nebenwirkungen: m.nebenwirkungen || "",
+                  grundVerordnung: m.grundVerordnung || "",
+                  status: m.status || "",
+                  quelle: m?.beleg?.quelle || "",
+                  zitat: m?.beleg?.zitat || "",
+                });
+              }
+            }
           } catch { /* partial war kein JSON – ignorieren */ }
         }
         // Duplikate ausdünnen (case-insensitive)
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
-        if (dedupDiag.length || dedupSym.length) {
-          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym });
+        const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
+        if (dedupDiag.length || dedupSym.length || dedupMed.length) {
+          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
         }
       } catch { /* nicht kritisch */ }
 
