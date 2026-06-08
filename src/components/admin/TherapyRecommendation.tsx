@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2 } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -147,6 +147,10 @@ export function TherapyRecommendation() {
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
+  const [extractedFromDocs, setExtractedFromDocs] = useState<{
+    diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
+    symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
+  } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
@@ -837,6 +841,50 @@ export function TherapyRecommendation() {
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
       }
 
+      // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
+      try {
+        const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
+        const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
+        const stripFence = (s: string) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+        for (const p of partials) {
+          if (!p) continue;
+          try {
+            const obj = JSON.parse(stripFence(p));
+            if (Array.isArray(obj?.diagnoses)) {
+              for (const d of obj.diagnoses) {
+                if (!d?.diagnose) continue;
+                extDiag.push({
+                  icd10: d.icd10 || "",
+                  diagnose: String(d.diagnose).trim(),
+                  quelle: d.quelle || d?.beleg?.quelle || "",
+                  status: d.status || "",
+                  datum: d?.beleg?.zitat ? "" : "",
+                  zitat: d?.beleg?.zitat || "",
+                });
+              }
+            }
+            const cp = obj?.anamnese?.currentProblems;
+            if (Array.isArray(cp)) {
+              for (const s of cp) {
+                const text = typeof s === "string" ? s : s?.text;
+                if (!text) continue;
+                extSym.push({
+                  text: String(text).trim(),
+                  quelle: s?.beleg?.quelle || "",
+                  zitat: s?.beleg?.zitat || "",
+                });
+              }
+            }
+          } catch { /* partial war kein JSON – ignorieren */ }
+        }
+        // Duplikate ausdünnen (case-insensitive)
+        const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
+        const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
+        if (dedupDiag.length || dedupSym.length) {
+          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym });
+        }
+      } catch { /* nicht kritisch */ }
+
       writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
       const resp = await fetch(endpoint, {
         method: "POST",
@@ -895,6 +943,68 @@ export function TherapyRecommendation() {
       setIsAnalyzingDocs(false);
     }
   };
+
+  // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
+  const applyExtractedToInputs = () => {
+    if (!extractedFromDocs) return;
+    const { diagnoses, symptoms } = extractedFromDocs;
+    // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
+    if (diagnoses.length) {
+      setManualDiagnosen((existing) => {
+        const known = new Set(existing.map((d) => d.diagnose.trim().toLowerCase()));
+        const additions: DiagnoseEntry[] = [];
+        for (const d of diagnoses) {
+          const key = d.diagnose.trim().toLowerCase();
+          if (known.has(key)) continue;
+          known.add(key);
+          const begrParts: string[] = [];
+          if (d.quelle) begrParts.push(`📄 ${d.quelle}`);
+          if (d.status) begrParts.push(`Status: ${d.status}`);
+          if (d.zitat) begrParts.push(`„${d.zitat}"`);
+          additions.push({
+            icd10: d.icd10 || "",
+            diagnose: d.diagnose,
+            begruendung: begrParts.join(" · ") || "aus Befund-Auswertung übernommen",
+          });
+        }
+        return [...existing, ...additions];
+      });
+    }
+    // Symptome → Textarea (mit Quelle/Datum) — vorhandenen Text bewahren
+    if (symptoms.length) {
+      setSymptome((prev) => {
+        const existingLines = new Set(
+          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
+        );
+        const newLines: string[] = [];
+        for (const s of symptoms) {
+          if (existingLines.has(s.text.toLowerCase())) continue;
+          existingLines.add(s.text.toLowerCase());
+          const meta: string[] = [];
+          if (s.quelle) meta.push(s.quelle);
+          if (s.zitat) meta.push(`„${s.zitat}"`);
+          newLines.push(`• ${s.text}${meta.length ? ` (📄 ${meta.join(" · ")})` : ""}`);
+        }
+        if (!newLines.length) return prev;
+        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
+      });
+    }
+    toast({
+      title: "In Eingabemaske übernommen",
+      description: `${diagnoses.length} Diagnose(n) und ${symptoms.length} Symptom(e) eingefügt (mit Quelle).`,
+    });
+    setExtractedFromDocs(null);
+  };
+
+  // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
+  const appendNachgereicht = (text: string) => {
+    if (!text.trim()) return;
+    const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
+    setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}${header}${text}` : `${header.trim()}\n${text}`));
+    toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
+  };
+
 
 
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
@@ -1971,6 +2081,64 @@ export function TherapyRecommendation() {
           </Button>
         )}
       </div>
+
+      {/* 📎 Weitere Dokumente nachladen */}
+      <div className="rounded-md border border-sage-300/70 bg-sage-50/40 dark:bg-sage-950/10 p-3 flex items-start gap-3 flex-wrap">
+        <div className="flex-1 min-w-[260px]">
+          <div className="text-sm font-semibold flex items-center gap-1.5">
+            <FileUp className="h-4 w-4 text-sage-700" />
+            Weitere Befunde nachladen
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Patient hat zusätzliche Unterlagen geschickt? Hier hochladen — der extrahierte Text wird mit Zeitstempel an „Sonstige Voruntersuchungen" angehängt. Danach erneut <strong>„Nur Befund-Auswertung (HTML)"</strong> klicken, um die Auswertung zu ergänzen.
+          </p>
+        </div>
+        <div className="shrink-0">
+          <MultiDocUpload
+            ocrMode="doctor"
+            label="📎 Nachgereichte PDFs / Bilder hochladen"
+            onExtracted={appendNachgereicht}
+          />
+        </div>
+      </div>
+
+      {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
+      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0) && (
+        <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="flex-1 min-w-[260px]">
+              <div className="text-sm font-semibold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4" />
+                Aus der Befund-Auswertung extrahiert
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n) und <strong>{extractedFromDocs.symptoms.length}</strong> aktuelle(s) Beschwerdebild(er) gefunden — inkl. Quelle (Arztbericht/Labor) und wörtlichem Zitat als Beleg. In die Eingabemaske oben übernehmen?
+              </p>
+              {extractedFromDocs.diagnoses.length > 0 && (
+                <details className="mt-1.5">
+                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Diagnosen</summary>
+                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
+                    {extractedFromDocs.diagnoses.slice(0, 8).map((d, i) => (
+                      <li key={i}>
+                        {d.icd10 && <code className="mr-1">{d.icd10}</code>}
+                        <strong>{d.diagnose}</strong>
+                        {d.quelle && <span className="text-muted-foreground"> · 📄 {d.quelle}</span>}
+                      </li>
+                    ))}
+                    {extractedFromDocs.diagnoses.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.diagnoses.length - 8} weitere</li>}
+                  </ul>
+                </details>
+              )}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" onClick={applyExtractedToInputs} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white">
+                <Plus className="h-3.5 w-3.5" /> In Eingabemaske übernehmen
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setExtractedFromDocs(null)}>verwerfen</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workflow-Stage-Indikator */}
       {result && !isStreaming && (
