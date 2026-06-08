@@ -1038,11 +1038,24 @@ export function TherapyRecommendation() {
       });
     }
     toast({
-      title: "In Eingabemaske übernommen",
-      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) eingefügt (mit Quelle).`,
+      title: "Automatisch in Eingabemaske eingetragen",
+      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) ergänzt — jeweils mit Quelle (Dokument), Datum (sonst „unbekannt") und wörtlichem Zitat.`,
     });
+
     setExtractedFromDocs(null);
   };
+
+  // Auto-Übernahme: sobald aus den Befunden Diagnosen/Symptome/Medikamente extrahiert wurden,
+  // direkt in die Eingabemaske (Symptome / Medikamente / Diagnosen) eintragen — mit Quelle, Datum, Zitat.
+  // Banner bleibt sichtbar bis applyExtractedToInputs den State auf null setzt → dient als Bestätigung/Undo.
+  useEffect(() => {
+    if (!extractedFromDocs) return;
+    const { diagnoses, symptoms, medications } = extractedFromDocs;
+    if (!diagnoses.length && !symptoms.length && !medications.length) return;
+    applyExtractedToInputs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extractedFromDocs]);
+
 
   // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
   const appendNachgereicht = (text: string) => {
