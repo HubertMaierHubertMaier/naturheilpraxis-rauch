@@ -313,6 +313,7 @@ export function TherapyRecommendation() {
   const autoSaveTimerRef = useRef<number | null>(null);
   const autoSaveRunIdRef = useRef(0);
   const autoSaveSessionIdRef = useRef<string | null>(null);
+  const checkpointSessionIdRef = useRef<string | null>(null);
   const lastAutoSavedPayloadRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
