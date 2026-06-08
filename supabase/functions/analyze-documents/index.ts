@@ -138,17 +138,43 @@ Patientenkontext: ${patientContext(b)}
 
 Wichtig:
 - Es ist eine reine Befund-Auswertung, KEINE eigene Therapie-Empfehlung und KEINE neuen Mittel-Vorschläge.
-- ABER: Alle in den Dokumenten genannten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel müssen vollständig in "medicationsTherapies" gelistet werden — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status (laufend/abgesetzt/unklar). Lieber zu viel als zu wenig. Wenn ein Medikament nur am Rande erwähnt wird ("nimmt zusätzlich X"), trotzdem aufnehmen.
-- Extrahiere nur, was im Text steht. Keine Halluzination.
+- VOLLSTÄNDIGKEIT IST PFLICHT. Extrahiere ALLES, was an folgenden Standard-Anamnese-Kategorien im Text vorkommt (auch wenn die Überschriften englisch, französisch oder anders benannt sind — semantisch zuordnen):
+  * Current medical problems / Aktuelle Beschwerden
+  * Past medical history / Vorerkrankungen, OPs, stationäre Aufenthalte
+  * Allergies / Allergien & Unverträglichkeiten
+  * Present medication / Aktuelle Medikation (inkl. OTC, Supplemente, Phyto, HP-Mittel)
+  * Habits / Genussmittel, Lebensgewohnheiten (Rauchen, Alkohol, Drogen, Sport, Schlaf, Ernährung)
+  * Review of systems / Systemanamnese (Kopf, HNO, Herz/Lunge, GI, Uro, Neuro, Haut, MSK, Psyche)
+  * Recent medical examinations / controls — letzte Untersuchungen, Kontrollen, Screenings
+  * Vaccination status / Impfstatus
+  * Medical family history / Familienanamnese
+  * Social status / Sozialanamnese (Beruf, Wohnsituation, Familie, Belastungen)
+  * Physical examination / körperlicher Untersuchungsbefund
+  * Additional medical investigation / weiterführende Untersuchungen (Labor, Bildgebung, Funktionsdiagnostik)
+- ALLE Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel vollständig in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Lieber zu viel als zu wenig.
+- Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
-- Anonymisierung respektieren.
-- Heilpraktiker oder Arzt gleichrangig nennen; "ärztlich" nur bei echtem Arztvorbehalt.
+- Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
 Gib ausschließlich kompaktes JSON zurück:
 {
   "documents": [{"datum":"", "quelle":"", "untersuchung":"", "hauptbefund":"", "auffaellig":""}],
+  "anamnese": {
+    "currentProblems": [""],
+    "pastHistory": [""],
+    "allergies": [""],
+    "presentMedication": [""],
+    "habits": [""],
+    "reviewOfSystems": [{"system":"", "befund":""}],
+    "recentExaminations": [""],
+    "vaccinationStatus": [""],
+    "familyHistory": [""],
+    "socialStatus": [""],
+    "physicalExamination": [""],
+    "additionalInvestigations": [""]
+  },
   "diagnoses": [{"icd10":"", "diagnose":"", "quelle":"", "status":"gesichert|Verdacht|Z.n.|unklar"}],
-  "medicationsTherapies": [{"name":"", "vonWem":"", "datum":"", "indikation":"", "status":"laufend|abgesetzt|unklar"}],
+  "medicationsTherapies": [{"name":"", "dosis":"", "vonWem":"", "datum":"", "indikation":"", "wirkmechanismus":"", "nebenwirkungen":"", "grundVerordnung":"", "status":"laufend|abgesetzt|unklar"}],
   "findings": ["wichtige Auffälligkeit/Widerspruch/fehlender Befund"],
   "terms": [{"term":"", "plain":"laienverständlich auf Deutsch"}],
   "redFlags": ["dringlicher Sicherheitshinweis, falls vorhanden"],
@@ -157,12 +183,15 @@ Gib ausschließlich kompaktes JSON zurück:
   "missingReports": ["nachzureichender Befund"]
 }
 
+Leere Felder als [] zurückgeben — Kategorien NIE weglassen.
+
 Dokumentblock: ${block.label}
 
 --- TEXTBEGINN ---
 ${block.text}
 --- TEXTENDE ---`;
 }
+
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
   return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.
@@ -172,23 +201,36 @@ Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCo
 
 VERBINDLICHE OUTPUT-STRUKTUR:
 - Ausschließlich vollständiges HTML: <!DOCTYPE html> ... </html>
-- Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border.
+- Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border, h2 mit linker Bordleiste.
 - Keine Therapie-Empfehlung, keine Mittel-Vorschläge. Es geht um Befundübersicht, Einordnung und Vorbereitung des Erstgesprächs.
-- Keine Halluzination: fehlende Angaben mit "—" oder "nicht angegeben" markieren.
-- HWG-konform: "kann unterstützen", keine Heilversprechen.
-- Praktiker-Gleichrangigkeit: "Heilpraktiker oder Arzt"; "ärztlich" nur bei echtem Arztvorbehalt.
+- VOLLSTÄNDIGKEIT IST PFLICHT. Jede Sektion + Unterpunkt muss erscheinen, auch wenn leer (dann explizit "In den vorliegenden Unterlagen nicht dokumentiert.").
+- Keine Halluzination bei Anamnese-Inhalten. Pharmakologie (Wirkmechanismus/Nebenwirkungen/Indikation) darf aus medizinischem Standardwissen ergänzt und in Sektion 6 als "(Standard-Pharmakologie)" markiert werden.
+- HWG-konform: "kann unterstützen". Praktiker-Gleichrangigkeit: "Heilpraktiker oder Arzt".
 
 Pflicht-Sektionen in Reihenfolge:
 1. <h1>Befund-Auswertung</h1> + Datum + Pseudonym
 2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
 3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig?; neueste zuerst, fehlendes Datum: "ohne Datum".
-4. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
-5. Bereits empfohlene / verordnete Mittel & Therapien — VOLLSTÄNDIGE Tabelle ALLER in den Teilanalysen erwähnten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, Operationen, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel (medicationsTherapies aus allen Teilanalysen zusammenführen, Duplikate konsolidieren, NICHTS weglassen). Spalten: Mittel/Therapie (mit Dosis falls bekannt) | von wem (Arzt/Klinik/Therapeut) | Datum | Indikation | Status (laufend/abgesetzt/unklar). Wenn wirklich kein einziges Mittel in den Quelldokumenten erwähnt wird, schreibe explizit "In den vorliegenden Unterlagen sind keine konkreten Medikamente oder Therapien dokumentiert." — sonst niemals leer lassen.
-6. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
-7. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung; die wichtigsten Begriffe.
-8. Gesamtbild & Arbeitshypothese — 1–3 Absätze aus den Vorbefunden, keine Therapie.
-9. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung falls passend), fehlende Befunde, Differentialdiagnosen, Priorität.
-10. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken.
+4. Strukturierte Anamnese-Übersicht — pro Unterkategorie <h3> + Bullet-Liste oder kompakte Tabelle. ALLE folgenden Unterpunkte sind PFLICHT in dieser Reihenfolge (anamnese-Felder aus allen Teilanalysen konsolidieren):
+   4.1 Aktuelle Beschwerden (Current medical problems)
+   4.2 Vorerkrankungen / OPs / Z.n. (Past medical history)
+   4.3 Allergien & Unverträglichkeiten (Allergies)
+   4.4 Aktuelle Medikation — Kurzliste (Details in Sektion 6)
+   4.5 Genussmittel & Lebensgewohnheiten (Habits)
+   4.6 Systemanamnese (Review of systems) — Tabelle System | Befund
+   4.7 Letzte Untersuchungen / Kontrollen (Recent examinations)
+   4.8 Impfstatus (Vaccination status)
+   4.9 Familienanamnese (Family history)
+   4.10 Sozialanamnese (Social status)
+   4.11 Körperliche Untersuchung (Physical examination)
+   4.12 Weiterführende Untersuchungen (Additional investigations)
+5. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
+6. Medikamente, Präparate & Therapien — DETAIL-Tabelle ALLER in den Teilanalysen erwähnten Mittel (medicationsTherapies aus allen Teilanalysen zusammenführen, Duplikate konsolidieren, NICHTS weglassen). Spalten: Mittel/Wirkstoff (mit Dosis) | von wem (Arzt/Klinik) | Datum | Indikation laut Verordner | Wirkmechanismus (laienverständlich) | Häufige Nebenwirkungen | Grund der Verordnung | Status. Wirkmechanismus/Nebenwirkungen ggf. mit Standard-Pharmakologie ergänzen und als "(Standard-Pharmakologie)" markieren. Homöopathika/Bioresonanz-Mittel: "naturheilkundliches Mittel, keine schulmedizinisch belegte Pharmakologie". Wenn keinerlei Mittel dokumentiert: explizit "Keine Medikamente/Therapien in den Unterlagen dokumentiert." — sonst niemals leer.
+7. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
+8. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung.
+9. Gesamtbild & Arbeitshypothese — 1–3 Absätze, keine Therapie.
+10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen, Priorität.
+11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
