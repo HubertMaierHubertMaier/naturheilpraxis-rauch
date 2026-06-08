@@ -171,6 +171,13 @@ const writeAnalysisCheckpoint = (key: string, checkpoint: AnalysisCheckpoint) =>
   } catch { /* lokale Sicherung optional */ }
 };
 
+const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+  const checkpoint = value as AnalysisCheckpoint | null;
+  if (!checkpoint || ![2, 3].includes(checkpoint.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+  if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
+  return checkpoint;
+};
+
 const readAnalysisError = async (resp: Response) => {
   const text = await resp.text().catch(() => "");
   try {
