@@ -36,6 +36,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Expose-Headers": "x-model, x-input-chars",
     "Vary": "Origin",
   };
   if (isAllowedCorsOrigin(origin)) {
