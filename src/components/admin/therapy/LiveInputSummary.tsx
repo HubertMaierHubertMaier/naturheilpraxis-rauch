@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio } from "lucide-react";
+import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList } from "lucide-react";
 import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
 
 const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
@@ -26,6 +26,7 @@ interface Props {
   arztbericht?: string;
   arztberichtDatum?: string;
   metatronHeel?: string;
+  sonstigeUntersuchungen?: string;
 }
 
 const splitLines = (s?: string) =>
@@ -42,7 +43,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "",
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
@@ -55,16 +56,18 @@ export function LiveInputSummary({
   const stuhlList = splitLines(stuhlbefund);
   const arztberichtList = splitLines(arztbericht);
   const metatronList = splitLines(metatronHeel);
+  const sonstigeList = splitLines(sonstigeUntersuchungen);
 
   const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
   const hasStuhl = stuhlList.length > 0;
   const hasArzt = arztberichtList.length > 0;
   const hasMetatron = metatronList.length > 0;
+  const hasSonstige = sonstigeList.length > 0;
 
   const totalCount =
     filledPathogens.length + symptomList.length + erkrankungList.length +
     laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
-    stuhlList.length + arztberichtList.length + metatronList.length;
+    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length;
 
   const hasAny = totalCount > 0;
   if (!hasAny) return null;
