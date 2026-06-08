@@ -156,12 +156,13 @@ const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) =
 
 const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${pseudonymId.trim() || "ohne-pseudonym"}.${fingerprint}`;
 
-const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const checkpoint = JSON.parse(raw) as AnalysisCheckpoint;
     if (![2, 3].includes(checkpoint?.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+    if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
     if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
     return checkpoint;
   } catch {
@@ -175,9 +176,10 @@ const writeAnalysisCheckpoint = (key: string, checkpoint: AnalysisCheckpoint) =>
   } catch { /* lokale Sicherung optional */ }
 };
 
-const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   const checkpoint = value as AnalysisCheckpoint | null;
   if (!checkpoint || ![2, 3].includes(checkpoint.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+  if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
   if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
   return checkpoint;
 };
