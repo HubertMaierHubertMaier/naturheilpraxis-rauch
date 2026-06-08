@@ -1760,6 +1760,7 @@ export function TherapyRecommendation() {
 
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
+    pseudonymIdRef.current = "";
     setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
