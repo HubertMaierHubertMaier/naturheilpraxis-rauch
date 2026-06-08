@@ -530,7 +530,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         }
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
-        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt);
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length));
         const reader = htmlStream.getReader();
         while (true) {
           const { value, done } = await reader.read();
@@ -650,7 +650,12 @@ serve(async (req) => {
       const model = body.useProModel || totalChars > 60_000
         ? "google/gemini-2.5-pro"
         : "google/gemini-2.5-flash";
-      const htmlStream = await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length));
+      const htmlStream = await streamGatewayHtml(
+        LOVABLE_API_KEY,
+        model,
+        buildFinalPrompt(partials, body, totalChars, partials.length),
+        buildDeterministicFinalHtml(partials, body, totalChars, partials.length),
+      );
       return new Response(htmlStream, {
         headers: {
           ...corsHeaders,
@@ -680,7 +685,7 @@ serve(async (req) => {
 
     const stream = largeMode
       ? progressStream(chunks, body, LOVABLE_API_KEY, model, totalChars)
-      : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
+        : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
           JSON.stringify({ rawDocument: blocks.map((block) => `### ${block.label}\n${block.text}`).join("\n\n") }),
         ], body, totalChars, 1));
 
