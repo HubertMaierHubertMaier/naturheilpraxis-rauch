@@ -972,7 +972,7 @@ export function TherapyRecommendation() {
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
-    const previous = normalizePseudonymId(pseudonymId);
+    const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
     if (previous && next && previous !== next) {
       clearPatientScopedState();
@@ -983,6 +983,7 @@ export function TherapyRecommendation() {
     } else if (!next) {
       clearPatientScopedState();
     }
+    patientDataOwnerRef.current = next;
     setPseudonymId(nextValue);
   }, [pseudonymId, clearPatientScopedState, toast]);
 
