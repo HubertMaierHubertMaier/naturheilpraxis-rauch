@@ -17,7 +17,11 @@ export interface TherapySession {
   notiz: string | null;
   created_at: string;
   updated_at: string;
+  kind?: string | null;
+  befund_html?: string | null;
+  befund_meta?: any;
 }
+
 
 interface Props {
   pseudonymId: string;
@@ -153,16 +157,34 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                 [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
                 "";
 
+              const isBefund = s.kind === "befund_auswertung" || !!s.befund_html;
+              const meta = s.befund_meta || {};
+              const openBefund = () => {
+                if (!s.befund_html) return;
+                const w = window.open("", "_blank");
+                if (w) {
+                  w.document.open();
+                  w.document.write(s.befund_html);
+                  w.document.close();
+                }
+              };
               return (
-                <div key={s.id} className="border border-border rounded-md p-3 hover:bg-muted/30 transition">
+                <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                   <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <FileText className={`h-4 w-4 mt-0.5 shrink-0 ${isBefund ? "text-primary" : "text-muted-foreground"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-medium text-foreground">{date}</span>
+                        {isBefund && (
+                          <Badge variant="default" className="text-[10px] py-0 h-4">📄 Befund-Auswertung</Badge>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{summary}</p>
-                      {labParts.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {isBefund
+                          ? `${(meta.total_chars || 0).toLocaleString("de-DE")} Zeichen · ${meta.chunk_count || "?"} Teilpaket(e)${meta.model ? ` · ${meta.model}` : ""}`
+                          : summary}
+                      </p>
+                      {!isBefund && labParts.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {labParts.map((l, i) => (
                             <Badge key={i} variant={l === "Auto-Sicherung" ? "secondary" : "outline"} className="text-[10px] py-0 h-4">{l}</Badge>
@@ -178,23 +200,33 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                   </div>
 
                   <div className="flex gap-1 mt-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setExpandedId(isExpanded ? null : s.id)}
-                    >
-                      <Eye className="h-3 w-3" />
-                      {isExpanded ? "Ausblenden" : "Anzeigen"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => onLoadSession(s)}
-                    >
-                      In Formular laden
-                    </Button>
+                    {isBefund && (
+                      <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
+                        <FileText className="h-3 w-3" />
+                        Auswertung öffnen
+                      </Button>
+                    )}
+                    {!isBefund && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                        >
+                          <Eye className="h-3 w-3" />
+                          {isExpanded ? "Ausblenden" : "Anzeigen"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => onLoadSession(s)}
+                        >
+                          In Formular laden
+                        </Button>
+                      </>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -214,6 +246,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
+
                   </div>
 
                   {editNoteId === s.id && (

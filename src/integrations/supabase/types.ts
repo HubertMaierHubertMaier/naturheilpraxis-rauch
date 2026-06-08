@@ -451,31 +451,40 @@ export type Database = {
       }
       therapy_sessions: {
         Row: {
+          befund_html: string | null
+          befund_meta: Json | null
           created_at: string
           created_by: string
           eingabe_daten: Json
-          empfehlung: string
+          empfehlung: string | null
           id: string
+          kind: string
           notiz: string | null
           pseudonym_id: string
           updated_at: string
         }
         Insert: {
+          befund_html?: string | null
+          befund_meta?: Json | null
           created_at?: string
           created_by: string
           eingabe_daten?: Json
-          empfehlung?: string
+          empfehlung?: string | null
           id?: string
+          kind?: string
           notiz?: string | null
           pseudonym_id: string
           updated_at?: string
         }
         Update: {
+          befund_html?: string | null
+          befund_meta?: Json | null
           created_at?: string
           created_by?: string
           eingabe_daten?: Json
-          empfehlung?: string
+          empfehlung?: string | null
           id?: string
+          kind?: string
           notiz?: string | null
           pseudonym_id?: string
           updated_at?: string

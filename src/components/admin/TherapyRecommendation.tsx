@@ -1031,7 +1031,42 @@ export function TherapyRecommendation() {
         toast({ title: "Auswertung mit Fehler beendet", description: "Details stehen im geöffneten HTML-Fenster.", variant: "destructive" });
       } else {
         toast({ title: "Befund-Auswertung fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen vollständig ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}` });
+
+        // Auto-Save in therapy_sessions (DSGVO-konform, nur Pseudonym)
+        const pid = pseudonymId.trim();
+        if (pid) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
+                pseudonym_id: pid,
+                kind: "befund_auswertung",
+                eingabe_daten: { kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
+                empfehlung: "",
+                befund_html: full,
+                befund_meta: {
+                  model,
+                  analysis_mode: analysisMode,
+                  chunk_count: chunks.length,
+                  total_chars: totalChars,
+                  saved_at: new Date().toISOString(),
+                },
+                created_by: user.id,
+              });
+              if (saveErr) {
+                toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+              } else {
+                toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
+              }
+            }
+          } catch (saveEx) {
+            toast({ title: "Speichern fehlgeschlagen", description: (saveEx as Error).message, variant: "destructive" });
+          }
+        } else {
+          toast({ title: "Nicht gespeichert", description: "Ohne Pseudonym-ID wird die Auswertung nicht im Verlauf abgelegt.", variant: "default" });
+        }
       }
+
     } catch (e) {
       const msg = (e as Error).message;
       if (w) {
