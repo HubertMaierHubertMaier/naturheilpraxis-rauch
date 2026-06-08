@@ -36,6 +36,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Expose-Headers": "x-model, x-input-chars",
     "Vary": "Origin",
   };
   if (isAllowedCorsOrigin(origin)) {
@@ -209,11 +210,12 @@ serve(async (req) => {
           { role: "user", content: prompt },
         ],
         temperature: 0.3,
+        stream: true,
       }),
     });
 
-    if (!aiResp.ok) {
-      const errText = await aiResp.text();
+    if (!aiResp.ok || !aiResp.body) {
+      const errText = await aiResp.text().catch(() => "");
       if (aiResp.status === 429) {
         return new Response(JSON.stringify({ error: "Rate-Limit erreicht. Bitte später erneut versuchen." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -227,23 +229,69 @@ serve(async (req) => {
       throw new Error(`AI Gateway ${aiResp.status}: ${errText.slice(0, 500)}`);
     }
 
-    const aiData = await aiResp.json();
-    let html: string = aiData.choices?.[0]?.message?.content ?? "";
+    // SSE → plain-text HTML stream weiterreichen.
+    // Verhindert IDLE_TIMEOUT (150s) bei großem Input, weil kontinuierlich Bytes fließen.
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const reader = aiResp.body.getReader();
+    let buffer = "";
+    let started = false;
+    let wrapped = false;
 
-    // Strip eventuelle Code-Fences
-    html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+    const out = new ReadableStream({
+      async pull(controller) {
+        try {
+          const { value, done } = await reader.read();
+          if (done) {
+            if (buffer.length) {
+              const tail = buffer.replace(/```\s*$/i, "");
+              if (tail) controller.enqueue(encoder.encode(tail));
+            }
+            if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
+            controller.close();
+            return;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          let nl: number;
+          let textOut = "";
+          while ((nl = buffer.indexOf("\n")) !== -1) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") continue;
+            try {
+              const j = JSON.parse(data);
+              const delta = j.choices?.[0]?.delta?.content ?? "";
+              if (delta) textOut += delta;
+            } catch { /* ignore */ }
+          }
+          if (textOut) {
+            if (!started) {
+              textOut = textOut.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "");
+              if (!/^<!DOCTYPE/i.test(textOut) && !/^<html/i.test(textOut)) {
+                controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
+                wrapped = true;
+              }
+              started = true;
+            }
+            controller.enqueue(encoder.encode(textOut));
+          }
+        } catch (err) {
+          controller.error(err);
+        }
+      },
+      cancel() { reader.cancel().catch(() => {}); },
+    });
 
-    if (!/^<!DOCTYPE/i.test(html) && !/^<html/i.test(html)) {
-      // Wrap als Fallback
-      html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>${html}</body></html>`;
-    }
-
-    return new Response(JSON.stringify({
-      html,
-      model,
-      inputChars: totalChars,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(out, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Model": model,
+        "X-Input-Chars": String(totalChars),
+        "Cache-Control": "no-cache",
+      },
     });
 
   } catch (e) {

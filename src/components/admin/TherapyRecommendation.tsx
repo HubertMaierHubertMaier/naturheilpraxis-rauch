@@ -784,14 +784,39 @@ export function TherapyRecommendation() {
           }),
         }
       );
-      if (!resp.ok) {
+      if (!resp.ok || !resp.body) {
         const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
         throw new Error(err.error || `HTTP ${resp.status}`);
       }
-      const { html, model, inputChars } = await resp.json();
+      const model = resp.headers.get("x-model") || "?";
+      const inputChars = Number(resp.headers.get("x-input-chars") || 0);
+
+      // Streaming: progressiv ins neue Tab schreiben (umgeht Edge-Function-IDLE_TIMEOUT)
       if (w) {
         w.document.open();
-        w.document.write(html);
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung lädt…</title></head><body><div id="__stream" style="font-family:system-ui;padding:24px;color:#444"><h2 style="color:#6b8e6b">⏳ Befund-Auswertung wird live generiert…</h2><pre id="__live" style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#888;max-height:40vh;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px"></pre></div></body></html>`);
+        w.document.close();
+      }
+      const live = w?.document.getElementById("__live") as HTMLElement | null;
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        full += chunk;
+        if (live) {
+          live.textContent = (live.textContent || "") + chunk;
+          live.scrollTop = live.scrollHeight;
+        }
+      }
+
+      // Finales HTML ins Tab schreiben
+      if (w) {
+        w.document.open();
+        w.document.write(full);
         w.document.close();
       }
       toast({ title: "Befund-Auswertung fertig", description: `Modell: ${model} · ${inputChars.toLocaleString("de-DE")} Zeichen ausgewertet` });
