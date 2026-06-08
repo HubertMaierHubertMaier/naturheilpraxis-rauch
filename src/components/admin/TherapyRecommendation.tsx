@@ -1041,7 +1041,7 @@ export function TherapyRecommendation() {
               const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { kind: "befund_auswertung", sources: chunks.map((c) => c.title) },
+                eingabe_daten: { kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
