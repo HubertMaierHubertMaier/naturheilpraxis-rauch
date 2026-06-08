@@ -133,18 +133,35 @@ const sanitizeFinalAnalysisHtml = (value: string) => stripAnalysisFence(value).t
 
 const buildFallbackAnalysisHtml = (partials: string[], meta: { pseudonymId?: string; totalChars: number; chunkCount: number }) => {
   const rows = { docs: [] as string[], diagnoses: [] as string[], meds: [] as string[], symptoms: [] as string[], findings: [] as string[], redFlags: [] as string[], questions: [] as string[], missing: [] as string[] };
-  const beleg = (item: any) => [item?.beleg?.quelle || item?.quelle, item?.beleg?.teil, item?.beleg?.zitat ? `„${item.beleg.zitat}”` : ""].filter(Boolean).join(" · ") || "Beleg im Teilpaket dokumentiert";
+  const asRecord = (value: unknown): Record<string, unknown> => value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const getText = (source: Record<string, unknown>, key: string) => typeof source[key] === "string" ? String(source[key]) : "";
+  const beleg = (item: unknown) => {
+    const source = asRecord(item);
+    const b = asRecord(source.beleg);
+    return [getText(b, "quelle") || getText(source, "quelle"), getText(b, "teil"), getText(b, "zitat") ? `„${getText(b, "zitat")}”` : ""].filter(Boolean).join(" · ") || "Beleg im Teilpaket dokumentiert";
+  };
   partials.forEach((partial) => {
     try {
       const obj = JSON.parse(stripAnalysisFence(partial));
-      (obj?.documents || []).forEach((d: any) => rows.docs.push(`<tr><td>${escapeAnalysisHtml(d.datum || "unbekannt")}</td><td>${escapeAnalysisHtml(d.quelle || d?.beleg?.quelle || "unbekannt")}</td><td>${escapeAnalysisHtml(d.untersuchung || "")}</td><td>${escapeAnalysisHtml(d.hauptbefund || d.auffaellig || "")}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`));
-      (obj?.diagnoses || []).forEach((d: any) => rows.diagnoses.push(`<tr><td>${escapeAnalysisHtml(d.icd10 || "—")}</td><td>${escapeAnalysisHtml(d.diagnose || "")}</td><td>${escapeAnalysisHtml(d.status || "unklar")}</td><td>${escapeAnalysisHtml(d.quelle || d?.beleg?.quelle || "unbekannt")}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`));
-      (obj?.medicationsTherapies || []).forEach((m: any) => rows.meds.push(`<tr><td>${escapeAnalysisHtml(m.name || "")}</td><td>${escapeAnalysisHtml(m.dosis || "—")}</td><td>${escapeAnalysisHtml(m.vonWem || "unbekannt")}</td><td>${escapeAnalysisHtml(m.indikation || m.grundVerordnung || "")}</td><td>${escapeAnalysisHtml(m.status || "unklar")}</td><td class="beleg">${escapeAnalysisHtml(beleg(m))}</td></tr>`));
-      (obj?.anamnese?.currentProblems || []).forEach((s: any) => rows.symptoms.push(`<li>${escapeAnalysisHtml(typeof s === "string" ? s : s?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(s))}</span></li>`));
-      (obj?.findings || []).forEach((f: any) => rows.findings.push(`<li>${escapeAnalysisHtml(typeof f === "string" ? f : f?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(f))}</span></li>`));
-      (obj?.redFlags || []).forEach((r: any) => rows.redFlags.push(`<li>${escapeAnalysisHtml(typeof r === "string" ? r : r?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(r))}</span></li>`));
-      (obj?.openQuestions || []).forEach((q: any) => rows.questions.push(`<li>${escapeAnalysisHtml(q)}</li>`));
-      (obj?.missingReports || []).forEach((m: any) => rows.missing.push(`<li>${escapeAnalysisHtml(m)}</li>`));
+      const root = asRecord(obj);
+      const anamnese = asRecord(root.anamnese);
+      (Array.isArray(root.documents) ? root.documents : []).forEach((entry) => {
+        const d = asRecord(entry); const b = asRecord(d.beleg);
+        rows.docs.push(`<tr><td>${escapeAnalysisHtml(getText(d, "datum") || "unbekannt")}</td><td>${escapeAnalysisHtml(getText(d, "quelle") || getText(b, "quelle") || "unbekannt")}</td><td>${escapeAnalysisHtml(getText(d, "untersuchung"))}</td><td>${escapeAnalysisHtml(getText(d, "hauptbefund") || getText(d, "auffaellig"))}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`);
+      });
+      (Array.isArray(root.diagnoses) ? root.diagnoses : []).forEach((entry) => {
+        const d = asRecord(entry); const b = asRecord(d.beleg);
+        rows.diagnoses.push(`<tr><td>${escapeAnalysisHtml(getText(d, "icd10") || "—")}</td><td>${escapeAnalysisHtml(getText(d, "diagnose"))}</td><td>${escapeAnalysisHtml(getText(d, "status") || "unklar")}</td><td>${escapeAnalysisHtml(getText(d, "quelle") || getText(b, "quelle") || "unbekannt")}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`);
+      });
+      (Array.isArray(root.medicationsTherapies) ? root.medicationsTherapies : []).forEach((entry) => {
+        const m = asRecord(entry);
+        rows.meds.push(`<tr><td>${escapeAnalysisHtml(getText(m, "name"))}</td><td>${escapeAnalysisHtml(getText(m, "dosis") || "—")}</td><td>${escapeAnalysisHtml(getText(m, "vonWem") || "unbekannt")}</td><td>${escapeAnalysisHtml(getText(m, "indikation") || getText(m, "grundVerordnung"))}</td><td>${escapeAnalysisHtml(getText(m, "status") || "unklar")}</td><td class="beleg">${escapeAnalysisHtml(beleg(m))}</td></tr>`);
+      });
+      (Array.isArray(anamnese.currentProblems) ? anamnese.currentProblems : []).forEach((entry) => { const s = asRecord(entry); rows.symptoms.push(`<li>${escapeAnalysisHtml(typeof entry === "string" ? entry : getText(s, "text"))} <span class="beleg">${escapeAnalysisHtml(beleg(entry))}</span></li>`); });
+      (Array.isArray(root.findings) ? root.findings : []).forEach((entry) => { const f = asRecord(entry); rows.findings.push(`<li>${escapeAnalysisHtml(typeof entry === "string" ? entry : getText(f, "text"))} <span class="beleg">${escapeAnalysisHtml(beleg(entry))}</span></li>`); });
+      (Array.isArray(root.redFlags) ? root.redFlags : []).forEach((entry) => { const r = asRecord(entry); rows.redFlags.push(`<li>${escapeAnalysisHtml(typeof entry === "string" ? entry : getText(r, "text"))} <span class="beleg">${escapeAnalysisHtml(beleg(entry))}</span></li>`); });
+      (Array.isArray(root.openQuestions) ? root.openQuestions : []).forEach((q) => rows.questions.push(`<li>${escapeAnalysisHtml(q)}</li>`));
+      (Array.isArray(root.missingReports) ? root.missingReports : []).forEach((m) => rows.missing.push(`<li>${escapeAnalysisHtml(m)}</li>`));
     } catch { /* defektes Teilpaket überspringen */ }
   });
   const empty = "<p class=\"muted\">In den verarbeiteten Teilanalysen nicht dokumentiert.</p>";
