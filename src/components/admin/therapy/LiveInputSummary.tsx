@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList } from "lucide-react";
+import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList, Search } from "lucide-react";
 import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
 
 const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
