@@ -988,9 +988,10 @@ export function TherapyRecommendation() {
       } catch { /* nicht kritisch */ }
 
       writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
+      const finalHeaders = await getFreshAuthHeaders();
       const resp = await fetch(endpoint, {
         method: "POST",
-        headers: authHeaders,
+        headers: finalHeaders,
         body: JSON.stringify({
           analysisMode: "final",
           partials,
