@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1179,196 +1180,286 @@ export function TherapyRecommendation() {
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
                 Patientenbefund
               </span>
+              <Badge variant="outline" className="ml-auto text-[10px] font-mono">
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel]
+                  .filter((s) => s && s.trim()).length}/11 Felder
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-accent" />
-                Belastungen / Pathogene
-              </label>
-              <PathogenInput entries={pathogens} onChange={setPathogens} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Symptome</label>
-              <Textarea
-                value={symptome}
-                onChange={(e) => setSymptome(e.target.value)}
-                placeholder="z.B. chronische Müdigkeit, Gelenkschmerzen, Verdauungsbeschwerden..."
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Erkrankung / Diagnose</label>
-              <Input
-                value={erkrankung}
-                onChange={(e) => setErkrankung(e.target.value)}
-                placeholder="z.B. Borreliose, Hashimoto, CFS..."
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">🔬 Erhöhte Laborwerte</label>
-              <Textarea
-                value={laborErhoeht}
-                onChange={(e) => setLaborErhoeht(e.target.value)}
-                placeholder="z.B. LDL 185 mg/dl, Triglyzeride 210 mg/dl, hsCRP 4.2, Homocystein 18..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">🔬 Erniedrigte Laborwerte</label>
-              <Textarea
-                value={laborErniedrigt}
-                onChange={(e) => setLaborErniedrigt(e.target.value)}
-                placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
-                rows={2}
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                <LabImageUpload onExtracted={(t) => {
-                  const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
-                  setLaborKomplett(next);
-                  saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
-                }} />
-              </div>
-              <Textarea
-                value={laborKomplett}
-                onChange={(e) => setLaborKomplett(e.target.value)}
-                placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
-                rows={4}
-              />
-              <div className="flex items-center gap-2 mt-2">
-                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Labor erstellt am:</label>
-                <Input
-                  type="date"
-                  value={laborDatum}
-                  onChange={(e) => setLaborDatum(e.target.value)}
-                  className="h-8 w-auto text-xs"
-                />
-                {laborDatum && (
-                  <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
-              <Textarea
-                value={stuhlbefund}
-                onChange={(e) => setStuhlbefund(e.target.value)}
-                placeholder="z.B. Candida albicans ++, Klebsiella ++, Lactobacillus ↓, Bifidobacterium ↓, sIgA 280 (niedrig), Calprotectin 95 µg/g, pH 6.8, Zonulin erhöht, Pankreas-Elastase 180 (vermindert)..."
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
-            </div>
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
-                <LabImageUpload mode="doctor" onExtracted={(t) => {
-                  const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
-                  setArztbericht(next);
-                  saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
-                }} />
-              </div>
-              <Textarea
-                value={arztbericht}
-                onChange={(e) => setArztbericht(e.target.value)}
-                placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
-                rows={4}
-              />
-              <div className="flex items-center gap-2 mt-2">
-                <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Arztbericht erstellt am:</label>
-                <Input
-                  type="date"
-                  value={arztberichtDatum}
-                  onChange={(e) => setArztberichtDatum(e.target.value)}
-                  className="h-8 w-auto text-xs"
-                />
-                {arztberichtDatum && (
-                  <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
-            </div>
-            <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
-                Heel-Mittel aus Metatron-/NLS-Auswertung
-              </label>
-              <Textarea
-                value={metatronHeel}
-                onChange={(e) => setMetatronHeel(e.target.value)}
-                placeholder="z.B. Lymphomyosot, Traumeel S, Hepeel, Nux vomica-Homaccord, Engystol, Mucosa compositum, Coenzyme compositum, Galium-Heel..."
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
-              </p>
-            </div>
-            <div className="rounded-md border border-indigo-300/60 bg-indigo-50/40 dark:bg-indigo-950/10 p-3">
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <ClipboardList className="h-3.5 w-3.5 text-indigo-600" />
-                Sonstige / unsortierte Voruntersuchungen
-                {sonstigeUntersuchungen.length > 0 && (
-                  <span className="ml-auto text-[11px] font-mono text-muted-foreground">
-                    {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Zeichen
-                    {sonstigeUntersuchungen.length > 80_000 && (
-                      <span className="ml-1 text-amber-700 dark:text-amber-400">· sehr groß → Pro-Modell aktivieren</span>
+          <CardContent className="p-3 sm:p-4">
+            <Tabs defaultValue="befund" className="w-full">
+              <TabsList className="grid w-full grid-cols-5 h-auto gap-1 bg-muted/60">
+                <TabsTrigger value="befund" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
+                  <span>🩺 Befund</span>
+                  <span className="text-[9px] opacity-70 font-mono">
+                    {[symptome, erkrankung].filter((s) => s.trim()).length + pathogens.filter((p) => p.name.trim()).length}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="labor" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
+                  <span>🧪 Labor</span>
+                  <span className="text-[9px] opacity-70 font-mono">
+                    {[laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund].filter((s) => s.trim()).length}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="arzt" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
+                  <span>📄 Arzt/NLS</span>
+                  <span className="text-[9px] opacity-70 font-mono">
+                    {[arztbericht, metatronHeel].filter((s) => s.trim()).length}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="grossdaten" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-950/40">
+                  <span>📚 Großdaten</span>
+                  <span className="text-[9px] opacity-70 font-mono">
+                    {((sonstigeUntersuchungen.length + perplexityAnalyse.length) / 1000).toFixed(0)}k Z.
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
+                  <span>💊 Mittel</span>
+                  <span className="text-[9px] opacity-70 font-mono">
+                    {bisherigeMittel.trim() ? "1" : "0"}
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* ===== TAB: Befund ===== */}
+              <TabsContent value="befund" className="space-y-3 mt-4">
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-accent" />
+                    Belastungen / Pathogene
+                  </label>
+                  <PathogenInput entries={pathogens} onChange={setPathogens} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Symptome</label>
+                  <Textarea
+                    value={symptome}
+                    onChange={(e) => setSymptome(e.target.value)}
+                    placeholder="z.B. chronische Müdigkeit, Gelenkschmerzen, Verdauungsbeschwerden..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Erkrankung / Diagnose</label>
+                  <Input
+                    value={erkrankung}
+                    onChange={(e) => setErkrankung(e.target.value)}
+                    placeholder="z.B. Borreliose, Hashimoto, CFS..."
+                  />
+                </div>
+              </TabsContent>
+
+              {/* ===== TAB: Labor ===== */}
+              <TabsContent value="labor" className="space-y-3 mt-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">🔬 Erhöhte Laborwerte</label>
+                  <Textarea
+                    value={laborErhoeht}
+                    onChange={(e) => setLaborErhoeht(e.target.value)}
+                    placeholder="z.B. LDL 185 mg/dl, Triglyzeride 210 mg/dl, hsCRP 4.2, Homocystein 18..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">🔬 Erniedrigte Laborwerte</label>
+                  <Textarea
+                    value={laborErniedrigt}
+                    onChange={(e) => setLaborErniedrigt(e.target.value)}
+                    placeholder="z.B. Vitamin D 12 ng/ml, Ferritin 8, Omega-3-Index 3.2%, HDL 35..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
+                    <LabImageUpload onExtracted={(t) => {
+                      const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                      setLaborKomplett(next);
+                      saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                    }} />
+                  </div>
+                  <Textarea
+                    value={laborKomplett}
+                    onChange={(e) => setLaborKomplett(e.target.value)}
+                    placeholder="Komplettes klassisches Labor zur Gesamtbewertung – z.B. Großes Blutbild, Differentialblutbild, Leberwerte (GOT/GPT/GGT), Nierenwerte (Krea/Harnstoff/eGFR), Elektrolyte, TSH/fT3/fT4, HbA1c, Lipidstatus, Gerinnung, CRP, Eisenstatus, B12, Folsäure..."
+                    rows={5}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Labor erstellt am:</label>
+                    <Input
+                      type="date"
+                      value={laborDatum}
+                      onChange={(e) => setLaborDatum(e.target.value)}
+                      className="h-8 w-auto text-xs"
+                    />
+                    {laborDatum && (
+                      <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
                     )}
-                  </span>
-                )}
-              </label>
-              <Textarea
-                value={sonstigeUntersuchungen}
-                onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
-                placeholder={"Gemischte Befunde mit eigenen Untersuchungsdaten, z.B.:\n\n— MRT LWS vom 14.03.2024: ...\n— Sono Abdomen vom 02.11.2025: ...\n— EAV-Messung vom 08.06.2026: ...\n— Bioresonanz/NLS vom ...\n— EKG/Lufu/Allergietest/Knochendichte vom ...\n— Reha-/Kurbericht vom ...\n— Selbstmessungen (RR, HRV, CGM) Zeitraum ...\n\nDarf 5–60 Seiten lang sein – wird vollständig an die KI übergeben (kein Trimmen)."}
-                rows={12}
-                className="font-sans"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                <strong>Vollständig verarbeitet</strong> – ganz egal wie lang (auch 60+ Seiten). Die KI <strong>extrahiert die Untersuchungsdaten</strong> selbständig aus dem Text und ordnet jeden Befund seinem Datum/Untersuchungstyp zu (Bildgebung → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend, Reha-Bericht → Anamnesekontext). Bei sehr großen Mengen <strong>Gemini-Pro-Modell</strong> unten aktivieren (1 Mio Token Kontext statt 128k).
-              </p>
-            </div>
-            <div className="rounded-md border border-teal-300/60 bg-teal-50/40 dark:bg-teal-950/10 p-3">
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <Search className="h-3.5 w-3.5 text-teal-600" />
-                Perplexity-Recherche / Zusatzauswertung
-                {perplexityAnalyse.length > 0 && (
-                  <span className="ml-auto text-[11px] font-mono text-muted-foreground">
-                    {perplexityAnalyse.length.toLocaleString("de-DE")} Zeichen
-                  </span>
-                )}
-              </label>
-              <Textarea
-                value={perplexityAnalyse}
-                onChange={(e) => setPerplexityAnalyse(e.target.value)}
-                placeholder={"Komplette Perplexity-/Recherche-Auswertung 1:1 einfügen (mit Zitaten/Quellen). Z.B. Literaturrecherche zu seltener Diagnose, aktuelle Studienlage zu einem Wirkstoff, Differentialdiagnose-Liste aus AI-Search, S3-Leitlinien-Auszug, PubMed-Treffer ...\n\nWird als zusätzlicher Evidenz-Kontext berücksichtigt – Wiki-Mittel haben weiterhin Vorrang, aber Hinweise aus der Recherche fließen in die Differentialdiagnostik & Begründung ein."}
-                rows={10}
-                className="font-sans"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Wird der KI als <strong>externer Recherche-Kontext</strong> (Perplexity, PubMed, Leitlinien) übergeben. Quellen daraus dürfen zitiert werden, ersetzen aber NICHT die hauseigene Wissensdatenbank. Bei Diff.-Diagnostik werden hier genannte Differentialdiagnosen geprüft und gewichtet.
-              </p>
-            </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
+                  <Textarea
+                    value={stuhlbefund}
+                    onChange={(e) => setStuhlbefund(e.target.value)}
+                    placeholder="z.B. Candida albicans ++, Klebsiella ++, Lactobacillus ↓, Bifidobacterium ↓, sIgA 280 (niedrig), Calprotectin 95 µg/g, pH 6.8, Zonulin erhöht, Pankreas-Elastase 180 (vermindert)..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Mikrobiom-Befund, Verdauungsmarker (Elastase, Gallensäuren), Entzündungsmarker (Calprotectin, sIgA, Zonulin), Pilze, Parasiten.</p>
+                </div>
+              </TabsContent>
 
+              {/* ===== TAB: Arzt & NLS ===== */}
+              <TabsContent value="arzt" className="space-y-3 mt-4">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                    <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
+                    <LabImageUpload mode="doctor" onExtracted={(t) => {
+                      const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
+                      setArztbericht(next);
+                      saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                    }} />
+                  </div>
+                  <Textarea
+                    value={arztbericht}
+                    onChange={(e) => setArztbericht(e.target.value)}
+                    placeholder="z.B. Diagnosen mit ICD-10, Anamnese, Befund (Bildgebung/Histologie), Beurteilung des Arztes, Therapieempfehlung mit Medikation..."
+                    rows={6}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <label className="text-xs text-muted-foreground whitespace-nowrap">📅 Arztbericht erstellt am:</label>
+                    <Input
+                      type="date"
+                      value={arztberichtDatum}
+                      onChange={(e) => setArztberichtDatum(e.target.value)}
+                      className="h-8 w-auto text-xs"
+                    />
+                    {arztberichtDatum && (
+                      <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
+                </div>
+                <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
+                  <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                    <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
+                    Heel-Mittel aus Metatron-/NLS-Auswertung
+                  </label>
+                  <Textarea
+                    value={metatronHeel}
+                    onChange={(e) => setMetatronHeel(e.target.value)}
+                    placeholder="z.B. Lymphomyosot, Traumeel S, Hepeel, Nux vomica-Homaccord, Engystol, Mucosa compositum, Coenzyme compositum, Galium-Heel..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
+                  </p>
+                </div>
+              </TabsContent>
 
-            <div>
-              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                <Pill className="h-3.5 w-3.5 text-emerald-600" />
-                Bisherige Naturheilmittel
-              </label>
-              <Textarea
-                value={bisherigeMittel}
-                onChange={(e) => setBisherigeMittel(e.target.value)}
-                placeholder="z.B. Schwarzwalnuss 15 Tropfen 3x/Tag, Wermut 200mg morgens, Oreganoöl 2 Kapseln..."
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis)</p>
-            </div>
+              {/* ===== TAB: Großdaten (Sonstige + Perplexity) — viel Platz, 100+ Seiten ===== */}
+              <TabsContent value="grossdaten" className="space-y-4 mt-4">
+                <div className="rounded-md border border-indigo-300/70 bg-gradient-to-br from-indigo-50/60 to-background dark:from-indigo-950/15 dark:border-indigo-900/40 p-3">
+                  <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <ClipboardList className="h-4 w-4 text-indigo-600" />
+                    Sonstige / unsortierte Voruntersuchungen
+                    <span className="ml-auto flex items-center gap-2 text-[11px] font-mono">
+                      <span className={
+                        sonstigeUntersuchungen.length > 400_000 ? "text-rose-700 font-bold"
+                        : sonstigeUntersuchungen.length > 150_000 ? "text-amber-700 font-semibold"
+                        : "text-muted-foreground"
+                      }>
+                        {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Z. · ≈{Math.round(sonstigeUntersuchungen.length / 2500)} Seiten
+                      </span>
+                      {sonstigeUntersuchungen.length > 80_000 && !useProModel && (
+                        <button
+                          type="button"
+                          onClick={() => setUseProModel(true)}
+                          className="px-2 py-0.5 rounded border border-amber-400 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-semibold"
+                          title="Aktiviert Gemini-2.5-Pro (1 Mio Token Kontext) für die KI-Auswertung"
+                        >
+                          → Pro-Modell aktivieren
+                        </button>
+                      )}
+                      {useProModel && sonstigeUntersuchungen.length > 80_000 && (
+                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-semibold">✓ Pro aktiv</span>
+                      )}
+                    </span>
+                  </label>
+                  <Textarea
+                    value={sonstigeUntersuchungen}
+                    onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
+                    placeholder={"Gemischte Befunde mit eigenen Untersuchungsdaten – KI extrahiert Datum + Typ automatisch:\n\n— MRT LWS vom 14.03.2024: ...\n— Sono Abdomen vom 02.11.2025: ...\n— EAV-Messung vom 08.06.2026: ...\n— Bioresonanz/NLS-Auswertung vom ...\n— EKG/Lufu/Allergietest/Knochendichte vom ...\n— Reha-/Kurbericht vom ...\n— Selbstmessungen (RR, HRV, CGM) Zeitraum ...\n\n100+ Seiten kein Problem – wird VOLLSTÄNDIG verarbeitet (kein Trimmen, kein Stichproben)."}
+                    rows={22}
+                    className="font-sans text-[13px] leading-relaxed resize-y max-h-[70vh]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    <strong className="text-indigo-700 dark:text-indigo-300">100% vollständig verarbeitet</strong> – auch 100+ Seiten. Die KI extrahiert die Untersuchungsdaten selbständig (TT.MM.JJJJ, „März 2024", „vor 2 Jahren" …) und ordnet jeden Befund seinem Datum / Typ zu (Bildgebung → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend, Reha-Bericht → Anamnesekontext). Output-Sektion <em>🗂️ Voruntersuchungen – chronologische Auswertung</em> entsteht automatisch. <strong>Bei &gt; 80 k Zeichen unbedingt Pro-Modell</strong> (Gemini-2.5-Pro, 1 Mio Token Kontext) – Schalter weiter unten oder oben rechts.
+                  </p>
+                </div>
+
+                <div className="rounded-md border border-teal-300/70 bg-gradient-to-br from-teal-50/60 to-background dark:from-teal-950/15 dark:border-teal-900/40 p-3">
+                  <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <Search className="h-4 w-4 text-teal-600" />
+                    Perplexity-Recherche / externe AI-Zusatzauswertung
+                    {perplexityAnalyse.length > 0 && (
+                      <span className="ml-auto text-[11px] font-mono text-muted-foreground">
+                        {perplexityAnalyse.length.toLocaleString("de-DE")} Z. · ≈{Math.round(perplexityAnalyse.length / 2500)} Seiten
+                      </span>
+                    )}
+                  </label>
+                  <Textarea
+                    value={perplexityAnalyse}
+                    onChange={(e) => setPerplexityAnalyse(e.target.value)}
+                    placeholder={"Komplette Perplexity-/Recherche-Auswertung 1:1 einfügen (mit Zitaten/Quellen).\n\nZ.B. Literaturrecherche zu seltener Diagnose, aktuelle Studienlage zu einem Wirkstoff, Differentialdiagnose-Liste aus AI-Search, S3-Leitlinien-Auszug, PubMed-Treffer (PMIDs), Cochrane-Reviews ...\n\nWird als zusätzlicher Evidenz-Kontext berücksichtigt – Wiki-Mittel haben weiterhin Vorrang, aber Hinweise aus der Recherche fließen in die Differentialdiagnostik & Begründung ein."}
+                    rows={14}
+                    className="font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Externer Recherche-Kontext (Perplexity, PubMed, Leitlinien). Quellen daraus dürfen zitiert werden, ersetzen aber NICHT die hauseigene Wissensdatenbank. Output-Sektion <em>🔎 Differentialdiagnostik (vertieft)</em> wird automatisch erzeugt, sobald hier oder im Sonstige-Feld Inhalt steht – mit 3–6 DDs, ICD-10, Wahrscheinlichkeit, Dafür/Dagegen-Befunden.
+                  </p>
+                </div>
+
+                {(sonstigeUntersuchungen.length + perplexityAnalyse.length) > 80_000 && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs flex items-start gap-2">
+                    <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                    <div>
+                      <strong>Großer Patienten-Kontext erkannt</strong> ({((sonstigeUntersuchungen.length + perplexityAnalyse.length) / 1000).toFixed(0)} k Zeichen ≈ {Math.round((sonstigeUntersuchungen.length + perplexityAnalyse.length) / 2500)} Seiten). Für tiefenpräzise Auswertung <strong>Gemini-2.5-Pro</strong> empfohlen – Schalter „🧠 Tieferes Reasoning-Modell (Pro)" unter der Live-Übersicht.
+                      {!useProModel && (
+                        <button
+                          type="button"
+                          onClick={() => setUseProModel(true)}
+                          className="ml-2 px-2 py-0.5 rounded border border-amber-500 bg-white hover:bg-amber-100 text-amber-800 font-semibold"
+                        >
+                          Jetzt aktivieren
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ===== TAB: Mittel ===== */}
+              <TabsContent value="mittel" className="space-y-3 mt-4">
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                    <Pill className="h-3.5 w-3.5 text-emerald-600" />
+                    Bisherige Naturheilmittel
+                  </label>
+                  <Textarea
+                    value={bisherigeMittel}
+                    onChange={(e) => setBisherigeMittel(e.target.value)}
+                    placeholder="z.B. Schwarzwalnuss 15 Tropfen 3x/Tag, Wermut 200mg morgens, Oreganoöl 2 Kapseln..."
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis) – Die KI bewertet diese kritisch und integriert / ersetzt / ergänzt sie.</p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
+
 
         {/* Right: Safety checks */}
         <Card className="border-orange-300/60 bg-gradient-to-br from-orange-50/40 via-background to-rose-50/30 dark:from-orange-950/10 dark:via-background dark:to-rose-950/10 dark:border-orange-900/40">
