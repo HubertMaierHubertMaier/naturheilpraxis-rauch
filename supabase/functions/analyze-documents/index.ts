@@ -427,7 +427,7 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
   return String(json.choices?.[0]?.message?.content || "").trim();
 }
 
-async function streamGatewayHtml(apiKey: string, model: string, prompt: string): Promise<ReadableStream<Uint8Array>> {
+async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string): Promise<ReadableStream<Uint8Array>> {
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -455,9 +455,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
   const decoder = new TextDecoder();
   const reader = aiResp.body.getReader();
   let buffer = "";
-  let started = false;
-  let wrapped = false;
-  let emittedChars = 0;
+  let outputBuffer = "";
   let lastFinishReason = "";
 
   return new ReadableStream({
@@ -467,33 +465,25 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
         if (done) {
           if (buffer.length) {
             const tail = stripHtmlFence(buffer);
-            if (tail) { controller.enqueue(encoder.encode(tail)); emittedChars += tail.length; }
+            if (tail) outputBuffer += tail;
           }
-          // Fallback: Stream lieferte kein/zu wenig sichtbares HTML → einmal non-streaming auf Flash retry
-          if (emittedChars < 300) {
-            console.warn(`analyze-documents final stream empty (chars=${emittedChars}, finish=${lastFinishReason}) – fallback to non-stream flash`);
+          let finalHtml = stripHtmlFence(outputBuffer);
+          // Wichtig: unfertiges HTML nicht ausliefern. Sonst speichert der Client eine scheinbar „fertige“, aber leere Seite.
+          if (!isCompleteFinalHtml(finalHtml)) {
+            console.warn(`analyze-documents final stream incomplete (chars=${finalHtml.length}, finish=${lastFinishReason}) – fallback to non-stream flash/deterministic`);
             try {
               const fallback = await callGatewayText(apiKey, "google/gemini-2.5-flash", prompt, 0.2);
               const html = stripHtmlFence(fallback);
-              if (html && html.length > 100) {
-                if (!started) {
-                  if (!/^<!DOCTYPE/i.test(html) && !/^<html/i.test(html)) {
-                    controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
-                    wrapped = true;
-                  }
-                }
-                controller.enqueue(encoder.encode(html));
-              } else {
-                controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Die KI hat keine HTML-Antwort geliefert (finish_reason=${lastFinishReason || "unknown"}). Bitte erneut versuchen oder Umfang reduzieren.</p>`));
-                wrapped = true;
-              }
+              finalHtml = isCompleteFinalHtml(html) ? html : (deterministicFallbackHtml || html);
             } catch (fbErr) {
               console.error("fallback flash failed:", (fbErr as Error).message);
-              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Stream leer und Fallback fehlgeschlagen: ${(fbErr as Error).message.replace(/[<>]/g, "")}</p>`));
-              wrapped = true;
+              finalHtml = deterministicFallbackHtml || `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body><h1>Befund-Auswertung</h1><p style="color:#a33">⚠ Stream leer und Fallback fehlgeschlagen: ${escapeHtml((fbErr as Error).message)}</p></body></html>`;
             }
           }
-          if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
+          if (!/^<!DOCTYPE/i.test(finalHtml) && !/^<html/i.test(finalHtml)) {
+            finalHtml = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>${finalHtml}</body></html>`;
+          }
+          controller.enqueue(encoder.encode(finalHtml));
           controller.close();
           return;
         }
@@ -515,16 +505,7 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string):
           } catch { /* ignore malformed SSE frame */ }
         }
         if (textOut) {
-          if (!started) {
-            textOut = stripHtmlFence(textOut);
-            if (!/^<!DOCTYPE/i.test(textOut) && !/^<html/i.test(textOut)) {
-              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
-              wrapped = true;
-            }
-            started = true;
-          }
-          controller.enqueue(encoder.encode(textOut));
-          emittedChars += textOut.length;
+          outputBuffer += textOut;
         }
       } catch (err) {
         controller.error(err);
