@@ -294,6 +294,7 @@ export function TherapyRecommendation() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
+    forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
     symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
     medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
@@ -970,6 +971,7 @@ export function TherapyRecommendation() {
     setClinicalLoadInfo(null);
     setWorkflowStage("edit");
     setAutoSaveStatus("idle");
+    setDiagnosen([]);
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
@@ -996,6 +998,9 @@ export function TherapyRecommendation() {
     }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
     patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
+    setExtractedFromDocs(null);
+    setDiagnosen([]);
+    checkpointSessionIdRef.current = null;
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
     setSymptome(asText(d.symptome));
