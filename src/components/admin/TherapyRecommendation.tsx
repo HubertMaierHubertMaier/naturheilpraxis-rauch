@@ -908,11 +908,14 @@ export function TherapyRecommendation() {
       return;
     }
     const totalChars = chunks.reduce((sum, chunk) => sum + chunk.text.length, 0);
+    const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId].join("|"));
+    const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
+    const checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length);
     setIsAnalyzingDocs(true);
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
     if (w) {
-      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui;padding:32px;color:#344238;line-height:1.5}h2{color:#6b8e6b}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.muted{color:#667063}pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#52605a;max-height:55vh;overflow:auto;border:1px solid #d8e2d3;padding:10px;border-radius:6px;background:white}</style></head><body><div class="box"><h2>⏳ Befund-Auswertung wird vollständig erstellt…</h2><p>Alle übergebenen Befundseiten werden in ${chunks.length} Teilpaket(en) gelesen und anschließend zusammengeführt.</p><p class="muted">Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen. Bitte dieses Fenster offen lassen.</p><pre id="__live">Start…</pre></div></body></html>`);
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui;padding:32px;color:#344238;line-height:1.5}h2{color:#6b8e6b}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.muted{color:#667063}pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#52605a;max-height:55vh;overflow:auto;border:1px solid #d8e2d3;padding:10px;border-radius:6px;background:white}</style></head><body><div class="box"><h2>⏳ Befund-Auswertung wird vollständig erstellt…</h2><p>Alle übergebenen Befundseiten werden in ${chunks.length} Teilpaket(en) gelesen und anschließend zusammengeführt.</p><p class="muted">Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen. Fertige Teilpakete werden laufend zwischengesichert.</p><pre id="__live">Start…${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}</pre></div></body></html>`);
       w.document.close();
     }
     try {
