@@ -1291,7 +1291,7 @@ export function TherapyRecommendation() {
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
         const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
         if (dedupDiag.length || dedupSym.length || dedupMed.length) {
-          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
+          setExtractedFromDocs({ forPseudonymId: normalizePseudonymId(pseudonymId), diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
         }
       } catch { /* nicht kritisch */ }
 
