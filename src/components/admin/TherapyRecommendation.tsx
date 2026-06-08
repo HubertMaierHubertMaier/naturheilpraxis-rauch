@@ -91,6 +91,7 @@ export function TherapyRecommendation() {
   const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
+  const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
