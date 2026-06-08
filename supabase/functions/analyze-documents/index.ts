@@ -156,29 +156,36 @@ Wichtig:
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
-Gib ausschließlich kompaktes JSON zurück:
+🔎 BELEG-PFLICHT (Rückverfolgbarkeit für Patientengespräch):
+- Zu JEDEM Eintrag in documents, anamnese.*, diagnoses, medicationsTherapies, findings, redFlags, systemsPatterns ein Objekt "beleg":
+  * quelle = das Dokumentblock-Label (s.u.),
+  * teil = "${index}/${total}",
+  * zitat = WÖRTLICHES Kurzzitat (max. 220 Zeichen) aus dem Originaltext — KEINE Umformulierung. Wählt das prägnanteste Zitat.
+- 🚫 HALLUZINATIONSVERBOT: Was nicht im Text steht, NICHT erfinden, NICHT aus anderen Befunden schließen, KEINE Untersuchungen oder Symptome ergänzen, die nicht explizit dokumentiert sind. Lieber [] lassen. Vor dem Antworten selbst prüfen: "Steht das wörtlich/sinngemäß im Text? Wenn nein → entfernen."
+
+Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt mit "text" + "beleg", außer wo unten anders strukturiert):
 {
-  "documents": [{"datum":"", "quelle":"", "untersuchung":"", "hauptbefund":"", "auffaellig":""}],
+  "documents": [{"datum":"","quelle":"","untersuchung":"","hauptbefund":"","auffaellig":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "anamnese": {
-    "currentProblems": [""],
-    "pastHistory": [""],
-    "allergies": [""],
-    "presentMedication": [""],
-    "habits": [""],
-    "reviewOfSystems": [{"system":"", "befund":""}],
-    "recentExaminations": [""],
-    "vaccinationStatus": [""],
-    "familyHistory": [""],
-    "socialStatus": [""],
-    "physicalExamination": [""],
-    "additionalInvestigations": [""]
+    "currentProblems": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "pastHistory": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "allergies": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "presentMedication": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "habits": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "reviewOfSystems": [{"system":"","befund":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "recentExaminations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "vaccinationStatus": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "familyHistory": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "socialStatus": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "physicalExamination": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+    "additionalInvestigations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}]
   },
-  "diagnoses": [{"icd10":"", "diagnose":"", "quelle":"", "status":"gesichert|Verdacht|Z.n.|unklar"}],
-  "medicationsTherapies": [{"name":"", "dosis":"", "vonWem":"", "datum":"", "indikation":"", "wirkmechanismus":"", "nebenwirkungen":"", "grundVerordnung":"", "status":"laufend|abgesetzt|unklar"}],
-  "findings": ["wichtige Auffälligkeit/Widerspruch/fehlender Befund"],
-  "terms": [{"term":"", "plain":"laienverständlich auf Deutsch"}],
-  "redFlags": ["dringlicher Sicherheitshinweis, falls vorhanden"],
-  "systemsPatterns": ["betroffene Systeme/Muster"],
+  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "medicationsTherapies": [{"name":"","dosis":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "findings": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "terms": [{"term":"","plain":"laienverständlich auf Deutsch"}],
+  "redFlags": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "systemsPatterns": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "openQuestions": ["konkrete Frage für Erstgespräch"],
   "missingReports": ["nachzureichender Befund"]
 }
