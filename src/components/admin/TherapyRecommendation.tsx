@@ -776,64 +776,87 @@ export function TherapyRecommendation() {
   };
 
   const handleAnalyzeDocuments = async () => {
-    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse].some((x) => x.trim());
-    if (!hasAnyDoc) {
+    const chunks = [
+      ...splitAnalysisText(laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", laborKomplett),
+      ...splitAnalysisText("Labor – erhöhte Werte", laborErhoeht),
+      ...splitAnalysisText("Labor – erniedrigte Werte", laborErniedrigt),
+      ...splitAnalysisText("Stuhlbefund", stuhlbefund),
+      ...splitAnalysisText(arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
+      ...splitAnalysisText("Metatron / NLS / Bioresonanz", metatronHeel),
+      ...splitAnalysisText("Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
+      ...splitAnalysisText("Externe Recherche / Perplexity", perplexityAnalyse),
+    ];
+    if (!chunks.length) {
       toast({ title: "Keine Dokumente vorhanden", description: "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
       return;
     }
+    const totalChars = chunks.reduce((sum, chunk) => sum + chunk.text.length, 0);
     setIsAnalyzingDocs(true);
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
     if (w) {
-      w.document.write(`<!DOCTYPE html><html><head><title>Befund-Auswertung lädt…</title><style>body{font-family:system-ui;padding:40px;color:#444}h2{color:#6b8e6b}</style></head><body><h2>⏳ Befund-Auswertung wird erstellt…</h2><p>Alle Befundseiten werden verarbeitet. Bei sehr vielen Seiten wird automatisch in Teilpakete zerlegt; das kann mehrere Minuten dauern. Bitte dieses Fenster offen lassen.</p></body></html>`);
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui;padding:32px;color:#344238;line-height:1.5}h2{color:#6b8e6b}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.muted{color:#667063}pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#52605a;max-height:55vh;overflow:auto;border:1px solid #d8e2d3;padding:10px;border-radius:6px;background:white}</style></head><body><div class="box"><h2>⏳ Befund-Auswertung wird vollständig erstellt…</h2><p>Alle übergebenen Befundseiten werden in ${chunks.length} Teilpaket(en) gelesen und anschließend zusammengeführt.</p><p class="muted">Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen. Bitte dieses Fenster offen lassen.</p><pre id="__live">Start…</pre></div></body></html>`);
+      w.document.close();
     }
     try {
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
+      const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
+      const authHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
+      const live = w?.document.getElementById("__live") as HTMLElement | null;
+      const writeProgress = (line: string) => {
+        if (!live) return;
+        live.textContent = `${live.textContent || ""}\n${line}`;
+        live.scrollTop = live.scrollHeight;
+      };
 
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`,
-        {
+      const partials: string[] = [];
+      for (let i = 0; i < chunks.length; i += 1) {
+        writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
+        const chunkResp = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
+          headers: authHeaders,
           body: JSON.stringify({
-            laborKomplett: laborKomplett.trim() || undefined,
-            laborErhoeht: laborErhoeht.trim() || undefined,
-            laborErniedrigt: laborErniedrigt.trim() || undefined,
-            laborDatum: laborDatum.trim() || undefined,
-            stuhlbefund: stuhlbefund.trim() || undefined,
-            arztbericht: arztbericht.trim() || undefined,
-            arztberichtDatum: arztberichtDatum.trim() || undefined,
-            metatronHeel: metatronHeel.trim() || undefined,
-            sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
-            perplexityAnalyse: perplexityAnalyse.trim() || undefined,
+            analysisMode: "chunk",
+            chunk: { ...chunks[i], index: i + 1, total: chunks.length },
             alter: alter.trim() || undefined,
             geschlecht: geschlecht || undefined,
             pseudonymId: pseudonymId || undefined,
-            useProModel: useProModel || undefined,
           }),
+        });
+        if (!chunkResp.ok) {
+          const err = await chunkResp.json().catch(() => ({ error: `HTTP ${chunkResp.status}` }));
+          throw new Error(err.error || `HTTP ${chunkResp.status}`);
         }
-      );
+        const chunkJson = await chunkResp.json();
+        partials.push(String(chunkJson.partial || ""));
+        writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
+      }
+
+      writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          analysisMode: "final",
+          partials,
+          totalChars,
+          alter: alter.trim() || undefined,
+          geschlecht: geschlecht || undefined,
+          pseudonymId: pseudonymId || undefined,
+          useProModel: useProModel || undefined,
+        }),
+      });
       if (!resp.ok || !resp.body) {
         const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
         throw new Error(err.error || `HTTP ${resp.status}`);
       }
       const model = resp.headers.get("x-model") || "?";
-      const inputChars = Number(resp.headers.get("x-input-chars") || 0);
       const analysisMode = resp.headers.get("x-analysis-mode") || "single-pass";
-      const analysisChunks = Number(resp.headers.get("x-analysis-chunks") || 1);
-
-      // Streaming: progressiv ins neue Tab schreiben (umgeht Edge-Function-IDLE_TIMEOUT)
-      if (w) {
-        w.document.open();
-        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title></head><body><div id="__stream" style="font-family:system-ui;padding:24px;color:#444"><h2 style="color:#6b8e6b">⏳ Befund-Auswertung wird vollständig generiert…</h2><p>${analysisMode === "chunked-full" ? `Große Eingabe: ${analysisChunks} Teilpakete werden nacheinander gelesen und danach zusammengeführt.` : "Die Dokumente werden direkt ausgewertet."}</p><pre id="__live" style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#888;max-height:40vh;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px"></pre></div></body></html>`);
-        w.document.close();
-      }
-      const live = w?.document.getElementById("__live") as HTMLElement | null;
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -858,7 +881,7 @@ export function TherapyRecommendation() {
       if (full.includes("❌ Fehler")) {
         toast({ title: "Auswertung mit Fehler beendet", description: "Details stehen im geöffneten HTML-Fenster.", variant: "destructive" });
       } else {
-        toast({ title: "Befund-Auswertung fertig", description: `${inputChars.toLocaleString("de-DE")} Zeichen vollständig ausgewertet · ${analysisChunks} Teilpaket(e) · ${model}` });
+        toast({ title: "Befund-Auswertung fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen vollständig ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}` });
       }
     } catch (e) {
       const msg = (e as Error).message;
