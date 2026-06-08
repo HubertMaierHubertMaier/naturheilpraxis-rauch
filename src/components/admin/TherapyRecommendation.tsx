@@ -408,6 +408,7 @@ export function TherapyRecommendation() {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
+      if (!d?._pseudonym_id && !d?.pseudonymId) return;
       if (typeof d?.pseudonymId === "string") setPseudonymId(d.pseudonymId);
       if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
       if (typeof d?.symptome === "string") setSymptome(d.symptome);
@@ -491,6 +492,9 @@ export function TherapyRecommendation() {
       const raw = localStorage.getItem(`therapy.inputs.draft.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
+        const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
+        if (embedded && embedded !== pid) localData = null;
+        if (!embedded) localData = null;
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
@@ -1705,6 +1709,8 @@ export function TherapyRecommendation() {
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
+    setSonstigeUntersuchungen("");
+    setPerplexityAnalyse("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
