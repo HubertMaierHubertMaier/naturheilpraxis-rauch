@@ -23,6 +23,7 @@ import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRem
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
+import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
 type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
@@ -1270,13 +1271,16 @@ export function TherapyRecommendation() {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
                     <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                    <LabImageUpload onExtracted={(t) => {
-                      const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
-                      setLaborKomplett(next);
-                      saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
-                    }} />
+                    <div className="flex items-center gap-2 ml-auto">
+                      <WorkloadBadge chars={laborKomplett.length} hint="Labor: Werte abgleichen, Referenzbereiche, Verlauf" />
+                      <LabImageUpload onExtracted={(t) => {
+                        const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                        setLaborKomplett(next);
+                        saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                      }} />
+                    </div>
                   </div>
                   <Textarea
                     value={laborKomplett}
@@ -1315,11 +1319,14 @@ export function TherapyRecommendation() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
                     <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
-                    <LabImageUpload mode="doctor" onExtracted={(t) => {
-                      const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
-                      setArztbericht(next);
-                      saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
-                    }} />
+                    <div className="flex items-center gap-2 ml-auto">
+                      <WorkloadBadge chars={arztbericht.length} hint="Arztbrief: Diagnosen, Anamnese, Beurteilung, Therapie verstehen" />
+                      <LabImageUpload mode="doctor" onExtracted={(t) => {
+                        const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
+                        setArztbericht(next);
+                        saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                      }} />
+                    </div>
                   </div>
                   <Textarea
                     value={arztbericht}
@@ -1360,18 +1367,16 @@ export function TherapyRecommendation() {
 
               {/* ===== TAB: Großdaten (Sonstige + Perplexity) — viel Platz, 100+ Seiten ===== */}
               <TabsContent value="grossdaten" className="space-y-4 mt-4">
+                <WorkloadTotal
+                  chars={laborKomplett.length + arztbericht.length + metatronHeel.length + sonstigeUntersuchungen.length + perplexityAnalyse.length}
+                  label="Gesamter Sichtungs-/Auswertungsaufwand (Honorar-Basis 100 €/h)"
+                />
                 <div className="rounded-md border border-indigo-300/70 bg-gradient-to-br from-indigo-50/60 to-background dark:from-indigo-950/15 dark:border-indigo-900/40 p-3">
                   <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
                     <ClipboardList className="h-4 w-4 text-indigo-600" />
                     Sonstige / unsortierte Voruntersuchungen
                     <span className="ml-auto flex items-center gap-2 text-[11px] font-mono">
-                      <span className={
-                        sonstigeUntersuchungen.length > 400_000 ? "text-rose-700 font-bold"
-                        : sonstigeUntersuchungen.length > 150_000 ? "text-amber-700 font-semibold"
-                        : "text-muted-foreground"
-                      }>
-                        {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Z. · ≈{Math.round(sonstigeUntersuchungen.length / 2500)} Seiten
-                      </span>
+                      <WorkloadBadge chars={sonstigeUntersuchungen.length} hint="Mehrere Arzt-Befunde (DE/EN/FR) sichten, einordnen, chronologisch bewerten" />
                       {sonstigeUntersuchungen.length > 80_000 && !useProModel && (
                         <button
                           type="button"
@@ -1403,11 +1408,9 @@ export function TherapyRecommendation() {
                   <label className="text-sm font-semibold flex items-center gap-1.5 mb-1.5 flex-wrap">
                     <Search className="h-4 w-4 text-teal-600" />
                     Perplexity-Recherche / externe AI-Zusatzauswertung
-                    {perplexityAnalyse.length > 0 && (
-                      <span className="ml-auto text-[11px] font-mono text-muted-foreground">
-                        {perplexityAnalyse.length.toLocaleString("de-DE")} Z. · ≈{Math.round(perplexityAnalyse.length / 2500)} Seiten
-                      </span>
-                    )}
+                    <span className="ml-auto">
+                      <WorkloadBadge chars={perplexityAnalyse.length} hint="Recherche-Auswertung lesen, Quellen prüfen, in DDx einarbeiten" />
+                    </span>
                   </label>
                   <Textarea
                     value={perplexityAnalyse}
