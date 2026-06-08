@@ -417,8 +417,8 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v2";
-  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v3";
+  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v3.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -522,7 +522,7 @@ export function TherapyRecommendation() {
     let localTs = 0;
     let localData: any = null;
     try {
-      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v2.${pid}`);
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v3.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
         const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
