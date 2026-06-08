@@ -1137,6 +1137,11 @@ export function TherapyRecommendation() {
         writeProgress("⚠ Abschluss-HTML war leer/unvollständig. Erstelle sichere Ersatz-Auswertung aus den fertigen Teilanalysen…");
         full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
       }
+      if (full.includes("❌ Fehler")) {
+        writeProgress("⚠ Fehler-HTML erkannt. Ersetze es durch die gespeicherte Ersatz-Auswertung aus den fertigen Teilanalysen…");
+        full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
+        analysisMode = `${analysisMode}-recovered`;
+      }
 
       // Finales HTML ins Tab schreiben
       if (w) {
@@ -1144,10 +1149,8 @@ export function TherapyRecommendation() {
         w.document.write(full);
         w.document.close();
       }
-      if (full.includes("❌ Fehler")) {
-        toast({ title: "Auswertung mit Fehler beendet", description: "Details stehen im geöffneten HTML-Fenster.", variant: "destructive" });
-      } else {
-        toast({ title: "Befund-Auswertung fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen vollständig ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}` });
+      {
+        toast({ title: failedChunks.length ? "Befund-Auswertung mit technischen Lücken fertig" : "Befund-Auswertung fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${failedChunks.length ? ` · ${failedChunks.length} Lücke(n) dokumentiert` : ""}` });
 
         // Auto-Save in therapy_sessions (DSGVO-konform, nur Pseudonym)
         const pid = pseudonymId.trim();
@@ -1166,6 +1169,7 @@ export function TherapyRecommendation() {
                   analysis_mode: analysisMode,
                   chunk_count: chunks.length,
                   total_chars: totalChars,
+                  failed_chunks: failedChunks,
                   saved_at: new Date().toISOString(),
                 },
                 created_by: user.id,
@@ -1173,6 +1177,7 @@ export function TherapyRecommendation() {
               if (saveErr) {
                 toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
               } else {
+                try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
                 toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
               }
             }
