@@ -751,7 +751,7 @@ export function TherapyRecommendation() {
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
     if (w) {
-      w.document.write(`<!DOCTYPE html><html><head><title>Befund-Auswertung lädt…</title><style>body{font-family:system-ui;padding:40px;color:#444}h2{color:#6b8e6b}</style></head><body><h2>⏳ Befund-Auswertung wird erstellt…</h2><p>Bei großen Dokumenten kann das 30–90 Sekunden dauern. Bitte dieses Fenster offen lassen.</p></body></html>`);
+      w.document.write(`<!DOCTYPE html><html><head><title>Befund-Auswertung lädt…</title><style>body{font-family:system-ui;padding:40px;color:#444}h2{color:#6b8e6b}</style></head><body><h2>⏳ Befund-Auswertung wird erstellt…</h2><p>Alle Befundseiten werden verarbeitet. Bei sehr vielen Seiten wird automatisch in Teilpakete zerlegt; das kann mehrere Minuten dauern. Bitte dieses Fenster offen lassen.</p></body></html>`);
     }
     try {
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
@@ -790,11 +790,13 @@ export function TherapyRecommendation() {
       }
       const model = resp.headers.get("x-model") || "?";
       const inputChars = Number(resp.headers.get("x-input-chars") || 0);
+      const analysisMode = resp.headers.get("x-analysis-mode") || "single-pass";
+      const analysisChunks = Number(resp.headers.get("x-analysis-chunks") || 1);
 
       // Streaming: progressiv ins neue Tab schreiben (umgeht Edge-Function-IDLE_TIMEOUT)
       if (w) {
         w.document.open();
-        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung lädt…</title></head><body><div id="__stream" style="font-family:system-ui;padding:24px;color:#444"><h2 style="color:#6b8e6b">⏳ Befund-Auswertung wird live generiert…</h2><pre id="__live" style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#888;max-height:40vh;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px"></pre></div></body></html>`);
+        w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title></head><body><div id="__stream" style="font-family:system-ui;padding:24px;color:#444"><h2 style="color:#6b8e6b">⏳ Befund-Auswertung wird vollständig generiert…</h2><p>${analysisMode === "chunked-full" ? `Große Eingabe: ${analysisChunks} Teilpakete werden nacheinander gelesen und danach zusammengeführt.` : "Die Dokumente werden direkt ausgewertet."}</p><pre id="__live" style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#888;max-height:40vh;overflow:auto;border:1px solid #eee;padding:8px;border-radius:6px"></pre></div></body></html>`);
         w.document.close();
       }
       const live = w?.document.getElementById("__live") as HTMLElement | null;
@@ -819,7 +821,11 @@ export function TherapyRecommendation() {
         w.document.write(full);
         w.document.close();
       }
-      toast({ title: "Befund-Auswertung fertig", description: `Modell: ${model} · ${inputChars.toLocaleString("de-DE")} Zeichen ausgewertet` });
+      if (full.includes("❌ Fehler")) {
+        toast({ title: "Auswertung mit Fehler beendet", description: "Details stehen im geöffneten HTML-Fenster.", variant: "destructive" });
+      } else {
+        toast({ title: "Befund-Auswertung fertig", description: `${inputChars.toLocaleString("de-DE")} Zeichen vollständig ausgewertet · ${analysisChunks} Teilpaket(e) · ${model}` });
+      }
     } catch (e) {
       const msg = (e as Error).message;
       if (w) {
@@ -1863,7 +1869,7 @@ export function TherapyRecommendation() {
           disabled={isAnalyzingDocs || isStreaming}
           variant="outline"
           className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
-          title="Reine Befund-Auswertung der eingereichten Dokumente (ohne Therapie-Empfehlung) — öffnet als HTML in neuem Tab"
+          title="Reine Befund-Auswertung aller eingereichten Dokumente (ohne Therapie-Empfehlung) — große Mengen werden vollständig in Teilpaketen verarbeitet"
         >
           {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
           {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
