@@ -150,6 +150,7 @@ export function TherapyRecommendation() {
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
     symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
+    medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
   } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
@@ -845,6 +846,7 @@ export function TherapyRecommendation() {
       try {
         const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
         const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
+        const extMed: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }> = [];
         const stripFence = (s: string) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
         for (const p of partials) {
           if (!p) continue;
@@ -875,13 +877,32 @@ export function TherapyRecommendation() {
                 });
               }
             }
+            if (Array.isArray(obj?.medicationsTherapies)) {
+              for (const m of obj.medicationsTherapies) {
+                if (!m?.name) continue;
+                extMed.push({
+                  name: String(m.name).trim(),
+                  dosis: m.dosis || "",
+                  vonWem: m.vonWem || "",
+                  datum: m.datum || "",
+                  indikation: m.indikation || "",
+                  wirkmechanismus: m.wirkmechanismus || "",
+                  nebenwirkungen: m.nebenwirkungen || "",
+                  grundVerordnung: m.grundVerordnung || "",
+                  status: m.status || "",
+                  quelle: m?.beleg?.quelle || "",
+                  zitat: m?.beleg?.zitat || "",
+                });
+              }
+            }
           } catch { /* partial war kein JSON – ignorieren */ }
         }
         // Duplikate ausdünnen (case-insensitive)
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
-        if (dedupDiag.length || dedupSym.length) {
-          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym });
+        const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
+        if (dedupDiag.length || dedupSym.length || dedupMed.length) {
+          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
         }
       } catch { /* nicht kritisch */ }
 
@@ -947,7 +968,7 @@ export function TherapyRecommendation() {
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
   const applyExtractedToInputs = () => {
     if (!extractedFromDocs) return;
-    const { diagnoses, symptoms } = extractedFromDocs;
+    const { diagnoses, symptoms, medications } = extractedFromDocs;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
       setManualDiagnosen((existing) => {
@@ -989,9 +1010,36 @@ export function TherapyRecommendation() {
         return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
       });
     }
+    // Medikamente → Textarea "medikamente" (mit Arzt/„unbekannt", Datum, Indikation, Wirkmech., NW)
+    if (medications.length) {
+      setMedikamente((prev) => {
+        const existingLines = new Set(
+          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
+        );
+        const newLines: string[] = [];
+        for (const m of medications) {
+          const head = `${m.name}${m.dosis ? ` ${m.dosis}` : ""}`.trim();
+          if (existingLines.has(head.toLowerCase())) continue;
+          existingLines.add(head.toLowerCase());
+          const meta: string[] = [];
+          meta.push(`verordnet von: ${m.vonWem?.trim() || "unbekannt"}`);
+          meta.push(`Datum: ${m.datum?.trim() || "unbekannt"}`);
+          if (m.indikation?.trim()) meta.push(`Indikation: ${m.indikation.trim()}`);
+          if (m.grundVerordnung?.trim()) meta.push(`Grund: ${m.grundVerordnung.trim()}`);
+          if (m.wirkmechanismus?.trim()) meta.push(`Wirkung: ${m.wirkmechanismus.trim()}`);
+          if (m.nebenwirkungen?.trim()) meta.push(`NW: ${m.nebenwirkungen.trim()}`);
+          if (m.status?.trim()) meta.push(`Status: ${m.status.trim()}`);
+          if (m.quelle?.trim()) meta.push(`📄 ${m.quelle.trim()}`);
+          if (m.zitat?.trim()) meta.push(`„${m.zitat.trim()}"`);
+          newLines.push(`• ${head} — ${meta.join(" · ")}`);
+        }
+        if (!newLines.length) return prev;
+        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
+      });
+    }
     toast({
       title: "In Eingabemaske übernommen",
-      description: `${diagnoses.length} Diagnose(n) und ${symptoms.length} Symptom(e) eingefügt (mit Quelle).`,
+      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) eingefügt (mit Quelle).`,
     });
     setExtractedFromDocs(null);
   };
@@ -2103,7 +2151,7 @@ export function TherapyRecommendation() {
       </div>
 
       {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
-      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0) && (
+      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0 || extractedFromDocs.medications.length > 0) && (
         <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3">
           <div className="flex items-start gap-3 flex-wrap">
             <div className="flex-1 min-w-[260px]">
@@ -2112,8 +2160,22 @@ export function TherapyRecommendation() {
                 Aus der Befund-Auswertung extrahiert
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n) und <strong>{extractedFromDocs.symptoms.length}</strong> aktuelle(s) Beschwerdebild(er) gefunden — inkl. Quelle (Arztbericht/Labor) und wörtlichem Zitat als Beleg. In die Eingabemaske oben übernehmen?
+                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n), <strong>{extractedFromDocs.symptoms.length}</strong> Beschwerde(n) und <strong>{extractedFromDocs.medications.length}</strong> ärztlich verordnete(s) Medikament(e) gefunden — inkl. Quelle, Datum (sonst „unbekannt") und wörtlichem Zitat. In die Eingabemaske oben übernehmen?
               </p>
+              {extractedFromDocs.medications.length > 0 && (
+                <details className="mt-1.5">
+                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Medikamente</summary>
+                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
+                    {extractedFromDocs.medications.slice(0, 8).map((m, i) => (
+                      <li key={i}>
+                        <strong>{m.name}</strong>{m.dosis ? ` ${m.dosis}` : ""}
+                        <span className="text-muted-foreground"> · von: {m.vonWem?.trim() || "unbekannt"} · {m.datum?.trim() || "unbekannt"}</span>
+                      </li>
+                    ))}
+                    {extractedFromDocs.medications.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.medications.length - 8} weitere</li>}
+                  </ul>
+                </details>
+              )}
               {extractedFromDocs.diagnoses.length > 0 && (
                 <details className="mt-1.5">
                   <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Diagnosen</summary>
