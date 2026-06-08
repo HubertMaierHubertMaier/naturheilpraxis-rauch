@@ -131,6 +131,10 @@ type PreparedAnalysis = {
   analyzedChars: number;
 };
 
+const normalizePseudonymId = (value: string) => value.trim();
+
+const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
+
 const analysisDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) => {
@@ -152,12 +156,13 @@ const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) =
 
 const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${pseudonymId.trim() || "ohne-pseudonym"}.${fingerprint}`;
 
-const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const checkpoint = JSON.parse(raw) as AnalysisCheckpoint;
     if (![2, 3].includes(checkpoint?.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+    if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
     if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
     return checkpoint;
   } catch {
@@ -171,9 +176,10 @@ const writeAnalysisCheckpoint = (key: string, checkpoint: AnalysisCheckpoint) =>
   } catch { /* lokale Sicherung optional */ }
 };
 
-const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   const checkpoint = value as AnalysisCheckpoint | null;
   if (!checkpoint || ![2, 3].includes(checkpoint.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+  if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
   if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
   return checkpoint;
 };
@@ -288,6 +294,7 @@ export function TherapyRecommendation() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
+    forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
     symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
     medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
@@ -315,9 +322,12 @@ export function TherapyRecommendation() {
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
   const lastAutoSavedPayloadRef = useRef("");
+  const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
+    _pseudonym_id: normalizePseudonymId(pseudonymId),
+    pseudonymId: normalizePseudonymId(pseudonymId),
     pathogens,
     symptome,
     erkrankung,
@@ -345,7 +355,12 @@ export function TherapyRecommendation() {
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+
+  const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
+    const embedded = normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
+    if (embedded && embedded !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
+  }, []);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
@@ -363,6 +378,7 @@ export function TherapyRecommendation() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Nicht angemeldet");
       const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
+      assertPayloadMatchesPseudonym(pid, payload);
       const saveBody = {
         pseudonym_id: pid,
         created_by: user.id,
@@ -381,12 +397,12 @@ export function TherapyRecommendation() {
       setAutoSaveStatus("error");
       toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
     }
-  }, [pseudonymId, buildInputData, toast]);
+  }, [pseudonymId, buildInputData, assertPayloadMatchesPseudonym, toast]);
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.v1";
-  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.${pseudonymId.trim()}` : "";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v2";
+  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -396,7 +412,11 @@ export function TherapyRecommendation() {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
-      if (typeof d?.pseudonymId === "string") setPseudonymId(d.pseudonymId);
+      if (!d?._pseudonym_id && !d?.pseudonymId) return;
+      if (typeof d?.pseudonymId === "string") {
+        patientDataOwnerRef.current = normalizePseudonymId(d.pseudonymId);
+        setPseudonymId(d.pseudonymId);
+      }
       if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
       if (typeof d?.symptome === "string") setSymptome(d.symptome);
       if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
@@ -476,9 +496,12 @@ export function TherapyRecommendation() {
     let localTs = 0;
     let localData: any = null;
     try {
-      const raw = localStorage.getItem(`therapy.inputs.draft.${pid}`);
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v2.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
+        const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
+        if (embedded && embedded !== pid) localData = null;
+        if (!embedded) localData = null;
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
@@ -494,6 +517,7 @@ export function TherapyRecommendation() {
         .from("therapy_sessions")
         .select("id, eingabe_daten, updated_at")
         .eq("pseudonym_id", pid)
+        .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
         .order("updated_at", { ascending: false })
         .limit(10);
       if (!Array.isArray(data) || !data.length) {
@@ -544,6 +568,7 @@ export function TherapyRecommendation() {
       const newest = data[0];
       const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
       if (cloudTs >= localTs) {
+        patientDataOwnerRef.current = pid;
         applyDraftPayload(merged);
         const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
         if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
@@ -584,6 +609,11 @@ export function TherapyRecommendation() {
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
+    if (patientDataOwnerRef.current !== pid) {
+      setAutoSaveStatus("error");
+      return;
+    }
+
     const payload = JSON.stringify(buildInputData({
       autoSavedDraft: true,
       finalized: false,
@@ -598,6 +628,7 @@ export function TherapyRecommendation() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Nicht angemeldet");
         const eingabe_daten = JSON.parse(payload);
+        assertPayloadMatchesPseudonym(pid, eingabe_daten);
         const updateBody = {
           pseudonym_id: pid,
           created_by: user.id,
@@ -607,12 +638,15 @@ export function TherapyRecommendation() {
         };
 
         if (autoSaveSessionIdRef.current) {
-          const { error } = await (supabase as any)
+          const { data: updatedDraft, error } = await (supabase as any)
             .from("therapy_sessions")
             .update(updateBody)
-            .eq("id", autoSaveSessionIdRef.current);
+            .eq("id", autoSaveSessionIdRef.current)
+            .eq("pseudonym_id", pid)
+            .select("id")
+            .maybeSingle();
           if (runId !== autoSaveRunIdRef.current) return;
-          if (!error) {
+          if (!error && updatedDraft?.id) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
             return;
@@ -889,11 +923,84 @@ export function TherapyRecommendation() {
       .select("pseudonym_id")
       .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
     const existing = ((data || []) as Array<{ pseudonym_id: string }>).map((r) => r.pseudonym_id);
-    setPseudonymId(generatePseudonymId(existing));
+    handlePseudonymChange(generatePseudonymId(existing));
   };
 
+  const clearPatientScopedState = useCallback(() => {
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    autoSaveSessionIdRef.current = null;
+    checkpointSessionIdRef.current = null;
+    lastAutoSavedPayloadRef.current = "";
+    loadedInputDraftForPidRef.current = "";
+    draftStageLoadedRef.current = "";
+    setPathogens([emptyEntry()]);
+    setSymptome("");
+    setErkrankung("");
+    setAlter("");
+    setGeschlecht("");
+    setGroesseCm("");
+    setGewichtKg("");
+    setSchwanger("nein");
+    setMedikamente("");
+    setBisherigeMittel("");
+    setBudget("");
+    setLaborErhoeht("");
+    setLaborErniedrigt("");
+    setLaborKomplett("");
+    setLaborDatum("");
+    setStuhlbefund("");
+    setArztbericht("");
+    setArztberichtDatum("");
+    setMetatronHeel("");
+    setSonstigeUntersuchungen("");
+    setPerplexityAnalyse("");
+    setSelectedCategories([]);
+    setBevorzugteLinie([]);
+    setPinnedMittel([]);
+    setUseMapReduce(true);
+    setResult("");
+    setAuditInfo(null);
+    setManualMittel([]);
+    setManualDiagnosen([]);
+    setTherapieNotiz("");
+    setExtractedFromDocs(null);
+    setClinicalLoadInfo(null);
+    setWorkflowStage("edit");
+    setAutoSaveStatus("idle");
+    setDiagnosen([]);
+  }, []);
+
+  const handlePseudonymChange = useCallback((nextValue: string) => {
+    const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
+    const next = normalizePseudonymId(nextValue);
+    const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
+    if (hasPatientScopedData && previous && next && previous !== next) {
+      clearPatientScopedState();
+      toast({
+        title: "Patient gewechselt – Formular geleert",
+        description: `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`,
+      });
+    } else if (hasPatientScopedData && !next) {
+      clearPatientScopedState();
+    }
+    patientDataOwnerRef.current = next;
+    setPseudonymId(nextValue);
+  }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
+
   const handleLoadSession = (session: TherapySession) => {
+    if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
+      toast({ title: "Sicherheitsstopp", description: "Diese Sitzung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
+      return;
+    }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
+    patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
+    setExtractedFromDocs(null);
+    setDiagnosen([]);
+    checkpointSessionIdRef.current = null;
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
     setSymptome(asText(d.symptome));
@@ -962,7 +1069,7 @@ export function TherapyRecommendation() {
     const totalChars = prepared.analyzedChars;
     const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
-    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length);
+    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
@@ -995,7 +1102,7 @@ export function TherapyRecommendation() {
             .order("updated_at", { ascending: false })
             .limit(1);
           const cloudRow = Array.isArray(cloudRows) ? cloudRows[0] : null;
-          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length);
+          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length, pseudonymId);
           if (cloudCheckpoint && (!checkpoint || new Date(cloudCheckpoint.updatedAt).getTime() > new Date(checkpoint.updatedAt).getTime())) {
             checkpoint = cloudCheckpoint;
             checkpointSessionIdRef.current = cloudRow.id;
@@ -1070,15 +1177,21 @@ export function TherapyRecommendation() {
           const row = {
             pseudonym_id: pid,
             kind: "befund_checkpoint",
-            eingabe_daten: { kind: "befund_checkpoint", fingerprint, checkpoint: checkpointData },
+            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, checkpoint: checkpointData },
             empfehlung: "Automatische Zwischen-Sicherung der Befund-Auswertung.",
             notiz: `Befund-Zwischenstand: ${checkpointData.completedChunks}/${checkpointData.totalChunks} Teilpakete`,
             created_by: user.id,
           };
           const existingId = checkpointSessionIdRef.current;
           if (existingId) {
-            const { error } = await (supabase as any).from("therapy_sessions").update(row).eq("id", existingId);
-            if (!error) return;
+            const { data: updatedCheckpoint, error } = await (supabase as any)
+              .from("therapy_sessions")
+              .update(row)
+              .eq("id", existingId)
+              .eq("pseudonym_id", pid)
+              .select("id")
+              .maybeSingle();
+            if (!error && updatedCheckpoint?.id) return;
           }
           const { data, error } = await (supabase as any).from("therapy_sessions").insert(row).select("id").single();
           if (!error && data?.id) checkpointSessionIdRef.current = data.id;
@@ -1178,7 +1291,7 @@ export function TherapyRecommendation() {
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
         const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
         if (dedupDiag.length || dedupSym.length || dedupMed.length) {
-          setExtractedFromDocs({ diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
+          setExtractedFromDocs({ forPseudonymId: normalizePseudonymId(pseudonymId), diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
         }
       } catch { /* nicht kritisch */ }
 
@@ -1261,7 +1374,7 @@ export function TherapyRecommendation() {
               const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
+                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
@@ -1307,6 +1420,11 @@ export function TherapyRecommendation() {
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
   const applyExtractedToInputs = () => {
     if (!extractedFromDocs) return;
+    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
+      setExtractedFromDocs(null);
+      toast({ title: "Sicherheitsstopp", description: "Extrahierte Befunddaten gehören zu einem anderen Pseudonym und wurden nicht übernommen.", variant: "destructive" });
+      return;
+    }
     const { diagnoses, symptoms, medications } = extractedFromDocs;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
@@ -1389,11 +1507,15 @@ export function TherapyRecommendation() {
   // Banner bleibt sichtbar bis applyExtractedToInputs den State auf null setzt → dient als Bestätigung/Undo.
   useEffect(() => {
     if (!extractedFromDocs) return;
+    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
+      setExtractedFromDocs(null);
+      return;
+    }
     const { diagnoses, symptoms, medications } = extractedFromDocs;
     if (!diagnoses.length && !symptoms.length && !medications.length) return;
     applyExtractedToInputs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extractedFromDocs]);
+  }, [extractedFromDocs, pseudonymId]);
 
 
   // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
@@ -1624,17 +1746,28 @@ export function TherapyRecommendation() {
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
+    setSonstigeUntersuchungen("");
+    setPerplexityAnalyse("");
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
+    setExtractedFromDocs(null);
+    setDiagnosen([]);
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
     setWorkflowStage("edit");
-    try { sessionStorage.removeItem("therapy.draftInputs.v1"); } catch {}
+    autoSaveSessionIdRef.current = null;
+    checkpointSessionIdRef.current = null;
+    loadedInputDraftForPidRef.current = "";
+    patientDataOwnerRef.current = "";
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem("therapy.draftInputs.v1");
+    } catch {}
     if (currentInputDraftKey) { try { localStorage.removeItem(currentInputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
   };
@@ -1734,7 +1867,7 @@ export function TherapyRecommendation() {
             <div className="flex-1">
               <Input
                 value={pseudonymId}
-                onChange={(e) => setPseudonymId(e.target.value)}
+                onChange={(e) => handlePseudonymChange(e.target.value)}
                 placeholder="z. B. P-2026-0042 oder eigener Code"
                 className="font-mono"
               />
