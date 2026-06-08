@@ -1319,11 +1319,14 @@ export function TherapyRecommendation() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
                     <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
-                    <LabImageUpload mode="doctor" onExtracted={(t) => {
-                      const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
-                      setArztbericht(next);
-                      saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
-                    }} />
+                    <div className="flex items-center gap-2 ml-auto">
+                      <WorkloadBadge chars={arztbericht.length} hint="Arztbrief: Diagnosen, Anamnese, Beurteilung, Therapie verstehen" />
+                      <LabImageUpload mode="doctor" onExtracted={(t) => {
+                        const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
+                        setArztbericht(next);
+                        saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                      }} />
+                    </div>
                   </div>
                   <Textarea
                     value={arztbericht}
