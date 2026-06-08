@@ -45,7 +45,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
 
 interface AnalyzeBody {
   analysisMode?: "chunk" | "final";
-  chunk?: { label?: string; text?: string; index?: number; total?: number };
+  chunk?: { label?: string; text?: string; index?: number | string; total?: number | string };
   partials?: string[];
   totalChars?: number;
   laborKomplett?: string;
@@ -471,8 +471,10 @@ serve(async (req) => {
     if (body.analysisMode === "chunk") {
       const text = cleanText(body.chunk?.text);
       const label = cleanText(body.chunk?.label) || "Dokument-Teil";
-      const index = Math.max(1, Number(body.chunk?.index || 1));
-      const total = Math.max(index, Number(body.chunk?.total || index));
+      const rawIndex = Number.parseFloat(String(body.chunk?.index || "1"));
+      const index = Number.isFinite(rawIndex) ? Math.max(1, rawIndex) : 1;
+      const rawTotal = Number.parseFloat(String(body.chunk?.total || index));
+      const total = Number.isFinite(rawTotal) ? Math.max(index, rawTotal) : index;
       if (!text) {
         return new Response(JSON.stringify({ error: "Leeres Dokument-Teilpaket" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
