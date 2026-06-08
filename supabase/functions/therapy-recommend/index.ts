@@ -932,6 +932,8 @@ serve(async (req) => {
         queryTokens: tokenizeQuery(queryText),
         symptomAxes: activeSymptomTargets.map((t) => t.label),
         metatronHeelInput: metatronHeelText || null,
+        sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
+        perplexityAnalyseChars: perplexityAnalyseText.length,
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
