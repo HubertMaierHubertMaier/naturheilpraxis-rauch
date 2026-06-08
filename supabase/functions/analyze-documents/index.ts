@@ -89,7 +89,7 @@ function collectBlocks(b: AnalyzeBody): DocBlock[] {
   return blocks;
 }
 
-function splitBlock(block: DocBlock, maxChars = 18_000): DocBlock[] {
+function splitBlock(block: DocBlock, maxChars = 6_000): DocBlock[] {
   if (block.text.length <= maxChars) return [block];
   const paragraphs = block.text.split(/\n{2,}/);
   const chunks: DocBlock[] = [];
@@ -119,7 +119,7 @@ function splitBlock(block: DocBlock, maxChars = 18_000): DocBlock[] {
   return chunks;
 }
 
-function chunkDocuments(blocks: DocBlock[], maxChars = 18_000): DocBlock[] {
+function chunkDocuments(blocks: DocBlock[], maxChars = 6_000): DocBlock[] {
   return blocks.flatMap((block) => splitBlock(block, maxChars));
 }
 
@@ -475,8 +475,8 @@ serve(async (req) => {
       const model = body.useProModel || totalChars > 60_000
         ? "google/gemini-2.5-pro"
         : "google/gemini-2.5-flash";
-      const html = stripHtmlFence(await callGatewayText(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length), 0.25));
-      return new Response(html, {
+      const htmlStream = await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length));
+      return new Response(htmlStream, {
         headers: {
           ...corsHeaders,
           "Content-Type": "text/html; charset=utf-8",

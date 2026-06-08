@@ -74,7 +74,10 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 
-const splitAnalysisText = (label: string, value: string, maxChars = 18000): AnalysisDocChunk[] => {
+const ANALYSIS_CHUNK_MAX_CHARS = 6000;
+const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2800;
+
+const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
   if (!text) return [];
   if (text.length <= maxChars) return [{ label, text }];
@@ -104,6 +107,18 @@ const splitAnalysisText = (label: string, value: string, maxChars = 18000): Anal
   }
   flush();
   return chunks;
+};
+
+const isRecoverableAnalysisTimeout = (message: string) => /504|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit/i.test(message);
+
+const readAnalysisError = async (resp: Response) => {
+  const text = await resp.text().catch(() => "");
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.error || parsed.message || `HTTP ${resp.status}`;
+  } catch {
+    return text || `HTTP ${resp.status}`;
+  }
 };
 
 export function TherapyRecommendation() {
@@ -818,27 +833,38 @@ export function TherapyRecommendation() {
         live.textContent = `${live.textContent || ""}\n${line}`;
         live.scrollTop = live.scrollHeight;
       };
-
-      const partials: string[] = [];
-      for (let i = 0; i < chunks.length; i += 1) {
-        writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
+      const analyzeChunk = async (chunk: AnalysisDocChunk, indexLabel: string, totalLabel: number) => {
         const chunkResp = await fetch(endpoint, {
           method: "POST",
           headers: authHeaders,
           body: JSON.stringify({
             analysisMode: "chunk",
-            chunk: { ...chunks[i], index: i + 1, total: chunks.length },
+            chunk: { ...chunk, index: indexLabel, total: totalLabel },
             alter: alter.trim() || undefined,
             geschlecht: geschlecht || undefined,
             pseudonymId: pseudonymId || undefined,
           }),
         });
-        if (!chunkResp.ok) {
-          const err = await chunkResp.json().catch(() => ({ error: `HTTP ${chunkResp.status}` }));
-          throw new Error(err.error || `HTTP ${chunkResp.status}`);
-        }
+        if (!chunkResp.ok) throw new Error(await readAnalysisError(chunkResp));
         const chunkJson = await chunkResp.json();
-        partials.push(String(chunkJson.partial || ""));
+        return String(chunkJson.partial || "");
+      };
+
+      const partials: string[] = [];
+      for (let i = 0; i < chunks.length; i += 1) {
+        writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
+        try {
+          partials.push(await analyzeChunk(chunks[i], String(i + 1), chunks.length));
+        } catch (error) {
+          const message = (error as Error).message || "";
+          if (!isRecoverableAnalysisTimeout(message) || chunks[i].text.length <= ANALYSIS_RETRY_CHUNK_MAX_CHARS) throw error;
+          const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
+          writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
+          for (let r = 0; r < retryChunks.length; r += 1) {
+            writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
+            partials.push(await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1));
+          }
+        }
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
       }
 
@@ -921,8 +947,7 @@ export function TherapyRecommendation() {
         }),
       });
       if (!resp.ok || !resp.body) {
-        const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
-        throw new Error(err.error || `HTTP ${resp.status}`);
+        throw new Error(await readAnalysisError(resp));
       }
       const model = resp.headers.get("x-model") || "?";
       const analysisMode = resp.headers.get("x-analysis-mode") || "single-pass";
