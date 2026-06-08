@@ -1014,7 +1014,9 @@ export function TherapyRecommendation() {
       }
       full += decoder.decode();
       full = sanitizeFinalAnalysisHtml(full);
-      if (!full || !/(<html|<!DOCTYPE|<body|<h1|<h2|<table)/i.test(full) || full.trim().length < 250) {
+      const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
+      if (!hasMeaningfulAnalysisContent) {
         writeProgress("⚠ Abschluss-HTML war leer/unvollständig. Erstelle sichere Ersatz-Auswertung aus den 17 fertigen Teilanalysen…");
         full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
       }
