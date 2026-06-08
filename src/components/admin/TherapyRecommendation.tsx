@@ -109,7 +109,7 @@ const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHU
   return chunks;
 };
 
-const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|504|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON-Antwort/i.test(message);
+const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig/i.test(message);
 
 type AnalysisCheckpoint = {
   version: 2 | 3;
@@ -1017,6 +1017,7 @@ export function TherapyRecommendation() {
             }
             const partial = String(chunkJson.partial || "").trim();
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
+            assertStrictPartialAnalysis(partial);
             return partial;
           } catch (err) {
             lastError = (err as Error).message || String(err);
