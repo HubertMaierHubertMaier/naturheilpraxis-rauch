@@ -1051,7 +1051,7 @@ export function TherapyRecommendation() {
     const totalChars = prepared.analyzedChars;
     const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
-    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length);
+    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
@@ -1084,7 +1084,7 @@ export function TherapyRecommendation() {
             .order("updated_at", { ascending: false })
             .limit(1);
           const cloudRow = Array.isArray(cloudRows) ? cloudRows[0] : null;
-          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length);
+          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length, pseudonymId);
           if (cloudCheckpoint && (!checkpoint || new Date(cloudCheckpoint.updatedAt).getTime() > new Date(checkpoint.updatedAt).getTime())) {
             checkpoint = cloudCheckpoint;
             checkpointSessionIdRef.current = cloudRow.id;
