@@ -368,10 +368,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen];
+    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse];
 
     return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
-  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
+  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
