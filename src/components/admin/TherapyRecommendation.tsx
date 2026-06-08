@@ -1724,12 +1724,13 @@ export function TherapyRecommendation() {
         });
       }
 
-      // Auto-Save wenn Pseudonym vorhanden
-      if (pseudonymId.trim() && accumulated.trim()) {
+      // Auto-Save nur bei vollständiger, eindeutig patientengebundener Pseudonym-ID
+      const resultPid = normalizePseudonymId(pseudonymId);
+      if (isPatientScopedStorageReady(resultPid) && patientDataOwnerRef.current === resultPid && accumulated.trim()) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
-            pseudonym_id: pseudonymId.trim(),
+            pseudonym_id: resultPid,
             created_by: user.id,
             eingabe_daten: buildInputData({ autoSavedDraft: false }),
             empfehlung: accumulated,
@@ -1846,8 +1847,9 @@ export function TherapyRecommendation() {
   };
 
   const handleFinalize = async () => {
-    if (!pseudonymId.trim()) {
-      toast({ title: "Pseudonym-ID fehlt", description: "Bitte oben eine Pseudonym-ID vergeben oder generieren.", variant: "destructive" });
+    const finalPid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(finalPid) || patientDataOwnerRef.current !== finalPid) {
+      toast({ title: "Pseudonym-ID fehlt oder unklar", description: "Bitte oben eine vollständige Pseudonym-ID vergeben, damit keine Patientendaten vermischt werden.", variant: "destructive" });
       return;
     }
     const finalMd = buildFinalMarkdown();
@@ -1857,7 +1859,7 @@ export function TherapyRecommendation() {
       return;
     }
     const { error } = await (supabase as any).from("therapy_sessions").insert({
-      pseudonym_id: pseudonymId.trim(),
+      pseudonym_id: finalPid,
       created_by: user.id,
       eingabe_daten: buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false }),
       empfehlung: finalMd,
@@ -1871,7 +1873,7 @@ export function TherapyRecommendation() {
     setHistoryRefresh((n) => n + 1);
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
-    toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${pseudonymId.trim()}. Druck jetzt verfügbar.` });
+    toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
   };
 
 
