@@ -1833,6 +1833,16 @@ export function TherapyRecommendation() {
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
+        <Button
+          onClick={handleAnalyzeDocuments}
+          disabled={isAnalyzingDocs || isStreaming}
+          variant="outline"
+          className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
+          title="Reine Befund-Auswertung der eingereichten Dokumente (ohne Therapie-Empfehlung) — öffnet als HTML in neuem Tab"
+        >
+          {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+          {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
+        </Button>
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
