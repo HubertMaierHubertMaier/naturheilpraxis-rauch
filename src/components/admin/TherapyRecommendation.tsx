@@ -1922,7 +1922,7 @@ export function TherapyRecommendation() {
                 loadCloudDraft(pid);
               }}
               className="gap-1.5"
-              disabled={!pseudonymId.trim()}
+                disabled={!isPatientScopedStorageReady(pseudonymId)}
               title="Alle bisher gespeicherten Eingaben (Labor, Arztbericht, etc.) für diese Pseudonym-ID erneut zusammenführen und ins Formular laden"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -1937,7 +1937,7 @@ export function TherapyRecommendation() {
               Bei vorhandener Pseudonym-ID wird die Empfehlung automatisch im Verlauf gespeichert.
             </span>
           </div>
-          {pseudonymId.trim() && (
+          {isPatientScopedStorageReady(pseudonymId) && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Badge variant={autoSaveStatus === "error" ? "destructive" : "secondary"} className="h-5">
                 {autoSaveStatus === "saving" && "Auto-Sicherung läuft…"}
@@ -1976,7 +1976,7 @@ export function TherapyRecommendation() {
       </Card>
 
       {/* Verlauf bei vorhandenem Pseudonym */}
-      {pseudonymId.trim() && (
+      {isPatientScopedStorageReady(pseudonymId) && (
         <PseudonymHistory
           key={`${pseudonymId}-${historyRefresh}`}
           pseudonymId={pseudonymId}
