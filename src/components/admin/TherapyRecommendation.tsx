@@ -995,6 +995,12 @@ export function TherapyRecommendation() {
           live.scrollTop = live.scrollHeight;
         }
       }
+      full += decoder.decode();
+      full = sanitizeFinalAnalysisHtml(full);
+      if (!full || !/(<html|<!DOCTYPE|<body|<h1|<h2|<table)/i.test(full) || full.trim().length < 250) {
+        writeProgress("⚠ Abschluss-HTML war leer/unvollständig. Erstelle sichere Ersatz-Auswertung aus den 17 fertigen Teilanalysen…");
+        full = buildFallbackAnalysisHtml(partials, { pseudonymId, totalChars, chunkCount: chunks.length });
+      }
 
       // Finales HTML ins Tab schreiben
       if (w) {
