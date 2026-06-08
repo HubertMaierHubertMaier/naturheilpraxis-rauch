@@ -74,7 +74,10 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 
-const splitAnalysisText = (label: string, value: string, maxChars = 18000): AnalysisDocChunk[] => {
+const ANALYSIS_CHUNK_MAX_CHARS = 6000;
+const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2800;
+
+const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
   if (!text) return [];
   if (text.length <= maxChars) return [{ label, text }];
@@ -104,6 +107,18 @@ const splitAnalysisText = (label: string, value: string, maxChars = 18000): Anal
   }
   flush();
   return chunks;
+};
+
+const isRecoverableAnalysisTimeout = (message: string) => /504|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit/i.test(message);
+
+const readAnalysisError = async (resp: Response) => {
+  const text = await resp.text().catch(() => "");
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.error || parsed.message || `HTTP ${resp.status}`;
+  } catch {
+    return text || `HTTP ${resp.status}`;
+  }
 };
 
 export function TherapyRecommendation() {
