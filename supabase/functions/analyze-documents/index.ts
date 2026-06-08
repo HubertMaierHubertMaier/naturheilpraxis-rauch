@@ -138,17 +138,43 @@ Patientenkontext: ${patientContext(b)}
 
 Wichtig:
 - Es ist eine reine Befund-Auswertung, KEINE eigene Therapie-Empfehlung und KEINE neuen Mittel-Vorschläge.
-- ABER: Alle in den Dokumenten genannten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel müssen vollständig in "medicationsTherapies" gelistet werden — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status (laufend/abgesetzt/unklar). Lieber zu viel als zu wenig. Wenn ein Medikament nur am Rande erwähnt wird ("nimmt zusätzlich X"), trotzdem aufnehmen.
-- Extrahiere nur, was im Text steht. Keine Halluzination.
+- VOLLSTÄNDIGKEIT IST PFLICHT. Extrahiere ALLES, was an folgenden Standard-Anamnese-Kategorien im Text vorkommt (auch wenn die Überschriften englisch, französisch oder anders benannt sind — semantisch zuordnen):
+  * Current medical problems / Aktuelle Beschwerden
+  * Past medical history / Vorerkrankungen, OPs, stationäre Aufenthalte
+  * Allergies / Allergien & Unverträglichkeiten
+  * Present medication / Aktuelle Medikation (inkl. OTC, Supplemente, Phyto, HP-Mittel)
+  * Habits / Genussmittel, Lebensgewohnheiten (Rauchen, Alkohol, Drogen, Sport, Schlaf, Ernährung)
+  * Review of systems / Systemanamnese (Kopf, HNO, Herz/Lunge, GI, Uro, Neuro, Haut, MSK, Psyche)
+  * Recent medical examinations / controls — letzte Untersuchungen, Kontrollen, Screenings
+  * Vaccination status / Impfstatus
+  * Medical family history / Familienanamnese
+  * Social status / Sozialanamnese (Beruf, Wohnsituation, Familie, Belastungen)
+  * Physical examination / körperlicher Untersuchungsbefund
+  * Additional medical investigation / weiterführende Untersuchungen (Labor, Bildgebung, Funktionsdiagnostik)
+- ALLE Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel vollständig in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Lieber zu viel als zu wenig.
+- Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
-- Anonymisierung respektieren.
-- Heilpraktiker oder Arzt gleichrangig nennen; "ärztlich" nur bei echtem Arztvorbehalt.
+- Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
 Gib ausschließlich kompaktes JSON zurück:
 {
   "documents": [{"datum":"", "quelle":"", "untersuchung":"", "hauptbefund":"", "auffaellig":""}],
+  "anamnese": {
+    "currentProblems": [""],
+    "pastHistory": [""],
+    "allergies": [""],
+    "presentMedication": [""],
+    "habits": [""],
+    "reviewOfSystems": [{"system":"", "befund":""}],
+    "recentExaminations": [""],
+    "vaccinationStatus": [""],
+    "familyHistory": [""],
+    "socialStatus": [""],
+    "physicalExamination": [""],
+    "additionalInvestigations": [""]
+  },
   "diagnoses": [{"icd10":"", "diagnose":"", "quelle":"", "status":"gesichert|Verdacht|Z.n.|unklar"}],
-  "medicationsTherapies": [{"name":"", "vonWem":"", "datum":"", "indikation":"", "status":"laufend|abgesetzt|unklar"}],
+  "medicationsTherapies": [{"name":"", "dosis":"", "vonWem":"", "datum":"", "indikation":"", "wirkmechanismus":"", "nebenwirkungen":"", "grundVerordnung":"", "status":"laufend|abgesetzt|unklar"}],
   "findings": ["wichtige Auffälligkeit/Widerspruch/fehlender Befund"],
   "terms": [{"term":"", "plain":"laienverständlich auf Deutsch"}],
   "redFlags": ["dringlicher Sicherheitshinweis, falls vorhanden"],
@@ -157,12 +183,15 @@ Gib ausschließlich kompaktes JSON zurück:
   "missingReports": ["nachzureichender Befund"]
 }
 
+Leere Felder als [] zurückgeben — Kategorien NIE weglassen.
+
 Dokumentblock: ${block.label}
 
 --- TEXTBEGINN ---
 ${block.text}
 --- TEXTENDE ---`;
 }
+
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
   return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.
