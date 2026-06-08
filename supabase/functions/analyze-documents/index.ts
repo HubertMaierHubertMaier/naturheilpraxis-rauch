@@ -258,6 +258,23 @@ function extractJsonish(text: string) {
   return text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
 }
 
+function technicalChunkFallback(label: string, index: number, total: number, error: unknown) {
+  const message = String((error as Error)?.message || error || "Technischer Analysefehler").slice(0, 220);
+  return JSON.stringify({
+    documents: [],
+    anamnese: {},
+    diagnoses: [],
+    medicationsTherapies: [],
+    findings: [],
+    redFlags: [{
+      text: `Teilpaket konnte technisch nicht ausgewertet werden: ${label}`,
+      beleg: { quelle: label, teil: `${index}/${total}`, zitat: message },
+    }],
+    openQuestions: [`Teilpaket manuell prüfen oder erneut importieren: ${label}`],
+    missingReports: [`Technisch nicht verarbeitet: ${label}`],
+  });
+}
+
 function stripHtmlFence(text: string) {
   return text.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
 }
@@ -461,12 +478,19 @@ serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const partial = await callGatewayText(
-        LOVABLE_API_KEY,
-        "google/gemini-2.5-flash",
-        buildChunkPrompt({ label, text }, index, total, body),
-      );
-      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length }), {
+      let partial = "";
+      let recovered = false;
+      try {
+        partial = await callGatewayText(
+          LOVABLE_API_KEY,
+          "google/gemini-2.5-flash",
+          buildChunkPrompt({ label, text }, index, total, body),
+        );
+      } catch (error) {
+        recovered = true;
+        partial = technicalChunkFallback(label, index, total, error);
+      }
+      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered }), {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
