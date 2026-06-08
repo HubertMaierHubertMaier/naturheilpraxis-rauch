@@ -233,6 +233,7 @@ export function TherapyRecommendation() {
       if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
+      if (typeof d?.perplexityAnalyse === "string") setPerplexityAnalyse(d.perplexityAnalyse);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
