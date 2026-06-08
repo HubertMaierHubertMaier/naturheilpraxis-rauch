@@ -72,6 +72,40 @@ const asText = (value: unknown, fallback = "") => (typeof value === "string" ? v
 
 const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
 
+type AnalysisDocChunk = { label: string; text: string };
+
+const splitAnalysisText = (label: string, value: string, maxChars = 18000): AnalysisDocChunk[] => {
+  const text = value.trim();
+  if (!text) return [];
+  if (text.length <= maxChars) return [{ label, text }];
+  const chunks: AnalysisDocChunk[] = [];
+  const paragraphs = text.replace(/\r\n/g, "\n").split(/\n{2,}/);
+  let current = "";
+  let index = 1;
+  const flush = () => {
+    if (!current.trim()) return;
+    chunks.push({ label: `${label} – Teil ${index}`, text: current.trim() });
+    current = "";
+    index += 1;
+  };
+  for (const paragraph of paragraphs) {
+    const part = paragraph.trim();
+    if (!part) continue;
+    if (part.length > maxChars) {
+      flush();
+      for (let i = 0; i < part.length; i += maxChars) {
+        chunks.push({ label: `${label} – Teil ${index}`, text: part.slice(i, i + maxChars).trim() });
+        index += 1;
+      }
+      continue;
+    }
+    if ((current + "\n\n" + part).length > maxChars) flush();
+    current = current ? `${current}\n\n${part}` : part;
+  }
+  flush();
+  return chunks;
+};
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
