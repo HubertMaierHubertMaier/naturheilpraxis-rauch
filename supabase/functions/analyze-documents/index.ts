@@ -44,6 +44,10 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 interface AnalyzeBody {
+  analysisMode?: "chunk" | "final";
+  chunk?: { label?: string; text?: string; index?: number; total?: number };
+  partials?: string[];
+  totalChars?: number;
   laborKomplett?: string;
   laborErhoeht?: string;
   laborErniedrigt?: string;
@@ -371,6 +375,59 @@ serve(async (req) => {
     }
 
     const body = (await req.json()) as AnalyzeBody;
+
+    if (body.analysisMode === "chunk") {
+      const text = cleanText(body.chunk?.text);
+      const label = cleanText(body.chunk?.label) || "Dokument-Teil";
+      const index = Math.max(1, Number(body.chunk?.index || 1));
+      const total = Math.max(index, Number(body.chunk?.total || index));
+      if (!text) {
+        return new Response(JSON.stringify({ error: "Leeres Dokument-Teilpaket" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const partial = await callGatewayText(
+        LOVABLE_API_KEY,
+        "google/gemini-2.5-flash",
+        buildChunkPrompt({ label, text }, index, total, body),
+      );
+      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-Model": "google/gemini-2.5-flash",
+          "X-Input-Chars": String(text.length),
+          "X-Analysis-Mode": "chunk",
+          "X-Analysis-Chunks": String(total),
+        },
+      });
+    }
+
+    if (body.analysisMode === "final") {
+      const partials = Array.isArray(body.partials) ? body.partials.filter((x) => typeof x === "string" && x.trim()) : [];
+      if (!partials.length) {
+        return new Response(JSON.stringify({ error: "Keine Teilanalysen zur Zusammenführung übergeben" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const totalChars = Number(body.totalChars || 0);
+      const model = body.useProModel || totalChars > 60_000
+        ? "google/gemini-2.5-pro"
+        : "google/gemini-2.5-flash";
+      const stream = await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length));
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Model": model,
+          "X-Input-Chars": String(totalChars),
+          "X-Analysis-Mode": "client-chunked-final",
+          "X-Analysis-Chunks": String(partials.length),
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
+
     const blocks = collectBlocks(body);
     if (!blocks.length) {
       return new Response(JSON.stringify({ error: "Keine Dokumente zur Auswertung übergeben" }), {
