@@ -321,6 +321,7 @@ export function TherapyRecommendation() {
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
   const lastAutoSavedPayloadRef = useRef("");
+  const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
@@ -399,8 +400,8 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.v1";
-  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.${pseudonymId.trim()}` : "";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v2";
+  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -411,7 +412,10 @@ export function TherapyRecommendation() {
       if (!raw) return;
       const d = JSON.parse(raw);
       if (!d?._pseudonym_id && !d?.pseudonymId) return;
-      if (typeof d?.pseudonymId === "string") setPseudonymId(d.pseudonymId);
+      if (typeof d?.pseudonymId === "string") {
+        patientDataOwnerRef.current = normalizePseudonymId(d.pseudonymId);
+        setPseudonymId(d.pseudonymId);
+      }
       if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
       if (typeof d?.symptome === "string") setSymptome(d.symptome);
       if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
@@ -491,7 +495,7 @@ export function TherapyRecommendation() {
     let localTs = 0;
     let localData: any = null;
     try {
-      const raw = localStorage.getItem(`therapy.inputs.draft.${pid}`);
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v2.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
         const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
@@ -602,6 +606,11 @@ export function TherapyRecommendation() {
     if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
+
+    if (patientDataOwnerRef.current !== pid) {
+      setAutoSaveStatus("error");
+      return;
+    }
 
     const payload = JSON.stringify(buildInputData({
       autoSavedDraft: true,
