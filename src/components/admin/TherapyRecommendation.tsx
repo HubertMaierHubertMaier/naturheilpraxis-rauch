@@ -1038,9 +1038,10 @@ export function TherapyRecommendation() {
       });
     }
     toast({
-      title: "In Eingabemaske übernommen",
-      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) eingefügt (mit Quelle).`,
+      title: "Automatisch in Eingabemaske eingetragen",
+      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) ergänzt — jeweils mit Quelle (Dokument), Datum (sonst „unbekannt") und wörtlichem Zitat.`,
     });
+
     setExtractedFromDocs(null);
   };
 
