@@ -27,6 +27,7 @@ interface Props {
   arztberichtDatum?: string;
   metatronHeel?: string;
   sonstigeUntersuchungen?: string;
+  perplexityAnalyse?: string;
 }
 
 const splitLines = (s?: string) =>
