@@ -1420,6 +1420,11 @@ export function TherapyRecommendation() {
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
   const applyExtractedToInputs = () => {
     if (!extractedFromDocs) return;
+    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
+      setExtractedFromDocs(null);
+      toast({ title: "Sicherheitsstopp", description: "Extrahierte Befunddaten gehören zu einem anderen Pseudonym und wurden nicht übernommen.", variant: "destructive" });
+      return;
+    }
     const { diagnoses, symptoms, medications } = extractedFromDocs;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
@@ -1502,11 +1507,15 @@ export function TherapyRecommendation() {
   // Banner bleibt sichtbar bis applyExtractedToInputs den State auf null setzt → dient als Bestätigung/Undo.
   useEffect(() => {
     if (!extractedFromDocs) return;
+    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
+      setExtractedFromDocs(null);
+      return;
+    }
     const { diagnoses, symptoms, medications } = extractedFromDocs;
     if (!diagnoses.length && !symptoms.length && !medications.length) return;
     applyExtractedToInputs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extractedFromDocs]);
+  }, [extractedFromDocs, pseudonymId]);
 
 
   // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
