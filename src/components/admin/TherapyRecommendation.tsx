@@ -718,6 +718,7 @@ export function TherapyRecommendation() {
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
+    setPerplexityAnalyse(asText(d.perplexityAnalyse));
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
