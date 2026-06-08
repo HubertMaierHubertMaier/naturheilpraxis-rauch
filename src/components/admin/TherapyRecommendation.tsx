@@ -1393,6 +1393,16 @@ export function TherapyRecommendation() {
                       )}
                     </span>
                   </label>
+                  <div className="mb-2">
+                    <MultiDocUpload
+                      ocrMode="doctor"
+                      label="📂 PDFs / Bilder hochladen (auto-extrahieren)"
+                      onExtracted={(t) => {
+                        const next = sonstigeUntersuchungen ? `${sonstigeUntersuchungen.trim()}\n\n${t}` : t;
+                        setSonstigeUntersuchungen(next);
+                      }}
+                    />
+                  </div>
                   <Textarea
                     value={sonstigeUntersuchungen}
                     onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
