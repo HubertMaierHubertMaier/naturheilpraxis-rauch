@@ -1535,6 +1535,7 @@ export function TherapyRecommendation() {
         arztberichtDatum={arztberichtDatum}
         metatronHeel={metatronHeel}
         sonstigeUntersuchungen={sonstigeUntersuchungen}
+        perplexityAnalyse={perplexityAnalyse}
       />
 
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
