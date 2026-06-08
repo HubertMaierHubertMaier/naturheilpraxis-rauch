@@ -1,8 +1,6 @@
 // Edge Function: analyze-documents
 // Reine Befund-Auswertung (KEINE Therapie-Empfehlung).
-// Input: alle Dokument-Felder (Labor, Arztberichte, sonstige Untersuchungen, Perplexity, Metatron, Stuhl).
-// Output: HTML-Dokument als String — chronologische Aufstellung, Diagnosen, Patientensprache,
-// Vorgehensempfehlung. Wird im Frontend in neuem Tab geöffnet.
+// Große Eingaben werden vollständig in Chunks analysiert und danach synthetisiert.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -36,7 +34,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Expose-Headers": "x-model, x-input-chars",
+    "Access-Control-Expose-Headers": "x-model, x-input-chars, x-analysis-mode, x-analysis-chunks",
     "Vary": "Origin",
   };
   if (isAllowedCorsOrigin(origin)) {
@@ -46,6 +44,10 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 interface AnalyzeBody {
+  analysisMode?: "chunk" | "final";
+  chunk?: { label?: string; text?: string; index?: number; total?: number };
+  partials?: string[];
+  totalChars?: number;
   laborKomplett?: string;
   laborErhoeht?: string;
   laborErniedrigt?: string;
@@ -62,10 +64,19 @@ interface AnalyzeBody {
   useProModel?: boolean;
 }
 
-function buildPrompt(b: AnalyzeBody): string {
-  const blocks: string[] = [];
+type DocBlock = { label: string; text: string };
+
+const encoder = new TextEncoder();
+
+function cleanText(value?: string) {
+  return (value || "").replace(/\r\n/g, "\n").trim();
+}
+
+function collectBlocks(b: AnalyzeBody): DocBlock[] {
+  const blocks: DocBlock[] = [];
   const push = (label: string, val?: string) => {
-    if (val && val.trim()) blocks.push(`### ${label}\n${val.trim()}`);
+    const text = cleanText(val);
+    if (text) blocks.push({ label, text });
   };
   push(`Labor (komplett)${b.laborDatum ? ` – ${b.laborDatum}` : ""}`, b.laborKomplett);
   push("Labor – erhöhte Werte", b.laborErhoeht);
@@ -75,60 +86,252 @@ function buildPrompt(b: AnalyzeBody): string {
   push("Metatron / NLS / Bioresonanz", b.metatronHeel);
   push("Sonstige / unsortierte Voruntersuchungen", b.sonstigeUntersuchungen);
   push("Externe Recherche (Perplexity / Studien / Leitlinien)", b.perplexityAnalyse);
+  return blocks;
+}
 
+function splitBlock(block: DocBlock, maxChars = 18_000): DocBlock[] {
+  if (block.text.length <= maxChars) return [block];
+  const paragraphs = block.text.split(/\n{2,}/);
+  const chunks: DocBlock[] = [];
+  let current = "";
+  let index = 1;
+  const flush = () => {
+    if (!current.trim()) return;
+    chunks.push({ label: `${block.label} – Teil ${index}`, text: current.trim() });
+    current = "";
+    index += 1;
+  };
+  for (const paragraph of paragraphs) {
+    const part = paragraph.trim();
+    if (!part) continue;
+    if (part.length > maxChars) {
+      flush();
+      for (let i = 0; i < part.length; i += maxChars) {
+        chunks.push({ label: `${block.label} – Teil ${index}`, text: part.slice(i, i + maxChars).trim() });
+        index += 1;
+      }
+      continue;
+    }
+    if ((current + "\n\n" + part).length > maxChars) flush();
+    current = current ? `${current}\n\n${part}` : part;
+  }
+  flush();
+  return chunks;
+}
+
+function chunkDocuments(blocks: DocBlock[], maxChars = 18_000): DocBlock[] {
+  return blocks.flatMap((block) => splitBlock(block, maxChars));
+}
+
+function patientContext(b: AnalyzeBody) {
   const patient: string[] = [];
   if (b.alter) patient.push(`Alter: ${b.alter}`);
   if (b.geschlecht) patient.push(`Geschlecht: ${b.geschlecht}`);
   if (b.pseudonymId) patient.push(`Pseudonym: ${b.pseudonymId}`);
+  return patient.length ? patient.join(" · ") : "nicht angegeben";
+}
 
-  return `Du bist ein erfahrener Naturheilpraktiker (Peter Rauch, Heilpraktiker + Ing. Elektrotechnik) und sollst eine **reine Befund-Auswertung** durchführen — KEINE Therapie-Empfehlung, KEINE Mittel-Vorschläge.
+function buildChunkPrompt(block: DocBlock, index: number, total: number, b: AnalyzeBody): string {
+  return `Du analysierst Teil ${index}/${total} einer großen Vorbefund-Sammlung für Peter Rauch (Heilpraktiker, Physiotherapeut, Hypnotherapeut, Ing. Elektrotechnik).
 
-Der Patient hat **viele Seiten Vorbefunde** geschickt, **bevor** das Erstgespräch stattgefunden hat. Symptome sind noch nicht bekannt. Deine Aufgabe: Vorbefunde durchsehen, sortieren, übersetzen, einordnen.
+Patientenkontext: ${patientContext(b)}
 
-${patient.length ? `**Patientenkontext:** ${patient.join(" · ")}\n` : ""}
+Wichtig:
+- Es ist eine reine Befund-Auswertung, KEINE Therapie-Empfehlung und KEINE Mittel-Vorschläge.
+- Extrahiere nur, was im Text steht. Keine Halluzination.
+- Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
+- Anonymisierung respektieren.
+- Heilpraktiker oder Arzt gleichrangig nennen; "ärztlich" nur bei echtem Arztvorbehalt.
 
----
+Gib ausschließlich kompaktes JSON zurück:
+{
+  "documents": [{"datum":"", "quelle":"", "untersuchung":"", "hauptbefund":"", "auffaellig":""}],
+  "diagnoses": [{"icd10":"", "diagnose":"", "quelle":"", "status":"gesichert|Verdacht|Z.n.|unklar"}],
+  "medicationsTherapies": [{"name":"", "vonWem":"", "datum":"", "indikation":"", "status":"laufend|abgesetzt|unklar"}],
+  "findings": ["wichtige Auffälligkeit/Widerspruch/fehlender Befund"],
+  "terms": [{"term":"", "plain":"laienverständlich auf Deutsch"}],
+  "redFlags": ["dringlicher Sicherheitshinweis, falls vorhanden"],
+  "systemsPatterns": ["betroffene Systeme/Muster"],
+  "openQuestions": ["konkrete Frage für Erstgespräch"],
+  "missingReports": ["nachzureichender Befund"]
+}
 
-## VERBINDLICHE OUTPUT-STRUKTUR (HTML)
+Dokumentblock: ${block.label}
 
-Liefere **ausschließlich** ein vollständiges HTML-Dokument (beginnend mit \`<!DOCTYPE html>\`, endend mit \`</html>\`). Kein Markdown, keine Code-Fences, kein Vorspann.
+--- TEXTBEGINN ---
+${block.text}
+--- TEXTENDE ---`;
+}
 
-Style: eingebettetes \`<style>\` mit serifenfreier Schrift, Akzentfarbe \`#6b8e6b\` (sage green), Print-tauglich (A4), Tabellen mit dünner Border.
+function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
+  return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für Peter Rauch.
 
-### Pflicht-Sektionen (in dieser Reihenfolge):
+Patientenkontext: ${patientContext(b)}
+Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCount} Teilpaketen. Wichtig: Es wurden alle übergebenen Dokumentblöcke verarbeitet; keine künstliche Seitenbegrenzung.
 
-1. **\`<h1>\` Befund-Auswertung** + Datum + Pseudonym
-2. **\`<section>\` 📋 Übersicht der eingereichten Unterlagen** — Tabelle: Anzahl Dokumente / geschätzter Umfang / Sprachen / Zeitraum.
-3. **\`<section>\` 🗂️ Chronologische Untersuchungs-Übersicht** — **Tabelle** sortiert nach Datum (neueste zuerst):
-   | Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig? |
-   Jedes Datum aus dem Freitext extrahieren (TT.MM.JJJJ, „März 2024", „vor 2 J." …). Bei fehlendem Datum: "ohne Datum".
-4. **\`<section>\` 🩺 Diagnosen & Verdachtsdiagnosen (aus den Vorbefunden)** — Tabelle: ICD-10 | Diagnose | Quelle (welcher Befund/Arzt) | Status (gesichert / Verdacht / Z.n.).
-5. **\`<section>\` 💊 Bereits empfohlene / verordnete Mittel & Therapien** — Tabelle: Mittel/Therapie | von wem | Datum | Indikation | Status (laufend / abgesetzt / unklar). Falls nichts erwähnt: ausdrücklich vermerken.
-6. **\`<section>\` 🔍 Auffälligkeiten, Widersprüche, fehlende Befunde** — Bullet-Liste: was widerspricht sich zwischen den Ärzten? was wurde nie ausgewertet? was fehlt für eine saubere Einordnung?
-7. **\`<section>\` 🗣️ Übersetzung Ärzte-Sprache → Patienten-Sprache** — Tabelle: Fachbegriff | Was es bedeutet (1 Satz, laienverständlich, ohne Verharmlosung). Mindestens die 10 wichtigsten Begriffe aus den Dokumenten.
-8. **\`<section>\` 🎯 Gesamtbild & Arbeitshypothese** — 1–2 Absätze: Was zeichnet sich aus den Vorbefunden ab? Welche Systeme sind betroffen (Endokrin, GI, Immun, Muskuloskelettal, Psyche, …)? Welche Muster (chronisch-entzündlich, mitochondrial, allergisch, …)?
-9. **\`<section>\` 📌 Empfohlenes Vorgehen für das Erstgespräch (Peter Rauch)** — **nummerierte Liste**, sehr konkret:
-   - Welche **Fragen** muss Peter im Erstgespräch unbedingt stellen (Symptom-Lücken füllen)?
-   - Welche **eigenen Untersuchungen** sinnvoll (EAV / NLS / Bioresonanz / Labor-Ergänzung)?
-   - Welche **fehlenden Befunde** sollte der Patient nachreichen?
-   - Welche **Differentialdiagnosen** noch abklären lassen (Heilpraktiker ODER Arzt — gleichrangig, "ärztlich" nur bei echtem Arztvorbehalt)?
-   - **Reihenfolge / Priorität** der nächsten Schritte.
-10. **\`<section>\` ⚠️ Sicherheitshinweise / Red Flags** — alles was nicht warten darf (Notfall-Hinweise, dringliche Abklärung). Falls nichts kritisch: kurz vermerken.
+VERBINDLICHE OUTPUT-STRUKTUR:
+- Ausschließlich vollständiges HTML: <!DOCTYPE html> ... </html>
+- Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border.
+- Keine Therapie-Empfehlung, keine Mittel-Vorschläge. Es geht um Befundübersicht, Einordnung und Vorbereitung des Erstgesprächs.
+- Keine Halluzination: fehlende Angaben mit "—" oder "nicht angegeben" markieren.
+- HWG-konform: "kann unterstützen", keine Heilversprechen.
+- Praktiker-Gleichrangigkeit: "Heilpraktiker oder Arzt"; "ärztlich" nur bei echtem Arztvorbehalt.
 
-### Regeln:
-- **VOLLSTÄNDIG lesen** — wenn der Input sehr groß ist und du nicht alles verarbeiten kannst, **explizit oben in einem \`<div class="warn">\` melden**: "⚠️ Kontextlimit: nur die ersten X% der Dokumente konnten ausgewertet werden."
-- **Keine Halluzination** — wenn ein Datum/Arzt/Wert nicht im Input steht: leer lassen oder "—".
-- **Anonymisierung respektieren** — Texte wie "(Name entfernt)" / "(Adresse entfernt)" einfach so übernehmen.
-- **Sprache: Deutsch.** Fremdsprachige Befunde (EN/FR) übersetzen.
-- **HWG-konform**: bei naturheilkundlichen Aussagen "kann unterstützen", keine Heilversprechen.
-- **Praktiker-Gleichrangigkeit**: "Heilpraktiker oder Arzt" — "ärztlich" NUR bei echtem Arztvorbehalt (Krebs akut, Notfall, meldepflichtige Infektion, Geburtshilfe).
+Pflicht-Sektionen in Reihenfolge:
+1. <h1>Befund-Auswertung</h1> + Datum + Pseudonym
+2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
+3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig?; neueste zuerst, fehlendes Datum: "ohne Datum".
+4. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
+5. Bereits empfohlene / verordnete Mittel & Therapien — Tabelle: Mittel/Therapie | von wem | Datum | Indikation | Status.
+6. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
+7. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung; die wichtigsten Begriffe.
+8. Gesamtbild & Arbeitshypothese — 1–3 Absätze aus den Vorbefunden, keine Therapie.
+9. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung falls passend), fehlende Befunde, Differentialdiagnosen, Priorität.
+10. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken.
 
----
+TEILANALYSEN (JSON/Notizen):
+${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
+}
 
-## EINGEREICHTE DOKUMENTE (vollständig):
+function extractJsonish(text: string) {
+  return text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
+}
 
-${blocks.join("\n\n")}
-`;
+function stripHtmlFence(text: string) {
+  return text.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
+}
+
+async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2): Promise<string> {
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: "Du antwortest exakt im geforderten Format. Keine Vorrede." },
+        { role: "user", content: prompt },
+      ],
+      temperature,
+    }),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    if (resp.status === 429) throw new Error("Rate-Limit erreicht. Bitte später erneut versuchen.");
+    if (resp.status === 402) throw new Error("AI-Guthaben aufgebraucht. Bitte im Workspace aufladen.");
+    throw new Error(`AI Gateway ${resp.status}: ${errText.slice(0, 500)}`);
+  }
+  const json = await resp.json();
+  return String(json.choices?.[0]?.message?.content || "").trim();
+}
+
+async function streamGatewayHtml(apiKey: string, model: string, prompt: string): Promise<ReadableStream<Uint8Array>> {
+  const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: "Du gibst ausschließlich vollständiges HTML zurück, beginnend mit <!DOCTYPE html>." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.25,
+      stream: true,
+    }),
+  });
+  if (!aiResp.ok || !aiResp.body) {
+    const errText = await aiResp.text().catch(() => "");
+    if (aiResp.status === 429) throw new Error("Rate-Limit erreicht. Bitte später erneut versuchen.");
+    if (aiResp.status === 402) throw new Error("AI-Guthaben aufgebraucht. Bitte im Workspace aufladen.");
+    throw new Error(`AI Gateway ${aiResp.status}: ${errText.slice(0, 500)}`);
+  }
+
+  const decoder = new TextDecoder();
+  const reader = aiResp.body.getReader();
+  let buffer = "";
+  let started = false;
+  let wrapped = false;
+
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        const { value, done } = await reader.read();
+        if (done) {
+          if (buffer.length) {
+            const tail = stripHtmlFence(buffer);
+            if (tail) controller.enqueue(encoder.encode(tail));
+          }
+          if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
+          controller.close();
+          return;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        let textOut = "";
+        while ((nl = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (data === "[DONE]") continue;
+          try {
+            const j = JSON.parse(data);
+            const delta = j.choices?.[0]?.delta?.content ?? "";
+            if (delta) textOut += delta;
+          } catch { /* ignore malformed SSE frame */ }
+        }
+        if (textOut) {
+          if (!started) {
+            textOut = stripHtmlFence(textOut);
+            if (!/^<!DOCTYPE/i.test(textOut) && !/^<html/i.test(textOut)) {
+              controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
+              wrapped = true;
+            }
+            started = true;
+          }
+          controller.enqueue(encoder.encode(textOut));
+        }
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+    cancel() { reader.cancel().catch(() => {}); },
+  });
+}
+
+function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, model: string, totalChars: number) {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (text: string) => controller.enqueue(encoder.encode(text));
+      try {
+        send(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:32px;color:#28342d;line-height:1.5}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.bar{height:10px;background:#e5eadf;border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:#6b8e6b;width:8%}.muted{color:#667063}</style></head><body><main class="box"><h1>Befund-Auswertung wird vollständig erstellt…</h1><p>Alle übergebenen Seiten werden in ${chunks.length} Teilpaketen gelesen und anschließend zusammengeführt.</p><div class="bar"><span></span></div><p class="muted">Bitte Fenster offen lassen. Bei sehr vielen Seiten kann das einige Minuten dauern.</p><ul>`);
+        const partials: string[] = [];
+        for (let i = 0; i < chunks.length; i += 1) {
+          send(`<li>Teil ${i + 1}/${chunks.length}: ${chunks[i].label.replace(/[<>&]/g, "")} wird gelesen…</li>`);
+          const partial = await callGatewayText(apiKey, "google/gemini-2.5-flash", buildChunkPrompt(chunks[i], i + 1, chunks.length, b));
+          partials.push(extractJsonish(partial).slice(0, 12_000));
+        }
+        send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
+        const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt);
+        const reader = htmlStream.getReader();
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+        controller.close();
+      } catch (error) {
+        send(`</ul><h2 style="color:#a33">❌ Fehler</h2><p>${String((error as Error).message || error).replace(/[<>&]/g, "")}</p></body></html>`);
+        controller.close();
+      }
+    },
+  });
 }
 
 serve(async (req) => {
@@ -173,127 +376,89 @@ serve(async (req) => {
 
     const body = (await req.json()) as AnalyzeBody;
 
-    const hasAny = [
-      body.laborKomplett, body.laborErhoeht, body.laborErniedrigt,
-      body.stuhlbefund, body.arztbericht, body.metatronHeel,
-      body.sonstigeUntersuchungen, body.perplexityAnalyse,
-    ].some((x) => x && x.trim());
-    if (!hasAny) {
+    if (body.analysisMode === "chunk") {
+      const text = cleanText(body.chunk?.text);
+      const label = cleanText(body.chunk?.label) || "Dokument-Teil";
+      const index = Math.max(1, Number(body.chunk?.index || 1));
+      const total = Math.max(index, Number(body.chunk?.total || index));
+      if (!text) {
+        return new Response(JSON.stringify({ error: "Leeres Dokument-Teilpaket" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const partial = await callGatewayText(
+        LOVABLE_API_KEY,
+        "google/gemini-2.5-flash",
+        buildChunkPrompt({ label, text }, index, total, body),
+      );
+      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-Model": "google/gemini-2.5-flash",
+          "X-Input-Chars": String(text.length),
+          "X-Analysis-Mode": "chunk",
+          "X-Analysis-Chunks": String(total),
+        },
+      });
+    }
+
+    if (body.analysisMode === "final") {
+      const partials = Array.isArray(body.partials) ? body.partials.filter((x) => typeof x === "string" && x.trim()) : [];
+      if (!partials.length) {
+        return new Response(JSON.stringify({ error: "Keine Teilanalysen zur Zusammenführung übergeben" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const totalChars = Number(body.totalChars || 0);
+      const model = body.useProModel || totalChars > 60_000
+        ? "google/gemini-2.5-pro"
+        : "google/gemini-2.5-flash";
+      const html = stripHtmlFence(await callGatewayText(LOVABLE_API_KEY, model, buildFinalPrompt(partials, body, totalChars, partials.length), 0.25));
+      return new Response(html, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Model": model,
+          "X-Input-Chars": String(totalChars),
+          "X-Analysis-Mode": "client-chunked-final",
+          "X-Analysis-Chunks": String(partials.length),
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
+
+    const blocks = collectBlocks(body);
+    if (!blocks.length) {
       return new Response(JSON.stringify({ error: "Keine Dokumente zur Auswertung übergeben" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const totalChars = [
-      body.laborKomplett, body.laborErhoeht, body.laborErniedrigt,
-      body.stuhlbefund, body.arztbericht, body.metatronHeel,
-      body.sonstigeUntersuchungen, body.perplexityAnalyse,
-    ].reduce((sum, x) => sum + (x?.length ?? 0), 0);
-
-    // Bei großem Kontext IMMER Pro-Modell
+    const totalChars = blocks.reduce((sum, block) => sum + block.text.length, 0);
+    const chunks = chunkDocuments(blocks);
+    const largeMode = chunks.length > 1 || totalChars > 24_000;
     const model = body.useProModel || totalChars > 60_000
       ? "google/gemini-2.5-pro"
       : "google/gemini-2.5-flash";
 
-    const prompt = buildPrompt(body);
+    const stream = largeMode
+      ? progressStream(chunks, body, LOVABLE_API_KEY, model, totalChars)
+      : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
+          JSON.stringify({ rawDocument: blocks.map((block) => `### ${block.label}\n${block.text}`).join("\n\n") }),
+        ], body, totalChars, 1));
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: "Du gibst ausschließlich vollständiges HTML zurück, beginnend mit <!DOCTYPE html>." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.3,
-        stream: true,
-      }),
-    });
-
-    if (!aiResp.ok || !aiResp.body) {
-      const errText = await aiResp.text().catch(() => "");
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate-Limit erreicht. Bitte später erneut versuchen." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI-Guthaben aufgebraucht. Bitte im Workspace aufladen." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI Gateway ${aiResp.status}: ${errText.slice(0, 500)}`);
-    }
-
-    // SSE → plain-text HTML stream weiterreichen.
-    // Verhindert IDLE_TIMEOUT (150s) bei großem Input, weil kontinuierlich Bytes fließen.
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    const reader = aiResp.body.getReader();
-    let buffer = "";
-    let started = false;
-    let wrapped = false;
-
-    const out = new ReadableStream({
-      async pull(controller) {
-        try {
-          const { value, done } = await reader.read();
-          if (done) {
-            if (buffer.length) {
-              const tail = buffer.replace(/```\s*$/i, "");
-              if (tail) controller.enqueue(encoder.encode(tail));
-            }
-            if (wrapped) controller.enqueue(encoder.encode("</body></html>"));
-            controller.close();
-            return;
-          }
-          buffer += decoder.decode(value, { stream: true });
-          let nl: number;
-          let textOut = "";
-          while ((nl = buffer.indexOf("\n")) !== -1) {
-            const line = buffer.slice(0, nl).trim();
-            buffer = buffer.slice(nl + 1);
-            if (!line.startsWith("data:")) continue;
-            const data = line.slice(5).trim();
-            if (data === "[DONE]") continue;
-            try {
-              const j = JSON.parse(data);
-              const delta = j.choices?.[0]?.delta?.content ?? "";
-              if (delta) textOut += delta;
-            } catch { /* ignore */ }
-          }
-          if (textOut) {
-            if (!started) {
-              textOut = textOut.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "");
-              if (!/^<!DOCTYPE/i.test(textOut) && !/^<html/i.test(textOut)) {
-                controller.enqueue(encoder.encode(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>`));
-                wrapped = true;
-              }
-              started = true;
-            }
-            controller.enqueue(encoder.encode(textOut));
-          }
-        } catch (err) {
-          controller.error(err);
-        }
-      },
-      cancel() { reader.cancel().catch(() => {}); },
-    });
-
-    return new Response(out, {
+    return new Response(stream, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/html; charset=utf-8",
         "X-Model": model,
         "X-Input-Chars": String(totalChars),
+        "X-Analysis-Mode": largeMode ? "chunked-full" : "single-pass",
+        "X-Analysis-Chunks": String(chunks.length),
         "Cache-Control": "no-cache",
       },
     });
-
   } catch (e) {
     console.error("analyze-documents error:", (e as Error).message);
     return new Response(JSON.stringify({ error: (e as Error).message || "Fehler" }), {
