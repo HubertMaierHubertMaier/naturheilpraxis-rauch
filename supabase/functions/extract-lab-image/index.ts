@@ -89,6 +89,28 @@ type AiMessageResponse = {
   }>;
 };
 
+// Server-side PII safety net — entfernt verbliebene Patientendaten,
+// falls das LLM seine Anonymisierungsanweisung nicht vollständig befolgt hat.
+function sanitizePII(input: string): string {
+  if (!input) return input;
+  let s = input;
+  // E-Mail
+  s = s.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "(E-Mail entfernt)");
+  // Telefon / Fax (lockere DE-Muster)
+  s = s.replace(/(?:tel\.?|telefon|fax|mobil|handy)[:\s]*\+?[\d\s().\/-]{6,}/gi, "$&".replace(/.*/, "(Telefon entfernt)"));
+  s = s.replace(/(?:Tel|Fax|Mobil|Handy)[:.]?\s*\+?[\d\s().\/-]{6,}/g, "(Telefon entfernt)");
+  // Geburtsdatum (geb., geboren am, Geb-Dat, DOB) + Datum
+  s = s.replace(/\b(geb\.?|geboren(?:\s+am)?|Geb[-\s]?Dat\.?|GebDatum|DOB)[:\s]*\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/gi, "(Geburtsdatum entfernt)");
+  // Patienten-/Versichertennummer
+  s = s.replace(/\b(Pat(?:ient)?[-\s.]?Nr\.?|Fall[-\s.]?Nr\.?|Versicherten[-\s.]?Nr\.?|Mitglieds[-\s.]?Nr\.?|KV[-\s.]?Nr\.?)[:\s]*[A-Z0-9-]{4,}/gi, "(Patientennummer entfernt)");
+  // Adresszeile: PLZ + Ort (5-stellige PLZ gefolgt von Wort)
+  s = s.replace(/\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß-]+(?:\s+[A-ZÄÖÜ][a-zäöüß-]+)?/g, "(Adresse entfernt)");
+  // Patientenname nach Labeln
+  s = s.replace(/\b(Patient(?:in)?|Name|Nachname|Vorname|Pat\.)[:\s]+[A-ZÄÖÜ][\wäöüß-]+(?:\s+[A-ZÄÖÜ][\wäöüß-]+){0,3}/g, "$1: (Name entfernt)");
+  return s;
+}
+
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
