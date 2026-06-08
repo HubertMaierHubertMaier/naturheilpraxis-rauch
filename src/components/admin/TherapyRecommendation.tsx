@@ -1038,6 +1038,31 @@ export function TherapyRecommendation() {
       };
 
 
+      const saveCheckpoint = async (checkpointData: AnalysisCheckpoint) => {
+        writeAnalysisCheckpoint(checkpointKey, checkpointData);
+        const pid = pseudonymId.trim();
+        if (!pid) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const row = {
+            pseudonym_id: pid,
+            kind: "befund_checkpoint",
+            eingabe_daten: { kind: "befund_checkpoint", fingerprint, checkpoint: checkpointData },
+            empfehlung: "Automatische Zwischen-Sicherung der Befund-Auswertung.",
+            notiz: `Befund-Zwischenstand: ${checkpointData.completedChunks}/${checkpointData.totalChunks} Teilpakete`,
+            created_by: user.id,
+          };
+          const existingId = checkpointSessionIdRef.current;
+          if (existingId) {
+            const { error } = await (supabase as any).from("therapy_sessions").update(row).eq("id", existingId);
+            if (!error) return;
+          }
+          const { data, error } = await (supabase as any).from("therapy_sessions").insert(row).select("id").single();
+          if (!error && data?.id) checkpointSessionIdRef.current = data.id;
+        } catch { /* Cloud-Checkpoint ist Zusatzsicherung; lokale Sicherung bleibt maßgeblich */ }
+      };
+
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
@@ -1048,7 +1073,7 @@ export function TherapyRecommendation() {
         } catch (error) {
           const message = (error as Error).message || "";
           if (!isRecoverableAnalysisTimeout(message) || chunks[i].text.length <= ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
-            writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
+            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
             throw new Error(`Strikte Auswertung gestoppt bei Teil ${i + 1}/${chunks.length} (${chunks[i].label}): ${message}. ${partials.length} Teilanalyse(n) sind gespeichert; bitte später erneut klicken, dann geht es genau hier weiter.`);
           } else {
             const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
@@ -1061,13 +1086,13 @@ export function TherapyRecommendation() {
                 partials.push(retryPartial);
               } catch (retryError) {
                 const retryMessage = (retryError as Error).message || String(retryError);
-                writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
+                await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
                 throw new Error(`Strikte Auswertung gestoppt bei Unter-Teil ${i + 1}.${r + 1}/${retryChunks.length} (${retryChunks[r].label}): ${retryMessage}. ${partials.length} Teilanalyse(n) sind gespeichert; bitte erneut klicken, dann geht es am letzten vollständigen Hauptteil weiter.`);
               }
             }
           }
         }
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
       }
 
