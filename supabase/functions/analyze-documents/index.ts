@@ -280,6 +280,7 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
         { role: "user", content: prompt },
       ],
       temperature,
+      max_tokens: 32000,
     }),
   });
   if (!resp.ok) {
