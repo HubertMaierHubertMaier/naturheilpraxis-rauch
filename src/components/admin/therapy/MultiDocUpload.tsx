@@ -37,8 +37,7 @@ async function renderPageToDataUrl(page: pdfjs.PDFPageProxy, maxDim = 1600): Pro
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
   const ctx = canvas.getContext("2d")!;
-  // @ts-expect-error – canvas typing differs across pdfjs versions
-  await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+  await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
   return canvas.toDataURL("image/jpeg", 0.78);
 }
 
