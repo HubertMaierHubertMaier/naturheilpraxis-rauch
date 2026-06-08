@@ -183,7 +183,7 @@ Pflicht-Sektionen in Reihenfolge:
 2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
 3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig?; neueste zuerst, fehlendes Datum: "ohne Datum".
 4. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status.
-5. Bereits empfohlene / verordnete Mittel & Therapien — Tabelle: Mittel/Therapie | von wem | Datum | Indikation | Status.
+5. Bereits empfohlene / verordnete Mittel & Therapien — VOLLSTÄNDIGE Tabelle ALLER in den Teilanalysen erwähnten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, Operationen, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel (medicationsTherapies aus allen Teilanalysen zusammenführen, Duplikate konsolidieren, NICHTS weglassen). Spalten: Mittel/Therapie (mit Dosis falls bekannt) | von wem (Arzt/Klinik/Therapeut) | Datum | Indikation | Status (laufend/abgesetzt/unklar). Wenn wirklich kein einziges Mittel in den Quelldokumenten erwähnt wird, schreibe explizit "In den vorliegenden Unterlagen sind keine konkreten Medikamente oder Therapien dokumentiert." — sonst niemals leer lassen.
 6. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste.
 7. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung; die wichtigsten Begriffe.
 8. Gesamtbild & Arbeitshypothese — 1–3 Absätze aus den Vorbefunden, keine Therapie.
