@@ -380,7 +380,7 @@ export function TherapyRecommendation() {
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
-    if (!pid) {
+    if (!isPatientScopedStorageReady(pid)) {
       toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
       return;
     }
@@ -636,7 +636,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
+    if (!isPatientScopedStorageReady(pid) || !hasMeaningfulInput || workflowStage === "finalized") return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
@@ -653,7 +653,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (runId !== autoSaveRunIdRef.current) return;
+      if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -676,7 +676,7 @@ export function TherapyRecommendation() {
             .eq("pseudonym_id", pid)
             .select("id")
             .maybeSingle();
-          if (runId !== autoSaveRunIdRef.current) return;
+          if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
           if (!error && updatedDraft?.id) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
@@ -690,7 +690,7 @@ export function TherapyRecommendation() {
           .select("id")
           .single();
         if (error) throw error;
-        if (runId !== autoSaveRunIdRef.current) return;
+        if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
         autoSaveSessionIdRef.current = data?.id ?? null;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
