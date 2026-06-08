@@ -112,6 +112,7 @@ export function TherapyRecommendation() {
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
