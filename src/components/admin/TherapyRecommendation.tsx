@@ -109,7 +109,57 @@ const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHU
   return chunks;
 };
 
-const isRecoverableAnalysisTimeout = (message: string) => /504|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit/i.test(message);
+const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|504|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON-Antwort/i.test(message);
+
+type AnalysisCheckpoint = {
+  version: 2;
+  fingerprint: string;
+  pseudonymId: string;
+  totalChunks: number;
+  totalChars: number;
+  completedChunks: number;
+  partials: string[];
+  updatedAt: string;
+};
+
+const analysisDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) => {
+  let hash = 2166136261;
+  const update = (value: string) => {
+    for (let i = 0; i < value.length; i += 1) {
+      hash ^= value.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+  };
+  update(context);
+  chunks.forEach((chunk) => {
+    update(chunk.label);
+    update(String(chunk.text.length));
+    update(chunk.text);
+  });
+  return (hash >>> 0).toString(36);
+};
+
+const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${pseudonymId.trim() || "ohne-pseudonym"}.${fingerprint}`;
+
+const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number): AnalysisCheckpoint | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const checkpoint = JSON.parse(raw) as AnalysisCheckpoint;
+    if (checkpoint?.version !== 2 || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
+    return checkpoint;
+  } catch {
+    return null;
+  }
+};
+
+const writeAnalysisCheckpoint = (key: string, checkpoint: AnalysisCheckpoint) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(checkpoint));
+  } catch { /* lokale Sicherung optional */ }
+};
 
 const readAnalysisError = async (resp: Response) => {
   const text = await resp.text().catch(() => "");
