@@ -17,7 +17,11 @@ export interface TherapySession {
   notiz: string | null;
   created_at: string;
   updated_at: string;
+  kind?: string | null;
+  befund_html?: string | null;
+  befund_meta?: any;
 }
+
 
 interface Props {
   pseudonymId: string;
