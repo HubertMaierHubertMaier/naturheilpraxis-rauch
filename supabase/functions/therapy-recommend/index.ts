@@ -678,9 +678,15 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
+    const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
+    // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
+    const totalPatientChars = (sonstigeUntersuchungenText.length + perplexityAnalyseText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    if (totalPatientChars > 80_000) {
+      console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
+    }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
@@ -725,7 +731,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -926,6 +932,8 @@ serve(async (req) => {
         queryTokens: tokenizeQuery(queryText),
         symptomAxes: activeSymptomTargets.map((t) => t.label),
         metatronHeelInput: metatronHeelText || null,
+        sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
+        perplexityAnalyseChars: perplexityAnalyseText.length,
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
@@ -951,7 +959,8 @@ serve(async (req) => {
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
-    if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte): ${sonstigeUntersuchungenText}`);
+    if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
+    if (perplexityAnalyseText) patientInfo.push(`Externe Perplexity-/AI-Recherche & Literaturauswertung (Zusatzkontext, ${perplexityAnalyseText.length} Zeichen): ${perplexityAnalyseText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
     // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
@@ -1101,12 +1110,25 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - Berücksichtige diese Diagnosen im Therapieplan: Naturheilkundliche Mittel müssen mit der bestehenden Schulmedizin (Wechselwirkungen, Kontraindikationen, Karenzen) verträglich sein.
    - Verwende die ärztlichen Diagnosen als gesicherten Befund (nicht erneut in Frage stellen) und leite ergänzende naturheilkundliche Strategien daraus ab.
 
-6c. **Sonstige / unsortierte Voruntersuchungen (gemischte Befunde)**: ${sonstigeUntersuchungenText || "Nicht angegeben"}
-   - Hier liegen gemischte, NICHT sauber in Labor/Arztbrief getrennte Befunde vor (Bildgebung MRT/CT/Sono, EKG/Lufu, Allergie-/Funktionstests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, Kur-/Reha-Berichte, Selbstmessungen wie RR/HRV/CGM, ältere Fremdbefunde).
-   - Sortiere intern, was davon (a) gesicherter schulmedizinischer Befund, (b) komplementär-/bioenergetische Resonanzaussage oder (c) Verlaufs-/Selbstmessung ist – behandle jede Gruppe entsprechend.
-   - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen.
+6c. **Sonstige / unsortierte Voruntersuchungen (gemischte Befunde, ${sonstigeUntersuchungenText.length} Zeichen)**: ${sonstigeUntersuchungenText || "Nicht angegeben"}
+   - VERBINDLICH: Dieser Block ist VOLLSTÄNDIG zu lesen — auch wenn er sehr lang ist (5–60 Seiten / bis 200.000+ Zeichen). NICHTS überspringen, NICHTS überfliegen, KEINE Stichproben. Wenn du am Limit deines Kontextes ankommst, melde das explizit als "⚠️ Kontextlimit erreicht – folgende Abschnitte konnten nicht ausgewertet werden: [...]" — aber täusche niemals eine vollständige Auswertung vor.
+   - **DATUMS-EXTRAKTION (PFLICHT):** Lies systematisch jedes Untersuchungsdatum aus dem Freitext (Formate: TT.MM.JJJJ, JJJJ-MM-TT, "März 2024", "vor 2 Jahren", "Q1/25" usw.). Ordne JEDEM Befund sein Datum + den Untersuchungstyp zu. Erstelle dazu im Output unter "🗂️ Voruntersuchungen – chronologische Auswertung" eine **chronologisch sortierte Liste** (neueste zuerst) im Format:
+     - **[TT.MM.JJJJ] – [Untersuchungstyp] ([Quelle/Praxis falls genannt])** → Befund: [Kernbefund kurz]. Therapierelevanz: [konkret]. Einordnung: [a/b/c].
+   - Sortiere intern, was davon (a) **gesicherter schulmedizinischer Befund** (Bildgebung, Histologie, Labor mit Arztstempel), (b) **komplementär-/bioenergetische Resonanzaussage** (EAV, NLS, Bioresonanz, Kinesiologie) oder (c) **Verlaufs-/Selbstmessung** (RR, HRV, CGM, Schmerztagebuch) ist – jede Gruppe wird unterschiedlich gewichtet.
+   - **Tiefen-Diff.-Diagnostik (PFLICHT bei diesem Block):** Leite aus den Befunden eine eigene Sektion "## 🔎 Differentialdiagnostik (vertieft)" ab — mindestens 3–6 Differentialdiagnosen mit (i) passenden Befunden DAFÜR, (ii) Befunden DAGEGEN, (iii) zusätzlich nötigen Untersuchungen zur Abklärung, (iv) Wahrscheinlichkeit (gering/mittel/hoch). Verwende ICD-10-Codes wenn möglich. Quelle: Wiki-Einträge + genannte Voruntersuchungen + Perplexity-Recherche (6d), niemals erfundene Werte.
+   - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen, Anamnese-Kontext aus Reha-/Kurberichten.
    - Bei NLS-/Bioresonanz-Hinweisen: kennzeichne Empfehlungen klar als „resonanz-basiert" und vermische sie nicht mit gesicherten schulmedizinischen Diagnosen.
    - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
+
+6d. **Externe Perplexity-/AI-Recherche & Literaturauswertung (${perplexityAnalyseText.length} Zeichen)**: ${perplexityAnalyseText || "Nicht angegeben"}
+   - VERBINDLICH: Auch dieser Block ist VOLLSTÄNDIG zu lesen – egal wie lang. KEIN Trimmen, KEIN Stichprobenlesen.
+   - Inhalt sind in der Regel: Perplexity-Antworten mit Zitaten, PubMed-Treffer, S3-Leitlinien-Auszüge, Cochrane-Reviews, Lehrbuch-Exzerpte, Spezialisten-Forenposts, AI-generierte Differentialdiagnose-Listen.
+   - Verwendung im Therapieplan:
+     1. **Differentialdiagnostik (Sektion 🔎):** Differentialdiagnosen aus der Recherche MÜSSEN in die Liste übernommen und gewichtet werden.
+     2. **Evidenz-Hinweise:** Studien/Leitlinien aus diesem Block dürfen zitiert werden — IMMER mit der Originalquelle ("lt. Perplexity-Recherche: PMID xxxxxxxx" oder "S3-LL DGP 2023").
+     3. **Wiki-Vorrang bleibt:** Wenn die Recherche Mittel nennt, die NICHT in der Wissensdatenbank stehen, gib einen Hinweis "💡 Recherche-Anregung (nicht im Wiki): [Mittel] – [Quelle]. Vor Empfehlung Wiki-Eintrag prüfen/ergänzen." aber EMPFIEHL es nicht als Hauptmittel.
+     4. **Widersprüche zwischen Recherche und Wiki:** Transparent machen ("Wiki sagt X, Perplexity-Recherche sagt Y – Praxis-Entscheidung: ..."). Wiki gewinnt im Zweifel.
+     5. **Anti-Halluzinations-Regel:** Nichts aus dem Modellwissen erfinden, was nicht entweder in Wiki oder in der Perplexity-Recherche steht.
 
    
    **ZWINGENDE QUELLENREGEL für Labor-/Stuhlwerte:**
@@ -1150,6 +1172,20 @@ Kurze Zusammenfassung der identifizierten Probleme.
 
 ## 🧫 Stuhlbefund-Analyse
 (Nur falls Stuhlbefund angegeben) Bewertung von Mikrobiom-Dysbiose, Verdauungs-, Entzündungs- und Barriere-Markern. Konkrete Ableitung der Darmsanierungs-Strategie (4-R-Konzept: Remove – Replace – Reinoculate – Repair).
+
+## 🗂️ Voruntersuchungen – chronologische Auswertung
+(Nur falls "Sonstige Voruntersuchungen" angegeben) Chronologisch sortierte Liste ALLER aus dem Freitext extrahierten Untersuchungen mit Datum, Untersuchungstyp, Kernbefund, Therapierelevanz und Einordnung (a/b/c). Bei fehlendem Datum: "(Datum nicht im Text genannt)". KEINE Befunde überspringen.
+
+## 🔎 Differentialdiagnostik (vertieft)
+(PFLICHT, sobald "Sonstige Voruntersuchungen" ODER "Perplexity-Recherche" Inhalte enthalten — sonst optional)
+Mindestens 3–6 Differentialdiagnosen, jeweils mit:
+- **DD [Nr.]: [Bezeichnung]** (ICD-10: [Code falls möglich]) — Wahrscheinlichkeit: gering/mittel/hoch
+  - **Dafür spricht:** [Befunde aus Anamnese/Labor/Bildgebung/NLS/Perplexity]
+  - **Dagegen spricht:** [...]
+  - **Zusätzlich nötige Abklärung:** [konkrete Untersuchung/Marker]
+  - **Naturheilkundliche Konsequenz wenn zutreffend:** [Wiki-Mittel/Strategie]
+
+
 
 ## 🕳️ Wissensdatenbank-Lücken (ZWINGEND – diesen Abschnitt FRÜH ausgeben, vor den Mittel-Tabellen, damit er nicht durch Längenkürzung verloren geht)
 Liste hier transparent ALLE Punkte auf, an denen die Wissensdatenbank für diesen konkreten Fall unvollständig ist. Nichts erfinden – nur melden.

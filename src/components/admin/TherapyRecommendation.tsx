@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -91,6 +91,7 @@ export function TherapyRecommendation() {
   const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
+  const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
@@ -153,13 +154,14 @@ export function TherapyRecommendation() {
     arztberichtDatum,
     metatronHeel,
     sonstigeUntersuchungen,
+    perplexityAnalyse,
     selectedCategories,
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
@@ -231,6 +233,7 @@ export function TherapyRecommendation() {
       if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
+      if (typeof d?.perplexityAnalyse === "string") setPerplexityAnalyse(d.perplexityAnalyse);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
@@ -243,13 +246,13 @@ export function TherapyRecommendation() {
       const draftPayload = {
         pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any) => {
     const data = normalizeTherapyInput(d);
@@ -274,6 +277,7 @@ export function TherapyRecommendation() {
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
+    if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
@@ -318,7 +322,7 @@ export function TherapyRecommendation() {
       const stringKeys = [
         "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
         "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen",
+        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse",
       ];
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
@@ -364,10 +368,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen];
+    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse];
 
     return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
-  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
+  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -714,6 +718,7 @@ export function TherapyRecommendation() {
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
+    setPerplexityAnalyse(asText(d.perplexityAnalyse));
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
@@ -801,6 +806,7 @@ export function TherapyRecommendation() {
             arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
+            perplexityAnalyse: perplexityAnalyse.trim() || undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
@@ -1305,17 +1311,48 @@ export function TherapyRecommendation() {
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                 <ClipboardList className="h-3.5 w-3.5 text-indigo-600" />
                 Sonstige / unsortierte Voruntersuchungen
+                {sonstigeUntersuchungen.length > 0 && (
+                  <span className="ml-auto text-[11px] font-mono text-muted-foreground">
+                    {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Zeichen
+                    {sonstigeUntersuchungen.length > 80_000 && (
+                      <span className="ml-1 text-amber-700 dark:text-amber-400">· sehr groß → Pro-Modell aktivieren</span>
+                    )}
+                  </span>
+                )}
               </label>
               <Textarea
                 value={sonstigeUntersuchungen}
                 onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
-                placeholder="Gemischte Befunde, die NICHT sauber in Labor/Arztbrief/Stuhl trennbar sind: z.B. Bildgebung (MRT, CT, Sono), EKG, Lungenfunktion, Allergietests, Knochendichte, Bioresonanz/EAV, NLS-Auswertungen, ärztliche Vorbefunde älterer Praxen, Kurberichte, Reha-Berichte, Selbstmessungen (Blutdruck, Puls, HRV, CGM), Funktionstests..."
-                rows={5}
+                placeholder={"Gemischte Befunde mit eigenen Untersuchungsdaten, z.B.:\n\n— MRT LWS vom 14.03.2024: ...\n— Sono Abdomen vom 02.11.2025: ...\n— EAV-Messung vom 08.06.2026: ...\n— Bioresonanz/NLS vom ...\n— EKG/Lufu/Allergietest/Knochendichte vom ...\n— Reha-/Kurbericht vom ...\n— Selbstmessungen (RR, HRV, CGM) Zeitraum ...\n\nDarf 5–60 Seiten lang sein – wird vollständig an die KI übergeben (kein Trimmen)."}
+                rows={12}
+                className="font-sans"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Hierhin gehört alles, was an <strong>gemischten/unstrukturierten Voruntersuchungen</strong> vorliegt und nicht klar in Labor oder Arztbrief gehört. Die KI bekommt diesen Block als eigenen Kontext und ordnet ihn in der Empfehlung passend ein (z.B. Bildgebungs-Befund → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend).
+                <strong>Vollständig verarbeitet</strong> – ganz egal wie lang (auch 60+ Seiten). Die KI <strong>extrahiert die Untersuchungsdaten</strong> selbständig aus dem Text und ordnet jeden Befund seinem Datum/Untersuchungstyp zu (Bildgebung → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend, Reha-Bericht → Anamnesekontext). Bei sehr großen Mengen <strong>Gemini-Pro-Modell</strong> unten aktivieren (1 Mio Token Kontext statt 128k).
               </p>
             </div>
+            <div className="rounded-md border border-teal-300/60 bg-teal-50/40 dark:bg-teal-950/10 p-3">
+              <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                <Search className="h-3.5 w-3.5 text-teal-600" />
+                Perplexity-Recherche / Zusatzauswertung
+                {perplexityAnalyse.length > 0 && (
+                  <span className="ml-auto text-[11px] font-mono text-muted-foreground">
+                    {perplexityAnalyse.length.toLocaleString("de-DE")} Zeichen
+                  </span>
+                )}
+              </label>
+              <Textarea
+                value={perplexityAnalyse}
+                onChange={(e) => setPerplexityAnalyse(e.target.value)}
+                placeholder={"Komplette Perplexity-/Recherche-Auswertung 1:1 einfügen (mit Zitaten/Quellen). Z.B. Literaturrecherche zu seltener Diagnose, aktuelle Studienlage zu einem Wirkstoff, Differentialdiagnose-Liste aus AI-Search, S3-Leitlinien-Auszug, PubMed-Treffer ...\n\nWird als zusätzlicher Evidenz-Kontext berücksichtigt – Wiki-Mittel haben weiterhin Vorrang, aber Hinweise aus der Recherche fließen in die Differentialdiagnostik & Begründung ein."}
+                rows={10}
+                className="font-sans"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Wird der KI als <strong>externer Recherche-Kontext</strong> (Perplexity, PubMed, Leitlinien) übergeben. Quellen daraus dürfen zitiert werden, ersetzen aber NICHT die hauseigene Wissensdatenbank. Bei Diff.-Diagnostik werden hier genannte Differentialdiagnosen geprüft und gewichtet.
+              </p>
+            </div>
+
 
             <div>
               <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
@@ -1498,6 +1535,7 @@ export function TherapyRecommendation() {
         arztberichtDatum={arztberichtDatum}
         metatronHeel={metatronHeel}
         sonstigeUntersuchungen={sonstigeUntersuchungen}
+        perplexityAnalyse={perplexityAnalyse}
       />
 
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}

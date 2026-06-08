@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList } from "lucide-react";
+import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList, Search } from "lucide-react";
 import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
 
 const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
@@ -27,6 +27,7 @@ interface Props {
   arztberichtDatum?: string;
   metatronHeel?: string;
   sonstigeUntersuchungen?: string;
+  perplexityAnalyse?: string;
 }
 
 const splitLines = (s?: string) =>
@@ -43,7 +44,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", perplexityAnalyse = "",
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
@@ -57,17 +58,19 @@ export function LiveInputSummary({
   const arztberichtList = splitLines(arztbericht);
   const metatronList = splitLines(metatronHeel);
   const sonstigeList = splitLines(sonstigeUntersuchungen);
+  const perplexityList = splitLines(perplexityAnalyse);
 
   const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
   const hasStuhl = stuhlList.length > 0;
   const hasArzt = arztberichtList.length > 0;
   const hasMetatron = metatronList.length > 0;
   const hasSonstige = sonstigeList.length > 0;
+  const hasPerplexity = perplexityList.length > 0;
 
   const totalCount =
     filledPathogens.length + symptomList.length + erkrankungList.length +
     laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
-    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length;
+    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + perplexityList.length;
 
   const hasAny = totalCount > 0;
   if (!hasAny) return null;
@@ -208,9 +211,19 @@ export function LiveInputSummary({
           <div>
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
               <ClipboardList className="h-3.5 w-3.5" />
-              Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen)
+              Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen · {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Zeichen)
             </div>
-            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+          </div>
+        )}
+
+        {hasPerplexity && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-300">
+              <Search className="h-3.5 w-3.5" />
+              Perplexity-Recherche / Zusatzauswertung ({perplexityList.length} Zeilen · {perplexityAnalyse.length.toLocaleString("de-DE")} Zeichen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{perplexityAnalyse}</pre>
           </div>
         )}
       </CardContent>
