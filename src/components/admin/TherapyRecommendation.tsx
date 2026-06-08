@@ -962,7 +962,7 @@ export function TherapyRecommendation() {
     const totalChars = prepared.analyzedChars;
     const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
-    const checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length);
+    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length);
     setIsAnalyzingDocs(true);
     // Tab sofort öffnen (Pop-up-Blocker umgehen)
     const w = window.open("", "_blank");
@@ -985,6 +985,24 @@ export function TherapyRecommendation() {
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
       const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
+      if (pseudonymId.trim()) {
+        try {
+          const { data: cloudRows } = await (supabase as any)
+            .from("therapy_sessions")
+            .select("id, eingabe_daten, updated_at")
+            .eq("pseudonym_id", pseudonymId.trim())
+            .eq("kind", "befund_checkpoint")
+            .order("updated_at", { ascending: false })
+            .limit(1);
+          const cloudRow = Array.isArray(cloudRows) ? cloudRows[0] : null;
+          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length);
+          if (cloudCheckpoint && (!checkpoint || new Date(cloudCheckpoint.updatedAt).getTime() > new Date(checkpoint.updatedAt).getTime())) {
+            checkpoint = cloudCheckpoint;
+            checkpointSessionIdRef.current = cloudRow.id;
+            writeAnalysisCheckpoint(checkpointKey, cloudCheckpoint);
+          }
+        } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
+      }
       const live = w?.document.getElementById("__live") as HTMLElement | null;
       const writeProgress = (line: string) => {
         if (!live) return;
