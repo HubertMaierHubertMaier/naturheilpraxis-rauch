@@ -1009,11 +1009,13 @@ export function TherapyRecommendation() {
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
     const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
-    if (hasPatientScopedData && previous && next && previous !== next) {
+    if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
       toast({
         title: "Patient gewechselt – Formular geleert",
-        description: `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`,
+        description: previous
+          ? `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`
+          : `Vorherige Eingaben wurden entfernt, damit keine Alt-Daten unter ${next} gespeichert werden.`,
       });
     } else if (hasPatientScopedData && !next) {
       clearPatientScopedState();
