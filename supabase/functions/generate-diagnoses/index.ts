@@ -21,7 +21,8 @@ function isAllowedCorsOrigin(origin: string | null): boolean {
     return (
       isLocalDev ||
       allowedCorsHostnames.has(url.hostname) ||
-      url.hostname.endsWith(".lovableproject.com")
+      url.hostname.endsWith(".lovableproject.com") ||
+      url.hostname.endsWith(".lovable.app")
     );
   } catch {
     return false;
