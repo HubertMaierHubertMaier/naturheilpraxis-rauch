@@ -89,7 +89,7 @@ function collectBlocks(b: AnalyzeBody): DocBlock[] {
   return blocks;
 }
 
-function splitBlock(block: DocBlock, maxChars = 18_000): DocBlock[] {
+function splitBlock(block: DocBlock, maxChars = 6_000): DocBlock[] {
   if (block.text.length <= maxChars) return [block];
   const paragraphs = block.text.split(/\n{2,}/);
   const chunks: DocBlock[] = [];
@@ -119,7 +119,7 @@ function splitBlock(block: DocBlock, maxChars = 18_000): DocBlock[] {
   return chunks;
 }
 
-function chunkDocuments(blocks: DocBlock[], maxChars = 18_000): DocBlock[] {
+function chunkDocuments(blocks: DocBlock[], maxChars = 6_000): DocBlock[] {
   return blocks.flatMap((block) => splitBlock(block, maxChars));
 }
 
