@@ -121,6 +121,36 @@ const readAnalysisError = async (resp: Response) => {
   }
 };
 
+const escapeAnalysisHtml = (value: unknown) => String(value ?? "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;");
+
+const stripAnalysisFence = (value: string) => value.replace(/^\s*```(?:json|html)?\s*/i, "").replace(/```\s*$/i, "").trim();
+
+const sanitizeFinalAnalysisHtml = (value: string) => stripAnalysisFence(value).trim();
+
+const buildFallbackAnalysisHtml = (partials: string[], meta: { pseudonymId?: string; totalChars: number; chunkCount: number }) => {
+  const rows = { docs: [] as string[], diagnoses: [] as string[], meds: [] as string[], symptoms: [] as string[], findings: [] as string[], redFlags: [] as string[], questions: [] as string[], missing: [] as string[] };
+  const beleg = (item: any) => [item?.beleg?.quelle || item?.quelle, item?.beleg?.teil, item?.beleg?.zitat ? `„${item.beleg.zitat}”` : ""].filter(Boolean).join(" · ") || "Beleg im Teilpaket dokumentiert";
+  partials.forEach((partial) => {
+    try {
+      const obj = JSON.parse(stripAnalysisFence(partial));
+      (obj?.documents || []).forEach((d: any) => rows.docs.push(`<tr><td>${escapeAnalysisHtml(d.datum || "unbekannt")}</td><td>${escapeAnalysisHtml(d.quelle || d?.beleg?.quelle || "unbekannt")}</td><td>${escapeAnalysisHtml(d.untersuchung || "")}</td><td>${escapeAnalysisHtml(d.hauptbefund || d.auffaellig || "")}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`));
+      (obj?.diagnoses || []).forEach((d: any) => rows.diagnoses.push(`<tr><td>${escapeAnalysisHtml(d.icd10 || "—")}</td><td>${escapeAnalysisHtml(d.diagnose || "")}</td><td>${escapeAnalysisHtml(d.status || "unklar")}</td><td>${escapeAnalysisHtml(d.quelle || d?.beleg?.quelle || "unbekannt")}</td><td class="beleg">${escapeAnalysisHtml(beleg(d))}</td></tr>`));
+      (obj?.medicationsTherapies || []).forEach((m: any) => rows.meds.push(`<tr><td>${escapeAnalysisHtml(m.name || "")}</td><td>${escapeAnalysisHtml(m.dosis || "—")}</td><td>${escapeAnalysisHtml(m.vonWem || "unbekannt")}</td><td>${escapeAnalysisHtml(m.indikation || m.grundVerordnung || "")}</td><td>${escapeAnalysisHtml(m.status || "unklar")}</td><td class="beleg">${escapeAnalysisHtml(beleg(m))}</td></tr>`));
+      (obj?.anamnese?.currentProblems || []).forEach((s: any) => rows.symptoms.push(`<li>${escapeAnalysisHtml(typeof s === "string" ? s : s?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(s))}</span></li>`));
+      (obj?.findings || []).forEach((f: any) => rows.findings.push(`<li>${escapeAnalysisHtml(typeof f === "string" ? f : f?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(f))}</span></li>`));
+      (obj?.redFlags || []).forEach((r: any) => rows.redFlags.push(`<li>${escapeAnalysisHtml(typeof r === "string" ? r : r?.text)} <span class="beleg">${escapeAnalysisHtml(beleg(r))}</span></li>`));
+      (obj?.openQuestions || []).forEach((q: any) => rows.questions.push(`<li>${escapeAnalysisHtml(q)}</li>`));
+      (obj?.missingReports || []).forEach((m: any) => rows.missing.push(`<li>${escapeAnalysisHtml(m)}</li>`));
+    } catch { /* defektes Teilpaket überspringen */ }
+  });
+  const empty = "<p class=\"muted\">In den verarbeiteten Teilanalysen nicht dokumentiert.</p>";
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:32px;color:#28342d;line-height:1.5}h1,h2{color:#4f734f}h2{border-left:4px solid #6b8e6b;padding-left:10px;margin-top:28px}.notice{background:#fff7ed;border:1px solid #fdba74;padding:14px;border-radius:8px}.muted{color:#667063}.beleg{display:block;color:#5a6b5a;font-size:.85em;font-style:italic;margin-top:3px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #d8e2d3;padding:7px;vertical-align:top}th{background:#eef4ea;text-align:left}li{margin:6px 0}</style></head><body><h1>Befund-Auswertung</h1><p><strong>Pseudonym:</strong> ${escapeAnalysisHtml(meta.pseudonymId || "—")} · <strong>Umfang:</strong> ${meta.totalChars.toLocaleString("de-DE")} Zeichen · <strong>Teilpakete:</strong> ${meta.chunkCount}</p><div class="notice"><strong>Hinweis:</strong> Die finale KI-Formatierung hat keinen darstellbaren HTML-Inhalt geliefert. Die folgenden Daten wurden sicher aus den bereits erfolgreich verarbeiteten Teilanalysen rekonstruiert, damit keine Auswertung verloren geht.</div><h2>Unterlagen</h2>${rows.docs.length ? `<table><thead><tr><th>Datum</th><th>Quelle</th><th>Untersuchung</th><th>Hauptbefund</th><th>Beleg</th></tr></thead><tbody>${rows.docs.join("")}</tbody></table>` : empty}<h2>Diagnosen / Verdachtsdiagnosen</h2>${rows.diagnoses.length ? `<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Status</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows.diagnoses.join("")}</tbody></table>` : empty}<h2>Symptome / aktuelle Beschwerden</h2>${rows.symptoms.length ? `<ul>${rows.symptoms.join("")}</ul>` : empty}<h2>Medikamente, Präparate & Therapien</h2>${rows.meds.length ? `<table><thead><tr><th>Mittel</th><th>Dosis</th><th>von wem</th><th>Indikation/Grund</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows.meds.join("")}</tbody></table>` : empty}<h2>Auffälligkeiten</h2>${rows.findings.length ? `<ul>${rows.findings.join("")}</ul>` : empty}<h2>Sicherheit / Red Flags</h2>${rows.redFlags.length ? `<ul>${rows.redFlags.join("")}</ul>` : empty}<h2>Offene Fragen</h2>${rows.questions.length ? `<ul>${rows.questions.join("")}</ul>` : empty}<h2>Fehlende Befunde</h2>${rows.missing.length ? `<ul>${rows.missing.join("")}</ul>` : empty}</body></html>`;
+};
+
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
