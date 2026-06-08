@@ -154,13 +154,14 @@ export function TherapyRecommendation() {
     arztberichtDatum,
     metatronHeel,
     sonstigeUntersuchungen,
+    perplexityAnalyse,
     selectedCategories,
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
