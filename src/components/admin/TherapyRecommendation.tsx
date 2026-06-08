@@ -866,14 +866,20 @@ export function TherapyRecommendation() {
       w.document.close();
     }
     try {
+      const getFreshAuthHeaders = async () => {
+        // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
+        const { data: { session: s }, error: e } = await supabase.auth.getSession();
+        if (e || !s) throw new Error("Nicht angemeldet");
+        return {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${s.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+        } as Record<string, string>;
+      };
+      // Initial einmal prüfen, ob überhaupt eine Session existiert
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
       const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
-      const authHeaders = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      };
       const live = w?.document.getElementById("__live") as HTMLElement | null;
       const writeProgress = (line: string) => {
         if (!live) return;
@@ -881,9 +887,10 @@ export function TherapyRecommendation() {
         live.scrollTop = live.scrollHeight;
       };
       const analyzeChunk = async (chunk: AnalysisDocChunk, indexLabel: string, totalLabel: number) => {
+        const headers = await getFreshAuthHeaders();
         const chunkResp = await fetch(endpoint, {
           method: "POST",
-          headers: authHeaders,
+          headers,
           body: JSON.stringify({
             analysisMode: "chunk",
             chunk: { ...chunk, index: indexLabel, total: totalLabel },
@@ -896,6 +903,7 @@ export function TherapyRecommendation() {
         const chunkJson = await chunkResp.json();
         return String(chunkJson.partial || "");
       };
+
 
       const partials: string[] = [];
       for (let i = 0; i < chunks.length; i += 1) {
