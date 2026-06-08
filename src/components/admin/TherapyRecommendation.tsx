@@ -132,6 +132,17 @@ type PreparedAnalysis = {
 };
 
 const normalizePseudonymId = (value: string) => value.trim();
+const STANDARD_PSEUDONYM_PATTERN = /^P-\d{4}-\d{4}$/i;
+const isPatientScopedStorageReady = (value: string) => {
+  const pid = normalizePseudonymId(value);
+  if (!pid) return false;
+  // Standard-Pseudonyme erst laden/speichern, wenn sie vollständig sind.
+  // Verhindert Autosaves während des Tippens wie "P", "P-2026-000".
+  if (/^P-/i.test(pid)) return STANDARD_PSEUDONYM_PATTERN.test(pid);
+  // Eigene Codes bleiben möglich, aber erst ab sinnvoller Mindestlänge.
+  return pid.length >= 6;
+};
+const getEmbeddedPseudonymId = (payload: Record<string, unknown>) => normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
 
 const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
 
@@ -254,6 +265,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
+  const pseudonymIdRef = useRef("");
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
@@ -325,6 +337,10 @@ export function TherapyRecommendation() {
   const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
+  useEffect(() => {
+    pseudonymIdRef.current = normalizePseudonymId(pseudonymId);
+  }, [pseudonymId]);
+
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
     _pseudonym_id: normalizePseudonymId(pseudonymId),
     pseudonymId: normalizePseudonymId(pseudonymId),
@@ -358,13 +374,13 @@ export function TherapyRecommendation() {
   }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
-    const embedded = normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
+    const embedded = getEmbeddedPseudonymId(payload);
     if (embedded && embedded !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
   }, []);
 
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
-    if (!pid) {
+    if (!isPatientScopedStorageReady(pid)) {
       toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
       return;
     }
@@ -401,8 +417,8 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v2";
-  const inputDraftKey = pseudonymId.trim() ? `therapy.inputs.draft.patientSafe.v2.${pseudonymId.trim()}` : "";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v3";
+  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v3.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -413,9 +429,11 @@ export function TherapyRecommendation() {
       if (!raw) return;
       const d = JSON.parse(raw);
       if (!d?._pseudonym_id && !d?.pseudonymId) return;
+      const storedPid = normalizePseudonymId(String(d?._pseudonym_id || d?.pseudonymId || ""));
+      if (!isPatientScopedStorageReady(storedPid)) return;
       if (typeof d?.pseudonymId === "string") {
-        patientDataOwnerRef.current = normalizePseudonymId(d.pseudonymId);
-        setPseudonymId(d.pseudonymId);
+        patientDataOwnerRef.current = storedPid;
+        setPseudonymId(storedPid);
       }
       if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
       if (typeof d?.symptome === "string") setSymptome(d.symptome);
@@ -448,19 +466,27 @@ export function TherapyRecommendation() {
     if (!draftLoadedRef.current) return;
     try {
       const draftPayload = {
-        pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht,
+        _pseudonym_id: normalizePseudonymId(pseudonymId),
+        pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+      if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
-  const applyDraftPayload = useCallback((d: any) => {
+  const applyDraftPayload = useCallback((d: any, expectedPid?: string) => {
     const data = normalizeTherapyInput(d);
     if (!Object.keys(data).length) return;
+    if (expectedPid) {
+      const embedded = getEmbeddedPseudonymId(data);
+      if (embedded && embedded !== normalizePseudonymId(expectedPid)) {
+        toast({ title: "Sicherheitsstopp", description: "Gespeicherte Eingaben gehören zu einem anderen Pseudonym und wurden nicht geladen.", variant: "destructive" });
+        return;
+      }
+    }
     if (Array.isArray(data.pathogens) && data.pathogens.length) setPathogens(data.pathogens as PathogenEntry[]);
     if (typeof data.symptome === "string") setSymptome(data.symptome);
     if (typeof data.erkrankung === "string") setErkrankung(data.erkrankung);
@@ -485,7 +511,7 @@ export function TherapyRecommendation() {
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -496,7 +522,7 @@ export function TherapyRecommendation() {
     let localTs = 0;
     let localData: any = null;
     try {
-      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v2.${pid}`);
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v3.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
         const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
@@ -505,13 +531,14 @@ export function TherapyRecommendation() {
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
-    if (localData) applyDraftPayload(localData);
+    if (localData) applyDraftPayload(localData, pid);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
     loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId, toast, applyDraftPayload]);
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
+    if (!isPatientScopedStorageReady(pid)) return;
     try {
       const { data } = await (supabase as any)
         .from("therapy_sessions")
@@ -520,6 +547,7 @@ export function TherapyRecommendation() {
         .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
         .order("updated_at", { ascending: false })
         .limit(10);
+      if (pseudonymIdRef.current !== pid) return;
       if (!Array.isArray(data) || !data.length) {
         if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
         return;
@@ -537,6 +565,8 @@ export function TherapyRecommendation() {
       const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
       for (const row of data) {
         const e = normalizeTherapyInput(row?.eingabe_daten);
+        const embedded = getEmbeddedPseudonymId(e);
+        if (embedded && embedded !== pid) continue;
         for (const k of stringKeys) {
           if (mergeTextKeys.has(k)) {
             if (typeof e[k] === "string" && e[k].trim()) {
@@ -568,8 +598,9 @@ export function TherapyRecommendation() {
       const newest = data[0];
       const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
       if (cloudTs >= localTs) {
+        if (pseudonymIdRef.current !== pid) return;
         patientDataOwnerRef.current = pid;
-        applyDraftPayload(merged);
+        applyDraftPayload({ ...merged, _pseudonym_id: pid, pseudonymId: pid }, pid);
         const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
         if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
         const filledFields = Object.keys(merged).filter((k) => {
@@ -605,7 +636,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (!pid || !hasMeaningfulInput || workflowStage === "finalized") return;
+    if (!isPatientScopedStorageReady(pid) || !hasMeaningfulInput || workflowStage === "finalized") return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
@@ -622,7 +653,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (runId !== autoSaveRunIdRef.current) return;
+      if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -645,7 +676,7 @@ export function TherapyRecommendation() {
             .eq("pseudonym_id", pid)
             .select("id")
             .maybeSingle();
-          if (runId !== autoSaveRunIdRef.current) return;
+          if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
           if (!error && updatedDraft?.id) {
             lastAutoSavedPayloadRef.current = payload;
             setAutoSaveStatus("saved");
@@ -659,7 +690,7 @@ export function TherapyRecommendation() {
           .select("id")
           .single();
         if (error) throw error;
-        if (runId !== autoSaveRunIdRef.current) return;
+        if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
         autoSaveSessionIdRef.current = data?.id ?? null;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
@@ -978,16 +1009,19 @@ export function TherapyRecommendation() {
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
     const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
-    if (hasPatientScopedData && previous && next && previous !== next) {
+    if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
       toast({
         title: "Patient gewechselt – Formular geleert",
-        description: `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`,
+        description: previous
+          ? `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`
+          : `Vorherige Eingaben wurden entfernt, damit keine Alt-Daten unter ${next} gespeichert werden.`,
       });
     } else if (hasPatientScopedData && !next) {
       clearPatientScopedState();
     }
     patientDataOwnerRef.current = next;
+    pseudonymIdRef.current = next;
     setPseudonymId(nextValue);
   }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
@@ -1690,12 +1724,13 @@ export function TherapyRecommendation() {
         });
       }
 
-      // Auto-Save wenn Pseudonym vorhanden
-      if (pseudonymId.trim() && accumulated.trim()) {
+      // Auto-Save nur bei vollständiger, eindeutig patientengebundener Pseudonym-ID
+      const resultPid = normalizePseudonymId(pseudonymId);
+      if (isPatientScopedStorageReady(resultPid) && patientDataOwnerRef.current === resultPid && accumulated.trim()) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
-            pseudonym_id: pseudonymId.trim(),
+            pseudonym_id: resultPid,
             created_by: user.id,
             eingabe_daten: buildInputData({ autoSavedDraft: false }),
             empfehlung: accumulated,
@@ -1726,6 +1761,7 @@ export function TherapyRecommendation() {
 
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
+    pseudonymIdRef.current = "";
     setPseudonymId("");
     setPathogens([emptyEntry()]);
     setSymptome("");
@@ -1811,8 +1847,9 @@ export function TherapyRecommendation() {
   };
 
   const handleFinalize = async () => {
-    if (!pseudonymId.trim()) {
-      toast({ title: "Pseudonym-ID fehlt", description: "Bitte oben eine Pseudonym-ID vergeben oder generieren.", variant: "destructive" });
+    const finalPid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(finalPid) || patientDataOwnerRef.current !== finalPid) {
+      toast({ title: "Pseudonym-ID fehlt oder unklar", description: "Bitte oben eine vollständige Pseudonym-ID vergeben, damit keine Patientendaten vermischt werden.", variant: "destructive" });
       return;
     }
     const finalMd = buildFinalMarkdown();
@@ -1822,7 +1859,7 @@ export function TherapyRecommendation() {
       return;
     }
     const { error } = await (supabase as any).from("therapy_sessions").insert({
-      pseudonym_id: pseudonymId.trim(),
+      pseudonym_id: finalPid,
       created_by: user.id,
       eingabe_daten: buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false }),
       empfehlung: finalMd,
@@ -1836,7 +1873,7 @@ export function TherapyRecommendation() {
     setHistoryRefresh((n) => n + 1);
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
-    toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${pseudonymId.trim()}. Druck jetzt verfügbar.` });
+    toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
   };
 
 
@@ -1888,7 +1925,7 @@ export function TherapyRecommendation() {
                 loadCloudDraft(pid);
               }}
               className="gap-1.5"
-              disabled={!pseudonymId.trim()}
+                disabled={!isPatientScopedStorageReady(pseudonymId)}
               title="Alle bisher gespeicherten Eingaben (Labor, Arztbericht, etc.) für diese Pseudonym-ID erneut zusammenführen und ins Formular laden"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -1903,7 +1940,7 @@ export function TherapyRecommendation() {
               Bei vorhandener Pseudonym-ID wird die Empfehlung automatisch im Verlauf gespeichert.
             </span>
           </div>
-          {pseudonymId.trim() && (
+          {isPatientScopedStorageReady(pseudonymId) && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Badge variant={autoSaveStatus === "error" ? "destructive" : "secondary"} className="h-5">
                 {autoSaveStatus === "saving" && "Auto-Sicherung läuft…"}
@@ -1942,7 +1979,7 @@ export function TherapyRecommendation() {
       </Card>
 
       {/* Verlauf bei vorhandenem Pseudonym */}
-      {pseudonymId.trim() && (
+      {isPatientScopedStorageReady(pseudonymId) && (
         <PseudonymHistory
           key={`${pseudonymId}-${historyRefresh}`}
           pseudonymId={pseudonymId}
