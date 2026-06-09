@@ -1956,10 +1956,17 @@ export function TherapyRecommendation() {
 
     } catch (e) {
       const msg = (e as Error).message;
-      setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
-      toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+      if ((e as Error).name === "AbortError" || docController.signal.aborted) {
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
+        toast({ title: "Auswertung abgebrochen", description: "Der laufende Befund-Lauf wurde gestoppt.", variant: "default" as any });
+      } else {
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
+        toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+      }
     } finally {
       setIsAnalyzingDocs(false);
+      docAbortRef.current = null;
+    }
     }
   };
 
