@@ -555,6 +555,25 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     })}</tbody></table>`;
   })()}
 
+  <h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2>
+  ${(() => {
+    const lv = (aggregate.labValues as any[]).filter((v) => {
+      const bw = String(v?.bewertung || "").trim();
+      return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
+    });
+    if (!lv.length) return `<p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p>`;
+    // Pro Parameter den neuesten Wert behalten
+    const newest = new Map<string, any>();
+    for (const v of lv) {
+      const p = String(v?.parameter || "");
+      const d = String(v?.datum || "");
+      const prev = newest.get(p);
+      if (!prev || d > String(prev?.datum || "")) newest.set(p, v);
+    }
+    const list = Array.from(newest.values());
+    return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${list.map((item: any) => `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (lokaler Fallback ohne KI-Bewertung).</em></td><td>${beleg(item)}</td></tr>`).join("\n")}</tbody></table>`;
+  })()}
+
   <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
   ${mannayanRows.length
     ? `<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen dokumentierte Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`)}</tbody></table>`
