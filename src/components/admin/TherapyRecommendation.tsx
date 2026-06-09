@@ -634,6 +634,7 @@ export function TherapyRecommendation() {
   // Wiki-Autocomplete für manuelle Mittel
   const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const docAbortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
@@ -1611,6 +1612,8 @@ export function TherapyRecommendation() {
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
+    const docController = new AbortController();
+    docAbortRef.current = docController;
     setDocAnalysisHtml("");
     setLatestBefundLoadedFrom(null);
     setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
@@ -1662,6 +1665,7 @@ export function TherapyRecommendation() {
             const chunkResp = await fetch(endpoint, {
               method: "POST",
               headers,
+              signal: docController.signal,
               body: JSON.stringify({
                 analysisMode: "chunk",
                 chunk: { ...chunk, index: indexLabel, total: totalLabel },
@@ -1842,6 +1846,7 @@ export function TherapyRecommendation() {
           resp = await fetch(endpoint, {
             method: "POST",
             headers: finalHeaders,
+            signal: docController.signal,
             body: JSON.stringify({
               analysisMode: "final",
               partials,
@@ -1951,10 +1956,16 @@ export function TherapyRecommendation() {
 
     } catch (e) {
       const msg = (e as Error).message;
-      setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
-      toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+      if ((e as Error).name === "AbortError" || docController.signal.aborted) {
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
+        toast({ title: "Auswertung abgebrochen", description: "Der laufende Befund-Lauf wurde gestoppt.", variant: "default" as any });
+      } else {
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
+        toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+      }
     } finally {
       setIsAnalyzingDocs(false);
+      docAbortRef.current = null;
     }
   };
 
@@ -2342,6 +2353,11 @@ export function TherapyRecommendation() {
   const handleCancel = () => {
     abortRef.current?.abort();
     setIsStreaming(false);
+  };
+
+  const handleCancelAnalysis = () => {
+    docAbortRef.current?.abort();
+    setIsAnalyzingDocs(false);
   };
 
   const handleReset = () => {
@@ -3301,6 +3317,16 @@ export function TherapyRecommendation() {
           <RotateCcw className="h-4 w-4" />
           Alles neu auswerten
         </Button>
+        {isAnalyzingDocs && (
+          <Button
+            variant="destructive"
+            onClick={handleCancelAnalysis}
+            className="gap-2"
+          >
+            <X className="h-4 w-4" />
+            Auswertung abbrechen
+          </Button>
+        )}
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
