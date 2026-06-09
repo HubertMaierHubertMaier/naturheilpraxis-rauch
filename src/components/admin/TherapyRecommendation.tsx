@@ -1804,6 +1804,14 @@ export function TherapyRecommendation() {
       setDocAnalysisHtml(full);
       writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
+        const finalProgress = `${docAnalysisProgress || "Start…"}\n✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.`;
+        writeLatestBefundDisplay(pseudonymId.trim(), {
+          html: full,
+          progress: finalProgress,
+          meta: { analysis_mode: analysisMode, chunk_count: chunks.length, total_chars: totalChars, model },
+          createdAt: new Date().toISOString(),
+        });
+        setLatestBefundLoadedFrom("local");
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
         // Auto-Save in therapy_sessions (DSGVO-konform, nur Pseudonym)
