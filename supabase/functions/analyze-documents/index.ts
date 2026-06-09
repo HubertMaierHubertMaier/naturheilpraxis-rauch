@@ -263,6 +263,7 @@ Pflicht-Sektionen in Reihenfolge:
    4.12 Weiterführende Untersuchungen (Additional investigations)
 5. Diagnosen & Verdachtsdiagnosen — Tabelle: ICD-10 | Diagnose | Quelle | Status | Beleg.
 6. Medikamente, Präparate & Therapien — DETAIL-Tabelle ALLER Mittel. Spalten: Mittel/Wirkstoff (Dosis) | von wem | Datum | Indikation | Wirkmechanismus | Nebenwirkungen | Grund | Status | Beleg. Standard-Pharmakologie markieren. Wenn keinerlei Mittel: "Keine Medikamente/Therapien in den Unterlagen dokumentiert."
+6b. 🧾 Prüfung der Mannayan-Bestellungen (PFLICHT, wenn im Quellblock „Mannayan-Bestellungen" Inhalte vorhanden sind) — Tabelle: Bestelldatum | Bestell-Nr. | Mittel | Bezug zu Symptom/Pathogen/Diagnose aus diesem Befund | Bewertung (✅ passt · 🔄 anpassen · ❓ unklare Indikation · ⚠️ Risiko/Wechselwirkung · ❌ nicht passend) | Beleg. Pro Mittel klare Begründung. Wenn keine Mannayan-Bestellungen übergeben wurden: kurzen Satz "Keine Mannayan-Bestellungen zugeordnet." schreiben.
 7. Auffälligkeiten, Widersprüche, fehlende Befunde — Bullet-Liste mit Beleg pro Punkt.
 8. Übersetzung Ärzte-Sprache → Patienten-Sprache — Tabelle: Fachbegriff | Bedeutung.
 9. Gesamtbild & Arbeitshypothese — 1–3 Absätze. JEDER Satz mit Beleg(en) am Ende ODER mit "🟡 Hypothese" markiert. Keine Therapie.
