@@ -1351,6 +1351,56 @@ export function TherapyRecommendation() {
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
+  const handleReAnalyzeAll = async () => {
+    const pid = pseudonymId.trim();
+    if (!pid) {
+      toast({ title: "Kein Pseudonym ausgewählt", description: "Bitte zuerst einen Patienten/Pseudonym wählen.", variant: "destructive" });
+      return;
+    }
+    const ok = window.confirm(
+      `„Alles neu auswerten" für ${pid}\n\n` +
+      `• Löscht alle lokalen und Cloud-Checkpoints dieser Befundauswertung\n` +
+      `• Startet danach die strikte Befund-Auswertung komplett neu\n\n` +
+      `Hinweis: Bild-/Scan-Uploads (Laborfotos, Arztbrief-Scans) müssen separat über „Laborbild auswerten" / „Arztbericht-Bild auswerten" neu durch die OCR geschickt werden – nur dort werden die neuen Datumsangaben pro Zeile erzeugt.\n\nFortfahren?`
+    );
+    if (!ok) return;
+
+    try {
+      // 1) Lokale Checkpoints für dieses Pseudonym entfernen
+      const prefix = `therapy.befundAnalysis.v2.${pid}.`;
+      const toDelete: string[] = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) toDelete.push(k);
+      }
+      toDelete.forEach((k) => { try { localStorage.removeItem(k); } catch { /* optional */ } });
+
+      // 2) Cloud-Checkpoints entfernen
+      try {
+        await (supabase as any)
+          .from("therapy_sessions")
+          .delete()
+          .eq("pseudonym_id", pid)
+          .eq("kind", "befund_checkpoint");
+      } catch { /* Cloud-Reset optional */ }
+
+      checkpointSessionIdRef.current = null;
+
+      toast({
+        title: "Cache geleert",
+        description: `${toDelete.length} lokale + Cloud-Checkpoints für ${pid} entfernt. Auswertung startet neu …`,
+      });
+
+      // 3) Strikte Auswertung neu starten
+      await handleAnalyzeDocuments();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: "Reset fehlgeschlagen", description: msg, variant: "destructive" });
+    }
+  };
+
+
+
   const handleAnalyzeDocuments = async () => {
     const rawBlocks = [
       { label: laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", text: laborKomplett.trim() },
@@ -3031,6 +3081,16 @@ export function TherapyRecommendation() {
         >
           {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
           {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
+        </Button>
+        <Button
+          onClick={handleReAnalyzeAll}
+          disabled={isAnalyzingDocs || isStreaming}
+          variant="outline"
+          className="gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
+          title="Löscht alle Checkpoints (lokal + Cloud) für dieses Pseudonym und startet die strikte Auswertung komplett neu — z.B. nach Prompt-/Regel-Updates wie der neuen Datumspflicht."
+        >
+          <RotateCcw className="h-4 w-4" />
+          Alles neu auswerten
         </Button>
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
