@@ -539,6 +539,8 @@ export function TherapyRecommendation() {
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
+  const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
+  const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1422,12 +1424,9 @@ export function TherapyRecommendation() {
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
-    // Tab sofort öffnen (Pop-up-Blocker umgehen)
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui;padding:32px;color:#344238;line-height:1.5}h2{color:#6b8e6b}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.muted{color:#667063}.ok{color:#476b47;font-weight:600}pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#52605a;max-height:55vh;overflow:auto;border:1px solid #d8e2d3;padding:10px;border-radius:6px;background:white}</style></head><body><div class="box"><h2>⏳ Strikte Befund-Auswertung läuft…</h2><p>Alle Befundseiten werden in ${chunks.length} Teilpaket(en) gelesen und danach erst zusammengeführt, wenn wirklich alle Teilanalysen vollständig vorliegen.</p><p class="muted">Umfang: ${totalChars.toLocaleString("de-DE")} analysierte Zeichen${prepared.originalChars !== totalChars ? ` von ${prepared.originalChars.toLocaleString("de-DE")} Rohzeichen` : ""}. Fertige Teilpakete werden laufend zwischengesichert.</p><p class="ok">Kein Lückenbericht: Bei Fehler stoppt die Analyse und macht beim nächsten Klick an derselben Stelle weiter.</p><pre id="__live">Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}</pre></div></body></html>`);
-      w.document.close();
-    }
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
