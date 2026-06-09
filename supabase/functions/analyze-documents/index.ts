@@ -407,7 +407,7 @@ function isCompleteFinalHtml(html: string) {
 
 function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number) {
   const aggregate: Record<string, unknown[]> = {
-    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+    documents: [], diagnoses: [], medicationsTherapies: [], labValues: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
   };
   const anamneseKeys = [
     "currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems",
