@@ -180,6 +180,31 @@ const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) =
 
 const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${pseudonymId.trim() || "ohne-pseudonym"}.${fingerprint}`;
 
+const getLatestBefundDisplayKey = (pseudonymId: string) => `therapy.befundAnalysis.latest.${normalizePseudonymId(pseudonymId)}`;
+
+const writeLatestBefundDisplay = (pseudonymId: string, snapshot: { html: string; progress: string; meta?: any; createdAt?: string }) => {
+  try {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!pid || !snapshot.html.trim()) return;
+    localStorage.setItem(getLatestBefundDisplayKey(pid), JSON.stringify({ ...snapshot, pseudonymId: pid }));
+  } catch { /* lokale Anzeige-Sicherung optional */ }
+};
+
+const readLatestBefundDisplay = (pseudonymId: string): { html: string; progress: string; meta?: any; createdAt?: string } | null => {
+  try {
+    const pid = normalizePseudonymId(pseudonymId);
+    const raw = localStorage.getItem(getLatestBefundDisplayKey(pid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (normalizePseudonymId(parsed?.pseudonymId || "") !== pid) return null;
+    const html = String(parsed?.html || "").trim();
+    if (!html) return null;
+    return { html, progress: String(parsed?.progress || ""), meta: parsed?.meta, createdAt: parsed?.createdAt };
+  } catch {
+    return null;
+  }
+};
+
 const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   try {
     const raw = localStorage.getItem(key);
@@ -542,6 +567,7 @@ export function TherapyRecommendation() {
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
+  const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1256,12 +1282,15 @@ export function TherapyRecommendation() {
     setWorkflowStage("edit");
     setAutoSaveStatus("idle");
     setDiagnosen([]);
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress("");
+    setLatestBefundLoadedFrom(null);
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
-    const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
+    const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
       toast({
@@ -1276,7 +1305,7 @@ export function TherapyRecommendation() {
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
     setPseudonymId(nextValue);
-  }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
+  }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
   const handleLoadSession = (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
@@ -1366,11 +1395,58 @@ export function TherapyRecommendation() {
     }
     const meta = session.befund_meta || {};
     setDocAnalysisHtml(html);
-    setDocAnalysisProgress(`Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`);
+    const progress = `Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
+    setDocAnalysisProgress(progress);
+    writeLatestBefundDisplay(session.pseudonym_id, { html, progress, meta, createdAt: session.created_at });
+    setLatestBefundLoadedFrom("cloud");
     setIsDocAnalysisPanelMinimized(false);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     toast({ title: "Befund-Auswertung angezeigt", description: "Das Ergebnis ist jetzt direkt auf der Seite sichtbar." });
   };
+
+  const restoreLatestBefundForPid = useCallback(async (pidValue: string, options?: { quiet?: boolean }) => {
+    const pid = normalizePseudonymId(pidValue);
+    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
+
+    const localSnapshot = readLatestBefundDisplay(pid);
+    if (localSnapshot) {
+      const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
+      const progress = localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`;
+      setDocAnalysisHtml(localSnapshot.html);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("local");
+      if (!options?.quiet) toast({ title: "Befund-Auswertung wiederhergestellt", description: "Das zuletzt fertige Ergebnis ist wieder sichtbar." });
+      return true;
+    }
+
+    try {
+      const { data: rows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
+        .eq("pseudonym_id", pid)
+        .not("befund_html", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const row = Array.isArray(rows) ? rows[0] : null;
+      const html = String(row?.befund_html || "").trim();
+      if (!html) return false;
+      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${new Date(row.created_at).toLocaleString("de-DE")}${row.befund_meta?.total_chars ? `\nUmfang: ${Number(row.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
+      setDocAnalysisHtml(html);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("cloud");
+      writeLatestBefundDisplay(pid, { html, progress, meta: row.befund_meta, createdAt: row.created_at });
+      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: "Das letzte gespeicherte Ergebnis ist wieder sichtbar." });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [docAnalysisHtml, isAnalyzingDocs, toast]);
+
+  useEffect(() => {
+    restoreLatestBefundForPid(pseudonymId, { quiet: true });
+  }, [pseudonymId, historyRefresh, restoreLatestBefundForPid]);
 
   const handleReAnalyzeAll = async () => {
     const pid = pseudonymId.trim();
@@ -1728,6 +1804,14 @@ export function TherapyRecommendation() {
       setDocAnalysisHtml(full);
       writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
+        const finalProgress = `${docAnalysisProgress || "Start…"}\n✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.`;
+        writeLatestBefundDisplay(pseudonymId.trim(), {
+          html: full,
+          progress: finalProgress,
+          meta: { analysis_mode: analysisMode, chunk_count: chunks.length, total_chars: totalChars, model },
+          createdAt: new Date().toISOString(),
+        });
+        setLatestBefundLoadedFrom("local");
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
         // Auto-Save in therapy_sessions (DSGVO-konform, nur Pseudonym)
@@ -2364,6 +2448,31 @@ export function TherapyRecommendation() {
                 {autoSaveStatus === "idle" && "Auto-Sicherung bereit"}
               </Badge>
               <span>Labor, Arztbericht und alle Eingaben werden laufend unter diesem Pseudonym gesichert.</span>
+            </div>
+          )}
+          {isPatientScopedStorageReady(pseudonymId) && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2 text-xs flex-wrap">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="font-medium text-foreground">
+                {docAnalysisHtml
+                  ? `Befund-Auswertung ist geladen${latestBefundLoadedFrom === "local" ? " (lokale Sicherung)" : latestBefundLoadedFrom === "cloud" ? " (Verlauf)" : ""}.`
+                  : "Falls die Auswertung verschwunden wirkt: letztes Ergebnis hier wieder laden."}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto h-7 text-xs"
+                onClick={() => {
+                  if (docAnalysisHtml) {
+                    setIsDocAnalysisPanelMinimized(false);
+                    docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    return;
+                  }
+                  restoreLatestBefundForPid(pseudonymId);
+                }}
+              >
+                {docAnalysisHtml ? "Ergebnis anzeigen" : "Letztes Ergebnis laden"}
+              </Button>
             </div>
           )}
           {clinicalLoadInfo?.pid === pseudonymId.trim() && (
