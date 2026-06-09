@@ -157,6 +157,14 @@ Wichtig:
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
+📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch!):
+- Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
+- Wenn ein Dokument mehrere Untersuchungstage enthält (z.B. Laborbefund mit Werten vom 12.03.2024 und 28.09.2024): die Werte pro Tag getrennt extrahieren — NICHT zusammenwerfen.
+- Im Dokumentblock-Label und im "BEFUND VOM:"-Header (aus der OCR) steht meist das Datum. Wenn nirgends auffindbar: datum = "" und in openQuestions notieren ("Datum von … fehlt").
+- Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge).
+
+
+
 🔎 BELEG-PFLICHT (Rückverfolgbarkeit für Patientengespräch):
 - Zu JEDEM Eintrag in documents, anamnese.*, diagnoses, medicationsTherapies, findings, redFlags, systemsPatterns ein Objekt "beleg":
   * quelle = das Dokumentblock-Label (s.u.),
