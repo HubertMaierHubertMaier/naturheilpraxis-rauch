@@ -591,30 +591,49 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 }
 
 async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2): Promise<string> {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "Du antwortest exakt im geforderten Format. Keine Vorrede." },
-        { role: "user", content: prompt },
-      ],
-      temperature,
-      max_tokens: 32000,
-    }),
-  });
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => "");
-    if (resp.status === 429) throw new Error("Rate-Limit erreicht. Bitte später erneut versuchen.");
-    if (resp.status === 402) throw new Error("AI-Guthaben aufgebraucht. Bitte im Workspace aufladen.");
-    throw new Error(`AI Gateway ${resp.status}: ${errText.slice(0, 500)}`);
+  let lastError = "AI Gateway lieferte keine verwertbare Antwort";
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "Du antwortest exakt im geforderten Format. Keine Vorrede." },
+            { role: "user", content: prompt },
+          ],
+          temperature,
+          max_tokens: 32000,
+        }),
+      });
+      const bodyText = await resp.text().catch(() => "");
+      if (!resp.ok) {
+        if (resp.status === 429) throw new Error("Rate-Limit erreicht. Bitte später erneut versuchen.");
+        if (resp.status === 402) throw new Error("AI-Guthaben aufgebraucht. Bitte im Workspace aufladen.");
+        throw new Error(`AI Gateway ${resp.status}: ${bodyText.slice(0, 500)}`);
+      }
+      if (!bodyText.trim()) throw new Error("AI Gateway lieferte eine leere Antwort");
+      let json: any;
+      try {
+        json = JSON.parse(bodyText);
+      } catch {
+        throw new Error(`AI Gateway lieferte unvollständiges JSON (${bodyText.length} Zeichen)`);
+      }
+      const content = String(json.choices?.[0]?.message?.content || "").trim();
+      if (!content) throw new Error("AI Gateway lieferte leeren Inhalt");
+      return content;
+    } catch (error) {
+      lastError = String((error as Error)?.message || error || lastError);
+      const retryable = /leere Antwort|unvollständiges JSON|leeren Inhalt|Unexpected end|500|502|503|504|timeout|NetworkError|Failed to fetch/i.test(lastError);
+      if (attempt >= 3 || !retryable) break;
+      await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+    }
   }
-  const json = await resp.json();
-  return String(json.choices?.[0]?.message?.content || "").trim();
+  throw new Error(lastError);
 }
 
 async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string): Promise<ReadableStream<Uint8Array>> {
