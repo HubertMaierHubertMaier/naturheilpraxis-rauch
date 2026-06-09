@@ -1282,6 +1282,9 @@ export function TherapyRecommendation() {
     setWorkflowStage("edit");
     setAutoSaveStatus("idle");
     setDiagnosen([]);
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress("");
+    setLatestBefundLoadedFrom(null);
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
