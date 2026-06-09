@@ -189,9 +189,11 @@ Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt m
     "physicalExamination": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
     "additionalInvestigations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}]
   },
-  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","datum":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
   "medicationsTherapies": [{"name":"","dosis":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
-  "findings": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "labValues": [{"datum":"","parameter":"","wert":"","einheit":"","referenz":"","bewertung":"normal|↑|↓|kritisch|unklar","quelle":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "findings": [{"text":"","datum":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+
   "terms": [{"term":"","plain":"laienverständlich auf Deutsch"}],
   "redFlags": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "systemsPatterns": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
