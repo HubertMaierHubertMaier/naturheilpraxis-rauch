@@ -470,8 +470,8 @@ ${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory")}
 ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
 ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
 ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
-${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
-${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+${anamnesisTable("Systemanamnese", "reviewOfSystems", { system: true })}
+${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations", { date: true })}
 ${anamnesisTable("Impfstatus", "vaccinationStatus")}
 ${anamnesisTable("Familienanamnese", "familyHistory")}
 ${anamnesisTable("Sozialanamnese", "socialStatus")}
@@ -479,17 +479,21 @@ ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
 ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
 <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
-<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 5)}</tbody></table>
+<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 6)}</tbody></table>
 
 <h2>5. Medikamente, Präparate &amp; Therapien</h2>
 <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
+<h2>6a. Laborwert-Verlauf mit Datumsangaben</h2>
+<table><thead><tr><th>Parameter</th><th>Datum</th><th>Wert</th><th>Einheit</th><th>Referenz</th><th>Bewertung</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.labValues.sort((a: any, b: any) => String(a?.parameter || "").localeCompare(String(b?.parameter || ""), "de") || String(dateOf(b)).localeCompare(String(dateOf(a)))), (item: any) => `<td>${escapeHtml(item?.parameter || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.wert || "—")}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`, 8)}</tbody></table>
+
 <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
 ${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
-  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Die KI-gestützte Einzel-Bewertung pro Mittel konnte hier nicht durchlaufen werden. Unten siehst du die für ${escapeHtml(ctx.pseudonymId || "diesen Patienten")} hinterlegten Bestellungen im Rohformat, damit du sie manuell gegen die obigen Symptome, Diagnosen und Pathogene abgleichen kannst.</div>
-<pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre>`
+  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Diese Tabelle zeigt alle zugeordneten Bestellmittel sichtbar in der Befund-Auswertung. Die Detailbewertung ist konservativ markiert, wenn die KI-Zusammenführung abgebrochen ist.</div>
+<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen obige Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`, 6)}</tbody></table>
+<details><summary>Rohdaten der Mannayan-Bestellungen anzeigen</summary><pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre></details>`
   : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
 
 <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
