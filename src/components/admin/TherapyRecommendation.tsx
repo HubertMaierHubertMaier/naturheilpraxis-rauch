@@ -19,6 +19,7 @@ import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
+import { VersionDiffCard } from "./therapy/VersionDiffCard";
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
@@ -318,6 +319,7 @@ export function TherapyRecommendation() {
   // Versionierung: beim Laden einer Vorversion gemerkt, beim nächsten Finalize als parent_session_id mitgespeichert
   const [parentSessionId, setParentSessionId] = useState<string | null>(null);
   const [parentVersionNumber, setParentVersionNumber] = useState<number | null>(null);
+  const [parentSnapshot, setParentSnapshot] = useState<Record<string, any> | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
   // Nachschlag-Modus
   const [ergaenzung, setErgaenzung] = useState("");
@@ -1045,12 +1047,17 @@ export function TherapyRecommendation() {
     if (!d.autoSavedDraft) {
       setParentSessionId(session.id);
       setParentVersionNumber((session as any).version_number ?? null);
+      setParentSnapshot(d as any);
       setVersionLabel("");
       setWorkflowStage("edit");
       toast({
         title: "In neue Version übernommen",
         description: `Basis: V${(session as any).version_number ?? "?"}. Änderungen werden als neue Version gespeichert – die Originalfassung bleibt erhalten.`,
       });
+    } else {
+      setParentSessionId(null);
+      setParentVersionNumber(null);
+      setParentSnapshot(null);
     }
     setSymptome(asText(d.symptome));
     setErkrankung(asText(d.erkrankung));
@@ -1885,6 +1892,7 @@ export function TherapyRecommendation() {
     setHistoryRefresh((n) => n + 1);
     setParentSessionId(null);
     setParentVersionNumber(null);
+    setParentSnapshot(null);
     setVersionLabel("");
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
@@ -1999,6 +2007,15 @@ export function TherapyRecommendation() {
           key={`${pseudonymId}-${historyRefresh}`}
           pseudonymId={pseudonymId}
           onLoadSession={handleLoadSession}
+        />
+      )}
+
+      {/* Diff-Anzeige: Änderungen gegenüber Vorversion */}
+      {parentSnapshot && parentVersionNumber !== null && (
+        <VersionDiffCard
+          parentVersionNumber={parentVersionNumber}
+          parentSnapshot={parentSnapshot}
+          current={buildInputData()}
         />
       )}
 
