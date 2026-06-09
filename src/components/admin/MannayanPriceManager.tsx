@@ -494,7 +494,8 @@ export default function MannayanPriceManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <Label>Patient / Kunde</Label>
-                <Input value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Name oder Pseudonym" />
+                <Input value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Pseudonym, z.B. P-2026-0001" />
+                <p className="text-xs text-muted-foreground mt-1">Für automatische Therapie-Berücksichtigung bitte die Pseudonym-ID eintragen.</p>
               </div>
               <div>
                 <Label>Produkt suchen</Label>
