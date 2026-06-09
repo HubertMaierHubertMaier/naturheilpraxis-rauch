@@ -2400,6 +2400,7 @@ export function TherapyRecommendation() {
           key={`${pseudonymId}-${historyRefresh}`}
           pseudonymId={pseudonymId}
           onLoadSession={handleLoadSession}
+          onShowBefund={handleShowBefundSession}
         />
       )}
 
@@ -3160,11 +3161,16 @@ export function TherapyRecommendation() {
                 </pre>
               )}
               {docAnalysisHtml ? (
-                <iframe
-                  title="Befund-Auswertung HTML direkt sichtbar"
-                  srcDoc={docAnalysisHtml}
-                  className="h-[62vh] w-full rounded-md border bg-background"
-                />
+                <>
+                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+                    Ergebnis ist geladen und bleibt hier sichtbar. Im Verlauf kann es jederzeit wieder über „Auswertung hier anzeigen" geöffnet werden.
+                  </div>
+                  <iframe
+                    title="Befund-Auswertung HTML direkt sichtbar"
+                    srcDoc={docAnalysisHtml}
+                    className="h-[62vh] w-full rounded-md border bg-background"
+                  />
+                </>
               ) : (
                 <div className="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
                   Das Ergebnis erscheint automatisch hier, sobald die Zusammenführung fertig ist.
