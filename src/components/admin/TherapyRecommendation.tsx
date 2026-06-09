@@ -315,6 +315,10 @@ export function TherapyRecommendation() {
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
   const [therapieNotiz, setTherapieNotiz] = useState("");
+  // Versionierung: beim Laden einer Vorversion gemerkt, beim nächsten Finalize als parent_session_id mitgespeichert
+  const [parentSessionId, setParentSessionId] = useState<string | null>(null);
+  const [parentVersionNumber, setParentVersionNumber] = useState<number | null>(null);
+  const [versionLabel, setVersionLabel] = useState("");
   // Nachschlag-Modus
   const [ergaenzung, setErgaenzung] = useState("");
   const [isNachschlag, setIsNachschlag] = useState(false);
