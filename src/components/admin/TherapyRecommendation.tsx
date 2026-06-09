@@ -567,6 +567,7 @@ export function TherapyRecommendation() {
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
+  const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
