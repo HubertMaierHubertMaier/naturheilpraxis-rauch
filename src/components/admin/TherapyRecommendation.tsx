@@ -89,6 +89,7 @@ type AnalysisDocChunk = { label: string; text: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 3500;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 1800;
+const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v4";
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -1520,6 +1521,11 @@ export function TherapyRecommendation() {
         if (k && k.startsWith(prefix)) toDelete.push(k);
       }
       toDelete.forEach((k) => { try { localStorage.removeItem(k); } catch { /* optional */ } });
+      try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
+
+      setDocAnalysisHtml("");
+      setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
+      setLatestBefundLoadedFrom(null);
 
       // 2) Cloud-Checkpoints entfernen
       try {
@@ -1565,7 +1571,8 @@ export function TherapyRecommendation() {
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
+    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
