@@ -259,6 +259,98 @@ const parseLlmJson = (raw: string): any => {
   return JSON.parse(cleaned);
 };
 
+/**
+ * Client-seitiger Notfall-Renderer: baut aus den gespeicherten Teilanalysen ein
+ * vollständiges Befund-HTML, wenn der Server keine vollständige Zusammenführung
+ * zurückgeben konnte. Damit muss der Anwender nicht erneut auf „Auswerten" klicken
+ * und verliert keine Zeit, falls das AI-Gateway flackert.
+ */
+const buildClientFallbackAnalysisHtml = (
+  partials: string[],
+  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[] },
+): string => {
+  const escapeHtml = (v: unknown) => String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const aggregate: Record<string, any[]> = {
+    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+  };
+  const anamneseKeys = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
+  const anamnese: Record<string, any[]> = Object.fromEntries(anamneseKeys.map((k) => [k, []]));
+  let parsedCount = 0;
+  for (const p of partials) {
+    try {
+      const obj = parseLlmJson(p);
+      parsedCount += 1;
+      for (const key of Object.keys(aggregate)) if (Array.isArray(obj?.[key])) aggregate[key].push(...obj[key]);
+      for (const key of anamneseKeys) if (Array.isArray(obj?.anamnese?.[key])) anamnese[key].push(...obj.anamnese[key]);
+    } catch { /* unparsbarer Teil bleibt in den Rohdaten erhalten */ }
+  }
+  const beleg = (item: any) => {
+    const b = item?.beleg || {};
+    const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}"` : ""].filter(Boolean).join(" · ");
+    return parts ? `<span class="beleg">📄 ${escapeHtml(parts)}</span>` : `<span class="beleg">Kein Einzelbeleg ausgewiesen.</span>`;
+  };
+  const rows = (items: any[], cells: (item: any) => string, colspan = 6) => items.length
+    ? items.map((item) => `<tr>${cells(item)}</tr>`).join("\n")
+    : `<tr><td colspan="${colspan}" class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</td></tr>`;
+  const val = (item: any) => escapeHtml(typeof item === "string" ? item : item?.text || item?.diagnose || item?.name || "—");
+  const bullets = (items: any[]) => items.length
+    ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
+    : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
+  const anamnesisTable = (title: string, key: string, system = false) => `
+    <h3>${escapeHtml(title)}</h3>
+    <table><thead><tr>${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}<th>Beleg</th></tr></thead><tbody>
+      ${rows(anamnese[key], (item: any) => system
+        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td><td>${beleg(item)}</td>`
+        : `<td>${val(item)}</td><td>${beleg(item)}</td>`, 2)}
+    </tbody></table>`;
+  const today = new Date().toLocaleDateString("de-DE");
+  const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
+  return `<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Befund-Auswertung (lokaler Notfall-Aufbau)</title>
+<style>@page{size:A4;margin:1.7cm}body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#263128;line-height:1.48;margin:0;padding:28px;background:#fff}h1{color:#4f744f;border-bottom:3px solid #6b8e6b;padding-bottom:10px;margin:0 0 12px}h2{color:#4f744f;border-left:5px solid #6b8e6b;padding-left:10px;margin-top:28px}h3{color:#52614f;margin:18px 0 8px}table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:.92rem}th,td{border:1px solid #d9e1d6;padding:7px 8px;vertical-align:top}th{background:#eef4eb;text-align:left;color:#394a37}.meta,.notice{background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;margin:10px 0}.beleg{display:block;margin-top:4px;font-size:.84em;color:#5a6b5a;font-style:italic}.empty{color:#6f786c;font-style:italic}.red{color:#a33;font-weight:700}.warn{background:#fff5e6;border:1px solid #f3cf95;padding:10px 12px;margin:10px 0;color:#7a4e10}ul,ol{padding-left:1.25rem}</style>
+</head><body>
+<h1>Befund-Auswertung</h1>
+<div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientLine)} · <strong>Umfang:</strong> ${escapeHtml(ctx.totalChars.toLocaleString("de-DE"))} Zeichen / ${partials.length} Teilpaket(e)</div>
+<div class="warn"><strong>Hinweis:</strong> Diese Auswertung wurde aus den vollständig gespeicherten Teilanalysen <em>lokal im Browser</em> rekonstruiert, weil die KI-Zusammenführung im Server-Lauf unvollständig zurückkam. ${parsedCount}/${partials.length} Teile waren als JSON lesbar. Inhaltlich basieren die Tabellen ausschließlich auf den belegten Teil-Extraktionen — keine zusätzliche Interpretation, keine Therapie-Empfehlung.</div>
+
+<h2>1. Übersicht der eingereichten Unterlagen</h2>
+<table><tbody><tr><th>Teilpakete</th><td>${partials.length}</td></tr><tr><th>Verarbeiteter Umfang</th><td>${escapeHtml(ctx.totalChars.toLocaleString("de-DE"))} Zeichen</td></tr><tr><th>Duplikate</th><td>${ctx.duplicateNotes.length ? ctx.duplicateNotes.map(escapeHtml).join("<br>") : "Keine vorab erkannten identischen Duplikate."}</td></tr></tbody></table>
+
+<h2>2. Chronologische Untersuchungs-Übersicht</h2>
+<table><thead><tr><th>Datum</th><th>Quelle</th><th>Untersuchung</th><th>Hauptbefund</th><th>Auffällig?</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.documents, (item: any) => `<td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.untersuchung || "—")}</td><td>${escapeHtml(item?.hauptbefund || "—")}</td><td>${escapeHtml(item?.auffaellig || "—")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+
+<h2>3. Strukturierte Anamnese-Übersicht</h2>
+${anamnesisTable("Aktuelle Beschwerden", "currentProblems")}
+${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory")}
+${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
+${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
+${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
+${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
+${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+${anamnesisTable("Impfstatus", "vaccinationStatus")}
+${anamnesisTable("Familienanamnese", "familyHistory")}
+${anamnesisTable("Sozialanamnese", "socialStatus")}
+${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
+${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
+
+<h2>4. Diagnosen & Verdachtsdiagnosen</h2>
+<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 5)}</tbody></table>
+
+<h2>5. Medikamente, Präparate &amp; Therapien</h2>
+<table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
+
+<h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+<h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
+<h2>8. Offene Fragen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+<h2>9. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
+<h2>10. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
+</body></html>`;
+};
+
 const normalizeForDuplicateCheck = (value: string) => value
   .toLowerCase()
   .replace(/\s+/g, " ")
@@ -1452,13 +1544,19 @@ export function TherapyRecommendation() {
       full = sanitizeFinalAnalysisHtml(full);
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
-      if (!hasMeaningfulAnalysisContent) {
+      const hasInlineErrorMarker = full.includes("❌ Fehler");
+      if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
         writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
-        throw new Error("Die finale HTML-Auswertung war leer oder unvollständig. Alle Teilanalysen sind gespeichert; bitte erneut klicken, dann wird nur die finale Zusammenführung neu gestartet.");
-      }
-      if (full.includes("❌ Fehler")) {
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
-        throw new Error("Die finale HTML-Auswertung enthält eine Fehlermeldung. Alle Teilanalysen sind gespeichert; bitte erneut klicken, dann wird nur die finale Zusammenführung neu gestartet.");
+        writeProgress(`⚠ Server-HTML ${hasInlineErrorMarker ? "enthielt eine Fehlermeldung" : "war leer/unvollständig"} – baue Befund lokal aus den ${partials.length} gespeicherten Teilanalysen auf…`);
+        full = buildClientFallbackAnalysisHtml(partials, {
+          pseudonymId: pseudonymId.trim() || undefined,
+          alter: alter.trim() || undefined,
+          geschlecht: geschlecht || undefined,
+          totalChars,
+          duplicateNotes: prepared.duplicateNotes,
+        });
+        analysisMode = `${analysisMode}+client-fallback`;
+        toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
       }
 
       // Finales HTML ins Tab schreiben
