@@ -210,6 +210,55 @@ const stripAnalysisFence = (value: string) => value.replace(/^\s*```(?:json|html
 
 const sanitizeFinalAnalysisHtml = (value: string) => stripAnalysisFence(value).trim();
 
+/**
+ * Robust JSON parser für LLM-Output. Repariert die typischen Müll-Fälle, die Gemini/GPT
+ * gerne mal produzieren: ungültige Backslash-Escapes (z. B. "\x" oder "\,"), trailing commas,
+ * unescapte Steuerzeichen, abgeschnittenes JSON mit fehlenden Klammern.
+ */
+const parseLlmJson = (raw: string): any => {
+  const cleaned = stripAnalysisFence(raw);
+  // 1. Direkt versuchen
+  try { return JSON.parse(cleaned); } catch { /* weiter mit Reparatur */ }
+
+  // 2. Ungültige Backslash-Escapes entfernen — nur \", \\, \/, \b, \f, \n, \r, \t, \uXXXX sind erlaubt
+  let repaired = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "");
+
+  // 3. Echte Steuerzeichen in Strings entfernen (außer \n \r \t, die sind im JSON-Text harmlos wenn escaped)
+  repaired = repaired.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+
+  // 4. Trailing commas vor } oder ]
+  repaired = repaired.replace(/,\s*([}\]])/g, "$1");
+
+  try { return JSON.parse(repaired); } catch { /* letzter Versuch: Klammern ergänzen */ }
+
+  // 5. Fehlende schließende Klammern ergänzen (truncated JSON)
+  const opens = (repaired.match(/[{[]/g) || []).length;
+  const closes = (repaired.match(/[}\]]/g) || []).length;
+  if (opens > closes) {
+    // grob ermitteln, welche Klammer zuletzt offen war, indem wir Stack durchlaufen
+    const stack: string[] = [];
+    let inString = false;
+    let escape = false;
+    for (const ch of repaired) {
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{" || ch === "[") stack.push(ch);
+      else if (ch === "}" || ch === "]") stack.pop();
+    }
+    let suffix = "";
+    if (inString) suffix += '"';
+    while (stack.length) {
+      const open = stack.pop();
+      suffix += open === "{" ? "}" : "]";
+    }
+    try { return JSON.parse(repaired + suffix); } catch { /* fällt durch */ }
+  }
+  // Wenn nichts hilft: originalen Fehler werfen
+  return JSON.parse(cleaned);
+};
+
 const normalizeForDuplicateCheck = (value: string) => value
   .toLowerCase()
   .replace(/\s+/g, " ")
@@ -254,7 +303,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
     throw new Error("Teilpaket wurde nur als technische Lücke beantwortet – strikte Auswertung stoppt hier.");
   }
   try {
-    const parsed = JSON.parse(stripAnalysisFence(partial));
+    const parsed = parseLlmJson(partial);
     const hasRequiredArrays = Array.isArray(parsed?.documents) && Array.isArray(parsed?.diagnoses) && Array.isArray(parsed?.medicationsTherapies) && Array.isArray(parsed?.findings) && Array.isArray(parsed?.redFlags) && Array.isArray(parsed?.openQuestions) && Array.isArray(parsed?.missingReports);
     if (!hasRequiredArrays || !parsed?.anamnese || typeof parsed.anamnese !== "object") {
       throw new Error("Teilanalysen-JSON unvollständig");
@@ -1296,7 +1345,7 @@ export function TherapyRecommendation() {
         for (const p of partials) {
           if (!p) continue;
           try {
-            const obj = JSON.parse(stripFence(p));
+            const obj = parseLlmJson(p);
             if (Array.isArray(obj?.diagnoses)) {
               for (const d of obj.diagnoses) {
                 if (!d?.diagnose) continue;
