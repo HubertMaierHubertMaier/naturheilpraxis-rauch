@@ -1554,7 +1554,17 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async () => {
+    const therapyContext = [
+      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
+      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
+      formatPathogensForAI(pathogens).trim() && `Pathogene / NLS-EAV-Befunde:\n${formatPathogensForAI(pathogens).trim()}`,
+      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
+      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
+    ].filter(Boolean).join("\n\n");
+    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
     const rawBlocks = [
+      { label: "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", text: therapyContext },
+      { label: "Mannayan-Bestellungen – patientenbezogene Präparate zur Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", text: mannayanContext },
       { label: laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", text: laborKomplett.trim() },
       { label: "Labor – erhöhte Werte", text: laborErhoeht.trim() },
       { label: "Labor – erniedrigte Werte", text: laborErniedrigt.trim() },
@@ -1571,7 +1581,6 @@ export function TherapyRecommendation() {
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
     const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
