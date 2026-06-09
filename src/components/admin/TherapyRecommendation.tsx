@@ -1445,8 +1445,7 @@ export function TherapyRecommendation() {
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
-    setDocAnalysisHtml("");
-    setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    setDocAnalysisProgress(`Start…${docAnalysisHtml ? "\nⓘ Die bisherige Auswertung bleibt sichtbar, bis die neue fertig ist." : ""}${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
@@ -1759,6 +1758,7 @@ export function TherapyRecommendation() {
                 toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
               } else {
                 try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
+                setHistoryRefresh((n) => n + 1);
                 toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
               }
             }
@@ -1773,7 +1773,6 @@ export function TherapyRecommendation() {
     } catch (e) {
       const msg = (e as Error).message;
       setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
-      setDocAnalysisHtml("");
       toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
     } finally {
       setIsAnalyzingDocs(false);
