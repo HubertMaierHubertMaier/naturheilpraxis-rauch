@@ -29,9 +29,10 @@ export interface TherapySession {
 interface Props {
   pseudonymId: string;
   onLoadSession: (session: TherapySession) => void;
+  onShowBefund?: (session: TherapySession) => void;
 }
 
-export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
+export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: Props) {
   const [sessions, setSessions] = useState<TherapySession[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -165,6 +166,10 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
               const meta = s.befund_meta || {};
               const openBefund = () => {
                 if (!s.befund_html) return;
+                if (onShowBefund) {
+                  onShowBefund(s);
+                  return;
+                }
                 const w = window.open("", "_blank");
                 if (w) {
                   w.document.open();
@@ -222,7 +227,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                     {isBefund && (
                       <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
                         <FileText className="h-3 w-3" />
-                        Auswertung öffnen
+                        Auswertung hier anzeigen
                       </Button>
                     )}
                     {!isBefund && (
