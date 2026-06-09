@@ -1497,14 +1497,23 @@ export function TherapyRecommendation() {
     const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
     const newestFinishedTs = Math.max(cloudTs, localTs);
 
-    if (checkpointTs > newestFinishedTs) {
+    const unfinishedCheckpointNotice = (() => {
+      if (checkpointTs <= newestFinishedTs) return "";
+      const checkpoint = latestCheckpoint?.eingabe_daten?.checkpoint;
+      const done = Number(checkpoint?.completedChunks || 0);
+      const total = Number(checkpoint?.totalChunks || 0);
+      const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
+      return `\n\n⚠ Neuerer Befund-Lauf ist noch nicht fertig.\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\nDer unten angezeigte Bericht ist der letzte vollständig fertige Stand. Fortsetzen nur über „Nur Befund-Auswertung (HTML)“ — „Alles neu auswerten“ startet komplett neu und kostet erneut Credits.`;
+    })();
+
+    if (checkpointTs > newestFinishedTs && !cloudHtml && !localSnapshot) {
       const checkpoint = latestCheckpoint?.eingabe_daten?.checkpoint;
       const done = Number(checkpoint?.completedChunks || 0);
       const total = Number(checkpoint?.totalChunks || 0);
       const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
       setDocAnalysisHtml("");
       setDocAnalysisProgress(
-        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nDer ältere fertige Bericht wird deshalb nicht automatisch als aktuelles Ergebnis angezeigt. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen, oder „Alles neu auswerten“, um komplett neu zu starten.`
+        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nEs wurde kein vollständig fertiger Bericht gefunden. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen. Bitte NICHT „Alles neu auswerten“, außer du willst bewusst komplett neu starten.`
       );
       setLatestBefundLoadedFrom(null);
       if (!options?.quiet) toast({ title: "Neuer Lauf ist noch nicht fertig", description: total ? `Zwischenstand ${done}/${total} Teilpakete · bitte fortsetzen.` : "Bitte Befund-Auswertung fortsetzen." });
@@ -1514,7 +1523,7 @@ export function TherapyRecommendation() {
     // Cloud bevorzugen, wenn neuer ODER lokal nichts da
     if (cloudHtml && (!localSnapshot || cloudTs > localTs)) {
       const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
-      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}`;
+      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(cloudHtml);
       setDocAnalysisProgress(progress);
       setIsDocAnalysisPanelMinimized(false);
@@ -1526,7 +1535,7 @@ export function TherapyRecommendation() {
 
     if (localSnapshot) {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
-      const progress = localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`;
+      const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(localSnapshot.html);
       setDocAnalysisProgress(progress);
       setIsDocAnalysisPanelMinimized(false);
