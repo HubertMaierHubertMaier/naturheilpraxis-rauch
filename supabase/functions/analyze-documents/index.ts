@@ -522,8 +522,8 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
   ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
   ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
-  ${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
-  ${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+  ${anamnesisTable("Systemanamnese", "reviewOfSystems", { system: true })}
+  ${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations", { date: true })}
   ${anamnesisTable("Impfstatus", "vaccinationStatus")}
   ${anamnesisTable("Familienanamnese", "familyHistory")}
   ${anamnesisTable("Sozialanamnese", "socialStatus")}
@@ -531,7 +531,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
   <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
-  <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+  <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
   <h2>5. Medikamente, Präparate & Therapien</h2>
   <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
@@ -553,6 +553,11 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
       return `<td>${w(escapeHtml(item?.parameter || "—"))}</td><td>${w(escapeHtml(item?.datum || "(Datum unbekannt)"))}</td><td>${w(escapeHtml(item?.wert || "—"))}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`;
     })}</tbody></table>`;
   })()}
+
+  <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
+  ${mannayanRows.length
+    ? `<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen dokumentierte Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`)}</tbody></table>`
+    : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
 
   <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
