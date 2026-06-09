@@ -1759,6 +1759,7 @@ export function TherapyRecommendation() {
               geschlecht: geschlecht || undefined,
               pseudonymId: pseudonymId || undefined,
               useProModel: useProModel || undefined,
+              mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
             }),
           });
           if (resp.ok && resp.body) break;
