@@ -569,6 +569,7 @@ export function TherapyRecommendation() {
   const abortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const docAnalysisRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -1426,7 +1427,7 @@ export function TherapyRecommendation() {
     setIsAnalyzingDocs(true);
     setDocAnalysisHtml("");
     setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
-    window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
@@ -1460,11 +1461,8 @@ export function TherapyRecommendation() {
           }
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
       }
-      const live = w?.document.getElementById("__live") as HTMLElement | null;
       const writeProgress = (line: string) => {
-        if (!live) return;
-        live.textContent = `${live.textContent || ""}\n${line}`;
-        live.scrollTop = live.scrollHeight;
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n${line}`);
       };
       if (checkpoint?.partials?.length) {
         writeProgress(`✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Zwischen-Sicherung geladen.`);
