@@ -1,0 +1,6 @@
+DROP TRIGGER IF EXISTS prevent_therapy_session_patient_mismatch_trigger ON public.therapy_sessions;
+
+CREATE TRIGGER prevent_therapy_session_patient_mismatch_trigger
+BEFORE INSERT OR UPDATE ON public.therapy_sessions
+FOR EACH ROW
+EXECUTE FUNCTION public.prevent_therapy_session_patient_mismatch();
