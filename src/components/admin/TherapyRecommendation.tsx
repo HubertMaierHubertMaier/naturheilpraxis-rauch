@@ -1536,19 +1536,14 @@ export function TherapyRecommendation() {
     setExtractedFromDocs(null);
   };
 
-  // Auto-Übernahme: sobald aus den Befunden Diagnosen/Symptome/Medikamente extrahiert wurden,
-  // direkt in die Eingabemaske (Symptome / Medikamente / Diagnosen) eintragen — mit Quelle, Datum, Zitat.
-  // Banner bleibt sichtbar bis applyExtractedToInputs den State auf null setzt → dient als Bestätigung/Undo.
+  // Keine automatische Übernahme mehr: extrahierte Befunddaten werden nur nach
+  // bewusstem Klick in die Eingabemaske geschrieben. Das verhindert stille
+  // Patientendaten-Vermischung durch Browser-/Autosave-Zustände.
   useEffect(() => {
     if (!extractedFromDocs) return;
     if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
       setExtractedFromDocs(null);
-      return;
     }
-    const { diagnoses, symptoms, medications } = extractedFromDocs;
-    if (!diagnoses.length && !symptoms.length && !medications.length) return;
-    applyExtractedToInputs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extractedFromDocs, pseudonymId]);
 
 
