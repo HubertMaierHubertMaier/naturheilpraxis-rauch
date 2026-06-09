@@ -634,6 +634,7 @@ export function TherapyRecommendation() {
   // Wiki-Autocomplete für manuelle Mittel
   const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const docAbortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
