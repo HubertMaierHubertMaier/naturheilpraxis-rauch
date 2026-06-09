@@ -3082,6 +3082,16 @@ export function TherapyRecommendation() {
           {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
           {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
         </Button>
+        <Button
+          onClick={handleReAnalyzeAll}
+          disabled={isAnalyzingDocs || isStreaming}
+          variant="outline"
+          className="gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
+          title="Löscht alle Checkpoints (lokal + Cloud) für dieses Pseudonym und startet die strikte Auswertung komplett neu — z.B. nach Prompt-/Regel-Updates wie der neuen Datumspflicht."
+        >
+          <RotateCcw className="h-4 w-4" />
+          Alles neu auswerten
+        </Button>
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
