@@ -318,6 +318,7 @@ export function TherapyRecommendation() {
   // Versionierung: beim Laden einer Vorversion gemerkt, beim nächsten Finalize als parent_session_id mitgespeichert
   const [parentSessionId, setParentSessionId] = useState<string | null>(null);
   const [parentVersionNumber, setParentVersionNumber] = useState<number | null>(null);
+  const [parentSnapshot, setParentSnapshot] = useState<Record<string, any> | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
   // Nachschlag-Modus
   const [ergaenzung, setErgaenzung] = useState("");
