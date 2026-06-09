@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType, Maximize2, Minimize2, ExternalLink } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -567,6 +567,7 @@ export function TherapyRecommendation() {
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
+  const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
@@ -1576,6 +1577,7 @@ export function TherapyRecommendation() {
                 alter: alter.trim() || undefined,
                 geschlecht: geschlecht || undefined,
                 pseudonymId: pseudonymId || undefined,
+                mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               }),
             });
             const responseText = await chunkResp.text().catch(() => "");
@@ -1758,6 +1760,7 @@ export function TherapyRecommendation() {
               geschlecht: geschlecht || undefined,
               pseudonymId: pseudonymId || undefined,
               useProModel: useProModel || undefined,
+              mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
             }),
           });
           if (resp.ok && resp.body) break;
@@ -3248,35 +3251,69 @@ export function TherapyRecommendation() {
       </div>
 
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
-        <div className="fixed right-4 top-20 z-50 w-[min(760px,calc(100vw-2rem))] rounded-md border border-primary/50 bg-background shadow-2xl">
-          <div className="flex items-center gap-3 border-b bg-primary/10 px-4 py-3">
+        <div
+          className={
+            isDocAnalysisPanelFullscreen
+              ? "fixed inset-2 z-[60] rounded-md border border-primary/50 bg-background shadow-2xl flex flex-col"
+              : "fixed right-4 top-20 z-50 w-[min(900px,calc(100vw-2rem))] rounded-md border border-primary/50 bg-background shadow-2xl flex flex-col"
+          }
+        >
+          <div className="flex items-center gap-2 border-b bg-primary/10 px-4 py-3 flex-wrap">
             {isAnalyzingDocs ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <CheckCircle2 className="h-5 w-5 text-primary" />}
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">Hier ist die Befund-Auswertung</div>
               <div className="text-xs text-muted-foreground">
-                {isAnalyzingDocs ? "Sie läuft gerade — das Protokoll aktualisiert sich live." : "Fertig — das Ergebnis ist unten im Rahmen sichtbar."}
+                {isAnalyzingDocs ? "Sie läuft gerade — das Protokoll aktualisiert sich live." : "Fertig — Vollbild · neuer Tab · oder minimieren."}
               </div>
             </div>
+            {docAnalysisHtml && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const blob = new Blob([docAnalysisHtml], { type: "text/html;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, "_blank", "noopener,noreferrer");
+                    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                  }}
+                  className="gap-1"
+                  title="HTML in neuem Browser-Tab öffnen (vergrößert, druckbar, separat scrollbar)"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> HTML in neuem Tab
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsDocAnalysisPanelFullscreen((v) => !v)}
+                  className="gap-1"
+                  title={isDocAnalysisPanelFullscreen ? "Vollbild verlassen" : "Vollbild — füllt das Browserfenster"}
+                >
+                  {isDocAnalysisPanelFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                  {isDocAnalysisPanelFullscreen ? "kleiner" : "Vollbild"}
+                </Button>
+              </>
+            )}
             <Button size="sm" variant="outline" onClick={() => setIsDocAnalysisPanelMinimized((value) => !value)}>
               {isDocAnalysisPanelMinimized ? "anzeigen" : "minimieren"}
             </Button>
           </div>
           {!isDocAnalysisPanelMinimized && (
-            <div className="max-h-[calc(100vh-7rem)] overflow-auto p-3 space-y-3">
+            <div className={`${isDocAnalysisPanelFullscreen ? "flex-1 overflow-auto" : "max-h-[calc(100vh-7rem)] overflow-auto"} p-3 space-y-3 flex flex-col`}>
               {docAnalysisProgress && (
-                <pre className="max-h-44 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                <pre className="max-h-44 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground shrink-0">
                   {docAnalysisProgress}
                 </pre>
               )}
               {docAnalysisHtml ? (
                 <>
-                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
-                    Ergebnis ist geladen und bleibt hier sichtbar. Im Verlauf kann es jederzeit wieder über „Auswertung hier anzeigen" geöffnet werden.
+                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary shrink-0">
+                    Ergebnis ist geladen. Tipp: „Vollbild" für mehr Lesefläche oder „HTML in neuem Tab" für eine separate Browser-Ansicht (zoomen mit Strg/⌘ + +).
                   </div>
                   <iframe
                     title="Befund-Auswertung HTML direkt sichtbar"
                     srcDoc={docAnalysisHtml}
-                    className="h-[62vh] w-full rounded-md border bg-background"
+                    className={`w-full rounded-md border bg-background ${isDocAnalysisPanelFullscreen ? "flex-1 min-h-[400px]" : "h-[62vh]"}`}
                   />
                 </>
               ) : (
@@ -3288,6 +3325,7 @@ export function TherapyRecommendation() {
           )}
         </div>
       )}
+
 
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
         <Card ref={docAnalysisRef} className="border-primary/40 bg-primary/[0.03] shadow-sm scroll-mt-24">
