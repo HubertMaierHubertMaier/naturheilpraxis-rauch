@@ -1846,6 +1846,7 @@ export function TherapyRecommendation() {
           resp = await fetch(endpoint, {
             method: "POST",
             headers: finalHeaders,
+            signal: docController.signal,
             body: JSON.stringify({
               analysisMode: "final",
               partials,
