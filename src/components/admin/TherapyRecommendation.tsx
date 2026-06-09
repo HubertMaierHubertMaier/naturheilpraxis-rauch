@@ -388,8 +388,28 @@ const buildClientFallbackAnalysisHtml = (
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+  const dateOf = (item: any) => String(
+    item?.datum || item?.date || item?.befunddatum || item?.untersuchungsdatum ||
+    (String(item?.quelle || item?.beleg?.quelle || item?.beleg?.zitat || "").match(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\.\d{4}\b/)?.[0]) ||
+    "(Datum unbekannt)"
+  );
+  const parseMannayanRows = (text?: string) => {
+    const rows: Array<{ order: string; date: string; item: string }> = [];
+    const source = String(text || "").trim();
+    if (!source) return rows;
+    const blocks = source.split(/\n{2,}(?=Bestellung\s+)/i);
+    for (const block of blocks) {
+      const header = block.match(/^Bestellung\s+(.+?)\s+vom\s+([^\n]+)/i);
+      const order = header?.[1]?.trim() || "—";
+      const date = header?.[2]?.replace(/·.*$/, "").trim() || "Datum unbekannt";
+      for (const line of block.split(/\n/).filter((l) => /^\s*-\s+/.test(l))) {
+        rows.push({ order, date, item: line.replace(/^\s*-\s+/, "").trim() });
+      }
+    }
+    return rows;
+  };
   const aggregate: Record<string, any[]> = {
-    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+    documents: [], diagnoses: [], medicationsTherapies: [], labValues: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
   };
   const anamneseKeys = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
   const anamnese: Record<string, any[]> = Object.fromEntries(anamneseKeys.map((k) => [k, []]));
@@ -414,13 +434,20 @@ const buildClientFallbackAnalysisHtml = (
   const bullets = (items: any[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
     : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
-  const anamnesisTable = (title: string, key: string, system = false) => `
+  const anamnesisTable = (title: string, key: string, options?: { system?: boolean; date?: boolean }) => {
+    const system = !!options?.system;
+    const showDate = !!options?.date || system;
+    const header = `${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}${showDate ? "<th>Datum</th>" : ""}<th>Beleg</th>`;
+    const colspan = (system ? 2 : 1) + (showDate ? 1 : 0) + 1;
+    return `
     <h3>${escapeHtml(title)}</h3>
-    <table><thead><tr>${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}<th>Beleg</th></tr></thead><tbody>
+    <table><thead><tr>${header}</tr></thead><tbody>
       ${rows(anamnese[key], (item: any) => system
-        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td><td>${beleg(item)}</td>`
-        : `<td>${val(item)}</td><td>${beleg(item)}</td>`, 2)}
+        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`
+        : `<td>${val(item)}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`, colspan)}
     </tbody></table>`;
+  };
+  const mannayanRows = parseMannayanRows(ctx.mannayanOrdersText);
   const today = new Date().toLocaleDateString("de-DE");
   const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
   return `<!DOCTYPE html>
