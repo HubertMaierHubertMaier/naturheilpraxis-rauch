@@ -1041,6 +1041,17 @@ export function TherapyRecommendation() {
     checkpointSessionIdRef.current = null;
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
+    // Versionierung: nicht-Draft-Sessions werden als Eltern-Version übernommen → nächster Save ist neue Version
+    if (!d.autoSavedDraft) {
+      setParentSessionId(session.id);
+      setParentVersionNumber((session as any).version_number ?? null);
+      setVersionLabel("");
+      setWorkflowStage("edit");
+      toast({
+        title: "In neue Version übernommen",
+        description: `Basis: V${(session as any).version_number ?? "?"}. Änderungen werden als neue Version gespeichert – die Originalfassung bleibt erhalten.`,
+      });
+    }
     setSymptome(asText(d.symptome));
     setErkrankung(asText(d.erkrankung));
     setAlter(asText(d.alter));
