@@ -1446,7 +1446,7 @@ export function TherapyRecommendation() {
 
   const restoreLatestBefundForPid = useCallback(async (pidValue: string, options?: { quiet?: boolean }) => {
     const pid = normalizePseudonymId(pidValue);
-    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
+    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs) return false;
 
     const localSnapshot = readLatestBefundDisplay(pid);
     const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
@@ -1517,7 +1517,7 @@ export function TherapyRecommendation() {
     }
 
     return false;
-  }, [docAnalysisHtml, isAnalyzingDocs, toast]);
+  }, [isAnalyzingDocs, toast]);
 
   useEffect(() => {
     restoreLatestBefundForPid(pseudonymId, { quiet: true });
@@ -1611,7 +1611,9 @@ export function TherapyRecommendation() {
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
-    setDocAnalysisProgress(`Start…${docAnalysisHtml ? "\nⓘ Die bisherige Auswertung bleibt sichtbar, bis die neue fertig ist." : ""}${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    setDocAnalysisHtml("");
+    setLatestBefundLoadedFrom(null);
+    setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
