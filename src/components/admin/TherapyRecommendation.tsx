@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2 } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -26,9 +26,22 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { MultiDocUpload } from "./therapy/MultiDocUpload";
+import * as pdfjs from "pdfjs-dist";
+// @ts-ignore - vite handles ?url
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+// @ts-ignore - mammoth ships browser bundle without bundled TS declarations for this subpath
+import mammoth from "mammoth/mammoth.browser";
+
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
 type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
+type MannayanOrderContext = {
+  orderNumber: string;
+  createdAt: string;
+  notes?: string;
+  items: Array<{ name: string; quantity?: number; unit?: string; sku?: string; price_eur?: number }>;
+};
 
 const extractWikiField = (content: string, labels: string[]) => {
   const labelPattern = labels.join("|");
@@ -210,24 +223,49 @@ const stripAnalysisFence = (value: string) => value.replace(/^\s*```(?:json|html
 
 const sanitizeFinalAnalysisHtml = (value: string) => stripAnalysisFence(value).trim();
 
+const extractJsonSubstring = (value: string) => {
+  const cleaned = stripAnalysisFence(value);
+  const start = cleaned.search(/[\[{]/);
+  if (start < 0) return cleaned;
+  const opener = cleaned[start];
+  const closer = opener === "[" ? "]" : "}";
+  const end = cleaned.lastIndexOf(closer);
+  return end > start ? cleaned.slice(start, end + 1).trim() : cleaned.slice(start).trim();
+};
+
+const normalizeJsonText = (value: string) => value
+  .replace(/[“”]/g, '"')
+  .replace(/[‘’]/g, "'")
+  .replace(/\r\n/g, "\n")
+  .replace(/\r/g, "\n")
+  .replace(/\\(?!["\\/bfnrtu])/g, "")
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")
+  // Häufiger LLM-Fehler: {"text":"..." "beleg":{...}} — fehlendes Komma vor nächstem Key.
+  .replace(/(["}\]\d])\s+(?="[A-Za-zÄÖÜäöüß_][^"\n]{0,80}"\s*:)/g, "$1,")
+  .replace(/,\s*([}\]])/g, "$1");
+
+const parseJsonPrefix = (value: string): any => {
+  const decoder = new TextDecoder();
+  for (let cut = value.length; cut > Math.max(0, value.length - 5000); cut -= 1) {
+    try {
+      return JSON.parse(value.slice(0, cut));
+    } catch { /* suche rückwärts nach letztem vollständigen JSON-Präfix */ }
+  }
+  return JSON.parse(decoder.decode(new TextEncoder().encode(value)));
+};
+
 /**
  * Robust JSON parser für LLM-Output. Repariert die typischen Müll-Fälle, die Gemini/GPT
  * gerne mal produzieren: ungültige Backslash-Escapes (z. B. "\x" oder "\,"), trailing commas,
  * unescapte Steuerzeichen, abgeschnittenes JSON mit fehlenden Klammern.
  */
 const parseLlmJson = (raw: string): any => {
-  const cleaned = stripAnalysisFence(raw);
+  const cleaned = extractJsonSubstring(raw);
   // 1. Direkt versuchen
   try { return JSON.parse(cleaned); } catch { /* weiter mit Reparatur */ }
 
   // 2. Ungültige Backslash-Escapes entfernen — nur \", \\, \/, \b, \f, \n, \r, \t, \uXXXX sind erlaubt
-  let repaired = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "");
-
-  // 3. Echte Steuerzeichen in Strings entfernen (außer \n \r \t, die sind im JSON-Text harmlos wenn escaped)
-  repaired = repaired.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
-
-  // 4. Trailing commas vor } oder ]
-  repaired = repaired.replace(/,\s*([}\]])/g, "$1");
+  let repaired = normalizeJsonText(cleaned);
 
   try { return JSON.parse(repaired); } catch { /* letzter Versuch: Klammern ergänzen */ }
 
@@ -255,7 +293,8 @@ const parseLlmJson = (raw: string): any => {
     }
     try { return JSON.parse(repaired + suffix); } catch { /* fällt durch */ }
   }
-  // Wenn nichts hilft: originalen Fehler werfen
+  // Wenn das Modell hinter einem vollständigen Objekt noch Müll erzeugt hat: längstes gültiges Präfix verwenden.
+  try { return parseJsonPrefix(repaired); } catch { /* originalen Fehler werfen */ }
   return JSON.parse(cleaned);
 };
 
@@ -429,6 +468,9 @@ export function TherapyRecommendation() {
   const [metatronHeel, setMetatronHeel] = useState("");
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
+  const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
+  const [mannayanOrders, setMannayanOrders] = useState<MannayanOrderContext[]>([]);
+  const [isLoadingMannayanOrders, setIsLoadingMannayanOrders] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [bevorzugteLinie, setBevorzugteLinie] = useState<string[]>([]);
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
@@ -473,6 +515,7 @@ export function TherapyRecommendation() {
   // Wiki-Autocomplete für manuelle Mittel
   const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -512,13 +555,15 @@ export function TherapyRecommendation() {
     metatronHeel,
     sonstigeUntersuchungen,
     perplexityAnalyse,
+    eigeneTherapieVorlage,
+    mannayanOrders,
     selectedCategories,
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -603,6 +648,8 @@ export function TherapyRecommendation() {
       if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
       if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
       if (typeof d?.perplexityAnalyse === "string") setPerplexityAnalyse(d.perplexityAnalyse);
+      if (typeof d?.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(d.eigeneTherapieVorlage);
+      if (Array.isArray(d?.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
       if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
@@ -616,13 +663,13 @@ export function TherapyRecommendation() {
         _pseudonym_id: normalizePseudonymId(pseudonymId),
         pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
       if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any, expectedPid?: string) => {
     const data = normalizeTherapyInput(d);
@@ -655,6 +702,8 @@ export function TherapyRecommendation() {
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
     if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
+    if (typeof data.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(data.eigeneTherapieVorlage);
+    if (Array.isArray(data.mannayanOrders)) setMannayanOrders(data.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
@@ -705,11 +754,11 @@ export function TherapyRecommendation() {
       const stringKeys = [
         "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
         "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse",
+        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage",
       ];
-      const mergeTextKeys = new Set(["symptome","erkrankung","medikamente","bisherigeMittel","laborErhoeht","laborErniedrigt","laborKomplett","stuhlbefund","arztbericht","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse"]);
+      const mergeTextKeys = new Set(["symptome","erkrankung","medikamente","bisherigeMittel","laborErhoeht","laborErniedrigt","laborKomplett","stuhlbefund","arztbericht","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage"]);
       const textCollections: Record<string, Array<{ label: string; text: string }>> = {};
-      const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel"];
+      const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel","mannayanOrders"];
       for (const row of data) {
         const e = normalizeTherapyInput(row?.eingabe_daten);
         const embedded = getEmbeddedPseudonymId(e);
@@ -776,10 +825,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse];
+    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage];
 
-    return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0;
-  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel]);
+    return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
+  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -1136,6 +1185,9 @@ export function TherapyRecommendation() {
     setMetatronHeel("");
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
+    setEigeneTherapieVorlage("");
+    setMannayanOrders([]);
+    setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
@@ -1228,6 +1280,8 @@ export function TherapyRecommendation() {
     setMetatronHeel(asText(d.metatronHeel));
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
     setPerplexityAnalyse(asText(d.perplexityAnalyse));
+    setEigeneTherapieVorlage(asText(d.eigeneTherapieVorlage));
+    if (Array.isArray(d.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
@@ -1725,12 +1779,93 @@ export function TherapyRecommendation() {
     toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
   };
 
+  const extractOwnTherapyFileText = async (file: File): Promise<string> => {
+    const lower = file.name.toLowerCase();
+    if (lower.endsWith(".docx")) {
+      const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+      return res.value.trim();
+    }
+    if (file.type === "application/pdf" || lower.endsWith(".pdf")) {
+      const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages: string[] = [];
+      for (let p = 1; p <= doc.numPages; p += 1) {
+        const page = await doc.getPage(p);
+        const content = await page.getTextContent();
+        pages.push(`--- Seite ${p} ---\n${content.items.map((it: any) => ("str" in it ? it.str : "")).join(" ").trim()}`);
+      }
+      return pages.join("\n\n").trim();
+    }
+    if (file.type.startsWith("text/") || lower.endsWith(".txt") || lower.endsWith(".md")) return (await file.text()).trim();
+    throw new Error("Bitte PDF, Word (.docx) oder Textdatei verwenden.");
+  };
+
+  const appendOwnTherapyFile = async (file: File) => {
+    try {
+      const text = await extractOwnTherapyFileText(file);
+      if (!text) throw new Error("Datei enthält keinen auslesbaren Text.");
+      const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const block = `=== Eigene Therapie-/Verordnungs-Vorlage · ${file.name} · ${ts} ===\n${text}`;
+      setEigeneTherapieVorlage((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+      toast({ title: "Therapie-Vorlage übernommen", description: `${text.length.toLocaleString("de-DE")} Zeichen aus ${file.name} eingefügt.` });
+    } catch (error: any) {
+      toast({ title: "Datei konnte nicht gelesen werden", description: error?.message || "Unbekannter Fehler", variant: "destructive" });
+    }
+  };
+
+  const formatMannayanOrders = (orders: MannayanOrderContext[]) => orders.map((order) => {
+    const day = order.createdAt ? new Date(order.createdAt).toLocaleDateString("de-DE") : "Datum unbekannt";
+    const items = order.items.map((it) => `- ${it.quantity ? `${it.quantity}× ` : ""}${it.name}${it.unit ? ` (${it.unit})` : ""}${it.sku ? ` · Art.-Nr. ${it.sku}` : ""}`).join("\n");
+    return `Bestellung ${order.orderNumber} vom ${day}${order.notes ? ` · Notiz: ${order.notes}` : ""}\n${items}`;
+  }).join("\n\n");
+
+  const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    setIsLoadingMannayanOrders(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("mannayan_orders")
+        .select("order_number, created_at, items, notes, patient_label")
+        .ilike("patient_label", `%${pid}%`)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const orders = ((data || []) as any[]).map((row) => ({
+        orderNumber: row.order_number || "—",
+        createdAt: row.created_at || "",
+        notes: row.notes || "",
+        items: Array.isArray(row.items) ? row.items.map((it: any) => ({
+          name: String(it?.name || "").trim(),
+          quantity: Number(it?.quantity) || undefined,
+          unit: it?.unit || "",
+          sku: it?.sku || "",
+          price_eur: Number(it?.price_eur) || undefined,
+        })).filter((it: any) => it.name) : [],
+      })).filter((order) => order.items.length > 0);
+      setMannayanOrders(orders);
+      if (orders.length) toast({ title: "Mannayan-Bestellungen geladen", description: `${orders.length} Bestellung(en) für ${pid} werden in der Therapieprüfung berücksichtigt.` });
+    } catch (error: any) {
+      toast({ title: "Mannayan-Bestellungen nicht geladen", description: error?.message || "Bitte später erneut versuchen.", variant: "destructive" });
+    } finally {
+      setIsLoadingMannayanOrders(false);
+    }
+  }, [pseudonymId, toast]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) {
+      setMannayanOrders([]);
+      return;
+    }
+    loadMannayanOrdersForCurrentPatient();
+  }, [pseudonymId, loadMannayanOrdersForCurrentPatient]);
+
 
 
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const belastungenText = formatPathogensForAI(pathogens);
-    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse].some((x) => x.trim());
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage].some((x) => x.trim()) || mannayanOrders.length > 0;
     if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
       return;
@@ -1798,6 +1933,8 @@ export function TherapyRecommendation() {
             metatronHeel: metatronHeel.trim() || undefined,
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
             perplexityAnalyse: perplexityAnalyse.trim() || undefined,
+            eigeneTherapieVorlage: eigeneTherapieVorlage.trim() || undefined,
+            mannayanOrders: mannayanOrders.length > 0 ? mannayanOrders : undefined,
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
@@ -1948,6 +2085,9 @@ export function TherapyRecommendation() {
     setMetatronHeel("");
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
+    setEigeneTherapieVorlage("");
+    setMannayanOrders([]);
+    setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
     setBevorzugteLinie([]);
     setPinnedMittel([]);
@@ -2200,8 +2340,8 @@ export function TherapyRecommendation() {
                 Patientenbefund
               </span>
               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel]
-                  .filter((s) => s && s.trim()).length}/11 Felder
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/13 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -2487,6 +2627,54 @@ export function TherapyRecommendation() {
                   />
                   <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis) – Die KI bewertet diese kritisch und integriert / ersetzt / ergänzt sie.</p>
                 </div>
+                <div className="rounded-md border border-emerald-300/70 bg-emerald-50/50 dark:bg-emerald-950/10 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <label className="text-sm font-medium flex items-center gap-1.5">
+                      <FileType className="h-3.5 w-3.5 text-emerald-700" />
+                      Eigene Therapie-/Verordnungs-Vorlage zur KI-Prüfung
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        ref={ownTherapyFileRef}
+                        type="file"
+                        accept="application/pdf,.pdf,.docx,text/plain,.txt,.md"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) appendOwnTherapyFile(file);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      <Button type="button" size="sm" variant="outline" onClick={() => ownTherapyFileRef.current?.click()} className="gap-1.5">
+                        <FileUp className="h-3.5 w-3.5" /> PDF/Word einlesen
+                      </Button>
+                    </div>
+                  </div>
+                  <Textarea
+                    value={eigeneTherapieVorlage}
+                    onChange={(e) => setEigeneTherapieVorlage(e.target.value)}
+                    placeholder="Hier eigenen Therapieplan, Verordnungsidee oder Patienten-Medikamentenliste eingeben/einfügen. Die KI prüft: passt das zum Befund, welche Themen werden damit adressiert, was ist sinnvoll, überflüssig, riskant oder fehlt?"
+                    rows={6}
+                  />
+                  <p className="text-xs text-muted-foreground">Wird nicht blind übernommen, sondern gegen Befund, Labor, Medikamente, Wiki und Sicherheit geprüft.</p>
+                </div>
+                <div className="rounded-md border border-amber-300/70 bg-amber-50/50 dark:bg-amber-950/10 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <label className="text-sm font-medium flex items-center gap-1.5">
+                      <ShoppingCart className="h-3.5 w-3.5 text-amber-700" />
+                      Mannayan-Bestellungen für dieses Pseudonym
+                    </label>
+                    <Button type="button" size="sm" variant="outline" onClick={loadMannayanOrdersForCurrentPatient} disabled={!isPatientScopedStorageReady(pseudonymId) || isLoadingMannayanOrders} className="gap-1.5">
+                      {isLoadingMannayanOrders ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      neu laden
+                    </Button>
+                  </div>
+                  {mannayanOrders.length > 0 ? (
+                    <pre className="text-xs whitespace-pre-wrap font-sans bg-background/70 p-2 rounded max-h-48 overflow-y-auto">{formatMannayanOrders(mannayanOrders)}</pre>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Keine passende Bestellung gefunden. Wichtig: Im Mannayan-Tab als Patient/Kunde die Pseudonym-ID eintragen, z. B. {pseudonymId.trim() || "P-2026-0001"}.</p>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -2659,6 +2847,8 @@ export function TherapyRecommendation() {
         metatronHeel={metatronHeel}
         sonstigeUntersuchungen={sonstigeUntersuchungen}
         perplexityAnalyse={perplexityAnalyse}
+        eigeneTherapieVorlage={eigeneTherapieVorlage}
+        mannayanOrders={mannayanOrders}
       />
 
       {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}

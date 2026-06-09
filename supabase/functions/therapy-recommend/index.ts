@@ -679,19 +679,26 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult } = await req.json();
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
+    const eigeneTherapieText: string = typeof eigeneTherapieVorlage === "string" ? eigeneTherapieVorlage.trim() : "";
+    const mannayanOrdersText: string = Array.isArray(mannayanOrders)
+      ? mannayanOrders.map((order: any) => {
+          const items = Array.isArray(order?.items) ? order.items.map((it: any) => `- ${Number(it?.quantity) || 1}× ${String(it?.name || "").trim()}${it?.unit ? ` (${it.unit})` : ""}${it?.sku ? ` · Art.-Nr. ${it.sku}` : ""}`).join("\n") : "";
+          return `Bestellung ${order?.orderNumber || "—"} vom ${order?.createdAt || "Datum unbekannt"}${order?.notes ? ` · Notiz: ${order.notes}` : ""}\n${items}`.trim();
+        }).filter(Boolean).join("\n\n")
+      : "";
     // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
-    const totalPatientChars = (sonstigeUntersuchungenText.length + perplexityAnalyseText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    const totalPatientChars = (sonstigeUntersuchungenText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
     if (totalPatientChars > 80_000) {
       console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
     }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !isNachschlag) {
+    if (!belastungen && !symptome && !erkrankung && !sonstigeUntersuchungenText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
@@ -732,7 +739,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -935,6 +942,8 @@ serve(async (req) => {
         metatronHeelInput: metatronHeelText || null,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
         perplexityAnalyseChars: perplexityAnalyseText.length,
+        eigeneTherapieChars: eigeneTherapieText.length,
+        mannayanOrdersCount: Array.isArray(mannayanOrders) ? mannayanOrders.length : 0,
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
@@ -962,6 +971,8 @@ serve(async (req) => {
     if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
     if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
     if (perplexityAnalyseText) patientInfo.push(`Externe Perplexity-/AI-Recherche & Literaturauswertung (Zusatzkontext, ${perplexityAnalyseText.length} Zeichen): ${perplexityAnalyseText}`);
+    if (eigeneTherapieText) patientInfo.push(`Eigene Therapie-/Verordnungs-Vorlage des Therapeuten (zur fachlichen Plausibilitätsprüfung, NICHT automatisch übernehmen): ${eigeneTherapieText}`);
+    if (mannayanOrdersText) patientInfo.push(`Bereits bestellte Mannayan-Präparate für diesen Patienten (als real verordnete/ausgewählte Mittel berücksichtigen): ${mannayanOrdersText}`);
 
     // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
     // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
@@ -1098,6 +1109,19 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
      e) Gibt es bessere Alternativen aus der Wissensdatenbank? Empfehle den Wechsel mit Begründung.
      f) Gibt es problematische Wechselwirkungen zwischen den bisherigen Mitteln?
 
+4b. **Eigene Therapie-/Verordnungs-Vorlage des Therapeuten**: ${eigeneTherapieText || "Nicht angegeben"}
+   - Falls vorhanden: Erstelle eine eigene Sektion "## 🧾 Prüfung der eingebrachten Therapie/Verordnung".
+   - Vergleiche JEDES genannte Mittel / jede Maßnahme mit Befund, Symptomen, Labor/Stuhl, Voruntersuchungen, Medikamenten, Kontraindikationen und Wiki-Kontext.
+   - Klassifiziere pro Eintrag: ✅ passt gut / 🔄 passt, aber anpassen / ❓ unklare Indikation / ⚠️ Risiko-Wechselwirkung / ❌ eher nicht passend.
+   - Begründe konkret: Für welches Patiententhema passt es (z.B. Darmbarriere, Entzündung, Leber, Mitochondrien, Schlaf, Onkologie-Begleitung), welche Befunde sprechen dafür/dagegen, welche Verbesserung des Befundes realistisch unterstützt werden kann.
+   - Falls ein Mittel nicht im Wiki-Kontext vorkommt: als "💡 externe/therapeutische Vorgabe – Wiki-Eintrag prüfen/ergänzen" markieren, nicht halluzinieren.
+
+4c. **Mannayan-Bestellungen / bereits bestellte Präparate**: ${mannayanOrdersText || "Keine passenden Bestellungen gefunden"}
+   - Falls vorhanden: Diese Präparate sind bereits für den Patienten bestellt bzw. vorgesehen und müssen in derselben Prüflogik berücksichtigt werden.
+   - Erstelle im Abschnitt "## 🧾 Prüfung der eingebrachten Therapie/Verordnung" zusätzlich eine Untergruppe "Mannayan-Bestellungen".
+   - Für jedes bestellte Produkt angeben: passt zu welchem Thema/Befund, erwarteter Nutzen, mögliche Lücke, mögliche Doppelung mit anderen empfohlenen Mitteln, Sicherheits-/Interaktionshinweis.
+   - Nicht automatisch alles bestätigen: Wenn ein Mannayan-Produkt für das Krankheitsbild nicht plausibel ist, klar als ❓/❌ markieren und sagen, welche Daten fehlen oder warum es nicht Priorität hat.
+
 5. **Laborwerte**: 
    - Erhöhte Werte: ${laborErhoeht || "Keine angegeben"}
    - Erniedrigte Werte: ${laborErniedrigt || "Keine angegeben"}
@@ -1167,6 +1191,9 @@ Kurze Zusammenfassung der identifizierten Probleme.
 - 🔄 Dosisanpassung empfohlen (alt → neu, mit Begründung)
 - ❌ Absetzen empfohlen (mit Begründung)
 - 🔀 Alternative empfohlen (Wechsel zu X, mit Begründung)
+
+## 🧾 Prüfung der eingebrachten Therapie/Verordnung
+(PFLICHT, sobald eigene Therapie-/Verordnungs-Vorlage ODER Mannayan-Bestellungen angegeben sind.) Tabelle/strukturierte Liste mit: Mittel/Maßnahme | Herkunft (eigene Eingabe/Mannayan/Datei) | Patiententhema/Befundbezug | Bewertung (✅/🔄/❓/⚠️/❌) | Begründung | Anpassung/fehlende Daten.
 
 ## 🔬 Laborwert-Analyse
 (Nur falls Laborwerte angegeben) Bewertung der auffälligen Werte mit naturheilkundlichen Empfehlungen zur Verbesserung.

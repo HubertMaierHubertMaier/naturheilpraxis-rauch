@@ -1,7 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList, Search } from "lucide-react";
+import { ListChecks, Bug, Activity, Stethoscope, FlaskConical, FileText, Microscope, Radio, ClipboardList, Search, ShoppingCart, FileType } from "lucide-react";
 import { classifyPathogenIndex, type PathogenEntry } from "./PathogenInput";
+
+type MannayanOrderContext = {
+  orderNumber: string;
+  createdAt: string;
+  notes?: string;
+  items: Array<{ name: string; quantity?: number; unit?: string; sku?: string; price_eur?: number }>;
+};
 
 const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
   switch (level) {
@@ -28,6 +35,8 @@ interface Props {
   metatronHeel?: string;
   sonstigeUntersuchungen?: string;
   perplexityAnalyse?: string;
+  eigeneTherapieVorlage?: string;
+  mannayanOrders?: MannayanOrderContext[];
 }
 
 const splitLines = (s?: string) =>
@@ -44,7 +53,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", perplexityAnalyse = "",
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", perplexityAnalyse = "", eigeneTherapieVorlage = "", mannayanOrders = [],
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
@@ -59,6 +68,7 @@ export function LiveInputSummary({
   const metatronList = splitLines(metatronHeel);
   const sonstigeList = splitLines(sonstigeUntersuchungen);
   const perplexityList = splitLines(perplexityAnalyse);
+  const eigeneTherapieList = splitLines(eigeneTherapieVorlage);
 
   const hasLabor = laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length > 0;
   const hasStuhl = stuhlList.length > 0;
@@ -66,11 +76,13 @@ export function LiveInputSummary({
   const hasMetatron = metatronList.length > 0;
   const hasSonstige = sonstigeList.length > 0;
   const hasPerplexity = perplexityList.length > 0;
+  const hasEigeneTherapie = eigeneTherapieList.length > 0;
+  const hasMannayanOrders = mannayanOrders.length > 0;
 
   const totalCount =
     filledPathogens.length + symptomList.length + erkrankungList.length +
     laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
-    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + perplexityList.length;
+    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + perplexityList.length + eigeneTherapieList.length + mannayanOrders.reduce((sum, order) => sum + order.items.length, 0);
 
   const hasAny = totalCount > 0;
   if (!hasAny) return null;
@@ -224,6 +236,35 @@ export function LiveInputSummary({
               Perplexity-Recherche / Zusatzauswertung ({perplexityList.length} Zeilen · {perplexityAnalyse.length.toLocaleString("de-DE")} Zeichen)
             </div>
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{perplexityAnalyse}</pre>
+          </div>
+        )}
+        {hasEigeneTherapie && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+              <FileType className="h-3.5 w-3.5" />
+              Eigene Therapie-/Verordnungs-Vorlage ({eigeneTherapieList.length} Zeilen · {eigeneTherapieVorlage.length.toLocaleString("de-DE")} Zeichen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{eigeneTherapieVorlage}</pre>
+          </div>
+        )}
+        {hasMannayanOrders && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Mannayan-Bestellungen ({mannayanOrders.length})
+            </div>
+            <div className="space-y-2 text-xs">
+              {mannayanOrders.map((order) => (
+                <div key={order.orderNumber} className="rounded bg-muted/40 p-2">
+                  <div className="font-semibold">{order.orderNumber} · {order.createdAt ? new Date(order.createdAt).toLocaleDateString("de-DE") : "Datum unbekannt"}</div>
+                  <ul className="list-disc pl-4 mt-1">
+                    {order.items.map((item, i) => (
+                      <li key={i}>{item.quantity ? `${item.quantity}× ` : ""}{item.name}{item.unit ? ` (${item.unit})` : ""}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

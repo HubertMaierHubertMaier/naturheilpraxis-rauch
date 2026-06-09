@@ -259,16 +259,38 @@ ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
 }
 
 function extractJsonish(text: string) {
-  return text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
+  const cleaned = text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
+  const start = cleaned.search(/[\[{]/);
+  if (start < 0) return cleaned;
+  const closer = cleaned[start] === "[" ? "]" : "}";
+  const end = cleaned.lastIndexOf(closer);
+  return end > start ? cleaned.slice(start, end + 1).trim() : cleaned.slice(start).trim();
+}
+
+function normalizeJsonText(value: string) {
+  return value
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\\(?!["\\/bfnrtu])/g, "")
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")
+    .replace(/(["}\]\d])\s+(?="[A-Za-zÄÖÜäöüß_][^"\n]{0,80}"\s*:)/g, "$1,")
+    .replace(/,\s*([}\]])/g, "$1");
+}
+
+function parseJsonPrefix(value: string): any {
+  for (let cut = value.length; cut > Math.max(0, value.length - 5000); cut -= 1) {
+    try { return JSON.parse(value.slice(0, cut)); } catch { /* scan backward */ }
+  }
+  return JSON.parse(value);
 }
 
 /** LLM-tolerant JSON parser: repariert die typischen Müll-Fälle (ungültige Escapes, trailing commas, abgeschnittenes JSON). */
 function parseLlmJson(raw: string): any {
   const cleaned = extractJsonish(raw);
   try { return JSON.parse(cleaned); } catch { /* repair */ }
-  let r = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "");
-  r = r.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
-  r = r.replace(/,\s*([}\]])/g, "$1");
+  let r = normalizeJsonText(cleaned);
   try { return JSON.parse(r); } catch { /* try bracket fix */ }
   const opens = (r.match(/[{[]/g) || []).length;
   const closes = (r.match(/[}\]]/g) || []).length;
@@ -291,6 +313,7 @@ function parseLlmJson(raw: string): any {
     }
     try { return JSON.parse(r + suffix); } catch { /* fall through */ }
   }
+  try { return parseJsonPrefix(r); } catch { /* original error */ }
   return JSON.parse(cleaned);
 }
 
