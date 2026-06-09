@@ -222,6 +222,7 @@ function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number
 
 Patientenkontext: ${patientContext(b)}
 Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCount} Teilpaketen. Wichtig: Es wurden alle übergebenen Dokumentblöcke verarbeitet; keine künstliche Seitenbegrenzung.
+${cleanText(b.mannayanOrdersText) ? `\nPatientenbezogene Mannayan-Bestellungen (PFLICHT in Sektion 6b sichtbar prüfen):\n${cleanText(b.mannayanOrdersText)}\n` : ""}
 
 VERBINDLICHE OUTPUT-STRUKTUR:
 - Ausschließlich vollständiges HTML: <!DOCTYPE html> ... </html>
@@ -440,6 +441,23 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}“` : ""].filter(Boolean).join(" · ");
     return parts ? `<span class="beleg">📄 ${escapeHtml(parts)}</span>` : `<span class="beleg">Kein Einzelbeleg in der Teilanalyse ausgewiesen.</span>`;
   };
+  const dateOf = (item: any) => String(
+    item?.datum || item?.date || item?.befunddatum || item?.untersuchungsdatum ||
+    (String(item?.quelle || item?.beleg?.quelle || item?.beleg?.zitat || "").match(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\.\d{4}\b/)?.[0]) ||
+    "(Datum unbekannt)"
+  );
+  const parseMannayanRows = (text?: string) => {
+    const rows: Array<{ order: string; date: string; item: string }> = [];
+    const source = cleanText(text);
+    if (!source) return rows;
+    for (const block of source.split(/\n{2,}(?=Bestellung\s+)/i)) {
+      const header = block.match(/^Bestellung\s+(.+?)\s+vom\s+([^\n]+)/i);
+      const order = header?.[1]?.trim() || "—";
+      const date = header?.[2]?.replace(/·.*$/, "").trim() || "Datum unbekannt";
+      for (const line of block.split(/\n/).filter((l) => /^\s*-\s+/.test(l))) rows.push({ order, date, item: line.replace(/^\s*-\s+/, "").trim() });
+    }
+    return rows;
+  };
   const val = (item: any, key = "text") => escapeHtml(typeof item === "string" ? item : item?.[key] || item?.diagnose || item?.name || "In den vorliegenden Unterlagen nicht dokumentiert.");
   const rows = (items: unknown[], cells: (item: any) => string) => items.length
     ? items.map((item) => `<tr>${cells(item)}</tr>`).join("\n")
@@ -447,16 +465,22 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   const bullets = (items: unknown[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
     : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
-  const anamnesisTable = (title: string, key: string, system = false) => `
+  const anamnesisTable = (title: string, key: string, options?: { system?: boolean; date?: boolean }) => {
+    const system = !!options?.system;
+    const showDate = !!options?.date || system;
+    const header = `${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}${showDate ? "<th>Datum</th>" : ""}<th>Beleg</th>`;
+    return `
     <h3>${escapeHtml(title)}</h3>
-    <table><thead><tr>${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}<th>Beleg</th></tr></thead><tbody>
+    <table><thead><tr>${header}</tr></thead><tbody>
       ${rows(anamnese[key], (item: any) => system
-        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td><td>${beleg(item)}</td>`
-        : `<td>${val(item)}</td><td>${beleg(item)}</td>`)}
+        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`
+        : `<td>${val(item)}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`)}
     </tbody></table>`;
+  };
 
   const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
   const today = new Date().toLocaleDateString("de-DE");
+  const mannayanRows = parseMannayanRows(b.mannayanOrdersText);
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -498,8 +522,8 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
   ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
   ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
-  ${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
-  ${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+  ${anamnesisTable("Systemanamnese", "reviewOfSystems", { system: true })}
+  ${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations", { date: true })}
   ${anamnesisTable("Impfstatus", "vaccinationStatus")}
   ${anamnesisTable("Familienanamnese", "familyHistory")}
   ${anamnesisTable("Sozialanamnese", "socialStatus")}
@@ -507,7 +531,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
   <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
-  <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
+  <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
   <h2>5. Medikamente, Präparate & Therapien</h2>
   <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
@@ -529,6 +553,11 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
       return `<td>${w(escapeHtml(item?.parameter || "—"))}</td><td>${w(escapeHtml(item?.datum || "(Datum unbekannt)"))}</td><td>${w(escapeHtml(item?.wert || "—"))}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`;
     })}</tbody></table>`;
   })()}
+
+  <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
+  ${mannayanRows.length
+    ? `<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen dokumentierte Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`)}</tbody></table>`
+    : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
 
   <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 

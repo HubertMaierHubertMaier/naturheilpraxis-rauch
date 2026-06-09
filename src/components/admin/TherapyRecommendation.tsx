@@ -89,6 +89,7 @@ type AnalysisDocChunk = { label: string; text: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 3500;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 1800;
+const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v4";
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -388,8 +389,28 @@ const buildClientFallbackAnalysisHtml = (
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+  const dateOf = (item: any) => String(
+    item?.datum || item?.date || item?.befunddatum || item?.untersuchungsdatum ||
+    (String(item?.quelle || item?.beleg?.quelle || item?.beleg?.zitat || "").match(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\.\d{4}\b/)?.[0]) ||
+    "(Datum unbekannt)"
+  );
+  const parseMannayanRows = (text?: string) => {
+    const rows: Array<{ order: string; date: string; item: string }> = [];
+    const source = String(text || "").trim();
+    if (!source) return rows;
+    const blocks = source.split(/\n{2,}(?=Bestellung\s+)/i);
+    for (const block of blocks) {
+      const header = block.match(/^Bestellung\s+(.+?)\s+vom\s+([^\n]+)/i);
+      const order = header?.[1]?.trim() || "—";
+      const date = header?.[2]?.replace(/·.*$/, "").trim() || "Datum unbekannt";
+      for (const line of block.split(/\n/).filter((l) => /^\s*-\s+/.test(l))) {
+        rows.push({ order, date, item: line.replace(/^\s*-\s+/, "").trim() });
+      }
+    }
+    return rows;
+  };
   const aggregate: Record<string, any[]> = {
-    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+    documents: [], diagnoses: [], medicationsTherapies: [], labValues: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
   };
   const anamneseKeys = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
   const anamnese: Record<string, any[]> = Object.fromEntries(anamneseKeys.map((k) => [k, []]));
@@ -414,13 +435,20 @@ const buildClientFallbackAnalysisHtml = (
   const bullets = (items: any[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
     : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
-  const anamnesisTable = (title: string, key: string, system = false) => `
+  const anamnesisTable = (title: string, key: string, options?: { system?: boolean; date?: boolean }) => {
+    const system = !!options?.system;
+    const showDate = !!options?.date || system;
+    const header = `${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}${showDate ? "<th>Datum</th>" : ""}<th>Beleg</th>`;
+    const colspan = (system ? 2 : 1) + (showDate ? 1 : 0) + 1;
+    return `
     <h3>${escapeHtml(title)}</h3>
-    <table><thead><tr>${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}<th>Beleg</th></tr></thead><tbody>
+    <table><thead><tr>${header}</tr></thead><tbody>
       ${rows(anamnese[key], (item: any) => system
-        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td><td>${beleg(item)}</td>`
-        : `<td>${val(item)}</td><td>${beleg(item)}</td>`, 2)}
+        ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`
+        : `<td>${val(item)}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`, colspan)}
     </tbody></table>`;
+  };
+  const mannayanRows = parseMannayanRows(ctx.mannayanOrdersText);
   const today = new Date().toLocaleDateString("de-DE");
   const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
   return `<!DOCTYPE html>
@@ -443,8 +471,8 @@ ${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory")}
 ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
 ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
 ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}
-${anamnesisTable("Systemanamnese", "reviewOfSystems", true)}
-${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations")}
+${anamnesisTable("Systemanamnese", "reviewOfSystems", { system: true })}
+${anamnesisTable("Letzte Untersuchungen / Kontrollen", "recentExaminations", { date: true })}
 ${anamnesisTable("Impfstatus", "vaccinationStatus")}
 ${anamnesisTable("Familienanamnese", "familyHistory")}
 ${anamnesisTable("Sozialanamnese", "socialStatus")}
@@ -452,17 +480,21 @@ ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
 ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
 <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
-<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 5)}</tbody></table>
+<table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 6)}</tbody></table>
 
 <h2>5. Medikamente, Präparate &amp; Therapien</h2>
 <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
+<h2>6a. Laborwert-Verlauf mit Datumsangaben</h2>
+<table><thead><tr><th>Parameter</th><th>Datum</th><th>Wert</th><th>Einheit</th><th>Referenz</th><th>Bewertung</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.labValues.sort((a: any, b: any) => String(a?.parameter || "").localeCompare(String(b?.parameter || ""), "de") || String(dateOf(b)).localeCompare(String(dateOf(a)))), (item: any) => `<td>${escapeHtml(item?.parameter || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.wert || "—")}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`, 8)}</tbody></table>
+
 <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
 ${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
-  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Die KI-gestützte Einzel-Bewertung pro Mittel konnte hier nicht durchlaufen werden. Unten siehst du die für ${escapeHtml(ctx.pseudonymId || "diesen Patienten")} hinterlegten Bestellungen im Rohformat, damit du sie manuell gegen die obigen Symptome, Diagnosen und Pathogene abgleichen kannst.</div>
-<pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre>`
+  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Diese Tabelle zeigt alle zugeordneten Bestellmittel sichtbar in der Befund-Auswertung. Die Detailbewertung ist konservativ markiert, wenn die KI-Zusammenführung abgebrochen ist.</div>
+<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen obige Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`, 6)}</tbody></table>
+<details><summary>Rohdaten der Mannayan-Bestellungen anzeigen</summary><pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre></details>`
   : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
 
 <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
@@ -1414,13 +1446,14 @@ export function TherapyRecommendation() {
 
   const restoreLatestBefundForPid = useCallback(async (pidValue: string, options?: { quiet?: boolean }) => {
     const pid = normalizePseudonymId(pidValue);
-    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
+    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs) return false;
 
     const localSnapshot = readLatestBefundDisplay(pid);
     const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
 
     // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
     let cloudRow: any = null;
+    let latestCheckpoint: any = null;
     try {
       const { data: rows } = await (supabase as any)
         .from("therapy_sessions")
@@ -1430,10 +1463,34 @@ export function TherapyRecommendation() {
         .order("created_at", { ascending: false })
         .limit(1);
       cloudRow = Array.isArray(rows) ? rows[0] : null;
+      const { data: checkpointRows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, updated_at, created_at, eingabe_daten, notiz")
+        .eq("pseudonym_id", pid)
+        .eq("kind", "befund_checkpoint")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      latestCheckpoint = Array.isArray(checkpointRows) ? checkpointRows[0] : null;
     } catch { /* offline → lokal weiter unten */ }
 
     const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
     const cloudHtml = String(cloudRow?.befund_html || "").trim();
+    const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
+    const newestFinishedTs = Math.max(cloudTs, localTs);
+
+    if (checkpointTs > newestFinishedTs) {
+      const checkpoint = latestCheckpoint?.eingabe_daten?.checkpoint;
+      const done = Number(checkpoint?.completedChunks || 0);
+      const total = Number(checkpoint?.totalChunks || 0);
+      const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
+      setDocAnalysisHtml("");
+      setDocAnalysisProgress(
+        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nDer ältere fertige Bericht wird deshalb nicht automatisch als aktuelles Ergebnis angezeigt. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen, oder „Alles neu auswerten“, um komplett neu zu starten.`
+      );
+      setLatestBefundLoadedFrom(null);
+      if (!options?.quiet) toast({ title: "Neuer Lauf ist noch nicht fertig", description: total ? `Zwischenstand ${done}/${total} Teilpakete · bitte fortsetzen.` : "Bitte Befund-Auswertung fortsetzen." });
+      return false;
+    }
 
     // Cloud bevorzugen, wenn neuer ODER lokal nichts da
     if (cloudHtml && (!localSnapshot || cloudTs > localTs)) {
@@ -1460,7 +1517,7 @@ export function TherapyRecommendation() {
     }
 
     return false;
-  }, [docAnalysisHtml, isAnalyzingDocs, toast]);
+  }, [isAnalyzingDocs, toast]);
 
   useEffect(() => {
     restoreLatestBefundForPid(pseudonymId, { quiet: true });
@@ -1489,6 +1546,11 @@ export function TherapyRecommendation() {
         if (k && k.startsWith(prefix)) toDelete.push(k);
       }
       toDelete.forEach((k) => { try { localStorage.removeItem(k); } catch { /* optional */ } });
+      try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
+
+      setDocAnalysisHtml("");
+      setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
+      setLatestBefundLoadedFrom(null);
 
       // 2) Cloud-Checkpoints entfernen
       try {
@@ -1517,7 +1579,17 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async () => {
+    const therapyContext = [
+      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
+      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
+      formatPathogensForAI(pathogens).trim() && `Pathogene / NLS-EAV-Befunde:\n${formatPathogensForAI(pathogens).trim()}`,
+      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
+      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
+    ].filter(Boolean).join("\n\n");
+    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
     const rawBlocks = [
+      { label: "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", text: therapyContext },
+      { label: "Mannayan-Bestellungen – patientenbezogene Präparate zur Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", text: mannayanContext },
       { label: laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", text: laborKomplett.trim() },
       { label: "Labor – erhöhte Werte", text: laborErhoeht.trim() },
       { label: "Labor – erniedrigte Werte", text: laborErniedrigt.trim() },
@@ -1534,12 +1606,14 @@ export function TherapyRecommendation() {
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
-    setDocAnalysisProgress(`Start…${docAnalysisHtml ? "\nⓘ Die bisherige Auswertung bleibt sichtbar, bis die neue fertig ist." : ""}${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    setDocAnalysisHtml("");
+    setLatestBefundLoadedFrom(null);
+    setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
