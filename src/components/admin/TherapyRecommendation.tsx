@@ -3191,6 +3191,31 @@ export function TherapyRecommendation() {
         </div>
       )}
 
+      {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
+        <Card ref={docAnalysisRef} className="border-primary/30 bg-primary/[0.02] scroll-mt-24">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
+              Befund-Auswertung
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {docAnalysisProgress && (
+              <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
+                {docAnalysisProgress}
+              </pre>
+            )}
+            {docAnalysisHtml && (
+              <iframe
+                title="Befund-Auswertung HTML"
+                srcDoc={docAnalysisHtml}
+                className="h-[72vh] w-full rounded-md border bg-background"
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Workflow-Stage-Indikator */}
       {result && !isStreaming && (
         <WorkflowStepper stage={workflowStage} />
