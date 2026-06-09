@@ -1824,7 +1824,20 @@ export function TherapyRecommendation() {
                 });
               }
             }
-          } catch { /* partial war kein JSON – ignorieren */ }
+          } catch {
+            // Partial war kein gültiges JSON — Regex-Notfall-Extraktion für Diagnosen,
+            // damit die Übernahme-Box trotzdem erscheint.
+            try {
+              const diagRe = /"diagnose"\s*:\s*"([^"\\]{2,200})"/gi;
+              const icdRe = /"icd10"\s*:\s*"([^"]*)"/i;
+              let m: RegExpExecArray | null;
+              while ((m = diagRe.exec(p)) !== null) {
+                const around = p.slice(Math.max(0, m.index - 200), m.index + 200);
+                const icd = around.match(icdRe)?.[1] || "";
+                extDiag.push({ icd10: icd, diagnose: m[1].trim(), quelle: "Regex-Fallback aus Teilanalyse", status: "", datum: "", zitat: "" });
+              }
+            } catch { /* still ignore */ }
+          }
         }
         // Duplikate ausdünnen (case-insensitive)
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
