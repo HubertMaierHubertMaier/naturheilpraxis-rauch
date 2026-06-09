@@ -254,8 +254,8 @@ Pflicht-Sektionen in Reihenfolge:
    4.3 Allergien & Unverträglichkeiten (Allergies)
    4.4 Aktuelle Medikation — Kurzliste (Details in Sektion 6)
    4.5 Genussmittel & Lebensgewohnheiten (Habits)
-   4.6 Systemanamnese (Review of systems) — Tabelle System | Befund | Beleg
-   4.7 Letzte Untersuchungen / Kontrollen (Recent examinations)
+   4.6 Systemanamnese (Review of systems) — Tabelle System | Befund | **Datum** | Beleg. ⚠️ Das Datum-Feld ist PFLICHT: Wenn der Befund aus einem datierten Dokumentblock stammt (z.B. „Stuhlbefund 26.05.2025"), genau dieses Datum übernehmen — niemals leer lassen, sondern bei wirklich fehlendem Datum "(Datum unbekannt)" eintragen und unter Sektion 10 als offene Frage erfassen. Werte/Symptome, die zu unterschiedlichen Zeitpunkten erhoben wurden, ERSCHEINEN ALS MEHRERE ZEILEN, eine pro Datum — niemals zusammenfassen.
+   4.7 Letzte Untersuchungen / Kontrollen (Recent examinations) — Spalte Datum PFLICHT.
    4.8 Impfstatus (Vaccination status)
    4.9 Familienanamnese (Family history)
    4.10 Sozialanamnese (Social status)
