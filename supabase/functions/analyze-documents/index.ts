@@ -156,7 +156,7 @@ Wichtig:
   * Additional medical investigation / weiterführende Untersuchungen (Labor, Bildgebung, Funktionsdiagnostik)
 - ALLE Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel vollständig in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Lieber zu viel als zu wenig.
 - Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
-- Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
+- 🇩🇪 PFLICHT-DEUTSCH: ALLE extrahierten Textinhalte (Befund-Texte, Diagnose-Bezeichnungen, Parameter-Namen, Status, Untersuchungs-Bezeichnungen, Hauptbefunde, Wirkmechanismen, Indikationen, Nebenwirkungen, terms.plain) MÜSSEN auf Deutsch sein. Englische/französische/lateinische Originalbegriffe nur in Klammern beibehalten, z.B. "Leukozyten (WBC)", "Cholesterin gesamt (Total Cholesterol)", "Reizdarmsyndrom (IBS)", "Schilddrüsen-stimulierendes Hormon (TSH)", "Gelenkschmerzen (joint pain)". Niemals nur den englischen Originaltext stehen lassen — IMMER deutsch primär. Einheiten (mg/dl, mmol/l, ng/ml …) und Eigennamen (Markennamen, Personennamen) bleiben unverändert.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
 📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
