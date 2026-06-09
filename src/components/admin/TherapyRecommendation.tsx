@@ -2228,6 +2228,7 @@ export function TherapyRecommendation() {
                   </label>
                   <div className="mb-2">
                     <MultiDocUpload
+                      pseudonymId={pseudonymId}
                       ocrMode="doctor"
                       label="📂 PDFs / Bilder hochladen (auto-extrahieren)"
                       onExtracted={(t) => {
@@ -2660,6 +2661,7 @@ export function TherapyRecommendation() {
         </div>
         <div className="shrink-0">
           <MultiDocUpload
+            pseudonymId={pseudonymId}
             ocrMode="doctor"
             label="📎 Nachgereichte PDFs / Bilder hochladen"
             onExtracted={appendNachgereicht}
