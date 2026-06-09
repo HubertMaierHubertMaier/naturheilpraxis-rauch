@@ -487,6 +487,24 @@ ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
+<h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2>
+${(() => {
+  const lv = (aggregate.labValues as any[]).filter((v) => {
+    const bw = String(v?.bewertung || "").trim();
+    return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
+  });
+  if (!lv.length) return `<p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p>`;
+  const newest = new Map<string, any>();
+  for (const v of lv) {
+    const p = String(v?.parameter || "");
+    const d = String(v?.datum || "");
+    const prev = newest.get(p);
+    if (!prev || d > String(prev?.datum || "")) newest.set(p, v);
+  }
+  const list = Array.from(newest.values());
+  return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${list.map((item: any) => `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (lokaler Notfall-Aufbau ohne KI-Bewertung).</em></td><td>${beleg(item)}</td></tr>`).join("\n")}</tbody></table>`;
+})()}
+
 <h2>6a. Laborwert-Verlauf mit Datumsangaben</h2>
 <table><thead><tr><th>Parameter</th><th>Datum</th><th>Wert</th><th>Einheit</th><th>Referenz</th><th>Bewertung</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.labValues.sort((a: any, b: any) => String(a?.parameter || "").localeCompare(String(b?.parameter || ""), "de") || String(dateOf(b)).localeCompare(String(dateOf(a)))), (item: any) => `<td>${escapeHtml(item?.parameter || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.wert || "—")}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`, 8)}</tbody></table>
 
@@ -1824,7 +1842,20 @@ export function TherapyRecommendation() {
                 });
               }
             }
-          } catch { /* partial war kein JSON – ignorieren */ }
+          } catch {
+            // Partial war kein gültiges JSON — Regex-Notfall-Extraktion für Diagnosen,
+            // damit die Übernahme-Box trotzdem erscheint.
+            try {
+              const diagRe = /"diagnose"\s*:\s*"([^"\\]{2,200})"/gi;
+              const icdRe = /"icd10"\s*:\s*"([^"]*)"/i;
+              let m: RegExpExecArray | null;
+              while ((m = diagRe.exec(p)) !== null) {
+                const around = p.slice(Math.max(0, m.index - 200), m.index + 200);
+                const icd = around.match(icdRe)?.[1] || "";
+                extDiag.push({ icd10: icd, diagnose: m[1].trim(), quelle: "Regex-Fallback aus Teilanalyse", status: "", datum: "", zitat: "" });
+              }
+            } catch { /* still ignore */ }
+          }
         }
         // Duplikate ausdünnen (case-insensitive)
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());

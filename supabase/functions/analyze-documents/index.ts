@@ -156,7 +156,7 @@ Wichtig:
   * Additional medical investigation / weiterführende Untersuchungen (Labor, Bildgebung, Funktionsdiagnostik)
 - ALLE Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel vollständig in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Lieber zu viel als zu wenig.
 - Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
-- Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
+- 🇩🇪 PFLICHT-DEUTSCH: ALLE extrahierten Textinhalte (Befund-Texte, Diagnose-Bezeichnungen, Parameter-Namen, Status, Untersuchungs-Bezeichnungen, Hauptbefunde, Wirkmechanismen, Indikationen, Nebenwirkungen, terms.plain) MÜSSEN auf Deutsch sein. Englische/französische/lateinische Originalbegriffe nur in Klammern beibehalten, z.B. "Leukozyten (WBC)", "Cholesterin gesamt (Total Cholesterol)", "Reizdarmsyndrom (IBS)", "Schilddrüsen-stimulierendes Hormon (TSH)", "Gelenkschmerzen (joint pain)". Niemals nur den englischen Originaltext stehen lassen — IMMER deutsch primär. Einheiten (mg/dl, mmol/l, ng/ml …) und Eigennamen (Markennamen, Personennamen) bleiben unverändert.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
 📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
@@ -271,6 +271,7 @@ Pflicht-Sektionen in Reihenfolge:
 10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
 11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
 12. Laborwert-Verlauf (chronologisch) — PFLICHT, sortierbar pro Parameter. Tabelle: Parameter | Datum | Wert | Einheit | Referenz | Bewertung (↑/↓/normal/kritisch) | Quelle/Beleg. Werte desselben Parameters über mehrere Daten hinweg DIREKT untereinander gruppieren (z.B. Vitamin D · 12.03.2024 · 18 ng/ml ↓ — Vitamin D · 28.09.2024 · 34 ng/ml normal), damit der Verlauf sofort sichtbar ist. Der jeweils neueste Wert pro Parameter wird zusätzlich fett markiert. Wenn kein Datum auffindbar: "(Datum unbekannt)" eintragen UND in Sektion 10 als offene Frage führen.
+13. ⚠️ Auffällige Laborwerte — Kurzfassung & klinische Einordnung (PFLICHT, kommt am Schluss als Quintessenz). Nur Parameter mit Bewertung ↑, ↓ oder „kritisch" aufnehmen — normale Werte WEGLASSEN. Tabelle mit Spalten: Parameter (deutsch) | Aktueller Wert + Einheit | Datum | Referenz | Richtung (↑/↓/kritisch) | Mögliche klinische Bedeutung / Auswirkung (1–2 Sätze, neutral, "kann auf … hinweisen", keine Diagnose, keine Therapie) | Beleg. Bei Verlaufslabor IMMER den neuesten Wert nehmen. Wenn keine auffälligen Werte vorhanden: einen Satz „Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert." Diese Sektion ist die zentrale Quintessenz für das Erstgespräch.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
@@ -552,6 +553,25 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
       const w = (s: string) => isNewest ? `<strong>${s}</strong>` : s;
       return `<td>${w(escapeHtml(item?.parameter || "—"))}</td><td>${w(escapeHtml(item?.datum || "(Datum unbekannt)"))}</td><td>${w(escapeHtml(item?.wert || "—"))}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`;
     })}</tbody></table>`;
+  })()}
+
+  <h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2>
+  ${(() => {
+    const lv = (aggregate.labValues as any[]).filter((v) => {
+      const bw = String(v?.bewertung || "").trim();
+      return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
+    });
+    if (!lv.length) return `<p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p>`;
+    // Pro Parameter den neuesten Wert behalten
+    const newest = new Map<string, any>();
+    for (const v of lv) {
+      const p = String(v?.parameter || "");
+      const d = String(v?.datum || "");
+      const prev = newest.get(p);
+      if (!prev || d > String(prev?.datum || "")) newest.set(p, v);
+    }
+    const list = Array.from(newest.values());
+    return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${list.map((item: any) => `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (lokaler Fallback ohne KI-Bewertung).</em></td><td>${beleg(item)}</td></tr>`).join("\n")}</tbody></table>`;
   })()}
 
   <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
