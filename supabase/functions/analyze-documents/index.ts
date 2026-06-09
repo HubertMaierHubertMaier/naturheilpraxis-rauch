@@ -88,6 +88,7 @@ function collectBlocks(b: AnalyzeBody): DocBlock[] {
   push("Metatron / NLS / Bioresonanz", b.metatronHeel);
   push("Sonstige / unsortierte Voruntersuchungen", b.sonstigeUntersuchungen);
   push("Externe Recherche (Perplexity / Studien / Leitlinien)", b.perplexityAnalyse);
+  push("Mannayan-Bestellungen (vom Patienten verordnet/bestellt – PFLICHT in der Auswertung explizit prüfen, ob jedes bestellte Mittel zu den aktuellen Symptomen, Diagnosen und Pathogenen passt; in Sektion 6 als bestelltes/laufendes Mittel markieren und in einer eigenen Bewertung am Ende referenzieren)", b.mannayanOrdersText);
   return blocks;
 }
 
