@@ -59,6 +59,7 @@ interface AnalyzeBody {
   metatronHeel?: string;
   sonstigeUntersuchungen?: string;
   perplexityAnalyse?: string;
+  mannayanOrdersText?: string;
   alter?: string;
   geschlecht?: string;
   pseudonymId?: string;
