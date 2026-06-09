@@ -1354,6 +1354,24 @@ export function TherapyRecommendation() {
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
+  const handleShowBefundSession = (session: TherapySession) => {
+    if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
+      toast({ title: "Sicherheitsstopp", description: "Diese Auswertung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
+      return;
+    }
+    const html = String(session.befund_html || "").trim();
+    if (!html) {
+      toast({ title: "Keine Auswertung gefunden", description: "In dieser Sitzung ist kein HTML-Ergebnis gespeichert.", variant: "destructive" });
+      return;
+    }
+    const meta = session.befund_meta || {};
+    setDocAnalysisHtml(html);
+    setDocAnalysisProgress(`Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`);
+    setIsDocAnalysisPanelMinimized(false);
+    window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    toast({ title: "Befund-Auswertung angezeigt", description: "Das Ergebnis ist jetzt direkt auf der Seite sichtbar." });
+  };
+
   const handleReAnalyzeAll = async () => {
     const pid = pseudonymId.trim();
     if (!pid) {
@@ -1425,9 +1443,9 @@ export function TherapyRecommendation() {
     const fingerprint = buildAnalysisFingerprint(chunks, [alter, geschlecht, pseudonymId, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
+    setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
     setDocAnalysisHtml("");
-    setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
