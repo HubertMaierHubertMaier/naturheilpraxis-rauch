@@ -381,7 +381,7 @@ const parseLlmJson = (raw: string): any => {
  */
 const buildClientFallbackAnalysisHtml = (
   partials: string[],
-  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[] },
+  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[]; mannayanOrdersText?: string },
 ): string => {
   const escapeHtml = (v: unknown) => String(v ?? "")
     .replace(/&/g, "&amp;")
@@ -458,6 +458,13 @@ ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+
+<h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
+${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
+  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Die KI-gestützte Einzel-Bewertung pro Mittel konnte hier nicht durchlaufen werden. Unten siehst du die für ${escapeHtml(ctx.pseudonymId || "diesen Patienten")} hinterlegten Bestellungen im Rohformat, damit du sie manuell gegen die obigen Symptome, Diagnosen und Pathogene abgleichen kannst.</div>
+<pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre>`
+  : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
+
 <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
 <h2>8. Offene Fragen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
 <h2>9. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
@@ -1410,6 +1417,37 @@ export function TherapyRecommendation() {
     if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
 
     const localSnapshot = readLatestBefundDisplay(pid);
+    const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
+
+    // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
+    let cloudRow: any = null;
+    try {
+      const { data: rows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
+        .eq("pseudonym_id", pid)
+        .not("befund_html", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      cloudRow = Array.isArray(rows) ? rows[0] : null;
+    } catch { /* offline → lokal weiter unten */ }
+
+    const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
+    const cloudHtml = String(cloudRow?.befund_html || "").trim();
+
+    // Cloud bevorzugen, wenn neuer ODER lokal nichts da
+    if (cloudHtml && (!localSnapshot || cloudTs > localTs)) {
+      const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
+      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}`;
+      setDocAnalysisHtml(cloudHtml);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("cloud");
+      writeLatestBefundDisplay(pid, { html: cloudHtml, progress, meta: cloudRow.befund_meta, createdAt: cloudRow.created_at });
+      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: `Stand: ${created}` });
+      return true;
+    }
+
     if (localSnapshot) {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`;
@@ -1421,28 +1459,7 @@ export function TherapyRecommendation() {
       return true;
     }
 
-    try {
-      const { data: rows } = await (supabase as any)
-        .from("therapy_sessions")
-        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
-        .eq("pseudonym_id", pid)
-        .not("befund_html", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const row = Array.isArray(rows) ? rows[0] : null;
-      const html = String(row?.befund_html || "").trim();
-      if (!html) return false;
-      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${new Date(row.created_at).toLocaleString("de-DE")}${row.befund_meta?.total_chars ? `\nUmfang: ${Number(row.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
-      setDocAnalysisHtml(html);
-      setDocAnalysisProgress(progress);
-      setIsDocAnalysisPanelMinimized(false);
-      setLatestBefundLoadedFrom("cloud");
-      writeLatestBefundDisplay(pid, { html, progress, meta: row.befund_meta, createdAt: row.created_at });
-      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: "Das letzte gespeicherte Ergebnis ist wieder sichtbar." });
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }, [docAnalysisHtml, isAnalyzingDocs, toast]);
 
   useEffect(() => {
@@ -1799,6 +1816,7 @@ export function TherapyRecommendation() {
           geschlecht: geschlecht || undefined,
           totalChars,
           duplicateNotes: prepared.duplicateNotes,
+          mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
         });
         analysisMode = `${analysisMode}+client-fallback`;
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
