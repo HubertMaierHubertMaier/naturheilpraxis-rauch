@@ -1682,10 +1682,6 @@ export function TherapyRecommendation() {
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
           full += chunk;
-          if (live) {
-            live.textContent = (live.textContent || "") + chunk;
-            live.scrollTop = live.scrollHeight;
-          }
         }
         full += decoder.decode();
       } catch (finalError) {
@@ -1710,12 +1706,8 @@ export function TherapyRecommendation() {
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
       }
 
-      // Finales HTML ins Tab schreiben
-      if (w) {
-        w.document.open();
-        w.document.write(full);
-        w.document.close();
-      }
+      setDocAnalysisHtml(full);
+      writeProgress("✓ Befund-Auswertung vollständig fertig und unten sichtbar.");
       {
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
@@ -1760,11 +1752,8 @@ export function TherapyRecommendation() {
 
     } catch (e) {
       const msg = (e as Error).message;
-      if (w) {
-        w.document.open();
-        w.document.write(`<!DOCTYPE html><html><body style="font-family:system-ui;padding:40px;color:#a33"><h2>❌ Fehler</h2><p>${msg.replace(/</g, "&lt;")}</p></body></html>`);
-        w.document.close();
-      }
+      setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
+      setDocAnalysisHtml("");
       toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
     } finally {
       setIsAnalyzingDocs(false);
