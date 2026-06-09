@@ -12,6 +12,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 interface Props {
   /** Aufruf mit komplett extrahiertem Text (kann mehrere MB sein) */
   onExtracted: (text: string) => void;
+  /** Pseudonym für die sichere Originaldatei-Ablage */
+  pseudonymId?: string;
   /** mode an extract-lab-image weitergeben: "doctor" (Arztbrief-Struktur) oder "lab" */
   ocrMode?: "doctor" | "lab";
   /** Label-Override */
@@ -23,10 +25,20 @@ type PendingFile = {
   status: "queued" | "processing" | "done" | "error";
   pages?: number;
   chars?: number;
+  archivePath?: string;
   error?: string;
 };
 
 const MIN_TEXT_PER_PAGE = 80; // weniger ⇒ wahrscheinlich gescannt, OCR-Fallback
+const STORAGE_BUCKET = "therapy-documents";
+
+const normalizePid = (value?: string) => (value || "").trim();
+const safePathPart = (value: string) => value
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-zA-Z0-9._-]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .slice(0, 120) || "datei";
 
 // Eine PDF-Seite auf eine handliche Größe rendern (für OCR-Fallback)
 async function renderPageToDataUrl(page: pdfjs.PDFPageProxy, maxDim = 1600): Promise<string> {
@@ -67,11 +79,28 @@ async function ocrImages(images: string[], mode: "doctor" | "lab"): Promise<stri
   return out.filter(Boolean).join("\n\n");
 }
 
-export function MultiDocUpload({ onExtracted, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
+export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const archiveOriginal = async (file: File): Promise<string> => {
+    const pid = normalizePid(pseudonymId);
+    if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
+    const day = new Date().toISOString().slice(0, 10);
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const path = `${safePathPart(pid)}/${day}/${suffix}-${safePathPart(file.name)}`;
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, {
+        cacheControl: "3600",
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+    if (error) throw error;
+    return path;
+  };
 
   const addFiles = (list: FileList | null) => {
     if (!list || !list.length) return;
@@ -139,11 +168,11 @@ export function MultiDocUpload({ onExtracted, ocrMode = "doctor", label = "PDF /
       updated[i] = { ...updated[i], status: "processing" };
       setFiles([...updated]);
       try {
+        const archivePath = await archiveOriginal(updated[i].file);
         const text = await extractOne(updated[i]);
-        combined += text;
-        updated[i] = { ...updated[i], status: "done", chars: text.length };
+        combined += `${text}\n\n[Originaldatei sicher archiviert: ${STORAGE_BUCKET}/${archivePath}]`;
+        updated[i] = { ...updated[i], status: "done", chars: text.length, archivePath };
       } catch (e: any) {
-        console.error("[MultiDocUpload]", updated[i].file.name, e);
         updated[i] = { ...updated[i], status: "error", error: e.message || "Fehler" };
       }
       setFiles([...updated]);
@@ -188,6 +217,7 @@ export function MultiDocUpload({ onExtracted, ocrMode = "doctor", label = "PDF /
                 {(pf.file.size / 1024).toFixed(0)} KB
                 {pf.pages ? ` · ${pf.pages} S.` : ""}
               </span>
+              {pf.archivePath && <span className="text-emerald-700 text-[10px] whitespace-nowrap" title={`${STORAGE_BUCKET}/${pf.archivePath}`}>archiviert</span>}
               {pf.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
               {pf.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
               {pf.status === "error" && <span className="text-rose-700 text-[10px]" title={pf.error}>Fehler</span>}
