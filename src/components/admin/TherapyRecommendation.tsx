@@ -1453,6 +1453,7 @@ export function TherapyRecommendation() {
 
     // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
     let cloudRow: any = null;
+    let latestCheckpoint: any = null;
     try {
       const { data: rows } = await (supabase as any)
         .from("therapy_sessions")
@@ -1462,10 +1463,34 @@ export function TherapyRecommendation() {
         .order("created_at", { ascending: false })
         .limit(1);
       cloudRow = Array.isArray(rows) ? rows[0] : null;
+      const { data: checkpointRows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, updated_at, created_at, eingabe_daten, notiz")
+        .eq("pseudonym_id", pid)
+        .eq("kind", "befund_checkpoint")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      latestCheckpoint = Array.isArray(checkpointRows) ? checkpointRows[0] : null;
     } catch { /* offline → lokal weiter unten */ }
 
     const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
     const cloudHtml = String(cloudRow?.befund_html || "").trim();
+    const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
+    const newestFinishedTs = Math.max(cloudTs, localTs);
+
+    if (checkpointTs > newestFinishedTs) {
+      const checkpoint = latestCheckpoint?.eingabe_daten?.checkpoint;
+      const done = Number(checkpoint?.completedChunks || 0);
+      const total = Number(checkpoint?.totalChunks || 0);
+      const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
+      setDocAnalysisHtml("");
+      setDocAnalysisProgress(
+        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nDer ältere fertige Bericht wird deshalb nicht automatisch als aktuelles Ergebnis angezeigt. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen, oder „Alles neu auswerten“, um komplett neu zu starten.`
+      );
+      setLatestBefundLoadedFrom(null);
+      if (!options?.quiet) toast({ title: "Neuer Lauf ist noch nicht fertig", description: total ? `Zwischenstand ${done}/${total} Teilpakete · bitte fortsetzen.` : "Bitte Befund-Auswertung fortsetzen." });
+      return false;
+    }
 
     // Cloud bevorzugen, wenn neuer ODER lokal nichts da
     if (cloudHtml && (!localSnapshot || cloudTs > localTs)) {
