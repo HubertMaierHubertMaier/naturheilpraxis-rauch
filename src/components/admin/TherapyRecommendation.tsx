@@ -1444,6 +1444,10 @@ export function TherapyRecommendation() {
     }
   }, [docAnalysisHtml, isAnalyzingDocs, toast]);
 
+  useEffect(() => {
+    restoreLatestBefundForPid(pseudonymId, { quiet: true });
+  }, [pseudonymId, historyRefresh, restoreLatestBefundForPid]);
+
   const handleReAnalyzeAll = async () => {
     const pid = pseudonymId.trim();
     if (!pid) {
