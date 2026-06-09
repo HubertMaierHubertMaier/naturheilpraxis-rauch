@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS prevent_therapy_session_patient_mismatch_trigger ON public.therapy_sessions;
