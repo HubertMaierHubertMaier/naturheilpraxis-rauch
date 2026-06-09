@@ -1612,6 +1612,8 @@ export function TherapyRecommendation() {
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
+    const docController = new AbortController();
+    docAbortRef.current = docController;
     setDocAnalysisHtml("");
     setLatestBefundLoadedFrom(null);
     setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
