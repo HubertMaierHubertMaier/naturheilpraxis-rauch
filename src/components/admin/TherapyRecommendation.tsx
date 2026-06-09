@@ -1892,6 +1892,7 @@ export function TherapyRecommendation() {
     setHistoryRefresh((n) => n + 1);
     setParentSessionId(null);
     setParentVersionNumber(null);
+    setParentSnapshot(null);
     setVersionLabel("");
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
