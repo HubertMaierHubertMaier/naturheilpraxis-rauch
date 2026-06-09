@@ -2450,6 +2450,31 @@ export function TherapyRecommendation() {
               <span>Labor, Arztbericht und alle Eingaben werden laufend unter diesem Pseudonym gesichert.</span>
             </div>
           )}
+          {isPatientScopedStorageReady(pseudonymId) && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-2 text-xs flex-wrap">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="font-medium text-foreground">
+                {docAnalysisHtml
+                  ? `Befund-Auswertung ist geladen${latestBefundLoadedFrom === "local" ? " (lokale Sicherung)" : latestBefundLoadedFrom === "cloud" ? " (Verlauf)" : ""}.`
+                  : "Falls die Auswertung verschwunden wirkt: letztes Ergebnis hier wieder laden."}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto h-7 text-xs"
+                onClick={() => {
+                  if (docAnalysisHtml) {
+                    setIsDocAnalysisPanelMinimized(false);
+                    docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    return;
+                  }
+                  restoreLatestBefundForPid(pseudonymId);
+                }}
+              >
+                {docAnalysisHtml ? "Ergebnis anzeigen" : "Letztes Ergebnis laden"}
+              </Button>
+            </div>
+          )}
           {clinicalLoadInfo?.pid === pseudonymId.trim() && (
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
               <div className="grid gap-2 sm:grid-cols-3">
