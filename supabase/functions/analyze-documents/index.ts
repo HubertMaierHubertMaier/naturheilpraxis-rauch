@@ -333,7 +333,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 
   for (const partial of partials) {
     try {
-      const parsed = JSON.parse(extractJsonish(partial));
+      const parsed = parseLlmJson(partial);
       for (const key of Object.keys(aggregate)) {
         if (Array.isArray(parsed?.[key])) aggregate[key].push(...parsed[key]);
       }
