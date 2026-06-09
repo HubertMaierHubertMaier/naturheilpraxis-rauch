@@ -20,6 +20,9 @@ export interface TherapySession {
   kind?: string | null;
   befund_html?: string | null;
   befund_meta?: any;
+  version_number?: number | null;
+  version_label?: string | null;
+  parent_session_id?: string | null;
 }
 
 
