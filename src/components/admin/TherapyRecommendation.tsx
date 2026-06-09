@@ -2340,8 +2340,8 @@ export function TherapyRecommendation() {
                 Patientenbefund
               </span>
               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel]
-                  .filter((s) => s && s.trim()).length}/11 Felder
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/13 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
