@@ -1967,7 +1967,6 @@ export function TherapyRecommendation() {
       setIsAnalyzingDocs(false);
       docAbortRef.current = null;
     }
-    }
   };
 
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
