@@ -244,6 +244,54 @@ const normalizeJsonText = (value: string) => value
   .replace(/(["}\]\d])\s+(?="[A-Za-zÄÖÜäöüß_][^"\n]{0,80}"\s*:)/g, "$1,")
   .replace(/,\s*([}\]])/g, "$1");
 
+const repairJsonStringSyntax = (value: string) => {
+  let out = "";
+  let inString = false;
+  let escape = false;
+  let role: "key" | "value" = "value";
+  const stack: Array<{ type: "object" | "array"; expect: "key" | "value" | "colon" | "commaOrEnd" }> = [];
+  const nextNonWhitespace = (from: number) => {
+    for (let j = from; j < value.length; j += 1) if (!/\s/.test(value[j])) return value[j];
+    return "";
+  };
+  const top = () => stack[stack.length - 1];
+
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (!inString) {
+      if (ch === "{") stack.push({ type: "object", expect: "key" });
+      else if (ch === "[") stack.push({ type: "array", expect: "value" });
+      else if (ch === "}" || ch === "]") stack.pop();
+      else if (ch === ":" && top()?.type === "object") top()!.expect = "value";
+      else if (ch === "," && top()) top()!.expect = top()!.type === "object" ? "key" : "value";
+      if (ch === '"') {
+        role = top()?.type === "object" && top()?.expect === "key" ? "key" : "value";
+        inString = true;
+      }
+      out += ch;
+      continue;
+    }
+    if (escape) { out += ch; escape = false; continue; }
+    if (ch === "\\") { out += ch; escape = true; continue; }
+    if (ch === "\n") { out += "\\n"; continue; }
+    if (ch === "\t") { out += "\\t"; continue; }
+    if (ch === '"') {
+      const next = nextNonWhitespace(i + 1);
+      const closes = role === "key" ? next === ":" : !next || next === "," || next === "}" || next === "]";
+      if (closes) {
+        inString = false;
+        if (top()) top()!.expect = role === "key" ? "colon" : "commaOrEnd";
+        out += ch;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+};
+
 const parseJsonPrefix = (value: string): any => {
   const decoder = new TextDecoder();
   for (let cut = value.length; cut > Math.max(0, value.length - 5000); cut -= 1) {
@@ -268,6 +316,9 @@ const parseLlmJson = (raw: string): any => {
   let repaired = normalizeJsonText(cleaned);
 
   try { return JSON.parse(repaired); } catch { /* letzter Versuch: Klammern ergänzen */ }
+
+  repaired = normalizeJsonText(repairJsonStringSyntax(repaired));
+  try { return JSON.parse(repaired); } catch { /* weiter mit Klammern/Präfix */ }
 
   // 5. Fehlende schließende Klammern ergänzen (truncated JSON)
   const opens = (repaired.match(/[{[]/g) || []).length;

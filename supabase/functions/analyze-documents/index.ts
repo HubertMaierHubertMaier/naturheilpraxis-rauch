@@ -279,6 +279,54 @@ function normalizeJsonText(value: string) {
     .replace(/,\s*([}\]])/g, "$1");
 }
 
+function repairJsonStringSyntax(value: string) {
+  let out = "";
+  let inString = false;
+  let escape = false;
+  let role: "key" | "value" = "value";
+  const stack: Array<{ type: "object" | "array"; expect: "key" | "value" | "colon" | "commaOrEnd" }> = [];
+  const nextNonWhitespace = (from: number) => {
+    for (let j = from; j < value.length; j += 1) if (!/\s/.test(value[j])) return value[j];
+    return "";
+  };
+  const top = () => stack[stack.length - 1];
+
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (!inString) {
+      if (ch === "{") stack.push({ type: "object", expect: "key" });
+      else if (ch === "[") stack.push({ type: "array", expect: "value" });
+      else if (ch === "}" || ch === "]") stack.pop();
+      else if (ch === ":" && top()?.type === "object") top()!.expect = "value";
+      else if (ch === "," && top()) top()!.expect = top()!.type === "object" ? "key" : "value";
+      if (ch === '"') {
+        role = top()?.type === "object" && top()?.expect === "key" ? "key" : "value";
+        inString = true;
+      }
+      out += ch;
+      continue;
+    }
+    if (escape) { out += ch; escape = false; continue; }
+    if (ch === "\\") { out += ch; escape = true; continue; }
+    if (ch === "\n") { out += "\\n"; continue; }
+    if (ch === "\t") { out += "\\t"; continue; }
+    if (ch === '"') {
+      const next = nextNonWhitespace(i + 1);
+      const closes = role === "key" ? next === ":" : !next || next === "," || next === "}" || next === "]";
+      if (closes) {
+        inString = false;
+        if (top()) top()!.expect = role === "key" ? "colon" : "commaOrEnd";
+        out += ch;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
 function parseJsonPrefix(value: string): any {
   for (let cut = value.length; cut > Math.max(0, value.length - 5000); cut -= 1) {
     try { return JSON.parse(value.slice(0, cut)); } catch { /* scan backward */ }
@@ -291,6 +339,8 @@ function parseLlmJson(raw: string): any {
   const cleaned = extractJsonish(raw);
   try { return JSON.parse(cleaned); } catch { /* repair */ }
   let r = normalizeJsonText(cleaned);
+  try { return JSON.parse(r); } catch { /* try bracket fix */ }
+  r = normalizeJsonText(repairJsonStringSyntax(r));
   try { return JSON.parse(r); } catch { /* try bracket fix */ }
   const opens = (r.match(/[{[]/g) || []).length;
   const closes = (r.match(/[}\]]/g) || []).length;
