@@ -2355,6 +2355,11 @@ export function TherapyRecommendation() {
     setIsStreaming(false);
   };
 
+  const handleCancelAnalysis = () => {
+    docAbortRef.current?.abort();
+    setIsAnalyzingDocs(false);
+  };
+
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
     pseudonymIdRef.current = "";
