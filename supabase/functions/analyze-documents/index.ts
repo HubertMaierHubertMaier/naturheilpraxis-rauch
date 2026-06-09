@@ -263,6 +263,7 @@ Pflicht-Sektionen in Reihenfolge:
 9. Gesamtbild & Arbeitshypothese — 1–3 Absätze. JEDER Satz mit Beleg(en) am Ende ODER mit "🟡 Hypothese" markiert. Keine Therapie.
 10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
 11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
+12. Laborwert-Verlauf (chronologisch) — PFLICHT, sortierbar pro Parameter. Tabelle: Parameter | Datum | Wert | Einheit | Referenz | Bewertung (↑/↓/normal/kritisch) | Quelle/Beleg. Werte desselben Parameters über mehrere Daten hinweg DIREKT untereinander gruppieren (z.B. Vitamin D · 12.03.2024 · 18 ng/ml ↓ — Vitamin D · 28.09.2024 · 34 ng/ml normal), damit der Verlauf sofort sichtbar ist. Der jeweils neueste Wert pro Parameter wird zusätzlich fett markiert. Wenn kein Datum auffindbar: "(Datum unbekannt)" eintragen UND in Sektion 10 als offene Frage führen.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
