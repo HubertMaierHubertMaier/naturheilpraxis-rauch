@@ -157,11 +157,14 @@ Wichtig:
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
-📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch!):
+📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
 - Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
-- Wenn ein Dokument mehrere Untersuchungstage enthält (z.B. Laborbefund mit Werten vom 12.03.2024 und 28.09.2024): die Werte pro Tag getrennt extrahieren — NICHT zusammenwerfen.
-- Im Dokumentblock-Label und im "BEFUND VOM:"-Header (aus der OCR) steht meist das Datum. Wenn nirgends auffindbar: datum = "" und in openQuestions notieren ("Datum von … fehlt").
-- Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge).
+- ⚠️ KRITISCH: JEDER EINZELNE Laborwert / jede Einzel-Messung / jeder Einzel-Befund braucht ein Datum — NICHT NUR die übergeordnete Untersuchung. Beispiel: Wenn ein Stuhlbefund vom 26.05.2025 zehn Einzelparameter (Calprotectin, sIgA, Zonulin, Bakterienstämme, Pilze …) enthält, dann erhält JEDER dieser zehn Parameter "datum":"2025-05-26" — auch wenn das Datum nur EINMAL oben im Befund steht. NIEMALS Einzelwerte ohne Datum ausgeben.
+- DATUMS-PROPAGATION: Erkenne das übergeordnete Befunddatum (aus "BEFUND VOM:", Header, Probenabnahme, Eingangsdatum, Endbefund-Datum) und übernimm es automatisch auf ALLE Einzelwerte/Befunde dieses Dokumentblocks, sofern kein spezifischeres Einzeldatum am Wert selbst steht.
+- Wenn ein Dokument mehrere Untersuchungstage enthält (z.B. Verlaufslabor mit Spalten 12.03.2024 | 28.09.2024): die Werte pro Tag getrennt extrahieren — NICHT zusammenwerfen. Bei Verlaufslabor: pro Parameter so viele Einträge wie Messzeitpunkte.
+- Im Dokumentblock-Label und im "BEFUND VOM:"-Header steht meist das Datum. Wenn wirklich nirgends auffindbar (auch nicht im Header oder Quellenlabel): datum = "" und in openQuestions notieren ("Datum von … fehlt").
+- Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge), JEDER mit gefülltem "datum".
+- Vor dem Antworten Selbst-Check: "Hat JEDER labValues-/findings-/diagnoses-Eintrag ein nicht-leeres datum-Feld? Wenn nein → Datum aus Dokumentblock-Header übernehmen oder leeres datum dokumentieren."
 
 
 
