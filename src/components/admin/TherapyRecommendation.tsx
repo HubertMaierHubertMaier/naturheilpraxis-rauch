@@ -1576,6 +1576,7 @@ export function TherapyRecommendation() {
                 alter: alter.trim() || undefined,
                 geschlecht: geschlecht || undefined,
                 pseudonymId: pseudonymId || undefined,
+                mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               }),
             });
             const responseText = await chunkResp.text().catch(() => "");
