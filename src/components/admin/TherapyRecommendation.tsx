@@ -1806,6 +1806,7 @@ export function TherapyRecommendation() {
           geschlecht: geschlecht || undefined,
           totalChars,
           duplicateNotes: prepared.duplicateNotes,
+          mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
         });
         analysisMode = `${analysisMode}+client-fallback`;
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
