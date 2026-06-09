@@ -458,6 +458,13 @@ ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+
+<h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
+${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
+  ? `<div class="meta"><strong>Hinweis (Notfall-Aufbau):</strong> Die KI-gestützte Einzel-Bewertung pro Mittel konnte hier nicht durchlaufen werden. Unten siehst du die für ${escapeHtml(ctx.pseudonymId || "diesen Patienten")} hinterlegten Bestellungen im Rohformat, damit du sie manuell gegen die obigen Symptome, Diagnosen und Pathogene abgleichen kannst.</div>
+<pre style="white-space:pre-wrap;background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;border-radius:6px;font-size:.88rem;line-height:1.45;color:#28342d">${escapeHtml(ctx.mannayanOrdersText)}</pre>`
+  : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
+
 <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
 <h2>8. Offene Fragen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
 <h2>9. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
