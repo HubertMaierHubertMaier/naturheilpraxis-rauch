@@ -3317,6 +3317,16 @@ export function TherapyRecommendation() {
           <RotateCcw className="h-4 w-4" />
           Alles neu auswerten
         </Button>
+        {isAnalyzingDocs && (
+          <Button
+            variant="destructive"
+            onClick={handleCancelAnalysis}
+            className="gap-2"
+          >
+            <X className="h-4 w-4" />
+            Auswertung abbrechen
+          </Button>
+        )}
         {isStreaming && (
           <Button variant="outline" onClick={handleCancel}>Abbrechen</Button>
         )}
