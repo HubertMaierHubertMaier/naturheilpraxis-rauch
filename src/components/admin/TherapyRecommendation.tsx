@@ -29,8 +29,7 @@ import { MultiDocUpload } from "./therapy/MultiDocUpload";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-// @ts-ignore - mammoth ships browser bundle without bundled TS declarations for this subpath
-import mammoth from "mammoth/mammoth.browser";
+import mammoth from "mammoth";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
