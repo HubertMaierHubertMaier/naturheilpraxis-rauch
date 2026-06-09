@@ -1417,6 +1417,37 @@ export function TherapyRecommendation() {
     if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
 
     const localSnapshot = readLatestBefundDisplay(pid);
+    const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
+
+    // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
+    let cloudRow: any = null;
+    try {
+      const { data: rows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
+        .eq("pseudonym_id", pid)
+        .not("befund_html", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      cloudRow = Array.isArray(rows) ? rows[0] : null;
+    } catch { /* offline → lokal weiter unten */ }
+
+    const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
+    const cloudHtml = String(cloudRow?.befund_html || "").trim();
+
+    // Cloud bevorzugen, wenn neuer ODER lokal nichts da
+    if (cloudHtml && (!localSnapshot || cloudTs > localTs)) {
+      const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
+      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}`;
+      setDocAnalysisHtml(cloudHtml);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("cloud");
+      writeLatestBefundDisplay(pid, { html: cloudHtml, progress, meta: cloudRow.befund_meta, createdAt: cloudRow.created_at });
+      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: `Stand: ${created}` });
+      return true;
+    }
+
     if (localSnapshot) {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`;
@@ -1428,28 +1459,7 @@ export function TherapyRecommendation() {
       return true;
     }
 
-    try {
-      const { data: rows } = await (supabase as any)
-        .from("therapy_sessions")
-        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
-        .eq("pseudonym_id", pid)
-        .not("befund_html", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const row = Array.isArray(rows) ? rows[0] : null;
-      const html = String(row?.befund_html || "").trim();
-      if (!html) return false;
-      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${new Date(row.created_at).toLocaleString("de-DE")}${row.befund_meta?.total_chars ? `\nUmfang: ${Number(row.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
-      setDocAnalysisHtml(html);
-      setDocAnalysisProgress(progress);
-      setIsDocAnalysisPanelMinimized(false);
-      setLatestBefundLoadedFrom("cloud");
-      writeLatestBefundDisplay(pid, { html, progress, meta: row.befund_meta, createdAt: row.created_at });
-      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: "Das letzte gespeicherte Ergebnis ist wieder sichtbar." });
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }, [docAnalysisHtml, isAnalyzingDocs, toast]);
 
   useEffect(() => {
