@@ -1874,6 +1874,8 @@ export function TherapyRecommendation() {
       eingabe_daten: buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false }),
       empfehlung: finalMd,
       notiz: therapieNotiz,
+      parent_session_id: parentSessionId,
+      version_label: versionLabel.trim() || null,
     });
     if (error) {
       toast({ title: "Speichern fehlgeschlagen", description: error.message, variant: "destructive" });
@@ -1881,6 +1883,9 @@ export function TherapyRecommendation() {
     }
     setWorkflowStage("finalized");
     setHistoryRefresh((n) => n + 1);
+    setParentSessionId(null);
+    setParentVersionNumber(null);
+    setVersionLabel("");
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
