@@ -1544,13 +1544,19 @@ export function TherapyRecommendation() {
       full = sanitizeFinalAnalysisHtml(full);
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
-      if (!hasMeaningfulAnalysisContent) {
+      const hasInlineErrorMarker = full.includes("❌ Fehler");
+      if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
         writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
-        throw new Error("Die finale HTML-Auswertung war leer oder unvollständig. Alle Teilanalysen sind gespeichert; bitte erneut klicken, dann wird nur die finale Zusammenführung neu gestartet.");
-      }
-      if (full.includes("❌ Fehler")) {
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
-        throw new Error("Die finale HTML-Auswertung enthält eine Fehlermeldung. Alle Teilanalysen sind gespeichert; bitte erneut klicken, dann wird nur die finale Zusammenführung neu gestartet.");
+        writeProgress(`⚠ Server-HTML ${hasInlineErrorMarker ? "enthielt eine Fehlermeldung" : "war leer/unvollständig"} – baue Befund lokal aus den ${partials.length} gespeicherten Teilanalysen auf…`);
+        full = buildClientFallbackAnalysisHtml(partials, {
+          pseudonymId: pseudonymId.trim() || undefined,
+          alter: alter.trim() || undefined,
+          geschlecht: geschlecht || undefined,
+          totalChars,
+          duplicateNotes: prepared.duplicateNotes,
+        });
+        analysisMode = `${analysisMode}+client-fallback`;
+        toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
       }
 
       // Finales HTML ins Tab schreiben
