@@ -417,8 +417,8 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v3";
-  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v3.${pseudonymId.trim()}` : "";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v4";
+  const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
@@ -522,7 +522,7 @@ export function TherapyRecommendation() {
     let localTs = 0;
     let localData: any = null;
     try {
-      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v3.${pid}`);
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v4.${pid}`);
       if (raw) {
         localData = JSON.parse(raw);
         const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
@@ -1536,19 +1536,14 @@ export function TherapyRecommendation() {
     setExtractedFromDocs(null);
   };
 
-  // Auto-Übernahme: sobald aus den Befunden Diagnosen/Symptome/Medikamente extrahiert wurden,
-  // direkt in die Eingabemaske (Symptome / Medikamente / Diagnosen) eintragen — mit Quelle, Datum, Zitat.
-  // Banner bleibt sichtbar bis applyExtractedToInputs den State auf null setzt → dient als Bestätigung/Undo.
+  // Keine automatische Übernahme mehr: extrahierte Befunddaten werden nur nach
+  // bewusstem Klick in die Eingabemaske geschrieben. Das verhindert stille
+  // Patientendaten-Vermischung durch Browser-/Autosave-Zustände.
   useEffect(() => {
     if (!extractedFromDocs) return;
     if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
       setExtractedFromDocs(null);
-      return;
     }
-    const { diagnoses, symptoms, medications } = extractedFromDocs;
-    if (!diagnoses.length && !symptoms.length && !medications.length) return;
-    applyExtractedToInputs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extractedFromDocs, pseudonymId]);
 
 
