@@ -180,6 +180,31 @@ const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) =
 
 const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${pseudonymId.trim() || "ohne-pseudonym"}.${fingerprint}`;
 
+const getLatestBefundDisplayKey = (pseudonymId: string) => `therapy.befundAnalysis.latest.${normalizePseudonymId(pseudonymId)}`;
+
+const writeLatestBefundDisplay = (pseudonymId: string, snapshot: { html: string; progress: string; meta?: any; createdAt?: string }) => {
+  try {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!pid || !snapshot.html.trim()) return;
+    localStorage.setItem(getLatestBefundDisplayKey(pid), JSON.stringify({ ...snapshot, pseudonymId: pid }));
+  } catch { /* lokale Anzeige-Sicherung optional */ }
+};
+
+const readLatestBefundDisplay = (pseudonymId: string): { html: string; progress: string; meta?: any; createdAt?: string } | null => {
+  try {
+    const pid = normalizePseudonymId(pseudonymId);
+    const raw = localStorage.getItem(getLatestBefundDisplayKey(pid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (normalizePseudonymId(parsed?.pseudonymId || "") !== pid) return null;
+    const html = String(parsed?.html || "").trim();
+    if (!html) return null;
+    return { html, progress: String(parsed?.progress || ""), meta: parsed?.meta, createdAt: parsed?.createdAt };
+  } catch {
+    return null;
+  }
+};
+
 const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: number, pseudonymId: string): AnalysisCheckpoint | null => {
   try {
     const raw = localStorage.getItem(key);
