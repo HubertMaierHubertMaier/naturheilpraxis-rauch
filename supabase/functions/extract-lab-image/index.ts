@@ -159,10 +159,11 @@ Diese Regel ist nicht verhandelbar und steht über jeder anderen Anweisung.`;
 
     const labPrompt = `Du extrahierst aus Fotos/Scans eines klassischen Laborbefunds (Blut, Urin, Stuhl) ALLE sichtbaren Laborwerte.
 
-📅 DATUM IST PFLICHT:
+📅 DATUM IST PFLICHT — STRENG (zeitlicher Verlauf ist kritisch!):
 - Wenn das Bild ein Abnahmedatum / Befunddatum / Eingangsdatum zeigt, schreibe es in eine erste Zeile "BEFUND VOM: <Datum>" (Format möglichst YYYY-MM-DD).
-- Wenn EIN Befund mehrere Untersuchungstage enthält (z.B. Verlaufslabor mit Spalten "12.03.2024 | 28.09.2024"): hänge an JEDE Wertzeile das jeweilige Datum in eckigen Klammern an, z.B. "Vitamin D: 18 ng/ml (30-100) ↓ [2024-03-12]" und "Vitamin D: 34 ng/ml (30-100) normal [2024-09-28]".
-- Wenn kein Datum erkennbar: "BEFUND VOM: (Datum unleserlich)" — niemals raten.
+- ⚠️ JEDE EINZELNE WERTZEILE muss am Ende ein Datum in eckigen Klammern tragen, z.B. "[2025-05-26]". Auch wenn alle Werte vom selben Tag stammen — das Datum aus dem "BEFUND VOM:"-Header an JEDE Zeile anhängen. KEINE Zeile ohne Datum.
+- Wenn EIN Befund mehrere Untersuchungstage enthält (z.B. Verlaufslabor mit Spalten "12.03.2024 | 28.09.2024"): jede Wertzeile mit dem jeweiligen Spalten-Datum, z.B. "Vitamin D: 18 ng/ml (30-100) ↓ [2024-03-12]" und separat "Vitamin D: 34 ng/ml (30-100) normal [2024-09-28]".
+- Wenn wirklich kein Datum erkennbar: "BEFUND VOM: (Datum unleserlich)" + Zeilen mit "[Datum unbekannt]" markieren — niemals raten, aber niemals ganz weglassen.
 
 Format pro Zeile: "Parameter: Wert Einheit (Referenzbereich) [↑/↓/normal] [Datum YYYY-MM-DD falls aus Spalte ableitbar]"
 Beispiel:
@@ -178,7 +179,7 @@ Regeln:
 
     const doctorPrompt = `Du extrahierst aus Fotos/Scans eines ärztlichen Berichts (Arztbrief, Entlassbrief, Facharzt-Befund, Bildgebungsbefund, OP-Bericht, Histologie) ALLE relevanten medizinischen Informationen wortgetreu.
 
-📅 DATUM IST PFLICHT: Das Bericht-Datum gehört unter "## BERICHT VOM" (Format möglichst YYYY-MM-DD). Wenn im Bericht Verlaufsdaten oder mehrere Untersuchungstermine vorkommen (z.B. CT vom …, Verlaufskontrolle vom …), jedes Einzeldatum direkt am jeweiligen Befundabschnitt benennen ("CT-Thorax vom 12.03.2024: …"). Niemals Daten weglassen oder zusammenfassen.
+📅 DATUM IST PFLICHT — STRENG: Das Bericht-Datum gehört unter "## BERICHT VOM" (Format möglichst YYYY-MM-DD). ⚠️ JEDE einzelne Diagnose, JEDER Laborwert im Bericht, JEDER Befund-Eintrag und JEDE Therapie/Medikation bekommt am Anfang oder Ende ein Datum in eckigen Klammern, z.B. "[2025-03-12]" — entweder das spezifische Einzeldatum oder das übergeordnete Bericht-Datum als Fallback. Wenn im Bericht Verlaufsdaten oder mehrere Untersuchungstermine vorkommen (z.B. CT vom …, Verlaufskontrolle vom …), jedes Einzeldatum direkt am jeweiligen Befundabschnitt benennen ("CT-Thorax vom 12.03.2024: …"). Niemals Daten weglassen, niemals zusammenfassen, niemals einen Wert ohne Datum lassen.
 
 Struktur (Markdown, ## Überschriften):
 ## BERICHT VOM
