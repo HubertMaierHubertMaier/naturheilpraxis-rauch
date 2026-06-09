@@ -522,6 +522,48 @@ ${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
 </body></html>`;
 };
 
+/**
+ * Garantierte Quintessenz: extrahiert auffällige Laborwerte (↑/↓/kritisch) aus den Teilanalysen
+ * und liefert eine fertige HTML-Sektion. Wird verwendet, um die KI-Ausgabe zu ergänzen, falls
+ * das Modell Sektion 13 weggelassen hat.
+ */
+const buildLabQuintessenzAppendix = (partials: string[]): string => {
+  const escapeHtml = (v: unknown) => String(v ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const lv: any[] = [];
+  for (const p of partials) {
+    if (!p) continue;
+    try {
+      const obj = parseLlmJson(p);
+      if (Array.isArray(obj?.labValues)) lv.push(...obj.labValues);
+    } catch { /* ignore */ }
+  }
+  const auffaellig = lv.filter((v) => {
+    const bw = String(v?.bewertung || "").trim();
+    return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
+  });
+  const css = `<style>.qz-wrap{margin:28px 0 8px}.qz-wrap h2{color:#4f744f;border-left:5px solid #6b8e6b;padding-left:10px}.qz-wrap table{width:100%;border-collapse:collapse;font-size:.92rem}.qz-wrap th,.qz-wrap td{border:1px solid #d9e1d6;padding:7px 8px;vertical-align:top}.qz-wrap th{background:#eef4eb;text-align:left;color:#394a37}.qz-wrap .empty{color:#6f786c;font-style:italic}.qz-wrap .note{background:#fff5e6;border:1px solid #f3cf95;padding:8px 10px;margin:6px 0 10px;color:#7a4e10;font-size:.88rem}</style>`;
+  if (!auffaellig.length) {
+    return `${css}<section class="qz-wrap"><h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte.</div><p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p></section>`;
+  }
+  const newest = new Map<string, any>();
+  for (const v of auffaellig) {
+    const par = String(v?.parameter || "");
+    const d = String(v?.datum || "");
+    const prev = newest.get(par);
+    if (!prev || d > String(prev?.datum || "")) newest.set(par, v);
+  }
+  const list = Array.from(newest.values());
+  const body = list.map((item: any) => {
+    const b = item?.beleg || {};
+    const belegParts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}"` : ""].filter(Boolean).join(" · ");
+    return `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (Quintessenz lokal aus Teilanalysen rekonstruiert).</em></td><td style="font-size:.84em;color:#5a6b5a;font-style:italic">${escapeHtml(belegParts || "—")}</td></tr>`;
+  }).join("\n");
+  return `${css}<section class="qz-wrap"><h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte oder unvollständig war. Pro Parameter wird der jeweils <strong>neueste</strong> Wert gezeigt.</div><table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${body}</tbody></table></section>`;
+};
+
+
+
 const normalizeForDuplicateCheck = (value: string) => value
   .toLowerCase()
   .replace(/\s+/g, " ")
