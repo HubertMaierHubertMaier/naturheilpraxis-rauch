@@ -506,7 +506,26 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   <h2>5. Medikamente, Präparate & Therapien</h2>
   <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
-  <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+  <h2>6. Laborwert-Verlauf (chronologisch)</h2>
+  ${(() => {
+    const lv = (aggregate.labValues as any[]).slice();
+    lv.sort((a, b) => String(a?.parameter || "").localeCompare(String(b?.parameter || ""), "de") || String(b?.datum || "").localeCompare(String(a?.datum || "")));
+    // markiere neuesten Wert pro Parameter
+    const newestByParam = new Map<string, string>();
+    for (const v of lv) {
+      const p = String(v?.parameter || "");
+      const d = String(v?.datum || "");
+      if (!newestByParam.has(p) || d > (newestByParam.get(p) || "")) newestByParam.set(p, d);
+    }
+    return `<table><thead><tr><th>Parameter</th><th>Datum</th><th>Wert</th><th>Einheit</th><th>Referenz</th><th>Bewertung</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows(lv, (item: any) => {
+      const isNewest = newestByParam.get(String(item?.parameter || "")) === String(item?.datum || "") && item?.datum;
+      const w = (s: string) => isNewest ? `<strong>${s}</strong>` : s;
+      return `<td>${w(escapeHtml(item?.parameter || "—"))}</td><td>${w(escapeHtml(item?.datum || "(Datum unbekannt)"))}</td><td>${w(escapeHtml(item?.wert || "—"))}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`;
+    })}</tbody></table>`;
+  })()}
+
+  <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+
   <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
   <h2>8. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
   <h2>9. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
