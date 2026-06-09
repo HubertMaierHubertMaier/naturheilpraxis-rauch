@@ -179,7 +179,7 @@ Regeln:
 
     const doctorPrompt = `Du extrahierst aus Fotos/Scans eines ärztlichen Berichts (Arztbrief, Entlassbrief, Facharzt-Befund, Bildgebungsbefund, OP-Bericht, Histologie) ALLE relevanten medizinischen Informationen wortgetreu.
 
-📅 DATUM IST PFLICHT: Das Bericht-Datum gehört unter "## BERICHT VOM" (Format möglichst YYYY-MM-DD). Wenn im Bericht Verlaufsdaten oder mehrere Untersuchungstermine vorkommen (z.B. CT vom …, Verlaufskontrolle vom …), jedes Einzeldatum direkt am jeweiligen Befundabschnitt benennen ("CT-Thorax vom 12.03.2024: …"). Niemals Daten weglassen oder zusammenfassen.
+📅 DATUM IST PFLICHT — STRENG: Das Bericht-Datum gehört unter "## BERICHT VOM" (Format möglichst YYYY-MM-DD). ⚠️ JEDE einzelne Diagnose, JEDER Laborwert im Bericht, JEDER Befund-Eintrag und JEDE Therapie/Medikation bekommt am Anfang oder Ende ein Datum in eckigen Klammern, z.B. "[2025-03-12]" — entweder das spezifische Einzeldatum oder das übergeordnete Bericht-Datum als Fallback. Wenn im Bericht Verlaufsdaten oder mehrere Untersuchungstermine vorkommen (z.B. CT vom …, Verlaufskontrolle vom …), jedes Einzeldatum direkt am jeweiligen Befundabschnitt benennen ("CT-Thorax vom 12.03.2024: …"). Niemals Daten weglassen, niemals zusammenfassen, niemals einen Wert ohne Datum lassen.
 
 Struktur (Markdown, ## Überschriften):
 ## BERICHT VOM
