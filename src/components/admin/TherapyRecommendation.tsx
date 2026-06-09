@@ -315,6 +315,10 @@ export function TherapyRecommendation() {
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
   const [therapieNotiz, setTherapieNotiz] = useState("");
+  // Versionierung: beim Laden einer Vorversion gemerkt, beim nächsten Finalize als parent_session_id mitgespeichert
+  const [parentSessionId, setParentSessionId] = useState<string | null>(null);
+  const [parentVersionNumber, setParentVersionNumber] = useState<number | null>(null);
+  const [versionLabel, setVersionLabel] = useState("");
   // Nachschlag-Modus
   const [ergaenzung, setErgaenzung] = useState("");
   const [isNachschlag, setIsNachschlag] = useState(false);
@@ -1037,6 +1041,17 @@ export function TherapyRecommendation() {
     checkpointSessionIdRef.current = null;
     autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
     lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
+    // Versionierung: nicht-Draft-Sessions werden als Eltern-Version übernommen → nächster Save ist neue Version
+    if (!d.autoSavedDraft) {
+      setParentSessionId(session.id);
+      setParentVersionNumber((session as any).version_number ?? null);
+      setVersionLabel("");
+      setWorkflowStage("edit");
+      toast({
+        title: "In neue Version übernommen",
+        description: `Basis: V${(session as any).version_number ?? "?"}. Änderungen werden als neue Version gespeichert – die Originalfassung bleibt erhalten.`,
+      });
+    }
     setSymptome(asText(d.symptome));
     setErkrankung(asText(d.erkrankung));
     setAlter(asText(d.alter));
@@ -1859,6 +1874,8 @@ export function TherapyRecommendation() {
       eingabe_daten: buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false }),
       empfehlung: finalMd,
       notiz: therapieNotiz,
+      parent_session_id: parentSessionId,
+      version_label: versionLabel.trim() || null,
     });
     if (error) {
       toast({ title: "Speichern fehlgeschlagen", description: error.message, variant: "destructive" });
@@ -1866,6 +1883,9 @@ export function TherapyRecommendation() {
     }
     setWorkflowStage("finalized");
     setHistoryRefresh((n) => n + 1);
+    setParentSessionId(null);
+    setParentVersionNumber(null);
+    setVersionLabel("");
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
@@ -2974,11 +2994,21 @@ export function TherapyRecommendation() {
                   <Button variant="secondary" onClick={() => openManualAddons(true)} className="gap-2">
                     <Plus className="h-4 w-4" /> Mittel ergänzen
                   </Button>
-                  <span className="text-xs text-muted-foreground self-center">
-                    Stufe 3 von 3 · Vorschau – stimmt alles?
-                  </span>
+                  <div className="flex flex-col gap-1 self-center flex-1 min-w-[260px]">
+                    {parentVersionNumber !== null && (
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
+                        ⤴ Basis: V{parentVersionNumber} – wird als <strong>neue Version</strong> gespeichert (Original bleibt erhalten)
+                      </span>
+                    )}
+                    <Input
+                      value={versionLabel}
+                      onChange={(e) => setVersionLabel(e.target.value)}
+                      placeholder={parentVersionNumber !== null ? 'Versions-Label (z. B. „Erstgespräch 09.06.2026")' : 'Versions-Label (optional, z. B. „Vor-Anamnese")'}
+                      className="h-8 text-xs"
+                    />
+                  </div>
                   <Button onClick={handleFinalize} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-                    ✓ Plan ist OK – speichern
+                    ✓ {parentVersionNumber !== null ? "Als neue Version speichern" : "Plan ist OK – speichern"}
                   </Button>
                 </>
               )}

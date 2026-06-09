@@ -20,6 +20,9 @@ export interface TherapySession {
   kind?: string | null;
   befund_html?: string | null;
   befund_meta?: any;
+  version_number?: number | null;
+  version_label?: string | null;
+  parent_session_id?: string | null;
 }
 
 
@@ -175,9 +178,24 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                     <FileText className={`h-4 w-4 mt-0.5 shrink-0 ${isBefund ? "text-primary" : "text-muted-foreground"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {!isBefund && typeof s.version_number === "number" && (
+                          <Badge variant="default" className="text-[10px] py-0 h-4 bg-primary/80">
+                            V{s.version_number}
+                          </Badge>
+                        )}
                         <span className="text-xs font-medium text-foreground">{date}</span>
                         {isBefund && (
                           <Badge variant="default" className="text-[10px] py-0 h-4">📄 Befund-Auswertung</Badge>
+                        )}
+                        {s.version_label && (
+                          <Badge variant="outline" className="text-[10px] py-0 h-4 border-primary/40">
+                            🏷 {s.version_label}
+                          </Badge>
+                        )}
+                        {s.parent_session_id && (
+                          <span className="text-[10px] text-muted-foreground">
+                            ⤴ basiert auf Vorversion
+                          </span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -224,7 +242,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                           className="h-7 text-xs"
                           onClick={() => onLoadSession(s)}
                         >
-                          In Formular laden
+                          In neue Version übernehmen
                         </Button>
                       </>
                     )}

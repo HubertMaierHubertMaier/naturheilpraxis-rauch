@@ -460,8 +460,11 @@ export type Database = {
           id: string
           kind: string
           notiz: string | null
+          parent_session_id: string | null
           pseudonym_id: string
           updated_at: string
+          version_label: string | null
+          version_number: number | null
         }
         Insert: {
           befund_html?: string | null
@@ -473,8 +476,11 @@ export type Database = {
           id?: string
           kind?: string
           notiz?: string | null
+          parent_session_id?: string | null
           pseudonym_id: string
           updated_at?: string
+          version_label?: string | null
+          version_number?: number | null
         }
         Update: {
           befund_html?: string | null
@@ -486,10 +492,21 @@ export type Database = {
           id?: string
           kind?: string
           notiz?: string | null
+          parent_session_id?: string | null
           pseudonym_id?: string
           updated_at?: string
+          version_label?: string | null
+          version_number?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "therapy_sessions_parent_session_id_fkey"
+            columns: ["parent_session_id"]
+            isOneToOne: false
+            referencedRelation: "therapy_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
