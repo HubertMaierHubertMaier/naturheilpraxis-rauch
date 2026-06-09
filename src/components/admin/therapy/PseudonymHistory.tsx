@@ -242,7 +242,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession }: Props) {
                           className="h-7 text-xs"
                           onClick={() => onLoadSession(s)}
                         >
-                          In Formular laden
+                          In neue Version übernehmen
                         </Button>
                       </>
                     )}
