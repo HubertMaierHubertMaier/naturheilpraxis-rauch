@@ -1345,7 +1345,7 @@ export function TherapyRecommendation() {
         for (const p of partials) {
           if (!p) continue;
           try {
-            const obj = JSON.parse(stripFence(p));
+            const obj = parseLlmJson(p);
             if (Array.isArray(obj?.diagnoses)) {
               for (const d of obj.diagnoses) {
                 if (!d?.diagnose) continue;
