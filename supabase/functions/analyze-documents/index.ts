@@ -262,6 +262,38 @@ function extractJsonish(text: string) {
   return text.replace(/^\s*```json\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
 }
 
+/** LLM-tolerant JSON parser: repariert die typischen Müll-Fälle (ungültige Escapes, trailing commas, abgeschnittenes JSON). */
+function parseLlmJson(raw: string): any {
+  const cleaned = extractJsonish(raw);
+  try { return JSON.parse(cleaned); } catch { /* repair */ }
+  let r = cleaned.replace(/\\(?!["\\/bfnrtu])/g, "");
+  r = r.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  r = r.replace(/,\s*([}\]])/g, "$1");
+  try { return JSON.parse(r); } catch { /* try bracket fix */ }
+  const opens = (r.match(/[{[]/g) || []).length;
+  const closes = (r.match(/[}\]]/g) || []).length;
+  if (opens > closes) {
+    const stack: string[] = [];
+    let inString = false; let escape = false;
+    for (const ch of r) {
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{" || ch === "[") stack.push(ch);
+      else if (ch === "}" || ch === "]") stack.pop();
+    }
+    let suffix = "";
+    if (inString) suffix += '"';
+    while (stack.length) {
+      const open = stack.pop();
+      suffix += open === "{" ? "}" : "]";
+    }
+    try { return JSON.parse(r + suffix); } catch { /* fall through */ }
+  }
+  return JSON.parse(cleaned);
+}
+
 function stripHtmlFence(text: string) {
   return text.replace(/^\s*```html\s*/i, "").replace(/^\s*```\s*/i, "").replace(/```\s*$/i, "").trim();
 }
