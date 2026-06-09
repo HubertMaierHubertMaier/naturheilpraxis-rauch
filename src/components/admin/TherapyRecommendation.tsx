@@ -1965,6 +1965,13 @@ export function TherapyRecommendation() {
         throw new Error(`Alle ${chunks.length} Teilanalysen sind gespeichert, aber die finale HTML-Zusammenführung ist fehlgeschlagen: ${(finalError as Error).message}. Bitte erneut klicken – dann wird nur die finale Zusammenführung neu gestartet.`);
       }
       full = sanitizeFinalAnalysisHtml(full);
+      // Garantierte Quintessenz: anhängen, falls die KI Sektion 13 nicht ausgeliefert hat.
+      if (!/Auffällige Laborwerte/i.test(full)) {
+        const appendix = buildLabQuintessenzAppendix(partials);
+        if (/<\/body>/i.test(full)) full = full.replace(/<\/body>/i, `${appendix}</body>`);
+        else full = `${full}${appendix}`;
+      }
+
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
       const hasInlineErrorMarker = full.includes("❌ Fehler");
