@@ -158,19 +158,27 @@ Behandelnde Ärzte, Klinik-/Labor-Institute, Praxen (= keine Patientendaten) dü
 Diese Regel ist nicht verhandelbar und steht über jeder anderen Anweisung.`;
 
     const labPrompt = `Du extrahierst aus Fotos/Scans eines klassischen Laborbefunds (Blut, Urin, Stuhl) ALLE sichtbaren Laborwerte.
-Format pro Zeile: "Parameter: Wert Einheit (Referenzbereich) [↑/↓/normal]"
+
+📅 DATUM IST PFLICHT:
+- Wenn das Bild ein Abnahmedatum / Befunddatum / Eingangsdatum zeigt, schreibe es in eine erste Zeile "BEFUND VOM: <Datum>" (Format möglichst YYYY-MM-DD).
+- Wenn EIN Befund mehrere Untersuchungstage enthält (z.B. Verlaufslabor mit Spalten "12.03.2024 | 28.09.2024"): hänge an JEDE Wertzeile das jeweilige Datum in eckigen Klammern an, z.B. "Vitamin D: 18 ng/ml (30-100) ↓ [2024-03-12]" und "Vitamin D: 34 ng/ml (30-100) normal [2024-09-28]".
+- Wenn kein Datum erkennbar: "BEFUND VOM: (Datum unleserlich)" — niemals raten.
+
+Format pro Zeile: "Parameter: Wert Einheit (Referenzbereich) [↑/↓/normal] [Datum YYYY-MM-DD falls aus Spalte ableitbar]"
 Beispiel:
-- LDL-Cholesterin: 185 mg/dl (<130) ↑
-- Vitamin D: 12 ng/ml (30-100) ↓
-- TSH: 2.1 mU/l (0.4-4.0) normal
+- LDL-Cholesterin: 185 mg/dl (<130) ↑ [2024-03-12]
+- Vitamin D: 12 ng/ml (30-100) ↓ [2024-03-12]
+- TSH: 2.1 mU/l (0.4-4.0) normal [2024-03-12]
 
 Regeln:
 - Nichts erfinden. Was unleserlich ist: "(unleserlich)" notieren.
-- Datum/Labor-Name (falls erkennbar) in eine erste Zeile "BEFUND VOM: ..." schreiben.
+- Labor-Name / Einsendepraxis (falls erkennbar) zusätzlich in die "BEFUND VOM:"-Zeile aufnehmen ("BEFUND VOM: 2024-03-12 · Labor XY").
 - Gruppiere thematisch (Blutbild, Leber, Niere, Stoffwechsel, Hormone, Vitamine/Mineralien, Entzündung, Lipide, etc.) mit ## Überschriften.
 - Antworte NUR mit dem extrahierten Text, kein Vorwort, kein Kommentar.${anonymizationRules}`;
 
     const doctorPrompt = `Du extrahierst aus Fotos/Scans eines ärztlichen Berichts (Arztbrief, Entlassbrief, Facharzt-Befund, Bildgebungsbefund, OP-Bericht, Histologie) ALLE relevanten medizinischen Informationen wortgetreu.
+
+📅 DATUM IST PFLICHT: Das Bericht-Datum gehört unter "## BERICHT VOM" (Format möglichst YYYY-MM-DD). Wenn im Bericht Verlaufsdaten oder mehrere Untersuchungstermine vorkommen (z.B. CT vom …, Verlaufskontrolle vom …), jedes Einzeldatum direkt am jeweiligen Befundabschnitt benennen ("CT-Thorax vom 12.03.2024: …"). Niemals Daten weglassen oder zusammenfassen.
 
 Struktur (Markdown, ## Überschriften):
 ## BERICHT VOM

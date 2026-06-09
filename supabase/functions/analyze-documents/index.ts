@@ -157,6 +157,14 @@ Wichtig:
 - Fremdsprachige Befunde (Englisch/Französisch) auf Deutsch zusammenfassen.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
+📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch!):
+- Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
+- Wenn ein Dokument mehrere Untersuchungstage enthält (z.B. Laborbefund mit Werten vom 12.03.2024 und 28.09.2024): die Werte pro Tag getrennt extrahieren — NICHT zusammenwerfen.
+- Im Dokumentblock-Label und im "BEFUND VOM:"-Header (aus der OCR) steht meist das Datum. Wenn nirgends auffindbar: datum = "" und in openQuestions notieren ("Datum von … fehlt").
+- Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge).
+
+
+
 🔎 BELEG-PFLICHT (Rückverfolgbarkeit für Patientengespräch):
 - Zu JEDEM Eintrag in documents, anamnese.*, diagnoses, medicationsTherapies, findings, redFlags, systemsPatterns ein Objekt "beleg":
   * quelle = das Dokumentblock-Label (s.u.),
@@ -181,9 +189,11 @@ Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt m
     "physicalExamination": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
     "additionalInvestigations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}]
   },
-  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","datum":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
   "medicationsTherapies": [{"name":"","dosis":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
-  "findings": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "labValues": [{"datum":"","parameter":"","wert":"","einheit":"","referenz":"","bewertung":"normal|↑|↓|kritisch|unklar","quelle":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "findings": [{"text":"","datum":"","beleg":{"quelle":"","teil":"","zitat":""}}],
+
   "terms": [{"term":"","plain":"laienverständlich auf Deutsch"}],
   "redFlags": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "systemsPatterns": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
@@ -253,6 +263,7 @@ Pflicht-Sektionen in Reihenfolge:
 9. Gesamtbild & Arbeitshypothese — 1–3 Absätze. JEDER Satz mit Beleg(en) am Ende ODER mit "🟡 Hypothese" markiert. Keine Therapie.
 10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
 11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
+12. Laborwert-Verlauf (chronologisch) — PFLICHT, sortierbar pro Parameter. Tabelle: Parameter | Datum | Wert | Einheit | Referenz | Bewertung (↑/↓/normal/kritisch) | Quelle/Beleg. Werte desselben Parameters über mehrere Daten hinweg DIREKT untereinander gruppieren (z.B. Vitamin D · 12.03.2024 · 18 ng/ml ↓ — Vitamin D · 28.09.2024 · 34 ng/ml normal), damit der Verlauf sofort sichtbar ist. Der jeweils neueste Wert pro Parameter wird zusätzlich fett markiert. Wenn kein Datum auffindbar: "(Datum unbekannt)" eintragen UND in Sektion 10 als offene Frage führen.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
@@ -396,7 +407,7 @@ function isCompleteFinalHtml(html: string) {
 
 function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number) {
   const aggregate: Record<string, unknown[]> = {
-    documents: [], diagnoses: [], medicationsTherapies: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
+    documents: [], diagnoses: [], medicationsTherapies: [], labValues: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
   };
   const anamneseKeys = [
     "currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems",
@@ -495,12 +506,31 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   <h2>5. Medikamente, Präparate & Therapien</h2>
   <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
-  <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
-  <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
-  <h2>8. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
-  <h2>9. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
-  <h2>10. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
-  <h2>11. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
+  <h2>6. Laborwert-Verlauf (chronologisch)</h2>
+  ${(() => {
+    const lv = (aggregate.labValues as any[]).slice();
+    lv.sort((a, b) => String(a?.parameter || "").localeCompare(String(b?.parameter || ""), "de") || String(b?.datum || "").localeCompare(String(a?.datum || "")));
+    // markiere neuesten Wert pro Parameter
+    const newestByParam = new Map<string, string>();
+    for (const v of lv) {
+      const p = String(v?.parameter || "");
+      const d = String(v?.datum || "");
+      if (!newestByParam.has(p) || d > (newestByParam.get(p) || "")) newestByParam.set(p, d);
+    }
+    return `<table><thead><tr><th>Parameter</th><th>Datum</th><th>Wert</th><th>Einheit</th><th>Referenz</th><th>Bewertung</th><th>Quelle</th><th>Beleg</th></tr></thead><tbody>${rows(lv, (item: any) => {
+      const isNewest = newestByParam.get(String(item?.parameter || "")) === String(item?.datum || "") && item?.datum;
+      const w = (s: string) => isNewest ? `<strong>${s}</strong>` : s;
+      return `<td>${w(escapeHtml(item?.parameter || "—"))}</td><td>${w(escapeHtml(item?.datum || "(Datum unbekannt)"))}</td><td>${w(escapeHtml(item?.wert || "—"))}</td><td>${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.referenz || "")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${beleg(item)}</td>`;
+    })}</tbody></table>`;
+  })()}
+
+  <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+
+  <h2>8. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
+  <h2>9. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
+  <h2>10. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+  <h2>11. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
+  <h2>12. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
 </body>
 </html>`;
 }
