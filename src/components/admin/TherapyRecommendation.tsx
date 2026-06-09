@@ -1707,7 +1707,7 @@ export function TherapyRecommendation() {
       }
 
       setDocAnalysisHtml(full);
-      writeProgress("✓ Befund-Auswertung vollständig fertig und unten sichtbar.");
+      writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
@@ -3118,6 +3118,31 @@ export function TherapyRecommendation() {
         )}
       </div>
 
+      {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
+        <Card ref={docAnalysisRef} className="border-primary/40 bg-primary/[0.03] shadow-sm scroll-mt-24">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
+              Befund-Auswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {docAnalysisProgress && (
+              <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
+                {docAnalysisProgress}
+              </pre>
+            )}
+            {docAnalysisHtml && (
+              <iframe
+                title="Befund-Auswertung HTML"
+                srcDoc={docAnalysisHtml}
+                className="h-[72vh] w-full rounded-md border bg-background"
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* 📎 Weitere Dokumente nachladen */}
       <div className="rounded-md border border-sage-300/70 bg-sage-50/40 dark:bg-sage-950/10 p-3 flex items-start gap-3 flex-wrap">
         <div className="flex-1 min-w-[260px]">
@@ -3189,31 +3214,6 @@ export function TherapyRecommendation() {
             </div>
           </div>
         </div>
-      )}
-
-      {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
-        <Card ref={docAnalysisRef} className="border-primary/30 bg-primary/[0.02] scroll-mt-24">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
-              Befund-Auswertung
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {docAnalysisProgress && (
-              <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
-                {docAnalysisProgress}
-              </pre>
-            )}
-            {docAnalysisHtml && (
-              <iframe
-                title="Befund-Auswertung HTML"
-                srcDoc={docAnalysisHtml}
-                className="h-[72vh] w-full rounded-md border bg-background"
-              />
-            )}
-          </CardContent>
-        </Card>
       )}
 
       {/* Workflow-Stage-Indikator */}
