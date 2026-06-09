@@ -381,7 +381,7 @@ const parseLlmJson = (raw: string): any => {
  */
 const buildClientFallbackAnalysisHtml = (
   partials: string[],
-  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[] },
+  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[]; mannayanOrdersText?: string },
 ): string => {
   const escapeHtml = (v: unknown) => String(v ?? "")
     .replace(/&/g, "&amp;")
