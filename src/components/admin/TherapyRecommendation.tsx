@@ -539,6 +539,8 @@ export function TherapyRecommendation() {
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
+  const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
+  const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -567,6 +569,7 @@ export function TherapyRecommendation() {
   const abortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const docAnalysisRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -1422,12 +1425,9 @@ export function TherapyRecommendation() {
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
-    // Tab sofort öffnen (Pop-up-Blocker umgehen)
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Befund-Auswertung läuft…</title><style>body{font-family:system-ui;padding:32px;color:#344238;line-height:1.5}h2{color:#6b8e6b}.box{border:1px solid #d8e2d3;background:#f8faf6;padding:18px;border-radius:8px;max-width:900px}.muted{color:#667063}.ok{color:#476b47;font-weight:600}pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#52605a;max-height:55vh;overflow:auto;border:1px solid #d8e2d3;padding:10px;border-radius:6px;background:white}</style></head><body><div class="box"><h2>⏳ Strikte Befund-Auswertung läuft…</h2><p>Alle Befundseiten werden in ${chunks.length} Teilpaket(en) gelesen und danach erst zusammengeführt, wenn wirklich alle Teilanalysen vollständig vorliegen.</p><p class="muted">Umfang: ${totalChars.toLocaleString("de-DE")} analysierte Zeichen${prepared.originalChars !== totalChars ? ` von ${prepared.originalChars.toLocaleString("de-DE")} Rohzeichen` : ""}. Fertige Teilpakete werden laufend zwischengesichert.</p><p class="ok">Kein Lückenbericht: Bei Fehler stoppt die Analyse und macht beim nächsten Klick an derselben Stelle weiter.</p><pre id="__live">Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}</pre></div></body></html>`);
-      w.document.close();
-    }
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
@@ -1461,11 +1461,8 @@ export function TherapyRecommendation() {
           }
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
       }
-      const live = w?.document.getElementById("__live") as HTMLElement | null;
       const writeProgress = (line: string) => {
-        if (!live) return;
-        live.textContent = `${live.textContent || ""}\n${line}`;
-        live.scrollTop = live.scrollHeight;
+        setDocAnalysisProgress((previous) => `${previous || "Start…"}\n${line}`);
       };
       if (checkpoint?.partials?.length) {
         writeProgress(`✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Zwischen-Sicherung geladen.`);
@@ -1685,10 +1682,6 @@ export function TherapyRecommendation() {
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
           full += chunk;
-          if (live) {
-            live.textContent = (live.textContent || "") + chunk;
-            live.scrollTop = live.scrollHeight;
-          }
         }
         full += decoder.decode();
       } catch (finalError) {
@@ -1713,12 +1706,8 @@ export function TherapyRecommendation() {
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
       }
 
-      // Finales HTML ins Tab schreiben
-      if (w) {
-        w.document.open();
-        w.document.write(full);
-        w.document.close();
-      }
+      setDocAnalysisHtml(full);
+      writeProgress("✓ Befund-Auswertung vollständig fertig und unten sichtbar.");
       {
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
@@ -1763,11 +1752,8 @@ export function TherapyRecommendation() {
 
     } catch (e) {
       const msg = (e as Error).message;
-      if (w) {
-        w.document.open();
-        w.document.write(`<!DOCTYPE html><html><body style="font-family:system-ui;padding:40px;color:#a33"><h2>❌ Fehler</h2><p>${msg.replace(/</g, "&lt;")}</p></body></html>`);
-        w.document.close();
-      }
+      setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
+      setDocAnalysisHtml("");
       toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
     } finally {
       setIsAnalyzingDocs(false);
@@ -3203,6 +3189,31 @@ export function TherapyRecommendation() {
             </div>
           </div>
         </div>
+      )}
+
+      {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
+        <Card ref={docAnalysisRef} className="border-primary/30 bg-primary/[0.02] scroll-mt-24">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
+              Befund-Auswertung
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {docAnalysisProgress && (
+              <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs leading-relaxed text-muted-foreground">
+                {docAnalysisProgress}
+              </pre>
+            )}
+            {docAnalysisHtml && (
+              <iframe
+                title="Befund-Auswertung HTML"
+                srcDoc={docAnalysisHtml}
+                className="h-[72vh] w-full rounded-md border bg-background"
+              />
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Workflow-Stage-Indikator */}
