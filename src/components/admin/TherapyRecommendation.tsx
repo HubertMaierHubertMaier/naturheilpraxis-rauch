@@ -1290,7 +1290,7 @@ export function TherapyRecommendation() {
   const handlePseudonymChange = useCallback((nextValue: string) => {
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(nextValue);
-    const hasPatientScopedData = hasMeaningfulInput || !!result || manualDiagnosen.length > 0 || manualMittel.length > 0;
+    const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
       toast({
@@ -1305,7 +1305,7 @@ export function TherapyRecommendation() {
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
     setPseudonymId(nextValue);
-  }, [pseudonymId, hasMeaningfulInput, result, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
+  }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
   const handleLoadSession = (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
