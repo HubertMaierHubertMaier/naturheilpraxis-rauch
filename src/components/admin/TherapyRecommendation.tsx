@@ -1665,6 +1665,7 @@ export function TherapyRecommendation() {
             const chunkResp = await fetch(endpoint, {
               method: "POST",
               headers,
+              signal: docController.signal,
               body: JSON.stringify({
                 analysisMode: "chunk",
                 chunk: { ...chunk, index: indexLabel, total: totalLabel },
