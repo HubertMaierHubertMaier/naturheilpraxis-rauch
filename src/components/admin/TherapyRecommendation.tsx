@@ -2994,11 +2994,21 @@ export function TherapyRecommendation() {
                   <Button variant="secondary" onClick={() => openManualAddons(true)} className="gap-2">
                     <Plus className="h-4 w-4" /> Mittel ergänzen
                   </Button>
-                  <span className="text-xs text-muted-foreground self-center">
-                    Stufe 3 von 3 · Vorschau – stimmt alles?
-                  </span>
+                  <div className="flex flex-col gap-1 self-center flex-1 min-w-[260px]">
+                    {parentVersionNumber !== null && (
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
+                        ⤴ Basis: V{parentVersionNumber} – wird als <strong>neue Version</strong> gespeichert (Original bleibt erhalten)
+                      </span>
+                    )}
+                    <Input
+                      value={versionLabel}
+                      onChange={(e) => setVersionLabel(e.target.value)}
+                      placeholder={parentVersionNumber !== null ? "Versions-Label (z. B. „Erstgespräch 09.06.2026")" : "Versions-Label (optional, z. B. „Vor-Anamnese")"}
+                      className="h-8 text-xs"
+                    />
+                  </div>
                   <Button onClick={handleFinalize} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-                    ✓ Plan ist OK – speichern
+                    ✓ {parentVersionNumber !== null ? "Als neue Version speichern" : "Plan ist OK – speichern"}
                   </Button>
                 </>
               )}
