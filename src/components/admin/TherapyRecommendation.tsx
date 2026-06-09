@@ -1392,11 +1392,54 @@ export function TherapyRecommendation() {
     }
     const meta = session.befund_meta || {};
     setDocAnalysisHtml(html);
-    setDocAnalysisProgress(`Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`);
+    const progress = `Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
+    setDocAnalysisProgress(progress);
+    writeLatestBefundDisplay(session.pseudonym_id, { html, progress, meta, createdAt: session.created_at });
+    setLatestBefundLoadedFrom("cloud");
     setIsDocAnalysisPanelMinimized(false);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     toast({ title: "Befund-Auswertung angezeigt", description: "Das Ergebnis ist jetzt direkt auf der Seite sichtbar." });
   };
+
+  const restoreLatestBefundForPid = useCallback(async (pidValue: string, options?: { quiet?: boolean }) => {
+    const pid = normalizePseudonymId(pidValue);
+    if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs || docAnalysisHtml) return false;
+
+    const localSnapshot = readLatestBefundDisplay(pid);
+    if (localSnapshot) {
+      const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
+      const progress = localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`;
+      setDocAnalysisHtml(localSnapshot.html);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("local");
+      if (!options?.quiet) toast({ title: "Befund-Auswertung wiederhergestellt", description: "Das zuletzt fertige Ergebnis ist wieder sichtbar." });
+      return true;
+    }
+
+    try {
+      const { data: rows } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("id, pseudonym_id, created_at, befund_html, befund_meta")
+        .eq("pseudonym_id", pid)
+        .not("befund_html", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const row = Array.isArray(rows) ? rows[0] : null;
+      const html = String(row?.befund_html || "").trim();
+      if (!html) return false;
+      const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${new Date(row.created_at).toLocaleString("de-DE")}${row.befund_meta?.total_chars ? `\nUmfang: ${Number(row.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
+      setDocAnalysisHtml(html);
+      setDocAnalysisProgress(progress);
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("cloud");
+      writeLatestBefundDisplay(pid, { html, progress, meta: row.befund_meta, createdAt: row.created_at });
+      if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: "Das letzte gespeicherte Ergebnis ist wieder sichtbar." });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [docAnalysisHtml, isAnalyzingDocs, toast]);
 
   const handleReAnalyzeAll = async () => {
     const pid = pseudonymId.trim();
