@@ -1047,12 +1047,17 @@ export function TherapyRecommendation() {
     if (!d.autoSavedDraft) {
       setParentSessionId(session.id);
       setParentVersionNumber((session as any).version_number ?? null);
+      setParentSnapshot(d as any);
       setVersionLabel("");
       setWorkflowStage("edit");
       toast({
         title: "In neue Version übernommen",
         description: `Basis: V${(session as any).version_number ?? "?"}. Änderungen werden als neue Version gespeichert – die Originalfassung bleibt erhalten.`,
       });
+    } else {
+      setParentSessionId(null);
+      setParentVersionNumber(null);
+      setParentSnapshot(null);
     }
     setSymptome(asText(d.symptome));
     setErkrankung(asText(d.erkrankung));
