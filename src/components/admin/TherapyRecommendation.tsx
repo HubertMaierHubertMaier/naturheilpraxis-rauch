@@ -3003,7 +3003,7 @@ export function TherapyRecommendation() {
                     <Input
                       value={versionLabel}
                       onChange={(e) => setVersionLabel(e.target.value)}
-                      placeholder={parentVersionNumber !== null ? "Versions-Label (z. B. „Erstgespräch 09.06.2026")" : "Versions-Label (optional, z. B. „Vor-Anamnese")"}
+                      placeholder={parentVersionNumber !== null ? 'Versions-Label (z. B. „Erstgespräch 09.06.2026")' : 'Versions-Label (optional, z. B. „Vor-Anamnese")'}
                       className="h-8 text-xs"
                     />
                   </div>
