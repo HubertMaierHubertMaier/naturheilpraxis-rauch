@@ -526,11 +526,11 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 
   <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
-  <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
-  <h2>8. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
-  <h2>9. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
-  <h2>10. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
-  <h2>11. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
+  <h2>8. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
+  <h2>9. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
+  <h2>10. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+  <h2>11. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
+  <h2>12. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
 </body>
 </html>`;
 }
