@@ -541,6 +541,7 @@ export function TherapyRecommendation() {
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
+  const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1426,6 +1427,7 @@ export function TherapyRecommendation() {
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
     setDocAnalysisHtml("");
+    setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisProgress(`Start…${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
@@ -3117,6 +3119,43 @@ export function TherapyRecommendation() {
           </Button>
         )}
       </div>
+
+      {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
+        <div className="fixed right-4 top-20 z-50 w-[min(760px,calc(100vw-2rem))] rounded-md border border-primary/50 bg-background shadow-2xl">
+          <div className="flex items-center gap-3 border-b bg-primary/10 px-4 py-3">
+            {isAnalyzingDocs ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <CheckCircle2 className="h-5 w-5 text-primary" />}
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-foreground">Hier ist die Befund-Auswertung</div>
+              <div className="text-xs text-muted-foreground">
+                {isAnalyzingDocs ? "Sie läuft gerade — das Protokoll aktualisiert sich live." : "Fertig — das Ergebnis ist unten im Rahmen sichtbar."}
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setIsDocAnalysisPanelMinimized((value) => !value)}>
+              {isDocAnalysisPanelMinimized ? "anzeigen" : "minimieren"}
+            </Button>
+          </div>
+          {!isDocAnalysisPanelMinimized && (
+            <div className="max-h-[calc(100vh-7rem)] overflow-auto p-3 space-y-3">
+              {docAnalysisProgress && (
+                <pre className="max-h-44 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                  {docAnalysisProgress}
+                </pre>
+              )}
+              {docAnalysisHtml ? (
+                <iframe
+                  title="Befund-Auswertung HTML direkt sichtbar"
+                  srcDoc={docAnalysisHtml}
+                  className="h-[62vh] w-full rounded-md border bg-background"
+                />
+              ) : (
+                <div className="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                  Das Ergebnis erscheint automatisch hier, sobald die Zusammenführung fertig ist.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
         <Card ref={docAnalysisRef} className="border-primary/40 bg-primary/[0.03] shadow-sm scroll-mt-24">
