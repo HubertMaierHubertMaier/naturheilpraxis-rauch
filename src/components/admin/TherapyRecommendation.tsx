@@ -622,11 +622,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
     throw new Error("Teilpaket wurde nur als technische Lücke beantwortet – strikte Auswertung stoppt hier.");
   }
   try {
-    const parsed = parseLlmJson(partial);
-    const hasRequiredArrays = Array.isArray(parsed?.documents) && Array.isArray(parsed?.diagnoses) && Array.isArray(parsed?.medicationsTherapies) && Array.isArray(parsed?.findings) && Array.isArray(parsed?.redFlags) && Array.isArray(parsed?.openQuestions) && Array.isArray(parsed?.missingReports);
-    if (!hasRequiredArrays || !parsed?.anamnese || typeof parsed.anamnese !== "object") {
-      throw new Error("Teilanalysen-JSON unvollständig");
-    }
+    normalizePartialAnalysisJson(partial);
   } catch (error) {
     throw new Error(`Ungültige/unkomplette Teilanalyse: ${(error as Error).message}`);
   }
