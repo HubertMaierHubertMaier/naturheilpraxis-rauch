@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
         row.kind !== "befund_checkpoint" && row.kind !== "quarantine_patient_mismatch",
     );
 
-    if (error) throw error;
+
 
     return new Response(JSON.stringify({ sessions: filtered }), {
       status: 200,
