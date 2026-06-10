@@ -69,6 +69,8 @@ interface AnalyzeBody {
 type DocBlock = { label: string; text: string };
 
 const encoder = new TextEncoder();
+const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
+const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 
 function cleanText(value?: string) {
   return (value || "").replace(/\r\n/g, "\n").trim();
@@ -384,6 +386,18 @@ function parseLlmJson(raw: string): any {
   }
   try { return parseJsonPrefix(r); } catch { /* original error */ }
   return JSON.parse(cleaned);
+}
+
+function normalizePartialAnalysisJson(raw: string) {
+  const parsed = parseLlmJson(raw);
+  const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
+  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
+  if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  const normalized: Record<string, any> = {};
+  for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
+  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
+  normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
+  return JSON.stringify(normalized);
 }
 
 function stripHtmlFence(text: string) {
@@ -850,7 +864,17 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered: false }), {
+      let normalizedPartial = "";
+      try {
+        normalizedPartial = normalizePartialAnalysisJson(partial);
+      } catch (error) {
+        return new Response(JSON.stringify({ error: `Ungültige/unkomplette Teilanalyse: ${(error as Error).message}` }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ partial: normalizedPartial, chars: text.length, recovered: false }), {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",

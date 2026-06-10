@@ -87,9 +87,11 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 
-const ANALYSIS_CHUNK_MAX_CHARS = 9000;
-const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 4500;
-const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v4";
+const ANALYSIS_CHUNK_MAX_CHARS = 6000;
+const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
+const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v5-json-normalized";
+const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
+const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -374,6 +376,18 @@ const parseLlmJson = (raw: string): any => {
   return JSON.parse(cleaned);
 };
 
+const normalizePartialAnalysisJson = (raw: string) => {
+  const parsed = parseLlmJson(raw);
+  const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
+  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
+  if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  const normalized: Record<string, unknown> = {};
+  for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
+  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
+  normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
+  return JSON.stringify(normalized);
+};
+
 /**
  * Client-seitiger Notfall-Renderer: baut aus den gespeicherten Teilanalysen ein
  * vollständiges Befund-HTML, wenn der Server keine vollständige Zusammenführung
@@ -608,11 +622,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
     throw new Error("Teilpaket wurde nur als technische Lücke beantwortet – strikte Auswertung stoppt hier.");
   }
   try {
-    const parsed = parseLlmJson(partial);
-    const hasRequiredArrays = Array.isArray(parsed?.documents) && Array.isArray(parsed?.diagnoses) && Array.isArray(parsed?.medicationsTherapies) && Array.isArray(parsed?.findings) && Array.isArray(parsed?.redFlags) && Array.isArray(parsed?.openQuestions) && Array.isArray(parsed?.missingReports);
-    if (!hasRequiredArrays || !parsed?.anamnese || typeof parsed.anamnese !== "object") {
-      throw new Error("Teilanalysen-JSON unvollständig");
-    }
+    normalizePartialAnalysisJson(partial);
   } catch (error) {
     throw new Error(`Ungültige/unkomplette Teilanalyse: ${(error as Error).message}`);
   }
@@ -1773,8 +1783,7 @@ export function TherapyRecommendation() {
             }
             const partial = String(chunkJson.partial || "").trim();
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
-            assertStrictPartialAnalysis(partial);
-            return partial;
+            return normalizePartialAnalysisJson(partial);
           } catch (err) {
             lastError = (err as Error).message || String(err);
             if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);
@@ -1823,7 +1832,6 @@ export function TherapyRecommendation() {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
-          assertStrictPartialAnalysis(partial);
           partials.push(partial);
         } catch (error) {
           const message = (error as Error).message || "";
@@ -1837,7 +1845,6 @@ export function TherapyRecommendation() {
               writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
               try {
                 const retryPartial = await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1);
-                assertStrictPartialAnalysis(retryPartial);
                 partials.push(retryPartial);
               } catch (retryError) {
                 const retryMessage = (retryError as Error).message || String(retryError);
