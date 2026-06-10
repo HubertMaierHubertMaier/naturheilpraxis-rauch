@@ -379,11 +379,11 @@ const parseLlmJson = (raw: string): any => {
 const normalizePartialAnalysisJson = (raw: string) => {
   const parsed = parseLlmJson(raw);
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
-  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
+  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
-  const normalized: Record<string, any> = {};
+  const normalized: Record<string, unknown> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
-  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
+  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   return JSON.stringify(normalized);
 };
