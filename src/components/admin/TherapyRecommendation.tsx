@@ -1602,13 +1602,14 @@ export function TherapyRecommendation() {
     const ok = window.confirm(
       `„Alles neu auswerten" für ${pid}\n\n` +
       `• Löscht alle lokalen und Cloud-Checkpoints dieser Befundauswertung\n` +
+      `• Löscht außerdem den zuletzt gespeicherten fertigen Befundbericht in der Cloud (sonst wird er automatisch wieder geladen)\n` +
       `• Startet danach die strikte Befund-Auswertung komplett neu\n\n` +
       `Hinweis: Bild-/Scan-Uploads (Laborfotos, Arztbrief-Scans) müssen separat über „Laborbild auswerten" / „Arztbericht-Bild auswerten" neu durch die OCR geschickt werden – nur dort werden die neuen Datumsangaben pro Zeile erzeugt.\n\nFortfahren?`
     );
     if (!ok) return;
 
     try {
-      // 1) Lokale Checkpoints für dieses Pseudonym entfernen
+      // 1) Lokale Checkpoints + lokalen Anzeige-Snapshot für dieses Pseudonym entfernen
       const prefix = `therapy.befundAnalysis.v2.${pid}.`;
       const toDelete: string[] = [];
       for (let i = 0; i < localStorage.length; i += 1) {
@@ -1622,7 +1623,7 @@ export function TherapyRecommendation() {
       setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
       setLatestBefundLoadedFrom(null);
 
-      // 2) Cloud-Checkpoints entfernen
+      // 2a) Cloud-Checkpoints entfernen
       try {
         await (supabase as any)
           .from("therapy_sessions")
@@ -1631,11 +1632,20 @@ export function TherapyRecommendation() {
           .eq("kind", "befund_checkpoint");
       } catch { /* Cloud-Reset optional */ }
 
+      // 2b) Letzten fertigen Cloud-Befund (befund_html) entfernen, sonst lädt restoreLatestBefundForPid ihn sofort wieder
+      try {
+        await (supabase as any)
+          .from("therapy_sessions")
+          .delete()
+          .eq("pseudonym_id", pid)
+          .not("befund_html", "is", null);
+      } catch { /* Cloud-Reset optional */ }
+
       checkpointSessionIdRef.current = null;
 
       toast({
         title: "Cache geleert",
-        description: `${toDelete.length} lokale + Cloud-Checkpoints für ${pid} entfernt. Auswertung startet neu …`,
+        description: `${toDelete.length} lokale Sicherungen + Cloud-Checkpoints + alter fertiger Bericht für ${pid} entfernt. Auswertung startet neu …`,
       });
 
       // 3) Strikte Auswertung neu starten
@@ -1645,6 +1655,7 @@ export function TherapyRecommendation() {
       toast({ title: "Reset fehlgeschlagen", description: msg, variant: "destructive" });
     }
   };
+
 
 
 
