@@ -140,13 +140,13 @@ Deno.serve(async (req) => {
       .from("therapy_sessions")
       .select("*")
       .eq("pseudonym_id", pseudonymId)
-      .order("created_at", { ascending: false });
+      .neq("kind", "befund_checkpoint")
+      .neq("kind", "quarantine_patient_mismatch")
+      .order("created_at", { ascending: false })
+      .limit(200);
 
     if (error) throw error;
-    const filtered = (data ?? []).filter(
-      (row: { kind?: string | null }) =>
-        row.kind !== "befund_checkpoint" && row.kind !== "quarantine_patient_mismatch",
-    );
+    const filtered = data ?? [];
 
 
 
