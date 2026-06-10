@@ -140,8 +140,13 @@ Deno.serve(async (req) => {
       .from("therapy_sessions")
       .select("*")
       .eq("pseudonym_id", pseudonymId)
-      .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
       .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    const filtered = (data ?? []).filter(
+      (row: { kind?: string | null }) =>
+        row.kind !== "befund_checkpoint" && row.kind !== "quarantine_patient_mismatch",
+    );
 
     if (error) throw error;
 
