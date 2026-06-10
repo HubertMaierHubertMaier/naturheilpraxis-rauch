@@ -590,9 +590,14 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 </html>`;
 }
 
-async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2): Promise<string> {
+async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2, opts?: { maxTokens?: number; timeoutMs?: number; attempts?: number }): Promise<string> {
+  const maxTokens = opts?.maxTokens ?? 32000;
+  const timeoutMs = opts?.timeoutMs ?? 60_000;
+  const attempts = opts?.attempts ?? 3;
   let lastError = "AI Gateway lieferte keine verwertbare Antwort";
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -607,8 +612,9 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
             { role: "user", content: prompt },
           ],
           temperature,
-          max_tokens: 32000,
+          max_tokens: maxTokens,
         }),
+        signal: ac.signal,
       });
       const bodyText = await resp.text().catch(() => "");
       if (!resp.ok) {
@@ -628,13 +634,18 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
       return content;
     } catch (error) {
       lastError = String((error as Error)?.message || error || lastError);
-      const retryable = /leere Antwort|unvollständiges JSON|leeren Inhalt|Unexpected end|500|502|503|504|timeout|NetworkError|Failed to fetch/i.test(lastError);
-      if (attempt >= 3 || !retryable) break;
+      const isAbort = (error as Error)?.name === "AbortError" || /aborted/i.test(lastError);
+      if (isAbort) lastError = `AI Gateway timeout nach ${Math.round(timeoutMs / 1000)}s`;
+      const retryable = isAbort || /leere Antwort|unvollständiges JSON|leeren Inhalt|Unexpected end|500|502|503|504|timeout|NetworkError|Failed to fetch/i.test(lastError);
+      if (attempt >= attempts || !retryable) break;
       await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw new Error(lastError);
 }
+
 
 async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string): Promise<ReadableStream<Uint8Array>> {
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
