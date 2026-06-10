@@ -87,9 +87,11 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 
-const ANALYSIS_CHUNK_MAX_CHARS = 9000;
-const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 4500;
+const ANALYSIS_CHUNK_MAX_CHARS = 6000;
+const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v4";
+const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
+const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -372,6 +374,18 @@ const parseLlmJson = (raw: string): any => {
   // Wenn das Modell hinter einem vollständigen Objekt noch Müll erzeugt hat: längstes gültiges Präfix verwenden.
   try { return parseJsonPrefix(repaired); } catch { /* originalen Fehler werfen */ }
   return JSON.parse(cleaned);
+};
+
+const normalizePartialAnalysisJson = (raw: string) => {
+  const parsed = parseLlmJson(raw);
+  const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
+  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
+  if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  const normalized: Record<string, any> = {};
+  for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
+  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
+  normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
+  return JSON.stringify(normalized);
 };
 
 /**
