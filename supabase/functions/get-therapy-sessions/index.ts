@@ -150,12 +150,12 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ sessions: data ?? [] }), {
+    return new Response(JSON.stringify({ sessions: filtered }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    console.error("[get-therapy-sessions] Session lookup failed");
+    console.error("[get-therapy-sessions] Session lookup failed:", getErrorMessage(error));
     return new Response(JSON.stringify({ error: getErrorMessage(error) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
