@@ -1783,8 +1783,7 @@ export function TherapyRecommendation() {
             }
             const partial = String(chunkJson.partial || "").trim();
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
-            assertStrictPartialAnalysis(partial);
-            return partial;
+            return normalizePartialAnalysisJson(partial);
           } catch (err) {
             lastError = (err as Error).message || String(err);
             if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);
@@ -1833,7 +1832,6 @@ export function TherapyRecommendation() {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
-          assertStrictPartialAnalysis(partial);
           partials.push(partial);
         } catch (error) {
           const message = (error as Error).message || "";
@@ -1847,7 +1845,6 @@ export function TherapyRecommendation() {
               writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
               try {
                 const retryPartial = await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1);
-                assertStrictPartialAnalysis(retryPartial);
                 partials.push(retryPartial);
               } catch (retryError) {
                 const retryMessage = (retryError as Error).message || String(retryError);
