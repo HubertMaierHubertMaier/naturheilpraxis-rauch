@@ -840,6 +840,8 @@ serve(async (req) => {
           LOVABLE_API_KEY,
           "google/gemini-2.5-flash",
           buildChunkPrompt({ label, text }, index, total, body),
+          0.2,
+          { maxTokens: 8000, timeoutMs: 55_000, attempts: 2 },
         );
       } catch (error) {
         return new Response(JSON.stringify({ error: String((error as Error)?.message || error || "Teilpaket konnte nicht vollständig ausgewertet werden") }), {
@@ -847,6 +849,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
       return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered: false }), {
         headers: {
           ...corsHeaders,
