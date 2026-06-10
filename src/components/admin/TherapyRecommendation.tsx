@@ -87,8 +87,8 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 
-const ANALYSIS_CHUNK_MAX_CHARS = 3500;
-const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 1800;
+const ANALYSIS_CHUNK_MAX_CHARS = 9000;
+const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 4500;
 const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v4";
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
