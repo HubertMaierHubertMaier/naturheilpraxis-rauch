@@ -864,7 +864,17 @@ serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ partial: extractJsonish(partial), chars: text.length, recovered: false }), {
+      let normalizedPartial = "";
+      try {
+        normalizedPartial = normalizePartialAnalysisJson(partial);
+      } catch (error) {
+        return new Response(JSON.stringify({ error: `Ungültige/unkomplette Teilanalyse: ${(error as Error).message}` }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ partial: normalizedPartial, chars: text.length, recovered: false }), {
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
