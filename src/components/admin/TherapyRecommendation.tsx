@@ -1828,6 +1828,7 @@ export function TherapyRecommendation() {
       };
 
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
+      const skippedChunks: Array<{ index: number; label: string; reason: string }> = [];
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
@@ -1835,27 +1836,38 @@ export function TherapyRecommendation() {
           partials.push(partial);
         } catch (error) {
           const message = (error as Error).message || "";
-          if (!isRecoverableAnalysisTimeout(message) || chunks[i].text.length <= ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
+          // Echter Benutzer-Abbruch → wirklich stoppen
+          if (docController.signal.aborted) {
             await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
-            throw new Error(`Strikte Auswertung gestoppt bei Teil ${i + 1}/${chunks.length} (${chunks[i].label}): ${message}. ${partials.length} Teilanalyse(n) sind gespeichert; bitte später erneut klicken, dann geht es genau hier weiter.`);
-          } else {
+            throw new Error("Auswertung vom Benutzer abgebrochen.");
+          }
+          let anyRecovered = false;
+          if (isRecoverableAnalysisTimeout(message) && chunks[i].text.length > ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
             const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
-            writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf – ohne Lückenbericht…`);
+            writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
             for (let r = 0; r < retryChunks.length; r += 1) {
               writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
               try {
                 const retryPartial = await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1);
                 partials.push(retryPartial);
+                anyRecovered = true;
               } catch (retryError) {
                 const retryMessage = (retryError as Error).message || String(retryError);
-                await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
-                throw new Error(`Strikte Auswertung gestoppt bei Unter-Teil ${i + 1}.${r + 1}/${retryChunks.length} (${retryChunks[r].label}): ${retryMessage}. ${partials.length} Teilanalyse(n) sind gespeichert; bitte erneut klicken, dann geht es am letzten vollständigen Hauptteil weiter.`);
+                writeProgress(`  ⚠ Unter-Teil ${i + 1}.${r + 1} fehlgeschlagen (${retryMessage}). Wird übersprungen, Lauf geht weiter.`);
+                skippedChunks.push({ index: i + 1, label: `${chunks[i].label} (Unter-Teil ${r + 1}/${retryChunks.length})`, reason: retryMessage });
               }
             }
           }
+          if (!anyRecovered) {
+            writeProgress(`⚠ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${message}). Wird übersprungen, Lauf geht weiter.`);
+            skippedChunks.push({ index: i + 1, label: chunks[i].label, reason: message });
+          }
         }
         await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
-        writeProgress(`✓ Teil ${i + 1}/${chunks.length} ausgewertet`);
+        writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
+      }
+      if (skippedChunks.length) {
+        writeProgress(`\n⚠ Hinweis: ${skippedChunks.length} Teil(e) konnten nicht ausgewertet werden und fehlen im Bericht:\n${skippedChunks.map(s => `  • Teil ${s.index}: ${s.label} — ${s.reason}`).join("\n")}\nDer Bericht wird trotzdem aus den ${partials.length} erfolgreichen Teil(en) erstellt. Du kannst die Auswertung später erneut starten — die übersprungenen Teile werden dann erneut versucht.`);
       }
 
       // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
