@@ -72,7 +72,14 @@ function checkRateLimit(key: string, now = Date.now()): boolean {
 }
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : "Fehler";
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const parts = [record.message, record.code, record.details, record.hint]
+      .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
+    if (parts.length > 0) return parts.join(" | ");
+  }
+  return "Fehler";
 }
 
 Deno.serve(async (req) => {
