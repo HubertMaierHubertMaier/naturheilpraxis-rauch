@@ -158,26 +158,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ----- Mode A: slim list -----
-    // Avoid worker memory blow-ups: project eingabe_daten to only the keys
-    // actually rendered in the list, drop befund_html entirely (lazy-loaded),
-    // and truncate empfehlung. Full data is fetched per-row via session_id.
-    const SLIM_KEYS = [
-      "symptome", "erkrankung", "belastungen",
-      "laborKomplett", "laborErhoeht", "laborErniedrigt", "laborDatum",
-      "stuhlbefund", "arztbericht", "arztberichtDatum",
-      "metatronHeel", "autoSavedDraft",
-    ];
-
+    // ----- Mode A: metadata-only list -----
+    // Important: do NOT select eingabe_daten, empfehlung or befund_html here.
+    // Those columns can contain hundreds of KB per row and have repeatedly
+    // exhausted the Edge worker before the code could trim the payload.
+    // Full content is loaded only for one row via `session_id`.
     const PAGE_SIZE = 50;
-    const MAX_ROWS = 200;
+    const MAX_ROWS = 500;
     const slimRows: Array<Record<string, unknown>> = [];
 
     for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
       const { data: page, error } = await adminClient
         .from("therapy_sessions")
         .select(
-          "id, pseudonym_id, eingabe_daten, empfehlung, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id",
+          "id, pseudonym_id, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id",
         )
         .eq("pseudonym_id", pseudonymId)
         .neq("kind", "befund_checkpoint")
@@ -189,28 +183,17 @@ Deno.serve(async (req) => {
       if (!page || page.length === 0) break;
 
       for (const r of page as Array<Record<string, unknown>>) {
-        const raw = (r.eingabe_daten ?? {}) as Record<string, unknown>;
-        const slim: Record<string, unknown> = {};
-        for (const k of SLIM_KEYS) if (raw[k] !== undefined) slim[k] = raw[k];
-
-        const empfehlung = typeof r.empfehlung === "string" ? r.empfehlung : "";
         slimRows.push({
           ...r,
-          eingabe_daten: slim,
-          empfehlung: empfehlung.length > 400 ? empfehlung.slice(0, 400) + "…" : empfehlung,
-          has_empfehlung: empfehlung.length > 0,
+          eingabe_daten: {},
+          empfehlung: "",
+          has_empfehlung: true,
           is_truncated: true,
-          has_befund_html: false,
+          has_befund_html: r.kind === "befund_auswertung",
         });
       }
       if (page.length < PAGE_SIZE) break;
     }
-
-    // Proxy flag: kind === 'befund_auswertung' is reliably set when befund_html exists.
-    for (const r of slimRows) {
-      r.has_befund_html = r.kind === "befund_auswertung";
-    }
-
 
     return new Response(JSON.stringify({ sessions: slimRows }), {
       status: 200,
