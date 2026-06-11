@@ -72,6 +72,13 @@ const encoder = new TextEncoder();
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 
+function countAnalysisObjectItems(source: Record<string, any>) {
+  const topLevel = ANALYSIS_REQUIRED_ARRAY_KEYS.reduce((sum, key) => sum + (Array.isArray(source[key]) ? source[key].length : 0), 0);
+  const anamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
+  const anamnesisItems = ANALYSIS_ANAMNESE_KEYS.reduce((sum, key) => sum + (Array.isArray(anamnese[key]) ? anamnese[key].length : 0), 0);
+  return topLevel + anamnesisItems;
+}
+
 function cleanText(value?: string) {
   return (value || "").replace(/\r\n/g, "\n").trim();
 }
@@ -393,6 +400,7 @@ function normalizePartialAnalysisJson(raw: string) {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
   const normalized: Record<string, any> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
