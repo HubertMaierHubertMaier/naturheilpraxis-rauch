@@ -1579,7 +1579,7 @@ export function TherapyRecommendation() {
       const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(cloudHtml);
       setDocAnalysisProgress(progress);
-      setIsDocAnalysisPanelMinimized(false);
+      setIsDocAnalysisPanelMinimized(true);
       setLatestBefundLoadedFrom("cloud");
       writeLatestBefundDisplay(pid, { html: cloudHtml, progress, meta: cloudRow.befund_meta, createdAt: cloudRow.created_at });
       if (!options?.quiet) toast({ title: "Befund-Auswertung geladen", description: `Stand: ${created}` });
@@ -1591,7 +1591,7 @@ export function TherapyRecommendation() {
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(localSnapshot.html);
       setDocAnalysisProgress(progress);
-      setIsDocAnalysisPanelMinimized(false);
+      setIsDocAnalysisPanelMinimized(true);
       setLatestBefundLoadedFrom("local");
       if (!options?.quiet) toast({ title: "Befund-Auswertung wiederhergestellt", description: "Das zuletzt fertige Ergebnis ist wieder sichtbar." });
       return true;
