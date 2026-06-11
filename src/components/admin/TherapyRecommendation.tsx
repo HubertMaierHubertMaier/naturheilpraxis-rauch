@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType, Maximize2, Minimize2, ExternalLink } from "lucide-react";
@@ -3417,26 +3418,53 @@ export function TherapyRecommendation() {
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
-        <Button
-          onClick={handleAnalyzeDocuments}
-          disabled={isAnalyzingDocs || isStreaming}
-          variant="outline"
-          className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
-          title="Reine Befund-Auswertung aller eingereichten Dokumente (ohne Therapie-Empfehlung) — große Mengen werden vollständig in Teilpaketen verarbeitet"
-        >
-          {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-          {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
-        </Button>
-        <Button
-          onClick={handleReAnalyzeAll}
-          disabled={isAnalyzingDocs || isStreaming}
-          variant="outline"
-          className="gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
-          title="Löscht alle Checkpoints (lokal + Cloud) für dieses Pseudonym und startet die strikte Auswertung komplett neu — z.B. nach Prompt-/Regel-Updates wie der neuen Datumspflicht."
-        >
-          <RotateCcw className="h-4 w-4" />
-          Alles neu auswerten
-        </Button>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleAnalyzeDocuments}
+                disabled={isAnalyzingDocs || isStreaming}
+                variant="outline"
+                className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
+              >
+                {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+                {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
+              <p className="font-semibold mb-1">In 90 % der Fälle die richtige Wahl:</p>
+              <ul className="list-disc pl-4 space-y-1 mb-2">
+                <li><strong>Token/Coins sparen</strong> — die Anamnese ist meist schon analysiert und im Pseudonym-Verlauf gespeichert. Sie nochmal durchzujagen kostet bei P-2026-0006-Größe richtig Geld, ohne neue Erkenntnisse.</li>
+                <li><strong>Keine Datenverlust-Gefahr</strong> — bestehende Auswertungen/Checkpoints bleiben unangetastet. Der neue Befund wird nur ergänzend dazugerechnet.</li>
+                <li><strong>Schneller fertig</strong> — weniger Chunks = weniger Stellen an denen was schiefgehen kann (genau das Problem von gestern).</li>
+              </ul>
+              <p className="text-[10px] text-muted-foreground italic">Faustregel: Neuer Laborbefund / NLS-Befund kommt rein → „Nur Befund-Auswertung".</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleReAnalyzeAll}
+                disabled={isAnalyzingDocs || isStreaming}
+                variant="outline"
+                className="gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Alles neu auswerten
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
+              <p className="font-semibold mb-1">Nur in diesen Fällen:</p>
+              <ul className="list-disc pl-4 space-y-1 mb-2">
+                <li>die Anamnese sich <strong>wesentlich geändert</strong> hat (neue Medikamente, neue Diagnosen, neue Beschwerden)</li>
+                <li>der vorherige Lauf <strong>abgebrochen</strong> ist und du einen sauberen Neustart willst</li>
+                <li>du ein <strong>anderes KI-Modell</strong> testen willst</li>
+              </ul>
+              <p className="text-[10px] text-muted-foreground italic">Faustregel: Patient war 6 Monate weg und kommt mit komplett neuer Geschichte → „Alles neu auswerten".</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {isAnalyzingDocs && (
           <Button
             variant="destructive"
