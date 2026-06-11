@@ -143,17 +143,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data, error } = await adminClient
-      .from("therapy_sessions")
-      .select("*")
-      .eq("pseudonym_id", pseudonymId)
-      .neq("kind", "befund_checkpoint")
-      .neq("kind", "quarantine_patient_mismatch")
-      .order("created_at", { ascending: false })
-      .limit(200);
+    // Page through results to avoid statement_timeout on large JSONB payloads
+    // (single SELECT * can exceed the Postgres statement timeout when
+    // eingabe_daten / befund_html are several MB across many rows).
+    const PAGE_SIZE = 20;
+    const MAX_ROWS = 200;
+    const filtered: unknown[] = [];
 
-    if (error) throw error;
-    const filtered = data ?? [];
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+      const { data: page, error } = await adminClient
+        .from("therapy_sessions")
+        .select("*")
+        .eq("pseudonym_id", pseudonymId)
+        .neq("kind", "befund_checkpoint")
+        .neq("kind", "quarantine_patient_mismatch")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      if (!page || page.length === 0) break;
+      filtered.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
 
 
 
