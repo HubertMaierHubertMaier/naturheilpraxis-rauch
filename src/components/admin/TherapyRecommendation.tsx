@@ -2656,7 +2656,7 @@ export function TherapyRecommendation() {
               }}
               className="gap-1.5"
                 disabled={!isPatientScopedStorageReady(pseudonymId)}
-              title="Alle bisher gespeicherten Eingaben (Labor, Arztbericht, etc.) für diese Pseudonym-ID erneut zusammenführen und ins Formular laden"
+              title={"Im Normalfall NICHT nötig — die Daten werden beim Eintippen der Pseudonym-ID automatisch geladen (lokal + Cloud + letzter Befund).\n\nDiesen Knopf nur drücken, wenn:\n• du an einem anderen Gerät zwischendurch gespeichert hast und die Cloud-Version frischer ist\n• die Auto-Wiederherstellung etwas verschluckt hat\n• du den serverseitigen Stand erzwingen willst"}
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Daten neu laden
