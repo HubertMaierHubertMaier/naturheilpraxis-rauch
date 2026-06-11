@@ -192,21 +192,26 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
                 "";
 
-              const isBefund = s.kind === "befund_auswertung" || !!s.befund_html;
+              const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
-              const openBefund = () => {
-                if (!s.befund_html) return;
+              const openBefund = async () => {
+                let row: TherapySession | null = s;
+                if (!row.befund_html) {
+                  row = await fetchFullSession(s.id);
+                  if (!row?.befund_html) return;
+                }
                 if (onShowBefund) {
-                  onShowBefund(s);
+                  onShowBefund(row);
                   return;
                 }
                 const w = window.open("", "_blank");
                 if (w) {
                   w.document.open();
-                  w.document.write(s.befund_html);
+                  w.document.write(row.befund_html as string);
                   w.document.close();
                 }
               };
+
               return (
                 <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                   <div className="flex items-start gap-2">
