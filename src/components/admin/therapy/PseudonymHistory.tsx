@@ -271,7 +271,14 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           size="sm"
                           variant="ghost"
                           className="h-7 text-xs gap-1"
-                          onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                          onClick={async () => {
+                            if (isExpanded) {
+                              setExpandedId(null);
+                              return;
+                            }
+                            setExpandedId(s.id);
+                            if (s.is_truncated) await fetchFullSession(s.id);
+                          }}
                         >
                           <Eye className="h-3 w-3" />
                           {isExpanded ? "Ausblenden" : "Anzeigen"}
@@ -280,12 +287,16 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           size="sm"
                           variant="ghost"
                           className="h-7 text-xs"
-                          onClick={() => onLoadSession(s)}
+                          onClick={async () => {
+                            const full = s.is_truncated ? await fetchFullSession(s.id) : s;
+                            if (full) onLoadSession(full);
+                          }}
                         >
                           In neue Version übernehmen
                         </Button>
                       </>
                     )}
+
                     <Button
                       size="sm"
                       variant="ghost"
