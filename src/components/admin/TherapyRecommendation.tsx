@@ -3532,7 +3532,7 @@ export function TherapyRecommendation() {
                 {isAnalyzingDocs
                   ? "Sie läuft gerade — das Protokoll aktualisiert sich live."
                   : isDocAnalysisPanelMinimized
-                    ? "Minimiert — auf „anzeigen" klicken, um das Ergebnis einzublenden."
+                    ? 'Minimiert — auf „anzeigen" klicken, um das Ergebnis einzublenden.'
                     : "Fertig — Vollbild · neuer Tab · oder minimieren."}
               </div>
             </div>
