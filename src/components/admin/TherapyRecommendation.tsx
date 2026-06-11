@@ -3529,7 +3529,11 @@ export function TherapyRecommendation() {
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">Hier ist die Befund-Auswertung</div>
               <div className="text-xs text-muted-foreground">
-                {isAnalyzingDocs ? "Sie läuft gerade — das Protokoll aktualisiert sich live." : "Fertig — Vollbild · neuer Tab · oder minimieren."}
+                {isAnalyzingDocs
+                  ? "Sie läuft gerade — das Protokoll aktualisiert sich live."
+                  : isDocAnalysisPanelMinimized
+                    ? 'Minimiert — auf „anzeigen" klicken, um das Ergebnis einzublenden.'
+                    : "Fertig — Vollbild · neuer Tab · oder minimieren."}
               </div>
             </div>
             {docAnalysisHtml && (
