@@ -388,11 +388,28 @@ const normalizePartialAnalysisJson = (raw: string) => {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
   const normalized: Record<string, unknown> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   return JSON.stringify(normalized);
+};
+
+const countPartialExtractionItems = (partials: string[]) => partials.reduce((sum, partial) => {
+  try {
+    const parsed = parseLlmJson(partial);
+    return sum + countAnalysisObjectItems(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {});
+  } catch {
+    return sum;
+  }
+}, 0);
+
+const isFalseEmptyBefundHtml = (html: string) => {
+  const visible = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return /Automatisch ergänzt aus den Teilanalysen/i.test(visible)
+    && /Keine pathologischen Laborabweichungen/i.test(visible)
+    && !/(Diagnosen\s*&|Medikamente|Chronologische Untersuchungs|Strukturierte Anamnese|Laborwert-Verlauf)/i.test(visible);
 };
 
 /**
