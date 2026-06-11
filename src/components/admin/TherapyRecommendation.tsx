@@ -1528,6 +1528,10 @@ export function TherapyRecommendation() {
       toast({ title: "Keine Auswertung gefunden", description: "In dieser Sitzung ist kein HTML-Ergebnis gespeichert.", variant: "destructive" });
       return;
     }
+    if (isFalseEmptyBefundHtml(html)) {
+      toast({ title: "Ungültige Alt-Auswertung blockiert", description: "Dieser gespeicherte Stand enthält nur die falsche leere Labor-Quintessenz. Bitte die Befund-Auswertung erneut starten/fortsetzen.", variant: "destructive" });
+      return;
+    }
     const meta = session.befund_meta || {};
     setDocAnalysisHtml(html);
     const progress = `Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
@@ -1572,6 +1576,10 @@ export function TherapyRecommendation() {
     const cloudHtml = String(cloudRow?.befund_html || "").trim();
     const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
     const newestFinishedTs = Math.max(cloudTs, localTs);
+    if (cloudHtml && isFalseEmptyBefundHtml(cloudHtml)) cloudRow = null;
+    if (localSnapshot?.html && isFalseEmptyBefundHtml(localSnapshot.html)) {
+      try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
+    }
 
     const unfinishedCheckpointNotice = (() => {
       if (checkpointTs <= newestFinishedTs) return "";
@@ -1892,6 +1900,11 @@ export function TherapyRecommendation() {
       }
       if (skippedChunks.length) {
         writeProgress(`\n⚠ Hinweis: ${skippedChunks.length} Teil(e) konnten nicht ausgewertet werden und fehlen im Bericht:\n${skippedChunks.map(s => `  • Teil ${s.index}: ${s.label} — ${s.reason}`).join("\n")}\nDer Bericht wird trotzdem aus den ${partials.length} erfolgreichen Teil(en) erstellt. Du kannst die Auswertung später erneut starten — die übersprungenen Teile werden dann erneut versucht.`);
+      }
+      const extractedItemCount = countPartialExtractionItems(partials);
+      if (!partials.length || extractedItemCount === 0) {
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        throw new Error(`Die KI hat aus ${chunks.length} Teilpaket(en) keine verwertbaren Befunddaten extrahiert. Deshalb wird kein leerer „Keine Laborabweichungen"-Bericht mehr erzeugt. Bitte mit „Nur Befund-Auswertung (HTML)" fortsetzen/erneut versuchen.`);
       }
 
       // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
