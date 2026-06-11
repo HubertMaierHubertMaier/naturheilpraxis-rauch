@@ -2046,7 +2046,8 @@ export function TherapyRecommendation() {
       }
 
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
+      const hasCoreAnalysisSections = /(Chronologische Untersuchungs|Strukturierte Anamnese|Diagnosen\s*&|Medikamente|Laborwert-Verlauf|Auffälligkeiten, Widersprüche|Offene Fragen|Sicherheitshinweise)/i.test(visibleFinalText);
+      const hasMeaningfulAnalysisContent = hasCoreAnalysisSections && extractedItemCount > 0 && visibleFinalText.length > 300 && !isFalseEmptyBefundHtml(full);
       const hasInlineErrorMarker = full.includes("❌ Fehler");
       if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
         writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
