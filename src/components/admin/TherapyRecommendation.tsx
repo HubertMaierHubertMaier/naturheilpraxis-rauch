@@ -1547,8 +1547,8 @@ export function TherapyRecommendation() {
     const pid = normalizePseudonymId(pidValue);
     if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs) return false;
 
-    const localSnapshot = readLatestBefundDisplay(pid);
-    const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
+    let localSnapshot = readLatestBefundDisplay(pid);
+    let localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
 
     // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
     let cloudRow: any = null;
@@ -1572,14 +1572,20 @@ export function TherapyRecommendation() {
       latestCheckpoint = Array.isArray(checkpointRows) ? checkpointRows[0] : null;
     } catch { /* offline → lokal weiter unten */ }
 
-    const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
-    const cloudHtml = String(cloudRow?.befund_html || "").trim();
+    let cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
+    let cloudHtml = String(cloudRow?.befund_html || "").trim();
     const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
-    const newestFinishedTs = Math.max(cloudTs, localTs);
-    if (cloudHtml && isFalseEmptyBefundHtml(cloudHtml)) cloudRow = null;
+    if (cloudHtml && isFalseEmptyBefundHtml(cloudHtml)) {
+      cloudRow = null;
+      cloudHtml = "";
+      cloudTs = 0;
+    }
     if (localSnapshot?.html && isFalseEmptyBefundHtml(localSnapshot.html)) {
       try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
+      localSnapshot = null;
+      localTs = 0;
     }
+    const newestFinishedTs = Math.max(cloudTs, localTs);
 
     const unfinishedCheckpointNotice = (() => {
       if (checkpointTs <= newestFinishedTs) return "";
