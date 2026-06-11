@@ -135,6 +135,21 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
+    const sessionId = (body?.session_id ?? "").toString().trim();
+
+    // ----- Mode B: single-row full fetch (lazy load on expand / Befund / Empfehlung) -----
+    if (sessionId) {
+      const { data: row, error } = await adminClient
+        .from("therapy_sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (error) throw error;
+      return new Response(JSON.stringify({ session: row ?? null }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!pseudonymId) {
       return new Response(JSON.stringify({ sessions: [] }), {
@@ -143,17 +158,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Page through results to avoid statement_timeout on large JSONB payloads
-    // (single SELECT * can exceed the Postgres statement timeout when
-    // eingabe_daten / befund_html are several MB across many rows).
-    const PAGE_SIZE = 20;
+    // ----- Mode A: slim list -----
+    // Avoid worker memory blow-ups: project eingabe_daten to only the keys
+    // actually rendered in the list, drop befund_html entirely (lazy-loaded),
+    // and truncate empfehlung. Full data is fetched per-row via session_id.
+    const SLIM_KEYS = [
+      "symptome", "erkrankung", "belastungen",
+      "laborKomplett", "laborErhoeht", "laborErniedrigt", "laborDatum",
+      "stuhlbefund", "arztbericht", "arztberichtDatum",
+      "metatronHeel", "autoSavedDraft",
+    ];
+
+    const PAGE_SIZE = 50;
     const MAX_ROWS = 200;
-    const filtered: unknown[] = [];
+    const slimRows: Array<Record<string, unknown>> = [];
 
     for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
       const { data: page, error } = await adminClient
         .from("therapy_sessions")
-        .select("*")
+        .select(
+          "id, pseudonym_id, eingabe_daten, empfehlung, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id",
+        )
         .eq("pseudonym_id", pseudonymId)
         .neq("kind", "befund_checkpoint")
         .neq("kind", "quarantine_patient_mismatch")
@@ -162,16 +187,36 @@ Deno.serve(async (req) => {
 
       if (error) throw error;
       if (!page || page.length === 0) break;
-      filtered.push(...page);
+
+      for (const r of page as Array<Record<string, unknown>>) {
+        const raw = (r.eingabe_daten ?? {}) as Record<string, unknown>;
+        const slim: Record<string, unknown> = {};
+        for (const k of SLIM_KEYS) if (raw[k] !== undefined) slim[k] = raw[k];
+
+        const empfehlung = typeof r.empfehlung === "string" ? r.empfehlung : "";
+        slimRows.push({
+          ...r,
+          eingabe_daten: slim,
+          empfehlung: empfehlung.length > 400 ? empfehlung.slice(0, 400) + "…" : empfehlung,
+          has_empfehlung: empfehlung.length > 0,
+          is_truncated: true,
+          has_befund_html: false,
+        });
+      }
       if (page.length < PAGE_SIZE) break;
     }
 
+    // Proxy flag: kind === 'befund_auswertung' is reliably set when befund_html exists.
+    for (const r of slimRows) {
+      r.has_befund_html = r.kind === "befund_auswertung";
+    }
 
 
-    return new Response(JSON.stringify({ sessions: filtered }), {
+    return new Response(JSON.stringify({ sessions: slimRows }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (error: unknown) {
     console.error("[get-therapy-sessions] Session lookup failed:", getErrorMessage(error));
     return new Response(JSON.stringify({ error: getErrorMessage(error) }), {

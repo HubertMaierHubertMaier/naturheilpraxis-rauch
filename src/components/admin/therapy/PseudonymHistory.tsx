@@ -23,7 +23,12 @@ export interface TherapySession {
   version_number?: number | null;
   version_label?: string | null;
   parent_session_id?: string | null;
+  /** Server-side flags for the slim list view */
+  is_truncated?: boolean;
+  has_befund_html?: boolean;
+  has_empfehlung?: boolean;
 }
+
 
 
 interface Props {
@@ -75,6 +80,31 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
     const t = setTimeout(loadSessions, 300);
     return () => clearTimeout(t);
   }, [loadSessions]);
+
+  /**
+   * Lazy-load the full row (incl. befund_html + full eingabe_daten/empfehlung)
+   * for one slim list entry. Merges the result back into `sessions` so the UI
+   * keeps working with the same TherapySession shape.
+   */
+  const fetchFullSession = useCallback(async (id: string): Promise<TherapySession | null> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return null;
+    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+      body: { session_id: id },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (error) {
+      toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const full = (data as any)?.session as TherapySession | null;
+    if (full) {
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...full, is_truncated: false } : s)));
+    }
+    return full;
+  }, [toast]);
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Diese Sitzung endgültig löschen?")) return;
@@ -162,21 +192,26 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
                 "";
 
-              const isBefund = s.kind === "befund_auswertung" || !!s.befund_html;
+              const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
-              const openBefund = () => {
-                if (!s.befund_html) return;
+              const openBefund = async () => {
+                let row: TherapySession | null = s;
+                if (!row.befund_html) {
+                  row = await fetchFullSession(s.id);
+                  if (!row?.befund_html) return;
+                }
                 if (onShowBefund) {
-                  onShowBefund(s);
+                  onShowBefund(row);
                   return;
                 }
                 const w = window.open("", "_blank");
                 if (w) {
                   w.document.open();
-                  w.document.write(s.befund_html);
+                  w.document.write(row.befund_html as string);
                   w.document.close();
                 }
               };
+
               return (
                 <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                   <div className="flex items-start gap-2">
@@ -236,7 +271,14 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           size="sm"
                           variant="ghost"
                           className="h-7 text-xs gap-1"
-                          onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                          onClick={async () => {
+                            if (isExpanded) {
+                              setExpandedId(null);
+                              return;
+                            }
+                            setExpandedId(s.id);
+                            if (s.is_truncated) await fetchFullSession(s.id);
+                          }}
                         >
                           <Eye className="h-3 w-3" />
                           {isExpanded ? "Ausblenden" : "Anzeigen"}
@@ -245,12 +287,16 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           size="sm"
                           variant="ghost"
                           className="h-7 text-xs"
-                          onClick={() => onLoadSession(s)}
+                          onClick={async () => {
+                            const full = s.is_truncated ? await fetchFullSession(s.id) : s;
+                            if (full) onLoadSession(full);
+                          }}
                         >
                           In neue Version übernehmen
                         </Button>
                       </>
                     )}
+
                     <Button
                       size="sm"
                       variant="ghost"
