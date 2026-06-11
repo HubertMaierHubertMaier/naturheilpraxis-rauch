@@ -72,6 +72,13 @@ const encoder = new TextEncoder();
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 
+function countAnalysisObjectItems(source: Record<string, any>) {
+  const topLevel = ANALYSIS_REQUIRED_ARRAY_KEYS.reduce((sum, key) => sum + (Array.isArray(source[key]) ? source[key].length : 0), 0);
+  const anamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
+  const anamnesisItems = ANALYSIS_ANAMNESE_KEYS.reduce((sum, key) => sum + (Array.isArray(anamnese[key]) ? anamnese[key].length : 0), 0);
+  return topLevel + anamnesisItems;
+}
+
 function cleanText(value?: string) {
   return (value || "").replace(/\r\n/g, "\n").trim();
 }
@@ -393,11 +400,23 @@ function normalizePartialAnalysisJson(raw: string) {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
   const normalized: Record<string, any> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   return JSON.stringify(normalized);
+}
+
+function countPartialExtractionItems(partials: string[]) {
+  return partials.reduce((sum, partial) => {
+    try {
+      const parsed = parseLlmJson(partial);
+      return sum + countAnalysisObjectItems(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {});
+    } catch {
+      return sum;
+    }
+  }, 0);
 }
 
 function stripHtmlFence(text: string) {
@@ -760,8 +779,9 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         for (let i = 0; i < chunks.length; i += 1) {
           send(`<li>Teil ${i + 1}/${chunks.length}: ${chunks[i].label.replace(/[<>&]/g, "")} wird gelesen…</li>`);
           const partial = await callGatewayText(apiKey, "google/gemini-2.5-flash", buildChunkPrompt(chunks[i], i + 1, chunks.length, b));
-          partials.push(extractJsonish(partial).slice(0, 12_000));
+          partials.push(normalizePartialAnalysisJson(partial));
         }
+        if (countPartialExtractionItems(partials) === 0) throw new Error("Die KI hat keine verwertbaren Befunddaten extrahiert; es wird kein leerer Bericht erzeugt.");
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
         const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length));
@@ -891,6 +911,11 @@ serve(async (req) => {
       if (!partials.length) {
         return new Response(JSON.stringify({ error: "Keine Teilanalysen zur Zusammenführung übergeben" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (countPartialExtractionItems(partials) === 0) {
+        return new Response(JSON.stringify({ error: "Keine verwertbaren Befunddaten in den Teilanalysen; leerer Bericht wird blockiert." }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const totalChars = Number(body.totalChars || 0);

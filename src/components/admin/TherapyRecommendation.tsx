@@ -93,6 +93,12 @@ const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v5-json-normalized";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
+const countAnalysisObjectItems = (source: Record<string, unknown>) => {
+  const topLevel = ANALYSIS_REQUIRED_ARRAY_KEYS.reduce((sum, key) => sum + (Array.isArray(source[key]) ? (source[key] as unknown[]).length : 0), 0);
+  const anamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
+  const anamnesisItems = ANALYSIS_ANAMNESE_KEYS.reduce((sum, key) => sum + (Array.isArray(anamnese[key]) ? (anamnese[key] as unknown[]).length : 0), 0);
+  return topLevel + anamnesisItems;
+};
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -126,7 +132,7 @@ const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHU
   return chunks;
 };
 
-const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig/i.test(message);
+const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig|inhaltlose Teilanalyse|keine extrahierten Daten/i.test(message);
 
 type AnalysisCheckpoint = {
   version: 2 | 3;
@@ -382,11 +388,28 @@ const normalizePartialAnalysisJson = (raw: string) => {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
   const normalized: Record<string, unknown> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   return JSON.stringify(normalized);
+};
+
+const countPartialExtractionItems = (partials: string[]) => partials.reduce((sum, partial) => {
+  try {
+    const parsed = parseLlmJson(partial);
+    return sum + countAnalysisObjectItems(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {});
+  } catch {
+    return sum;
+  }
+}, 0);
+
+const isFalseEmptyBefundHtml = (html: string) => {
+  const visible = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return /Automatisch ergänzt aus den Teilanalysen/i.test(visible)
+    && /Keine pathologischen Laborabweichungen/i.test(visible)
+    && !/(Diagnosen\s*&|Medikamente|Chronologische Untersuchungs|Strukturierte Anamnese|Laborwert-Verlauf)/i.test(visible);
 };
 
 /**
@@ -1505,6 +1528,10 @@ export function TherapyRecommendation() {
       toast({ title: "Keine Auswertung gefunden", description: "In dieser Sitzung ist kein HTML-Ergebnis gespeichert.", variant: "destructive" });
       return;
     }
+    if (isFalseEmptyBefundHtml(html)) {
+      toast({ title: "Ungültige Alt-Auswertung blockiert", description: "Dieser gespeicherte Stand enthält nur die falsche leere Labor-Quintessenz. Bitte die Befund-Auswertung erneut starten/fortsetzen.", variant: "destructive" });
+      return;
+    }
     const meta = session.befund_meta || {};
     setDocAnalysisHtml(html);
     const progress = `Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
@@ -1520,8 +1547,8 @@ export function TherapyRecommendation() {
     const pid = normalizePseudonymId(pidValue);
     if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs) return false;
 
-    const localSnapshot = readLatestBefundDisplay(pid);
-    const localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
+    let localSnapshot = readLatestBefundDisplay(pid);
+    let localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
 
     // Immer Cloud abfragen — Stand kann auf einem anderen Gerät/Tab neuer sein
     let cloudRow: any = null;
@@ -1545,9 +1572,19 @@ export function TherapyRecommendation() {
       latestCheckpoint = Array.isArray(checkpointRows) ? checkpointRows[0] : null;
     } catch { /* offline → lokal weiter unten */ }
 
-    const cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
-    const cloudHtml = String(cloudRow?.befund_html || "").trim();
+    let cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
+    let cloudHtml = String(cloudRow?.befund_html || "").trim();
     const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
+    if (cloudHtml && isFalseEmptyBefundHtml(cloudHtml)) {
+      cloudRow = null;
+      cloudHtml = "";
+      cloudTs = 0;
+    }
+    if (localSnapshot?.html && isFalseEmptyBefundHtml(localSnapshot.html)) {
+      try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
+      localSnapshot = null;
+      localTs = 0;
+    }
     const newestFinishedTs = Math.max(cloudTs, localTs);
 
     const unfinishedCheckpointNotice = (() => {
@@ -1870,6 +1907,11 @@ export function TherapyRecommendation() {
       if (skippedChunks.length) {
         writeProgress(`\n⚠ Hinweis: ${skippedChunks.length} Teil(e) konnten nicht ausgewertet werden und fehlen im Bericht:\n${skippedChunks.map(s => `  • Teil ${s.index}: ${s.label} — ${s.reason}`).join("\n")}\nDer Bericht wird trotzdem aus den ${partials.length} erfolgreichen Teil(en) erstellt. Du kannst die Auswertung später erneut starten — die übersprungenen Teile werden dann erneut versucht.`);
       }
+      const extractedItemCount = countPartialExtractionItems(partials);
+      if (!partials.length || extractedItemCount === 0) {
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        throw new Error(`Die KI hat aus ${chunks.length} Teilpaket(en) keine verwertbaren Befunddaten extrahiert. Deshalb wird kein leerer „Keine Laborabweichungen"-Bericht mehr erzeugt. Bitte mit „Nur Befund-Auswertung (HTML)" fortsetzen/erneut versuchen.`);
+      }
 
       // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
       try {
@@ -2004,7 +2046,8 @@ export function TherapyRecommendation() {
       }
 
       const visibleFinalText = full.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      const hasMeaningfulAnalysisContent = /(<h1|<h2|<table|<li|Diagnosen|Medikamente|Symptome|Befund-Auswertung)/i.test(full) && visibleFinalText.length > 120;
+      const hasCoreAnalysisSections = /(Chronologische Untersuchungs|Strukturierte Anamnese|Diagnosen\s*&|Medikamente|Laborwert-Verlauf|Auffälligkeiten, Widersprüche|Offene Fragen|Sicherheitshinweise)/i.test(visibleFinalText);
+      const hasMeaningfulAnalysisContent = hasCoreAnalysisSections && extractedItemCount > 0 && visibleFinalText.length > 300 && !isFalseEmptyBefundHtml(full);
       const hasInlineErrorMarker = full.includes("❌ Fehler");
       if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
         writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
