@@ -913,6 +913,11 @@ serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      if (countPartialExtractionItems(partials) === 0) {
+        return new Response(JSON.stringify({ error: "Keine verwertbaren Befunddaten in den Teilanalysen; leerer Bericht wird blockiert." }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const totalChars = Number(body.totalChars || 0);
       const model = body.useProModel || totalChars > 60_000
         ? "google/gemini-2.5-pro"
