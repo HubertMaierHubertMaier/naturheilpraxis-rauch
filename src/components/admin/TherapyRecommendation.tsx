@@ -93,6 +93,12 @@ const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v5-json-normalized";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
+const countAnalysisObjectItems = (source: Record<string, unknown>) => {
+  const topLevel = ANALYSIS_REQUIRED_ARRAY_KEYS.reduce((sum, key) => sum + (Array.isArray(source[key]) ? (source[key] as unknown[]).length : 0), 0);
+  const anamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
+  const anamnesisItems = ANALYSIS_ANAMNESE_KEYS.reduce((sum, key) => sum + (Array.isArray(anamnese[key]) ? (anamnese[key] as unknown[]).length : 0), 0);
+  return topLevel + anamnesisItems;
+};
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
   const text = value.trim();
@@ -126,7 +132,7 @@ const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHU
   return chunks;
 };
 
-const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig/i.test(message);
+const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig|inhaltlose Teilanalyse|keine extrahierten Daten/i.test(message);
 
 type AnalysisCheckpoint = {
   version: 2 | 3;
