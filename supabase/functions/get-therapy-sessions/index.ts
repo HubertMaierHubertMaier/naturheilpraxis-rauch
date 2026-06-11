@@ -206,21 +206,11 @@ Deno.serve(async (req) => {
       if (page.length < PAGE_SIZE) break;
     }
 
-    // Cheap boolean flag for "has befund_html" without transferring HTML.
-    if (slimRows.length > 0) {
-      const ids = slimRows.map((r) => r.id as string);
-      const { data: flags } = await adminClient
-        .from("therapy_sessions")
-        .select("id, befund_html")
-        .in("id", ids);
-      const hasMap = new Map<string, boolean>();
-      for (const f of (flags ?? []) as Array<{ id: string; befund_html: string | null }>) {
-        hasMap.set(f.id, !!(f.befund_html && (f.befund_html as string).length > 0));
-      }
-      for (const r of slimRows) {
-        r.has_befund_html = hasMap.get(r.id as string) ?? false;
-      }
+    // Proxy flag: kind === 'befund_auswertung' is reliably set when befund_html exists.
+    for (const r of slimRows) {
+      r.has_befund_html = r.kind === "befund_auswertung";
     }
+
 
     return new Response(JSON.stringify({ sessions: slimRows }), {
       status: 200,
