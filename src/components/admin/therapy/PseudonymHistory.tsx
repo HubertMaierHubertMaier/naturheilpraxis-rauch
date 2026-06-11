@@ -81,6 +81,31 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
     return () => clearTimeout(t);
   }, [loadSessions]);
 
+  /**
+   * Lazy-load the full row (incl. befund_html + full eingabe_daten/empfehlung)
+   * for one slim list entry. Merges the result back into `sessions` so the UI
+   * keeps working with the same TherapySession shape.
+   */
+  const fetchFullSession = useCallback(async (id: string): Promise<TherapySession | null> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return null;
+    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+      body: { session_id: id },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (error) {
+      toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const full = (data as any)?.session as TherapySession | null;
+    if (full) {
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...full, is_truncated: false } : s)));
+    }
+    return full;
+  }, [toast]);
+
+
   const handleDelete = async (id: string) => {
     if (!confirm("Diese Sitzung endgültig löschen?")) return;
     const { error } = await (supabase as any).from("therapy_sessions").delete().eq("id", id);
