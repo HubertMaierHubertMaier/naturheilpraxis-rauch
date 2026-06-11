@@ -32,6 +32,8 @@ interface SessionRow {
   notiz: string | null;
   created_at: string;
   updated_at: string;
+  kind?: string | null;
+  is_truncated?: boolean;
 }
 
 const fmtDate = (iso: string) =>
@@ -113,8 +115,28 @@ export function TherapyPatientOverview() {
     await loadSessionsFor(pid, true);
   };
 
-  const refreshPid = async (pid: string) => {
-    return loadSessionsFor(pid, true);
+  const fetchFullSession = async (sessionId: string, pid: string): Promise<SessionRow | null> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) return null;
+
+    const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+      body: { session_id: sessionId },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (error) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      return null;
+    }
+
+    const full = (data as any)?.session as SessionRow | null;
+    if (full) {
+      setSessionsByPid((prev) => ({
+        ...prev,
+        [pid]: (prev[pid] || []).map((row) => (row.id === sessionId ? { ...row, ...full, is_truncated: false } : row)),
+      }));
+    }
+    return full;
   };
 
   const handleDelete = async (sessionId: string, pid: string) => {
@@ -273,6 +295,7 @@ export function TherapyPatientOverview() {
                           ) : (
                             sessions.map((s) => {
                               const isExp = expandedSessionId === s.id;
+                              const hasSlimPlaceholder = s.is_truncated && Object.keys(s.eingabe_daten || {}).length === 0;
                               return (
                                 <div key={s.id} className="border border-border rounded bg-background p-3">
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -290,6 +313,11 @@ export function TherapyPatientOverview() {
                                       {s.eingabe_daten.symptome || s.eingabe_daten.belastungen}
                                     </p>
                                   )}
+                                  {hasSlimPlaceholder && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Details werden erst beim Öffnen geladen.
+                                    </p>
+                                  )}
                                   {s.notiz && (
                                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
                                       📝 {s.notiz}
@@ -299,7 +327,14 @@ export function TherapyPatientOverview() {
                                   <div className="flex gap-1 mt-2 flex-wrap">
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                      onClick={() => setExpandedSessionId(isExp ? null : s.id)}
+                                      onClick={async () => {
+                                        if (isExp) {
+                                          setExpandedSessionId(null);
+                                          return;
+                                        }
+                                        setExpandedSessionId(s.id);
+                                        if (s.is_truncated) await fetchFullSession(s.id, p.pseudonym_id);
+                                      }}
                                     >
                                       <Eye className="h-3 w-3" />
                                       {isExp ? "Ausblenden" : "Empfehlung anzeigen"}
@@ -307,9 +342,8 @@ export function TherapyPatientOverview() {
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
                                       onClick={async () => {
-                                        const freshSessions = await refreshPid(p.pseudonym_id);
-                                        const fresh = freshSessions.find((row) => row.id === s.id) || s;
-                                        handlePrint(fresh, "praxis");
+                                        const full = s.is_truncated ? await fetchFullSession(s.id, p.pseudonym_id) : s;
+                                        if (full) handlePrint(full, "praxis");
                                       }}
                                     >
                                       <Printer className="h-3 w-3" />
@@ -317,7 +351,10 @@ export function TherapyPatientOverview() {
                                     </Button>
                                     <Button
                                       size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                                      onClick={() => handlePrint(s, "patient")}
+                                      onClick={async () => {
+                                        const full = s.is_truncated ? await fetchFullSession(s.id, p.pseudonym_id) : s;
+                                        if (full) handlePrint(full, "patient");
+                                      }}
                                     >
                                       <Printer className="h-3 w-3" />
                                       Patienten-PDF

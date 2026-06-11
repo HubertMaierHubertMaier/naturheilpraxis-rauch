@@ -172,11 +172,12 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 minute: "2-digit",
               });
               const e = s.eingabe_daten || {};
+              const hasSlimPlaceholder = s.is_truncated && Object.keys(e).length === 0;
               const summary =
                 e.symptome?.slice(0, 60) ||
                 e.erkrankung?.slice(0, 60) ||
                 e.belastungen?.slice(0, 60) ||
-                "—";
+                (hasSlimPlaceholder ? "Details werden erst beim Öffnen geladen" : "—");
               const labParts: string[] = [];
               if (e.laborKomplett?.trim()) labParts.push(`Labor (${String(e.laborKomplett).split(/\n+/).filter(Boolean).length} Werte)`);
               else {
@@ -243,6 +244,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           ? `${(meta.total_chars || 0).toLocaleString("de-DE")} Zeichen · ${meta.chunk_count || "?"} Teilpaket(e)${meta.model ? ` · ${meta.model}` : ""}`
                           : summary}
                       </p>
+                      {!isBefund && s.is_truncated && (
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 mt-1 border-primary/40">
+                          schlanke Liste · Volltext auf Klick
+                        </Badge>
+                      )}
                       {!isBefund && labParts.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {labParts.map((l, i) => (
