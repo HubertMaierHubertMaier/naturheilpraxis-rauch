@@ -1591,7 +1591,7 @@ export function TherapyRecommendation() {
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(localSnapshot.html);
       setDocAnalysisProgress(progress);
-      setIsDocAnalysisPanelMinimized(false);
+      setIsDocAnalysisPanelMinimized(true);
       setLatestBefundLoadedFrom("local");
       if (!options?.quiet) toast({ title: "Befund-Auswertung wiederhergestellt", description: "Das zuletzt fertige Ergebnis ist wieder sichtbar." });
       return true;
