@@ -115,10 +115,6 @@ export function TherapyPatientOverview() {
     await loadSessionsFor(pid, true);
   };
 
-  const refreshPid = async (pid: string) => {
-    return loadSessionsFor(pid, true);
-  };
-
   const fetchFullSession = async (sessionId: string, pid: string): Promise<SessionRow | null> => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
