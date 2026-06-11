@@ -23,7 +23,12 @@ export interface TherapySession {
   version_number?: number | null;
   version_label?: string | null;
   parent_session_id?: string | null;
+  /** Server-side flags for the slim list view */
+  is_truncated?: boolean;
+  has_befund_html?: boolean;
+  has_empfehlung?: boolean;
 }
+
 
 
 interface Props {
