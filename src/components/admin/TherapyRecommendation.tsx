@@ -1799,6 +1799,8 @@ export function TherapyRecommendation() {
               `Befund-Auswertung läuft bereits im Hintergrund weiter.\nPseudonym: ${pseudonymId.trim()}\nFortschritt: ${cloudDone}/${cloudTotal} Teilpakete\nLetzter gespeicherter Fortschritt: ${updated}\n\nBitte jetzt keinen neuen Lauf starten. Diese Sperre verhindert doppelte parallele Auswertungen und unnötige Credits. Sobald kein Fortschritt mehr kommt, kannst du mit „Nur Befund-Auswertung (HTML)“ fortsetzen.`
             );
             toast({ title: "Befund läuft bereits", description: `Backend-Fortschritt ${cloudDone}/${cloudTotal} · bitte kurz warten.` });
+            setIsAnalyzingDocs(false);
+            docAbortRef.current = null;
             return;
           }
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
