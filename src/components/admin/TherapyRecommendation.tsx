@@ -993,12 +993,43 @@ export function TherapyRecommendation() {
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
+    let loadedFromCloud = false;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Nicht angemeldet");
+
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { snapshot_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+
+      const snapshot = normalizeTherapyInput((data as any)?.snapshot || {});
+      const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
+      const hasSnapshotData = Object.keys(snapshot).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
+      if (hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
+        applyDraftPayload(snapshot, pid);
+        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
+        loadedFromCloud = true;
+        await logTherapyEvent(pid, "patient_context_loaded", {
+          source: "cloud-snapshot",
+          symptome_chars: countStringChars(snapshot.symptome),
+          diagnose_count: countDiagnoseEntries(snapshot.manualDiagnosen) || countDiagnoseEntries(snapshot.diagnosen),
+          labor_lines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
+          arzt_chars: countStringChars(snapshot.arztbericht),
+          sonstige_chars: countStringChars(snapshot.sonstigeUntersuchungen),
+          snapshot_updated_at: snapshot.snapshotUpdatedAt,
+        });
+        toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
+      }
       if (localData && localTs > 0) {
+        if (!loadedFromCloud) setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizeTherapyInput(localData), 1));
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
-    } catch {
+    } catch (error: any) {
       if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+      else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
     }
   }, [applyDraftPayload, toast]);
 
