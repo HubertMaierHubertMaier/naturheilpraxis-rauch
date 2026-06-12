@@ -88,6 +88,7 @@ const asText = (value: unknown, fallback = "") => (typeof value === "string" ? v
 const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
 
 type AnalysisDocChunk = { label: string; text: string };
+type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -156,6 +157,18 @@ type PreparedAnalysis = {
   analyzedChars: number;
 };
 
+type ClinicalLoadInfo = {
+  pid: string;
+  source: "local" | "cloud" | "session";
+  sessionCount: number;
+  symptomeChars: number;
+  diagnoseCount: number;
+  laborLines: number;
+  arztChars: number;
+  sonstigeChars: number;
+  loadedAt: string;
+};
+
 const normalizePseudonymId = (value: string) => value.trim();
 const STANDARD_PSEUDONYM_PATTERN = /^P-\d{4}-\d{4}$/i;
 const isPatientScopedStorageReady = (value: string) => {
@@ -170,6 +183,33 @@ const isPatientScopedStorageReady = (value: string) => {
 const getEmbeddedPseudonymId = (payload: Record<string, unknown>) => normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
 
 const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
+
+const countStringChars = (value: unknown) => (typeof value === "string" ? value.trim().length : 0);
+
+const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
+  pid,
+  source,
+  sessionCount,
+  symptomeChars: countStringChars(d.symptome),
+  diagnoseCount: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
+  laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+  arztChars: countStringChars(d.arztbericht),
+  sonstigeChars: countStringChars(d.sonstigeUntersuchungen),
+  loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+});
+
+const summarizeAnalysisSources = (blocks: AnalysisDocChunk[]): AnalysisSourceSummary[] => blocks.map((block) => ({
+  key: block.label,
+  label: block.label,
+  chars: block.text.trim().length,
+  lines: countClinicalLines(block.text),
+}));
+
+const formatSourceSummaryForProgress = (sources: AnalysisSourceSummary[]) => sources
+  .map((source) => `• ${source.label}: ${source.chars.toLocaleString("de-DE")} Zeichen / ${source.lines.toLocaleString("de-DE")} Zeile(n)`)
+  .join("\n");
 
 const analysisDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
