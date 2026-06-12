@@ -1475,13 +1475,7 @@ export function TherapyRecommendation() {
     setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
-    setClinicalLoadInfo({
-      pid: session.pseudonym_id,
-      sessionCount: 1,
-      laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
-      arztChars: typeof d.arztbericht === "string" ? d.arztbericht.trim().length : 0,
-      loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-    });
+    setClinicalLoadInfo(buildClinicalLoadInfo(session.pseudonym_id, "session", d, 1));
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
