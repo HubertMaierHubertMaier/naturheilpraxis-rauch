@@ -145,6 +145,7 @@ type AnalysisCheckpoint = {
   totalChars: number;
   completedChunks: number;
   partials: string[];
+  sourceSummary?: AnalysisSourceSummary[];
   duplicateNotes?: string[];
   status?: "in_progress" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
