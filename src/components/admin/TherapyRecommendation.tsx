@@ -2083,7 +2083,7 @@ export function TherapyRecommendation() {
               const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
+                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label), sourceSummary },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
@@ -2092,6 +2092,7 @@ export function TherapyRecommendation() {
                   chunk_count: chunks.length,
                   total_chars: totalChars,
                   original_chars: prepared.originalChars,
+                  source_summary: sourceSummary,
                   duplicate_notes: prepared.duplicateNotes,
                   strict_complete: true,
                   saved_at: new Date().toISOString(),
@@ -2110,6 +2111,7 @@ export function TherapyRecommendation() {
                   chunk_count: chunks.length,
                   model,
                   source: analysisMode,
+                  source_summary: sourceSummary,
                   note: "HTML in Patientenverlauf gespeichert",
                 });
               }
