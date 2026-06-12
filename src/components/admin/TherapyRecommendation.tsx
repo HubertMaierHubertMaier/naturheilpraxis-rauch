@@ -90,6 +90,7 @@ type AnalysisDocChunk = { label: string; text: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
+const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
 const ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v5-json-normalized";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
@@ -1782,10 +1783,25 @@ export function TherapyRecommendation() {
             .limit(1);
           const cloudRow = Array.isArray(cloudRows) ? cloudRows[0] : null;
           const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length, pseudonymId);
+          const cloudUpdatedAt = cloudRow?.updated_at ? Date.parse(cloudRow.updated_at) : 0;
           if (cloudCheckpoint && (!checkpoint || new Date(cloudCheckpoint.updatedAt).getTime() > new Date(checkpoint.updatedAt).getTime())) {
             checkpoint = cloudCheckpoint;
             checkpointSessionIdRef.current = cloudRow.id;
             writeAnalysisCheckpoint(checkpointKey, cloudCheckpoint);
+          }
+          const cloudDone = Number(cloudCheckpoint?.completedChunks || 0);
+          const cloudTotal = Number(cloudCheckpoint?.totalChunks || chunks.length);
+          const cloudStillRunning = cloudCheckpoint?.status === "in_progress" && cloudDone < cloudTotal && cloudUpdatedAt > Date.now() - ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS;
+          if (cloudCheckpoint && cloudStillRunning) {
+            const updated = new Date(cloudRow.updated_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            setDocAnalysisStats({ current: cloudDone, total: cloudTotal, label: "läuft bereits im Hintergrund" });
+            setDocAnalysisProgress(
+              `Befund-Auswertung läuft bereits im Hintergrund weiter.\nPseudonym: ${pseudonymId.trim()}\nFortschritt: ${cloudDone}/${cloudTotal} Teilpakete\nLetzter gespeicherter Fortschritt: ${updated}\n\nBitte jetzt keinen neuen Lauf starten. Diese Sperre verhindert doppelte parallele Auswertungen und unnötige Credits. Sobald kein Fortschritt mehr kommt, kannst du mit „Nur Befund-Auswertung (HTML)“ fortsetzen.`
+            );
+            toast({ title: "Befund läuft bereits", description: `Backend-Fortschritt ${cloudDone}/${cloudTotal} · bitte kurz warten.` });
+            setIsAnalyzingDocs(false);
+            docAbortRef.current = null;
+            return;
           }
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
       }
