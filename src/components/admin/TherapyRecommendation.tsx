@@ -488,7 +488,7 @@ const buildClientFallbackAnalysisHtml = (
     </tbody></table>`;
   };
   const mannayanRows = parseMannayanRows(ctx.mannayanOrdersText);
-  const today = new Date().toLocaleDateString("de-DE");
+  const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
   const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
   return `<!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Befund-Auswertung (lokaler Notfall-Aufbau)</title>

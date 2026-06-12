@@ -255,7 +255,7 @@ ${duplicateNotes.length ? duplicateNotes.map((note) => `  * ${note}`).join("\n")
 - Vor Ausgabe selbst prüfen: Für jede Aussage in Sektion 9/10 → gibt es einen Beleg? Wenn nein → entfernen oder als Hypothese kennzeichnen.
 
 Pflicht-Sektionen in Reihenfolge:
-1. <h1>Befund-Auswertung</h1> + Datum + Pseudonym
+1. <h1>Befund-Auswertung</h1> + Auswertungs-Zeitpunkt (Datum **und** Uhrzeit, Format TT.MM.JJJJ HH:MM Uhr) + Pseudonym
 2. Übersicht der eingereichten Unterlagen — Tabelle: Anzahl Teilpakete/Dokumente, geschätzter Umfang, Sprachen, Zeitraum.
 3. Chronologische Untersuchungs-Übersicht — Tabelle: Datum | Arzt/Labor | Untersuchung | Hauptbefund | Auffällig? | Beleg (Quelle+Teil+Zitat); neueste zuerst.
 4. Strukturierte Anamnese-Übersicht — pro Unterkategorie <h3> + Tabelle mit Spalten: Eintrag | Beleg. ALLE folgenden Unterpunkte sind PFLICHT in dieser Reihenfolge:
@@ -513,7 +513,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   };
 
   const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
-  const today = new Date().toLocaleDateString("de-DE");
+  const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) + " Uhr";
   const mannayanRows = parseMannayanRows(b.mannayanOrdersText);
 
   return `<!DOCTYPE html>
