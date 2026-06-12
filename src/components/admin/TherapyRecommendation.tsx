@@ -1710,6 +1710,14 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async () => {
+    const clickedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setIsDocAnalysisPanelMinimized(false);
+    setDocAnalysisHtml("");
+    setDocAnalysisStats(null);
+    setLatestBefundLoadedFrom(null);
+    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\nPrüfe jetzt, ob auswertbare Befund-/PDF-Daten in den Eingabefeldern stehen…`);
+    window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+
     const therapyContext = [
       symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
       erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
@@ -1733,6 +1741,9 @@ export function TherapyRecommendation() {
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
+      setDocAnalysisProgress(
+        `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
+      );
       toast({ title: "Keine Dokumente vorhanden", description: "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
       return;
     }
@@ -1740,15 +1751,11 @@ export function TherapyRecommendation() {
     const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
-    setIsDocAnalysisPanelMinimized(false);
     setIsAnalyzingDocs(true);
     const docController = new AbortController();
     docAbortRef.current = docController;
-    setDocAnalysisHtml("");
-    setLatestBefundLoadedFrom(null);
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
-    setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
-    window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
