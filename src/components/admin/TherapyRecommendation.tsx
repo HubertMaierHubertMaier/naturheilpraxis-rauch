@@ -2376,6 +2376,10 @@ export function TherapyRecommendation() {
     }
     setIsNachschlag(isErweitern);
     setIsStreaming(true);
+    const fullAnalysisStartedAt = Date.now();
+    if (!isErweitern) {
+      await logTherapyEvent(pseudonymId, "full_analysis_started", { note: "„Alles neu auswerten" gestartet" });
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
