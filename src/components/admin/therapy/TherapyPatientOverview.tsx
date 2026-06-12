@@ -287,6 +287,14 @@ export function TherapyPatientOverview() {
 
                       {isOpen && (
                         <div className="border-t border-border bg-muted/20 p-3 space-y-2">
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm" variant="outline" className="h-7 text-xs gap-1"
+                              onClick={() => { setOpenId(null); setExpandedSessionId(null); }}
+                            >
+                              Verlauf schließen
+                            </Button>
+                          </div>
                           {loadingSessions === p.pseudonym_id ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
                               <Loader2 className="h-4 w-4 animate-spin" /> Lade Sitzungen...
