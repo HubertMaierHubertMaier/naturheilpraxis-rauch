@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,6 +115,8 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const autoHydratedSessionIds = useRef<Set<string>>(new Set());
+  const autoHydratingRecent = useRef(false);
   const { toast } = useToast();
 
   const loadSessions = useCallback(async () => {
@@ -149,6 +151,8 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [pseudonymId, toast]);
 
   useEffect(() => {
+    autoHydratedSessionIds.current.clear();
+    autoHydratingRecent.current = false;
     setHistoryOpen(true);
     setExpandedId(null);
     setEditNoteId(null);
@@ -179,6 +183,42 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
     }
     return full;
   }, [toast]);
+
+  useEffect(() => {
+    if (!historyOpen || loading || autoHydratingRecent.current) return;
+
+    const recentTruncatedSessions = sessions
+      .filter((session) => {
+        const kind = String(session.kind || "");
+        return (
+          session.is_truncated === true &&
+          kind !== "event_log" &&
+          kind !== "befund_checkpoint" &&
+          kind !== "quarantine_patient_mismatch" &&
+          !autoHydratedSessionIds.current.has(session.id)
+        );
+      })
+      .slice(0, 8);
+
+    if (recentTruncatedSessions.length === 0) return;
+
+    recentTruncatedSessions.forEach((session) => autoHydratedSessionIds.current.add(session.id));
+    autoHydratingRecent.current = true;
+
+    let cancelled = false;
+    (async () => {
+      for (const session of recentTruncatedSessions) {
+        if (cancelled) break;
+        await fetchFullSession(session.id);
+      }
+      autoHydratingRecent.current = false;
+    })();
+
+    return () => {
+      cancelled = true;
+      autoHydratingRecent.current = false;
+    };
+  }, [fetchFullSession, historyOpen, loading, sessions]);
 
 
   const handleDelete = async (id: string) => {
