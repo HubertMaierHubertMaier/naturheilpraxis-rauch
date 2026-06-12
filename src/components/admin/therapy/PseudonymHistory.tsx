@@ -204,20 +204,12 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
     recentTruncatedSessions.forEach((session) => autoHydratedSessionIds.current.add(session.id));
     autoHydratingRecent.current = true;
-
-    let cancelled = false;
     (async () => {
       for (const session of recentTruncatedSessions) {
-        if (cancelled) break;
         await fetchFullSession(session.id);
       }
       autoHydratingRecent.current = false;
     })();
-
-    return () => {
-      cancelled = true;
-      autoHydratingRecent.current = false;
-    };
   }, [fetchFullSession, historyOpen, loading, sessions]);
 
 
