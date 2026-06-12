@@ -1000,7 +1000,32 @@ export function TherapyRecommendation() {
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) throw new Error("Nicht angemeldet");
 
-      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+      const { data: draftData, error: draftError } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { draft_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (draftError) throw draftError;
+
+      const draftRow = (draftData as any)?.draft;
+      const draftInput = normalizeTherapyInput(draftRow?.eingabe_daten || {});
+      const hasDraftData = Object.keys(draftInput).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt", "autoSavedDraft", "finalized", "lastAutoSaveAt"].includes(key));
+      if (hasDraftData) {
+        applyDraftPayload(draftInput, pid);
+        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
+        loadedFromCloud = true;
+        await logTherapyEvent(pid, "patient_context_loaded", {
+          source: "cloud-autosave-draft",
+          symptome_chars: countStringChars(draftInput.symptome),
+          diagnose_count: countDiagnoseEntries(draftInput.manualDiagnosen) || countDiagnoseEntries(draftInput.diagnosen),
+          labor_lines: countClinicalLines([draftInput.laborKomplett, draftInput.laborErhoeht, draftInput.laborErniedrigt].filter(Boolean).join("\n")),
+          arzt_chars: countStringChars(draftInput.arztbericht),
+          sonstige_chars: countStringChars(draftInput.sonstigeUntersuchungen),
+          draft_updated_at: draftRow?.updated_at,
+        });
+        toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
+      }
+
+      const { data, error } = loadedFromCloud ? { data: null, error: null } : await supabase.functions.invoke("get-therapy-sessions", {
         body: { snapshot_pseudonym_id: pid },
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -1009,7 +1034,7 @@ export function TherapyRecommendation() {
       const snapshot = normalizeTherapyInput((data as any)?.snapshot || {});
       const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
       const hasSnapshotData = Object.keys(snapshot).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
-      if (hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
+      if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
         applyDraftPayload(snapshot, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
         loadedFromCloud = true;
