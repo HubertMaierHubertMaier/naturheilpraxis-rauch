@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye } from "lucide-react";
+import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye, X } from "lucide-react";
 import { logTherapyEvent } from "./therapyEventLog";
 
 export interface TherapySession {
@@ -41,6 +41,7 @@ interface Props {
 export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: Props) {
   const [sessions, setSessions] = useState<TherapySession[]>([]);
   const [loading, setLoading] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
@@ -78,6 +79,9 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [pseudonymId, toast]);
 
   useEffect(() => {
+    setHistoryOpen(true);
+    setExpandedId(null);
+    setEditNoteId(null);
     const t = setTimeout(loadSessions, 300);
     return () => clearTimeout(t);
   }, [loadSessions]);
