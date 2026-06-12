@@ -41,10 +41,6 @@ interface Props {
 type StoredDetail = { label: string; value: string };
 
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
-const previewText = (value: string, max = 90) => {
-  const compact = value.replace(/\s+/g, " ").trim();
-  return compact.length > max ? `${compact.slice(0, max - 1)}…` : compact;
-};
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
 
 const summarizeGenericArray = (value: unknown): string => {
