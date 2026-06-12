@@ -1871,6 +1871,7 @@ export function TherapyRecommendation() {
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
       const skippedChunks: Array<{ index: number; label: string; reason: string }> = [];
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
+        setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
@@ -1905,6 +1906,7 @@ export function TherapyRecommendation() {
           }
         }
         await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
+        setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
       }
       if (skippedChunks.length) {
@@ -1996,6 +1998,7 @@ export function TherapyRecommendation() {
       let full = "";
       let model = "pending";
       let analysisMode = "client-checkpoint-strict";
+      setDocAnalysisStats({ current: chunks.length, total: chunks.length, label: "Abschluss-HTML wird zusammengeführt" });
       writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
       try {
         let resp: Response | null = null;
