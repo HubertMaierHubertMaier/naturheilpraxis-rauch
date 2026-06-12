@@ -779,9 +779,11 @@ export function TherapyRecommendation() {
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
+    manualDiagnosen,
+    manualMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -925,6 +927,9 @@ export function TherapyRecommendation() {
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
+    if (Array.isArray(data.manualDiagnosen)) setManualDiagnosen(data.manualDiagnosen as DiagnoseEntry[]);
+    else if (Array.isArray(data.diagnosen)) setManualDiagnosen(data.diagnosen as DiagnoseEntry[]);
+    if (Array.isArray(data.manualMittel)) setManualMittel(data.manualMittel as ManualRemedyEntry[]);
   }, [toast]);
 
   useEffect(() => {
