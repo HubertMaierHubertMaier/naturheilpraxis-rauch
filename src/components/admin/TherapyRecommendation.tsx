@@ -2697,6 +2697,7 @@ export function TherapyRecommendation() {
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
+    await logTherapyEvent(finalPid, "patient_saved", { note: versionLabel.trim() ? `Versions-Label: ${versionLabel.trim()}` : "Therapieplan finalisiert" });
   };
 
 
