@@ -1698,6 +1698,7 @@ export function TherapyRecommendation() {
       { label: "Sonstige / unsortierte Voruntersuchungen", text: sonstigeUntersuchungen.trim() },
       { label: "Externe Recherche / Perplexity", text: perplexityAnalyse.trim() },
     ].filter((block) => block.text);
+    const sourceSummary = summarizeAnalysisSources(rawBlocks);
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
@@ -1715,7 +1716,7 @@ export function TherapyRecommendation() {
     const docController = new AbortController();
     docAbortRef.current = docController;
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
-    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\n\nGeladene Quellen für diesen Befund-Lauf:\n${formatSourceSummaryForProgress(sourceSummary)}\n\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
