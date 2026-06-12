@@ -1732,6 +1732,13 @@ export function TherapyRecommendation() {
       // Initial einmal prüfen, ob überhaupt eine Session existiert
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
+      await logTherapyEvent(pseudonymId.trim(), "befund_input_loaded", {
+        source: "befund-run-start",
+        total_chars: totalChars,
+        chunk_count: chunks.length,
+        source_summary: sourceSummary,
+        note: `Befund-Lauf gestartet mit ${chunks.length} Teilpaket(en) / ${totalChars.toLocaleString("de-DE")} Zeichen.`,
+      });
       const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
       if (pseudonymId.trim()) {
         try {
@@ -1831,7 +1838,7 @@ export function TherapyRecommendation() {
           const row = {
             pseudonym_id: pid,
             kind: "befund_checkpoint",
-            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, checkpoint: checkpointData },
+            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, sourceSummary, checkpoint: { ...checkpointData, sourceSummary } },
             empfehlung: "Automatische Zwischen-Sicherung der Befund-Auswertung.",
             notiz: `Befund-Zwischenstand: ${checkpointData.completedChunks}/${checkpointData.totalChunks} Teilpakete`,
             created_by: user.id,
