@@ -14,6 +14,7 @@ import {
 import { parseTherapyMarkdown } from "@/lib/therapyParser";
 import { openPrintRecipe } from "./printRecipe";
 import { formatPathogensForAI } from "./PathogenInput";
+import { buildStoredDetails } from "./PseudonymHistory";
 
 interface PseudonymRow {
   pseudonym_id: string;
@@ -305,6 +306,8 @@ export function TherapyPatientOverview() {
                             sessions.map((s) => {
                               const isExp = expandedSessionId === s.id;
                               const hasSlimPlaceholder = s.is_truncated && Object.keys(s.eingabe_daten || {}).length === 0;
+                              const storedDetails = buildStoredDetails(s.eingabe_daten || {});
+                              const storedLabels = storedDetails.slice(0, 4).map((detail) => detail.label);
 
                               // ─── Verlaufs-Event (Upload / Save / Befund-HTML / PDF / Re-Analyse) ───
                               if (s.kind === "event_log") {
@@ -391,6 +394,11 @@ export function TherapyPatientOverview() {
                                       Details werden erst beim Öffnen geladen.
                                     </p>
                                   )}
+                                  {!hasSlimPlaceholder && storedLabels.length > 0 && (
+                                    <p className="text-[11px] text-muted-foreground mt-1">
+                                      Gespeichert: {storedLabels.join(" · ")}{storedDetails.length > storedLabels.length ? ` · +${storedDetails.length - storedLabels.length} weitere` : ""}
+                                    </p>
+                                  )}
                                   {s.notiz && (
                                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
                                       📝 {s.notiz}
@@ -442,7 +450,22 @@ export function TherapyPatientOverview() {
                                   </div>
 
                                   {isExp && (
-                                    <div className="mt-2 pt-2 border-t border-border">
+                                    <div className="mt-2 pt-2 border-t border-border space-y-2">
+                                      {storedDetails.length > 0 && (
+                                        <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
+                                          <p className="text-xs font-medium text-foreground">Für dich gespeicherte Zusatzangaben</p>
+                                          {storedDetails.map((detail) => (
+                                            <details key={detail.label} open={detail.value.length < 1200}>
+                                              <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
+                                                {detail.label} · {detail.value.length.toLocaleString("de-DE")} Zeichen
+                                              </summary>
+                                              <div className="text-xs bg-background/70 p-2 rounded mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap">
+                                                {detail.value}
+                                              </div>
+                                            </details>
+                                          ))}
+                                        </div>
+                                      )}
                                       <div className="text-xs bg-muted/40 p-2 rounded max-h-[400px] overflow-y-auto whitespace-pre-wrap">
                                         {s.empfehlung || "—"}
                                       </div>
