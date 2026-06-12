@@ -959,83 +959,40 @@ export function TherapyRecommendation() {
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
     try {
-      const { data } = await (supabase as any)
-        .from("therapy_sessions")
-        .select("id, eingabe_daten, updated_at")
-        .eq("pseudonym_id", pid)
-        .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
-        .order("updated_at", { ascending: false })
-        .limit(10);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) return;
+      const { data: snapshotResponse, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { snapshot_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
       if (pseudonymIdRef.current !== pid) return;
-      if (!Array.isArray(data) || !data.length) {
+      const snapshot = normalizeTherapyInput((snapshotResponse as any)?.snapshot || {});
+      const sessionCount = Number((snapshotResponse as any)?.snapshot?.sessionCount || 0);
+      if (!Object.keys(snapshot).length || sessionCount === 0) {
         if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
         return;
       }
-      // Strategie: Jüngste Sitzung gewinnt. Fehlende Felder werden aus den
-      // nächstälteren Sitzungen ergänzt (z. B. Labor in Sitzung A, Arztbericht in Sitzung B).
-      const merged: any = {};
-      const stringKeys = [
-        "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
-        "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage",
-      ];
-      const mergeTextKeys = new Set(["symptome","erkrankung","medikamente","bisherigeMittel","laborErhoeht","laborErniedrigt","laborKomplett","stuhlbefund","arztbericht","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage"]);
-      const textCollections: Record<string, Array<{ label: string; text: string }>> = {};
-      const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel","mannayanOrders"];
-      for (const row of data) {
-        const e = normalizeTherapyInput(row?.eingabe_daten);
-        const embedded = getEmbeddedPseudonymId(e);
-        if (embedded && embedded !== pid) continue;
-        for (const k of stringKeys) {
-          if (mergeTextKeys.has(k)) {
-            if (typeof e[k] === "string" && e[k].trim()) {
-              const dateLabel = row?.updated_at ? new Date(row.updated_at).toLocaleDateString("de-DE") : "unbekannt";
-              if (!textCollections[k]) textCollections[k] = [];
-              textCollections[k].push({ label: `Sitzung ${dateLabel}`, text: e[k].trim() });
-            }
-          } else if (!merged[k] && typeof e[k] === "string" && e[k].trim()) merged[k] = e[k];
-        }
-        for (const k of arrayKeys) {
-          if ((!merged[k] || (Array.isArray(merged[k]) && merged[k].length === 0)) && Array.isArray(e[k]) && e[k].length) {
-            merged[k] = e[k];
-          }
-        }
-      }
-      for (const [key, blocks] of Object.entries(textCollections)) {
-        const seenText = new Map<string, string>();
-        const duplicateNotes: string[] = [];
-        const mergedText = blocks
-          .map((block) => {
-            const text = dedupeAnalysisBlockText({ label: block.label, text: block.text }, seenText, duplicateNotes);
-            return text ? `### ${block.label}\n${text}` : "";
-          })
-          .filter(Boolean)
-          .join("\n\n")
-          .trim();
-        if (mergedText) merged[key] = mergedText;
-      }
-      const newest = data[0];
-      const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
-      if (cloudTs >= localTs) {
+      const cloudTs = snapshot.loadedAt ? new Date(String(snapshot.loadedAt)).getTime() : Date.now();
+      if (cloudTs >= localTs || !localData) {
         if (pseudonymIdRef.current !== pid) return;
         patientDataOwnerRef.current = pid;
-        applyDraftPayload({ ...merged, _pseudonym_id: pid, pseudonymId: pid }, pid);
-        const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
-        if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
-        const filledFields = Object.keys(merged).filter((k) => {
-          const v = (merged as any)[k];
+        applyDraftPayload({ ...snapshot, _pseudonym_id: pid, pseudonymId: pid }, pid);
+        const filledFields = Object.keys(snapshot).filter((k) => {
+          const v = (snapshot as any)[k];
           return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
         }).length;
         setClinicalLoadInfo({
           pid,
-          sessionCount: data.length,
-          laborLines: countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n")),
-          arztChars: typeof merged.arztbericht === "string" ? merged.arztbericht.trim().length : 0,
+          sessionCount,
+          laborLines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
+          arztChars: typeof snapshot.arztbericht === "string" ? snapshot.arztbericht.trim().length : 0,
           loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
         });
         toast({
           title: "Eingaben wiederhergestellt",
-          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt · Labor: ${countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n"))} Zeilen · Arztbrief: ${typeof merged.arztbericht === "string" && merged.arztbericht.trim() ? "geladen" : "nicht vorhanden"}.`,
+          description: `${filledFields} Felder aus ${sessionCount} Sitzung${sessionCount !== 1 ? "en" : ""} für ${pid} zusammengeführt · Alter/Geschlecht/Medikamente werden aus dem letzten gefüllten Verlauf geladen.`,
         });
       } else if (localData) {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
