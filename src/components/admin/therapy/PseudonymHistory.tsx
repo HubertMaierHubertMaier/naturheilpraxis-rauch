@@ -43,6 +43,13 @@ type StoredDetail = { label: string; value: string };
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
 
+const isEmptyAutosaveOnly = (session: TherapySession): boolean => {
+  if (session.kind === "event_log") return false;
+  const input = session.eingabe_daten || {};
+  const keys = Object.keys(input);
+  return keys.length === 1 && keys[0] === "autoSavedDraft" && input.autoSavedDraft === true;
+};
+
 const summarizeGenericArray = (value: unknown): string => {
   if (!Array.isArray(value)) return "";
   return value
@@ -142,7 +149,10 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
       toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
       setSessions([]);
     } else {
-      const visibleSessions = ((data as any)?.sessions ?? []).filter((session: TherapySession) => !["befund_checkpoint", "quarantine_patient_mismatch"].includes(String(session.kind || "")));
+      const visibleSessions = ((data as any)?.sessions ?? []).filter((session: TherapySession) => (
+        !["befund_checkpoint", "quarantine_patient_mismatch"].includes(String(session.kind || "")) &&
+        !isEmptyAutosaveOnly(session)
+      ));
       setSessions(visibleSessions);
     }
     setLoading(false);
