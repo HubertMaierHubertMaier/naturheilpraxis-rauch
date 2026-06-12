@@ -38,6 +38,76 @@ interface Props {
   onShowBefund?: (session: TherapySession) => void;
 }
 
+type StoredDetail = { label: string; value: string };
+
+const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
+
+const summarizeGenericArray = (value: unknown): string => {
+  if (!Array.isArray(value)) return "";
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (!item || typeof item !== "object") return "";
+      const row = item as Record<string, unknown>;
+      const parts = [row.name, row.title, row.label, row.index, row.organe]
+        .map((part) => asText(part))
+        .filter(Boolean);
+      return parts.join(" · ");
+    })
+    .filter(Boolean)
+    .join("\n");
+};
+
+const summarizeMannayanOrders = (orders: unknown): string => {
+  if (!Array.isArray(orders) || orders.length === 0) return "";
+  const items = orders.flatMap((order: any) => (Array.isArray(order?.items) ? order.items : []));
+  if (!items.length) return `${orders.length} Bestellung(en) gespeichert`;
+  const total = items.reduce((sum: number, item: any) => {
+    const quantity = Number(item?.quantity || 0);
+    const price = Number(item?.price_eur || 0);
+    return sum + (Number.isFinite(quantity * price) ? quantity * price : 0);
+  }, 0);
+  const lines = items.slice(0, 30).map((item: any) => {
+    const quantity = Number(item?.quantity || 0);
+    const amount = quantity > 0 ? `${quantity}× ` : "";
+    const name = asText(item?.name) || asText(item?.sku) || "Mittel";
+    const unit = asText(item?.unit);
+    return `${amount}${name}${unit ? ` · ${unit}` : ""}`;
+  });
+  const suffix = items.length > 30 ? `\n… und ${items.length - 30} weitere Position(en)` : "";
+  return `${items.length} Position(en)${total > 0 ? ` · ca. ${total.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}` : ""}\n${lines.join("\n")}${suffix}`;
+};
+
+export const buildStoredDetails = (input: any): StoredDetail[] => {
+  const e = input || {};
+  const details: StoredDetail[] = [];
+  const add = (label: string, value: unknown) => {
+    const text = asText(value);
+    if (text) details.push({ label, value: text });
+  };
+
+  add("Beschwerden / Symptome", e.symptome);
+  add("Erkrankung / Diagnose", e.erkrankung);
+  add("Medikamente", e.medikamente);
+  add("Bisherige Mittel", e.bisherigeMittel);
+  add("Budget / Priorität", e.budget);
+  add("Belastungen / Pathogene", e.belastungen || summarizeGenericArray(e.pathogens));
+  add("Laborwerte", e.laborKomplett || [e.laborErhoeht && `↑ Erhöht:\n${e.laborErhoeht}`, e.laborErniedrigt && `↓ Erniedrigt:\n${e.laborErniedrigt}`].filter(Boolean).join("\n\n"));
+  add("Stuhlbefund", e.stuhlbefund);
+  add("Arztbericht", e.arztbericht);
+  add("Metatron / HEEL", e.metatronHeel);
+  add("Sonstige Untersuchungen / hochgeladene Dokumente", e.sonstigeUntersuchungen);
+  add("Zusätzliche Analyse", e.perplexityAnalyse);
+  add("Eigene Therapievorlage", e.eigeneTherapieVorlage);
+  add("Ausgewählte Kategorien", summarizeGenericArray(e.selectedCategories));
+  add("Bevorzugte Produktlinien", summarizeGenericArray(e.bevorzugteLinie));
+  add("Fixierte Mittel", summarizeGenericArray(e.pinnedMittel));
+  add("Mannayan-Bestellung", summarizeMannayanOrders(e.mannayanOrders));
+
+  return details;
+};
+
 export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: Props) {
   const [sessions, setSessions] = useState<TherapySession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -276,6 +346,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 e.laborKomplett?.trim() ||
                 [e.laborErhoeht, e.laborErniedrigt].filter((x:string)=>x?.trim()).join("\n") ||
                 "";
+              const storedDetails = buildStoredDetails(e);
+              const visibleDetailLabels = storedDetails.slice(0, 4).map((detail) => {
+                const lineCount = countTextLines(detail.value);
+                return lineCount > 1 ? `${detail.label} (${lineCount} Zeilen)` : detail.label;
+              });
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
@@ -371,6 +446,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                             <Badge key={i} variant={l === "Auto-Sicherung" ? "secondary" : "outline"} className="text-[10px] py-0 h-4">{l}</Badge>
                           ))}
                         </div>
+                      )}
+                      {!isBefund && visibleDetailLabels.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Gespeichert: {visibleDetailLabels.join(" · ")}{storedDetails.length > visibleDetailLabels.length ? ` · +${storedDetails.length - visibleDetailLabels.length} weitere` : ""}
+                        </p>
                       )}
                       {s.notiz && (
                         <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
@@ -470,6 +550,21 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      {storedDetails.length > 0 && (
+                        <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-2">
+                          <p className="text-xs font-medium text-foreground">Für dich gespeicherte Zusatzangaben</p>
+                          {storedDetails.map((detail) => (
+                            <details key={detail.label} open={detail.value.length < 1200}>
+                              <summary className="text-xs font-medium cursor-pointer text-muted-foreground">
+                                {detail.label} · {detail.value.length.toLocaleString("de-DE")} Zeichen
+                              </summary>
+                              <div className="text-xs bg-background/70 p-2 rounded mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap">
+                                {detail.value}
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      )}
                       {(e.laborKomplett?.trim() || e.laborErhoeht?.trim() || e.laborErniedrigt?.trim()) && (
                         <details open>
                           <summary className="text-xs font-medium cursor-pointer text-muted-foreground">

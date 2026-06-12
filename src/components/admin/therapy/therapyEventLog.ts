@@ -50,13 +50,13 @@ export async function logTherapyEvent(
 ): Promise<void> {
   const pid = (pseudonymId || "").trim();
   if (!pid) {
-    console.warn("[therapyEventLog] SKIP: pseudonymId leer", { type, details });
+    console.warn("[therapyEventLog] SKIP: pseudonymId leer", { type });
     return;
   }
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.warn("[therapyEventLog] SKIP: kein eingeloggter User", { type, pid });
+      console.warn("[therapyEventLog] SKIP: kein eingeloggter User", { type });
       return;
     }
     const label = labelFor(type);
@@ -71,11 +71,11 @@ export async function logTherapyEvent(
       created_by: user.id,
     });
     if (error) {
-      console.error("[therapyEventLog] INSERT FEHLER", { type, pid, error });
+      console.error("[therapyEventLog] INSERT FEHLER", { type, message: error.message });
     } else {
-      console.info("[therapyEventLog] ✓ gespeichert", { type, pid });
+      console.info("[therapyEventLog] ✓ gespeichert", { type });
     }
   } catch (e) {
-    console.error("[therapyEventLog] EXCEPTION:", (e as Error).message, { type, pid });
+    console.error("[therapyEventLog] EXCEPTION:", (e as Error).message, { type });
   }
 }
