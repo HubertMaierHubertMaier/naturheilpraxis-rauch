@@ -2133,14 +2133,23 @@ export function TherapyRecommendation() {
               });
               if (saveErr) {
                 toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+                await logTherapyEvent(pid, "befund_html_failed", { error: saveErr.message, note: "Auswertung erstellt, aber DB-Speichern fehlgeschlagen" });
               } else {
                 try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
                 setHistoryRefresh((n) => n + 1);
                 toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
+                await logTherapyEvent(pid, "befund_html_success", {
+                  total_chars: totalChars,
+                  chunk_count: chunks.length,
+                  model,
+                  source: analysisMode,
+                  note: "HTML in Patientenverlauf gespeichert",
+                });
               }
             }
           } catch (saveEx) {
             toast({ title: "Speichern fehlgeschlagen", description: (saveEx as Error).message, variant: "destructive" });
+            await logTherapyEvent(pid, "befund_html_failed", { error: (saveEx as Error).message });
           }
         } else {
           toast({ title: "Nicht gespeichert", description: "Ohne Pseudonym-ID wird die Auswertung nicht im Verlauf abgelegt.", variant: "default" });
