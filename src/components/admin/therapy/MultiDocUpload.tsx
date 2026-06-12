@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, FileUp, X, CheckCircle2, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logTherapyEvent } from "./therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
