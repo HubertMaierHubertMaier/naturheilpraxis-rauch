@@ -300,6 +300,12 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 w.document.open();
                 w.document.write(injected);
                 w.document.close();
+                await logTherapyEvent(pseudonymId, "befund_pdf_saved", {
+                  note: `PDF-Druckdialog für „${filename}" geöffnet`,
+                  source: "Verlauf · Als PDF speichern",
+                });
+                // Verlauf neu laden, damit das Event sofort sichtbar ist
+                loadSessions();
               };
 
 
