@@ -727,13 +727,7 @@ export function TherapyRecommendation() {
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
-  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<{
-    pid: string;
-    sessionCount: number;
-    laborLines: number;
-    arztChars: number;
-    loadedAt: string;
-  } | null>(null);
+  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
