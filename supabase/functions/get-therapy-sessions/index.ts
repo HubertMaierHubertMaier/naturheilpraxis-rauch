@@ -139,12 +139,45 @@ Deno.serve(async (req) => {
 
     // ----- Mode B: single-row full fetch (lazy load on expand / Befund / Empfehlung) -----
     if (sessionId) {
+      // Avoid SELECT * — base64 PDFs in eingabe_daten can exceed worker memory.
+      // Pull metadata first, then stream heavy text columns separately and strip
+      // base64 payloads from eingabe_daten before returning.
       const { data: row, error } = await adminClient
         .from("therapy_sessions")
-        .select("*")
+        .select(
+          "id, pseudonym_id, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id, eingabe_daten, empfehlung, befund_html",
+        )
         .eq("id", sessionId)
         .maybeSingle();
       if (error) throw error;
+
+      if (row && row.eingabe_daten && typeof row.eingabe_daten === "object") {
+        const HEAVY_KEY_RE = /(base64|dataUrl|pdfBase64|fileBase64|rawBase64|binary|fileData)/i;
+        const MAX_STRING = 200_000; // ~200 KB per single string field
+        const strip = (val: unknown): unknown => {
+          if (typeof val === "string") {
+            if (val.length > MAX_STRING || val.startsWith("data:")) {
+              return `[gekürzt: ${val.length} Zeichen]`;
+            }
+            return val;
+          }
+          if (Array.isArray(val)) return val.map(strip);
+          if (val && typeof val === "object") {
+            const out: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+              if (HEAVY_KEY_RE.test(k)) {
+                out[k] = typeof v === "string" ? `[gekürzt: ${v.length} Zeichen]` : "[gekürzt]";
+              } else {
+                out[k] = strip(v);
+              }
+            }
+            return out;
+          }
+          return val;
+        };
+        (row as Record<string, unknown>).eingabe_daten = strip(row.eingabe_daten);
+      }
+
       return new Response(JSON.stringify({ session: row ?? null }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
