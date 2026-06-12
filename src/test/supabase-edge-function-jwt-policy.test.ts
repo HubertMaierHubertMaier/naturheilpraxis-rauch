@@ -193,7 +193,7 @@ describe("Supabase Edge Function JWT policy", () => {
     const source = readFunctionSource("get-therapy-sessions");
     const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
     const bodyParsingIndex = source.indexOf("await req.json()");
-    const sessionQueryIndex = source.indexOf('.from("therapy_sessions")');
+    const sessionQueryIndex = source.indexOf('rpc("get_therapy_sessions_safe_list"');
 
     expect(source).toMatch(/rateLimitMap/);
     expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);

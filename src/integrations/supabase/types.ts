@@ -564,6 +564,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compact_therapy_session_input: {
+        Args: { _input: Json; _max_chars?: number }
+        Returns: Json
+      }
+      get_therapy_session_safe_detail: {
+        Args: { _include_befund_html?: boolean; _session_id: string }
+        Returns: Json
+      }
+      get_therapy_sessions_safe_list: {
+        Args: { _max_rows?: number; _pseudonym_id: string }
+        Returns: {
+          befund_meta: Json
+          created_at: string
+          eingabe_daten: Json
+          empfehlung: string
+          has_befund_html: boolean
+          has_empfehlung: boolean
+          id: string
+          is_truncated: boolean
+          kind: string
+          notiz: string
+          parent_session_id: string
+          pseudonym_id: string
+          updated_at: string
+          version_label: string
+          version_number: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
