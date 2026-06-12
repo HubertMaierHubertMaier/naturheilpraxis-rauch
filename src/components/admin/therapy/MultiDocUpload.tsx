@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, FileUp, X, CheckCircle2, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logTherapyEvent } from "./therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -178,9 +179,19 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       setFiles([...updated]);
     }
     const failed = updated.filter((u) => u.status === "error");
+    const successDocs = updated.filter((u) => u.status === "done");
     if (combined.trim()) {
       onExtracted(combined.trim());
-      toast({ title: "✓ Inhalte übernommen", description: `${updated.filter((u) => u.status === "done").length} Datei(en) verarbeitet.` });
+      toast({ title: "✓ Inhalte übernommen", description: `${successDocs.length} Datei(en) verarbeitet.` });
+      // Verlaufs-Event: Dokumente hochgeladen + sicher archiviert
+      await logTherapyEvent(pseudonymId, "documents_uploaded", {
+        files: successDocs.map((u) => ({ name: u.file.name, pages: u.pages, chars: u.chars, archivePath: u.archivePath })),
+        note: failed.length ? `${failed.length} Datei(en) fehlgeschlagen` : undefined,
+      });
+      await logTherapyEvent(pseudonymId, "documents_saved", {
+        files: successDocs.map((u) => ({ name: u.file.name, archivePath: u.archivePath })),
+        note: `Originaldateien im sicheren Bucket „${STORAGE_BUCKET}" archiviert.`,
+      });
     } else if (failed.length) {
       toast({ title: "Keine Daten extrahiert", description: failed[0].error || "Bitte Datei erneut versuchen oder anderes Format nutzen.", variant: "destructive" });
     }

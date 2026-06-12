@@ -27,6 +27,7 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { MultiDocUpload } from "./therapy/MultiDocUpload";
+import { logTherapyEvent } from "./therapy/therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -2132,14 +2133,23 @@ export function TherapyRecommendation() {
               });
               if (saveErr) {
                 toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+                await logTherapyEvent(pid, "befund_html_failed", { error: saveErr.message, note: "Auswertung erstellt, aber DB-Speichern fehlgeschlagen" });
               } else {
                 try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
                 setHistoryRefresh((n) => n + 1);
                 toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
+                await logTherapyEvent(pid, "befund_html_success", {
+                  total_chars: totalChars,
+                  chunk_count: chunks.length,
+                  model,
+                  source: analysisMode,
+                  note: "HTML in Patientenverlauf gespeichert",
+                });
               }
             }
           } catch (saveEx) {
             toast({ title: "Speichern fehlgeschlagen", description: (saveEx as Error).message, variant: "destructive" });
+            await logTherapyEvent(pid, "befund_html_failed", { error: (saveEx as Error).message });
           }
         } else {
           toast({ title: "Nicht gespeichert", description: "Ohne Pseudonym-ID wird die Auswertung nicht im Verlauf abgelegt.", variant: "default" });
@@ -2151,9 +2161,11 @@ export function TherapyRecommendation() {
       if ((e as Error).name === "AbortError" || docController.signal.aborted) {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
         toast({ title: "Auswertung abgebrochen", description: "Der laufende Befund-Lauf wurde gestoppt.", variant: "default" as any });
+        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: "Vom Benutzer abgebrochen" });
       } else {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
         toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: msg });
       }
     } finally {
       setIsAnalyzingDocs(false);
@@ -2364,6 +2376,10 @@ export function TherapyRecommendation() {
     }
     setIsNachschlag(isErweitern);
     setIsStreaming(true);
+    const fullAnalysisStartedAt = Date.now();
+    if (!isErweitern) {
+      await logTherapyEvent(pseudonymId, "full_analysis_started", { note: "Alles neu auswerten – gestartet" });
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -2526,15 +2542,20 @@ export function TherapyRecommendation() {
           });
           if (saveErr) {
             toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+            if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_failed", { error: saveErr.message, duration_ms: Date.now() - fullAnalysisStartedAt });
           } else {
             toast({ title: "Sitzung gespeichert", description: `Pseudonym ${pseudonymId.trim()}` });
             setHistoryRefresh((n) => n + 1);
+            if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_success", { duration_ms: Date.now() - fullAnalysisStartedAt, note: "Therapieempfehlung erstellt und gespeichert" });
           }
         }
       }
     } catch (e: any) {
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
+        if (!isErweitern) await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: e.message, duration_ms: Date.now() - fullAnalysisStartedAt });
+      } else if (!isErweitern) {
+        await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: "Vom Benutzer abgebrochen", duration_ms: Date.now() - fullAnalysisStartedAt });
       }
     } finally {
       setIsStreaming(false);
@@ -2676,6 +2697,7 @@ export function TherapyRecommendation() {
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
+    await logTherapyEvent(finalPid, "patient_saved", { note: versionLabel.trim() ? `Versions-Label: ${versionLabel.trim()}` : "Therapieplan finalisiert" });
   };
 
 
