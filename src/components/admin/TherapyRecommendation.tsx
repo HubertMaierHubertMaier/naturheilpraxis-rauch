@@ -88,6 +88,7 @@ const asText = (value: unknown, fallback = "") => (typeof value === "string" ? v
 const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x) => x.trim()).filter(Boolean).length;
 
 type AnalysisDocChunk = { label: string; text: string };
+type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -144,6 +145,7 @@ type AnalysisCheckpoint = {
   totalChars: number;
   completedChunks: number;
   partials: string[];
+  sourceSummary?: AnalysisSourceSummary[];
   duplicateNotes?: string[];
   status?: "in_progress" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
@@ -154,6 +156,18 @@ type PreparedAnalysis = {
   duplicateNotes: string[];
   originalChars: number;
   analyzedChars: number;
+};
+
+type ClinicalLoadInfo = {
+  pid: string;
+  source: "local" | "cloud" | "session";
+  sessionCount: number;
+  symptomeChars: number;
+  diagnoseCount: number;
+  laborLines: number;
+  arztChars: number;
+  sonstigeChars: number;
+  loadedAt: string;
 };
 
 const normalizePseudonymId = (value: string) => value.trim();
@@ -170,6 +184,33 @@ const isPatientScopedStorageReady = (value: string) => {
 const getEmbeddedPseudonymId = (payload: Record<string, unknown>) => normalizePseudonymId(String(payload._pseudonym_id || payload.pseudonymId || ""));
 
 const PATIENT_DATA_MISMATCH_ERROR = "Sicherheitsstopp: Patientendaten und Pseudonym-ID passen nicht zusammen.";
+
+const countStringChars = (value: unknown) => (typeof value === "string" ? value.trim().length : 0);
+
+const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
+  pid,
+  source,
+  sessionCount,
+  symptomeChars: countStringChars(d.symptome),
+  diagnoseCount: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
+  laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+  arztChars: countStringChars(d.arztbericht),
+  sonstigeChars: countStringChars(d.sonstigeUntersuchungen),
+  loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+});
+
+const summarizeAnalysisSources = (blocks: AnalysisDocChunk[]): AnalysisSourceSummary[] => blocks.map((block) => ({
+  key: block.label,
+  label: block.label,
+  chars: block.text.trim().length,
+  lines: countClinicalLines(block.text),
+}));
+
+const formatSourceSummaryForProgress = (sources: AnalysisSourceSummary[]) => sources
+  .map((source) => `• ${source.label}: ${source.chars.toLocaleString("de-DE")} Zeichen / ${source.lines.toLocaleString("de-DE")} Zeile(n)`)
+  .join("\n");
 
 const analysisDelay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -687,13 +728,7 @@ export function TherapyRecommendation() {
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
   const [historyRefresh, setHistoryRefresh] = useState(0);
-  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<{
-    pid: string;
-    sessionCount: number;
-    laborLines: number;
-    arztChars: number;
-    loadedAt: string;
-  } | null>(null);
+  const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
@@ -959,12 +994,68 @@ export function TherapyRecommendation() {
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
+    let loadedFromCloud = false;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Nicht angemeldet");
+
+      const { data: draftData, error: draftError } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { draft_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (draftError) throw draftError;
+
+      const draftRow = (draftData as any)?.draft;
+      const draftInput = normalizeTherapyInput(draftRow?.eingabe_daten || {});
+      const hasDraftData = Object.keys(draftInput).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt", "autoSavedDraft", "finalized", "lastAutoSaveAt"].includes(key));
+      if (hasDraftData) {
+        applyDraftPayload(draftInput, pid);
+        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
+        loadedFromCloud = true;
+        await logTherapyEvent(pid, "patient_context_loaded", {
+          source: "cloud-autosave-draft",
+          symptome_chars: countStringChars(draftInput.symptome),
+          diagnose_count: countDiagnoseEntries(draftInput.manualDiagnosen) || countDiagnoseEntries(draftInput.diagnosen),
+          labor_lines: countClinicalLines([draftInput.laborKomplett, draftInput.laborErhoeht, draftInput.laborErniedrigt].filter(Boolean).join("\n")),
+          arzt_chars: countStringChars(draftInput.arztbericht),
+          sonstige_chars: countStringChars(draftInput.sonstigeUntersuchungen),
+          draft_updated_at: draftRow?.updated_at,
+        });
+        toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
+      }
+
+      const { data, error } = loadedFromCloud ? { data: null, error: null } : await supabase.functions.invoke("get-therapy-sessions", {
+        body: { snapshot_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+
+      const snapshot = normalizeTherapyInput((data as any)?.snapshot || {});
+      const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
+      const hasSnapshotData = Object.keys(snapshot).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
+      if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
+        applyDraftPayload(snapshot, pid);
+        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
+        loadedFromCloud = true;
+        await logTherapyEvent(pid, "patient_context_loaded", {
+          source: "cloud-snapshot",
+          symptome_chars: countStringChars(snapshot.symptome),
+          diagnose_count: countDiagnoseEntries(snapshot.manualDiagnosen) || countDiagnoseEntries(snapshot.diagnosen),
+          labor_lines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
+          arzt_chars: countStringChars(snapshot.arztbericht),
+          sonstige_chars: countStringChars(snapshot.sonstigeUntersuchungen),
+          snapshot_updated_at: snapshot.snapshotUpdatedAt,
+        });
+        toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
+      }
       if (localData && localTs > 0) {
+        if (!loadedFromCloud) setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizeTherapyInput(localData), 1));
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
-    } catch {
+    } catch (error: any) {
       if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
+      else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
     }
   }, [applyDraftPayload, toast]);
 
@@ -1410,13 +1501,7 @@ export function TherapyRecommendation() {
     setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
     setAuditInfo(null);
-    setClinicalLoadInfo({
-      pid: session.pseudonym_id,
-      sessionCount: 1,
-      laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
-      arztChars: typeof d.arztbericht === "string" ? d.arztbericht.trim().length : 0,
-      loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-    });
+    setClinicalLoadInfo(buildClinicalLoadInfo(session.pseudonym_id, "session", d, 1));
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
@@ -1639,6 +1724,7 @@ export function TherapyRecommendation() {
       { label: "Sonstige / unsortierte Voruntersuchungen", text: sonstigeUntersuchungen.trim() },
       { label: "Externe Recherche / Perplexity", text: perplexityAnalyse.trim() },
     ].filter((block) => block.text);
+    const sourceSummary = summarizeAnalysisSources(rawBlocks);
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
@@ -1656,7 +1742,7 @@ export function TherapyRecommendation() {
     const docController = new AbortController();
     docAbortRef.current = docController;
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
-    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
+    setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\n\nGeladene Quellen für diesen Befund-Lauf:\n${formatSourceSummaryForProgress(sourceSummary)}\n\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     try {
       const getFreshAuthHeaders = async () => {
         // Token bei jedem Aufruf neu holen – verhindert 401 nach langer Laufzeit (Token-Ablauf)
@@ -1671,6 +1757,13 @@ export function TherapyRecommendation() {
       // Initial einmal prüfen, ob überhaupt eine Session existiert
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
+      await logTherapyEvent(pseudonymId.trim(), "befund_input_loaded", {
+        source: "befund-run-start",
+        total_chars: totalChars,
+        chunk_count: chunks.length,
+        source_summary: sourceSummary,
+        note: `Befund-Lauf gestartet mit ${chunks.length} Teilpaket(en) / ${totalChars.toLocaleString("de-DE")} Zeichen.`,
+      });
       const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
       if (pseudonymId.trim()) {
         try {
@@ -1770,7 +1863,7 @@ export function TherapyRecommendation() {
           const row = {
             pseudonym_id: pid,
             kind: "befund_checkpoint",
-            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, checkpoint: checkpointData },
+            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, sourceSummary, checkpoint: { ...checkpointData, sourceSummary } },
             empfehlung: "Automatische Zwischen-Sicherung der Befund-Auswertung.",
             notiz: `Befund-Zwischenstand: ${checkpointData.completedChunks}/${checkpointData.totalChunks} Teilpakete`,
             created_by: user.id,
@@ -2015,7 +2108,7 @@ export function TherapyRecommendation() {
               const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label) },
+                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label), sourceSummary },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
@@ -2024,6 +2117,7 @@ export function TherapyRecommendation() {
                   chunk_count: chunks.length,
                   total_chars: totalChars,
                   original_chars: prepared.originalChars,
+                  source_summary: sourceSummary,
                   duplicate_notes: prepared.duplicateNotes,
                   strict_complete: true,
                   saved_at: new Date().toISOString(),
@@ -2042,6 +2136,7 @@ export function TherapyRecommendation() {
                   chunk_count: chunks.length,
                   model,
                   source: analysisMode,
+                  source_summary: sourceSummary,
                   note: "HTML in Patientenverlauf gespeichert",
                 });
               }
@@ -2703,22 +2798,22 @@ export function TherapyRecommendation() {
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
               <div className="grid gap-2 sm:grid-cols-3">
                 <div>
-                  <span className="text-muted-foreground">Zusammengeführt:</span>{" "}
-                  <strong>{clinicalLoadInfo.sessionCount}</strong> Sitzung{clinicalLoadInfo.sessionCount !== 1 ? "en" : ""}
+                  <span className="text-muted-foreground">Quelle:</span>{" "}
+                  <strong>{clinicalLoadInfo.source === "cloud" ? "Cloud-Snapshot" : clinicalLoadInfo.source === "local" ? "lokale Sicherung" : "Verlaufssitzung"}</strong>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Labor geladen:</span>{" "}
-                  <strong>{clinicalLoadInfo.laborLines}</strong> Zeile{clinicalLoadInfo.laborLines !== 1 ? "n" : ""}
+                  <span className="text-muted-foreground">Symptome/Diagnosen:</span>{" "}
+                  <strong>{clinicalLoadInfo.symptomeChars.toLocaleString("de-DE")} Z. / {clinicalLoadInfo.diagnoseCount}</strong>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Arztbrief:</span>{" "}
-                  <strong>{clinicalLoadInfo.arztChars > 0 ? `${clinicalLoadInfo.arztChars} Zeichen` : "nicht gespeichert"}</strong>
+                  <span className="text-muted-foreground">Befunde:</span>{" "}
+                  <strong>{clinicalLoadInfo.laborLines} Labor-Z. · {clinicalLoadInfo.arztChars.toLocaleString("de-DE")} Arzt-Z. · {clinicalLoadInfo.sonstigeChars.toLocaleString("de-DE")} sonstige Z.</strong>
                   <span className="text-muted-foreground"> · {clinicalLoadInfo.loadedAt}</span>
                 </div>
               </div>
-              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && (
+              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && clinicalLoadInfo.sonstigeChars === 0 && (
                 <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                  Für diese Pseudonym-ID sind aktuell keine Labor- oder Arztbriefdaten in der Cloud gespeichert.
+                  Für diese Pseudonym-ID sind aktuell keine Labor-, Arztbrief- oder sonstigen Befunddaten geladen.
                 </div>
               )}
             </div>

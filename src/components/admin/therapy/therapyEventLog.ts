@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 export type TherapyEventType =
   | "documents_uploaded"
   | "documents_saved"
+  | "patient_context_loaded"
+  | "befund_input_loaded"
   | "befund_html_success"
   | "befund_html_failed"
   | "befund_pdf_saved"
@@ -33,6 +35,8 @@ const labelFor = (t: TherapyEventType): string => {
   switch (t) {
     case "documents_uploaded": return "📥 Dokumente hochgeladen";
     case "documents_saved": return "💾 Dokumente fest gespeichert";
+    case "patient_context_loaded": return "📂 Patientenkontext geladen";
+    case "befund_input_loaded": return "🔎 Befund-Auswertung: Eingaben geladen";
     case "befund_html_success": return "📄 Befund-Auswertung (HTML) erstellt";
     case "befund_html_failed": return "⚠ Befund-Auswertung fehlgeschlagen";
     case "befund_pdf_saved": return "🖨 Befund als PDF gedruckt/gespeichert";
