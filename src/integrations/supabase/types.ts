@@ -642,6 +642,15 @@ export type Database = {
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
       next_mannayan_order_number: { Args: never; Returns: string }
+      upsert_therapy_autosave_draft: {
+        Args: {
+          _eingabe_daten: Json
+          _empfehlung?: string
+          _notiz?: string
+          _pseudonym_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "patient"

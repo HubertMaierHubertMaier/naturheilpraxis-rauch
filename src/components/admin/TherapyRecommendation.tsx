@@ -790,6 +790,15 @@ export function TherapyRecommendation() {
     if (embedded && embedded !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
   }, []);
 
+  const upsertAutoSaveDraft = useCallback(async (pid: string, payload: Record<string, unknown>): Promise<string | null> => {
+    const { data, error } = await (supabase as any).rpc("upsert_therapy_autosave_draft", {
+      _pseudonym_id: pid,
+      _eingabe_daten: payload,
+    });
+    if (error) throw error;
+    return typeof data === "string" ? data : null;
+  }, []);
+
   const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
     const pid = pseudonymId.trim();
     if (!isPatientScopedStorageReady(pid)) {
@@ -807,16 +816,8 @@ export function TherapyRecommendation() {
       if (!user) throw new Error("Nicht angemeldet");
       const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
       assertPayloadMatchesPseudonym(pid, payload);
-      const saveBody = {
-        pseudonym_id: pid,
-        created_by: user.id,
-        eingabe_daten: payload,
-        empfehlung: "Automatische Eingabe-Sicherung – Labor/Arztbrief sofort gespeichert.",
-        notiz: `Sofort-Sicherung: ${label}`,
-      };
-      const { data, error } = await (supabase as any).from("therapy_sessions").insert(saveBody).select("id").single();
-      if (error) throw error;
-      autoSaveSessionIdRef.current = data?.id ?? autoSaveSessionIdRef.current;
+      const draftId = await upsertAutoSaveDraft(pid, payload);
+      autoSaveSessionIdRef.current = draftId ?? autoSaveSessionIdRef.current;
       lastAutoSavedPayloadRef.current = JSON.stringify({ ...payload, lastAutoSaveAt: undefined });
       setAutoSaveStatus("saved");
       setHistoryRefresh((n) => n + 1);
@@ -825,7 +826,7 @@ export function TherapyRecommendation() {
       setAutoSaveStatus("error");
       toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
     }
-  }, [pseudonymId, buildInputData, assertPayloadMatchesPseudonym, toast]);
+  }, [pseudonymId, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft, toast]);
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
@@ -1001,38 +1002,9 @@ export function TherapyRecommendation() {
         if (!user) throw new Error("Nicht angemeldet");
         const eingabe_daten = JSON.parse(payload);
         assertPayloadMatchesPseudonym(pid, eingabe_daten);
-        const updateBody = {
-          pseudonym_id: pid,
-          created_by: user.id,
-          eingabe_daten: { ...eingabe_daten, lastAutoSaveAt: new Date().toISOString() },
-          empfehlung: "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.",
-          notiz: "Auto-Sicherung der Eingaben",
-        };
-
-        if (autoSaveSessionIdRef.current) {
-          const { data: updatedDraft, error } = await (supabase as any)
-            .from("therapy_sessions")
-            .update(updateBody)
-            .eq("id", autoSaveSessionIdRef.current)
-            .eq("pseudonym_id", pid)
-            .select("id")
-            .maybeSingle();
-          if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
-          if (!error && updatedDraft?.id) {
-            lastAutoSavedPayloadRef.current = payload;
-            setAutoSaveStatus("saved");
-            return;
-          }
-        }
-
-        const { data, error } = await (supabase as any)
-          .from("therapy_sessions")
-          .insert(updateBody)
-          .select("id")
-          .single();
-        if (error) throw error;
+        const draftId = await upsertAutoSaveDraft(pid, { ...eingabe_daten, lastAutoSaveAt: new Date().toISOString() });
         if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
-        autoSaveSessionIdRef.current = data?.id ?? null;
+        autoSaveSessionIdRef.current = draftId;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
         setHistoryRefresh((n) => n + 1);
@@ -1044,7 +1016,7 @@ export function TherapyRecommendation() {
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     };
-  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage]);
+  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
