@@ -314,6 +314,33 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_snapshot: {
+        Row: {
+          created_at: string
+          data: Json
+          pseudonym_id: string
+          source_created_at: string | null
+          source_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          pseudonym_id: string
+          source_created_at?: string | null
+          source_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          pseudonym_id?: string
+          source_created_at?: string | null
+          source_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       practice_info: {
         Row: {
           content_de: string
@@ -568,6 +595,7 @@ export type Database = {
         Args: { _input: Json; _max_chars?: number }
         Returns: Json
       }
+      extract_patient_snapshot_fields: { Args: { _input: Json }; Returns: Json }
       get_therapy_patient_safe_snapshot: {
         Args: { _max_rows?: number; _pseudonym_id: string }
         Returns: Json
