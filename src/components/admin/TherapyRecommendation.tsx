@@ -3644,6 +3644,28 @@ export function TherapyRecommendation() {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => {
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                    const injected = docAnalysisHtml.includes("</body>")
+                      ? docAnalysisHtml.replace(
+                          "</body>",
+                          `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
+                        )
+                      : `<!doctype html><html><head><title>${filename}</title></head><body>${docAnalysisHtml}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
+                    const blob = new Blob([injected], { type: "text/html;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, "_blank", "noopener,noreferrer");
+                    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                  }}
+                  className="gap-1"
+                  title="Öffnet das HTML in neuem Tab und startet den Druck-Dialog — dort „Als PDF speichern“ wählen"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Als PDF speichern
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => setIsDocAnalysisPanelFullscreen((v) => !v)}
                   className="gap-1"
                   title={isDocAnalysisPanelFullscreen ? "Vollbild verlassen" : "Vollbild — füllt das Browserfenster"}
