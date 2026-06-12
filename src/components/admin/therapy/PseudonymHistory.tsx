@@ -213,6 +213,30 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 }
               };
 
+              const saveBefundPdf = async () => {
+                let row: TherapySession | null = s;
+                if (!row.befund_html) {
+                  row = await fetchFullSession(s.id);
+                  if (!row?.befund_html) return;
+                }
+                const w = window.open("", "_blank");
+                if (!w) return;
+                const dateStr = new Date(s.created_at).toISOString().slice(0, 10);
+                const filename = `Befund-Auswertung_${pseudonymId}_${dateStr}`;
+                const html = row.befund_html as string;
+                // Inject print trigger + filename hint (browser uses document.title as default PDF name)
+                const injected = html.includes("</body>")
+                  ? html.replace(
+                      "</body>",
+                      `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
+                    )
+                  : `<!doctype html><html><head><title>${filename}</title></head><body>${html}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
+                w.document.open();
+                w.document.write(injected);
+                w.document.close();
+              };
+
+
               return (
                 <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                   <div className="flex items-start gap-2">
@@ -266,10 +290,16 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {isBefund && (
-                      <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
-                        <FileText className="h-3 w-3" />
-                        Auswertung hier anzeigen
-                      </Button>
+                      <>
+                        <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
+                          <FileText className="h-3 w-3" />
+                          Auswertung hier anzeigen
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={saveBefundPdf}>
+                          <FileText className="h-3 w-3" />
+                          Als PDF speichern
+                        </Button>
+                      </>
                     )}
                     {!isBefund && (
                       <>
