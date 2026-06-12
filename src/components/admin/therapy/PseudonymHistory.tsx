@@ -221,7 +221,9 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 }
                 const w = window.open("", "_blank");
                 if (!w) return;
-                const dateStr = new Date(s.created_at).toISOString().slice(0, 10);
+                const d = new Date(s.created_at);
+                const pad = (n: number) => String(n).padStart(2, "0");
+                const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
                 const filename = `Befund-Auswertung_${pseudonymId}_${dateStr}`;
                 const html = row.befund_html as string;
                 // Inject print trigger + filename hint (browser uses document.title as default PDF name)
