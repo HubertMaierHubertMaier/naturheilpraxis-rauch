@@ -959,42 +959,7 @@ export function TherapyRecommendation() {
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) return;
-      const { data: snapshotResponse, error } = await supabase.functions.invoke("get-therapy-sessions", {
-        body: { snapshot_pseudonym_id: pid },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (error) throw error;
-      if (pseudonymIdRef.current !== pid) return;
-      const snapshot = normalizeTherapyInput((snapshotResponse as any)?.snapshot || {});
-      const sessionCount = Number((snapshotResponse as any)?.snapshot?.sessionCount || 0);
-      if (!Object.keys(snapshot).length || sessionCount === 0) {
-        if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-        return;
-      }
-      const cloudTs = snapshot.loadedAt ? new Date(String(snapshot.loadedAt)).getTime() : Date.now();
-      if (cloudTs >= localTs || !localData) {
-        if (pseudonymIdRef.current !== pid) return;
-        patientDataOwnerRef.current = pid;
-        applyDraftPayload({ ...snapshot, _pseudonym_id: pid, pseudonymId: pid }, pid);
-        const filledFields = Object.keys(snapshot).filter((k) => {
-          const v = (snapshot as any)[k];
-          return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
-        }).length;
-        setClinicalLoadInfo({
-          pid,
-          sessionCount,
-          laborLines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
-          arztChars: typeof snapshot.arztbericht === "string" ? snapshot.arztbericht.trim().length : 0,
-          loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-        });
-        toast({
-          title: "Eingaben wiederhergestellt",
-          description: `${filledFields} Felder aus ${sessionCount} Sitzung${sessionCount !== 1 ? "en" : ""} für ${pid} zusammengeführt · Alter/Geschlecht/Medikamente werden aus dem letzten gefüllten Verlauf geladen.`,
-        });
-      } else if (localData) {
+      if (localData && localTs > 0) {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch {
