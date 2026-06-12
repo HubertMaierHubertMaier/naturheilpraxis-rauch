@@ -1002,38 +1002,9 @@ export function TherapyRecommendation() {
         if (!user) throw new Error("Nicht angemeldet");
         const eingabe_daten = JSON.parse(payload);
         assertPayloadMatchesPseudonym(pid, eingabe_daten);
-        const updateBody = {
-          pseudonym_id: pid,
-          created_by: user.id,
-          eingabe_daten: { ...eingabe_daten, lastAutoSaveAt: new Date().toISOString() },
-          empfehlung: "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.",
-          notiz: "Auto-Sicherung der Eingaben",
-        };
-
-        if (autoSaveSessionIdRef.current) {
-          const { data: updatedDraft, error } = await (supabase as any)
-            .from("therapy_sessions")
-            .update(updateBody)
-            .eq("id", autoSaveSessionIdRef.current)
-            .eq("pseudonym_id", pid)
-            .select("id")
-            .maybeSingle();
-          if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
-          if (!error && updatedDraft?.id) {
-            lastAutoSavedPayloadRef.current = payload;
-            setAutoSaveStatus("saved");
-            return;
-          }
-        }
-
-        const { data, error } = await (supabase as any)
-          .from("therapy_sessions")
-          .insert(updateBody)
-          .select("id")
-          .single();
-        if (error) throw error;
+        const draftId = await upsertAutoSaveDraft(pid, { ...eingabe_daten, lastAutoSaveAt: new Date().toISOString() });
         if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
-        autoSaveSessionIdRef.current = data?.id ?? null;
+        autoSaveSessionIdRef.current = draftId;
         lastAutoSavedPayloadRef.current = payload;
         setAutoSaveStatus("saved");
         setHistoryRefresh((n) => n + 1);
@@ -1045,7 +1016,7 @@ export function TherapyRecommendation() {
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     };
-  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage]);
+  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
   // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
   // - Erste Generierung: alle Mittel anhaken.
