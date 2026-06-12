@@ -699,6 +699,7 @@ export function TherapyRecommendation() {
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
+  const [docAnalysisStats, setDocAnalysisStats] = useState<{ current: number; total: number; label: string } | null>(null);
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
@@ -1668,6 +1669,7 @@ export function TherapyRecommendation() {
       try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
 
       setDocAnalysisHtml("");
+      setDocAnalysisStats(null);
       setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
       setLatestBefundLoadedFrom(null);
 
@@ -1744,6 +1746,7 @@ export function TherapyRecommendation() {
     docAbortRef.current = docController;
     setDocAnalysisHtml("");
     setLatestBefundLoadedFrom(null);
+    setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
     setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
@@ -1868,6 +1871,7 @@ export function TherapyRecommendation() {
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
       const skippedChunks: Array<{ index: number; label: string; reason: string }> = [];
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
+        setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
         try {
           const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
@@ -1902,6 +1906,7 @@ export function TherapyRecommendation() {
           }
         }
         await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
+        setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
       }
       if (skippedChunks.length) {
@@ -1993,6 +1998,7 @@ export function TherapyRecommendation() {
       let full = "";
       let model = "pending";
       let analysisMode = "client-checkpoint-strict";
+      setDocAnalysisStats({ current: chunks.length, total: chunks.length, label: "Abschluss-HTML wird zusammengeführt" });
       writeProgress("Alle Teile gelesen. Abschluss-HTML wird zusammengeführt…");
       try {
         let resp: Response | null = null;
@@ -3471,7 +3477,11 @@ export function TherapyRecommendation() {
                 className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
               >
                 {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-                {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
+                {isAnalyzingDocs && docAnalysisStats?.total
+                  ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
+                  : isAnalyzingDocs
+                    ? "Befund-Auswertung läuft…"
+                    : "Nur Befund-Auswertung (HTML)"}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
@@ -3508,6 +3518,19 @@ export function TherapyRecommendation() {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        {isAnalyzingDocs && docAnalysisStats?.total && (
+          <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-md border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+            <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${Math.max(4, Math.min(100, (docAnalysisStats.current / docAnalysisStats.total) * 100))}%` }}
+              />
+            </div>
+            <span className="truncate">
+              Läuft sichtbar: Teil {docAnalysisStats.current}/{docAnalysisStats.total} · {docAnalysisStats.label}
+            </span>
+          </div>
+        )}
         {isAnalyzingDocs && (
           <Button
             variant="destructive"
