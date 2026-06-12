@@ -34,6 +34,7 @@ interface SessionRow {
   updated_at: string;
   kind?: string | null;
   is_truncated?: boolean;
+  befund_meta?: any;
 }
 
 const fmtDate = (iso: string) =>
