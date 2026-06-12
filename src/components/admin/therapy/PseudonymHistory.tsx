@@ -198,7 +198,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
           !autoHydratedSessionIds.current.has(session.id)
         );
       })
-      .slice(0, 8);
+      .slice(0, 3);
 
     if (recentTruncatedSessions.length === 0) return;
 
