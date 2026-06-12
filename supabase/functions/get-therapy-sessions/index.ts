@@ -135,6 +135,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
+    const snapshotPseudonymId = (body?.snapshot_pseudonym_id ?? "").toString().trim();
     const sessionId = (body?.session_id ?? "").toString().trim();
 
     // ----- Mode B: single-row safe fetch (lazy load on expand / Befund / Empfehlung) -----
@@ -147,6 +148,20 @@ Deno.serve(async (req) => {
       if (error) throw error;
 
       return new Response(JSON.stringify({ session: row ?? null }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ----- Mode C: compact latest-filled patient snapshot for restoring form fields -----
+    if (snapshotPseudonymId) {
+      const { data: snapshot, error } = await adminClient.rpc("get_therapy_patient_safe_snapshot", {
+        _pseudonym_id: snapshotPseudonymId,
+        _max_rows: 300,
+      });
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ snapshot: snapshot ?? {} }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
