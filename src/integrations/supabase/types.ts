@@ -568,6 +568,10 @@ export type Database = {
         Args: { _input: Json; _max_chars?: number }
         Returns: Json
       }
+      get_therapy_patient_safe_snapshot: {
+        Args: { _max_rows?: number; _pseudonym_id: string }
+        Returns: Json
+      }
       get_therapy_session_safe_detail: {
         Args: { _include_befund_html?: boolean; _session_id: string }
         Returns: Json
