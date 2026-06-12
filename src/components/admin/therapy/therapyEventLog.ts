@@ -49,13 +49,19 @@ export async function logTherapyEvent(
   details: TherapyEventDetails = {},
 ): Promise<void> {
   const pid = (pseudonymId || "").trim();
-  if (!pid) return;
+  if (!pid) {
+    console.warn("[therapyEventLog] SKIP: pseudonymId leer", { type, details });
+    return;
+  }
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.warn("[therapyEventLog] SKIP: kein eingeloggter User", { type, pid });
+      return;
+    }
     const label = labelFor(type);
     const ts = new Date().toISOString();
-    await (supabase as any).from("therapy_sessions").insert({
+    const { error } = await (supabase as any).from("therapy_sessions").insert({
       pseudonym_id: pid,
       kind: "event_log",
       eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "event_log" },
@@ -64,8 +70,12 @@ export async function logTherapyEvent(
       befund_meta: { event_type: type, label, ts, ...details },
       created_by: user.id,
     });
+    if (error) {
+      console.error("[therapyEventLog] INSERT FEHLER", { type, pid, error });
+    } else {
+      console.info("[therapyEventLog] ✓ gespeichert", { type, pid });
+    }
   } catch (e) {
-    // best-effort logging — niemals den eigentlichen Workflow blockieren
-    console.warn("[therapyEventLog] insert failed:", (e as Error).message);
+    console.error("[therapyEventLog] EXCEPTION:", (e as Error).message, { type, pid });
   }
 }
