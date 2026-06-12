@@ -290,10 +290,16 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {isBefund && (
-                      <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
-                        <FileText className="h-3 w-3" />
-                        Auswertung hier anzeigen
-                      </Button>
+                      <>
+                        <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={openBefund}>
+                          <FileText className="h-3 w-3" />
+                          Auswertung hier anzeigen
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={saveBefundPdf}>
+                          <FileText className="h-3 w-3" />
+                          Als PDF speichern
+                        </Button>
+                      </>
                     )}
                     {!isBefund && (
                       <>
