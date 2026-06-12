@@ -779,9 +779,11 @@ export function TherapyRecommendation() {
     useMapReduce,
     bevorzugteLinie,
     pinnedMittel,
+    manualDiagnosen,
+    manualMittel,
     belastungen: formatPathogensForAI(pathogens),
     ...extra,
-  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel]);
+  }), [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -925,6 +927,9 @@ export function TherapyRecommendation() {
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
     if (Array.isArray(data.pinnedMittel)) setPinnedMittel(data.pinnedMittel as PinnedRemedy[]);
+    if (Array.isArray(data.manualDiagnosen)) setManualDiagnosen(data.manualDiagnosen as DiagnoseEntry[]);
+    else if (Array.isArray(data.diagnosen)) setManualDiagnosen(data.diagnosen as DiagnoseEntry[]);
+    if (Array.isArray(data.manualMittel)) setManualMittel(data.manualMittel as ManualRemedyEntry[]);
   }, [toast]);
 
   useEffect(() => {
@@ -954,85 +959,7 @@ export function TherapyRecommendation() {
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
     try {
-      const { data } = await (supabase as any)
-        .from("therapy_sessions")
-        .select("id, eingabe_daten, updated_at")
-        .eq("pseudonym_id", pid)
-        .not("kind", "in", "(befund_checkpoint,quarantine_patient_mismatch)")
-        .order("updated_at", { ascending: false })
-        .limit(10);
-      if (pseudonymIdRef.current !== pid) return;
-      if (!Array.isArray(data) || !data.length) {
-        if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-        return;
-      }
-      // Strategie: Jüngste Sitzung gewinnt. Fehlende Felder werden aus den
-      // nächstälteren Sitzungen ergänzt (z. B. Labor in Sitzung A, Arztbericht in Sitzung B).
-      const merged: any = {};
-      const stringKeys = [
-        "symptome","erkrankung","alter","geschlecht","groesseCm","gewichtKg","schwanger",
-        "medikamente","bisherigeMittel","budget","laborErhoeht","laborErniedrigt","laborKomplett",
-        "laborDatum","stuhlbefund","arztbericht","arztberichtDatum","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage",
-      ];
-      const mergeTextKeys = new Set(["symptome","erkrankung","medikamente","bisherigeMittel","laborErhoeht","laborErniedrigt","laborKomplett","stuhlbefund","arztbericht","metatronHeel","sonstigeUntersuchungen","perplexityAnalyse","eigeneTherapieVorlage"]);
-      const textCollections: Record<string, Array<{ label: string; text: string }>> = {};
-      const arrayKeys = ["pathogens","selectedCategories","bevorzugteLinie","pinnedMittel","mannayanOrders"];
-      for (const row of data) {
-        const e = normalizeTherapyInput(row?.eingabe_daten);
-        const embedded = getEmbeddedPseudonymId(e);
-        if (embedded && embedded !== pid) continue;
-        for (const k of stringKeys) {
-          if (mergeTextKeys.has(k)) {
-            if (typeof e[k] === "string" && e[k].trim()) {
-              const dateLabel = row?.updated_at ? new Date(row.updated_at).toLocaleDateString("de-DE") : "unbekannt";
-              if (!textCollections[k]) textCollections[k] = [];
-              textCollections[k].push({ label: `Sitzung ${dateLabel}`, text: e[k].trim() });
-            }
-          } else if (!merged[k] && typeof e[k] === "string" && e[k].trim()) merged[k] = e[k];
-        }
-        for (const k of arrayKeys) {
-          if ((!merged[k] || (Array.isArray(merged[k]) && merged[k].length === 0)) && Array.isArray(e[k]) && e[k].length) {
-            merged[k] = e[k];
-          }
-        }
-      }
-      for (const [key, blocks] of Object.entries(textCollections)) {
-        const seenText = new Map<string, string>();
-        const duplicateNotes: string[] = [];
-        const mergedText = blocks
-          .map((block) => {
-            const text = dedupeAnalysisBlockText({ label: block.label, text: block.text }, seenText, duplicateNotes);
-            return text ? `### ${block.label}\n${text}` : "";
-          })
-          .filter(Boolean)
-          .join("\n\n")
-          .trim();
-        if (mergedText) merged[key] = mergedText;
-      }
-      const newest = data[0];
-      const cloudTs = newest?.updated_at ? new Date(newest.updated_at).getTime() : 0;
-      if (cloudTs >= localTs) {
-        if (pseudonymIdRef.current !== pid) return;
-        patientDataOwnerRef.current = pid;
-        applyDraftPayload({ ...merged, _pseudonym_id: pid, pseudonymId: pid }, pid);
-        const autoRow = data.find((r: any) => r?.eingabe_daten?.autoSavedDraft);
-        if (autoRow) autoSaveSessionIdRef.current = autoRow.id;
-        const filledFields = Object.keys(merged).filter((k) => {
-          const v = (merged as any)[k];
-          return typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length > 0 : false;
-        }).length;
-        setClinicalLoadInfo({
-          pid,
-          sessionCount: data.length,
-          laborLines: countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n")),
-          arztChars: typeof merged.arztbericht === "string" ? merged.arztbericht.trim().length : 0,
-          loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-        });
-        toast({
-          title: "Eingaben wiederhergestellt",
-          description: `${filledFields} Felder aus ${data.length} Sitzung${data.length !== 1 ? "en" : ""} für ${pid} zusammengeführt · Labor: ${countClinicalLines([merged.laborKomplett, merged.laborErhoeht, merged.laborErniedrigt].filter(Boolean).join("\n"))} Zeilen · Arztbrief: ${typeof merged.arztbericht === "string" && merged.arztbericht.trim() ? "geladen" : "nicht vorhanden"}.`,
-        });
-      } else if (localData) {
+      if (localData && localTs > 0) {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch {

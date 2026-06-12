@@ -94,9 +94,28 @@ export const buildStoredDetails = (input: any): StoredDetail[] => {
     if (text) details.push({ label, value: text });
   };
 
+  const summarizeDiagnoses = (value: unknown): string => {
+    if (!Array.isArray(value)) return "";
+    return value
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        if (!item || typeof item !== "object") return "";
+        const row = item as Record<string, unknown>;
+        const diagnose = asText(row.diagnose) || asText(row.label) || asText(row.name);
+        const icd10 = asText(row.icd10);
+        const begruendung = asText(row.begruendung);
+        return [icd10, diagnose, begruendung].filter(Boolean).join(" · ");
+      })
+      .filter(Boolean)
+      .join("\n");
+  };
+
+  add("Alter", e.alter ? `${e.alter} J.` : "");
+  add("Geschlecht", e.geschlecht === "maennlich" ? "männlich" : e.geschlecht === "weiblich" ? "weiblich" : e.geschlecht);
   add("Beschwerden / Symptome", e.symptome);
   add("Erkrankung / Diagnose", e.erkrankung);
-  add("Medikamente", e.medikamente);
+  add("Diagnosen aus Befundauswertung", summarizeDiagnoses(e.manualDiagnosen) || summarizeDiagnoses(e.diagnosen));
+  add("Aktuelle Medikamente", e.medikamente);
   add("Bisherige Mittel", e.bisherigeMittel);
   add("Budget / Priorität", e.budget);
   add("Belastungen / Pathogene", e.belastungen || summarizeGenericArray(e.pathogens));
