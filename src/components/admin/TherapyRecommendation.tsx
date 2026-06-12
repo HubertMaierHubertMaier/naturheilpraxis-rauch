@@ -3477,7 +3477,11 @@ export function TherapyRecommendation() {
                 className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
               >
                 {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-                {isAnalyzingDocs ? "Befund-Auswertung läuft…" : "Nur Befund-Auswertung (HTML)"}
+                {isAnalyzingDocs && docAnalysisStats?.total
+                  ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
+                  : isAnalyzingDocs
+                    ? "Befund-Auswertung läuft…"
+                    : "Nur Befund-Auswertung (HTML)"}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
@@ -3514,6 +3518,19 @@ export function TherapyRecommendation() {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        {isAnalyzingDocs && docAnalysisStats?.total && (
+          <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-md border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+            <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${Math.max(4, Math.min(100, (docAnalysisStats.current / docAnalysisStats.total) * 100))}%` }}
+              />
+            </div>
+            <span className="truncate">
+              Läuft sichtbar: Teil {docAnalysisStats.current}/{docAnalysisStats.total} · {docAnalysisStats.label}
+            </span>
+          </div>
+        )}
         {isAnalyzingDocs && (
           <Button
             variant="destructive"
