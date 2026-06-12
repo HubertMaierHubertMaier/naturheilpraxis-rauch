@@ -2542,15 +2542,20 @@ export function TherapyRecommendation() {
           });
           if (saveErr) {
             toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
+            if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_failed", { error: saveErr.message, duration_ms: Date.now() - fullAnalysisStartedAt });
           } else {
             toast({ title: "Sitzung gespeichert", description: `Pseudonym ${pseudonymId.trim()}` });
             setHistoryRefresh((n) => n + 1);
+            if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_success", { duration_ms: Date.now() - fullAnalysisStartedAt, note: "Therapieempfehlung erstellt und gespeichert" });
           }
         }
       }
     } catch (e: any) {
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
+        if (!isErweitern) await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: e.message, duration_ms: Date.now() - fullAnalysisStartedAt });
+      } else if (!isErweitern) {
+        await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: "Vom Benutzer abgebrochen", duration_ms: Date.now() - fullAnalysisStartedAt });
       }
     } finally {
       setIsStreaming(false);
