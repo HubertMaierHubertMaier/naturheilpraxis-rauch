@@ -299,6 +299,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 const type: string = meta.event_type || "event";
                 const label: string = meta.label || "Verlaufs-Event";
                 const files: Array<{ name: string; pages?: number; chars?: number; archivePath?: string }> = Array.isArray(meta.files) ? meta.files : [];
+                const sourceSummary: Array<{ label?: string; chars?: number; lines?: number }> = Array.isArray(meta.source_summary) ? meta.source_summary : [];
                 const success = type.endsWith("_success") || type === "documents_uploaded" || type === "documents_saved" || type === "befund_pdf_saved" || type === "patient_saved";
                 const failed = type.endsWith("_failed");
                 const started = type.endsWith("_started");
@@ -352,6 +353,16 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                     {meta.note && !files.length && (
                       <p className="mt-0.5 text-muted-foreground italic">{String(meta.note)}</p>
                     )}
+                    {sourceSummary.length > 0 && (
+                      <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
+                        {sourceSummary.slice(0, 8).map((source, i) => (
+                          <li key={i}>
+                            {String(source.label || "Quelle")} · {Number(source.chars || 0).toLocaleString("de-DE")} Zeichen · {Number(source.lines || 0).toLocaleString("de-DE")} Zeile(n)
+                          </li>
+                        ))}
+                        {sourceSummary.length > 8 && <li className="italic">… und {sourceSummary.length - 8} weitere Quellen</li>}
+                      </ul>
+                    )}
                   </div>
                 );
               }
@@ -388,6 +399,9 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
+              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = Array.isArray(meta.source_summary)
+                ? meta.source_summary
+                : Array.isArray(e.sourceSummary) ? e.sourceSummary : [];
               const openBefund = async () => {
                 let row: TherapySession | null = s;
                 if (!row.befund_html) {
@@ -500,6 +514,18 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                               <span className="whitespace-pre-wrap">{detail.value}</span>
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {isBefund && befundSources.length > 0 && (
+                        <div className="mt-2 rounded-md border border-primary/25 bg-primary/5 p-2 space-y-1">
+                          <p className="text-[11px] font-medium text-foreground">Für diese Auswertung geladen</p>
+                          {befundSources.slice(0, 6).map((source, i) => (
+                            <div key={`${source.label || "Quelle"}-${i}`} className="text-[11px] text-muted-foreground">
+                              <span className="font-medium text-foreground">{String(source.label || "Quelle")}: </span>
+                              {Number(source.chars || 0).toLocaleString("de-DE")} Zeichen · {Number(source.lines || 0).toLocaleString("de-DE")} Zeile(n)
+                            </div>
+                          ))}
+                          {befundSources.length > 6 && <p className="text-[11px] text-muted-foreground italic">… und {befundSources.length - 6} weitere Quellen</p>}
                         </div>
                       )}
                       {s.notiz && (
