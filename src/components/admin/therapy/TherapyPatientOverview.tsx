@@ -49,6 +49,13 @@ const fmtDateOnly = (iso: string) =>
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 
+const isEmptyAutosaveOnly = (session: SessionRow): boolean => {
+  if (session.kind === "event_log") return false;
+  const input = session.eingabe_daten || {};
+  const keys = Object.keys(input);
+  return keys.length === 1 && keys[0] === "autoSavedDraft" && input.autoSavedDraft === true;
+};
+
 export function TherapyPatientOverview() {
   const [pseudonyms, setPseudonyms] = useState<PseudonymRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +107,7 @@ export function TherapyPatientOverview() {
         return [];
       }
 
-      const sessions = ((data as any)?.sessions ?? []) as SessionRow[];
+      const sessions = (((data as any)?.sessions ?? []) as SessionRow[]).filter((session) => !isEmptyAutosaveOnly(session));
       setSessionsByPid((p) => ({ ...p, [pid]: sessions }));
       return sessions;
     } finally {
