@@ -513,7 +513,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   };
 
   const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
-  const today = new Date().toLocaleDateString("de-DE");
+  const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) + " Uhr";
   const mannayanRows = parseMannayanRows(b.mannayanOrdersText);
 
   return `<!DOCTYPE html>
