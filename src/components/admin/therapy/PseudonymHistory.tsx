@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye } from "lucide-react";
+import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye, X } from "lucide-react";
 import { logTherapyEvent } from "./therapyEventLog";
 
 export interface TherapySession {
@@ -41,6 +41,7 @@ interface Props {
 export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: Props) {
   const [sessions, setSessions] = useState<TherapySession[]>([]);
   const [loading, setLoading] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
@@ -78,6 +79,9 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [pseudonymId, toast]);
 
   useEffect(() => {
+    setHistoryOpen(true);
+    setExpandedId(null);
+    setEditNoteId(null);
     const t = setTimeout(loadSessions, 300);
     return () => clearTimeout(t);
   }, [loadSessions]);
@@ -146,16 +150,32 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <History className="h-4 w-4 text-primary" />
-          Verlauf: <span className="font-mono text-primary">{pseudonymId}</span>
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          <Badge variant="secondary" className="ml-auto text-xs">
-            {sessions.length} Sitzung{sessions.length !== 1 ? "en" : ""}
-          </Badge>
-        </CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+            <History className="h-4 w-4 text-primary" />
+            Verlauf: <span className="font-mono text-primary">{pseudonymId}</span>
+            {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            <Badge variant="secondary" className="text-xs">
+              {sessions.length} Sitzung{sessions.length !== 1 ? "en" : ""}
+            </Badge>
+          </CardTitle>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 shrink-0 gap-1 text-xs"
+            onClick={() => {
+              setHistoryOpen((open) => !open);
+              setExpandedId(null);
+              setEditNoteId(null);
+            }}
+          >
+            {historyOpen ? <X className="h-3.5 w-3.5" /> : <History className="h-3.5 w-3.5" />}
+            {historyOpen ? "Verlauf schließen" : "Verlauf öffnen"}
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
+      {historyOpen && <CardContent>
         {sessions.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground text-center py-4">
             Noch keine gespeicherten Sitzungen für dieses Pseudonym.
@@ -512,7 +532,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
             führst du ausschließlich in deiner lokalen Patientenakte (offline/verschlüsselt).
           </span>
         </div>
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
