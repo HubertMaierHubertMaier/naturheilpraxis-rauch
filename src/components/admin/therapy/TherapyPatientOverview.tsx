@@ -297,6 +297,70 @@ export function TherapyPatientOverview() {
                             sessions.map((s) => {
                               const isExp = expandedSessionId === s.id;
                               const hasSlimPlaceholder = s.is_truncated && Object.keys(s.eingabe_daten || {}).length === 0;
+
+                              // ─── Verlaufs-Event (Upload / Save / Befund-HTML / PDF / Re-Analyse) ───
+                              if (s.kind === "event_log") {
+                                const meta: any = s.befund_meta || {};
+                                const type: string = meta.event_type || "event";
+                                const label: string = meta.label || s.notiz || "Verlaufs-Event";
+                                const files: Array<{ name: string; pages?: number; archivePath?: string }> = Array.isArray(meta.files) ? meta.files : [];
+                                const success = type.endsWith("_success") || type === "documents_uploaded" || type === "documents_saved" || type === "befund_pdf_saved" || type === "patient_saved";
+                                const failed = type.endsWith("_failed");
+                                const started = type.endsWith("_started");
+                                const borderClass = failed
+                                  ? "border-destructive/40 bg-destructive/5"
+                                  : success
+                                  ? "border-emerald-400/40 bg-emerald-50/40 dark:bg-emerald-950/15"
+                                  : started
+                                  ? "border-amber-400/40 bg-amber-50/40 dark:bg-amber-950/15"
+                                  : "border-border bg-muted/20";
+                                return (
+                                  <div key={s.id} className={`border rounded-md p-2 text-xs ${borderClass}`}>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-medium text-foreground">{label}</span>
+                                      <span className="text-muted-foreground">{fmtDate(s.created_at)}</span>
+                                      {typeof meta.duration_ms === "number" && (
+                                        <Badge variant="outline" className="text-[10px] py-0 h-4">{Math.round(meta.duration_ms / 1000)}s</Badge>
+                                      )}
+                                      {meta.model && (
+                                        <Badge variant="outline" className="text-[10px] py-0 h-4">{meta.model}</Badge>
+                                      )}
+                                      {typeof meta.total_chars === "number" && (
+                                        <Badge variant="outline" className="text-[10px] py-0 h-4">
+                                          {Number(meta.total_chars).toLocaleString("de-DE")} Z.
+                                        </Badge>
+                                      )}
+                                      <Button
+                                        size="sm" variant="ghost"
+                                        className="h-5 px-1 ml-auto text-destructive hover:text-destructive"
+                                        title="Event aus Verlauf entfernen"
+                                        onClick={() => handleDelete(s.id, p.pseudonym_id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    {files.length > 0 && (
+                                      <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
+                                        {files.slice(0, 8).map((f, i) => (
+                                          <li key={i}>
+                                            <span className="font-mono">{f.name}</span>
+                                            {f.pages ? <span> · {f.pages} S.</span> : null}
+                                            {f.archivePath ? <span> · ✓ archiviert</span> : null}
+                                          </li>
+                                        ))}
+                                        {files.length > 8 && <li className="italic">… und {files.length - 8} weitere</li>}
+                                      </ul>
+                                    )}
+                                    {meta.error && (
+                                      <p className="mt-1 text-destructive">Fehler: {String(meta.error)}</p>
+                                    )}
+                                    {meta.note && !files.length && (
+                                      <p className="mt-0.5 text-muted-foreground italic">{String(meta.note)}</p>
+                                    )}
+                                  </div>
+                                );
+                              }
+
                               return (
                                 <div key={s.id} className="border border-border rounded bg-background p-3">
                                   <div className="flex items-center gap-2 flex-wrap">
