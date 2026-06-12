@@ -137,46 +137,14 @@ Deno.serve(async (req) => {
     const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
     const sessionId = (body?.session_id ?? "").toString().trim();
 
-    // ----- Mode B: single-row full fetch (lazy load on expand / Befund / Empfehlung) -----
+    // ----- Mode B: single-row safe fetch (lazy load on expand / Befund / Empfehlung) -----
     if (sessionId) {
-      // Avoid SELECT * — base64 PDFs in eingabe_daten can exceed worker memory.
-      // Pull metadata first, then stream heavy text columns separately and strip
-      // base64 payloads from eingabe_daten before returning.
-      const { data: row, error } = await adminClient
-        .from("therapy_sessions")
-        .select(
-          "id, pseudonym_id, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id, eingabe_daten, empfehlung, befund_html",
-        )
-        .eq("id", sessionId)
-        .maybeSingle();
+      const includeBefundHtml = body?.include_befund_html === true;
+      const { data: row, error } = await adminClient.rpc("get_therapy_session_safe_detail", {
+        _session_id: sessionId,
+        _include_befund_html: includeBefundHtml,
+      });
       if (error) throw error;
-
-      if (row && row.eingabe_daten && typeof row.eingabe_daten === "object") {
-        const HEAVY_KEY_RE = /(base64|dataUrl|pdfBase64|fileBase64|rawBase64|binary|fileData)/i;
-        const MAX_STRING = 200_000; // ~200 KB per single string field
-        const strip = (val: unknown): unknown => {
-          if (typeof val === "string") {
-            if (val.length > MAX_STRING || val.startsWith("data:")) {
-              return `[gekürzt: ${val.length} Zeichen]`;
-            }
-            return val;
-          }
-          if (Array.isArray(val)) return val.map(strip);
-          if (val && typeof val === "object") {
-            const out: Record<string, unknown> = {};
-            for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-              if (HEAVY_KEY_RE.test(k)) {
-                out[k] = typeof v === "string" ? `[gekürzt: ${v.length} Zeichen]` : "[gekürzt]";
-              } else {
-                out[k] = strip(v);
-              }
-            }
-            return out;
-          }
-          return val;
-        };
-        (row as Record<string, unknown>).eingabe_daten = strip(row.eingabe_daten);
-      }
 
       return new Response(JSON.stringify({ session: row ?? null }), {
         status: 200,
@@ -191,42 +159,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ----- Mode A: metadata-only list -----
-    // Important: do NOT select eingabe_daten, empfehlung or befund_html here.
-    // Those columns can contain hundreds of KB per row and have repeatedly
-    // exhausted the Edge worker before the code could trim the payload.
-    // Full content is loaded only for one row via `session_id`.
-    const PAGE_SIZE = 50;
-    const MAX_ROWS = 500;
-    const slimRows: Array<Record<string, unknown>> = [];
+    // ----- Mode A: lightweight list with safe Zusatzangaben -----
+    // Important: do NOT select the whole eingabe_daten or befund_html here.
+    // Some rows contain embedded document payloads that can exhaust the worker
+    // before TypeScript-side trimming can run.
+    const { data: slimRows, error } = await adminClient.rpc("get_therapy_sessions_safe_list", {
+      _pseudonym_id: pseudonymId,
+      _max_rows: 500,
+    });
 
-    for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
-      const { data: page, error } = await adminClient
-        .from("therapy_sessions")
-        .select(
-          "id, pseudonym_id, notiz, created_at, updated_at, kind, befund_meta, version_number, version_label, parent_session_id",
-        )
-        .eq("pseudonym_id", pseudonymId)
-        .neq("kind", "befund_checkpoint")
-        .neq("kind", "quarantine_patient_mismatch")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
-
-      if (error) throw error;
-      if (!page || page.length === 0) break;
-
-      for (const r of page as Array<Record<string, unknown>>) {
-        slimRows.push({
-          ...r,
-          eingabe_daten: {},
-          empfehlung: "",
-          has_empfehlung: true,
-          is_truncated: true,
-          has_befund_html: r.kind === "befund_auswertung",
-        });
-      }
-      if (page.length < PAGE_SIZE) break;
-    }
+    if (error) throw error;
 
     return new Response(JSON.stringify({ sessions: slimRows }), {
       status: 200,

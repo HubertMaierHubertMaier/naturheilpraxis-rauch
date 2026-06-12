@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,8 +115,6 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
-  const autoHydratedSessionIds = useRef<Set<string>>(new Set());
-  const autoHydratingRecent = useRef(false);
   const { toast } = useToast();
 
   const loadSessions = useCallback(async () => {
@@ -151,8 +149,6 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [pseudonymId, toast]);
 
   useEffect(() => {
-    autoHydratedSessionIds.current.clear();
-    autoHydratingRecent.current = false;
     setHistoryOpen(true);
     setExpandedId(null);
     setEditNoteId(null);
@@ -161,16 +157,17 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [loadSessions]);
 
   /**
-   * Lazy-load the full row (incl. befund_html + full eingabe_daten/empfehlung)
+   * Lazy-load the full row. The backend returns only safe extracted
+   * Zusatzangaben from eingabe_daten, never embedded document/base64 payloads.
    * for one slim list entry. Merges the result back into `sessions` so the UI
    * keeps working with the same TherapySession shape.
    */
-  const fetchFullSession = useCallback(async (id: string): Promise<TherapySession | null> => {
+  const fetchFullSession = useCallback(async (id: string, includeBefundHtml = false): Promise<TherapySession | null> => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) return null;
     const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
-      body: { session_id: id },
+      body: { session_id: id, include_befund_html: includeBefundHtml },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (error) {
@@ -183,34 +180,6 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
     }
     return full;
   }, [toast]);
-
-  useEffect(() => {
-    if (!historyOpen || loading || autoHydratingRecent.current) return;
-
-    const recentTruncatedSessions = sessions
-      .filter((session) => {
-        const kind = String(session.kind || "");
-        return (
-          session.is_truncated === true &&
-          kind !== "event_log" &&
-          kind !== "befund_checkpoint" &&
-          kind !== "quarantine_patient_mismatch" &&
-          !autoHydratedSessionIds.current.has(session.id)
-        );
-      })
-      .slice(0, 3);
-
-    if (recentTruncatedSessions.length === 0) return;
-
-    recentTruncatedSessions.forEach((session) => autoHydratedSessionIds.current.add(session.id));
-    autoHydratingRecent.current = true;
-    (async () => {
-      for (const session of recentTruncatedSessions) {
-        await fetchFullSession(session.id);
-      }
-      autoHydratingRecent.current = false;
-    })();
-  }, [fetchFullSession, historyOpen, loading, sessions]);
 
 
   const handleDelete = async (id: string) => {
@@ -393,7 +362,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
               const openBefund = async () => {
                 let row: TherapySession | null = s;
                 if (!row.befund_html) {
-                  row = await fetchFullSession(s.id);
+                  row = await fetchFullSession(s.id, true);
                   if (!row?.befund_html) return;
                 }
                 if (onShowBefund) {
@@ -411,7 +380,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
               const saveBefundPdf = async () => {
                 let row: TherapySession | null = s;
                 if (!row.befund_html) {
-                  row = await fetchFullSession(s.id);
+                  row = await fetchFullSession(s.id, true);
                   if (!row?.befund_html) return;
                 }
                 const w = window.open("", "_blank");
