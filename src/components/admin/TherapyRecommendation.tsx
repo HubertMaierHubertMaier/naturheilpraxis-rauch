@@ -699,6 +699,7 @@ export function TherapyRecommendation() {
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
+  const [docAnalysisStats, setDocAnalysisStats] = useState<{ current: number; total: number; label: string } | null>(null);
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
