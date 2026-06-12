@@ -1669,6 +1669,7 @@ export function TherapyRecommendation() {
       try { localStorage.removeItem(getLatestBefundDisplayKey(pid)); } catch { /* optional */ }
 
       setDocAnalysisHtml("");
+      setDocAnalysisStats(null);
       setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
       setLatestBefundLoadedFrom(null);
 
@@ -1745,6 +1746,7 @@ export function TherapyRecommendation() {
     docAbortRef.current = docController;
     setDocAnalysisHtml("");
     setLatestBefundLoadedFrom(null);
+    setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
     setDocAnalysisProgress(`Start…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     try {
