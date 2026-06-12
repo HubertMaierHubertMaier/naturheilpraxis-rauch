@@ -135,6 +135,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
+    const draftPseudonymId = (body?.draft_pseudonym_id ?? "").toString().trim();
     const snapshotPseudonymId = (body?.snapshot_pseudonym_id ?? "").toString().trim();
     const sessionId = (body?.session_id ?? "").toString().trim();
 
@@ -148,6 +149,27 @@ Deno.serve(async (req) => {
       if (error) throw error;
 
       return new Response(JSON.stringify({ session: row ?? null }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ----- Mode C1: latest full autosave draft for restoring the working form -----
+    // This is intentionally separate from the lightweight history list: the list must
+    // never pull large JSON payloads, but restoring one current draft by pseudonym is safe.
+    if (draftPseudonymId) {
+      const { data: draft, error } = await adminClient
+        .from("therapy_sessions")
+        .select("id,pseudonym_id,eingabe_daten,created_at,updated_at,kind,notiz")
+        .eq("pseudonym_id", draftPseudonymId)
+        .eq("notiz", "Auto-Sicherung der Eingaben")
+        .eq("empfehlung", "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ draft: draft ?? null }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
