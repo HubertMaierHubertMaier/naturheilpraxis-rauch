@@ -2773,22 +2773,22 @@ export function TherapyRecommendation() {
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
               <div className="grid gap-2 sm:grid-cols-3">
                 <div>
-                  <span className="text-muted-foreground">Zusammengeführt:</span>{" "}
-                  <strong>{clinicalLoadInfo.sessionCount}</strong> Sitzung{clinicalLoadInfo.sessionCount !== 1 ? "en" : ""}
+                  <span className="text-muted-foreground">Quelle:</span>{" "}
+                  <strong>{clinicalLoadInfo.source === "cloud" ? "Cloud-Snapshot" : clinicalLoadInfo.source === "local" ? "lokale Sicherung" : "Verlaufssitzung"}</strong>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Labor geladen:</span>{" "}
-                  <strong>{clinicalLoadInfo.laborLines}</strong> Zeile{clinicalLoadInfo.laborLines !== 1 ? "n" : ""}
+                  <span className="text-muted-foreground">Symptome/Diagnosen:</span>{" "}
+                  <strong>{clinicalLoadInfo.symptomeChars.toLocaleString("de-DE")} Z. / {clinicalLoadInfo.diagnoseCount}</strong>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Arztbrief:</span>{" "}
-                  <strong>{clinicalLoadInfo.arztChars > 0 ? `${clinicalLoadInfo.arztChars} Zeichen` : "nicht gespeichert"}</strong>
+                  <span className="text-muted-foreground">Befunde:</span>{" "}
+                  <strong>{clinicalLoadInfo.laborLines} Labor-Z. · {clinicalLoadInfo.arztChars.toLocaleString("de-DE")} Arzt-Z. · {clinicalLoadInfo.sonstigeChars.toLocaleString("de-DE")} sonstige Z.</strong>
                   <span className="text-muted-foreground"> · {clinicalLoadInfo.loadedAt}</span>
                 </div>
               </div>
-              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && (
+              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && clinicalLoadInfo.sonstigeChars === 0 && (
                 <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
-                  Für diese Pseudonym-ID sind aktuell keine Labor- oder Arztbriefdaten in der Cloud gespeichert.
+                  Für diese Pseudonym-ID sind aktuell keine Labor-, Arztbrief- oder sonstigen Befunddaten geladen.
                 </div>
               )}
             </div>
