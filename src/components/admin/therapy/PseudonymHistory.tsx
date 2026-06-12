@@ -383,6 +383,10 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 const lineCount = countTextLines(detail.value);
                 return lineCount > 1 ? `${detail.label} (${lineCount} Zeilen)` : detail.label;
               });
+              const visibleDetailPreviews = storedDetails.slice(0, 2).map((detail) => ({
+                ...detail,
+                value: detail.value.length > 220 ? `${detail.value.slice(0, 220).trim()} …` : detail.value,
+              }));
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
@@ -483,6 +487,22 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                         <p className="text-[11px] text-muted-foreground mt-1">
                           Gespeichert: {visibleDetailLabels.join(" · ")}{storedDetails.length > visibleDetailLabels.length ? ` · +${storedDetails.length - visibleDetailLabels.length} weitere` : ""}
                         </p>
+                      )}
+                      {!isBefund && hasSlimPlaceholder && (
+                        <p className="text-[11px] text-primary mt-1">
+                          Zusatzangaben werden automatisch in die Verlaufsanzeige geladen …
+                        </p>
+                      )}
+                      {!isBefund && visibleDetailPreviews.length > 0 && (
+                        <div className="mt-2 rounded-md border border-primary/25 bg-primary/5 p-2 space-y-1">
+                          <p className="text-[11px] font-medium text-foreground">Zusatzangaben im Verlauf</p>
+                          {visibleDetailPreviews.map((detail) => (
+                            <div key={detail.label} className="text-[11px] text-muted-foreground">
+                              <span className="font-medium text-foreground">{detail.label}: </span>
+                              <span className="whitespace-pre-wrap">{detail.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                       {s.notiz && (
                         <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 italic">
