@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye } from "lucide-react";
+import { logTherapyEvent } from "./therapyEventLog";
 
 export interface TherapySession {
   id: string;
