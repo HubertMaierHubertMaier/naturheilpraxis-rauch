@@ -2161,9 +2161,11 @@ export function TherapyRecommendation() {
       if ((e as Error).name === "AbortError" || docController.signal.aborted) {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
         toast({ title: "Auswertung abgebrochen", description: "Der laufende Befund-Lauf wurde gestoppt.", variant: "default" as any });
+        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: "Vom Benutzer abgebrochen" });
       } else {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
         toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
+        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: msg });
       }
     } finally {
       setIsAnalyzingDocs(false);
