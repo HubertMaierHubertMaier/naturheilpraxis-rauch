@@ -2446,6 +2446,55 @@ export function TherapyRecommendation() {
     return `Bestellung ${order.orderNumber} vom ${day}${order.notes ? ` · Notiz: ${order.notes}` : ""}\n${items}`;
   }).join("\n\n");
 
+  const analysisSources = useMemo<SelectableAnalysisSource[]>(() => {
+    const pathogenText = formatPathogensForAI(pathogens).trim();
+    const therapyContext = [
+      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
+      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
+      pathogenText && `Pathogene / NLS-EAV-Befunde:\n${pathogenText}`,
+      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
+      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
+    ].filter(Boolean).join("\n\n");
+    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
+    const addSimple = (key: string, label: string, text: string, group: SelectableAnalysisSource["group"]): SelectableAnalysisSource[] => {
+      const trimmed = text.trim();
+      return trimmed ? [{ key, label, text: trimmed, group, chars: trimmed.length, lines: countClinicalLines(trimmed) }] : [];
+    };
+    return [
+      ...addSimple("patientenkontext", "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", therapyContext, "kontext"),
+      ...addSimple("mannayan", "Mannayan-Bestellungen – Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", mannayanContext, "kontext"),
+      ...splitMarkedDocumentSources("laborKomplett", laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", laborKomplett),
+      ...addSimple("laborErhoeht", "Labor – erhöhte Werte", laborErhoeht, "befund"),
+      ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
+      ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
+      ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
+      ...addSimple("metatronHeel", "Metatron / NLS / Bioresonanz", metatronHeel, "befund"),
+      ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
+      ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
+    ];
+  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse]);
+
+  useEffect(() => {
+    const availableKeys = analysisSources.map((source) => source.key);
+    setSelectedAnalysisSourceKeys((current) => {
+      const stillAvailable = current.filter((key) => availableKeys.includes(key));
+      const added = availableKeys.filter((key) => !stillAvailable.includes(key));
+      if (stillAvailable.length === current.length && added.length === 0) return current;
+      return [...stillAvailable, ...added];
+    });
+  }, [analysisSources]);
+
+  const selectedAnalysisSources = useMemo(() => {
+    const selected = new Set(selectedAnalysisSourceKeys);
+    return analysisSources.filter((source) => selected.has(source.key));
+  }, [analysisSources, selectedAnalysisSourceKeys]);
+
+  const analysisSourceTotals = useMemo(() => ({
+    selected: selectedAnalysisSources.length,
+    all: analysisSources.length,
+    chars: selectedAnalysisSources.reduce((sum, source) => sum + source.chars, 0),
+  }), [analysisSources.length, selectedAnalysisSources]);
+
   const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
