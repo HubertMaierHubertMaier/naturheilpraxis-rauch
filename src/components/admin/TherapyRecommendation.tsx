@@ -26,7 +26,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
-import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
+import { archiveClinicalDocumentOriginal, extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
@@ -2408,6 +2408,46 @@ export function TherapyRecommendation() {
     const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
     setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}${header}${text}` : `${header.trim()}\n${text}`));
     toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
+  };
+
+  const addDirectBefundFiles = (list: FileList | null) => {
+    if (!list?.length) return;
+    const stamp = Date.now().toString(36);
+    setPendingDirectBefundFiles((prev) => [
+      ...prev,
+      ...Array.from(list).map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
+    ]);
+    if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+  };
+
+  const processDirectBefundFiles = async () => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) {
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auslesen.", variant: "destructive" });
+      return;
+    }
+    const queue = pendingDirectBefundFiles.filter((item) => item.status !== "done");
+    if (!queue.length) return;
+    const successful: Array<{ name: string; pages?: number; chars?: number; archivePath?: string }> = [];
+    for (const item of queue) {
+      setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
+      try {
+        const archivePath = await archiveClinicalDocumentOriginal(item.file, pid);
+        const extracted = await extractClinicalDocumentText(item.file, "doctor", toast);
+        const block = `${extracted.text.trim()}\n\n[Originaldatei sicher archiviert: therapy-documents/${archivePath}]`;
+        setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+        successful.push({ name: item.file.name, pages: extracted.pages, chars: extracted.chars, archivePath });
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "done", chars: extracted.chars, pages: extracted.pages } : row));
+      } catch (error: any) {
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", error: error?.message || "Fehler beim Auslesen" } : row));
+      }
+    }
+    if (successful.length) {
+      await logTherapyEvent(pid, "documents_uploaded", { files: successful, note: "Direkt in der Befund-Quellen-Auswahl ausgelesen und übernommen." });
+      await logTherapyEvent(pid, "documents_saved", { files: successful.map(({ name, archivePath }) => ({ name, archivePath })), note: "Originaldateien im sicheren Bucket „therapy-documents" archiviert." });
+      toast({ title: "PDFs in Auswahl übernommen", description: `${successful.length} Datei(en) stehen jetzt oben zum Anhaken bereit.` });
+      setHistoryRefresh((n) => n + 1);
+    }
   };
 
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
