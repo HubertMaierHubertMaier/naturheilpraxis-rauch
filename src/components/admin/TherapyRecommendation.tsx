@@ -3007,6 +3007,22 @@ export function TherapyRecommendation() {
                 ))}
               </div>
             )}
+            {loadedDocumentInventory.filter((doc) => doc.archivePath).length > 0 && (
+              <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs space-y-1">
+                <div className="font-semibold text-foreground">Archivierte PDFs für dieses Pseudonym</div>
+                {loadedDocumentInventory.filter((doc) => doc.archivePath).map((doc) => (
+                  <div key={doc.archivePath} className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                    <span className="min-w-0 flex-1 truncate" title={doc.name}>{doc.name}</span>
+                    {doc.note ? <span className="hidden sm:inline text-muted-foreground whitespace-nowrap">{doc.note}</span> : null}
+                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
+                      {loadingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                      In Auswahl laden
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
