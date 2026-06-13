@@ -811,6 +811,7 @@ export function TherapyRecommendation() {
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
+  const [addPreviousComparison, setAddPreviousComparison] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
 
@@ -2542,6 +2543,9 @@ export function TherapyRecommendation() {
             useProModel: useProModel || undefined,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
+            previousResultForCompare: !isErweitern && addPreviousComparison && result && result.trim().length > 200
+              ? result.slice(0, 18000)
+              : undefined,
           }),
           signal: controller.signal,
         }
@@ -3516,6 +3520,33 @@ export function TherapyRecommendation() {
               </p>
             </div>
           </label>
+
+          {/* Vergleich zur letzten Auswertung */}
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50 transition-colors mt-3">
+            <input
+              type="checkbox"
+              checked={addPreviousComparison}
+              onChange={(e) => setAddPreviousComparison(e.target.checked)}
+              disabled={!result || result.trim().length <= 200}
+              className="mt-1 h-4 w-4 accent-emerald-600"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
+                🔁 Vergleich zur vorherigen Auswertung beilegen
+                <Badge variant="outline" className="text-[10px] h-4 border-emerald-400 text-emerald-700">Weg A – Standard</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>AN:</strong> Alle Quellen werden komplett neu ausgewertet. Zusätzlich bekommt die KI die aktuell angezeigte Auswertung als Vergleichsanker und markiert oben <em>was bestätigt, was geändert und was neu hinzugekommen</em> ist.
+                <br />
+                <strong>AUS:</strong> Reine Neubewertung ohne Bezug zur Vorversion.
+                <br />
+                {(!result || result.trim().length <= 200)
+                  ? <span className="text-amber-700">Aktuell keine vorherige Auswertung im Fenster geladen – Vergleich nicht möglich.</span>
+                  : <span className="text-emerald-700">Vorherige Auswertung erkannt ({(result.length / 1000).toFixed(1)}k Zeichen) – wird beim nächsten Lauf als Vergleichsanker mitgegeben.</span>}
+              </p>
+            </div>
+          </label>
+
 
           {/* Pro-Modell Schalter */}
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-amber-200 bg-amber-50/60 hover:bg-amber-50 transition-colors mt-3">
