@@ -2807,7 +2807,7 @@ export function TherapyRecommendation() {
 
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Stethoscope className="h-7 w-7 text-primary" />
@@ -2818,6 +2818,37 @@ export function TherapyRecommendation() {
       <p className="text-sm text-muted-foreground">
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
+
+      <div className="fixed bottom-4 left-1/2 z-50 w-[min(calc(100vw-2rem),64rem)] -translate-x-1/2 rounded-lg border border-primary/30 bg-background/95 p-3 shadow-xl backdrop-blur print:hidden">
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+          <strong className="text-foreground">Start-Aktionen · immer sichtbar</strong>
+          <span className="text-muted-foreground">Befund neu? → HTML-Auswertung</span>
+        </div>
+        <div className="grid gap-2 md:grid-cols-3">
+          <Button onClick={() => handleSubmit()} disabled={isStreaming} className="justify-start gap-2 text-xs sm:text-sm">
+            {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isStreaming ? "Analyse läuft…" : "Therapie-Empfehlung generieren"}
+          </Button>
+          <Button
+            onClick={handleAnalyzeDocuments}
+            disabled={isAnalyzingDocs || isStreaming}
+            variant="outline"
+            className="justify-start gap-2 border-sage-600 text-xs text-sage-700 hover:bg-sage-50 sm:text-sm"
+          >
+            {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : "Nur Befund-Auswertung (HTML)"}
+          </Button>
+          <Button
+            onClick={handleReAnalyzeAll}
+            disabled={isAnalyzingDocs || isStreaming}
+            variant="outline"
+            className="justify-start gap-2 border-terracotta-600 text-xs text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30 sm:text-sm"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Alles neu auswerten
+          </Button>
+        </div>
+      </div>
 
       <Card className="border-primary/40 bg-primary/5">
         <CardContent className="pt-4 space-y-3">

@@ -22,13 +22,13 @@ interface KnowledgeEntry {
   updated_at: string;
 }
 
-const TAB_STORAGE_KEY = "wissensdatenbank.activeTab";
+const TAB_STORAGE_KEY = "wissensdatenbank.activeTab.v2";
 
 const Wissensdatenbank = () => {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(() => {
-    if (typeof window === "undefined") return "wiki";
-    return sessionStorage.getItem(TAB_STORAGE_KEY) || "wiki";
+    if (typeof window === "undefined") return "therapie";
+    return sessionStorage.getItem(TAB_STORAGE_KEY) || "therapie";
   });
   const handleTabChange = (val: string) => {
     setActiveTab(val);
