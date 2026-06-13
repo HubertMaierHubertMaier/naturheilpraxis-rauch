@@ -2481,10 +2481,12 @@ export function TherapyRecommendation() {
       }
     }
     if (successful.length) {
+      setLoadedDocumentInventory((current) => mergeDocumentInventory(successful.map((file) => ({ ...file, source: "Direkt-Upload", location: "event_log" })), current));
       await logTherapyEvent(pid, "documents_uploaded", { files: successful, note: "Direkt in der Befund-Quellen-Auswahl ausgelesen und übernommen." });
       await logTherapyEvent(pid, "documents_saved", { files: successful.map(({ name, archivePath }) => ({ name, archivePath })), note: "Originaldateien im sicheren Bucket therapy-documents archiviert." });
       toast({ title: "PDFs in Auswahl übernommen", description: `${successful.length} Datei(en) stehen jetzt oben zum Anhaken bereit.` });
       setHistoryRefresh((n) => n + 1);
+      refreshDocumentInventory(false);
     }
   };
 
