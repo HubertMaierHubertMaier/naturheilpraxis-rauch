@@ -271,7 +271,7 @@ const countLoadedClinicalChars = (d: Record<string, unknown>) => [
   d.laborKomplett, d.laborErhoeht, d.laborErniedrigt, d.stuhlbefund,
   d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.perplexityAnalyse,
   d.eigeneTherapieVorlage,
-].reduce((sum, value) => sum + countStringChars(value), 0);
+].reduce<number>((sum, value) => sum + countStringChars(value), 0);
 
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
   pid,
