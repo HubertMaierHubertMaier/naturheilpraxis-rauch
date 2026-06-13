@@ -40,7 +40,7 @@ interface Props {
 
 type StoredDetail = { label: string; value: string };
 type LoadSourceRow = { label?: string; chars?: number; lines?: number; key?: string };
-type DocumentInventoryItem = { name?: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
+type DocumentInventoryItem = { name?: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string; kindLabel?: string; fieldLabel?: string };
 
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
