@@ -266,6 +266,13 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
   };
 };
 
+const countLoadedClinicalChars = (d: Record<string, unknown>) => [
+  d.symptome, d.erkrankung, d.medikamente, d.bisherigeMittel, d.belastungen,
+  d.laborKomplett, d.laborErhoeht, d.laborErniedrigt, d.stuhlbefund,
+  d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.perplexityAnalyse,
+  d.eigeneTherapieVorlage,
+].reduce((sum, value) => sum + countStringChars(value), 0);
+
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
   pid,
   source,
