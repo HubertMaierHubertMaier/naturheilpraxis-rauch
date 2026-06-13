@@ -1084,7 +1084,8 @@ export function TherapyRecommendation() {
       if (draftError) throw draftError;
 
       const draftRow = (draftData as any)?.draft;
-      const draftInput = normalizeTherapyInput(draftRow?.eingabe_daten || {});
+      const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
+      const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
       const hasDraftData = Object.keys(draftInput).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt", "autoSavedDraft", "finalized", "lastAutoSaveAt"].includes(key));
       if (hasDraftData) {
         applyDraftPayload(draftInput, pid);
@@ -1103,7 +1104,8 @@ export function TherapyRecommendation() {
       });
       if (error) throw error;
 
-      const snapshot = normalizeTherapyInput((data as any)?.snapshot || {});
+      const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
+      const snapshot = normalizeTherapyInput({ ...((data as any)?.snapshot || {}), document_inventory: snapshotDocumentInventory });
       const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
       const hasSnapshotData = Object.keys(snapshot).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
       if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
