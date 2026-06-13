@@ -3868,7 +3868,7 @@ export function TherapyRecommendation() {
             <TooltipTrigger asChild>
               <Button
                 onClick={handleAnalyzeDocuments}
-                disabled={isAnalyzingDocs || isStreaming}
+                disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0}
                 variant="outline"
                 className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
               >
@@ -3877,7 +3877,7 @@ export function TherapyRecommendation() {
                   ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
                   : isAnalyzingDocs
                     ? "Befund-Auswertung läuft…"
-                    : "Nur Befund-Auswertung (HTML)"}
+                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
