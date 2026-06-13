@@ -64,6 +64,7 @@ interface AnalyzeBody {
   geschlecht?: string;
   pseudonymId?: string;
   useProModel?: boolean;
+  previousResultForCompare?: string;
 }
 
 type DocBlock = { label: string; text: string };
@@ -227,7 +228,12 @@ ${block.text}
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
   const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
-  return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.
+  const prevCompareRaw = typeof b.previousResultForCompare === "string" ? b.previousResultForCompare.trim() : "";
+  const prevCompare = prevCompareRaw ? prevCompareRaw.slice(0, 18000) : "";
+  const compareBlock = prevCompare
+    ? `\n\n🔁 VERGLEICHSANKER — VORHERIGE BEFUND-AUSWERTUNG (NUR REFERENZ, KEINE QUELLE DER WAHRHEIT):\nDie folgende Auswertung wurde zu einem früheren Zeitpunkt aus älteren Quellen erstellt. Sie ist KEIN Beleg — Belege kommen ausschließlich aus den TEILANALYSEN unten. Nutze den Vergleichsanker NUR, um festzustellen, was im Vergleich zur jetzigen Auswertung gleich geblieben, geändert, neu oder widerlegt ist.\n\nPFLICHT: Direkt nach <h1>Befund-Auswertung</h1> und vor Sektion 2 eine neue Sektion einfügen:\n<h2>0. Vergleich zur vorherigen Auswertung</h2>\nmit kurzer Tabelle: Punkt | Status | Begründung. Status-Marker:\n  ✅ bestätigt — Aussage steht weiterhin und ist durch aktuelle Quellen belegt\n  🔄 geändert — Aussage existiert weiter, aber Wert/Datum/Bewertung hat sich geändert\n  🆕 neu — kommt nur aus neuen Quellen, war im Vorbefund nicht enthalten\n  ❌ widerlegt — alte Aussage wird durch neue Quellen nicht mehr gestützt\n  ⚠️ offen — aus alten Quellen erwähnt, in neuen Quellen weder bestätigt noch widerlegt\nDanach NORMAL mit Sektion 2 fortfahren. Die Inhalte der restlichen Sektionen kommen AUSSCHLIESSLICH aus den aktuellen Teilanalysen, nicht aus dem Vorbefund.\n\n--- VORBEFUND (Referenz, gekürzt auf ${prevCompare.length.toLocaleString("de-DE")} Zeichen) ---\n${prevCompare}\n--- ENDE VORBEFUND ---\n`
+    : "";
+  return `Erstelle aus diesen Teilanalysen eine vollständige, print-taugliche HTML-Befund-Auswertung für den Heilpraktiker Peter Rauch (Behandler). Peter Rauch ist NICHT der Patient — der Patient bleibt im gesamten Output anonym ("der Patient" / "die Patientin"). Verwende NIEMALS "Herr Rauch" oder andere echte Patientennamen, selbst wenn diese in den Teilanalysen auftauchen.${compareBlock}
 
 Patientenkontext: ${patientContext(b)}
 Verarbeiteter Umfang: ${totalChars.toLocaleString("de-DE")} Zeichen in ${chunkCount} Teilpaketen. Wichtig: Es wurden alle übergebenen Dokumentblöcke verarbeitet; keine künstliche Seitenbegrenzung.
