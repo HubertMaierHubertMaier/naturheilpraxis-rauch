@@ -282,7 +282,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) throw error;
 
-      return new Response(JSON.stringify({ draft: draft ?? null }), {
+      const draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      const documentInventory = await buildDocumentInventory(adminClient, draftPseudonymId, draftInput);
+
+      return new Response(JSON.stringify({ draft: draft ? { ...draft, document_inventory: documentInventory } : null, document_inventory: documentInventory }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
