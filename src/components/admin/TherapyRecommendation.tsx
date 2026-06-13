@@ -2136,6 +2136,9 @@ export function TherapyRecommendation() {
               pseudonymId: pseudonymId || undefined,
               useProModel: useProModel || undefined,
               mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
+              previousResultForCompare: addPreviousComparison && result && result.trim().length > 200
+                ? result.slice(0, 18000)
+                : undefined,
             }),
           });
           if (resp.ok && resp.body) break;
