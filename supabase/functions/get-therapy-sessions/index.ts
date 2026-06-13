@@ -239,6 +239,37 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     }
   }
 
+  // Storage-Fallback: alles, was tatsächlich im Bucket liegt — fängt fehlende Upload-Events ab
+  try {
+    const { data: dateDirs } = await adminClient.storage
+      .from("therapy-documents")
+      .list(pseudonymId, { limit: 100, sortBy: { column: "name", order: "desc" } });
+    for (const dir of Array.isArray(dateDirs) ? dateDirs : []) {
+      if (!dir?.name) continue;
+      const { data: files } = await adminClient.storage
+        .from("therapy-documents")
+        .list(`${pseudonymId}/${dir.name}`, { limit: 200 });
+      for (const f of Array.isArray(files) ? files : []) {
+        if (!f?.name) continue;
+        const cleanName = f.name.replace(/^\d+-[a-z0-9]+-/i, "");
+        const size = f.metadata && typeof f.metadata === "object" ? (f.metadata as any).size : undefined;
+        items.push({
+          name: cleanName,
+          datum: dir.name,
+          chars: typeof size === "number" ? size : undefined,
+          archivePath: `${pseudonymId}/${dir.name}/${f.name}`,
+          loadedAt: f.created_at || dir.name,
+          source: `Storage-Archiv (therapy-documents/${pseudonymId}/${dir.name})`,
+          kindLabel: "Archivierte Originaldatei im Storage-Bucket",
+          location: "event_log",
+          note: typeof size === "number" ? `${(size / 1024 / 1024).toFixed(1)} MB im Bucket` : undefined,
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("[get-therapy-sessions] storage inventory failed:", getErrorMessage(e));
+  }
+
   return dedupeDocumentInventory(items);
 }
 
