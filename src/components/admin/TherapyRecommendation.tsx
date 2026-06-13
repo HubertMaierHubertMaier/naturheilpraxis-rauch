@@ -3088,6 +3088,69 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
+      <Card className="border-primary/50 bg-primary/[0.04]">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Befund-Quellen auswählen
+            <Badge variant="secondary" className="text-xs">
+              {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
+              Alle Quellen anhaken
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.filter((source) => source.group === "dokument" || source.group === "befund").map((source) => source.key))} disabled={!analysisSources.length}>
+              Nur Befunde/PDFs anhaken
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedAnalysisSourceKeys([])} disabled={!analysisSources.length}>
+              Auswahl leeren
+            </Button>
+            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
+              {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
+              Ausgewählte Befunde auswerten
+            </Button>
+          </div>
+          {analysisSources.length ? (
+            <div className="max-h-72 overflow-auto rounded-md border bg-background divide-y">
+              {analysisSources.map((source) => {
+                const checked = selectedAnalysisSourceKeys.includes(source.key);
+                return (
+                  <label key={source.key} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/40">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        setSelectedAnalysisSourceKeys((current) => e.target.checked
+                          ? Array.from(new Set([...current, source.key]))
+                          : current.filter((key) => key !== source.key));
+                      }}
+                      className="mt-1 h-4 w-4 accent-primary"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm break-words">{source.label}</span>
+                        <Badge variant="outline" className="text-[10px]">{source.group === "dokument" ? "PDF/Datei" : source.group === "kontext" ? "Kontext" : source.group === "recherche" ? "Recherche" : "Befund"}</Badge>
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {source.chars.toLocaleString("de-DE")} Zeichen · {source.lines.toLocaleString("de-DE")} Zeilen
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed bg-background p-3 text-sm text-muted-foreground">
+              Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten“ hochladen und „Datei(en) auslesen & einfügen“ klicken.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Verlauf bei vorhandenem Pseudonym */}
       {isPatientScopedStorageReady(pseudonymId) && (
         <PseudonymHistory
