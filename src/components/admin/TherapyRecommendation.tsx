@@ -1490,7 +1490,7 @@ export function TherapyRecommendation() {
     setPseudonymId(nextValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
-  const handleLoadSession = (session: TherapySession) => {
+  const handleLoadSession = async (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
       toast({ title: "Sicherheitsstopp", description: "Diese Sitzung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
       return;
@@ -1557,6 +1557,13 @@ export function TherapyRecommendation() {
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     setClinicalLoadInfo(buildClinicalLoadInfo(session.pseudonym_id, "session", d, 1));
+    await logTherapyEvent(session.pseudonym_id, "patient_context_loaded", buildPatientLoadEventDetails("Verlaufssitzung übernommen", d, {
+      source_session_id: session.id,
+      source_created_at: session.created_at,
+      version_number: session.version_number,
+      has_empfehlung: !!session.empfehlung,
+    }));
+    setHistoryRefresh((n) => n + 1);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 
