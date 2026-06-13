@@ -133,7 +133,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const archiveOriginal = async (file: File): Promise<string> => {
+export async function archiveClinicalDocumentOriginal(file: File, pseudonymId?: string): Promise<string> {
     const pid = normalizePid(pseudonymId);
     if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
     const day = new Date().toISOString().slice(0, 10);
@@ -148,7 +148,15 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       });
     if (error) throw error;
     return path;
-  };
+}
+
+export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<PendingFile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const archiveOriginal = async (file: File): Promise<string> => archiveClinicalDocumentOriginal(file, pseudonymId);
 
   const addFiles = (list: FileList | null) => {
     if (!list || !list.length) return;
