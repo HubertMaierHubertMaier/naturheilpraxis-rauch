@@ -3983,7 +3983,7 @@ export function TherapyRecommendation() {
           className={
             isDocAnalysisPanelFullscreen
               ? "fixed inset-2 z-[60] rounded-md border border-primary/50 bg-background shadow-2xl flex flex-col"
-              : "fixed right-4 top-20 z-50 w-[min(900px,calc(100vw-2rem))] rounded-md border border-primary/50 bg-background shadow-2xl flex flex-col"
+              : "relative w-full max-w-[900px] rounded-md border border-primary/50 bg-background shadow-md flex flex-col my-4"
           }
         >
           <div className="flex items-center gap-2 border-b bg-primary/10 px-4 py-3 flex-wrap">
