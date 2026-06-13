@@ -454,9 +454,19 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
-              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = Array.isArray(meta.source_summary)
+              const rawBefundSources: any[] = Array.isArray(meta.source_summary)
                 ? meta.source_summary
-                : Array.isArray(e.sourceSummary) ? e.sourceSummary : [];
+                : Array.isArray(e.sourceSummary)
+                ? e.sourceSummary
+                : Array.isArray((meta as any).sources_fallback)
+                ? (meta as any).sources_fallback
+                : Array.isArray(e.sources)
+                ? e.sources
+                : [];
+              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = rawBefundSources.map((src) =>
+                typeof src === "string" ? { label: src } : (src || {})
+              );
+              const befundSourcesMissing = isBefund && befundSources.length === 0;
               const openBefund = async () => {
                 let row: TherapySession | null = s;
                 if (!row.befund_html) {
