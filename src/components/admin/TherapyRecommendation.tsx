@@ -2454,6 +2454,27 @@ export function TherapyRecommendation() {
     }
   };
 
+  const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
+    if (!doc.archivePath) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    setLoadingArchiveDocumentPath(doc.archivePath);
+    try {
+      const { data: blob, error } = await supabase.storage.from("therapy-documents").download(doc.archivePath);
+      if (error || !blob) throw error || new Error("Archivdatei konnte nicht geladen werden.");
+      const file = new File([blob], doc.name || doc.archivePath.split("/").pop() || "befund.pdf", { type: blob.type || "application/pdf" });
+      const extracted = await extractClinicalDocumentText(file, "doctor", toast);
+      const block = `${extracted.text.trim()}\n\n[Originaldatei aus Archiv geladen: therapy-documents/${doc.archivePath}]`;
+      setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+      await logTherapyEvent(pid, "documents_uploaded", { files: [{ name: doc.name, pages: extracted.pages || doc.pages, chars: extracted.chars, archivePath: doc.archivePath }], note: "Archivierte Originaldatei erneut ausgelesen und in die Befund-Auswahl übernommen." });
+      toast({ title: "Archiv-PDF übernommen", description: `${doc.name} steht jetzt oben als auswählbare Quelle bereit.` });
+      setHistoryRefresh((n) => n + 1);
+    } catch (error: any) {
+      toast({ title: "Archiv-PDF nicht auslesbar", description: error?.message || "Bitte Datei erneut direkt auswählen.", variant: "destructive" });
+    } finally {
+      setLoadingArchiveDocumentPath(null);
+    }
+  };
+
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".docx")) {
