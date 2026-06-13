@@ -90,6 +90,7 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
+type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -191,6 +192,46 @@ const countStringChars = (value: unknown) => (typeof value === "string" ? value.
 const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
 
 const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const sourceKeyPart = (value: string) => value
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-zA-Z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .slice(0, 60)
+  .toLowerCase() || "quelle";
+
+const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, text: string): SelectableAnalysisSource[] => {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const markerPattern = /(?:^|\n)(===\s*(?:📄|📷)\s*([^=\n]+?)\s*===)\n?/g;
+  const matches = Array.from(trimmed.matchAll(markerPattern));
+  if (matches.length <= 1) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
+
+  const sources: SelectableAnalysisSource[] = [];
+  const firstIndex = matches[0].index ?? 0;
+  const before = trimmed.slice(0, firstIndex).trim();
+  if (before.length > 30) {
+    sources.push({ key: `${fieldKey}:intro`, label: `${fallbackLabel} – Kopftext`, text: before, group: "befund", chars: before.length, lines: countClinicalLines(before) });
+  }
+  matches.forEach((match, index) => {
+    const start = match.index ?? 0;
+    const end = index + 1 < matches.length ? (matches[index + 1].index ?? trimmed.length) : trimmed.length;
+    const block = trimmed.slice(start, end).trim();
+    if (!block) return;
+    const rawName = (match[1] || match[2] || `${fallbackLabel} ${index + 1}`).replace(/^=+|=+$/g, "").trim();
+    const label = rawName.replace(/^\s*(?:📄|📷)\s*/, "").trim() || `${fallbackLabel} ${index + 1}`;
+    sources.push({
+      key: `${fieldKey}:doc:${index}:${sourceKeyPart(label)}`,
+      label,
+      text: block,
+      group: "dokument",
+      chars: block.length,
+      lines: countClinicalLines(block),
+    });
+  });
+  return sources;
+};
 
 const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => Array.isArray(value)
   ? value
@@ -825,6 +866,7 @@ export function TherapyRecommendation() {
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
+  const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
