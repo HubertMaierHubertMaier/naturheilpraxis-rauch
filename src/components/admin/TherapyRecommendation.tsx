@@ -90,6 +90,7 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
+type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -191,6 +192,46 @@ const countStringChars = (value: unknown) => (typeof value === "string" ? value.
 const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
 
 const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const sourceKeyPart = (value: string) => value
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-zA-Z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .slice(0, 60)
+  .toLowerCase() || "quelle";
+
+const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, text: string): SelectableAnalysisSource[] => {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const markerPattern = /(?:^|\n)(===\s*(?:📄|📷)\s*([^=\n]+?)\s*===)\n?/g;
+  const matches = Array.from(trimmed.matchAll(markerPattern));
+  if (matches.length <= 1) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
+
+  const sources: SelectableAnalysisSource[] = [];
+  const firstIndex = matches[0].index ?? 0;
+  const before = trimmed.slice(0, firstIndex).trim();
+  if (before.length > 30) {
+    sources.push({ key: `${fieldKey}:intro`, label: `${fallbackLabel} – Kopftext`, text: before, group: "befund", chars: before.length, lines: countClinicalLines(before) });
+  }
+  matches.forEach((match, index) => {
+    const start = match.index ?? 0;
+    const end = index + 1 < matches.length ? (matches[index + 1].index ?? trimmed.length) : trimmed.length;
+    const block = trimmed.slice(start, end).trim();
+    if (!block) return;
+    const rawName = (match[2] || match[1] || `${fallbackLabel} ${index + 1}`).replace(/^=+|=+$/g, "").trim();
+    const label = rawName.replace(/^\s*(?:📄|📷)\s*/, "").trim() || `${fallbackLabel} ${index + 1}`;
+    sources.push({
+      key: `${fieldKey}:doc:${index}:${sourceKeyPart(label)}`,
+      label,
+      text: block,
+      group: "dokument",
+      chars: block.length,
+      lines: countClinicalLines(block),
+    });
+  });
+  return sources;
+};
 
 const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => Array.isArray(value)
   ? value
@@ -825,6 +866,7 @@ export function TherapyRecommendation() {
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
+  const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1807,38 +1849,23 @@ export function TherapyRecommendation() {
     setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\nPrüfe jetzt, ob auswertbare Befund-/PDF-Daten in den Eingabefeldern stehen…`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
 
-    const therapyContext = [
-      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
-      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
-      formatPathogensForAI(pathogens).trim() && `Pathogene / NLS-EAV-Befunde:\n${formatPathogensForAI(pathogens).trim()}`,
-      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
-      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
-    ].filter(Boolean).join("\n\n");
-    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
-    const rawBlocks = [
-      { label: "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", text: therapyContext },
-      { label: "Mannayan-Bestellungen – patientenbezogene Präparate zur Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", text: mannayanContext },
-      { label: laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", text: laborKomplett.trim() },
-      { label: "Labor – erhöhte Werte", text: laborErhoeht.trim() },
-      { label: "Labor – erniedrigte Werte", text: laborErniedrigt.trim() },
-      { label: "Stuhlbefund", text: stuhlbefund.trim() },
-      { label: arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", text: arztbericht.trim() },
-      { label: "Metatron / NLS / Bioresonanz", text: metatronHeel.trim() },
-      { label: "Sonstige / unsortierte Voruntersuchungen", text: sonstigeUntersuchungen.trim() },
-      { label: "Externe Recherche / Perplexity", text: perplexityAnalyse.trim() },
-    ].filter((block) => block.text);
+    const selectedSourceSet = new Set(selectedAnalysisSourceKeys);
+    const selectedSources = analysisSources.filter((source) => selectedSourceSet.has(source.key));
+    const rawBlocks = selectedSources.map((source) => ({ label: source.label, text: source.text.trim() })).filter((block) => block.text);
     const sourceSummary = summarizeAnalysisSources(rawBlocks);
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
       setDocAnalysisProgress(
-        `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
+        analysisSources.length
+          ? `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: Es ist keine Quelle ausgewählt. Bitte oben in „Befund-Quellen auswählen“ mindestens eine PDF/einen Befund anhaken und dann „Ausgewählte Befunde auswerten“ klicken.`
+          : `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
       );
-      toast({ title: "Keine Dokumente vorhanden", description: "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
+      toast({ title: analysisSources.length ? "Keine Quelle ausgewählt" : "Keine Dokumente vorhanden", description: analysisSources.length ? "Bitte mindestens eine Quelle anhaken." : "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, selectedAnalysisSourceKeys.join("|"), prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
@@ -2419,6 +2446,55 @@ export function TherapyRecommendation() {
     return `Bestellung ${order.orderNumber} vom ${day}${order.notes ? ` · Notiz: ${order.notes}` : ""}\n${items}`;
   }).join("\n\n");
 
+  const analysisSources = useMemo<SelectableAnalysisSource[]>(() => {
+    const pathogenText = formatPathogensForAI(pathogens).trim();
+    const therapyContext = [
+      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
+      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
+      pathogenText && `Pathogene / NLS-EAV-Befunde:\n${pathogenText}`,
+      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
+      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
+    ].filter(Boolean).join("\n\n");
+    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
+    const addSimple = (key: string, label: string, text: string, group: SelectableAnalysisSource["group"]): SelectableAnalysisSource[] => {
+      const trimmed = text.trim();
+      return trimmed ? [{ key, label, text: trimmed, group, chars: trimmed.length, lines: countClinicalLines(trimmed) }] : [];
+    };
+    return [
+      ...addSimple("patientenkontext", "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", therapyContext, "kontext"),
+      ...addSimple("mannayan", "Mannayan-Bestellungen – Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", mannayanContext, "kontext"),
+      ...splitMarkedDocumentSources("laborKomplett", laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", laborKomplett),
+      ...addSimple("laborErhoeht", "Labor – erhöhte Werte", laborErhoeht, "befund"),
+      ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
+      ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
+      ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
+      ...addSimple("metatronHeel", "Metatron / NLS / Bioresonanz", metatronHeel, "befund"),
+      ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
+      ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
+    ];
+  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse]);
+
+  useEffect(() => {
+    const availableKeys = analysisSources.map((source) => source.key);
+    setSelectedAnalysisSourceKeys((current) => {
+      const stillAvailable = current.filter((key) => availableKeys.includes(key));
+      const added = availableKeys.filter((key) => !stillAvailable.includes(key));
+      if (stillAvailable.length === current.length && added.length === 0) return current;
+      return [...stillAvailable, ...added];
+    });
+  }, [analysisSources]);
+
+  const selectedAnalysisSources = useMemo(() => {
+    const selected = new Set(selectedAnalysisSourceKeys);
+    return analysisSources.filter((source) => selected.has(source.key));
+  }, [analysisSources, selectedAnalysisSourceKeys]);
+
+  const analysisSourceTotals = useMemo(() => ({
+    selected: selectedAnalysisSources.length,
+    all: analysisSources.length,
+    chars: selectedAnalysisSources.reduce((sum, source) => sum + source.chars, 0),
+  }), [analysisSources.length, selectedAnalysisSources]);
+
   const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
@@ -2822,7 +2898,7 @@ export function TherapyRecommendation() {
       <div className="fixed bottom-4 left-1/2 z-50 w-[min(calc(100vw-2rem),64rem)] -translate-x-1/2 rounded-lg border border-primary/30 bg-background/95 p-3 shadow-xl backdrop-blur print:hidden">
         <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <strong className="text-foreground">Start-Aktionen · immer sichtbar</strong>
-          <span className="text-muted-foreground">Befund neu? → HTML-Auswertung</span>
+          <span className="text-muted-foreground">{analysisSourceTotals.selected}/{analysisSourceTotals.all} Quellen gewählt</span>
         </div>
         <div className="grid gap-2 md:grid-cols-3">
           <Button onClick={() => handleSubmit()} disabled={isStreaming} className="justify-start gap-2 text-xs sm:text-sm">
@@ -2836,7 +2912,7 @@ export function TherapyRecommendation() {
             className="justify-start gap-2 border-sage-600 text-xs text-sage-700 hover:bg-sage-50 sm:text-sm"
           >
             {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : "Nur Befund-Auswertung (HTML)"}
+            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
           </Button>
           <Button
             onClick={handleReAnalyzeAll}
@@ -2879,9 +2955,9 @@ export function TherapyRecommendation() {
                   ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
                   : isAnalyzingDocs
                     ? "Befund-Auswertung läuft…"
-                    : "Nur Befund-Auswertung (HTML)"}
+                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
               </Button>
-              <p className="text-[11px] leading-snug text-muted-foreground">Beste Wahl für neue Labor-, NLS-, Arztbrief- oder Nachreich-Befunde.</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">Nur die unten angehakten Quellen werden zusammen ausgewertet.</p>
             </div>
             <div className="space-y-1">
               <Button
@@ -3007,6 +3083,69 @@ export function TherapyRecommendation() {
                   Für diese Pseudonym-ID sind aktuell keine Labor-, Arztbrief- oder sonstigen Befunddaten geladen.
                 </div>
               )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/50 bg-primary/[0.04]">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Befund-Quellen auswählen
+            <Badge variant="secondary" className="text-xs">
+              {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
+              Alle Quellen anhaken
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.filter((source) => source.group === "dokument" || source.group === "befund").map((source) => source.key))} disabled={!analysisSources.length}>
+              Nur Befunde/PDFs anhaken
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedAnalysisSourceKeys([])} disabled={!analysisSources.length}>
+              Auswahl leeren
+            </Button>
+            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
+              {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
+              Ausgewählte Befunde auswerten
+            </Button>
+          </div>
+          {analysisSources.length ? (
+            <div className="max-h-72 overflow-auto rounded-md border bg-background divide-y">
+              {analysisSources.map((source) => {
+                const checked = selectedAnalysisSourceKeys.includes(source.key);
+                return (
+                  <label key={source.key} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/40">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        setSelectedAnalysisSourceKeys((current) => e.target.checked
+                          ? Array.from(new Set([...current, source.key]))
+                          : current.filter((key) => key !== source.key));
+                      }}
+                      className="mt-1 h-4 w-4 accent-primary"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm break-words">{source.label}</span>
+                        <Badge variant="outline" className="text-[10px]">{source.group === "dokument" ? "PDF/Datei" : source.group === "kontext" ? "Kontext" : source.group === "recherche" ? "Recherche" : "Befund"}</Badge>
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {source.chars.toLocaleString("de-DE")} Zeichen · {source.lines.toLocaleString("de-DE")} Zeilen
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed bg-background p-3 text-sm text-muted-foreground">
+              Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten“ hochladen und „Datei(en) auslesen & einfügen“ klicken.
             </div>
           )}
         </CardContent>
@@ -3729,7 +3868,7 @@ export function TherapyRecommendation() {
             <TooltipTrigger asChild>
               <Button
                 onClick={handleAnalyzeDocuments}
-                disabled={isAnalyzingDocs || isStreaming}
+                disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0}
                 variant="outline"
                 className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
               >
@@ -3738,7 +3877,7 @@ export function TherapyRecommendation() {
                   ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
                   : isAnalyzingDocs
                     ? "Befund-Auswertung läuft…"
-                    : "Nur Befund-Auswertung (HTML)"}
+                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
