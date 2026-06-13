@@ -311,6 +311,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                   ? meta.source_summary
                   : Array.isArray(meta.loaded_fields) ? meta.loaded_fields : [];
                 const isPatientContextLoad = type === "patient_context_loaded";
+                const visibleSourceSummary = isPatientContextLoad ? sourceSummary : sourceSummary.slice(0, 8);
                 const success = type.endsWith("_success") || type === "documents_uploaded" || type === "documents_saved" || type === "befund_pdf_saved" || type === "patient_saved";
                 const failed = type.endsWith("_failed");
                 const started = type.endsWith("_started");
@@ -381,12 +382,12 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                     )}
                     {sourceSummary.length > 0 && (
                       <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
-                        {sourceSummary.slice(0, 8).map((source, i) => (
+                        {visibleSourceSummary.map((source, i) => (
                           <li key={i}>
                             {String(source.label || "Quelle")} · {formatLoadSourceAmount(source)}
                           </li>
                         ))}
-                        {sourceSummary.length > 8 && <li className="italic">… und {sourceSummary.length - 8} weitere Quellen</li>}
+                        {!isPatientContextLoad && sourceSummary.length > 8 && <li className="italic">… und {sourceSummary.length - 8} weitere Quellen</li>}
                       </ul>
                     )}
                   </div>
