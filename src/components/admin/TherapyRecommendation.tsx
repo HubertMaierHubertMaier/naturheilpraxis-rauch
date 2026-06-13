@@ -2953,6 +2953,36 @@ export function TherapyRecommendation() {
           <p className="text-xs text-muted-foreground">
             Hier siehst du jede hochgeladene PDF und jedes Befundfeld einzeln. Hake an, was zusammen ausgewertet werden soll — z.B. beide PDFs (Eisen-Werte + Arztbericht) gleichzeitig.
           </p>
+          <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={directBefundFileRef} type="file" accept="application/pdf,image/*" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                <FileUp className="h-3.5 w-3.5" />
+                PDFs hier auswählen
+              </Button>
+              {pendingDirectBefundFiles.length > 0 && (
+                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.every((file) => file.status === "done") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                  {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                  Auslesen und in Auswahl übernehmen
+                </Button>
+              )}
+            </div>
+            {pendingDirectBefundFiles.length > 0 && (
+              <div className="divide-y rounded-md border bg-muted/20 text-xs">
+                {pendingDirectBefundFiles.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 p-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                    <span className="min-w-0 flex-1 truncate" title={item.file.name}>{item.file.name}</span>
+                    {item.pages ? <span className="text-muted-foreground whitespace-nowrap">{item.pages} S.</span> : null}
+                    {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+                    {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                    {item.status === "error" && <span className="max-w-[280px] truncate text-destructive" title={item.error}>Fehler: {item.error}</span>}
+                    {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
               Alle Quellen anhaken
