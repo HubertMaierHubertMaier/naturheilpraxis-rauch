@@ -1849,38 +1849,23 @@ export function TherapyRecommendation() {
     setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\nPrüfe jetzt, ob auswertbare Befund-/PDF-Daten in den Eingabefeldern stehen…`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
 
-    const therapyContext = [
-      symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
-      erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
-      formatPathogensForAI(pathogens).trim() && `Pathogene / NLS-EAV-Befunde:\n${formatPathogensForAI(pathogens).trim()}`,
-      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
-      bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
-    ].filter(Boolean).join("\n\n");
-    const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
-    const rawBlocks = [
-      { label: "Aktueller Patientenkontext – Symptome, Diagnosen, Pathogene und laufende Mittel", text: therapyContext },
-      { label: "Mannayan-Bestellungen – patientenbezogene Präparate zur Pflichtprüfung gegen Symptome, Diagnosen und Pathogene", text: mannayanContext },
-      { label: laborDatum.trim() ? `Labor komplett – ${laborDatum.trim()}` : "Labor komplett", text: laborKomplett.trim() },
-      { label: "Labor – erhöhte Werte", text: laborErhoeht.trim() },
-      { label: "Labor – erniedrigte Werte", text: laborErniedrigt.trim() },
-      { label: "Stuhlbefund", text: stuhlbefund.trim() },
-      { label: arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", text: arztbericht.trim() },
-      { label: "Metatron / NLS / Bioresonanz", text: metatronHeel.trim() },
-      { label: "Sonstige / unsortierte Voruntersuchungen", text: sonstigeUntersuchungen.trim() },
-      { label: "Externe Recherche / Perplexity", text: perplexityAnalyse.trim() },
-    ].filter((block) => block.text);
+    const selectedSourceSet = new Set(selectedAnalysisSourceKeys);
+    const selectedSources = analysisSources.filter((source) => selectedSourceSet.has(source.key));
+    const rawBlocks = selectedSources.map((source) => ({ label: source.label, text: source.text.trim() })).filter((block) => block.text);
     const sourceSummary = summarizeAnalysisSources(rawBlocks);
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
       setDocAnalysisProgress(
-        `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
+        analysisSources.length
+          ? `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: Es ist keine Quelle ausgewählt. Bitte oben in „Befund-Quellen auswählen“ mindestens eine PDF/einen Befund anhaken und dann „Ausgewählte Befunde auswerten“ klicken.`
+          : `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
       );
-      toast({ title: "Keine Dokumente vorhanden", description: "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
+      toast({ title: analysisSources.length ? "Keine Quelle ausgewählt" : "Keine Dokumente vorhanden", description: analysisSources.length ? "Bitte mindestens eine Quelle anhaken." : "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, mannayanContext, prepared.duplicateNotes.join("|")].join("|"));
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, selectedAnalysisSourceKeys.join("|"), prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
     setIsAnalyzingDocs(true);
