@@ -30,6 +30,14 @@ type PendingFile = {
   error?: string;
 };
 
+export type ClinicalDocumentExtractionResult = {
+  text: string;
+  pages?: number;
+  chars: number;
+};
+
+type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
+
 const MIN_TEXT_PER_PAGE = 80; // weniger ⇒ wahrscheinlich gescannt, OCR-Fallback
 const STORAGE_BUCKET = "therapy-documents";
 
@@ -80,28 +88,69 @@ async function ocrImages(images: string[], mode: "doctor" | "lab"): Promise<stri
   return out.filter(Boolean).join("\n\n");
 }
 
+export async function extractClinicalDocumentText(file: File, mode: "doctor" | "lab" = "doctor", notify?: ToastFn): Promise<ClinicalDocumentExtractionResult> {
+  if (file.type.startsWith("image/")) {
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const text = `\n\n=== 📷 ${file.name} ===\n${await ocrImages([dataUrl], mode)}`;
+    return { text, chars: text.length };
+  }
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const parts: string[] = [];
+    let totalChars = 0;
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const content = await page.getTextContent();
+      const pageText = content.items.map((it: any) => ("str" in it ? it.str : "")).join(" ").trim();
+      parts.push(pageText);
+      totalChars += pageText.length;
+    }
+    if (totalChars / doc.numPages < MIN_TEXT_PER_PAGE) {
+      notify?.({ title: `${file.name}: Scan erkannt`, description: `${doc.numPages} Seite(n) werden per OCR ausgelesen (kann dauern)…` });
+      const images: string[] = [];
+      for (let p = 1; p <= doc.numPages; p++) {
+        const page = await doc.getPage(p);
+        images.push(await renderPageToDataUrl(page));
+      }
+      const text = `\n\n=== 📄 ${file.name} (${doc.numPages} S., OCR) ===\n${await ocrImages(images, mode)}`;
+      return { text, pages: doc.numPages, chars: text.length };
+    }
+    const joined = parts.map((t, i) => `--- Seite ${i + 1} ---\n${t}`).join("\n\n");
+    const text = `\n\n=== 📄 ${file.name} (${doc.numPages} S.) ===\n${joined}`;
+    return { text, pages: doc.numPages, chars: text.length };
+  }
+  throw new Error("Format nicht unterstützt (nur PDF, JPG, PNG)");
+}
+
+export async function archiveClinicalDocumentOriginal(file: File, pseudonymId?: string): Promise<string> {
+  const pid = normalizePid(pseudonymId);
+  if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
+  const day = new Date().toISOString().slice(0, 10);
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const path = `${safePathPart(pid)}/${day}/${suffix}-${safePathPart(file.name)}`;
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+  if (error) throw error;
+  return path;
+}
+
 export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const archiveOriginal = async (file: File): Promise<string> => {
-    const pid = normalizePid(pseudonymId);
-    if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
-    const day = new Date().toISOString().slice(0, 10);
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const path = `${safePathPart(pid)}/${day}/${suffix}-${safePathPart(file.name)}`;
-    const { error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(path, file, {
-        cacheControl: "3600",
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
-    if (error) throw error;
-    return path;
-  };
+  const archiveOriginal = async (file: File): Promise<string> => archiveClinicalDocumentOriginal(file, pseudonymId);
 
   const addFiles = (list: FileList | null) => {
     if (!list || !list.length) return;
@@ -113,50 +162,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const removeAt = (i: number) => setFiles((p) => p.filter((_, idx) => idx !== i));
 
   const extractOne = async (pf: PendingFile): Promise<string> => {
-    const f = pf.file;
-    // Bild → direkt OCR
-    if (f.type.startsWith("image/")) {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.onerror = rej;
-        r.readAsDataURL(f);
-      });
-      const text = await ocrImages([dataUrl], ocrMode);
-      return `\n\n=== 📷 ${f.name} ===\n${text}`;
-    }
-    // PDF
-    if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
-      const buf = await f.arrayBuffer();
-      const doc = await pdfjs.getDocument({ data: buf }).promise;
-      pf.pages = doc.numPages;
-      // 1) nativ Text extrahieren
-      const parts: string[] = [];
-      let totalChars = 0;
-      for (let p = 1; p <= doc.numPages; p++) {
-        const page = await doc.getPage(p);
-        const content = await page.getTextContent();
-        const pageText = content.items.map((it: any) => ("str" in it ? it.str : "")).join(" ").trim();
-        parts.push(pageText);
-        totalChars += pageText.length;
-      }
-      const avgPerPage = totalChars / doc.numPages;
-      // 2) wenn fast kein Text (=Scan), OCR-Fallback
-      if (avgPerPage < MIN_TEXT_PER_PAGE) {
-        toast({ title: `${f.name}: Scan erkannt`, description: `${doc.numPages} Seite(n) werden per OCR ausgelesen (kann dauern)…` });
-        const images: string[] = [];
-        for (let p = 1; p <= doc.numPages; p++) {
-          const page = await doc.getPage(p);
-          images.push(await renderPageToDataUrl(page));
-        }
-        const text = await ocrImages(images, ocrMode);
-        return `\n\n=== 📄 ${f.name} (${doc.numPages} S., OCR) ===\n${text}`;
-      }
-      // 3) nativer Text – Seitenmarker einfügen
-      const joined = parts.map((t, i) => `--- Seite ${i + 1} ---\n${t}`).join("\n\n");
-      return `\n\n=== 📄 ${f.name} (${doc.numPages} S.) ===\n${joined}`;
-    }
-    throw new Error("Format nicht unterstützt (nur PDF, JPG, PNG)");
+    const extracted = await extractClinicalDocumentText(pf.file, ocrMode, toast);
+    pf.pages = extracted.pages;
+    return extracted.text;
   };
 
   const runExtraction = async () => {

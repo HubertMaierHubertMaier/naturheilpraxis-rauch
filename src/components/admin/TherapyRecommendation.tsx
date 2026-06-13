@@ -26,7 +26,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
-import { MultiDocUpload } from "./therapy/MultiDocUpload";
+import { archiveClinicalDocumentOriginal, extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
@@ -91,6 +91,7 @@ type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
+type PendingDirectBefundFile = { id: string; file: File; status: "queued" | "processing" | "done" | "error"; chars?: number; pages?: number; error?: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -206,7 +207,7 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
   if (!trimmed) return [];
   const markerPattern = /(?:^|\n)(===\s*(?:📄|📷)\s*([^=\n]+?)\s*===)\n?/g;
   const matches = Array.from(trimmed.matchAll(markerPattern));
-  if (matches.length <= 1) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
+  if (!matches.length) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
 
   const sources: SelectableAnalysisSource[] = [];
   const firstIndex = matches[0].index ?? 0;
@@ -867,6 +868,9 @@ export function TherapyRecommendation() {
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
+  const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
+  const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
+  const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -895,6 +899,7 @@ export function TherapyRecommendation() {
   const abortRef = useRef<AbortController | null>(null);
   const docAbortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
+  const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
@@ -1135,6 +1140,7 @@ export function TherapyRecommendation() {
 
       const draftRow = (draftData as any)?.draft;
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
+      setLoadedDocumentInventory(draftDocumentInventory);
       const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
       const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
         || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
@@ -1159,6 +1165,7 @@ export function TherapyRecommendation() {
       if (error) throw error;
 
       const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
+      if (snapshotDocumentInventory.length) setLoadedDocumentInventory(snapshotDocumentInventory);
       const snapshot = normalizeTherapyInput({ ...((data as any)?.snapshot || {}), document_inventory: snapshotDocumentInventory });
       const snapshotWithDraftAdmin = !loadedFromCloud ? {
         ...snapshot,
@@ -2407,6 +2414,67 @@ export function TherapyRecommendation() {
     toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
   };
 
+  const addDirectBefundFiles = (list: FileList | null) => {
+    if (!list?.length) return;
+    const stamp = Date.now().toString(36);
+    setPendingDirectBefundFiles((prev) => [
+      ...prev,
+      ...Array.from(list).map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
+    ]);
+    if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+  };
+
+  const processDirectBefundFiles = async () => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) {
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auslesen.", variant: "destructive" });
+      return;
+    }
+    const queue = pendingDirectBefundFiles.filter((item) => item.status !== "done");
+    if (!queue.length) return;
+    const successful: Array<{ name: string; pages?: number; chars?: number; archivePath?: string }> = [];
+    for (const item of queue) {
+      setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
+      try {
+        const archivePath = await archiveClinicalDocumentOriginal(item.file, pid);
+        const extracted = await extractClinicalDocumentText(item.file, "doctor", toast);
+        const block = `${extracted.text.trim()}\n\n[Originaldatei sicher archiviert: therapy-documents/${archivePath}]`;
+        setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+        successful.push({ name: item.file.name, pages: extracted.pages, chars: extracted.chars, archivePath });
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "done", chars: extracted.chars, pages: extracted.pages } : row));
+      } catch (error: any) {
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", error: error?.message || "Fehler beim Auslesen" } : row));
+      }
+    }
+    if (successful.length) {
+      await logTherapyEvent(pid, "documents_uploaded", { files: successful, note: "Direkt in der Befund-Quellen-Auswahl ausgelesen und übernommen." });
+      await logTherapyEvent(pid, "documents_saved", { files: successful.map(({ name, archivePath }) => ({ name, archivePath })), note: "Originaldateien im sicheren Bucket therapy-documents archiviert." });
+      toast({ title: "PDFs in Auswahl übernommen", description: `${successful.length} Datei(en) stehen jetzt oben zum Anhaken bereit.` });
+      setHistoryRefresh((n) => n + 1);
+    }
+  };
+
+  const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
+    if (!doc.archivePath) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    setLoadingArchiveDocumentPath(doc.archivePath);
+    try {
+      const { data: blob, error } = await supabase.storage.from("therapy-documents").download(doc.archivePath);
+      if (error || !blob) throw error || new Error("Archivdatei konnte nicht geladen werden.");
+      const file = new File([blob], doc.name || doc.archivePath.split("/").pop() || "befund.pdf", { type: blob.type || "application/pdf" });
+      const extracted = await extractClinicalDocumentText(file, "doctor", toast);
+      const block = `${extracted.text.trim()}\n\n[Originaldatei aus Archiv geladen: therapy-documents/${doc.archivePath}]`;
+      setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+      await logTherapyEvent(pid, "documents_uploaded", { files: [{ name: doc.name, pages: extracted.pages || doc.pages, chars: extracted.chars, archivePath: doc.archivePath }], note: "Archivierte Originaldatei erneut ausgelesen und in die Befund-Auswahl übernommen." });
+      toast({ title: "Archiv-PDF übernommen", description: `${doc.name} steht jetzt oben als auswählbare Quelle bereit.` });
+      setHistoryRefresh((n) => n + 1);
+    } catch (error: any) {
+      toast({ title: "Archiv-PDF nicht auslesbar", description: error?.message || "Bitte Datei erneut direkt auswählen.", variant: "destructive" });
+    } finally {
+      setLoadingArchiveDocumentPath(null);
+    }
+  };
+
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".docx")) {
@@ -2910,6 +2978,52 @@ export function TherapyRecommendation() {
           <p className="text-xs text-muted-foreground">
             Hier siehst du jede hochgeladene PDF und jedes Befundfeld einzeln. Hake an, was zusammen ausgewertet werden soll — z.B. beide PDFs (Eisen-Werte + Arztbericht) gleichzeitig.
           </p>
+          <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={directBefundFileRef} type="file" accept="application/pdf,image/*" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                <FileUp className="h-3.5 w-3.5" />
+                PDFs hier auswählen
+              </Button>
+              {pendingDirectBefundFiles.length > 0 && (
+                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.every((file) => file.status === "done") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                  {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                  Auslesen und in Auswahl übernehmen
+                </Button>
+              )}
+            </div>
+            {pendingDirectBefundFiles.length > 0 && (
+              <div className="divide-y rounded-md border bg-muted/20 text-xs">
+                {pendingDirectBefundFiles.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 p-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                    <span className="min-w-0 flex-1 truncate" title={item.file.name}>{item.file.name}</span>
+                    {item.pages ? <span className="text-muted-foreground whitespace-nowrap">{item.pages} S.</span> : null}
+                    {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+                    {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                    {item.status === "error" && <span className="max-w-[280px] truncate text-destructive" title={item.error}>Fehler: {item.error}</span>}
+                    {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {loadedDocumentInventory.filter((doc) => doc.archivePath).length > 0 && (
+              <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs space-y-1">
+                <div className="font-semibold text-foreground">Archivierte PDFs für dieses Pseudonym</div>
+                {loadedDocumentInventory.filter((doc) => doc.archivePath).map((doc) => (
+                  <div key={doc.archivePath} className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                    <span className="min-w-0 flex-1 truncate" title={doc.name}>{doc.name}</span>
+                    {doc.note ? <span className="hidden sm:inline text-muted-foreground whitespace-nowrap">{doc.note}</span> : null}
+                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
+                      {loadingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                      In Auswahl laden
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
               Alle Quellen anhaken
