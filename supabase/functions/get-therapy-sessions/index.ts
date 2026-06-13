@@ -299,7 +299,10 @@ Deno.serve(async (req) => {
       });
       if (error) throw error;
 
-      return new Response(JSON.stringify({ snapshot: snapshot ?? {} }), {
+      const snapshotInput = snapshot && typeof snapshot === "object" ? snapshot as Record<string, unknown> : {};
+      const documentInventory = await buildDocumentInventory(adminClient, snapshotPseudonymId, snapshotInput);
+
+      return new Response(JSON.stringify({ snapshot: { ...(snapshot ?? {}), document_inventory: documentInventory }, document_inventory: documentInventory }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
