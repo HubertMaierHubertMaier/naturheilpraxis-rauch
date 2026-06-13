@@ -1215,6 +1215,29 @@ export function TherapyRecommendation() {
     }
   }, [applyDraftPayload, toast]);
 
+  const refreshDocumentInventory = useCallback(async (showToast = true) => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    setIsRefreshingDocumentInventory(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Nicht angemeldet");
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { draft_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+      const next = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.draft?.document_inventory);
+      setLoadedDocumentInventory((current) => mergeDocumentInventory(next, current));
+      if (showToast) toast({ title: "PDF-Archiv aktualisiert", description: next.length ? `${next.filter((doc) => doc.archivePath).length} archivierte Datei(en) gefunden.` : "Keine archivierten PDFs für dieses Pseudonym gefunden." });
+    } catch (error: any) {
+      if (showToast) toast({ title: "PDF-Archiv nicht geladen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
+    } finally {
+      setIsRefreshingDocumentInventory(false);
+    }
+  }, [pseudonymId, toast]);
+
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
