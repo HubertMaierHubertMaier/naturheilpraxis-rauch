@@ -193,6 +193,7 @@ const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filt
 
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
   const fields: AnalysisSourceSummary[] = [];
+  const diagnosesValue = countArrayEntries(d.manualDiagnosen) > 0 ? d.manualDiagnosen : d.diagnosen;
   const addText = (key: string, label: string, value: unknown) => {
     const text = textFromClinicalValue(value);
     if (text) fields.push({ key, label, chars: text.length, lines: countClinicalLines(text) });
@@ -204,7 +205,7 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
 
   addText("symptome", "Symptome / Beschwerden", d.symptome);
   addText("erkrankung", "Erkrankungen / Diagnosen", d.erkrankung);
-  addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", d.manualDiagnosen || d.diagnosen);
+  addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", diagnosesValue);
   addText("pathogens", "Pathogene / NLS-EAV-Befunde", d.belastungen || formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []));
   addText("medikamente", "Aktuelle Medikamente", d.medikamente);
   addText("bisherigeMittel", "Bisherige Mittel", d.bisherigeMittel);
