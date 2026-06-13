@@ -811,6 +811,7 @@ export function TherapyRecommendation() {
   const [pinnedMittel, setPinnedMittel] = useState<PinnedRemedy[]>([]);
   const [useMapReduce, setUseMapReduce] = useState(true);
   const [useProModel, setUseProModel] = useState(false);
+  const [addPreviousComparison, setAddPreviousComparison] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
 
