@@ -40,7 +40,7 @@ interface Props {
 
 type StoredDetail = { label: string; value: string };
 type LoadSourceRow = { label?: string; chars?: number; lines?: number; key?: string };
-type DocumentInventoryItem = { name?: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
+type DocumentInventoryItem = { name?: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string; kindLabel?: string; fieldLabel?: string };
 
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
@@ -383,16 +383,23 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                     {documentInventory.length > 0 && (
                       <div className="mt-2 rounded-md border border-amber-300/50 bg-amber-50/60 dark:bg-amber-950/15 p-2">
                         <p className="text-[11px] font-medium text-foreground">Großdateien / Dokumente im Patientenbestand</p>
-                        <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
+                        <p className="text-[10px] text-muted-foreground italic mt-0.5">
+                          „Hochgeladene Originaldatei" = PDF/Doku, die du eingelesen hast. „Eingefügter Befundtext" = Inhalt, der in einem Befund-Feld liegt (z. B. Sonstige Untersuchungen). „Befund-Auswertungs-PDF" = von der KI erzeugter Auswertungs-Druck.
+                        </p>
+                        <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-1">
                           {documentInventory.map((doc, i) => (
                             <li key={`${doc.name || "Dokument"}-${i}`}>
                               <span className="font-medium text-foreground">{String(doc.name || "Dokument")}</span>
-                              {doc.datum ? <span> · Befunddatum/Gruppe: {doc.datum}</span> : null}
-                              {doc.loadedAt ? <span> · geladen: {new Date(doc.loadedAt).toLocaleString("de-DE")}</span> : null}
-                              {typeof doc.pages === "number" ? <span> · {doc.pages} S.</span> : null}
-                              {typeof doc.chars === "number" && doc.chars > 0 ? <span> · {doc.chars.toLocaleString("de-DE")} Zeichen</span> : null}
-                              {doc.source ? <span> · {doc.source}</span> : null}
-                              {doc.archivePath ? <span> · archiviert</span> : null}
+                              {doc.kindLabel ? <span className="ml-1 text-[10px] uppercase tracking-wide text-primary">[{doc.kindLabel}]</span> : null}
+                              <div className="text-[11px] pl-1">
+                                {doc.loadedAt ? <span>📅 erfasst/geladen: {new Date(doc.loadedAt).toLocaleString("de-DE")}</span> : null}
+                                {doc.datum ? <span> · 🗓 Befunddatum im Text: {doc.datum}</span> : null}
+                                {typeof doc.pages === "number" ? <span> · 📄 {doc.pages} S.</span> : null}
+                                {typeof doc.chars === "number" && doc.chars > 0 ? <span> · ✍ {doc.chars.toLocaleString("de-DE")} Zeichen</span> : null}
+                                {doc.archivePath ? <span> · ✓ in Cloud archiviert</span> : null}
+                                {doc.source ? <div className="text-[10px]">Herkunft: {doc.source}</div> : null}
+                                {doc.note ? <div className="text-[10px] italic">{doc.note}</div> : null}
+                              </div>
                             </li>
                           ))}
                         </ul>
@@ -492,6 +499,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 w.document.write(injected);
                 w.document.close();
                 await logTherapyEvent(pseudonymId, "befund_pdf_saved", {
+                  filename: `${filename}.pdf`,
                   note: `PDF-Druckdialog für „${filename}" geöffnet`,
                   source: "Verlauf · Als PDF speichern",
                 });

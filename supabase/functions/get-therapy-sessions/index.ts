@@ -90,15 +90,32 @@ type DocumentInventoryItem = {
   archivePath?: string;
   loadedAt?: string;
   source: string;
-  location: "current_draft" | "snapshot" | "event_log" | "analysis_meta";
+  kindLabel?: string;
+  fieldLabel?: string;
+  location: "current_draft" | "snapshot" | "event_log" | "analysis_meta" | "befund_pdf" | "befund_html";
   note?: string;
 };
 
-function extractDocumentInventoryFromText(text: unknown, source: string, location: DocumentInventoryItem["location"], loadedAt?: string): DocumentInventoryItem[] {
+const FIELD_LABELS: Record<string, string> = {
+  sonstigeUntersuchungen: "Sonstige Untersuchungen / freier Befundtext",
+  arztbericht: "Arztbericht / Klinikbericht",
+  laborKomplett: "Komplett-Laborbefund",
+  metatronHeel: "Metatron- / NLS-Befund",
+  perplexityAnalyse: "KI-Recherche (Perplexity etc.)",
+};
+
+function extractDocumentInventoryFromText(
+  text: unknown,
+  fieldKey: string,
+  locationLabel: string,
+  location: DocumentInventoryItem["location"],
+  loadedAt?: string,
+): DocumentInventoryItem[] {
   if (typeof text !== "string" || !text.trim()) return [];
   const items: DocumentInventoryItem[] = [];
   const lines = text.split(/\n+/);
   let contextDate = "";
+  const fieldLabel = FIELD_LABELS[fieldKey] || fieldKey;
   for (const line of lines) {
     const group = line.match(/^===\s*📎\s*(.+?)(?:\s*·\s*([^=]+?))?\s*===/);
     if (group?.[2]) contextDate = group[2].trim();
@@ -109,7 +126,9 @@ function extractDocumentInventoryFromText(text: unknown, source: string, locatio
         datum: contextDate || undefined,
         pages: file[2] ? Number(file[2]) : undefined,
         loadedAt,
-        source,
+        source: `${locationLabel} → Feld „${fieldLabel}"`,
+        kindLabel: "Eingefügter Befundtext im Patientenakt",
+        fieldLabel,
         location,
       });
     }
@@ -124,13 +143,13 @@ function dedupeDocumentInventory(items: DocumentInventoryItem[]): DocumentInvent
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 40);
+  }).slice(0, 80);
 }
 
 async function buildDocumentInventory(adminClient: any, pseudonymId: string, draftInput: Record<string, unknown>): Promise<DocumentInventoryItem[]> {
   const items: DocumentInventoryItem[] = [];
-  for (const key of ["sonstigeUntersuchungen", "arztbericht", "laborKomplett", "metatronHeel", "perplexityAnalyse"]) {
-    items.push(...extractDocumentInventoryFromText(draftInput[key], `Aktueller Auto-Entwurf · ${key}`, "current_draft"));
+  for (const key of Object.keys(FIELD_LABELS)) {
+    items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft"));
   }
 
   const { data: snapshot } = await adminClient
@@ -139,8 +158,8 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     .eq("pseudonym_id", pseudonymId)
     .maybeSingle();
   const snapshotData = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data as Record<string, unknown> : {};
-  for (const key of ["sonstigeUntersuchungen", "arztbericht", "laborKomplett", "metatronHeel", "perplexityAnalyse"]) {
-    items.push(...extractDocumentInventoryFromText(snapshotData[key], `Patienten-Snapshot · ${key}`, "snapshot", snapshot?.updated_at));
+  for (const key of Object.keys(FIELD_LABELS)) {
+    items.push(...extractDocumentInventoryFromText(snapshotData[key], key, "Patienten-Snapshot (fest gespeichert)", "snapshot", snapshot?.updated_at));
   }
 
   const { data: eventRows } = await adminClient
@@ -149,21 +168,48 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     .eq("pseudonym_id", pseudonymId)
     .eq("kind", "event_log")
     .order("created_at", { ascending: false })
-    .limit(80);
+    .limit(120);
   for (const row of Array.isArray(eventRows) ? eventRows : []) {
     const meta = row?.befund_meta || {};
     const eventType = String(meta.event_type || "");
-    if (!["documents_uploaded", "documents_saved"].includes(eventType) || !Array.isArray(meta.files)) continue;
-    for (const file of meta.files) {
-      if (!file?.name) continue;
+
+    if (["documents_uploaded", "documents_saved"].includes(eventType) && Array.isArray(meta.files)) {
+      for (const file of meta.files) {
+        if (!file?.name) continue;
+        items.push({
+          name: String(file.name),
+          pages: typeof file.pages === "number" ? file.pages : undefined,
+          chars: typeof file.chars === "number" ? file.chars : undefined,
+          archivePath: typeof file.archivePath === "string" ? file.archivePath : undefined,
+          loadedAt: row.created_at,
+          source: eventType === "documents_uploaded" ? "Beim Upload erkannte Originaldatei" : "In der Cloud archivierte Originaldatei",
+          kindLabel: "Hochgeladene Originaldatei (PDF/Doku)",
+          location: "event_log",
+        });
+      }
+    }
+
+    if (eventType === "befund_pdf_saved") {
+      const name = String(meta.filename || meta.name || `Befund-Auswertung_${pseudonymId}.pdf`);
       items.push({
-        name: String(file.name),
-        pages: typeof file.pages === "number" ? file.pages : undefined,
-        chars: typeof file.chars === "number" ? file.chars : undefined,
-        archivePath: typeof file.archivePath === "string" ? file.archivePath : undefined,
+        name,
+        pages: typeof meta.pages === "number" ? meta.pages : undefined,
+        chars: typeof meta.chars === "number" ? meta.chars : undefined,
         loadedAt: row.created_at,
-        source: eventType === "documents_uploaded" ? "Dokument-Upload-Event" : "Archivierungs-Event",
-        location: "event_log",
+        source: "KI-Befund-Auswertung als PDF gedruckt/gespeichert",
+        kindLabel: "Erzeugtes Befund-Auswertungs-PDF",
+        location: "befund_pdf",
+      });
+    }
+
+    if (eventType === "befund_html_success") {
+      items.push({
+        name: `Befund-Auswertung (HTML) vom ${new Date(row.created_at).toLocaleString("de-DE")}`,
+        chars: typeof meta.total_chars === "number" ? meta.total_chars : undefined,
+        loadedAt: row.created_at,
+        source: "KI-Befund-Auswertung im Browser erstellt",
+        kindLabel: "Erzeugte Befund-Auswertung (HTML, ggf. noch kein PDF)",
+        location: "befund_html",
       });
     }
   }
@@ -185,9 +231,10 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
         name: label,
         chars: typeof source.chars === "number" ? source.chars : undefined,
         loadedAt: row.created_at,
-        source: "Befund-Auswertung · Quellenliste",
+        source: "Quellenblock einer früheren Befund-Auswertung",
+        kindLabel: "Quellen-Eintrag aus früherer Auswertung (kein Originaldateiname)",
         location: "analysis_meta",
-        note: "Quellenblock, nicht zwingend Originaldateiname",
+        note: "Beschreibt, welcher Inhalt damals in die KI-Auswertung floss.",
       });
     }
   }
