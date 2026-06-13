@@ -2898,7 +2898,7 @@ export function TherapyRecommendation() {
       <div className="fixed bottom-4 left-1/2 z-50 w-[min(calc(100vw-2rem),64rem)] -translate-x-1/2 rounded-lg border border-primary/30 bg-background/95 p-3 shadow-xl backdrop-blur print:hidden">
         <div className="mb-2 flex items-center justify-between gap-2 text-xs">
           <strong className="text-foreground">Start-Aktionen · immer sichtbar</strong>
-          <span className="text-muted-foreground">Befund neu? → HTML-Auswertung</span>
+          <span className="text-muted-foreground">{analysisSourceTotals.selected}/{analysisSourceTotals.all} Quellen gewählt</span>
         </div>
         <div className="grid gap-2 md:grid-cols-3">
           <Button onClick={() => handleSubmit()} disabled={isStreaming} className="justify-start gap-2 text-xs sm:text-sm">
@@ -2912,7 +2912,7 @@ export function TherapyRecommendation() {
             className="justify-start gap-2 border-sage-600 text-xs text-sage-700 hover:bg-sage-50 sm:text-sm"
           >
             {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : "Nur Befund-Auswertung (HTML)"}
+            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
           </Button>
           <Button
             onClick={handleReAnalyzeAll}
@@ -2955,9 +2955,9 @@ export function TherapyRecommendation() {
                   ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
                   : isAnalyzingDocs
                     ? "Befund-Auswertung läuft…"
-                    : "Nur Befund-Auswertung (HTML)"}
+                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
               </Button>
-              <p className="text-[11px] leading-snug text-muted-foreground">Beste Wahl für neue Labor-, NLS-, Arztbrief- oder Nachreich-Befunde.</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">Nur die unten angehakten Quellen werden zusammen ausgewertet.</p>
             </div>
             <div className="space-y-1">
               <Button
