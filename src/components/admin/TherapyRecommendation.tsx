@@ -870,6 +870,7 @@ export function TherapyRecommendation() {
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
+  const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
