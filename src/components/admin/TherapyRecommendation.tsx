@@ -1071,15 +1071,10 @@ export function TherapyRecommendation() {
         applyDraftPayload(draftInput, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
         loadedFromCloud = true;
-        await logTherapyEvent(pid, "patient_context_loaded", {
-          source: "cloud-autosave-draft",
-          symptome_chars: countStringChars(draftInput.symptome),
-          diagnose_count: countDiagnoseEntries(draftInput.manualDiagnosen) || countDiagnoseEntries(draftInput.diagnosen),
-          labor_lines: countClinicalLines([draftInput.laborKomplett, draftInput.laborErhoeht, draftInput.laborErniedrigt].filter(Boolean).join("\n")),
-          arzt_chars: countStringChars(draftInput.arztbericht),
-          sonstige_chars: countStringChars(draftInput.sonstigeUntersuchungen),
+        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Auto-Sicherung", draftInput, {
           draft_updated_at: draftRow?.updated_at,
-        });
+        }));
+        setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
       }
 
@@ -1096,19 +1091,21 @@ export function TherapyRecommendation() {
         applyDraftPayload(snapshot, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
         loadedFromCloud = true;
-        await logTherapyEvent(pid, "patient_context_loaded", {
-          source: "cloud-snapshot",
-          symptome_chars: countStringChars(snapshot.symptome),
-          diagnose_count: countDiagnoseEntries(snapshot.manualDiagnosen) || countDiagnoseEntries(snapshot.diagnosen),
-          labor_lines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
-          arzt_chars: countStringChars(snapshot.arztbericht),
-          sonstige_chars: countStringChars(snapshot.sonstigeUntersuchungen),
+        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Snapshot", snapshot, {
           snapshot_updated_at: snapshot.snapshotUpdatedAt,
-        });
+        }));
+        setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
       }
       if (localData && localTs > 0) {
-        if (!loadedFromCloud) setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizeTherapyInput(localData), 1));
+        if (!loadedFromCloud) {
+          const normalizedLocal = normalizeTherapyInput(localData);
+          setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizedLocal, 1));
+          await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Lokale Browser-Sicherung", normalizedLocal, {
+            local_saved_at: localData?.savedAt,
+          }));
+          setHistoryRefresh((n) => n + 1);
+        }
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch (error: any) {
