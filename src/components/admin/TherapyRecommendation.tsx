@@ -89,6 +89,7 @@ const countClinicalLines = (value?: string) => (value || "").split(/\n+/).map((x
 
 type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
+type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -191,6 +192,12 @@ const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.f
 
 const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
 
+const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => Array.isArray(value)
+  ? value
+      .filter((item) => item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")
+      .map((item) => item as DocumentInventoryItem)
+  : [];
+
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
   const fields: AnalysisSourceSummary[] = [];
   const diagnosesValue = countArrayEntries(d.manualDiagnosen) > 0 ? d.manualDiagnosen : d.diagnosen;
@@ -221,12 +228,21 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
   addArray("mannayanOrders", "Mannayan-Bestellungen", d.mannayanOrders);
   addArray("selectedCategories", "Ausgewählte Kategorien", d.selectedCategories);
   addArray("pinnedMittel", "Fixierte Mittel", d.pinnedMittel);
+  normalizeDocumentInventory(d.document_inventory).forEach((doc, index) => {
+    fields.push({
+      key: `document_inventory_${index}`,
+      label: `Großdatei/Dokument: ${doc.name}${doc.datum ? ` · ${doc.datum}` : ""}${doc.source ? ` · ${doc.source}` : ""}`,
+      chars: Number(doc.chars || 0),
+      lines: Number(doc.pages || 0),
+    });
+  });
 
   return fields;
 };
 
 const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
   const sourceSummary = buildPatientLoadFieldSummary(d);
+  const documentInventory = normalizeDocumentInventory(d.document_inventory);
   const totalChars = sourceSummary.reduce((sum, field) => sum + field.chars, 0);
   const totalLines = sourceSummary.reduce((sum, field) => sum + field.lines, 0);
   return {
@@ -234,6 +250,8 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
     total_chars: totalChars,
     field_count: sourceSummary.length,
     total_lines: totalLines,
+    document_count: documentInventory.length,
+    document_inventory: documentInventory,
     source_summary: sourceSummary,
     loaded_fields: sourceSummary,
     symptome_chars: countStringChars(d.symptome),
