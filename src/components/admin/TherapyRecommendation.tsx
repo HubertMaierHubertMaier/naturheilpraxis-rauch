@@ -2239,6 +2239,7 @@ export function TherapyRecommendation() {
                   model,
                   source: analysisMode,
                   source_summary: sourceSummary,
+                  sources: chunks.map((c) => c.label),
                   note: "HTML in Patientenverlauf gespeichert",
                 });
               }
