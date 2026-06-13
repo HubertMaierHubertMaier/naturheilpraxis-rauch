@@ -2543,6 +2543,9 @@ export function TherapyRecommendation() {
             useProModel: useProModel || undefined,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
+            previousResultForCompare: !isErweitern && addPreviousComparison && result && result.trim().length > 200
+              ? result.slice(0, 18000)
+              : undefined,
           }),
           signal: controller.signal,
         }
