@@ -219,7 +219,7 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
     const end = index + 1 < matches.length ? (matches[index + 1].index ?? trimmed.length) : trimmed.length;
     const block = trimmed.slice(start, end).trim();
     if (!block) return;
-    const rawName = (match[1] || match[2] || `${fallbackLabel} ${index + 1}`).replace(/^=+|=+$/g, "").trim();
+    const rawName = (match[2] || match[1] || `${fallbackLabel} ${index + 1}`).replace(/^=+|=+$/g, "").trim();
     const label = rawName.replace(/^\s*(?:📄|📷)\s*/, "").trim() || `${fallbackLabel} ${index + 1}`;
     sources.push({
       key: `${fieldKey}:doc:${index}:${sourceKeyPart(label)}`,
