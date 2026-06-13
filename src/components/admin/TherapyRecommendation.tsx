@@ -2959,6 +2959,42 @@ export function TherapyRecommendation() {
               Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten" hochladen und „Datei(en) auslesen & einfügen" klicken — danach erscheinen sie hier zum Anhaken.
             </div>
           )}
+
+          {/* 🔬 Diagnose-Übersicht: zeigt für JEDES Backing-Feld die Zeichenanzahl, damit klar wird wo PDFs gelandet sind */}
+          <details className="rounded-md border border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10 p-2 text-xs" open>
+            <summary className="cursor-pointer font-semibold text-amber-800 dark:text-amber-200">
+              🔬 Diagnose: Zeichen pro Eingabefeld (zum Eingrenzen, wo die PDFs gelandet sind)
+            </summary>
+            <div className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { label: "Sonstige Voruntersuchungen (PDF-Drop-Ziel)", val: sonstigeUntersuchungen },
+                { label: "Labor komplett", val: laborKomplett },
+                { label: "Labor erhöht", val: laborErhoeht },
+                { label: "Labor erniedrigt", val: laborErniedrigt },
+                { label: "Stuhlbefund", val: stuhlbefund },
+                { label: "Arztbericht", val: arztbericht },
+                { label: "Metatron / NLS", val: metatronHeel },
+                { label: "Perplexity-Recherche", val: perplexityAnalyse },
+                { label: "Symptome", val: symptome },
+                { label: "Erkrankung / Diagnosen", val: erkrankung },
+              ].map((row) => {
+                const chars = row.val?.length || 0;
+                const markerCount = (row.val || "").match(/===\s*(?:📄|📷)/g)?.length || 0;
+                return (
+                  <div key={row.label} className={`flex justify-between gap-2 rounded px-2 py-1 ${chars > 0 ? "bg-emerald-100/60 dark:bg-emerald-950/20" : "bg-muted/40"}`}>
+                    <span className="truncate" title={row.label}>{row.label}</span>
+                    <span className="font-mono tabular-nums whitespace-nowrap">
+                      {chars.toLocaleString("de-DE")}{markerCount > 0 ? ` · ${markerCount}× 📄` : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[11px] text-amber-800/80 dark:text-amber-200/80">
+              Wenn deine zwei PDFs <strong>nirgendwo</strong> Zeichen anzeigen → Upload im Großdaten-Tab nicht abgeschlossen (auf ✓ pro Datei warten). Wenn sie unter <em>Sonstige Voruntersuchungen</em> stehen, aber „0× 📄" → wurden ohne Trennmarker eingefügt und gelten als ein Block.
+            </p>
+          </details>
+
         </CardContent>
       </Card>
 
