@@ -1139,6 +1139,7 @@ export function TherapyRecommendation() {
 
       const draftRow = (draftData as any)?.draft;
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
+      setLoadedDocumentInventory(draftDocumentInventory);
       const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
       const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
         || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
@@ -1163,6 +1164,7 @@ export function TherapyRecommendation() {
       if (error) throw error;
 
       const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
+      if (snapshotDocumentInventory.length) setLoadedDocumentInventory(snapshotDocumentInventory);
       const snapshot = normalizeTherapyInput({ ...((data as any)?.snapshot || {}), document_inventory: snapshotDocumentInventory });
       const snapshotWithDraftAdmin = !loadedFromCloud ? {
         ...snapshot,
