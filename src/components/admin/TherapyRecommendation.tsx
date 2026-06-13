@@ -240,6 +240,16 @@ const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => 
       .map((item) => item as DocumentInventoryItem)
   : [];
 
+const mergeDocumentInventory = (...groups: DocumentInventoryItem[][]): DocumentInventoryItem[] => {
+  const seen = new Set<string>();
+  return groups.flat().filter((item) => {
+    const key = [item.archivePath || "", item.name, item.datum || "", item.source || ""].join("|").toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
   const fields: AnalysisSourceSummary[] = [];
   const diagnosesValue = countArrayEntries(d.manualDiagnosen) > 0 ? d.manualDiagnosen : d.diagnosen;
@@ -870,6 +880,7 @@ export function TherapyRecommendation() {
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
+  const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
