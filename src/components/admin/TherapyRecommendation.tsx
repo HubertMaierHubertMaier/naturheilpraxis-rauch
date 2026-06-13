@@ -1097,7 +1097,8 @@ export function TherapyRecommendation() {
       const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
         || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
         || countDiagnoseEntries(draftInput.diagnosen) > 0
-        || countArrayEntries(draftInput.pathogens) > 0;
+        || countArrayEntries(draftInput.pathogens) > 0
+        || [draftInput.alter, draftInput.geschlecht, draftInput.groesseCm, draftInput.gewichtKg, draftInput.schwanger].some((value) => typeof value === "string" && value.trim());
       if (hasDraftClinicalData) {
         applyDraftPayload(draftInput, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
@@ -1157,10 +1158,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage];
+    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage];
 
-    return textFields.some((v) => v.trim()) || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+    return textFields.some((v) => v.trim()) || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
