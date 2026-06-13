@@ -127,27 +127,21 @@ export async function extractClinicalDocumentText(file: File, mode: "doctor" | "
   throw new Error("Format nicht unterstützt (nur PDF, JPG, PNG)");
 }
 
-export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<PendingFile[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
 export async function archiveClinicalDocumentOriginal(file: File, pseudonymId?: string): Promise<string> {
-    const pid = normalizePid(pseudonymId);
-    if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
-    const day = new Date().toISOString().slice(0, 10);
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const path = `${safePathPart(pid)}/${day}/${suffix}-${safePathPart(file.name)}`;
-    const { error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(path, file, {
-        cacheControl: "3600",
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
-    if (error) throw error;
-    return path;
+  const pid = normalizePid(pseudonymId);
+  if (!pid) throw new Error("Bitte zuerst eine Pseudonym-ID eintragen, damit die Originaldatei patientensicher archiviert werden kann.");
+  const day = new Date().toISOString().slice(0, 10);
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const path = `${safePathPart(pid)}/${day}/${suffix}-${safePathPart(file.name)}`;
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+  if (error) throw error;
+  return path;
 }
 
 export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF / Bilder hochladen" }: Props) {
