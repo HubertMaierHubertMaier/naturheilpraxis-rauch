@@ -64,6 +64,7 @@ interface AnalyzeBody {
   geschlecht?: string;
   pseudonymId?: string;
   useProModel?: boolean;
+  previousResultForCompare?: string;
 }
 
 type DocBlock = { label: string; text: string };
