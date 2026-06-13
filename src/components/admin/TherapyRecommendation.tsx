@@ -189,6 +189,65 @@ const countStringChars = (value: unknown) => (typeof value === "string" ? value.
 
 const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
 
+const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
+  const fields: AnalysisSourceSummary[] = [];
+  const diagnosesValue = countArrayEntries(d.manualDiagnosen) > 0 ? d.manualDiagnosen : d.diagnosen;
+  const addText = (key: string, label: string, value: unknown) => {
+    const text = textFromClinicalValue(value);
+    if (text) fields.push({ key, label, chars: text.length, lines: countClinicalLines(text) });
+  };
+  const addArray = (key: string, label: string, value: unknown) => {
+    const items = countArrayEntries(value);
+    if (items > 0) fields.push({ key, label, chars: 0, lines: items });
+  };
+
+  addText("symptome", "Symptome / Beschwerden", d.symptome);
+  addText("erkrankung", "Erkrankungen / Diagnosen", d.erkrankung);
+  addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", diagnosesValue);
+  addText("pathogens", "Pathogene / NLS-EAV-Befunde", d.belastungen || formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []));
+  addText("medikamente", "Aktuelle Medikamente", d.medikamente);
+  addText("bisherigeMittel", "Bisherige Mittel", d.bisherigeMittel);
+  addText("laborKomplett", "Labor komplett", d.laborKomplett);
+  addText("laborErhoeht", "Labor – erhöhte Werte", d.laborErhoeht);
+  addText("laborErniedrigt", "Labor – erniedrigte Werte", d.laborErniedrigt);
+  addText("stuhlbefund", "Stuhlbefund", d.stuhlbefund);
+  addText("arztbericht", "Arztbericht", d.arztbericht);
+  addText("metatronHeel", "Metatron / HEEL / NLS", d.metatronHeel);
+  addText("sonstigeUntersuchungen", "Sonstige Untersuchungen / Dokumente", d.sonstigeUntersuchungen);
+  addText("perplexityAnalyse", "Zusätzliche Analyse / Recherche", d.perplexityAnalyse);
+  addText("eigeneTherapieVorlage", "Eigene Therapievorlage", d.eigeneTherapieVorlage);
+  addArray("mannayanOrders", "Mannayan-Bestellungen", d.mannayanOrders);
+  addArray("selectedCategories", "Ausgewählte Kategorien", d.selectedCategories);
+  addArray("pinnedMittel", "Fixierte Mittel", d.pinnedMittel);
+
+  return fields;
+};
+
+const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
+  const sourceSummary = buildPatientLoadFieldSummary(d);
+  const totalChars = sourceSummary.reduce((sum, field) => sum + field.chars, 0);
+  const totalLines = sourceSummary.reduce((sum, field) => sum + field.lines, 0);
+  return {
+    source,
+    total_chars: totalChars,
+    field_count: sourceSummary.length,
+    total_lines: totalLines,
+    source_summary: sourceSummary,
+    loaded_fields: sourceSummary,
+    symptome_chars: countStringChars(d.symptome),
+    diagnose_count: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
+    labor_lines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+    arzt_chars: countStringChars(d.arztbericht),
+    sonstige_chars: countStringChars(d.sonstigeUntersuchungen),
+    note: sourceSummary.length
+      ? `${source}: ${sourceSummary.length} geladene Feldgruppe(n), ${totalChars.toLocaleString("de-DE")} Zeichen.`
+      : `${source}: keine gespeicherten Patientendaten geladen.`,
+    ...extra,
+  };
+};
+
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
   pid,
   source,
@@ -1013,15 +1072,10 @@ export function TherapyRecommendation() {
         applyDraftPayload(draftInput, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
         loadedFromCloud = true;
-        await logTherapyEvent(pid, "patient_context_loaded", {
-          source: "cloud-autosave-draft",
-          symptome_chars: countStringChars(draftInput.symptome),
-          diagnose_count: countDiagnoseEntries(draftInput.manualDiagnosen) || countDiagnoseEntries(draftInput.diagnosen),
-          labor_lines: countClinicalLines([draftInput.laborKomplett, draftInput.laborErhoeht, draftInput.laborErniedrigt].filter(Boolean).join("\n")),
-          arzt_chars: countStringChars(draftInput.arztbericht),
-          sonstige_chars: countStringChars(draftInput.sonstigeUntersuchungen),
+        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Auto-Sicherung", draftInput, {
           draft_updated_at: draftRow?.updated_at,
-        });
+        }));
+        setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
       }
 
@@ -1038,19 +1092,21 @@ export function TherapyRecommendation() {
         applyDraftPayload(snapshot, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
         loadedFromCloud = true;
-        await logTherapyEvent(pid, "patient_context_loaded", {
-          source: "cloud-snapshot",
-          symptome_chars: countStringChars(snapshot.symptome),
-          diagnose_count: countDiagnoseEntries(snapshot.manualDiagnosen) || countDiagnoseEntries(snapshot.diagnosen),
-          labor_lines: countClinicalLines([snapshot.laborKomplett, snapshot.laborErhoeht, snapshot.laborErniedrigt].filter(Boolean).join("\n")),
-          arzt_chars: countStringChars(snapshot.arztbericht),
-          sonstige_chars: countStringChars(snapshot.sonstigeUntersuchungen),
+        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Snapshot", snapshot, {
           snapshot_updated_at: snapshot.snapshotUpdatedAt,
-        });
+        }));
+        setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
       }
       if (localData && localTs > 0) {
-        if (!loadedFromCloud) setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizeTherapyInput(localData), 1));
+        if (!loadedFromCloud) {
+          const normalizedLocal = normalizeTherapyInput(localData);
+          setClinicalLoadInfo(buildClinicalLoadInfo(pid, "local", normalizedLocal, 1));
+          await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Lokale Browser-Sicherung", normalizedLocal, {
+            local_saved_at: localData?.savedAt,
+          }));
+          setHistoryRefresh((n) => n + 1);
+        }
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch (error: any) {
@@ -1435,7 +1491,7 @@ export function TherapyRecommendation() {
     setPseudonymId(nextValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
-  const handleLoadSession = (session: TherapySession) => {
+  const handleLoadSession = async (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
       toast({ title: "Sicherheitsstopp", description: "Diese Sitzung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
       return;
@@ -1502,6 +1558,13 @@ export function TherapyRecommendation() {
     setResult(session.empfehlung || "");
     setAuditInfo(null);
     setClinicalLoadInfo(buildClinicalLoadInfo(session.pseudonym_id, "session", d, 1));
+    await logTherapyEvent(session.pseudonym_id, "patient_context_loaded", buildPatientLoadEventDetails("Verlaufssitzung übernommen", d, {
+      source_session_id: session.id,
+      source_created_at: session.created_at,
+      version_number: session.version_number,
+      has_empfehlung: !!session.empfehlung,
+    }));
+    setHistoryRefresh((n) => n + 1);
     toast({ title: "Sitzung geladen", description: `Vom ${new Date(session.created_at).toLocaleDateString("de-DE")}` });
   };
 

@@ -39,9 +39,17 @@ interface Props {
 }
 
 type StoredDetail = { label: string; value: string };
+type LoadSourceRow = { label?: string; chars?: number; lines?: number; key?: string };
 
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
+const formatLoadSourceAmount = (source: LoadSourceRow) => {
+  const chars = Number(source.chars || 0);
+  const lines = Number(source.lines || 0);
+  if (chars > 0) return `${chars.toLocaleString("de-DE")} Zeichen · ${lines.toLocaleString("de-DE")} Zeile(n)`;
+  if (lines > 0) return `${lines.toLocaleString("de-DE")} Eintrag(e)`;
+  return "geladen";
+};
 
 const isEmptyAutosaveOnly = (session: TherapySession): boolean => {
   if (session.kind === "event_log") return false;
@@ -299,7 +307,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 const type: string = meta.event_type || "event";
                 const label: string = meta.label || "Verlaufs-Event";
                 const files: Array<{ name: string; pages?: number; chars?: number; archivePath?: string }> = Array.isArray(meta.files) ? meta.files : [];
-                const sourceSummary: Array<{ label?: string; chars?: number; lines?: number }> = Array.isArray(meta.source_summary) ? meta.source_summary : [];
+                const sourceSummary: LoadSourceRow[] = Array.isArray(meta.source_summary)
+                  ? meta.source_summary
+                  : Array.isArray(meta.loaded_fields) ? meta.loaded_fields : [];
+                const isPatientContextLoad = type === "patient_context_loaded";
+                const visibleSourceSummary = isPatientContextLoad ? sourceSummary : sourceSummary.slice(0, 8);
                 const success = type.endsWith("_success") || type === "documents_uploaded" || type === "documents_saved" || type === "befund_pdf_saved" || type === "patient_saved";
                 const failed = type.endsWith("_failed");
                 const started = type.endsWith("_started");
@@ -326,6 +338,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           {Number(meta.total_chars).toLocaleString("de-DE")} Z.
                         </Badge>
                       )}
+                      {isPatientContextLoad && typeof meta.field_count === "number" && (
+                        <Badge variant="secondary" className="text-[10px] py-0 h-4">
+                          {Number(meta.field_count).toLocaleString("de-DE")} Feldgruppe(n)
+                        </Badge>
+                      )}
                       <Button
                         size="sm" variant="ghost"
                         className="h-5 px-1 ml-auto text-destructive hover:text-destructive"
@@ -350,17 +367,27 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                     {meta.error && (
                       <p className="mt-1 text-destructive">Fehler: {String(meta.error)}</p>
                     )}
-                    {meta.note && !files.length && (
+                    {isPatientContextLoad && (
+                      <div className="mt-2 rounded-md border border-primary/25 bg-primary/5 p-2">
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                          <span><strong className="text-foreground">Quelle:</strong> {String(meta.source || "nicht angegeben")}</span>
+                          {typeof meta.total_chars === "number" && <span><strong className="text-foreground">Umfang:</strong> {Number(meta.total_chars).toLocaleString("de-DE")} Zeichen</span>}
+                          {typeof meta.diagnose_count === "number" && <span><strong className="text-foreground">Diagnosen:</strong> {Number(meta.diagnose_count).toLocaleString("de-DE")}</span>}
+                          {typeof meta.labor_lines === "number" && <span><strong className="text-foreground">Labor:</strong> {Number(meta.labor_lines).toLocaleString("de-DE")} Zeile(n)</span>}
+                        </div>
+                      </div>
+                    )}
+                    {meta.note && !files.length && !isPatientContextLoad && (
                       <p className="mt-0.5 text-muted-foreground italic">{String(meta.note)}</p>
                     )}
                     {sourceSummary.length > 0 && (
                       <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
-                        {sourceSummary.slice(0, 8).map((source, i) => (
+                        {visibleSourceSummary.map((source, i) => (
                           <li key={i}>
-                            {String(source.label || "Quelle")} · {Number(source.chars || 0).toLocaleString("de-DE")} Zeichen · {Number(source.lines || 0).toLocaleString("de-DE")} Zeile(n)
+                            {String(source.label || "Quelle")} · {formatLoadSourceAmount(source)}
                           </li>
                         ))}
-                        {sourceSummary.length > 8 && <li className="italic">… und {sourceSummary.length - 8} weitere Quellen</li>}
+                        {!isPatientContextLoad && sourceSummary.length > 8 && <li className="italic">… und {sourceSummary.length - 8} weitere Quellen</li>}
                       </ul>
                     )}
                   </div>
