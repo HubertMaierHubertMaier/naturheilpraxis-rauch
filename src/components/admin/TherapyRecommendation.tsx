@@ -1093,8 +1093,11 @@ export function TherapyRecommendation() {
       const draftRow = (draftData as any)?.draft;
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
       const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
-      const hasDraftData = Object.keys(draftInput).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt", "autoSavedDraft", "finalized", "lastAutoSaveAt"].includes(key));
-      if (hasDraftData) {
+      const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
+        || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
+        || countDiagnoseEntries(draftInput.diagnosen) > 0
+        || countArrayEntries(draftInput.pathogens) > 0;
+      if (hasDraftClinicalData) {
         applyDraftPayload(draftInput, pid);
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
         loadedFromCloud = true;
@@ -1113,14 +1116,22 @@ export function TherapyRecommendation() {
 
       const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
       const snapshot = normalizeTherapyInput({ ...((data as any)?.snapshot || {}), document_inventory: snapshotDocumentInventory });
+      const snapshotWithDraftAdmin = !loadedFromCloud ? {
+        ...snapshot,
+        mannayanOrders: Array.isArray(draftInput.mannayanOrders) ? draftInput.mannayanOrders : snapshot.mannayanOrders,
+        selectedCategories: Array.isArray(draftInput.selectedCategories) ? draftInput.selectedCategories : snapshot.selectedCategories,
+        bevorzugteLinie: Array.isArray(draftInput.bevorzugteLinie) ? draftInput.bevorzugteLinie : snapshot.bevorzugteLinie,
+        pinnedMittel: Array.isArray(draftInput.pinnedMittel) ? draftInput.pinnedMittel : snapshot.pinnedMittel,
+      } : snapshot;
       const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
-      const hasSnapshotData = Object.keys(snapshot).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
+      const hasSnapshotData = Object.keys(snapshotWithDraftAdmin).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
       if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
-        applyDraftPayload(snapshot, pid);
-        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshot, 1));
+        applyDraftPayload(snapshotWithDraftAdmin, pid);
+        setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshotWithDraftAdmin, 1));
         loadedFromCloud = true;
-        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Snapshot", snapshot, {
+        await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Snapshot + aktuelle Auto-Sicherung", snapshotWithDraftAdmin, {
           snapshot_updated_at: snapshot.snapshotUpdatedAt,
+          draft_updated_at: draftRow?.updated_at,
         }));
         setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
