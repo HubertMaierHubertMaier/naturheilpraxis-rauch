@@ -189,6 +189,64 @@ const countStringChars = (value: unknown) => (typeof value === "string" ? value.
 
 const countDiagnoseEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
 
+const countArrayEntries = (value: unknown) => (Array.isArray(value) ? value.filter(Boolean).length : 0);
+
+const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
+  const fields: AnalysisSourceSummary[] = [];
+  const addText = (key: string, label: string, value: unknown) => {
+    const text = textFromClinicalValue(value);
+    if (text) fields.push({ key, label, chars: text.length, lines: countClinicalLines(text) });
+  };
+  const addArray = (key: string, label: string, value: unknown) => {
+    const items = countArrayEntries(value);
+    if (items > 0) fields.push({ key, label, chars: 0, lines: items });
+  };
+
+  addText("symptome", "Symptome / Beschwerden", d.symptome);
+  addText("erkrankung", "Erkrankungen / Diagnosen", d.erkrankung);
+  addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", d.manualDiagnosen || d.diagnosen);
+  addText("pathogens", "Pathogene / NLS-EAV-Befunde", d.belastungen || formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []));
+  addText("medikamente", "Aktuelle Medikamente", d.medikamente);
+  addText("bisherigeMittel", "Bisherige Mittel", d.bisherigeMittel);
+  addText("laborKomplett", "Labor komplett", d.laborKomplett);
+  addText("laborErhoeht", "Labor – erhöhte Werte", d.laborErhoeht);
+  addText("laborErniedrigt", "Labor – erniedrigte Werte", d.laborErniedrigt);
+  addText("stuhlbefund", "Stuhlbefund", d.stuhlbefund);
+  addText("arztbericht", "Arztbericht", d.arztbericht);
+  addText("metatronHeel", "Metatron / HEEL / NLS", d.metatronHeel);
+  addText("sonstigeUntersuchungen", "Sonstige Untersuchungen / Dokumente", d.sonstigeUntersuchungen);
+  addText("perplexityAnalyse", "Zusätzliche Analyse / Recherche", d.perplexityAnalyse);
+  addText("eigeneTherapieVorlage", "Eigene Therapievorlage", d.eigeneTherapieVorlage);
+  addArray("mannayanOrders", "Mannayan-Bestellungen", d.mannayanOrders);
+  addArray("selectedCategories", "Ausgewählte Kategorien", d.selectedCategories);
+  addArray("pinnedMittel", "Fixierte Mittel", d.pinnedMittel);
+
+  return fields;
+};
+
+const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
+  const sourceSummary = buildPatientLoadFieldSummary(d);
+  const totalChars = sourceSummary.reduce((sum, field) => sum + field.chars, 0);
+  const totalLines = sourceSummary.reduce((sum, field) => sum + field.lines, 0);
+  return {
+    source,
+    total_chars: totalChars,
+    field_count: sourceSummary.length,
+    total_lines: totalLines,
+    source_summary: sourceSummary,
+    loaded_fields: sourceSummary,
+    symptome_chars: countStringChars(d.symptome),
+    diagnose_count: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
+    labor_lines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+    arzt_chars: countStringChars(d.arztbericht),
+    sonstige_chars: countStringChars(d.sonstigeUntersuchungen),
+    note: sourceSummary.length
+      ? `${source}: ${sourceSummary.length} geladene Feldgruppe(n), ${totalChars.toLocaleString("de-DE")} Zeichen.`
+      : `${source}: keine gespeicherten Patientendaten geladen.`,
+    ...extra,
+  };
+};
+
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
   pid,
   source,
