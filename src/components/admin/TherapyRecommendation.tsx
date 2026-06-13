@@ -26,7 +26,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
-import { MultiDocUpload } from "./therapy/MultiDocUpload";
+import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
@@ -91,6 +91,7 @@ type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
+type PendingDirectBefundFile = { id: string; file: File; status: "queued" | "processing" | "done" | "error"; chars?: number; pages?: number; error?: string };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -206,7 +207,7 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
   if (!trimmed) return [];
   const markerPattern = /(?:^|\n)(===\s*(?:📄|📷)\s*([^=\n]+?)\s*===)\n?/g;
   const matches = Array.from(trimmed.matchAll(markerPattern));
-  if (matches.length <= 1) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
+  if (!matches.length) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
 
   const sources: SelectableAnalysisSource[] = [];
   const firstIndex = matches[0].index ?? 0;
