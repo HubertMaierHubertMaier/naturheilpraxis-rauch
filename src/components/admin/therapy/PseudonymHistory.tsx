@@ -40,6 +40,7 @@ interface Props {
 
 type StoredDetail = { label: string; value: string };
 type LoadSourceRow = { label?: string; chars?: number; lines?: number; key?: string };
+type DocumentInventoryItem = { name?: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 
 const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const countTextLines = (value: string) => value.split(/\n+/).filter((line) => line.trim()).length;
@@ -310,6 +311,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                 const sourceSummary: LoadSourceRow[] = Array.isArray(meta.source_summary)
                   ? meta.source_summary
                   : Array.isArray(meta.loaded_fields) ? meta.loaded_fields : [];
+                const documentInventory: DocumentInventoryItem[] = Array.isArray(meta.document_inventory) ? meta.document_inventory : [];
                 const isPatientContextLoad = type === "patient_context_loaded";
                 const visibleSourceSummary = isPatientContextLoad ? sourceSummary : sourceSummary.slice(0, 8);
                 const success = type.endsWith("_success") || type === "documents_uploaded" || type === "documents_saved" || type === "befund_pdf_saved" || type === "patient_saved";
@@ -374,7 +376,26 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                           {typeof meta.total_chars === "number" && <span><strong className="text-foreground">Umfang:</strong> {Number(meta.total_chars).toLocaleString("de-DE")} Zeichen</span>}
                           {typeof meta.diagnose_count === "number" && <span><strong className="text-foreground">Diagnosen:</strong> {Number(meta.diagnose_count).toLocaleString("de-DE")}</span>}
                           {typeof meta.labor_lines === "number" && <span><strong className="text-foreground">Labor:</strong> {Number(meta.labor_lines).toLocaleString("de-DE")} Zeile(n)</span>}
+                          {typeof meta.document_count === "number" && <span><strong className="text-foreground">Großdateien:</strong> {Number(meta.document_count).toLocaleString("de-DE")}</span>}
                         </div>
+                      </div>
+                    )}
+                    {documentInventory.length > 0 && (
+                      <div className="mt-2 rounded-md border border-amber-300/50 bg-amber-50/60 dark:bg-amber-950/15 p-2">
+                        <p className="text-[11px] font-medium text-foreground">Großdateien / Dokumente im Patientenbestand</p>
+                        <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-0.5">
+                          {documentInventory.map((doc, i) => (
+                            <li key={`${doc.name || "Dokument"}-${i}`}>
+                              <span className="font-medium text-foreground">{String(doc.name || "Dokument")}</span>
+                              {doc.datum ? <span> · Befunddatum/Gruppe: {doc.datum}</span> : null}
+                              {doc.loadedAt ? <span> · geladen: {new Date(doc.loadedAt).toLocaleString("de-DE")}</span> : null}
+                              {typeof doc.pages === "number" ? <span> · {doc.pages} S.</span> : null}
+                              {typeof doc.chars === "number" && doc.chars > 0 ? <span> · {doc.chars.toLocaleString("de-DE")} Zeichen</span> : null}
+                              {doc.source ? <span> · {doc.source}</span> : null}
+                              {doc.archivePath ? <span> · archiviert</span> : null}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                     {meta.note && !files.length && !isPatientContextLoad && (
