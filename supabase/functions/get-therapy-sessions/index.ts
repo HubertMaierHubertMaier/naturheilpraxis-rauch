@@ -82,6 +82,119 @@ function getErrorMessage(error: unknown): string {
   return "Fehler";
 }
 
+type DocumentInventoryItem = {
+  name: string;
+  datum?: string;
+  pages?: number;
+  chars?: number;
+  archivePath?: string;
+  loadedAt?: string;
+  source: string;
+  location: "current_draft" | "snapshot" | "event_log" | "analysis_meta";
+  note?: string;
+};
+
+function extractDocumentInventoryFromText(text: unknown, source: string, location: DocumentInventoryItem["location"], loadedAt?: string): DocumentInventoryItem[] {
+  if (typeof text !== "string" || !text.trim()) return [];
+  const items: DocumentInventoryItem[] = [];
+  const lines = text.split(/\n+/);
+  let contextDate = "";
+  for (const line of lines) {
+    const group = line.match(/^===\s*📎\s*(.+?)(?:\s*·\s*([^=]+?))?\s*===/);
+    if (group?.[2]) contextDate = group[2].trim();
+    const file = line.match(/^===\s*📄\s*(.+?)(?:\s*\((\d+)\s*S\.?\))?\s*===/);
+    if (file?.[1]) {
+      items.push({
+        name: file[1].trim(),
+        datum: contextDate || undefined,
+        pages: file[2] ? Number(file[2]) : undefined,
+        loadedAt,
+        source,
+        location,
+      });
+    }
+  }
+  return items;
+}
+
+function dedupeDocumentInventory(items: DocumentInventoryItem[]): DocumentInventoryItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = [item.name, item.archivePath || "", item.datum || "", item.location].join("|").toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 40);
+}
+
+async function buildDocumentInventory(adminClient: any, pseudonymId: string, draftInput: Record<string, unknown>): Promise<DocumentInventoryItem[]> {
+  const items: DocumentInventoryItem[] = [];
+  for (const key of ["sonstigeUntersuchungen", "arztbericht", "laborKomplett", "metatronHeel", "perplexityAnalyse"]) {
+    items.push(...extractDocumentInventoryFromText(draftInput[key], `Aktueller Auto-Entwurf · ${key}`, "current_draft"));
+  }
+
+  const { data: snapshot } = await adminClient
+    .from("patient_snapshot")
+    .select("data,updated_at")
+    .eq("pseudonym_id", pseudonymId)
+    .maybeSingle();
+  const snapshotData = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data as Record<string, unknown> : {};
+  for (const key of ["sonstigeUntersuchungen", "arztbericht", "laborKomplett", "metatronHeel", "perplexityAnalyse"]) {
+    items.push(...extractDocumentInventoryFromText(snapshotData[key], `Patienten-Snapshot · ${key}`, "snapshot", snapshot?.updated_at));
+  }
+
+  const { data: eventRows } = await adminClient
+    .from("therapy_sessions")
+    .select("created_at,befund_meta")
+    .eq("pseudonym_id", pseudonymId)
+    .eq("kind", "event_log")
+    .order("created_at", { ascending: false })
+    .limit(80);
+  for (const row of Array.isArray(eventRows) ? eventRows : []) {
+    const meta = row?.befund_meta || {};
+    const eventType = String(meta.event_type || "");
+    if (!["documents_uploaded", "documents_saved"].includes(eventType) || !Array.isArray(meta.files)) continue;
+    for (const file of meta.files) {
+      if (!file?.name) continue;
+      items.push({
+        name: String(file.name),
+        pages: typeof file.pages === "number" ? file.pages : undefined,
+        chars: typeof file.chars === "number" ? file.chars : undefined,
+        archivePath: typeof file.archivePath === "string" ? file.archivePath : undefined,
+        loadedAt: row.created_at,
+        source: eventType === "documents_uploaded" ? "Dokument-Upload-Event" : "Archivierungs-Event",
+        location: "event_log",
+      });
+    }
+  }
+
+  const { data: analysisRows } = await adminClient
+    .from("therapy_sessions")
+    .select("created_at,befund_meta")
+    .eq("pseudonym_id", pseudonymId)
+    .eq("kind", "befund_auswertung")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  for (const row of Array.isArray(analysisRows) ? analysisRows : []) {
+    const summary = row?.befund_meta?.source_summary;
+    if (!Array.isArray(summary)) continue;
+    for (const source of summary) {
+      const label = String(source?.label || "").trim();
+      if (!label) continue;
+      items.push({
+        name: label,
+        chars: typeof source.chars === "number" ? source.chars : undefined,
+        loadedAt: row.created_at,
+        source: "Befund-Auswertung · Quellenliste",
+        location: "analysis_meta",
+        note: "Quellenblock, nicht zwingend Originaldateiname",
+      });
+    }
+  }
+
+  return dedupeDocumentInventory(items);
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -169,7 +282,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) throw error;
 
-      return new Response(JSON.stringify({ draft: draft ?? null }), {
+      const draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      const documentInventory = await buildDocumentInventory(adminClient, draftPseudonymId, draftInput);
+
+      return new Response(JSON.stringify({ draft: draft ? { ...draft, document_inventory: documentInventory } : null, document_inventory: documentInventory }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -183,7 +299,10 @@ Deno.serve(async (req) => {
       });
       if (error) throw error;
 
-      return new Response(JSON.stringify({ snapshot: snapshot ?? {} }), {
+      const snapshotInput = snapshot && typeof snapshot === "object" ? snapshot as Record<string, unknown> : {};
+      const documentInventory = await buildDocumentInventory(adminClient, snapshotPseudonymId, snapshotInput);
+
+      return new Response(JSON.stringify({ snapshot: { ...(snapshot ?? {}), document_inventory: documentInventory }, document_inventory: documentInventory }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
