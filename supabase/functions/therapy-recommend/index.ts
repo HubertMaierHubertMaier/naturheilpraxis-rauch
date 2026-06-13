@@ -1364,7 +1364,27 @@ Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
-Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.`;
+Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.${typeof previousResultForCompare === "string" && previousResultForCompare.trim().length > 200 ? `
+
+🔁 VERGLEICHSANKER – VORHERIGE AUSWERTUNG (nur als Referenz, NICHT als Faktenquelle)
+
+Die folgende Auswertung wurde in einem früheren Lauf erstellt. Sie dient ausschließlich dem Soll-/Ist-Vergleich.
+**Wichtig:** Behandle sie NICHT als gesicherte Wahrheit. Maßgeblich sind ausschließlich die oben gelieferten Patientendaten, Befunde und die Wissensdatenbank. Wenn die neuen Quellen einer früheren Aussage widersprechen, gilt die neue Bewertung.
+
+\`\`\`
+${(previousResultForCompare as string).slice(0, 18000)}
+\`\`\`
+
+ZUSÄTZLICHE PFLICHT-SEKTION GANZ OBEN im Output (vor allen anderen Sektionen):
+
+## 🔁 Vergleich zur vorherigen Auswertung
+- **✅ Bestätigt:** Welche Empfehlungen/Diagnosen aus der Vorauswertung werden durch die aktuellen Quellen erneut gestützt? (Stichpunkte)
+- **🔄 Geändert / präzisiert:** Welche Mittel, Dosierungen, Schwerpunkte wurden angepasst und warum (Bezug auf konkrete neue Befunde)?
+- **🆕 Neu hinzugekommen:** Was ergibt sich erstmals aus den neuen/zusätzlichen Quellen?
+- **❌ Widerlegt / nicht mehr empfohlen:** Welche frühere Empfehlung entfällt, mit Begründung aus den neuen Daten?
+- **⚠️ Offen / weiter zu beobachten:** Punkte, die noch unklar sind und in der nächsten Sitzung geklärt werden sollten.
+
+Danach folgt die normale, vollständige neue Auswertung wie unten beschrieben.` : ""}`;
 
     // Defensive: ensure both messages are non-empty strings (gateway rejects empty/null content)
     const safeSystem = typeof systemPrompt === "string" && systemPrompt.length > 0
