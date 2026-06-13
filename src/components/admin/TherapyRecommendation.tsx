@@ -3021,6 +3021,10 @@ export function TherapyRecommendation() {
                 <FileUp className="h-3.5 w-3.5" />
                 PDFs hier auswählen
               </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => refreshDocumentInventory(true)} disabled={isRefreshingDocumentInventory || !isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} className="gap-1.5">
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
+                Archiv neu laden
+              </Button>
               {pendingDirectBefundFiles.length > 0 && (
                 <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.every((file) => file.status === "done") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                   {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
@@ -3057,6 +3061,11 @@ export function TherapyRecommendation() {
                     </Button>
                   </div>
                 ))}
+              </div>
+            )}
+            {loadedDocumentInventory.filter((doc) => doc.archivePath).length === 0 && (
+              <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs text-muted-foreground">
+                Noch keine archivierten PDFs geladen. Mit „Archiv neu laden" wird der Cloud-Speicher für die aktuelle Pseudonym-ID direkt abgefragt.
               </div>
             )}
           </div>
