@@ -240,6 +240,16 @@ const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => 
       .map((item) => item as DocumentInventoryItem)
   : [];
 
+const mergeDocumentInventory = (...groups: DocumentInventoryItem[][]): DocumentInventoryItem[] => {
+  const seen = new Set<string>();
+  return groups.flat().filter((item) => {
+    const key = [item.archivePath || "", item.name, item.datum || "", item.source || ""].join("|").toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
   const fields: AnalysisSourceSummary[] = [];
   const diagnosesValue = countArrayEntries(d.manualDiagnosen) > 0 ? d.manualDiagnosen : d.diagnosen;
@@ -870,6 +880,7 @@ export function TherapyRecommendation() {
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
+  const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
@@ -1140,7 +1151,7 @@ export function TherapyRecommendation() {
 
       const draftRow = (draftData as any)?.draft;
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
-      setLoadedDocumentInventory(draftDocumentInventory);
+      setLoadedDocumentInventory((current) => mergeDocumentInventory(draftDocumentInventory, current));
       const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
       const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
         || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
@@ -1165,7 +1176,7 @@ export function TherapyRecommendation() {
       if (error) throw error;
 
       const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
-      if (snapshotDocumentInventory.length) setLoadedDocumentInventory(snapshotDocumentInventory);
+      if (snapshotDocumentInventory.length) setLoadedDocumentInventory((current) => mergeDocumentInventory(snapshotDocumentInventory, current));
       const snapshot = normalizeTherapyInput({ ...((data as any)?.snapshot || {}), document_inventory: snapshotDocumentInventory });
       const snapshotWithDraftAdmin = !loadedFromCloud ? {
         ...snapshot,
@@ -1203,6 +1214,29 @@ export function TherapyRecommendation() {
       else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
     }
   }, [applyDraftPayload, toast]);
+
+  const refreshDocumentInventory = useCallback(async (showToast = true) => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    setIsRefreshingDocumentInventory(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Nicht angemeldet");
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+        body: { draft_pseudonym_id: pid },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+      const next = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.draft?.document_inventory);
+      setLoadedDocumentInventory((current) => mergeDocumentInventory(next, current));
+      if (showToast) toast({ title: "PDF-Archiv aktualisiert", description: next.length ? `${next.filter((doc) => doc.archivePath).length} archivierte Datei(en) gefunden.` : "Keine archivierten PDFs für dieses Pseudonym gefunden." });
+    } catch (error: any) {
+      if (showToast) toast({ title: "PDF-Archiv nicht geladen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
+    } finally {
+      setIsRefreshingDocumentInventory(false);
+    }
+  }, [pseudonymId, toast]);
 
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
@@ -2447,10 +2481,12 @@ export function TherapyRecommendation() {
       }
     }
     if (successful.length) {
+      setLoadedDocumentInventory((current) => mergeDocumentInventory(successful.map((file) => ({ ...file, source: "Direkt-Upload", location: "event_log" })), current));
       await logTherapyEvent(pid, "documents_uploaded", { files: successful, note: "Direkt in der Befund-Quellen-Auswahl ausgelesen und übernommen." });
       await logTherapyEvent(pid, "documents_saved", { files: successful.map(({ name, archivePath }) => ({ name, archivePath })), note: "Originaldateien im sicheren Bucket therapy-documents archiviert." });
       toast({ title: "PDFs in Auswahl übernommen", description: `${successful.length} Datei(en) stehen jetzt oben zum Anhaken bereit.` });
       setHistoryRefresh((n) => n + 1);
+      refreshDocumentInventory(false);
     }
   };
 
@@ -2985,6 +3021,10 @@ export function TherapyRecommendation() {
                 <FileUp className="h-3.5 w-3.5" />
                 PDFs hier auswählen
               </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => refreshDocumentInventory(true)} disabled={isRefreshingDocumentInventory || !isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} className="gap-1.5">
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
+                Archiv neu laden
+              </Button>
               {pendingDirectBefundFiles.length > 0 && (
                 <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.every((file) => file.status === "done") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                   {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
@@ -3021,6 +3061,11 @@ export function TherapyRecommendation() {
                     </Button>
                   </div>
                 ))}
+              </div>
+            )}
+            {loadedDocumentInventory.filter((doc) => doc.archivePath).length === 0 && (
+              <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs text-muted-foreground">
+                Noch keine archivierten PDFs geladen. Mit „Archiv neu laden" wird der Cloud-Speicher für die aktuelle Pseudonym-ID direkt abgefragt.
               </div>
             )}
           </div>
