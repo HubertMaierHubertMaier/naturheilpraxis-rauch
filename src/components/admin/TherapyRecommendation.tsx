@@ -868,6 +868,7 @@ export function TherapyRecommendation() {
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
+  const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -896,6 +897,7 @@ export function TherapyRecommendation() {
   const abortRef = useRef<AbortController | null>(null);
   const docAbortRef = useRef<AbortController | null>(null);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
+  const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
