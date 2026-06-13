@@ -2818,6 +2818,55 @@ export function TherapyRecommendation() {
         Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
       </p>
 
+      <Card className="border-primary/40 bg-primary/5">
+        <CardContent className="pt-4 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-sm font-semibold text-foreground">Start-Aktionen</div>
+              <p className="text-xs text-muted-foreground">Diese drei Hauptbuttons stehen jetzt immer direkt oben im Therapie-Empfehlungs-Panel.</p>
+            </div>
+            <Badge variant="outline" className="text-[10px]">oben sichtbar</Badge>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div className="space-y-1">
+              <Button onClick={() => handleSubmit()} disabled={isStreaming} className="w-full justify-start gap-2">
+                {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft…" : "Analyse läuft…") : "Therapie-Empfehlung generieren"}
+              </Button>
+              <p className="text-[11px] leading-snug text-muted-foreground">Kompletter Therapieplan mit Mittel-Auswahl, Prioritäten und Sicherheitsprüfung.</p>
+            </div>
+            <div className="space-y-1">
+              <Button
+                onClick={handleAnalyzeDocuments}
+                disabled={isAnalyzingDocs || isStreaming}
+                variant="outline"
+                className="w-full justify-start gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
+              >
+                {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+                {isAnalyzingDocs && docAnalysisStats?.total
+                  ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
+                  : isAnalyzingDocs
+                    ? "Befund-Auswertung läuft…"
+                    : "Nur Befund-Auswertung (HTML)"}
+              </Button>
+              <p className="text-[11px] leading-snug text-muted-foreground">Beste Wahl für neue Labor-, NLS-, Arztbrief- oder Nachreich-Befunde.</p>
+            </div>
+            <div className="space-y-1">
+              <Button
+                onClick={handleReAnalyzeAll}
+                disabled={isAnalyzingDocs || isStreaming}
+                variant="outline"
+                className="w-full justify-start gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Alles neu auswerten
+              </Button>
+              <p className="text-[11px] leading-snug text-muted-foreground">Nur bei stark geänderter Anamnese oder bewusstem kompletten Neustart.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Pseudonym & DSGVO-Hinweis */}
       <Card className="border-primary/30 bg-primary/5">
         <CardHeader className="pb-3">
