@@ -2219,6 +2219,7 @@ export function TherapyRecommendation() {
                   total_chars: totalChars,
                   original_chars: prepared.originalChars,
                   source_summary: sourceSummary,
+                  sources: chunks.map((c) => c.label),
                   duplicate_notes: prepared.duplicateNotes,
                   strict_complete: true,
                   saved_at: new Date().toISOString(),
@@ -2238,6 +2239,7 @@ export function TherapyRecommendation() {
                   model,
                   source: analysisMode,
                   source_summary: sourceSummary,
+                  sources: chunks.map((c) => c.label),
                   note: "HTML in Patientenverlauf gespeichert",
                 });
               }

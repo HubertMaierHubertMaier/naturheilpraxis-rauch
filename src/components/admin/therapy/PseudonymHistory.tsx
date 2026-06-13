@@ -454,9 +454,19 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const meta = s.befund_meta || {};
-              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = Array.isArray(meta.source_summary)
+              const rawBefundSources: any[] = Array.isArray(meta.source_summary)
                 ? meta.source_summary
-                : Array.isArray(e.sourceSummary) ? e.sourceSummary : [];
+                : Array.isArray(e.sourceSummary)
+                ? e.sourceSummary
+                : Array.isArray((meta as any).sources_fallback)
+                ? (meta as any).sources_fallback
+                : Array.isArray(e.sources)
+                ? e.sources
+                : [];
+              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = rawBefundSources.map((src) =>
+                typeof src === "string" ? { label: src } : (src || {})
+              );
+              const befundSourcesMissing = isBefund && befundSources.length === 0;
               const openBefund = async () => {
                 let row: TherapySession | null = s;
                 if (!row.befund_html) {
@@ -573,15 +583,24 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                         </div>
                       )}
                       {isBefund && befundSources.length > 0 && (
-                        <div className="mt-2 rounded-md border border-primary/25 bg-primary/5 p-2 space-y-1">
-                          <p className="text-[11px] font-medium text-foreground">Für diese Auswertung geladen</p>
-                          {befundSources.slice(0, 6).map((source, i) => (
+                        <div className="mt-2 rounded-md border border-primary/40 bg-primary/10 p-2 space-y-1">
+                          <p className="text-[11px] font-semibold text-foreground">📎 Quell-Dateien dieser Auswertung</p>
+                          {befundSources.slice(0, 12).map((source, i) => (
                             <div key={`${source.label || "Quelle"}-${i}`} className="text-[11px] text-muted-foreground">
-                              <span className="font-medium text-foreground">{String(source.label || "Quelle")}: </span>
-                              {Number(source.chars || 0).toLocaleString("de-DE")} Zeichen · {Number(source.lines || 0).toLocaleString("de-DE")} Zeile(n)
+                              <span className="font-mono text-foreground">{String(source.label || "Quelle")}</span>
+                              {(source.chars || source.lines) ? (
+                                <span> · {Number(source.chars || 0).toLocaleString("de-DE")} Z. · {Number(source.lines || 0).toLocaleString("de-DE")} Z.</span>
+                              ) : null}
                             </div>
                           ))}
-                          {befundSources.length > 6 && <p className="text-[11px] text-muted-foreground italic">… und {befundSources.length - 6} weitere Quellen</p>}
+                          {befundSources.length > 12 && <p className="text-[11px] text-muted-foreground italic">… und {befundSources.length - 12} weitere Quellen</p>}
+                        </div>
+                      )}
+                      {befundSourcesMissing && (
+                        <div className="mt-2 rounded-md border border-amber-300/50 bg-amber-50/60 dark:bg-amber-950/15 p-2">
+                          <p className="text-[11px] text-amber-900 dark:text-amber-200">
+                            ⚠ Für diese ältere Auswertung wurden die Quell-Dateinamen noch nicht protokolliert. Ab jetzt wird bei jeder neuen Befund-Auswertung automatisch festgehalten, aus welchen Dateien sie entstanden ist.
+                          </p>
                         </div>
                       )}
                       {s.notiz && (
