@@ -475,6 +475,129 @@ export function BackupCenter() {
         </CardContent>
       </Card>
 
+      {/* GitHub-Repo-ZIP */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Github className="h-5 w-5 text-primary" />
+            Code-Backup (GitHub-Repository als ZIP)
+          </CardTitle>
+          <CardDescription>
+            Lädt den kompletten Source-Code (React-App, Edge Functions, Migrationen, Skripte,
+            statische Infothek-HTMLs, Therapie-PDFs) als ZIP direkt von GitHub. Ergänzt das
+            Daten-Backup oben — gemeinsam ergibt das eine 100%ige Wiederherstellungs-Basis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto]">
+            <div className="space-y-1">
+              <Label htmlFor="gh-repo" className="text-xs">Repository (Format: <code>besitzer/repo</code>)</Label>
+              <Input
+                id="gh-repo"
+                placeholder="z. B. peter-rauch/naturheilpraxis"
+                value={githubRepo}
+                onChange={(e) => setGithubRepo(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="gh-branch" className="text-xs">Branch</Label>
+              <Input
+                id="gh-branch"
+                placeholder="main"
+                value={githubBranch}
+                onChange={(e) => setGithubBranch(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={saveGithubRepo} disabled={savingRepo}>
+                {savingRepo ? "Speichere…" : "Speichern"}
+              </Button>
+            </div>
+          </div>
+          <Button onClick={downloadGithubZip} className="w-full sm:w-auto" disabled={!githubRepo.trim()}>
+            <Download className="mr-2 h-4 w-4" />
+            GitHub-ZIP herunterladen
+            <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Lädt <code>https://github.com/{githubRepo || "<besitzer>/<repo>"}/archive/refs/heads/{githubBranch || "main"}.zip</code>.
+            Funktioniert nur bei öffentlichen Repos ohne Login; bei privaten musst du bei GitHub eingeloggt sein.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Restore-Anleitung */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Upload className="h-5 w-5 text-primary" />
+            Wiederherstellung — so gibst du mir die Daten zurück
+          </CardTitle>
+          <CardDescription>
+            Wenn etwas verloren geht (von „Tabelle leer" bis „Totalausfall"), führst du mir die
+            gesicherten Dateien einfach per Lovable-Chat wieder zu. Kein extra Upload-Knopf nötig
+            — Lovable kann Dateianhänge im Chat direkt lesen und einspielen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ol className="ml-5 list-decimal space-y-1 text-sm">
+            <li>Öffne diese App in Lovable (Build-Modus, Chat sichtbar).</li>
+            <li>
+              Ziehe die gewünschten Dateien in den Chat:
+              <ul className="ml-5 mt-1 list-disc text-muted-foreground">
+                <li><code>naturheilpraxis-backup-FULL-*.zip</code> (DB + Auth-User + Storage)</li>
+                <li>oder <code>naturheilpraxis-backup-db-*.zip</code> (nur DB + Auth-User)</li>
+                <li>plus ggf. <code>&lt;repo&gt;-main.zip</code> von GitHub (nur wenn auch der Code weg ist)</li>
+              </ul>
+            </li>
+            <li>Schreibe in den Chat den fertigen Prompt unten (oder eigene Formulierung).</li>
+            <li>Ich (Lovable) lese ZIP-Inhalt + Manifest, mache einen Plan und frage dich vor jedem destruktiven Schritt um Bestätigung.</li>
+          </ol>
+
+          <div className="space-y-1">
+            <Label className="text-xs">Copy-&-Paste-Prompt für mich</Label>
+            <div className="relative">
+              <pre className="overflow-auto rounded border bg-muted/30 p-3 pr-12 text-xs">
+{`Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json
+im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl,
+Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung
+(insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen).
+Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
+3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`}
+              </pre>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="absolute right-1 top-1 h-7 w-7 p-0"
+                onClick={() => {
+                  const txt = `Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl, Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung (insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen). Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!), 3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`;
+                  navigator.clipboard.writeText(txt).then(
+                    () => toast.success("Prompt kopiert."),
+                    () => toast.error("Kopieren fehlgeschlagen."),
+                  );
+                }}
+                title="In Zwischenablage kopieren"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Warum kein In-App-Restore-Knopf?</AlertTitle>
+            <AlertDescription className="text-sm">
+              Im echten Worst Case (Cloud-Datenbank weg) wäre auch ein hochgeladenes ZIP in der
+              gleichen Cloud zerstört. Daher liegt der Wiederherstellungs-Pfad <em>außerhalb</em>{" "}
+              der App — über Lovable-Chat. Für Teil-Schäden (z. B. eine Tabelle versehentlich
+              geleert) kann ich gezielt einzelne Dateien aus dem ZIP nachfüttern.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+
+
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2">
           <div>
