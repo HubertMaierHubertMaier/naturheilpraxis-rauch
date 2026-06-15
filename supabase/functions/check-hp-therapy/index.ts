@@ -199,6 +199,8 @@ Deno.serve(async (req) => {
     const body = await req.json() as {
       pseudonymId?: string;
       meineTherapie?: string;
+      apothekerRezept?: string;
+      zusatzTherapie?: string;
       symptome?: string;
       erkrankung?: string;
       pathogensText?: string;
@@ -218,8 +220,10 @@ Deno.serve(async (req) => {
     };
 
     const meineTherapie = (body.meineTherapie || "").trim();
-    if (!meineTherapie) {
-      return new Response(JSON.stringify({ error: "Bitte zuerst deinen Therapieplan im Feld 'Meine Therapie' eingeben." }), {
+    const apothekerRezept = (body.apothekerRezept || "").trim();
+    const zusatzTherapie = (body.zusatzTherapie || "").trim();
+    if (!meineTherapie && !apothekerRezept && !zusatzTherapie) {
+      return new Response(JSON.stringify({ error: "Bitte mindestens 'Meine Therapie', 'Apotheker-Rezept' oder 'Zusätzlich empfohlene Therapie' eingeben." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
