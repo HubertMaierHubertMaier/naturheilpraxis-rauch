@@ -47,8 +47,10 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
-// Alle zu sichernden Tabellen
-const TABLES = [
+// Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
+// Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
+// damit neue Tabellen/Buckets automatisch mitgesichert werden.
+const FALLBACK_TABLES = [
   "admin_knowledge_base",
   "anamnesis_submissions",
   "app_settings",
@@ -67,7 +69,55 @@ const TABLES = [
   "verification_codes",
 ];
 
-const BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
+const FALLBACK_BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
+
+// System-Tabellen, die niemals gesichert werden (interne Supabase-Mechanik)
+const TABLE_BLOCKLIST = new Set<string>([
+  "schema_migrations",
+  "supabase_migrations",
+]);
+
+async function discoverTables(): Promise<{ tables: string[]; source: "openapi" | "fallback" }> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return { tables: FALLBACK_TABLES, source: "fallback" };
+    const res = await fetch(`${url}/rest/v1/`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/openapi+json" },
+    });
+    if (!res.ok) return { tables: FALLBACK_TABLES, source: "fallback" };
+    const spec = await res.json() as { definitions?: Record<string, unknown>; paths?: Record<string, unknown> };
+    const names = new Set<string>();
+    if (spec.definitions) for (const k of Object.keys(spec.definitions)) names.add(k);
+    if (spec.paths) {
+      for (const p of Object.keys(spec.paths)) {
+        const m = p.match(/^\/([A-Za-z0-9_]+)$/);
+        if (m) names.add(m[1]);
+      }
+    }
+    const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/")).sort();
+    if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
+    return { tables: filtered, source: "openapi" };
+  } catch (err) {
+    console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
+    return { tables: FALLBACK_TABLES, source: "fallback" };
+  }
+}
+
+async function discoverBuckets(
+  client: ReturnType<typeof createClient>,
+): Promise<{ buckets: string[]; source: "api" | "fallback" }> {
+  try {
+    const { data, error } = await client.storage.listBuckets();
+    if (error || !data || data.length === 0) {
+      return { buckets: FALLBACK_BUCKETS, source: "fallback" };
+    }
+    return { buckets: data.map((b) => b.name).sort(), source: "api" };
+  } catch {
+    return { buckets: FALLBACK_BUCKETS, source: "fallback" };
+  }
+}
+
 
 // Liste der Secret-Namen, die für eine vollständige Wiederherstellung gesetzt werden müssen
 const REQUIRED_SECRETS = [
@@ -139,14 +189,17 @@ async function fetchTableAll(
 }
 
 async function gatherStats(client: ReturnType<typeof createClient>) {
+  const { tables: tableNames, source: tableSource } = await discoverTables();
+  const { buckets: bucketNames, source: bucketSource } = await discoverBuckets(client);
+
   const tables: Array<{ name: string; rows: number }> = [];
-  for (const t of TABLES) {
+  for (const t of tableNames) {
     const { count, error } = await client.from(t).select("*", { count: "exact", head: true });
     tables.push({ name: t, rows: error ? -1 : count ?? 0 });
   }
 
   const buckets: Array<{ name: string; files: number; totalBytes: number }> = [];
-  for (const b of BUCKETS) {
+  for (const b of bucketNames) {
     try {
       const files = await listAllFiles(client, b);
       const totalBytes = files.reduce((acc, f) => acc + (f.size ?? 0), 0);
@@ -170,6 +223,7 @@ async function gatherStats(client: ReturnType<typeof createClient>) {
     buckets,
     authUserCount,
     secrets: REQUIRED_SECRETS,
+    discovery: { tableSource, bucketSource },
   };
 }
 
@@ -277,9 +331,9 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("- `db/*.json` + `db/*.csv` — alle DB-Tabelleninhalte");
   lines.push("- `auth/users.json` — Liste aller Patienten-Konten (ohne Passwörter)");
   if (mode === "full") {
-    lines.push("- `storage/anamnesis-pdfs/` — hochgeladene Patienten-Anamnese-PDFs");
-    lines.push("- `storage/patient-library/` — geschützte Patienten-Bibliothek (PDF/MP3)");
-    lines.push("- `storage/therapy-documents/` — Therapie-Befund-Dokumente");
+    for (const b of stats.buckets) {
+      lines.push(`- \`storage/${b.name}/\` — ${b.files} Datei(en), ${formatBytes(b.totalBytes)}`);
+    }
   }
   lines.push("- `SECRETS-CHECKLISTE.txt` — Liste der Secret-Namen");
   lines.push("");
@@ -430,7 +484,8 @@ Deno.serve(async (req) => {
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
-      for (const bucket of BUCKETS) {
+      const { buckets: dynamicBuckets } = await discoverBuckets(adminClient);
+      for (const bucket of dynamicBuckets) {
         try {
           const files = await listAllFiles(adminClient, bucket);
           const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
@@ -472,7 +527,8 @@ Deno.serve(async (req) => {
     const zip = new JSZip();
     const stats = await gatherStats(adminClient);
 
-    for (const table of TABLES) {
+    const tableNamesForDb = stats.tables.map((t) => t.name);
+    for (const table of tableNamesForDb) {
       try {
         const rows = await fetchTableAll(adminClient, table);
         zip.file(`db/${table}.json`, JSON.stringify(rows, null, 2));
