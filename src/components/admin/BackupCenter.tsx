@@ -442,7 +442,7 @@ export function BackupCenter() {
         },
       );
       setProgress(100);
-      const fn = `naturheilpraxis-backup-VOLL-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-${isoTimestamp()}.zip`;
       saveBlob(finalBlob, fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
