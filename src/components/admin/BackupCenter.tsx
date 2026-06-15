@@ -97,7 +97,7 @@ function saveBlob(blob: Blob, filename: string) {
 export function BackupCenter() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<"db" | "full" | null>(null);
+  const [downloading, setDownloading] = useState<"db" | "full" | "code" | null>(null);
   const [progress, setProgress] = useState(0);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<
@@ -192,31 +192,58 @@ export function BackupCenter() {
     return {
       cleaned,
       branch,
-      url: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
+      url: `${getFunctionsUrl()}/backup-export?mode=github-code&repo=${encodeURIComponent(cleaned)}&branch=${encodeURIComponent(branch)}`,
       filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
     };
   };
 
-  const downloadGithubZip = (preparedWindow?: Window | null) => {
-    let info: ReturnType<typeof getGithubZipDownload>;
-    try {
-      info = getGithubZipDownload();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "GitHub-ZIP konnte nicht gestartet werden.");
-      preparedWindow?.close();
-      return;
-    }
-    if (preparedWindow && !preparedWindow.closed) {
-      preparedWindow.location.href = info.url;
-    } else {
-      const opened = window.open(info.url, "_blank", "noopener");
-      if (!opened) {
-        toast.error("Browser hat den GitHub-Download blockiert. Bitte den separaten GitHub-ZIP-Knopf nutzen.");
-        return;
+  async function fetchGithubZipBytes(token: string): Promise<{ bytes: ArrayBuffer; filename: string }> {
+    const info = getGithubZipDownload();
+    const apikey = getApiKey();
+    log(`Lade Code-ZIP von GitHub: ${info.cleaned} (${info.branch})…`);
+    const res = await fetch(info.url, {
+      headers: { Authorization: `Bearer ${token}`, apikey },
+    });
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = (await res.json())?.error ?? "";
+      } catch {
+        /* ignore */
       }
+      throw new Error(`GitHub-Code-ZIP HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
     }
-    markDone("lastGithub");
-    toast.success(`Code-ZIP-Download (GitHub) gestartet: ${info.filename}`);
+    const buf = await res.arrayBuffer();
+    const cd = res.headers.get("Content-Disposition") ?? "";
+    const match = cd.match(/filename="?([^"]+)"?/);
+    const filename = match?.[1] ?? info.filename;
+    log(`Code-ZIP empfangen (${formatBytes(buf.byteLength)}).`);
+    return { bytes: buf, filename };
+  }
+
+  const downloadGithubZip = async () => {
+    setDownloading("code");
+    setProgress(0);
+    setLastResult(null);
+    const started = Date.now();
+    try {
+      const token = await getToken();
+      setProgress(40);
+      const { bytes, filename } = await fetchGithubZipBytes(token);
+      setProgress(100);
+      saveBlob(new Blob([bytes], { type: "application/zip" }), filename);
+      const dur = Math.round((Date.now() - started) / 1000);
+      setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0 });
+      markDone("lastGithub");
+      toast.success(`Code-ZIP heruntergeladen: ${filename} (${formatBytes(bytes.byteLength)}).`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "GitHub-ZIP konnte nicht geladen werden.";
+      log(`FEHLER: ${msg}`);
+      setLastResult({ ok: false, message: msg });
+      toast.error(msg);
+    } finally {
+      setDownloading(null);
+    }
   };
 
   useEffect(() => {
