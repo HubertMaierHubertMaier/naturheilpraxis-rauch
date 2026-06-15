@@ -3810,6 +3810,8 @@ export function TherapyRecommendation() {
                               body: {
                                 pseudonymId: pseudonymId.trim(),
                                 meineTherapie: eigeneTherapieVorlage,
+                                apothekerRezept,
+                                zusatzTherapie,
                                 symptome, erkrankung,
                                 pathogensText: formatPathogensForAI(pathogens),
                                 diagnosenText,
@@ -3821,7 +3823,7 @@ export function TherapyRecommendation() {
                               },
                             });
                             if (error) throw error;
-                            const payload = data as { html?: string; markdown?: string; modelLabel?: string; error?: string };
+                            const payload = data as { html?: string; markdown?: string; modelLabel?: string; sessionId?: string; error?: string };
                             if (payload?.error) throw new Error(payload.error);
                             if (!payload?.html) throw new Error("Leere Antwort");
                             setHpCheckHtml(payload.html);
