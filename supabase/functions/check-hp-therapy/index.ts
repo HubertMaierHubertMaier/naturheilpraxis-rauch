@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
 
     const meineTherapie = (body.meineTherapie || "").trim();
     if (!meineTherapie) {
-      return new Response(JSON.stringify({ error: "Bitte zuerst deinen Therapieplan im Feld „Meine Therapie" eingeben." }), {
+      return new Response(JSON.stringify({ error: "Bitte zuerst deinen Therapieplan im Feld 'Meine Therapie' eingeben." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
