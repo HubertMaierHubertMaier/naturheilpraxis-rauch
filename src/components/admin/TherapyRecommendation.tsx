@@ -856,6 +856,8 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
+  const [apothekerRezept, setApothekerRezept] = useState("");
+  const [zusatzTherapie, setZusatzTherapie] = useState("");
   const [hpCheckLoading, setHpCheckLoading] = useState(false);
   const [hpCheckHtml, setHpCheckHtml] = useState("");
   const [hpCheckMarkdown, setHpCheckMarkdown] = useState("");
@@ -957,6 +959,8 @@ export function TherapyRecommendation() {
     sonstigeUntersuchungen,
     perplexityAnalyse,
     eigeneTherapieVorlage,
+    apothekerRezept,
+    zusatzTherapie,
     mannayanOrders,
     selectedCategories,
     useMapReduce,
@@ -1053,6 +1057,8 @@ export function TherapyRecommendation() {
       if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
       if (typeof d?.perplexityAnalyse === "string") setPerplexityAnalyse(d.perplexityAnalyse);
       if (typeof d?.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(d.eigeneTherapieVorlage);
+      if (typeof d?.apothekerRezept === "string") setApothekerRezept(d.apothekerRezept);
+      if (typeof d?.zusatzTherapie === "string") setZusatzTherapie(d.zusatzTherapie);
       if (Array.isArray(d?.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
       if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
       if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
@@ -1067,13 +1073,13 @@ export function TherapyRecommendation() {
         _pseudonym_id: normalizePseudonymId(pseudonymId),
         pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
       if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
 
   const applyDraftPayload = useCallback((d: any, expectedPid?: string) => {
     const data = normalizeTherapyInput(d);
@@ -1107,6 +1113,8 @@ export function TherapyRecommendation() {
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
     if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
     if (typeof data.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(data.eigeneTherapieVorlage);
+    if (typeof data.apothekerRezept === "string") setApothekerRezept(data.apothekerRezept);
+    if (typeof data.zusatzTherapie === "string") setZusatzTherapie(data.zusatzTherapie);
     if (Array.isArray(data.mannayanOrders)) setMannayanOrders(data.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
@@ -1676,6 +1684,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
     setPerplexityAnalyse(asText(d.perplexityAnalyse));
     setEigeneTherapieVorlage(asText(d.eigeneTherapieVorlage));
+    setApothekerRezept(asText(d.apothekerRezept));
+    setZusatzTherapie(asText(d.zusatzTherapie));
     if (Array.isArray(d.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
@@ -3800,6 +3810,8 @@ export function TherapyRecommendation() {
                               body: {
                                 pseudonymId: pseudonymId.trim(),
                                 meineTherapie: eigeneTherapieVorlage,
+                                apothekerRezept,
+                                zusatzTherapie,
                                 symptome, erkrankung,
                                 pathogensText: formatPathogensForAI(pathogens),
                                 diagnosenText,
@@ -3811,7 +3823,7 @@ export function TherapyRecommendation() {
                               },
                             });
                             if (error) throw error;
-                            const payload = data as { html?: string; markdown?: string; modelLabel?: string; error?: string };
+                            const payload = data as { html?: string; markdown?: string; modelLabel?: string; sessionId?: string; error?: string };
                             if (payload?.error) throw new Error(payload.error);
                             if (!payload?.html) throw new Error("Leere Antwort");
                             setHpCheckHtml(payload.html);
@@ -3840,6 +3852,34 @@ export function TherapyRecommendation() {
                   <p className="text-xs text-muted-foreground">
                     Bewertung im HP-Rahmen: Bioresonanz/Frequenz/Phyto/Ortho/EAV/NLS sind gleichrangig. Prüft auf Lücken, Redundanzen, echte Wechselwirkungen und sinnvolle Reihenfolge – ohne reflexhafte „ärztlich abklären"-Floskeln.
                   </p>
+
+                  <div className="grid md:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                        💊 Vorschlag Apotheker (Rezept)
+                      </label>
+                      <Textarea
+                        value={apothekerRezept}
+                        onChange={(e) => setApothekerRezept(e.target.value)}
+                        placeholder="Z.B. Rezeptur: Curcuma 500 mg + Boswellia 300 mg + Vitamin D 4000 IE 1-0-0 … – Vorschläge des Apothekers (mit Dosis, falls vorhanden)."
+                        rows={5}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen.</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                        🧪 Zusätzlich empfohlene Therapie / Diagnostik
+                      </label>
+                      <Textarea
+                        value={zusatzTherapie}
+                        onChange={(e) => setZusatzTherapie(e.target.value)}
+                        placeholder="Z.B. Stuhlanalyse gezielt auf Klebsiella, Candida, Blastocystis hominis; oder Speichel-Cortisol-Tagesprofil; oder Diamond-Shield-Frequenzsatz X …"
+                        rows={5}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Zusätzliche Vorschläge (Diagnostik oder weitere Therapie) – die KI bewertet, ob diese in Kombination mit deiner Therapie sinnvoll sind.</p>
+                    </div>
+                  </div>
+
 
                   {(hpCheckLoading || hpCheckHtml) && (
                     <div className="mt-3 rounded-md border border-emerald-500/40 bg-background p-3 space-y-2">
@@ -3874,7 +3914,21 @@ export function TherapyRecommendation() {
                                 w.document.close();
                               }}
                             >
-                              <ExternalLink className="h-3.5 w-3.5" /> Neuer Tab
+                              <ExternalLink className="h-3.5 w-3.5" /> HTML in neuem Tab
+                            </Button>
+                            <Button
+                              type="button" size="sm" variant="ghost" className="gap-1.5"
+                              onClick={() => {
+                                const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.html`;
+                                const blob = new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}</body></html>`], { type: "text/html;charset=utf-8" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url; a.download = filename; a.click();
+                                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                              }}
+                              title="HTML-Datei herunterladen"
+                            >
+                              <FileText className="h-3.5 w-3.5" /> HTML herunterladen
                             </Button>
                           </div>
                         )}

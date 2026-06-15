@@ -199,6 +199,8 @@ Deno.serve(async (req) => {
     const body = await req.json() as {
       pseudonymId?: string;
       meineTherapie?: string;
+      apothekerRezept?: string;
+      zusatzTherapie?: string;
       symptome?: string;
       erkrankung?: string;
       pathogensText?: string;
@@ -218,8 +220,10 @@ Deno.serve(async (req) => {
     };
 
     const meineTherapie = (body.meineTherapie || "").trim();
-    if (!meineTherapie) {
-      return new Response(JSON.stringify({ error: "Bitte zuerst deinen Therapieplan im Feld 'Meine Therapie' eingeben." }), {
+    const apothekerRezept = (body.apothekerRezept || "").trim();
+    const zusatzTherapie = (body.zusatzTherapie || "").trim();
+    if (!meineTherapie && !apothekerRezept && !zusatzTherapie) {
+      return new Response(JSON.stringify({ error: "Bitte mindestens 'Meine Therapie', 'Apotheker-Rezept' oder 'Zusätzlich empfohlene Therapie' eingeben." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -251,39 +255,48 @@ GRUNDHALTUNG (verbindlich):
 - Symptome, Pathogene aus NLS/Metatron, EAV-Messwerte und Laborbefunde sind GLEICHWERTIGE diagnostische Hinweise.
 
 DEINE AUFGABE:
-Prüfe Peters EIGENEN Therapieplan („MEINE THERAPIE") auf Sinnhaftigkeit im Bezug zu Symptomen, Pathogenen, Diagnosen, Labor und bisherigen Mitteln.
+Prüfe Peters EIGENEN Therapieplan („MEINE THERAPIE") sowie – falls vorhanden – einen vom Apotheker vorgeschlagenen Rezept-Block („APOTHEKER-REZEPT") und zusätzlich empfohlene Diagnostik/Therapie („ZUSATZ-THERAPIE / DIAGNOSTIK", z.B. gezielte Stuhlanalyse auf bestimmte Keime, weitere Frequenzsätze, Speicheltests) auf Sinnhaftigkeit im Bezug zu Symptomen, Pathogenen, Diagnosen, Labor und bisherigen Mitteln. Bewerte ALLE drei Blöcke gemeinsam und im Zusammenspiel.
 
 LIEFERE STRUKTURIERT IN MARKDOWN:
 
 ## 1. Gesamteinschätzung
-Kurzes Fazit (3-5 Sätze): Wie gut adressiert der Plan das Beschwerdebild? Was ist die therapeutische Logik dahinter? Ist die Reihenfolge stimmig (z.B. erst Ausleitung/Mukosa-Aufbau, dann Mikronährstoffe)?
+Kurzes Fazit (3-5 Sätze) über die Kombination aus deiner Therapie + Apotheker-Rezept + Zusatz-Vorschlägen: Wie gut deckt das Gesamtpaket das Beschwerdebild ab? Ist die therapeutische Logik stimmig?
 
-## 2. Stärken des Plans
+## 2. Bewertung „Meine Therapie" (Heilpraktiker)
 Tabelle: | Maßnahme | Wofür sinnvoll | Bezug zu Befund/Symptom/Pathogen |
 
-## 3. Lücken & Vorschläge
-Was fehlt im Bezug zum Befund? Konkrete naturheilkundliche Ergänzungen (Phyto, Ortho, Frequenz, Bioresonanz, Ausleitung, Mykotherapie). Mit Begründung pro Vorschlag.
+## 3. Bewertung Apotheker-Rezept
+Nur wenn Block vorhanden. Tabelle: | Wirkstoff/Mittel | Dosis | Sinnvoll? | Begründung | Konflikt mit Meine Therapie? |
+Bewerte kritisch im HP-Rahmen (nicht reflexhaft pro Pharma), benenne sinnvolle Ergänzungen ebenso wie überflüssige oder doppelt wirkende Mittel.
 
-## 4. Redundanzen & Überschneidungen
-Welche Mittel überlappen sich (gleicher Wirkmechanismus, doppelte Belastung der Entgiftungsorgane)? Was kann zusammengeführt oder weggelassen werden?
+## 4. Bewertung Zusatz-Therapie / Diagnostik
+Nur wenn Block vorhanden. Z.B. bei gezielter Stuhlanalyse auf bestimmte Keime: ist die Auswahl der Keime im Befund-Kontext sinnvoll? Fehlen wichtige Keime (z.B. Klebsiella, Candida, Blastocystis, Methanobrevibacter)? Gibt es preiswertere/aussagekräftigere Alternativen?
 
-## 5. Wechselwirkungen & Sicherheit
-NUR ECHTE Risiken benennen:
-- Wechselwirkungen mit eingenommenen Schulmedikamenten (z.B. Johanniskraut + Antidepressiva, Bitterstoffe + PPI)
-- Kontraindikationen (Schwangerschaft, Niereninsuffizienz, Antikoagulation)
-- Reihenfolge-Fehler (z.B. Ausleitung bei verschlossenen Ausscheidungsorganen)
-KEINE generischen Warnungen.
+## 5. Lücken & Vorschläge
+Was fehlt im Gesamtbild zum Befund? Konkrete naturheilkundliche Ergänzungen (Phyto, Ortho, Frequenz, Bioresonanz, Ausleitung, Mykotherapie). Mit Begründung pro Vorschlag.
 
-## 6. Therapeutische Reihenfolge
-Vorschlag für sinnvolle Sequenz (Phase 1: Drainage/Ausleitung → Phase 2: antiparasitär/antimikrobiell → Phase 3: Mukosa/Mikrobiom → Phase 4: Mitochondrien/Mikronährstoffe – oder patienten-spezifisch anders begründet).
+## 6. Redundanzen & Überschneidungen
+Welche Mittel aus deiner Therapie + Apotheker-Rezept überlappen sich (gleicher Wirkmechanismus, doppelte Entgiftungs- oder Mikronährstoff-Last)? Was kann zusammengeführt oder weggelassen werden?
 
-## 7. Kosten/Nutzen-Hinweis
-Wenn der Plan teure Mittel enthält, wo es preiswerte Äquivalente gibt: nennen. Sonst weglassen.
+## 7. Wechselwirkungen & Sicherheit
+NUR ECHTE Risiken (Schulmedikamente ↔ Phyto/Ortho, Schwangerschaft, Niereninsuffizienz, Antikoagulation, Reihenfolge-Fehler). KEINE generischen Warnungen.
+
+## 8. Therapeutische Reihenfolge
+Vorschlag für sinnvolle Sequenz (Phase 1: Drainage/Ausleitung → Phase 2: antiparasitär/antimikrobiell → Phase 3: Mukosa/Mikrobiom → Phase 4: Mitochondrien/Mikronährstoffe – oder patienten-spezifisch anders begründet) inkl. Einordnung Apotheker-Rezept und Zusatz-Diagnostik.
+
+## 9. Kosten/Nutzen-Hinweis
+Wenn teurere Mittel enthalten sind und preiswerte Äquivalente existieren: nennen. Sonst weglassen.
 
 STIL: Du-Form, kollegial, technisch-naturwissenschaftlich fundiert. Bei biophysikalischen Themen (Frequenz, EAV, NLS) darfst du fachlich tief gehen – Peter ist Ing. Elektrotechnik.`;
 
-    const userBlock = `=== MEINE THERAPIE (zu prüfen) ===
-${meineTherapie}
+    const userBlock = `=== MEINE THERAPIE (Heilpraktiker, zu prüfen) ===
+${meineTherapie || "(leer)"}
+
+=== APOTHEKER-REZEPT (zu prüfen) ===
+${apothekerRezept || "(kein Apotheker-Rezept eingegeben)"}
+
+=== ZUSATZ-THERAPIE / DIAGNOSTIK (zu prüfen) ===
+${zusatzTherapie || "(keine Zusatz-Vorschläge eingegeben)"}
 
 === PATIENTENKONTEXT ===
 ${ctxBlock || "(keine weiteren Befunddaten eingegeben)"}`;
@@ -342,7 +355,39 @@ ${ctxBlock || "(keine weiteren Befunddaten eingegeben)"}`;
       body: mdToHtml(markdown),
     });
 
-    return new Response(JSON.stringify({ html, markdown, modelLabel }), {
+    let sessionId: string | null = null;
+    const pid = (body.pseudonymId || "").trim();
+    if (pid) {
+      try {
+        const { data: inserted } = await adminClient
+          .from("therapy_sessions")
+          .insert({
+            pseudonym_id: pid,
+            created_by: user.id,
+            kind: "hp_therapy_check",
+            notiz: "HP-Therapie Sinnhaftigkeits-Check",
+            empfehlung: markdown,
+            befund_html: html,
+            befund_meta: { modelLabel, generatedAt: new Date().toISOString(), kind: "hp_therapy_check" },
+            eingabe_daten: {
+              _pseudonym_id: pid,
+              pseudonymId: pid,
+              hpCheck: {
+                meineTherapie: meineTherapie.slice(0, 8000),
+                apothekerRezept: apothekerRezept.slice(0, 8000),
+                zusatzTherapie: zusatzTherapie.slice(0, 8000),
+              },
+            },
+          })
+          .select("id")
+          .single();
+        sessionId = inserted?.id ?? null;
+      } catch (saveErr) {
+        console.error("HP-Check save failed", saveErr);
+      }
+    }
+
+    return new Response(JSON.stringify({ html, markdown, modelLabel, sessionId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
