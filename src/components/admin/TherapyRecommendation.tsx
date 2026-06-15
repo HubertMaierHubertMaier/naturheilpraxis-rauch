@@ -3853,6 +3853,34 @@ export function TherapyRecommendation() {
                     Bewertung im HP-Rahmen: Bioresonanz/Frequenz/Phyto/Ortho/EAV/NLS sind gleichrangig. Prüft auf Lücken, Redundanzen, echte Wechselwirkungen und sinnvolle Reihenfolge – ohne reflexhafte „ärztlich abklären"-Floskeln.
                   </p>
 
+                  <div className="grid md:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                        💊 Vorschlag Apotheker (Rezept)
+                      </label>
+                      <Textarea
+                        value={apothekerRezept}
+                        onChange={(e) => setApothekerRezept(e.target.value)}
+                        placeholder="Z.B. Rezeptur: Curcuma 500 mg + Boswellia 300 mg + Vitamin D 4000 IE 1-0-0 … – Vorschläge des Apothekers (mit Dosis, falls vorhanden)."
+                        rows={5}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen.</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                        🧪 Zusätzlich empfohlene Therapie / Diagnostik
+                      </label>
+                      <Textarea
+                        value={zusatzTherapie}
+                        onChange={(e) => setZusatzTherapie(e.target.value)}
+                        placeholder="Z.B. Stuhlanalyse gezielt auf Klebsiella, Candida, Blastocystis hominis; oder Speichel-Cortisol-Tagesprofil; oder Diamond-Shield-Frequenzsatz X …"
+                        rows={5}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Zusätzliche Vorschläge (Diagnostik oder weitere Therapie) – die KI bewertet, ob diese in Kombination mit deiner Therapie sinnvoll sind.</p>
+                    </div>
+                  </div>
+
+
                   {(hpCheckLoading || hpCheckHtml) && (
                     <div className="mt-3 rounded-md border border-emerald-500/40 bg-background p-3 space-y-2">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
