@@ -502,7 +502,7 @@ Deno.serve(async (req) => {
       if (!githubRes.ok || !githubRes.body) {
         throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${githubRes.status}). Repo/Branch prüfen.`);
       }
-      const filename = `naturheilpraxis-KOMPLETT-GITHUB-Quellcode-${isoTimestamp()}.zip`;
+      const filename = `Naturheilpraxis-CODE-Backup-${isoTimestamp()}.zip`;
       return new Response(githubRes.body, {
         status: 200,
         headers: {
@@ -613,7 +613,7 @@ Deno.serve(async (req) => {
       compressionOptions: { level: 6 },
     });
 
-    const filename = `naturheilpraxis-DATEN-nur-DB+Auth-${isoTimestamp()}.zip`;
+    const filename = `Naturheilpraxis-DATEN-Backup-${isoTimestamp()}.zip`;
 
     return new Response(zipBytes, {
       status: 200,
