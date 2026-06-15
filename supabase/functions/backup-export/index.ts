@@ -156,12 +156,72 @@ async function gatherStats(client: ReturnType<typeof createClient>) {
     }
   }
 
+  let authUserCount = -1;
+  try {
+    const users = await fetchAllAuthUsers(client);
+    authUserCount = users.length;
+  } catch {
+    /* ignore */
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     tables,
     buckets,
+    authUserCount,
     secrets: REQUIRED_SECRETS,
   };
+}
+
+type AuthUserExport = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  email_confirmed_at: string | null;
+  phone_confirmed_at: string | null;
+  banned_until: string | null;
+  user_metadata: Record<string, unknown>;
+  app_metadata: Record<string, unknown>;
+  mfa_factors: Array<{ id: string; type: string; status: string; created_at: string }>;
+};
+
+async function fetchAllAuthUsers(
+  client: ReturnType<typeof createClient>,
+): Promise<AuthUserExport[]> {
+  const all: AuthUserExport[] = [];
+  const perPage = 1000;
+  let page = 1;
+  // Hard safety cap to avoid infinite loops
+  while (page <= 50) {
+    const { data, error } = await client.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const users = data?.users ?? [];
+    for (const u of users) {
+      all.push({
+        id: u.id,
+        email: u.email ?? null,
+        phone: u.phone ?? null,
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        email_confirmed_at: u.email_confirmed_at ?? null,
+        phone_confirmed_at: u.phone_confirmed_at ?? null,
+        banned_until: (u as unknown as { banned_until?: string }).banned_until ?? null,
+        user_metadata: u.user_metadata ?? {},
+        app_metadata: u.app_metadata ?? {},
+        mfa_factors: (u.factors ?? []).map((f) => ({
+          id: f.id,
+          type: f.factor_type,
+          status: f.status,
+          created_at: f.created_at,
+        })),
+      });
+    }
+    if (users.length < perPage) break;
+    page++;
+  }
+  return all;
 }
 
 type StorageFileEntry = { path: string; size: number };
