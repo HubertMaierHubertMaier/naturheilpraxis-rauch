@@ -3908,7 +3908,15 @@ export function TherapyRecommendation() {
                           }}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. PDF/Bild wird per OCR ausgelesen und sicher archiviert.</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. PDF/Bild wird per OCR ausgelesen und sicher archiviert.
+                        {" "}
+                        <span className={apothekerRezept.trim().length >= 5 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>
+                          {apothekerRezept.trim().length >= 5
+                            ? `✓ ${apothekerRezept.trim().length} Zeichen erkannt – wird ausgewertet.`
+                            : `⚠ Noch ${apothekerRezept.trim().length} Zeichen – nach Upload bitte prüfen, ob Text erschienen ist (sonst reiner Scan → manuell eintippen).`}
+                        </span>
+                      </p>
                     </div>
 
                     <div>
