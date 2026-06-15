@@ -101,6 +101,9 @@ export function BackupCenter() {
     | { ok: false; message: string }
     | null
   >(null);
+  const [githubRepo, setGithubRepo] = useState<string>("");
+  const [githubBranch, setGithubBranch] = useState<string>("main");
+  const [savingRepo, setSavingRepo] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   const log = (line: string) => {
