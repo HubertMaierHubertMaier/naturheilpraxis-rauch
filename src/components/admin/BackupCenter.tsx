@@ -164,8 +164,8 @@ export function BackupCenter() {
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
-      setLastResult({ ok: true, filename: fn, size: bytes.length, durationSec: dur, warnings: 0 });
-      toast.success(`Schnell-Backup heruntergeladen (${formatBytes(bytes.length)}).`);
+      setLastResult({ ok: true, filename: fn, size: bytes.byteLength, durationSec: dur, warnings: 0 });
+      toast.success(`Schnell-Backup heruntergeladen (${formatBytes(bytes.byteLength)}).`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
       log(`FEHLER: ${msg}`);
