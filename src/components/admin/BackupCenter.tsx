@@ -65,6 +65,14 @@ function getFunctionsUrl(): string {
   throw new Error("Supabase URL / Project-ID nicht verfügbar");
 }
 
+function getApiKey(): string {
+  return (
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+    ""
+  );
+}
+
 function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -130,8 +138,11 @@ export function BackupCenter() {
 
   async function fetchDbZipBytes(token: string): Promise<{ bytes: ArrayBuffer; filename: string }> {
     const url = `${getFunctionsUrl()}/backup-export?mode=db`;
+    const apikey = getApiKey();
     log("Lade Datenbank-Export von Server…");
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, apikey },
+    });
     if (!res.ok) {
       let detail = "";
       try {
@@ -193,10 +204,19 @@ export function BackupCenter() {
 
       // 2) Storage-Liste mit signierten URLs holen
       log("Hole Storage-Datei-Liste mit signierten URLs…");
+      const apikey = getApiKey();
       const listRes = await fetch(`${getFunctionsUrl()}/backup-export?mode=storage-list`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, apikey },
       });
-      if (!listRes.ok) throw new Error(`Storage-Liste HTTP ${listRes.status}`);
+      if (!listRes.ok) {
+        let detail = "";
+        try {
+          detail = (await listRes.json())?.error ?? "";
+        } catch {
+          /* ignore */
+        }
+        throw new Error(`Storage-Liste HTTP ${listRes.status}${detail ? ` — ${detail}` : ""}`);
+      }
       const storage = (await listRes.json()) as StorageList;
 
       const allFiles: Array<{ bucket: string; path: string; size: number; signedUrl: string }> = [];
