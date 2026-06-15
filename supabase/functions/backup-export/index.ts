@@ -331,9 +331,9 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("- `db/*.json` + `db/*.csv` — alle DB-Tabelleninhalte");
   lines.push("- `auth/users.json` — Liste aller Patienten-Konten (ohne Passwörter)");
   if (mode === "full") {
-    lines.push("- `storage/anamnesis-pdfs/` — hochgeladene Patienten-Anamnese-PDFs");
-    lines.push("- `storage/patient-library/` — geschützte Patienten-Bibliothek (PDF/MP3)");
-    lines.push("- `storage/therapy-documents/` — Therapie-Befund-Dokumente");
+    for (const b of stats.buckets) {
+      lines.push(`- \`storage/${b.name}/\` — ${b.files} Datei(en), ${formatBytes(b.totalBytes)}`);
+    }
   }
   lines.push("- `SECRETS-CHECKLISTE.txt` — Liste der Secret-Namen");
   lines.push("");
