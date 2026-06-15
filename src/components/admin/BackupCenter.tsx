@@ -340,7 +340,7 @@ export function BackupCenter() {
       setProgress(20);
       const { bytes, filename } = await fetchDbZipBytes(token);
       setProgress(100);
-      const fn = `naturheilpraxis-backup-DATEN-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-DATEN-nur-DB+Auth-${isoTimestamp()}.zip`;
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
