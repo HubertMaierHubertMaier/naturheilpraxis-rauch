@@ -531,91 +531,58 @@ export function BackupCenter() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">Wenn das weg ist…</th>
-                  <th className="px-3 py-2 text-left font-medium">Finde ich hier</th>
-                  <th className="px-3 py-2 text-left font-medium">Dateiname / Quelle</th>
+                  <th className="px-3 py-2 text-left font-medium">Kategorie</th>
+                  <th className="px-3 py-2 text-left font-medium">Quelle</th>
+                  <th className="px-3 py-2 text-center font-medium">GitHub-ZIP</th>
+                  <th className="px-3 py-2 text-center font-medium">Voll-Backup</th>
+                  <th className="px-3 py-2 text-left font-medium">Status / Lücke</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                <tr className="bg-background">
-                  <td className="px-3 py-2.5 font-medium">Code (React, Edge Functions, Infothek-HTMLs)</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <Github className="h-3 w-3" />
-                      GitHub-ZIP
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>{`${githubRepo || "<besitzer/repo>"}-main.zip`}</code>
-                  </td>
-                </tr>
-                <tr className="bg-muted/20">
-                  <td className="px-3 py-2.5 font-medium">Datenbank-Tabellen (Patienten, Anamnesen, FAQs…)</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <Database className="h-3 w-3" />
-                      Schnell-Backup
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>naturheilpraxis-backup-db-*.zip</code>
-                  </td>
-                </tr>
-                <tr className="bg-background">
-                  <td className="px-3 py-2.5 font-medium">Hochgeladene Dateien (PDFs, MP3s, MP4s, Befunde)</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <HardDrive className="h-3 w-3" />
-                      Voll-Backup
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>naturheilpraxis-backup-FULL-*.zip</code>
-                  </td>
-                </tr>
-                <tr className="bg-muted/20">
-                  <td className="px-3 py-2.5 font-medium">Patienten-Login-Konten (Auth / UUIDs)</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <Download className="h-3 w-3" />
-                      In jedem ZIP
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>auth/users.json</code>
-                  </td>
-                </tr>
-                <tr className="bg-background">
-                  <td className="px-3 py-2.5 font-medium">Secrets (API-Keys, SMTP, Relay-Passwörter)</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <Key className="h-3 w-3" />
-                      In jedem ZIP
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>SECRETS-CHECKLISTE.txt</code>
-                  </td>
-                </tr>
-                <tr className="bg-muted/20">
-                  <td className="px-3 py-2.5 font-medium">Schritt-für-Schritt-Wiederherstellung</td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="outline" className="gap-1">
-                      <Info className="h-3 w-3" />
-                      In jedem ZIP
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-xs">
-                    <code>BACKUP-MANIFEST.md</code>
-                  </td>
-                </tr>
+                {[
+                  { cat: "Source-Code (React, TS, CSS)", src: "src/, index.html", gh: true, full: false, status: "ok" },
+                  { cat: "Edge Functions", src: "supabase/functions/", gh: true, full: false, status: "ok" },
+                  { cat: "DB-Schema, RLS, Migrationen", src: "supabase/migrations/", gh: true, full: false, status: "ok" },
+                  { cat: "Statische Infothek-HTMLs", src: "public/*.html", gh: true, full: false, status: "ok" },
+                  { cat: "Statische Therapie-PDFs", src: "public/therapie/", gh: true, full: false, status: "ok" },
+                  { cat: "Mail-Relay PHP, Skripte, Doku", src: "docs/, scripts/", gh: true, full: false, status: "ok" },
+                  { cat: "package.json / bun.lock / vite.config.ts", src: "Repo-Root", gh: true, full: false, status: "ok" },
+                  { cat: "DB-Inhalte (Patienten, Anamnesen, FAQs, Wiki, IAA, Preise …)", src: "DB-Tabellen", gh: false, full: true, status: "ok" },
+                  { cat: "Hochgeladene Patienten-PDFs", src: "Bucket anamnesis-pdfs", gh: false, full: true, status: "ok" },
+                  { cat: "Patienten-Bibliothek (PDF/MP3)", src: "Bucket patient-library", gh: false, full: true, status: "ok" },
+                  { cat: "Therapie-Befund-Dokumente", src: "Bucket therapy-documents", gh: false, full: true, status: "ok" },
+                  { cat: "Auth-Benutzerkonten (E-Mail, ID, Rollen, MFA-Faktoren)", src: "auth.users", gh: false, full: true, status: "ok", note: "auth/users.json — in jedem ZIP" },
+                  { cat: "Secrets-Werte (API-Keys, SMTP, Relay)", src: "Lovable Cloud", gh: false, full: false, status: "warn", note: "nur Liste (SECRETS-CHECKLISTE.txt) — Werte aus Provider-Dashboards holen" },
+                  { cat: "Passwörter", src: "gehasht in auth.users", gh: false, full: false, status: "info", note: "technisch nicht exportierbar — bei Restore Reset-Mails versenden" },
+                  { cat: "Dynamisch erzeugte Hypnose-MP3s", src: "Browser zur Laufzeit", gh: false, full: false, status: "info", note: "nicht nötig — werden via Edge-TTS neu erzeugt" },
+                ].map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-background" : "bg-muted/20"}>
+                    <td className="px-3 py-2.5 font-medium">{row.cat}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.src}</td>
+                    <td className="px-3 py-2.5 text-center">{row.gh ? "✅" : "—"}</td>
+                    <td className="px-3 py-2.5 text-center">{row.full ? "✅" : "—"}</td>
+                    <td className="px-3 py-2.5 text-xs">
+                      {row.status === "ok" && <span className="text-green-700 dark:text-green-400">✓ {row.note ?? "vollständig gesichert"}</span>}
+                      {row.status === "warn" && <span className="text-amber-700 dark:text-amber-400">⚠ {row.note}</span>}
+                      {row.status === "info" && <span className="text-muted-foreground">ℹ {row.note}</span>}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Hinweis: Das Voll-Backup enthält <strong>alles</strong> (DB + Dateien + Auth + Manifest + Secrets-Checkliste).
-            Das Schnell-Backup enthält nur die Datenbank — ist dafür sekundenschnell und klein.
-          </p>
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+            <p className="font-semibold text-primary mb-1">🤖 Diese Sicherung wächst automatisch mit</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li><strong>Neue Source-/HTML-/PDF-/MP3-/MP4-Dateien</strong> in <code>src/</code>, <code>public/</code>, <code>supabase/functions/</code>, <code>docs/</code>, <code>scripts/</code> landen automatisch in der nächsten GitHub-ZIP.</li>
+              <li><strong>Neue DB-Tabellen</strong> werden zur Laufzeit aus dem PostgREST-Schema gelesen und automatisch mitgesichert (keine Pflege nötig).</li>
+              <li><strong>Neue Storage-Buckets</strong> werden via <code>storage.listBuckets()</code> automatisch erkannt und ins Voll-Backup gezogen.</li>
+              <li><strong>Neue Secrets</strong> trägt Lovable Cloud selbst — die Liste im ZIP wird beim nächsten Backup aktualisiert.</li>
+            </ul>
+            <p className="mt-2 text-muted-foreground">
+              Diese Übersichts-Tabelle hier ist eine <em>kuratierte Zusammenfassung</em>. Die tatsächlich gesicherten Tabellen/Buckets stehen vollständig im <code>BACKUP-MANIFEST.md</code> jedes ZIPs.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
