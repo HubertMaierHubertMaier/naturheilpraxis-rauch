@@ -189,14 +189,17 @@ async function fetchTableAll(
 }
 
 async function gatherStats(client: ReturnType<typeof createClient>) {
+  const { tables: tableNames, source: tableSource } = await discoverTables();
+  const { buckets: bucketNames, source: bucketSource } = await discoverBuckets(client);
+
   const tables: Array<{ name: string; rows: number }> = [];
-  for (const t of TABLES) {
+  for (const t of tableNames) {
     const { count, error } = await client.from(t).select("*", { count: "exact", head: true });
     tables.push({ name: t, rows: error ? -1 : count ?? 0 });
   }
 
   const buckets: Array<{ name: string; files: number; totalBytes: number }> = [];
-  for (const b of BUCKETS) {
+  for (const b of bucketNames) {
     try {
       const files = await listAllFiles(client, b);
       const totalBytes = files.reduce((acc, f) => acc + (f.size ?? 0), 0);
@@ -220,6 +223,7 @@ async function gatherStats(client: ReturnType<typeof createClient>) {
     buckets,
     authUserCount,
     secrets: REQUIRED_SECRETS,
+    discovery: { tableSource, bucketSource },
   };
 }
 
