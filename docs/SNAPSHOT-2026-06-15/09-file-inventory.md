@@ -1,3 +1,9 @@
+# 09 — Datei-Inventar (SHA-256, Größe in Bytes)
+
+Stand: 2026-06-15T12:58:25Z
+Format: `<sha256-prefix-16>  <bytes>  <pfad>`
+
+```
 030b04075bd815a5  23875  ../../public/allergiebehandlung.html
 3e3f337dcdd7dbf5  2056156  ../../public/anamnesebogen-blanko.pdf
 ff36e9f82b1f1c85  56101  ../../public/ass-salicylat-histamin.html
@@ -267,3 +273,4 @@ b89888b398cf5b57  8682  ../../supabase/functions/send-icd10-report/index.ts
 37af954bfd8360f0  31836  ../../supabase/functions/submit-anamnesis/index.ts
 de0bfa8c05be0279  100306  ../../supabase/functions/therapy-recommend/index.ts
 ad465b22999182d1  10335  ../../supabase/functions/verify-code/index.ts
+```
