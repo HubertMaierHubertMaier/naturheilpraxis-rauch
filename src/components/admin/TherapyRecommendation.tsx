@@ -1073,7 +1073,7 @@ export function TherapyRecommendation() {
         _pseudonym_id: normalizePseudonymId(pseudonymId),
         pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
-        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders,
+        laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
       if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
