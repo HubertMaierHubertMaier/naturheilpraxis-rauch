@@ -128,7 +128,7 @@ export function BackupCenter() {
     return token;
   }
 
-  async function fetchDbZipBytes(token: string): Promise<{ bytes: Uint8Array; filename: string }> {
+  async function fetchDbZipBytes(token: string): Promise<{ bytes: ArrayBuffer; filename: string }> {
     const url = `${getFunctionsUrl()}/backup-export?mode=db`;
     log("Lade Datenbank-Export von Server…");
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -141,11 +141,11 @@ export function BackupCenter() {
       }
       throw new Error(`DB-Export HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
     }
-    const buf = new Uint8Array(await res.arrayBuffer());
+    const buf = await res.arrayBuffer();
     const cd = res.headers.get("Content-Disposition") ?? "";
     const match = cd.match(/filename="?([^"]+)"?/);
     const filename = match?.[1] ?? `db-backup.zip`;
-    log(`Datenbank-ZIP empfangen (${formatBytes(buf.length)}).`);
+    log(`Datenbank-ZIP empfangen (${formatBytes(buf.byteLength)}).`);
     return { bytes: buf, filename };
   }
 
