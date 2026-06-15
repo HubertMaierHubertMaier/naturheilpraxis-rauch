@@ -3897,8 +3897,20 @@ export function TherapyRecommendation() {
                         placeholder="Z.B. Rezeptur: Curcuma 500 mg + Boswellia 300 mg + Vitamin D 4000 IE 1-0-0 … – Vorschläge des Apothekers (mit Dosis, falls vorhanden)."
                         rows={5}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen.</p>
+                      <div className="mt-1.5">
+                        <MultiDocUpload
+                          pseudonymId={pseudonymId}
+                          ocrMode="doctor"
+                          label="Apotheker-Rezept als PDF/Bild hochladen"
+                          onExtracted={(text) => {
+                            setApothekerRezept((prev) => (prev ? `${prev}\n\n${text}` : text).trim());
+                            toast({ title: "✓ Apotheker-Rezept übernommen", description: "Text extrahiert und ins Feld eingefügt." });
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. PDF/Bild wird per OCR ausgelesen und sicher archiviert.</p>
                     </div>
+
                     <div>
                       <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                         🧪 Zusätzlich empfohlene Therapie / Diagnostik
