@@ -374,16 +374,14 @@ export function BackupCenter() {
               size="lg"
               onClick={downloadDbBackup}
               disabled={downloading !== null}
-              className="h-auto flex-col gap-1 py-4"
+              className="h-auto flex-col gap-2 py-5"
             >
-              <div className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                <span className="font-semibold">Schnell-Backup (nur Datenbank)</span>
-              </div>
-              <span className="text-xs opacity-90">
+              <Database className="h-6 w-6" />
+              <span className="font-semibold leading-tight">Schnell-Backup</span>
+              <span className="text-xs opacity-90 leading-tight">
                 {downloading === "db"
                   ? "Wird erstellt…"
-                  : `≈ ${totalRows} Zeilen · klein, sekundenschnell`}
+                  : `Nur Datenbank · ≈ ${totalRows} Zeilen · sekundenschnell`}
               </span>
             </Button>
 
@@ -392,16 +390,14 @@ export function BackupCenter() {
               variant="secondary"
               onClick={downloadFullBackup}
               disabled={downloading !== null}
-              className="h-auto flex-col gap-1 py-4"
+              className="h-auto flex-col gap-2 py-5"
             >
-              <div className="flex items-center gap-2">
-                <HardDrive className="h-5 w-5" />
-                <span className="font-semibold">Voll-Backup (Datenbank + Dateien)</span>
-              </div>
-              <span className="text-xs opacity-90">
+              <HardDrive className="h-6 w-6" />
+              <span className="font-semibold leading-tight">Voll-Backup</span>
+              <span className="text-xs opacity-90 leading-tight">
                 {downloading === "full"
                   ? "Wird erstellt… (kann dauern)"
-                  : `≈ ${totalFiles} Dateien · ${formatBytes(totalBytes)}`}
+                  : `DB + Dateien · ≈ ${totalFiles} Dateien · ${formatBytes(totalBytes)}`}
               </span>
             </Button>
           </div>
@@ -554,21 +550,13 @@ export function BackupCenter() {
             <li>Ich (Lovable) lese ZIP-Inhalt + Manifest, mache einen Plan und frage dich vor jedem destruktiven Schritt um Bestätigung.</li>
           </ol>
 
-          <div className="space-y-1">
-            <Label className="text-xs">Copy-&-Paste-Prompt für mich</Label>
-            <div className="relative">
-              <pre className="overflow-auto rounded border bg-muted/30 p-3 pr-12 text-xs">
-{`Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json
-im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl,
-Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung
-(insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen).
-Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
-3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`}
-              </pre>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Copy-&-Paste-Prompt für mich</Label>
               <Button
                 size="sm"
-                variant="ghost"
-                className="absolute right-1 top-1 h-7 w-7 p-0"
+                variant="outline"
+                className="gap-1.5"
                 onClick={() => {
                   const txt = `Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl, Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung (insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen). Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!), 3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`;
                   navigator.clipboard.writeText(txt).then(
@@ -578,9 +566,18 @@ Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
                 }}
                 title="In Zwischenablage kopieren"
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" />
+                Kopieren
               </Button>
             </div>
+            <pre className="overflow-auto rounded border bg-muted/30 p-3 text-xs">
+{`Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json
+im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl,
+Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung
+(insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen).
+Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
+3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`}
+            </pre>
           </div>
 
           <Alert>
@@ -607,8 +604,9 @@ Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
             </CardTitle>
             <CardDescription>Übersicht aller Tabellen im Backup.</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" onClick={loadStats} disabled={loading}>
+          <Button variant="ghost" size="sm" onClick={loadStats} disabled={loading} className="gap-1.5">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Aktualisieren
           </Button>
         </CardHeader>
         <CardContent>
