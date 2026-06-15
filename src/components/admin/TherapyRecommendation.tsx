@@ -3861,7 +3861,7 @@ export function TherapyRecommendation() {
                                 w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`);
                                 w.document.close();
                               }}
-                              title="Öffnet HTML in neuem Tab und startet den Druck-Dialog – dort „Als PDF speichern"."
+                              title="Öffnet HTML in neuem Tab und startet den Druck-Dialog – dort Als PDF speichern wählen."
                             >
                               <FileText className="h-3.5 w-3.5" /> Als PDF speichern
                             </Button>
