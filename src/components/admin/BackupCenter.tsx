@@ -845,8 +845,8 @@ export function BackupCenter() {
               <Input
                 id="gh-repo"
                 placeholder="z. B. peter-rauch/naturheilpraxis"
-                value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
+                value={repoDraft}
+                onChange={(e) => setRepoDraft(e.target.value)}
               />
             </div>
             <div className="space-y-1">
@@ -854,8 +854,8 @@ export function BackupCenter() {
               <Input
                 id="gh-branch"
                 placeholder="main"
-                value={githubBranch}
-                onChange={(e) => setGithubBranch(e.target.value)}
+                value={branchDraft}
+                onChange={(e) => setBranchDraft(e.target.value)}
               />
             </div>
             <div className="flex items-end">
