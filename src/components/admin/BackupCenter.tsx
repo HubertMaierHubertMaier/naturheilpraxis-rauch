@@ -271,7 +271,7 @@ export function BackupCenter() {
       setProgress(20);
       const { bytes, filename } = await fetchDbZipBytes(token);
       setProgress(100);
-      const fn = `naturheilpraxis-backup-db-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-backup-DATEN-${isoTimestamp()}.zip`;
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
@@ -373,7 +373,7 @@ export function BackupCenter() {
         },
       );
       setProgress(100);
-      const fn = `naturheilpraxis-backup-FULL-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-backup-VOLL-${isoTimestamp()}.zip`;
       saveBlob(finalBlob, fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
@@ -564,34 +564,36 @@ export function BackupCenter() {
                 <tr>
                   <th className="px-3 py-2 text-left font-medium">Kategorie</th>
                   <th className="px-3 py-2 text-left font-medium">Quelle</th>
-                  <th className="px-3 py-2 text-center font-medium">GitHub-ZIP</th>
-                  <th className="px-3 py-2 text-center font-medium">Voll-Backup</th>
+                  <th className="px-3 py-2 text-left font-medium">Dateiname / Beispiel</th>
+                  <th className="px-3 py-2 text-center font-medium">Code-ZIP</th>
+                  <th className="px-3 py-2 text-center font-medium">Daten-ZIP</th>
                   <th className="px-3 py-2 text-left font-medium">Status / Lücke</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {[
-                  { cat: "Source-Code (React, TS, CSS)", src: "src/, index.html", gh: true, full: false, status: "ok" },
-                  { cat: "Edge Functions", src: "supabase/functions/", gh: true, full: false, status: "ok" },
-                  { cat: "DB-Schema, RLS, Migrationen", src: "supabase/migrations/", gh: true, full: false, status: "ok" },
-                  { cat: "Statische Infothek-HTMLs", src: "public/*.html", gh: true, full: false, status: "ok" },
-                  { cat: "Statische Therapie-PDFs", src: "public/therapie/", gh: true, full: false, status: "ok" },
-                  { cat: "Mail-Relay PHP, Skripte, Doku", src: "docs/, scripts/", gh: true, full: false, status: "ok" },
-                  { cat: "package.json / bun.lock / vite.config.ts", src: "Repo-Root", gh: true, full: false, status: "ok" },
-                  { cat: "DB-Inhalte (Patienten, Anamnesen, FAQs, Wiki, IAA, Preise …)", src: "DB-Tabellen", gh: false, full: true, status: "ok" },
-                  { cat: "Hochgeladene Patienten-PDFs", src: "Bucket anamnesis-pdfs", gh: false, full: true, status: "ok" },
-                  { cat: "Patienten-Bibliothek (PDF/MP3)", src: "Bucket patient-library", gh: false, full: true, status: "ok" },
-                  { cat: "Therapie-Befund-Dokumente", src: "Bucket therapy-documents", gh: false, full: true, status: "ok" },
-                  { cat: "Auth-Benutzerkonten (E-Mail, ID, Rollen, MFA-Faktoren)", src: "auth.users", gh: false, full: true, status: "ok", note: "auth/users.json — in jedem ZIP" },
-                  { cat: "Secrets-Werte (API-Keys, SMTP, Relay)", src: "Lovable Cloud", gh: false, full: false, status: "warn", note: "nur Liste (SECRETS-CHECKLISTE.txt) — Werte aus Provider-Dashboards holen" },
-                  { cat: "Passwörter", src: "gehasht in auth.users", gh: false, full: false, status: "info", note: "technisch nicht exportierbar — bei Restore Reset-Mails versenden" },
-                  { cat: "Dynamisch erzeugte Hypnose-MP3s", src: "Browser zur Laufzeit", gh: false, full: false, status: "info", note: "nicht nötig — werden via Edge-TTS neu erzeugt" },
+                  { cat: "Source-Code (React, TS, CSS)", src: "src/, index.html", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "Edge Functions", src: "supabase/functions/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "DB-Schema, RLS, Migrationen", src: "supabase/migrations/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "Statische Infothek-HTMLs", src: "public/*.html", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "Statische Therapie-PDFs", src: "public/therapie/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "Mail-Relay PHP, Skripte, Doku", src: "docs/, scripts/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "package.json / bun.lock / vite.config.ts", src: "Repo-Root", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
+                  { cat: "DB-Inhalte (Patienten, Anamnesen, FAQs, Wiki, IAA, Preise …)", src: "DB-Tabellen", fn: "naturheilpraxis-backup-DATEN-YYYY-MM-DD_HH-MM.zip", code: false, data: true, status: "ok" },
+                  { cat: "Hochgeladene Patienten-PDFs", src: "Bucket anamnesis-pdfs", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Patienten-Bibliothek (PDF/MP3)", src: "Bucket patient-library", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Therapie-Befund-Dokumente", src: "Bucket therapy-documents", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Auth-Benutzerkonten (E-Mail, ID, Rollen, MFA-Faktoren)", src: "auth.users", fn: "In DATEN und VOLL: auth/users.json", code: false, data: true, status: "ok", note: "auth/users.json — in jedem Daten-ZIP" },
+                  { cat: "Secrets-Werte (API-Keys, SMTP, Relay)", src: "Lovable Cloud", fn: "—", code: false, data: false, status: "warn", note: "nur Liste (SECRETS-CHECKLISTE.txt) — Werte aus Provider-Dashboards holen" },
+                  { cat: "Passwörter", src: "gehasht in auth.users", fn: "—", code: false, data: false, status: "info", note: "technisch nicht exportierbar — bei Restore Reset-Mails versenden" },
+                  { cat: "Dynamisch erzeugte Hypnose-MP3s", src: "Browser zur Laufzeit", fn: "—", code: false, data: false, status: "info", note: "nicht nötig — werden via Edge-TTS neu erzeugt" },
                 ].map((row, i) => (
                   <tr key={i} className={i % 2 === 0 ? "bg-background" : "bg-muted/20"}>
                     <td className="px-3 py-2.5 font-medium">{row.cat}</td>
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.src}</td>
-                    <td className="px-3 py-2.5 text-center">{row.gh ? "✅" : "—"}</td>
-                    <td className="px-3 py-2.5 text-center">{row.full ? "✅" : "—"}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs">{row.fn}</td>
+                    <td className="px-3 py-2.5 text-center">{row.code ? "✅" : "—"}</td>
+                    <td className="px-3 py-2.5 text-center">{row.data ? "✅" : "—"}</td>
                     <td className="px-3 py-2.5 text-xs">
                       {row.status === "ok" && <span className="text-green-700 dark:text-green-400">✓ {row.note ?? "vollständig gesichert"}</span>}
                       {row.status === "warn" && <span className="text-amber-700 dark:text-amber-400">⚠ {row.note}</span>}
