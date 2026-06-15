@@ -459,6 +459,37 @@ export function BackupCenter() {
             </span>
           </Button>
 
+          {/* Inline-Setup: GitHub-Repo eintragen, damit Code-Backup im 1-Klick funktioniert */}
+          {!githubRepo.trim() && (
+            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-900 dark:text-amber-200">
+                GitHub-Repo noch nicht eingerichtet — Code-Backup übersprungen
+              </AlertTitle>
+              <AlertDescription className="space-y-2 text-sm">
+                <p>
+                  Damit der grüne Knopf auch das <strong>Code-Backup</strong> mitmacht, brauche ich einmalig die Adresse
+                  deines GitHub-Repos. Einfach die URL aus dem Browser kopieren und hier einfügen:
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    placeholder="https://github.com/peter-rauch/naturheilpraxis"
+                    value={githubRepo}
+                    onChange={(e) => setGithubRepo(e.target.value)}
+                    className="bg-background"
+                  />
+                  <Button onClick={saveGithubRepo} disabled={savingRepo || !githubRepo.trim()}>
+                    {savingRepo ? "Speichere…" : "Speichern & aktivieren"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Wird einmal gespeichert und ab dann automatisch beim 1-Klick-Backup mit heruntergeladen.
+                  Bei privaten Repos musst du im selben Browser bei GitHub eingeloggt sein.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Ampel-Status: wann zuletzt gesichert? */}
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex items-center justify-between rounded border bg-background px-3 py-2 text-sm">
