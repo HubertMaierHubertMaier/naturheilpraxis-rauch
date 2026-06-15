@@ -468,6 +468,13 @@ export function BackupCenter() {
 
   const runOneClick = async () => {
     if (downloading || oneClickRunning) return;
+    let githubWindow: Window | null = null;
+    if (githubRepo.trim()) {
+      githubWindow = window.open("", "_blank");
+      if (githubWindow) {
+        githubWindow.document.write("<p style='font-family:system-ui;padding:24px'>Code-ZIP wartet auf Fertigstellung des Daten-Backups…</p>");
+      }
+    }
     setOneClickRunning(true);
     try {
       toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
@@ -476,7 +483,7 @@ export function BackupCenter() {
       await new Promise((r) => setTimeout(r, 800));
       if (githubRepo.trim()) {
         toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
-        await downloadGithubZip();
+        await downloadGithubZip(githubWindow);
       } else {
         toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
       }
