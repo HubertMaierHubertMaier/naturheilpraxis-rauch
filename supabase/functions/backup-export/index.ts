@@ -47,8 +47,10 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
-// Alle zu sichernden Tabellen
-const TABLES = [
+// Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
+// Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
+// damit neue Tabellen/Buckets automatisch mitgesichert werden.
+const FALLBACK_TABLES = [
   "admin_knowledge_base",
   "anamnesis_submissions",
   "app_settings",
@@ -67,7 +69,55 @@ const TABLES = [
   "verification_codes",
 ];
 
-const BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
+const FALLBACK_BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
+
+// System-Tabellen, die niemals gesichert werden (interne Supabase-Mechanik)
+const TABLE_BLOCKLIST = new Set<string>([
+  "schema_migrations",
+  "supabase_migrations",
+]);
+
+async function discoverTables(): Promise<{ tables: string[]; source: "openapi" | "fallback" }> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return { tables: FALLBACK_TABLES, source: "fallback" };
+    const res = await fetch(`${url}/rest/v1/`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/openapi+json" },
+    });
+    if (!res.ok) return { tables: FALLBACK_TABLES, source: "fallback" };
+    const spec = await res.json() as { definitions?: Record<string, unknown>; paths?: Record<string, unknown> };
+    const names = new Set<string>();
+    if (spec.definitions) for (const k of Object.keys(spec.definitions)) names.add(k);
+    if (spec.paths) {
+      for (const p of Object.keys(spec.paths)) {
+        const m = p.match(/^\/([A-Za-z0-9_]+)$/);
+        if (m) names.add(m[1]);
+      }
+    }
+    const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/")).sort();
+    if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
+    return { tables: filtered, source: "openapi" };
+  } catch (err) {
+    console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
+    return { tables: FALLBACK_TABLES, source: "fallback" };
+  }
+}
+
+async function discoverBuckets(
+  client: ReturnType<typeof createClient>,
+): Promise<{ buckets: string[]; source: "api" | "fallback" }> {
+  try {
+    const { data, error } = await client.storage.listBuckets();
+    if (error || !data || data.length === 0) {
+      return { buckets: FALLBACK_BUCKETS, source: "fallback" };
+    }
+    return { buckets: data.map((b) => b.name).sort(), source: "api" };
+  } catch {
+    return { buckets: FALLBACK_BUCKETS, source: "fallback" };
+  }
+}
+
 
 // Liste der Secret-Namen, die für eine vollständige Wiederherstellung gesetzt werden müssen
 const REQUIRED_SECRETS = [
