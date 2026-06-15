@@ -502,7 +502,7 @@ Deno.serve(async (req) => {
       if (!githubRes.ok || !githubRes.body) {
         throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${githubRes.status}). Repo/Branch prüfen.`);
       }
-      const filename = `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`;
+      const filename = `naturheilpraxis-KOMPLETT-GITHUB-Quellcode-${isoTimestamp()}.zip`;
       return new Response(githubRes.body, {
         status: 200,
         headers: {
