@@ -4347,10 +4347,52 @@ export function TherapyRecommendation() {
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
         <Card ref={docAnalysisRef} className="border-primary/40 bg-primary/[0.03] shadow-sm scroll-mt-24">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
-              Befund-Auswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
-            </CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-base flex items-center gap-2">
+                {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
+                Befund-Auswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
+              </CardTitle>
+              {docAnalysisHtml && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => {
+                      const dateStr = new Date().toISOString().slice(0, 10);
+                      const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                      const injected = docAnalysisHtml.includes("</body>")
+                        ? docAnalysisHtml.replace(
+                            "</body>",
+                            `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
+                          )
+                        : `<!doctype html><html><head><title>${filename}</title></head><body>${docAnalysisHtml}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
+                      const blob = new Blob([injected], { type: "text/html;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, "_blank", "noopener,noreferrer");
+                      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                    }}
+                    className="gap-1"
+                    title="Öffnet das HTML in neuem Tab und startet den Druck-Dialog — dort „Als PDF speichern“ wählen"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Als PDF speichern
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const blob = new Blob([docAnalysisHtml], { type: "text/html;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, "_blank", "noopener,noreferrer");
+                      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                    }}
+                    className="gap-1"
+                    title="HTML in neuem Browser-Tab öffnen"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" /> HTML in neuem Tab
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {docAnalysisProgress && (
@@ -4367,6 +4409,7 @@ export function TherapyRecommendation() {
             )}
           </CardContent>
         </Card>
+
       )}
 
       {/* 📎 Weitere Dokumente nachladen */}
