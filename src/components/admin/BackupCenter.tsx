@@ -194,7 +194,7 @@ export function BackupCenter() {
       branch,
       url: `${getFunctionsUrl()}/backup-export?mode=github-code&repo=${encodeURIComponent(cleaned)}&branch=${encodeURIComponent(branch)}`,
       githubUrl: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
-      filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
+      filename: `naturheilpraxis-KOMPLETT-GITHUB-Quellcode-${isoTimestamp()}.zip`,
     };
   };
 
