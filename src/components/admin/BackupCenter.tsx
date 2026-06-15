@@ -517,15 +517,16 @@ export function BackupCenter() {
       <Card>
 
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-primary" />
-            Backup-Center
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Download className="h-5 w-5 text-muted-foreground" />
+            Einzel-Backups (für Profis)
           </CardTitle>
           <CardDescription>
-            Sicherung aller Daten, die <strong>nicht</strong> in GitHub liegen (Datenbank-Inhalte,
-            hochgeladene Dateien, Secret-Namen-Liste). Empfehlung: täglich „Schnell-Backup",
-            wöchentlich „Voll-Backup". Die Datei landet im Download-Ordner deines Browsers.
+            Brauchst du nur einen Teil? Hier kannst du <em>Schnell-Backup</em> (nur Datenbank, sekundenschnell)
+            oder <em>Voll-Backup</em> (Datenbank + alle Dateien) separat starten. Für den Alltag reicht
+            der grüne Knopf ganz oben.
           </CardDescription>
+
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
