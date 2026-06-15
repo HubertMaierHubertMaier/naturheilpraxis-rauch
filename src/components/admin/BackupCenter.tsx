@@ -426,7 +426,96 @@ export function BackupCenter() {
 
   return (
     <div className="space-y-6">
+      {/* IDIOTENSICHER: 1-Klick Routine ganz oben */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Sicherungs-Routine — 1 Klick, alles erledigt
+          </CardTitle>
+          <CardDescription>
+            Drücke <strong>einmal</strong> auf den grünen Knopf. Das System lädt nacheinander{" "}
+            <strong>Voll-Backup</strong> (alle Patientendaten + Dateien) und{" "}
+            <strong>Code-ZIP</strong> (gesamte App von GitHub) in deinen Download-Ordner.
+            Empfehlung: <strong>1× pro Woche</strong>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            size="lg"
+            onClick={runOneClick}
+            disabled={downloading !== null || oneClickRunning}
+            className="h-auto w-full flex-col gap-1 py-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <div className="flex items-center gap-2">
+              <Download className="h-6 w-6" />
+              <span className="font-bold">
+                {oneClickRunning || downloading ? "Sicherung läuft… bitte Tab offen lassen" : "Jetzt komplett sichern (1 Klick)"}
+              </span>
+            </div>
+            <span className="text-xs font-normal opacity-90">
+              Daten-Backup + Code-Backup nacheinander · Browser fragt 2× nach Speichern
+            </span>
+          </Button>
+
+          {/* Ampel-Status: wann zuletzt gesichert? */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded border bg-background px-3 py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${dot(fullStatus)}`} aria-hidden />
+                <span className="font-medium">Daten-Backup (Voll)</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                {formatRelative(lastFullBackup)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded border bg-background px-3 py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${dot(githubStatus)}`} aria-hidden />
+                <span className="font-medium">Code-Backup (GitHub-ZIP)</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                {formatRelative(lastGithubZip)}
+              </span>
+            </div>
+          </div>
+
+          {(fullStatus === "crit" || githubStatus === "crit") && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Sicherung überfällig!</AlertTitle>
+              <AlertDescription className="text-sm">
+                Mindestens ein Backup ist älter als 30 Tage (oder wurde nie gemacht).
+                Bitte jetzt den grünen Knopf drücken.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="rounded border bg-background p-3 text-sm">
+            <p className="mb-2 font-medium">So lagerst du die 2 ZIP-Dateien sicher:</p>
+            <ol className="ml-5 list-decimal space-y-1 text-muted-foreground">
+              <li>Beide ZIPs aus dem Download-Ordner an <strong>2 getrennte Orte</strong> kopieren:
+                z. B. <strong>USB-Stick</strong> + <strong>externe Festplatte</strong> (oder verschlüsselter Cloud-Ordner).</li>
+              <li>Mindestens den USB-Stick mit <strong>VeraCrypt</strong> verschlüsseln (enthält Gesundheitsdaten).</li>
+              <li>Alte Backups älter als 10 Jahre <strong>sicher löschen</strong> (DSGVO).</li>
+            </ol>
+          </div>
+
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Wann brauchst du das?</AlertTitle>
+            <AlertDescription className="text-sm">
+              Wenn etwas kaputtgeht, ziehst du die ZIP-Datei einfach in den Lovable-Chat und schreibst
+              „Bitte wiederherstellen". Details und Profi-Optionen findest du in den Abschnitten unten.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
       <Card>
+
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5 text-primary" />
