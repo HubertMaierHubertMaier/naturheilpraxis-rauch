@@ -396,9 +396,33 @@ export function BackupCenter() {
     }
   };
 
+  const runOneClick = async () => {
+    if (downloading || oneClickRunning) return;
+    setOneClickRunning(true);
+    try {
+      toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
+      await downloadFullBackup();
+      // give browser a tick before triggering 2nd download
+      await new Promise((r) => setTimeout(r, 800));
+      if (githubRepo.trim()) {
+        toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
+        downloadGithubZip();
+      } else {
+        toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
+      }
+    } finally {
+      setOneClickRunning(false);
+    }
+  };
+
   const totalRows = stats?.tables.reduce((acc, t) => acc + Math.max(0, t.rows), 0) ?? 0;
   const totalFiles = stats?.buckets.reduce((acc, b) => acc + Math.max(0, b.files), 0) ?? 0;
   const totalBytes = stats?.buckets.reduce((acc, b) => acc + b.totalBytes, 0) ?? 0;
+
+  const fullStatus = statusOf(lastFullBackup, 7, 30);
+  const githubStatus = statusOf(lastGithubZip, 14, 60);
+  const dot = (s: "ok" | "warn" | "crit") =>
+    s === "ok" ? "bg-emerald-500" : s === "warn" ? "bg-amber-500" : "bg-destructive";
 
   return (
     <div className="space-y-6">
