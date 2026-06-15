@@ -256,7 +256,40 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("# BACKUP-MANIFEST — Naturheilpraxis Peter Rauch");
   lines.push("");
   lines.push(`Erstellt: ${stats.generatedAt}`);
-  lines.push(`Modus: ${mode === "full" ? "Voll-Backup (Datenbank + Storage)" : "Schnell-Backup (nur Datenbank)"}`);
+  lines.push(`Modus: ${mode === "full" ? "Voll-Backup (Datenbank + Storage + Auth-Users)" : "Schnell-Backup (Datenbank + Auth-Users)"}`);
+  lines.push("");
+  lines.push("## Wiederherstellungs-Kette — WAS LIEGT WO?");
+  lines.push("");
+  lines.push("Für eine 100%ige Wiederherstellung brauchst du DREI Quellen:");
+  lines.push("");
+  lines.push("**1. GitHub-Repository** (Code, Schema, statische Dateien)");
+  lines.push("- `src/` — komplette React-App");
+  lines.push("- `supabase/functions/` — alle Edge Functions");
+  lines.push("- `supabase/migrations/` — DB-Schema, RLS, Policies, Trigger");
+  lines.push("- `supabase/config.toml` — Function-Konfiguration");
+  lines.push("- `public/*.html` — alle Infothek-Seiten (Allergie, Parasiten, Zapper, etc.)");
+  lines.push("- `public/therapie/**/*.pdf` — statische Therapie-Begleitskripte (Raucher, Reizdarm, Schilddrüse)");
+  lines.push("- `docs/` — Mail-Relay PHP-Datei, Restore-Doku, Snapshots");
+  lines.push("- `scripts/` — Build-Skripte für PDFs/Hypnose");
+  lines.push("- `package.json`, `bun.lock`, `vite.config.ts`, `tailwind.config.ts`, `index.html`");
+  lines.push("");
+  lines.push("**2. Dieses Backup-ZIP** (alles, was NICHT in GitHub ist)");
+  lines.push("- `db/*.json` + `db/*.csv` — alle DB-Tabelleninhalte");
+  lines.push("- `auth/users.json` — Liste aller Patienten-Konten (ohne Passwörter)");
+  if (mode === "full") {
+    lines.push("- `storage/anamnesis-pdfs/` — hochgeladene Patienten-Anamnese-PDFs");
+    lines.push("- `storage/patient-library/` — geschützte Patienten-Bibliothek (PDF/MP3)");
+    lines.push("- `storage/therapy-documents/` — Therapie-Befund-Dokumente");
+  }
+  lines.push("- `SECRETS-CHECKLISTE.txt` — Liste der Secret-Namen");
+  lines.push("");
+  lines.push("**3. Secrets aus den Provider-Dashboards** (Werte nirgendwo gespeichert)");
+  lines.push("- ELEVENLABS_API_KEY, SMTP_*, RELAY_SECRET (siehe Checkliste)");
+  lines.push("");
+  lines.push("**Nicht gesichert (weil nicht nötig oder unmöglich):**");
+  lines.push("- Patient-Passwörter → gehasht, NICHT exportierbar. Lösung: Reset-Mails versenden.");
+  lines.push("- Dynamisch erzeugte Hypnose-MP3s → werden im Browser per Edge-TTS neu generiert.");
+  lines.push("- Lovable-Cloud-Secret-Werte → aus Sicherheitsgründen nicht exportierbar.");
   lines.push("");
   lines.push("## Enthaltene Datenbank-Tabellen");
   lines.push("");
@@ -265,6 +298,8 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   for (const t of stats.tables) {
     lines.push(`| \`${t.name}\` | ${t.rows} | \`db/${t.name}.csv\` + \`db/${t.name}.json\` |`);
   }
+  lines.push("");
+  lines.push(`**Auth-Benutzerkonten:** ${stats.authUserCount >= 0 ? stats.authUserCount : "Fehler"} (siehe \`auth/users.json\`)`);
   lines.push("");
   lines.push("## Storage-Buckets");
   lines.push("");
@@ -298,24 +333,27 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("");
   lines.push("## Wiederherstellung — Schritt für Schritt");
   lines.push("");
-  lines.push("1. **Code wiederherstellen**: Repo von GitHub klonen (`git clone <repo-url>`).");
-  lines.push("2. **Neues Lovable-Cloud-Projekt** anlegen oder bestehendes leeres Projekt nutzen.");
-  lines.push("3. **Migrationen ausführen**: Schema kommt automatisch aus `supabase/migrations/`.");
-  lines.push("4. **Secrets eintragen**: alle oben gelisteten Namen in den Lovable-Cloud-Settings hinterlegen.");
-  lines.push("5. **Tabellen-Daten zurückspielen**: Die JSON-Dateien aus `db/` per Skript wieder einspielen");
-  lines.push("   (z.B. via `psql \\copy` oder eine kleine Restore-Edge-Function). CSVs sind für manuelle");
-  lines.push("   Inspektion in Excel/LibreOffice gedacht.");
+  lines.push("**Szenario A: Kleine Panne (einzelne Daten/Datei verloren)**");
+  lines.push("- Einzeltabelle/Datei gezielt aus diesem ZIP zurückspielen.");
+  lines.push("");
+  lines.push("**Szenario B: Komplett-Wiederherstellung (Worst Case)**");
+  lines.push("1. **Code zurückholen**: Repo von GitHub klonen (`git clone <repo-url>`).");
+  lines.push("2. **Neues Lovable-Cloud-Projekt** anlegen (oder bestehendes leeres nutzen).");
+  lines.push("3. **Schema kommt automatisch** aus `supabase/migrations/` (RLS, Tabellen, Buckets, Functions, Trigger).");
+  lines.push("4. **Secrets eintragen**: alle Namen aus `SECRETS-CHECKLISTE.txt` in Lovable-Cloud → Settings → Secrets.");
+  lines.push("5. **Auth-Benutzer wiederherstellen**: User aus `auth/users.json` via Admin-API anlegen (ID übernehmen!). Passwort-Reset-Mails an alle Patienten verschicken.");
+  lines.push("6. **Tabellen-Daten zurückspielen**: Die JSON-Dateien aus `db/` per Skript einspielen (z. B. via `psql \\copy` oder Restore-Edge-Function). CSVs sind für manuelle Inspektion in Excel/LibreOffice.");
   if (mode === "full") {
-    lines.push("6. **Storage-Dateien hochladen**: Dateien aus `storage/<bucket>/` in die jeweiligen");
-    lines.push("   neu angelegten Buckets hochladen (Cloud → Files).");
+    lines.push("7. **Storage-Dateien hochladen**: Dateien aus `storage/<bucket>/` in die neu angelegten Buckets hochladen (Cloud → Files oder via Skript).");
   }
   lines.push("");
-  lines.push("## Wichtig");
+  lines.push("## Wichtig — DSGVO");
   lines.push("");
   lines.push("- Dieses Backup enthält **personenbezogene Gesundheitsdaten** (Art. 9 DSGVO).");
-  lines.push("- Verschlüsselt aufbewahren (z.B. VeraCrypt-Container).");
+  lines.push("- Verschlüsselt aufbewahren (z. B. VeraCrypt-Container, GPG, verschlüsselte USB).");
   lines.push("- Aufbewahrungsfrist: 10 Jahre gemäß Praxis-DSGVO-Konzept.");
-  lines.push("- Alte Backups nach Ablauf der Frist sicher löschen.");
+  lines.push("- Alte Backups nach Ablauf der Frist sicher löschen (`shred` / sicheres Löschen).");
+  lines.push("- 2 Speichermedien empfohlen (z. B. lokale Festplatte + USB-Stick im Tresor).");
   lines.push("");
   return lines.join("\n");
 }
