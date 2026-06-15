@@ -613,7 +613,7 @@ Deno.serve(async (req) => {
       compressionOptions: { level: 6 },
     });
 
-    const filename = `naturheilpraxis-backup-DATEN-${isoTimestamp()}.zip`;
+    const filename = `naturheilpraxis-DATEN-nur-DB+Auth-${isoTimestamp()}.zip`;
 
     return new Response(zipBytes, {
       status: 200,
