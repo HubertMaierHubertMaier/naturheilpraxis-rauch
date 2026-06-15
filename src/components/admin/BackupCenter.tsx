@@ -107,6 +107,8 @@ export function BackupCenter() {
   >(null);
   const [githubRepo, setGithubRepo] = useState<string>("");
   const [githubBranch, setGithubBranch] = useState<string>("main");
+  const [repoDraft, setRepoDraft] = useState<string>("");
+  const [branchDraft, setBranchDraft] = useState<string>("main");
   const [savingRepo, setSavingRepo] = useState(false);
   const [lastFullBackup, setLastFullBackup] = useState<string | null>(null);
   const [lastDbBackup, setLastDbBackup] = useState<string | null>(null);
