@@ -329,18 +329,51 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (mode !== "db" && mode !== "full") {
-      return new Response(JSON.stringify({ error: "mode must be stats|db|full" }), {
+    // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
+    if (mode === "storage-list") {
+      const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
+      for (const bucket of BUCKETS) {
+        try {
+          const files = await listAllFiles(adminClient, bucket);
+          const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
+          // signedUrls in Batches erzeugen (createSignedUrls akzeptiert max ~100)
+          const batchSize = 100;
+          for (let i = 0; i < files.length; i += batchSize) {
+            const batch = files.slice(i, i + batchSize);
+            const { data, error } = await adminClient.storage
+              .from(bucket)
+              .createSignedUrls(batch.map((f) => f.path), 60 * 60); // 1h gültig
+            if (error) throw error;
+            for (let j = 0; j < batch.length; j++) {
+              const su = data?.[j];
+              if (su?.signedUrl) {
+                entries.push({ path: batch[j].path, size: batch[j].size, signedUrl: su.signedUrl });
+              }
+            }
+          }
+          result[bucket] = entries;
+        } catch (e) {
+          console.error(`[backup-export] storage-list ${bucket}:`, e);
+          result[bucket] = [];
+        }
+      }
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (mode !== "db") {
+      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ZIP bauen
+    // mode=db: nur Datenbank, serverseitig ZIP bauen (klein & schnell)
     const zip = new JSZip();
     const stats = await gatherStats(adminClient);
 
-    // Tabellen exportieren
     for (const table of TABLES) {
       try {
         const rows = await fetchTableAll(adminClient, table);
@@ -352,29 +385,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Storage-Dateien (nur im Voll-Backup)
-    if (mode === "full") {
-      for (const bucket of BUCKETS) {
-        try {
-          const files = await listAllFiles(adminClient, bucket);
-          for (const f of files) {
-            const { data, error } = await adminClient.storage.from(bucket).download(f.path);
-            if (error || !data) {
-              zip.file(`storage/${bucket}/${f.path}.ERROR.txt`, error?.message ?? "download failed");
-              continue;
-            }
-            const buf = new Uint8Array(await data.arrayBuffer());
-            zip.file(`storage/${bucket}/${f.path}`, buf);
-          }
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          zip.file(`storage/${bucket}.ERROR.txt`, msg);
-        }
-      }
-    }
-
-    // Manifest + Secrets-Checkliste
-    zip.file("BACKUP-MANIFEST.md", buildManifest(stats, mode as "db" | "full"));
+    zip.file("BACKUP-MANIFEST.md", buildManifest(stats, "db"));
     zip.file("SECRETS-CHECKLISTE.txt", buildSecretsChecklist());
     zip.file("stats.json", JSON.stringify(stats, null, 2));
 
@@ -384,7 +395,7 @@ Deno.serve(async (req) => {
       compressionOptions: { level: 6 },
     });
 
-    const filename = `naturheilpraxis-backup-${mode}-${isoTimestamp()}.zip`;
+    const filename = `naturheilpraxis-backup-db-${isoTimestamp()}.zip`;
 
     return new Response(zipBytes, {
       status: 200,
