@@ -12,13 +12,14 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download } from "lucide-react";
 import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
+import { BackupCenter } from "@/components/admin/BackupCenter";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
@@ -91,7 +92,7 @@ const AdminDashboard = () => {
           <AnamneseToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9 max-w-6xl">
+            <TabsList className="grid w-full grid-cols-10 max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -127,6 +128,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="audit" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
                 Protokoll
+              </TabsTrigger>
+              <TabsTrigger value="backup" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Backup
               </TabsTrigger>
             </TabsList>
 
@@ -233,6 +238,10 @@ const AdminDashboard = () => {
                   <PatientLibraryManager />
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="backup">
+              <BackupCenter />
             </TabsContent>
           </Tabs>
         </div>
