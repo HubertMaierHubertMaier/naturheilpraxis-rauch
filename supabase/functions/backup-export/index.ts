@@ -494,6 +494,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (mode === "github-code") {
+      const { repo, branch } = sanitizeGithubInput(url.searchParams.get("repo"), url.searchParams.get("branch"));
+      const githubRes = await fetch(`https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`, {
+        headers: { "User-Agent": "naturheilpraxis-backup-export" },
+      });
+      if (!githubRes.ok || !githubRes.body) {
+        throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${githubRes.status}). Repo/Branch prüfen.`);
+      }
+      const filename = `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`;
+      return new Response(githubRes.body, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
@@ -530,7 +550,7 @@ Deno.serve(async (req) => {
     }
 
     if (mode !== "db") {
-      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list" }), {
+      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list|github-code" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
