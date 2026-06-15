@@ -469,7 +469,7 @@ export function BackupCenter() {
           </Button>
 
           {/* Inline-Setup: GitHub-Repo eintragen, damit Code-Backup im 1-Klick funktioniert */}
-          {!githubRepo.trim() && (
+          {!githubRepo.trim() ? (
             <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-900 dark:text-amber-200">
@@ -483,17 +483,46 @@ export function BackupCenter() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     placeholder="https://github.com/peter-rauch/naturheilpraxis"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
+                    value={repoDraft}
+                    onChange={(e) => setRepoDraft(e.target.value)}
                     className="bg-background"
                   />
-                  <Button onClick={saveGithubRepo} disabled={savingRepo || !githubRepo.trim()}>
+                  <Button onClick={saveGithubRepo} disabled={savingRepo || !repoDraft.trim()}>
                     {savingRepo ? "Speichere…" : "Speichern & aktivieren"}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Wird einmal gespeichert und ab dann automatisch beim 1-Klick-Backup mit heruntergeladen.
                   Bei privaten Repos musst du im selben Browser bei GitHub eingeloggt sein.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertTitle className="text-emerald-900 dark:text-emerald-200">
+                GitHub-Repo aktiv — Code-Backup wird mitgesichert
+              </AlertTitle>
+              <AlertDescription className="space-y-2 text-sm">
+                <p>
+                  Gespeichertes Repo: <code className="rounded bg-background px-1 py-0.5 text-xs">{githubRepo}</code>
+                  {githubBranch !== "main" && (
+                    <span> (Branch: <code className="rounded bg-background px-1 py-0.5 text-xs">{githubBranch}</code>)</span>
+                  )}
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    placeholder="https://github.com/peter-rauch/naturheilpraxis"
+                    value={repoDraft}
+                    onChange={(e) => setRepoDraft(e.target.value)}
+                    className="bg-background"
+                  />
+                  <Button onClick={saveGithubRepo} disabled={savingRepo || !repoDraft.trim()} variant="outline">
+                    {savingRepo ? "Speichere…" : "Ändern"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  URL ändern und auf „Ändern" klicken, falls das Repo umgezogen ist. Sonst passt alles.
                 </p>
               </AlertDescription>
             </Alert>
