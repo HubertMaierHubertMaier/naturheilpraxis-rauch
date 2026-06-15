@@ -496,11 +496,22 @@ Deno.serve(async (req) => {
 
     if (mode === "github-code") {
       const { repo, branch } = sanitizeGithubInput(url.searchParams.get("repo"), url.searchParams.get("branch"));
-      const githubRes = await fetch(`https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`, {
-        headers: { "User-Agent": "naturheilpraxis-backup-export" },
-      });
+      const githubToken = Deno.env.get("GITHUB_TOKEN") ?? "";
+      const ghHeaders: Record<string, string> = { "User-Agent": "naturheilpraxis-backup-export" };
+      if (githubToken) ghHeaders["Authorization"] = `Bearer ${githubToken}`;
+      // GitHub API endpoint supports private repos with token and returns a redirect to codeload
+      const apiUrl = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(branch)}`;
+      const codeloadUrl = `https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`;
+      let githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
       if (!githubRes.ok || !githubRes.body) {
-        throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${githubRes.status}). Repo/Branch prüfen.`);
+        const status = githubRes.status;
+        if (status === 404 && !githubToken) {
+          throw new Error(`GitHub-Code-ZIP HTTP 404 — Repo ist vermutlich PRIVAT. Bitte ein GitHub Personal Access Token mit "repo"-Scope als Secret "GITHUB_TOKEN" hinterlegen.`);
+        }
+        if (status === 401 || status === 403) {
+          throw new Error(`GitHub-Code-ZIP HTTP ${status} — Token abgelaufen oder ohne "repo"-Scope. Bitte GITHUB_TOKEN erneuern.`);
+        }
+        throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${status}). Repo/Branch prüfen.`);
       }
       const filename = `Naturheilpraxis-CODE-Backup-${isoTimestamp()}.zip`;
       return new Response(githubRes.body, {
