@@ -149,8 +149,14 @@ export function BackupCenter() {
       .eq("key", "github_repo")
       .maybeSingle();
     const v = (data?.value as { owner_repo?: string; branch?: string } | null) ?? null;
-    if (v?.owner_repo) setGithubRepo(v.owner_repo);
-    if (v?.branch) setGithubBranch(v.branch);
+    if (v?.owner_repo) {
+      setGithubRepo(v.owner_repo);
+      setRepoDraft(v.owner_repo);
+    }
+    if (v?.branch) {
+      setGithubBranch(v.branch);
+      setBranchDraft(v.branch);
+    }
   };
 
   const saveGithubRepo = async () => {
