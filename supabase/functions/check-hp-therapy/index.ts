@@ -355,7 +355,39 @@ ${ctxBlock || "(keine weiteren Befunddaten eingegeben)"}`;
       body: mdToHtml(markdown),
     });
 
-    return new Response(JSON.stringify({ html, markdown, modelLabel }), {
+    let sessionId: string | null = null;
+    const pid = (body.pseudonymId || "").trim();
+    if (pid) {
+      try {
+        const { data: inserted } = await adminClient
+          .from("therapy_sessions")
+          .insert({
+            pseudonym_id: pid,
+            created_by: user.id,
+            kind: "hp_therapy_check",
+            notiz: "HP-Therapie Sinnhaftigkeits-Check",
+            empfehlung: markdown,
+            befund_html: html,
+            befund_meta: { modelLabel, generatedAt: new Date().toISOString(), kind: "hp_therapy_check" },
+            eingabe_daten: {
+              _pseudonym_id: pid,
+              pseudonymId: pid,
+              hpCheck: {
+                meineTherapie: meineTherapie.slice(0, 8000),
+                apothekerRezept: apothekerRezept.slice(0, 8000),
+                zusatzTherapie: zusatzTherapie.slice(0, 8000),
+              },
+            },
+          })
+          .select("id")
+          .single();
+        sessionId = inserted?.id ?? null;
+      } catch (saveErr) {
+        console.error("HP-Check save failed", saveErr);
+      }
+    }
+
+    return new Response(JSON.stringify({ html, markdown, modelLabel, sessionId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
