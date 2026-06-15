@@ -266,8 +266,9 @@ Kurzes Fazit (3-5 Sätze) über die Kombination aus deiner Therapie + Apotheker-
 Tabelle: | Maßnahme | Wofür sinnvoll | Bezug zu Befund/Symptom/Pathogen |
 
 ## 3. Bewertung Apotheker-Rezept
-Nur wenn Block vorhanden. Tabelle: | Wirkstoff/Mittel | Dosis | Sinnvoll? | Begründung | Konflikt mit Meine Therapie? |
-Bewerte kritisch im HP-Rahmen (nicht reflexhaft pro Pharma), benenne sinnvolle Ergänzungen ebenso wie überflüssige oder doppelt wirkende Mittel.
+**PFLICHT-Abschnitt, sobald im Block „APOTHEKER-REZEPT" mehr als 5 Zeichen Inhalt stehen** (auch wenn Inhalt unstrukturiert, OCR-roh oder unvollständig ist – dann ausdrücklich vermerken: „OCR-Rohtext, Wirkstoffe so weit erkennbar:" und mit dem arbeiten, was da ist). Nur weglassen, wenn der Block exakt „(kein Apotheker-Rezept eingegeben)" enthält.
+Tabelle: | Wirkstoff/Mittel | Dosis | Sinnvoll? | Begründung | Konflikt mit Meine Therapie? |
+Bewerte kritisch im HP-Rahmen (nicht reflexhaft pro Pharma), benenne sinnvolle Ergänzungen ebenso wie überflüssige oder doppelt wirkende Mittel. Bei unklarem OCR-Text: liste die erkennbaren Begriffe auf und bitte um Klarstellung – aber überspringe den Abschnitt NICHT.
 
 ## 4. Bewertung Zusatz-Therapie / Diagnostik
 Nur wenn Block vorhanden. Z.B. bei gezielter Stuhlanalyse auf bestimmte Keime: ist die Auswahl der Keime im Befund-Kontext sinnvoll? Fehlen wichtige Keime (z.B. Klebsiella, Candida, Blastocystis, Methanobrevibacter)? Gibt es preiswertere/aussagekräftigere Alternativen?
