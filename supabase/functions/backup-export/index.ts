@@ -3,6 +3,7 @@
 //   ?mode=stats  -> JSON mit Übersicht (Tabellen, Buckets, Secrets)
 //   ?mode=db     -> ZIP mit allen Tabellen als CSV+JSON + MANIFEST
 //   ?mode=full   -> ZIP wie db, zusätzlich alle Storage-Dateien
+//   ?mode=github-code&repo=owner/repo&branch=main -> GitHub-Code-ZIP mit Praxis-Dateiname
 //
 // Auth: Nur Admin (per JWT + has_role).
 
@@ -162,6 +163,18 @@ function rowsToCsv(rows: Record<string, unknown>[]): string {
 
 function isoTimestamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+function sanitizeGithubInput(repo: string | null, branch: string | null): { repo: string; branch: string } {
+  const cleanedRepo = (repo ?? "").trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+  const cleanedBranch = (branch ?? "main").trim() || "main";
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleanedRepo)) {
+    throw new Error("Ungültiges GitHub-Repo. Erwartet: besitzer/repo");
+  }
+  if (!/^[A-Za-z0-9._\/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
+    throw new Error("Ungültiger GitHub-Branch.");
+  }
+  return { repo: cleanedRepo, branch: cleanedBranch };
 }
 
 async function fetchTableAll(
