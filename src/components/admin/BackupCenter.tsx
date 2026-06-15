@@ -377,6 +377,8 @@ export function BackupCenter() {
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
       setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings });
+      markDone("lastFull");
+      markDone("lastDb");
       if (warnings === 0) {
         toast.success(`Voll-Backup heruntergeladen (${formatBytes(finalBlob.size)}).`);
       } else {
