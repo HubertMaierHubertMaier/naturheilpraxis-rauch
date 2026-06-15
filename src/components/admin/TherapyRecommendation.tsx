@@ -856,6 +856,8 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
+  const [apothekerRezept, setApothekerRezept] = useState("");
+  const [zusatzTherapie, setZusatzTherapie] = useState("");
   const [hpCheckLoading, setHpCheckLoading] = useState(false);
   const [hpCheckHtml, setHpCheckHtml] = useState("");
   const [hpCheckMarkdown, setHpCheckMarkdown] = useState("");
