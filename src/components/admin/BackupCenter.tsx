@@ -194,7 +194,7 @@ export function BackupCenter() {
       branch,
       url: `${getFunctionsUrl()}/backup-export?mode=github-code&repo=${encodeURIComponent(cleaned)}&branch=${encodeURIComponent(branch)}`,
       githubUrl: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
-      filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
+      filename: `naturheilpraxis-KOMPLETT-GITHUB-Quellcode-${isoTimestamp()}.zip`,
     };
   };
 
@@ -340,7 +340,7 @@ export function BackupCenter() {
       setProgress(20);
       const { bytes, filename } = await fetchDbZipBytes(token);
       setProgress(100);
-      const fn = `naturheilpraxis-backup-DATEN-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-DATEN-nur-DB+Auth-${isoTimestamp()}.zip`;
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
@@ -442,7 +442,7 @@ export function BackupCenter() {
         },
       );
       setProgress(100);
-      const fn = `naturheilpraxis-backup-VOLL-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-${isoTimestamp()}.zip`;
       saveBlob(finalBlob, fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
@@ -682,14 +682,14 @@ export function BackupCenter() {
                   { cat: "Edge Functions", src: "supabase/functions/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
                   { cat: "DB-Schema, RLS, Migrationen", src: "supabase/migrations/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
                   { cat: "Statische Infothek-HTMLs", src: "public/*.html", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
-                  { cat: "Statische Therapie-PDFs", src: "public/therapie/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
-                  { cat: "Mail-Relay PHP, Skripte, Doku", src: "docs/, scripts/", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
-                  { cat: "package.json / bun.lock / vite.config.ts", src: "Repo-Root", fn: "GitHub: repo-branch.zip", code: true, data: false, status: "ok" },
-                  { cat: "DB-Inhalte (Patienten, Anamnesen, FAQs, Wiki, IAA, Preise …)", src: "DB-Tabellen", fn: "naturheilpraxis-backup-DATEN-YYYY-MM-DD_HH-MM.zip", code: false, data: true, status: "ok" },
-                  { cat: "Hochgeladene Patienten-PDFs", src: "Bucket anamnesis-pdfs", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
-                  { cat: "Patienten-Bibliothek (PDF/MP3)", src: "Bucket patient-library", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
-                  { cat: "Therapie-Befund-Dokumente", src: "Bucket therapy-documents", fn: "naturheilpraxis-backup-VOLL-YYYY-MM-DD_HH-MM.zip (im Unterordner storage/)", code: false, data: true, status: "ok" },
-                  { cat: "Auth-Benutzerkonten (E-Mail, ID, Rollen, MFA-Faktoren)", src: "auth.users", fn: "In DATEN und VOLL: auth/users.json", code: false, data: true, status: "ok", note: "auth/users.json — in jedem Daten-ZIP" },
+                  { cat: "Statische Therapie-PDFs", src: "public/therapie/", fn: "naturheilpraxis-KOMPLETT-GITHUB-Quellcode-*.zip", code: true, data: false, status: "ok" },
+                  { cat: "Mail-Relay PHP, Skripte, Doku", src: "docs/, scripts/", fn: "naturheilpraxis-KOMPLETT-GITHUB-Quellcode-*.zip", code: true, data: false, status: "ok" },
+                  { cat: "package.json / bun.lock / vite.config.ts", src: "Repo-Root", fn: "naturheilpraxis-KOMPLETT-GITHUB-Quellcode-*.zip", code: true, data: false, status: "ok" },
+                  { cat: "DB-Inhalte (Patienten, Anamnesen, FAQs, Wiki, IAA, Preise …)", src: "DB-Tabellen", fn: "naturheilpraxis-DATEN-nur-DB+Auth-*.zip  ODER  naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip", code: false, data: true, status: "ok" },
+                  { cat: "Hochgeladene Patienten-PDFs", src: "Bucket anamnesis-pdfs", fn: "naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip (Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Patienten-Bibliothek (PDF/MP3)", src: "Bucket patient-library", fn: "naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip (Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Therapie-Befund-Dokumente", src: "Bucket therapy-documents", fn: "naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip (Unterordner storage/)", code: false, data: true, status: "ok" },
+                  { cat: "Auth-Benutzerkonten (E-Mail, ID, Rollen, MFA-Faktoren)", src: "auth.users", fn: "In beiden Daten-ZIPs: auth/users.json", code: false, data: true, status: "ok", note: "auth/users.json — in jedem Daten-ZIP" },
                   { cat: "Secrets-Werte (API-Keys, SMTP, Relay)", src: "Lovable Cloud", fn: "—", code: false, data: false, status: "warn", note: "nur Liste (SECRETS-CHECKLISTE.txt) — Werte aus Provider-Dashboards holen" },
                   { cat: "Passwörter", src: "gehasht in auth.users", fn: "—", code: false, data: false, status: "info", note: "technisch nicht exportierbar — bei Restore Reset-Mails versenden" },
                   { cat: "Dynamisch erzeugte Hypnose-MP3s", src: "Browser zur Laufzeit", fn: "—", code: false, data: false, status: "info", note: "nicht nötig — werden via Edge-TTS neu erzeugt" },
@@ -909,7 +909,7 @@ export function BackupCenter() {
             <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
           </Button>
           <p className="text-xs text-muted-foreground">
-            Speichert als <code>naturheilpraxis-backup-CODE-GITHUB-YYYY-MM-DD_HH-MM.zip</code>.
+            Speichert als <code>naturheilpraxis-KOMPLETT-GITHUB-Quellcode-YYYY-MM-DD_HH-MM.zip</code>.
             Funktioniert für öffentlich erreichbare GitHub-Repos.
           </p>
         </CardContent>
@@ -934,9 +934,9 @@ export function BackupCenter() {
             <li>
               Ziehe die gewünschten Dateien in den Chat:
               <ul className="ml-5 mt-1 list-disc text-muted-foreground">
-                <li><code>naturheilpraxis-backup-FULL-*.zip</code> (DB + Auth-User + Storage)</li>
-                <li>oder <code>naturheilpraxis-backup-db-*.zip</code> (nur DB + Auth-User)</li>
-                <li>plus ggf. <code>&lt;repo&gt;-main.zip</code> von GitHub (nur wenn auch der Code weg ist)</li>
+                <li><code>naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip</code> (DB + Auth-User + Storage)</li>
+                <li>oder <code>naturheilpraxis-DATEN-nur-DB+Auth-*.zip</code> (nur DB + Auth-User)</li>
+                <li>plus ggf. <code>naturheilpraxis-KOMPLETT-GITHUB-Quellcode-*.zip</code> (nur wenn auch der Code weg ist)</li>
               </ul>
             </li>
             <li>Schreibe in den Chat den fertigen Prompt unten (oder eigene Formulierung).</li>
