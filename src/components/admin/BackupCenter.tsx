@@ -182,6 +182,7 @@ export function BackupCenter() {
     const branch = githubBranch.trim() || "main";
     const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
     window.open(url, "_blank", "noopener");
+    markDone("lastGithub");
     toast.success("GitHub-ZIP-Download gestartet (neuer Tab).");
   };
 
