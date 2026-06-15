@@ -778,7 +778,11 @@ export function BackupCenter() {
             <div className="space-y-2 rounded border bg-muted/30 p-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">
-                  {downloading === "db" ? "Schnell-Backup läuft…" : "Voll-Backup läuft…"}
+                  {downloading === "db"
+                    ? "Schnell-Backup läuft…"
+                    : downloading === "code"
+                      ? "Code-Backup läuft…"
+                      : "Voll-Backup läuft…"}
                 </span>
                 <span className="tabular-nums text-muted-foreground">{progress}%</span>
               </div>
@@ -852,7 +856,7 @@ export function BackupCenter() {
           </CardTitle>
           <CardDescription>
             Lädt den kompletten Source-Code (React-App, Edge Functions, Migrationen, Skripte,
-            statische Infothek-HTMLs, Therapie-PDFs) als ZIP direkt von GitHub. Ergänzt das
+            statische Infothek-HTMLs, Therapie-PDFs) als eindeutig benanntes ZIP von GitHub. Ergänzt das
             Daten-Backup oben — gemeinsam ergibt das eine 100%ige Wiederherstellungs-Basis.
           </CardDescription>
         </CardHeader>
@@ -888,8 +892,8 @@ export function BackupCenter() {
             <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
           </Button>
           <p className="text-xs text-muted-foreground">
-            Lädt <code>https://github.com/{githubRepo || "<besitzer>/<repo>"}/archive/refs/heads/{githubBranch || "main"}.zip</code>.
-            Funktioniert nur bei öffentlichen Repos ohne Login; bei privaten musst du bei GitHub eingeloggt sein.
+            Speichert als <code>naturheilpraxis-backup-CODE-GITHUB-YYYY-MM-DD_HH-MM.zip</code>.
+            Funktioniert für öffentlich erreichbare GitHub-Repos.
           </p>
         </CardContent>
       </Card>
