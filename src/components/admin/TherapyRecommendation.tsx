@@ -1684,6 +1684,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
     setPerplexityAnalyse(asText(d.perplexityAnalyse));
     setEigeneTherapieVorlage(asText(d.eigeneTherapieVorlage));
+    setApothekerRezept(asText(d.apothekerRezept));
+    setZusatzTherapie(asText(d.zusatzTherapie));
     if (Array.isArray(d.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
