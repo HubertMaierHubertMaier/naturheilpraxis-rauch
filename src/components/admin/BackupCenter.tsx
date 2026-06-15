@@ -107,6 +107,8 @@ export function BackupCenter() {
   >(null);
   const [githubRepo, setGithubRepo] = useState<string>("");
   const [githubBranch, setGithubBranch] = useState<string>("main");
+  const [repoDraft, setRepoDraft] = useState<string>("");
+  const [branchDraft, setBranchDraft] = useState<string>("main");
   const [savingRepo, setSavingRepo] = useState(false);
   const [lastFullBackup, setLastFullBackup] = useState<string | null>(null);
   const [lastDbBackup, setLastDbBackup] = useState<string | null>(null);
@@ -147,12 +149,18 @@ export function BackupCenter() {
       .eq("key", "github_repo")
       .maybeSingle();
     const v = (data?.value as { owner_repo?: string; branch?: string } | null) ?? null;
-    if (v?.owner_repo) setGithubRepo(v.owner_repo);
-    if (v?.branch) setGithubBranch(v.branch);
+    if (v?.owner_repo) {
+      setGithubRepo(v.owner_repo);
+      setRepoDraft(v.owner_repo);
+    }
+    if (v?.branch) {
+      setGithubBranch(v.branch);
+      setBranchDraft(v.branch);
+    }
   };
 
   const saveGithubRepo = async () => {
-    const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    const cleaned = repoDraft.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
     if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
       toast.error("Bitte als `besitzer/repo` eingeben (z. B. `peter-rauch/naturheilpraxis`).");
       return;
@@ -160,11 +168,12 @@ export function BackupCenter() {
     setSavingRepo(true);
     try {
       const { error } = await supabase.from("app_settings").upsert(
-        { key: "github_repo", value: { owner_repo: cleaned, branch: githubBranch.trim() || "main" } },
+        { key: "github_repo", value: { owner_repo: cleaned, branch: branchDraft.trim() || "main" } },
         { onConflict: "key" },
       );
       if (error) throw error;
       setGithubRepo(cleaned);
+      setGithubBranch(branchDraft.trim() || "main");
       toast.success("GitHub-Repo gespeichert.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
@@ -460,7 +469,7 @@ export function BackupCenter() {
           </Button>
 
           {/* Inline-Setup: GitHub-Repo eintragen, damit Code-Backup im 1-Klick funktioniert */}
-          {!githubRepo.trim() && (
+          {!githubRepo.trim() ? (
             <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-900 dark:text-amber-200">
@@ -474,17 +483,46 @@ export function BackupCenter() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     placeholder="https://github.com/peter-rauch/naturheilpraxis"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
+                    value={repoDraft}
+                    onChange={(e) => setRepoDraft(e.target.value)}
                     className="bg-background"
                   />
-                  <Button onClick={saveGithubRepo} disabled={savingRepo || !githubRepo.trim()}>
+                  <Button onClick={saveGithubRepo} disabled={savingRepo || !repoDraft.trim()}>
                     {savingRepo ? "Speichere…" : "Speichern & aktivieren"}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Wird einmal gespeichert und ab dann automatisch beim 1-Klick-Backup mit heruntergeladen.
                   Bei privaten Repos musst du im selben Browser bei GitHub eingeloggt sein.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertTitle className="text-emerald-900 dark:text-emerald-200">
+                GitHub-Repo aktiv — Code-Backup wird mitgesichert
+              </AlertTitle>
+              <AlertDescription className="space-y-2 text-sm">
+                <p>
+                  Gespeichertes Repo: <code className="rounded bg-background px-1 py-0.5 text-xs">{githubRepo}</code>
+                  {githubBranch !== "main" && (
+                    <span> (Branch: <code className="rounded bg-background px-1 py-0.5 text-xs">{githubBranch}</code>)</span>
+                  )}
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    placeholder="https://github.com/peter-rauch/naturheilpraxis"
+                    value={repoDraft}
+                    onChange={(e) => setRepoDraft(e.target.value)}
+                    className="bg-background"
+                  />
+                  <Button onClick={saveGithubRepo} disabled={savingRepo || !repoDraft.trim()} variant="outline">
+                    {savingRepo ? "Speichere…" : "Ändern"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  URL ändern und auf „Ändern" klicken, falls das Repo umgezogen ist. Sonst passt alles.
                 </p>
               </AlertDescription>
             </Alert>
