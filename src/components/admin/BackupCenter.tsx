@@ -132,8 +132,55 @@ export function BackupCenter() {
     }
   };
 
+  const loadGithubRepo = async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "github_repo")
+      .maybeSingle();
+    const v = (data?.value as { owner_repo?: string; branch?: string } | null) ?? null;
+    if (v?.owner_repo) setGithubRepo(v.owner_repo);
+    if (v?.branch) setGithubBranch(v.branch);
+  };
+
+  const saveGithubRepo = async () => {
+    const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
+      toast.error("Bitte als `besitzer/repo` eingeben (z. B. `peter-rauch/naturheilpraxis`).");
+      return;
+    }
+    setSavingRepo(true);
+    try {
+      const { error } = await supabase.from("app_settings").upsert(
+        { key: "github_repo", value: { owner_repo: cleaned, branch: githubBranch.trim() || "main" } },
+        { onConflict: "key" },
+      );
+      if (error) throw error;
+      setGithubRepo(cleaned);
+      toast.success("GitHub-Repo gespeichert.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
+      toast.error(`Speichern fehlgeschlagen: ${msg}`);
+    } finally {
+      setSavingRepo(false);
+    }
+  };
+
+  const downloadGithubZip = () => {
+    const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
+      toast.error("Erst Repo-Pfad speichern (Format `besitzer/repo`).");
+      return;
+    }
+    const branch = githubBranch.trim() || "main";
+    const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
+    window.open(url, "_blank", "noopener");
+    toast.success("GitHub-ZIP-Download gestartet (neuer Tab).");
+  };
+
   useEffect(() => {
     loadStats();
+    loadGithubRepo();
   }, []);
 
   async function getToken(): Promise<string> {
