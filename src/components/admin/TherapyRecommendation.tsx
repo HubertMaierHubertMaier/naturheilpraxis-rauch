@@ -959,6 +959,8 @@ export function TherapyRecommendation() {
     sonstigeUntersuchungen,
     perplexityAnalyse,
     eigeneTherapieVorlage,
+    apothekerRezept,
+    zusatzTherapie,
     mannayanOrders,
     selectedCategories,
     useMapReduce,
