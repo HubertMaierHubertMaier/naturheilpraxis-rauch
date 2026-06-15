@@ -531,7 +531,7 @@ export function BackupCenter() {
               </span>
             </div>
             <span className="text-xs font-normal opacity-90">
-              Daten-Backup + Code-Backup nacheinander · Browser fragt 2× nach Speichern
+              2 separate ZIPs landen automatisch im Download-Ordner (kein zweiter Speichern-Dialog)
             </span>
           </Button>
 
