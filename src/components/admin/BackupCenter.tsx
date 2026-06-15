@@ -374,7 +374,7 @@ export function BackupCenter() {
                     {lastResult.warnings > 0 && ` · ${lastResult.warnings} Datei(en) mit Fehler (siehe ERROR.txt im ZIP)`}
                   </>
                 ) : (
-                  lastResult.message
+                  (lastResult as { ok: false; message: string }).message
                 )}
               </AlertDescription>
             </Alert>
