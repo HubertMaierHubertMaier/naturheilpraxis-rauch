@@ -271,7 +271,7 @@ export function BackupCenter() {
       setProgress(20);
       const { bytes, filename } = await fetchDbZipBytes(token);
       setProgress(100);
-      const fn = `naturheilpraxis-backup-db-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-backup-DATEN-${isoTimestamp()}.zip`;
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
@@ -373,7 +373,7 @@ export function BackupCenter() {
         },
       );
       setProgress(100);
-      const fn = `naturheilpraxis-backup-FULL-${isoTimestamp()}.zip`;
+      const fn = `naturheilpraxis-backup-VOLL-${isoTimestamp()}.zip`;
       saveBlob(finalBlob, fn);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
