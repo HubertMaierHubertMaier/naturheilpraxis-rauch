@@ -193,6 +193,7 @@ export function BackupCenter() {
       cleaned,
       branch,
       url: `${getFunctionsUrl()}/backup-export?mode=github-code&repo=${encodeURIComponent(cleaned)}&branch=${encodeURIComponent(branch)}`,
+      githubUrl: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
       filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
     };
   };
@@ -221,23 +222,32 @@ export function BackupCenter() {
     return { bytes: buf, filename };
   }
 
-  const downloadGithubZip = async () => {
+  const downloadGithubZip = async (preparedWindow?: Window | null) => {
     setDownloading("code");
     setProgress(0);
     setLastResult(null);
     const started = Date.now();
+    let info: ReturnType<typeof getGithubZipDownload> | null = null;
     try {
       const token = await getToken();
       setProgress(40);
+      info = getGithubZipDownload();
       const { bytes, filename } = await fetchGithubZipBytes(token);
       setProgress(100);
       saveBlob(new Blob([bytes], { type: "application/zip" }), filename);
+      preparedWindow?.close();
       const dur = Math.round((Date.now() - started) / 1000);
       setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0 });
       markDone("lastGithub");
       toast.success(`Code-ZIP heruntergeladen: ${filename} (${formatBytes(bytes.byteLength)}).`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "GitHub-ZIP konnte nicht geladen werden.";
+      if (preparedWindow && info && !preparedWindow.closed) {
+        preparedWindow.location.href = info.githubUrl;
+        markDone("lastGithub");
+        toast.warning("Server-Download nicht möglich — normaler GitHub-Download wurde im vorbereiteten Tab gestartet.");
+        return;
+      }
       log(`FEHLER: ${msg}`);
       setLastResult({ ok: false, message: msg });
       toast.error(msg);
