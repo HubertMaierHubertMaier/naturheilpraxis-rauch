@@ -527,7 +527,8 @@ Deno.serve(async (req) => {
     const zip = new JSZip();
     const stats = await gatherStats(adminClient);
 
-    for (const table of TABLES) {
+    const tableNamesForDb = stats.tables.map((t) => t.name);
+    for (const table of tableNamesForDb) {
       try {
         const rows = await fetchTableAll(adminClient, table);
         zip.file(`db/${table}.json`, JSON.stringify(rows, null, 2));
