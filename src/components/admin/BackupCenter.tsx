@@ -183,27 +183,40 @@ export function BackupCenter() {
     }
   };
 
-  const downloadGithubZip = () => {
+  const getGithubZipDownload = () => {
     const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
     if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
-      toast.error("Erst Repo-Pfad speichern (Format `besitzer/repo`).");
-      return;
+      throw new Error("Erst Repo-Pfad speichern (Format `besitzer/repo`).");
     }
     const branch = githubBranch.trim() || "main";
-    const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
-    // Iframe-Trigger statt window.open — wird vom Popup-Blocker nicht abgefangen,
-    // auch wenn der Aufruf nach einer async-Pause (1-Klick-Routine) erfolgt.
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    setTimeout(() => {
-      try { document.body.removeChild(iframe); } catch { /* ignore */ }
-    }, 60_000);
-    // Fallback-Tab als Sicherheit (falls Browser den Iframe-Download blockt)
-    try { window.open(url, "_blank", "noopener"); } catch { /* ignore */ }
+    return {
+      cleaned,
+      branch,
+      url: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
+      filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
+    };
+  };
+
+  const downloadGithubZip = (preparedWindow?: Window | null) => {
+    let info: ReturnType<typeof getGithubZipDownload>;
+    try {
+      info = getGithubZipDownload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "GitHub-ZIP konnte nicht gestartet werden.");
+      preparedWindow?.close();
+      return;
+    }
+    if (preparedWindow && !preparedWindow.closed) {
+      preparedWindow.location.href = info.url;
+    } else {
+      const opened = window.open(info.url, "_blank", "noopener");
+      if (!opened) {
+        toast.error("Browser hat den GitHub-Download blockiert. Bitte den separaten GitHub-ZIP-Knopf nutzen.");
+        return;
+      }
+    }
     markDone("lastGithub");
-    toast.success(`Code-ZIP-Download (GitHub) gestartet: ${cleaned}-${branch}.zip`);
+    toast.success(`Code-ZIP-Download (GitHub) gestartet: ${info.filename}`);
   };
 
   useEffect(() => {
