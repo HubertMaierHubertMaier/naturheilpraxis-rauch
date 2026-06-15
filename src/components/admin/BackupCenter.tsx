@@ -191,9 +191,19 @@ export function BackupCenter() {
     }
     const branch = githubBranch.trim() || "main";
     const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
-    window.open(url, "_blank", "noopener");
+    // Iframe-Trigger statt window.open — wird vom Popup-Blocker nicht abgefangen,
+    // auch wenn der Aufruf nach einer async-Pause (1-Klick-Routine) erfolgt.
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      try { document.body.removeChild(iframe); } catch { /* ignore */ }
+    }, 60_000);
+    // Fallback-Tab als Sicherheit (falls Browser den Iframe-Download blockt)
+    try { window.open(url, "_blank", "noopener"); } catch { /* ignore */ }
     markDone("lastGithub");
-    toast.success("GitHub-ZIP-Download gestartet (neuer Tab).");
+    toast.success(`Code-ZIP-Download (GitHub) gestartet: ${cleaned}-${branch}.zip`);
   };
 
   useEffect(() => {
