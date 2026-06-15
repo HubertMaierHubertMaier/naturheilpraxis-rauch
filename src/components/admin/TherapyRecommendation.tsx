@@ -856,6 +856,11 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
+  const [hpCheckLoading, setHpCheckLoading] = useState(false);
+  const [hpCheckHtml, setHpCheckHtml] = useState("");
+  const [hpCheckMarkdown, setHpCheckMarkdown] = useState("");
+  const [hpCheckModelLabel, setHpCheckModelLabel] = useState("");
+  const [hpCheckTimestamp, setHpCheckTimestamp] = useState<string>("");
   const [mannayanOrders, setMannayanOrders] = useState<MannayanOrderContext[]>([]);
   const [isLoadingMannayanOrders, setIsLoadingMannayanOrders] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -3754,13 +3759,12 @@ export function TherapyRecommendation() {
                   />
                   <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis) – Die KI bewertet diese kritisch und integriert / ersetzt / ergänzt sie.</p>
                 </div>
-                <div className="rounded-md border border-emerald-300/70 bg-emerald-50/50 dark:bg-emerald-950/10 p-3 space-y-2">
+                <div className="rounded-md border-2 border-emerald-400/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <label className="text-sm font-medium flex items-center gap-1.5">
-                      <FileType className="h-3.5 w-3.5 text-emerald-700" />
-                      Eigene Therapie-/Verordnungs-Vorlage zur KI-Prüfung
+                    <label className="text-sm font-semibold flex items-center gap-1.5">
+                      🌿 Meine Therapie (Heilpraktiker) – KI-Sinnhaftigkeits-Check
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <input
                         ref={ownTherapyFileRef}
                         type="file"
@@ -3775,15 +3779,118 @@ export function TherapyRecommendation() {
                       <Button type="button" size="sm" variant="outline" onClick={() => ownTherapyFileRef.current?.click()} className="gap-1.5">
                         <FileUp className="h-3.5 w-3.5" /> PDF/Word einlesen
                       </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={hpCheckLoading || !eigeneTherapieVorlage.trim()}
+                        onClick={async () => {
+                          if (!eigeneTherapieVorlage.trim()) {
+                            toast({ title: "Leeres Feld", description: "Bitte zuerst deinen Therapieplan eingeben.", variant: "destructive" });
+                            return;
+                          }
+                          setHpCheckLoading(true);
+                          setHpCheckHtml("");
+                          setHpCheckMarkdown("");
+                          try {
+                            const diagnosenText = manualDiagnosen
+                              .map((d) => `${d.icd10 ? `[${d.icd10}] ` : ""}${d.diagnose || ""}${d.begruendung ? ` – ${d.begruendung}` : ""}`)
+                              .filter((s) => s.trim()).join("\n");
+                            const { data, error } = await supabase.functions.invoke("check-hp-therapy", {
+                              body: {
+                                pseudonymId: pseudonymId.trim(),
+                                meineTherapie: eigeneTherapieVorlage,
+                                symptome, erkrankung,
+                                pathogensText: formatPathogensForAI(pathogens),
+                                diagnosenText,
+                                laborErhoeht, laborErniedrigt, laborKomplett,
+                                stuhlbefund, arztbericht, metatronHeel,
+                                medikamente, bisherigeMittel,
+                                alter, geschlecht, schwanger,
+                                usePro: useProModel,
+                              },
+                            });
+                            if (error) throw error;
+                            const payload = data as { html?: string; markdown?: string; modelLabel?: string; error?: string };
+                            if (payload?.error) throw new Error(payload.error);
+                            if (!payload?.html) throw new Error("Leere Antwort");
+                            setHpCheckHtml(payload.html);
+                            setHpCheckMarkdown(payload.markdown || "");
+                            setHpCheckModelLabel(payload.modelLabel || "");
+                            setHpCheckTimestamp(new Date().toLocaleString("de-DE"));
+                            toast({ title: "Prüfung fertig", description: "Bewertung deiner Therapie steht unten." });
+                          } catch (e) {
+                            toast({ title: "Prüfung fehlgeschlagen", description: e instanceof Error ? e.message : "Unbekannter Fehler", variant: "destructive" });
+                          } finally {
+                            setHpCheckLoading(false);
+                          }
+                        }}
+                      >
+                        {hpCheckLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        Meine Therapie prüfen
+                      </Button>
                     </div>
                   </div>
                   <Textarea
                     value={eigeneTherapieVorlage}
                     onChange={(e) => setEigeneTherapieVorlage(e.target.value)}
-                    placeholder="Hier eigenen Therapieplan, Verordnungsidee oder Patienten-Medikamentenliste eingeben/einfügen. Die KI prüft: passt das zum Befund, welche Themen werden damit adressiert, was ist sinnvoll, überflüssig, riskant oder fehlt?"
-                    rows={6}
+                    placeholder="Hier deinen Heilpraktiker-Therapieplan eingeben (Phyto, Ortho, Frequenz, Bioresonanz, Ausleitung, Mykotherapie, Homöopathie, EAV-Mittel …). Die KI prüft auf Sinnhaftigkeit gegen Symptome, Pathogene, Diagnosen und Labor – im naturheilkundlichen Rahmen, nicht aus Pharma-Sicht."
+                    rows={8}
                   />
-                  <p className="text-xs text-muted-foreground">Wird nicht blind übernommen, sondern gegen Befund, Labor, Medikamente, Wiki und Sicherheit geprüft.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Bewertung im HP-Rahmen: Bioresonanz/Frequenz/Phyto/Ortho/EAV/NLS sind gleichrangig. Prüft auf Lücken, Redundanzen, echte Wechselwirkungen und sinnvolle Reihenfolge – ohne reflexhafte „ärztlich abklären"-Floskeln.
+                  </p>
+
+                  {(hpCheckLoading || hpCheckHtml) && (
+                    <div className="mt-3 rounded-md border border-emerald-500/40 bg-background p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-emerald-600" />
+                          Sinnhaftigkeits-Check
+                          {hpCheckModelLabel && <Badge variant="outline" className="text-xs">{hpCheckModelLabel}</Badge>}
+                          {hpCheckTimestamp && <span className="text-xs text-muted-foreground">· {hpCheckTimestamp}</span>}
+                        </div>
+                        {hpCheckHtml && (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button" size="sm" variant="outline" className="gap-1.5"
+                              onClick={() => {
+                                const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.pdf`;
+                                const w = window.open("", "_blank");
+                                if (!w) return;
+                                w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`);
+                                w.document.close();
+                              }}
+                              title="Öffnet HTML in neuem Tab und startet den Druck-Dialog – dort Als PDF speichern wählen."
+                            >
+                              <FileText className="h-3.5 w-3.5" /> Als PDF speichern
+                            </Button>
+                            <Button
+                              type="button" size="sm" variant="ghost" className="gap-1.5"
+                              onClick={() => {
+                                const w = window.open("", "_blank");
+                                if (!w) return;
+                                w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>HP-Therapie-Check</title></head><body>${hpCheckHtml}</body></html>`);
+                                w.document.close();
+                              }}
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" /> Neuer Tab
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {hpCheckLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" /> KI prüft deinen Therapieplan im HP-Rahmen…
+                        </div>
+                      ) : (
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none [&_table]:text-xs [&_th]:bg-emerald-50 dark:[&_th]:bg-emerald-900/30 [&_h2]:text-emerald-700 dark:[&_h2]:text-emerald-300 max-h-[600px] overflow-y-auto"
+                          dangerouslySetInnerHTML={{ __html: hpCheckHtml }}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="rounded-md border border-amber-300/70 bg-amber-50/50 dark:bg-amber-950/10 p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
