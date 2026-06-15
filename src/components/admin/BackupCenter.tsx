@@ -909,7 +909,7 @@ export function BackupCenter() {
             <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
           </Button>
           <p className="text-xs text-muted-foreground">
-            Speichert als <code>naturheilpraxis-backup-CODE-GITHUB-YYYY-MM-DD_HH-MM.zip</code>.
+            Speichert als <code>naturheilpraxis-KOMPLETT-GITHUB-Quellcode-YYYY-MM-DD_HH-MM.zip</code>.
             Funktioniert für öffentlich erreichbare GitHub-Repos.
           </p>
         </CardContent>
