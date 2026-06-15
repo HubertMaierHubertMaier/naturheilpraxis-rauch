@@ -445,6 +445,37 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Auth-Benutzerkonten (kritisch für Wiederherstellung — Passwörter NICHT exportierbar)
+    try {
+      const authUsers = await fetchAllAuthUsers(adminClient);
+      zip.file("auth/users.json", JSON.stringify(authUsers, null, 2));
+      zip.file("auth/users.csv", rowsToCsv(authUsers as unknown as Record<string, unknown>[]));
+      zip.file(
+        "auth/README.txt",
+        [
+          "AUTH-BENUTZERKONTEN — Wiederherstellungs-Hinweis",
+          "================================================",
+          "",
+          `Anzahl Konten: ${authUsers.length}`,
+          "",
+          "WICHTIG: Passwörter sind hier NICHT enthalten (technisch unmöglich — sie sind",
+          "gesalzene Hashes in auth.users und werden vom Provider nicht freigegeben).",
+          "",
+          "Bei Wiederherstellung auf einem neuen System:",
+          "1. Konten via Admin-API neu anlegen (id, email aus users.json übernehmen).",
+          "2. Allen Patienten per Passwort-Reset-Mail einen neuen Zugang ermöglichen.",
+          "3. 2FA-Faktoren (mfa_factors) müssen vom Patienten neu eingerichtet werden.",
+          "",
+          "Die user_id MUSS identisch bleiben, sonst brechen die Foreign Keys zu",
+          "profiles, user_roles, anamnesis_submissions etc. — daher beim Re-Import",
+          "die id-Werte aus users.json verwenden.",
+        ].join("\n"),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      zip.file("auth/ERROR.txt", `Auth-User-Export fehlgeschlagen: ${msg}`);
+    }
+
     zip.file("BACKUP-MANIFEST.md", buildManifest(stats, "db"));
     zip.file("SECRETS-CHECKLISTE.txt", buildSecretsChecklist());
     zip.file("stats.json", JSON.stringify(stats, null, 2));
