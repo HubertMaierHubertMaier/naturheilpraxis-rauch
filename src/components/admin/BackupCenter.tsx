@@ -21,6 +21,9 @@ import {
   Upload,
   Copy,
   ExternalLink,
+  Sparkles,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,6 +107,10 @@ export function BackupCenter() {
   const [githubRepo, setGithubRepo] = useState<string>("");
   const [githubBranch, setGithubBranch] = useState<string>("main");
   const [savingRepo, setSavingRepo] = useState(false);
+  const [lastFullBackup, setLastFullBackup] = useState<string | null>(null);
+  const [lastDbBackup, setLastDbBackup] = useState<string | null>(null);
+  const [lastGithubZip, setLastGithubZip] = useState<string | null>(null);
+  const [oneClickRunning, setOneClickRunning] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   const log = (line: string) => {
@@ -175,13 +182,49 @@ export function BackupCenter() {
     const branch = githubBranch.trim() || "main";
     const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
     window.open(url, "_blank", "noopener");
+    markDone("lastGithub");
     toast.success("GitHub-ZIP-Download gestartet (neuer Tab).");
   };
 
   useEffect(() => {
     loadStats();
     loadGithubRepo();
+    setLastFullBackup(localStorage.getItem("backup:lastFull"));
+    setLastDbBackup(localStorage.getItem("backup:lastDb"));
+    setLastGithubZip(localStorage.getItem("backup:lastGithub"));
   }, []);
+
+  const markDone = (key: "lastFull" | "lastDb" | "lastGithub") => {
+    const iso = new Date().toISOString();
+    localStorage.setItem(`backup:${key}`, iso);
+    if (key === "lastFull") setLastFullBackup(iso);
+    if (key === "lastDb") setLastDbBackup(iso);
+    if (key === "lastGithub") setLastGithubZip(iso);
+  };
+
+  const ageInDays = (iso: string | null): number | null => {
+    if (!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    return Math.floor(ms / (1000 * 60 * 60 * 24));
+  };
+
+  const formatRelative = (iso: string | null): string => {
+    if (!iso) return "noch nie";
+    const days = ageInDays(iso) ?? 0;
+    if (days === 0) return "heute";
+    if (days === 1) return "gestern";
+    if (days < 30) return `vor ${days} Tagen`;
+    if (days < 365) return `vor ${Math.floor(days / 30)} Mon.`;
+    return `vor ${Math.floor(days / 365)} J.`;
+  };
+
+  const statusOf = (iso: string | null, warnDays: number, critDays: number) => {
+    const days = ageInDays(iso);
+    if (days === null) return "crit" as const;
+    if (days >= critDays) return "crit" as const;
+    if (days >= warnDays) return "warn" as const;
+    return "ok" as const;
+  };
 
   async function getToken(): Promise<string> {
     const {
@@ -232,6 +275,7 @@ export function BackupCenter() {
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert.`);
       setLastResult({ ok: true, filename: fn, size: bytes.byteLength, durationSec: dur, warnings: 0 });
+      markDone("lastDb");
       toast.success(`Schnell-Backup heruntergeladen (${formatBytes(bytes.byteLength)}).`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
@@ -333,6 +377,8 @@ export function BackupCenter() {
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
       setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings });
+      markDone("lastFull");
+      markDone("lastDb");
       if (warnings === 0) {
         toast.success(`Voll-Backup heruntergeladen (${formatBytes(finalBlob.size)}).`);
       } else {
@@ -350,23 +396,137 @@ export function BackupCenter() {
     }
   };
 
+  const runOneClick = async () => {
+    if (downloading || oneClickRunning) return;
+    setOneClickRunning(true);
+    try {
+      toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
+      await downloadFullBackup();
+      // give browser a tick before triggering 2nd download
+      await new Promise((r) => setTimeout(r, 800));
+      if (githubRepo.trim()) {
+        toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
+        downloadGithubZip();
+      } else {
+        toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
+      }
+    } finally {
+      setOneClickRunning(false);
+    }
+  };
+
   const totalRows = stats?.tables.reduce((acc, t) => acc + Math.max(0, t.rows), 0) ?? 0;
   const totalFiles = stats?.buckets.reduce((acc, b) => acc + Math.max(0, b.files), 0) ?? 0;
   const totalBytes = stats?.buckets.reduce((acc, b) => acc + b.totalBytes, 0) ?? 0;
 
+  const fullStatus = statusOf(lastFullBackup, 7, 30);
+  const githubStatus = statusOf(lastGithubZip, 14, 60);
+  const dot = (s: "ok" | "warn" | "crit") =>
+    s === "ok" ? "bg-emerald-500" : s === "warn" ? "bg-amber-500" : "bg-destructive";
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* IDIOTENSICHER: 1-Klick Routine ganz oben */}
+      <Card className="border-primary/40 bg-primary/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-primary" />
-            Backup-Center
+            <Sparkles className="h-5 w-5 text-primary" />
+            Sicherungs-Routine — 1 Klick, alles erledigt
           </CardTitle>
           <CardDescription>
-            Sicherung aller Daten, die <strong>nicht</strong> in GitHub liegen (Datenbank-Inhalte,
-            hochgeladene Dateien, Secret-Namen-Liste). Empfehlung: täglich „Schnell-Backup",
-            wöchentlich „Voll-Backup". Die Datei landet im Download-Ordner deines Browsers.
+            Drücke <strong>einmal</strong> auf den grünen Knopf. Das System lädt nacheinander{" "}
+            <strong>Voll-Backup</strong> (alle Patientendaten + Dateien) und{" "}
+            <strong>Code-ZIP</strong> (gesamte App von GitHub) in deinen Download-Ordner.
+            Empfehlung: <strong>1× pro Woche</strong>.
           </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            size="lg"
+            onClick={runOneClick}
+            disabled={downloading !== null || oneClickRunning}
+            className="h-auto w-full flex-col gap-1 py-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <div className="flex items-center gap-2">
+              <Download className="h-6 w-6" />
+              <span className="font-bold">
+                {oneClickRunning || downloading ? "Sicherung läuft… bitte Tab offen lassen" : "Jetzt komplett sichern (1 Klick)"}
+              </span>
+            </div>
+            <span className="text-xs font-normal opacity-90">
+              Daten-Backup + Code-Backup nacheinander · Browser fragt 2× nach Speichern
+            </span>
+          </Button>
+
+          {/* Ampel-Status: wann zuletzt gesichert? */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded border bg-background px-3 py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${dot(fullStatus)}`} aria-hidden />
+                <span className="font-medium">Daten-Backup (Voll)</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                {formatRelative(lastFullBackup)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded border bg-background px-3 py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${dot(githubStatus)}`} aria-hidden />
+                <span className="font-medium">Code-Backup (GitHub-ZIP)</span>
+              </div>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                {formatRelative(lastGithubZip)}
+              </span>
+            </div>
+          </div>
+
+          {(fullStatus === "crit" || githubStatus === "crit") && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Sicherung überfällig!</AlertTitle>
+              <AlertDescription className="text-sm">
+                Mindestens ein Backup ist älter als 30 Tage (oder wurde nie gemacht).
+                Bitte jetzt den grünen Knopf drücken.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="rounded border bg-background p-3 text-sm">
+            <p className="mb-2 font-medium">So lagerst du die 2 ZIP-Dateien sicher:</p>
+            <ol className="ml-5 list-decimal space-y-1 text-muted-foreground">
+              <li>Beide ZIPs aus dem Download-Ordner an <strong>2 getrennte Orte</strong> kopieren:
+                z. B. <strong>USB-Stick</strong> + <strong>externe Festplatte</strong> (oder verschlüsselter Cloud-Ordner).</li>
+              <li>Mindestens den USB-Stick mit <strong>VeraCrypt</strong> verschlüsseln (enthält Gesundheitsdaten).</li>
+              <li>Alte Backups älter als 10 Jahre <strong>sicher löschen</strong> (DSGVO).</li>
+            </ol>
+          </div>
+
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Wann brauchst du das?</AlertTitle>
+            <AlertDescription className="text-sm">
+              Wenn etwas kaputtgeht, ziehst du die ZIP-Datei einfach in den Lovable-Chat und schreibst
+              „Bitte wiederherstellen". Details und Profi-Optionen findest du in den Abschnitten unten.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      <Card>
+
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Download className="h-5 w-5 text-muted-foreground" />
+            Einzel-Backups (für Profis)
+          </CardTitle>
+          <CardDescription>
+            Brauchst du nur einen Teil? Hier kannst du <em>Schnell-Backup</em> (nur Datenbank, sekundenschnell)
+            oder <em>Voll-Backup</em> (Datenbank + alle Dateien) separat starten. Für den Alltag reicht
+            der grüne Knopf ganz oben.
+          </CardDescription>
+
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
