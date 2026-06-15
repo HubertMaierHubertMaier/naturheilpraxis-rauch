@@ -97,7 +97,7 @@ function saveBlob(blob: Blob, filename: string) {
 export function BackupCenter() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<"db" | "full" | null>(null);
+  const [downloading, setDownloading] = useState<"db" | "full" | "code" | null>(null);
   const [progress, setProgress] = useState(0);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<
@@ -183,27 +183,77 @@ export function BackupCenter() {
     }
   };
 
-  const downloadGithubZip = () => {
+  const getGithubZipDownload = () => {
     const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
     if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
-      toast.error("Erst Repo-Pfad speichern (Format `besitzer/repo`).");
-      return;
+      throw new Error("Erst Repo-Pfad speichern (Format `besitzer/repo`).");
     }
     const branch = githubBranch.trim() || "main";
-    const url = `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`;
-    // Iframe-Trigger statt window.open — wird vom Popup-Blocker nicht abgefangen,
-    // auch wenn der Aufruf nach einer async-Pause (1-Klick-Routine) erfolgt.
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    setTimeout(() => {
-      try { document.body.removeChild(iframe); } catch { /* ignore */ }
-    }, 60_000);
-    // Fallback-Tab als Sicherheit (falls Browser den Iframe-Download blockt)
-    try { window.open(url, "_blank", "noopener"); } catch { /* ignore */ }
-    markDone("lastGithub");
-    toast.success(`Code-ZIP-Download (GitHub) gestartet: ${cleaned}-${branch}.zip`);
+    return {
+      cleaned,
+      branch,
+      url: `${getFunctionsUrl()}/backup-export?mode=github-code&repo=${encodeURIComponent(cleaned)}&branch=${encodeURIComponent(branch)}`,
+      githubUrl: `https://github.com/${cleaned}/archive/refs/heads/${encodeURIComponent(branch)}.zip`,
+      filename: `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`,
+    };
+  };
+
+  async function fetchGithubZipBytes(token: string): Promise<{ bytes: ArrayBuffer; filename: string }> {
+    const info = getGithubZipDownload();
+    const apikey = getApiKey();
+    log(`Lade Code-ZIP von GitHub: ${info.cleaned} (${info.branch})…`);
+    const res = await fetch(info.url, {
+      headers: { Authorization: `Bearer ${token}`, apikey },
+    });
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = (await res.json())?.error ?? "";
+      } catch {
+        /* ignore */
+      }
+      throw new Error(`GitHub-Code-ZIP HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
+    }
+    const buf = await res.arrayBuffer();
+    const cd = res.headers.get("Content-Disposition") ?? "";
+    const match = cd.match(/filename="?([^"]+)"?/);
+    const filename = match?.[1] ?? info.filename;
+    log(`Code-ZIP empfangen (${formatBytes(buf.byteLength)}).`);
+    return { bytes: buf, filename };
+  }
+
+  const downloadGithubZip = async (preparedWindow?: Window | null) => {
+    setDownloading("code");
+    setProgress(0);
+    setLastResult(null);
+    const started = Date.now();
+    let info: ReturnType<typeof getGithubZipDownload> | null = null;
+    try {
+      const token = await getToken();
+      setProgress(40);
+      info = getGithubZipDownload();
+      const { bytes, filename } = await fetchGithubZipBytes(token);
+      setProgress(100);
+      saveBlob(new Blob([bytes], { type: "application/zip" }), filename);
+      preparedWindow?.close();
+      const dur = Math.round((Date.now() - started) / 1000);
+      setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0 });
+      markDone("lastGithub");
+      toast.success(`Code-ZIP heruntergeladen: ${filename} (${formatBytes(bytes.byteLength)}).`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "GitHub-ZIP konnte nicht geladen werden.";
+      if (preparedWindow && info && !preparedWindow.closed) {
+        preparedWindow.location.href = info.githubUrl;
+        markDone("lastGithub");
+        toast.warning("Server-Download nicht möglich — normaler GitHub-Download wurde im vorbereiteten Tab gestartet.");
+        return;
+      }
+      log(`FEHLER: ${msg}`);
+      setLastResult({ ok: false, message: msg });
+      toast.error(msg);
+    } finally {
+      setDownloading(null);
+    }
   };
 
   useEffect(() => {
@@ -418,6 +468,13 @@ export function BackupCenter() {
 
   const runOneClick = async () => {
     if (downloading || oneClickRunning) return;
+    let githubWindow: Window | null = null;
+    if (githubRepo.trim()) {
+      githubWindow = window.open("", "_blank");
+      if (githubWindow) {
+        githubWindow.document.write("<p style='font-family:system-ui;padding:24px'>Code-ZIP wartet auf Fertigstellung des Daten-Backups…</p>");
+      }
+    }
     setOneClickRunning(true);
     try {
       toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
@@ -426,7 +483,7 @@ export function BackupCenter() {
       await new Promise((r) => setTimeout(r, 800));
       if (githubRepo.trim()) {
         toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
-        downloadGithubZip();
+        await downloadGithubZip(githubWindow);
       } else {
         toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
       }
@@ -738,7 +795,11 @@ export function BackupCenter() {
             <div className="space-y-2 rounded border bg-muted/30 p-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">
-                  {downloading === "db" ? "Schnell-Backup läuft…" : "Voll-Backup läuft…"}
+                  {downloading === "db"
+                    ? "Schnell-Backup läuft…"
+                    : downloading === "code"
+                      ? "Code-Backup läuft…"
+                      : "Voll-Backup läuft…"}
                 </span>
                 <span className="tabular-nums text-muted-foreground">{progress}%</span>
               </div>
@@ -812,7 +873,7 @@ export function BackupCenter() {
           </CardTitle>
           <CardDescription>
             Lädt den kompletten Source-Code (React-App, Edge Functions, Migrationen, Skripte,
-            statische Infothek-HTMLs, Therapie-PDFs) als ZIP direkt von GitHub. Ergänzt das
+            statische Infothek-HTMLs, Therapie-PDFs) als eindeutig benanntes ZIP von GitHub. Ergänzt das
             Daten-Backup oben — gemeinsam ergibt das eine 100%ige Wiederherstellungs-Basis.
           </CardDescription>
         </CardHeader>
@@ -823,8 +884,8 @@ export function BackupCenter() {
               <Input
                 id="gh-repo"
                 placeholder="z. B. peter-rauch/naturheilpraxis"
-                value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
+                value={repoDraft}
+                onChange={(e) => setRepoDraft(e.target.value)}
               />
             </div>
             <div className="space-y-1">
@@ -832,8 +893,8 @@ export function BackupCenter() {
               <Input
                 id="gh-branch"
                 placeholder="main"
-                value={githubBranch}
-                onChange={(e) => setGithubBranch(e.target.value)}
+                value={branchDraft}
+                onChange={(e) => setBranchDraft(e.target.value)}
               />
             </div>
             <div className="flex items-end">
@@ -842,14 +903,14 @@ export function BackupCenter() {
               </Button>
             </div>
           </div>
-          <Button onClick={downloadGithubZip} className="w-full sm:w-auto" disabled={!githubRepo.trim()}>
+          <Button onClick={() => downloadGithubZip()} className="w-full sm:w-auto" disabled={!githubRepo.trim()}>
             <Download className="mr-2 h-4 w-4" />
             GitHub-ZIP herunterladen
             <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
           </Button>
           <p className="text-xs text-muted-foreground">
-            Lädt <code>https://github.com/{githubRepo || "<besitzer>/<repo>"}/archive/refs/heads/{githubBranch || "main"}.zip</code>.
-            Funktioniert nur bei öffentlichen Repos ohne Login; bei privaten musst du bei GitHub eingeloggt sein.
+            Speichert als <code>naturheilpraxis-backup-CODE-GITHUB-YYYY-MM-DD_HH-MM.zip</code>.
+            Funktioniert für öffentlich erreichbare GitHub-Repos.
           </p>
         </CardContent>
       </Card>

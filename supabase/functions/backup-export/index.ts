@@ -3,6 +3,7 @@
 //   ?mode=stats  -> JSON mit Übersicht (Tabellen, Buckets, Secrets)
 //   ?mode=db     -> ZIP mit allen Tabellen als CSV+JSON + MANIFEST
 //   ?mode=full   -> ZIP wie db, zusätzlich alle Storage-Dateien
+//   ?mode=github-code&repo=owner/repo&branch=main -> GitHub-Code-ZIP mit Praxis-Dateiname
 //
 // Auth: Nur Admin (per JWT + has_role).
 
@@ -162,6 +163,18 @@ function rowsToCsv(rows: Record<string, unknown>[]): string {
 
 function isoTimestamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+function sanitizeGithubInput(repo: string | null, branch: string | null): { repo: string; branch: string } {
+  const cleanedRepo = (repo ?? "").trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+  const cleanedBranch = (branch ?? "main").trim() || "main";
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleanedRepo)) {
+    throw new Error("Ungültiges GitHub-Repo. Erwartet: besitzer/repo");
+  }
+  if (!/^[A-Za-z0-9._\/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
+    throw new Error("Ungültiger GitHub-Branch.");
+  }
+  return { repo: cleanedRepo, branch: cleanedBranch };
 }
 
 async function fetchTableAll(
@@ -481,6 +494,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (mode === "github-code") {
+      const { repo, branch } = sanitizeGithubInput(url.searchParams.get("repo"), url.searchParams.get("branch"));
+      const githubRes = await fetch(`https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`, {
+        headers: { "User-Agent": "naturheilpraxis-backup-export" },
+      });
+      if (!githubRes.ok || !githubRes.body) {
+        throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${githubRes.status}). Repo/Branch prüfen.`);
+      }
+      const filename = `naturheilpraxis-backup-CODE-GITHUB-${isoTimestamp()}.zip`;
+      return new Response(githubRes.body, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
@@ -517,7 +550,7 @@ Deno.serve(async (req) => {
     }
 
     if (mode !== "db") {
-      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list" }), {
+      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list|github-code" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
