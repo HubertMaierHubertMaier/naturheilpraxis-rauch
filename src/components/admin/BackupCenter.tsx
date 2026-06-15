@@ -615,6 +615,7 @@ export function BackupCenter() {
                   <th className="px-3 py-2 text-left font-medium">Dateiname / Beispiel</th>
                   <th className="px-3 py-2 text-center font-medium">Code-ZIP</th>
                   <th className="px-3 py-2 text-center font-medium">Daten-ZIP</th>
+                  <th className="px-3 py-2 text-left font-medium">Letzte Sicherung</th>
                   <th className="px-3 py-2 text-left font-medium">Status / Lücke</th>
                 </tr>
               </thead>
@@ -635,20 +636,38 @@ export function BackupCenter() {
                   { cat: "Secrets-Werte (API-Keys, SMTP, Relay)", src: "Lovable Cloud", fn: "—", code: false, data: false, status: "warn", note: "nur Liste (SECRETS-CHECKLISTE.txt) — Werte aus Provider-Dashboards holen" },
                   { cat: "Passwörter", src: "gehasht in auth.users", fn: "—", code: false, data: false, status: "info", note: "technisch nicht exportierbar — bei Restore Reset-Mails versenden" },
                   { cat: "Dynamisch erzeugte Hypnose-MP3s", src: "Browser zur Laufzeit", fn: "—", code: false, data: false, status: "info", note: "nicht nötig — werden via Edge-TTS neu erzeugt" },
-                ].map((row, i) => (
+                ].map((row, i) => {
+                  const iso = row.code
+                    ? lastGithubZip
+                    : row.data
+                      ? (lastFullBackup ?? lastDbBackup)
+                      : null;
+                  const abs = iso ? new Date(iso).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) : null;
+                  const rel = iso ? formatRelative(iso) : null;
+                  return (
                   <tr key={i} className={i % 2 === 0 ? "bg-background" : "bg-muted/20"}>
                     <td className="px-3 py-2.5 font-medium">{row.cat}</td>
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{row.src}</td>
                     <td className="px-3 py-2.5 font-mono text-xs">{row.fn}</td>
                     <td className="px-3 py-2.5 text-center">{row.code ? "✅" : "—"}</td>
                     <td className="px-3 py-2.5 text-center">{row.data ? "✅" : "—"}</td>
+                    <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+                      {abs ? (
+                        <span className="text-foreground">{abs}<span className="text-muted-foreground"> · {rel}</span></span>
+                      ) : (row.code || row.data) ? (
+                        <span className="text-amber-700 dark:text-amber-400">noch nie</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-xs">
                       {row.status === "ok" && <span className="text-green-700 dark:text-green-400">✓ {row.note ?? "vollständig gesichert"}</span>}
                       {row.status === "warn" && <span className="text-amber-700 dark:text-amber-400">⚠ {row.note}</span>}
                       {row.status === "info" && <span className="text-muted-foreground">ℹ {row.note}</span>}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
