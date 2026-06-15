@@ -856,6 +856,11 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
+  const [hpCheckLoading, setHpCheckLoading] = useState(false);
+  const [hpCheckHtml, setHpCheckHtml] = useState("");
+  const [hpCheckMarkdown, setHpCheckMarkdown] = useState("");
+  const [hpCheckModelLabel, setHpCheckModelLabel] = useState("");
+  const [hpCheckTimestamp, setHpCheckTimestamp] = useState<string>("");
   const [mannayanOrders, setMannayanOrders] = useState<MannayanOrderContext[]>([]);
   const [isLoadingMannayanOrders, setIsLoadingMannayanOrders] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
