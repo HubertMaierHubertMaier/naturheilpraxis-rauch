@@ -188,7 +188,42 @@ export function BackupCenter() {
   useEffect(() => {
     loadStats();
     loadGithubRepo();
+    setLastFullBackup(localStorage.getItem("backup:lastFull"));
+    setLastDbBackup(localStorage.getItem("backup:lastDb"));
+    setLastGithubZip(localStorage.getItem("backup:lastGithub"));
   }, []);
+
+  const markDone = (key: "lastFull" | "lastDb" | "lastGithub") => {
+    const iso = new Date().toISOString();
+    localStorage.setItem(`backup:${key}`, iso);
+    if (key === "lastFull") setLastFullBackup(iso);
+    if (key === "lastDb") setLastDbBackup(iso);
+    if (key === "lastGithub") setLastGithubZip(iso);
+  };
+
+  const ageInDays = (iso: string | null): number | null => {
+    if (!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    return Math.floor(ms / (1000 * 60 * 60 * 24));
+  };
+
+  const formatRelative = (iso: string | null): string => {
+    if (!iso) return "noch nie";
+    const days = ageInDays(iso) ?? 0;
+    if (days === 0) return "heute";
+    if (days === 1) return "gestern";
+    if (days < 30) return `vor ${days} Tagen`;
+    if (days < 365) return `vor ${Math.floor(days / 30)} Mon.`;
+    return `vor ${Math.floor(days / 365)} J.`;
+  };
+
+  const statusOf = (iso: string | null, warnDays: number, critDays: number) => {
+    const days = ageInDays(iso);
+    if (days === null) return "crit" as const;
+    if (days >= critDays) return "crit" as const;
+    if (days >= warnDays) return "warn" as const;
+    return "ok" as const;
+  };
 
   async function getToken(): Promise<string> {
     const {
