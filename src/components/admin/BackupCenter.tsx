@@ -934,9 +934,9 @@ export function BackupCenter() {
             <li>
               Ziehe die gewünschten Dateien in den Chat:
               <ul className="ml-5 mt-1 list-disc text-muted-foreground">
-                <li><code>naturheilpraxis-backup-FULL-*.zip</code> (DB + Auth-User + Storage)</li>
-                <li>oder <code>naturheilpraxis-backup-db-*.zip</code> (nur DB + Auth-User)</li>
-                <li>plus ggf. <code>&lt;repo&gt;-main.zip</code> von GitHub (nur wenn auch der Code weg ist)</li>
+                <li><code>naturheilpraxis-KOMPLETT-DATEIEN-DB+Storage+Auth-*.zip</code> (DB + Auth-User + Storage)</li>
+                <li>oder <code>naturheilpraxis-DATEN-nur-DB+Auth-*.zip</code> (nur DB + Auth-User)</li>
+                <li>plus ggf. <code>naturheilpraxis-KOMPLETT-GITHUB-Quellcode-*.zip</code> (nur wenn auch der Code weg ist)</li>
               </ul>
             </li>
             <li>Schreibe in den Chat den fertigen Prompt unten (oder eigene Formulierung).</li>
