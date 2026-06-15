@@ -160,7 +160,7 @@ export function BackupCenter() {
   };
 
   const saveGithubRepo = async () => {
-    const cleaned = githubRepo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    const cleaned = repoDraft.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
     if (!/^[^/\s]+\/[^/\s]+$/.test(cleaned)) {
       toast.error("Bitte als `besitzer/repo` eingeben (z. B. `peter-rauch/naturheilpraxis`).");
       return;
@@ -168,11 +168,12 @@ export function BackupCenter() {
     setSavingRepo(true);
     try {
       const { error } = await supabase.from("app_settings").upsert(
-        { key: "github_repo", value: { owner_repo: cleaned, branch: githubBranch.trim() || "main" } },
+        { key: "github_repo", value: { owner_repo: cleaned, branch: branchDraft.trim() || "main" } },
         { onConflict: "key" },
       );
       if (error) throw error;
       setGithubRepo(cleaned);
+      setGithubBranch(branchDraft.trim() || "main");
       toast.success("GitHub-Repo gespeichert.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
