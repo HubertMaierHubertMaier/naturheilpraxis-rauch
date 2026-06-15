@@ -245,7 +245,10 @@ export function BackupCenter() {
       if (preparedWindow && info && !preparedWindow.closed) {
         preparedWindow.location.href = info.githubUrl;
         markDone("lastGithub");
-        toast.warning("Server-Download nicht möglich — normaler GitHub-Download wurde im vorbereiteten Tab gestartet.");
+        toast.warning(
+          `Server-Download fehlgeschlagen (${msg}). Notfall-Fallback: direkter GitHub-Download im neuen Tab — ACHTUNG: Datei heißt dann "${info.cleaned.split("/")[1]}-${info.branch}.zip" statt "Naturheilpraxis-CODE-Backup-…". Für korrekten Namen GITHUB_TOKEN-Secret hinterlegen.`,
+          { duration: 12000 }
+        );
         return;
       }
       log(`FEHLER: ${msg}`);
