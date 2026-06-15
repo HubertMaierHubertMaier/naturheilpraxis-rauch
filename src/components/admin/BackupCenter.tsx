@@ -24,6 +24,7 @@ import {
   Sparkles,
   AlertTriangle,
   Clock,
+  Table,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -511,6 +512,110 @@ export function BackupCenter() {
               „Bitte wiederherstellen". Details und Profi-Optionen findest du in den Abschnitten unten.
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Was-ist-wo Übersicht */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Table className="h-5 w-5 text-primary" />
+            Was ist wo? — Übersicht aller Backup-Bestandteile
+          </CardTitle>
+          <CardDescription>
+            Damit du im Ernstfall sofort weißt, welche Datei was enthält und wo du sie herbekommst.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto rounded border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Wenn das weg ist…</th>
+                  <th className="px-3 py-2 text-left font-medium">Finde ich hier</th>
+                  <th className="px-3 py-2 text-left font-medium">Dateiname / Quelle</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr className="bg-background">
+                  <td className="px-3 py-2.5 font-medium">Code (React, Edge Functions, Infothek-HTMLs)</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <Github className="h-3 w-3" />
+                      GitHub-ZIP
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>{`${githubRepo || "<besitzer/repo>"}-main.zip`}</code>
+                  </td>
+                </tr>
+                <tr className="bg-muted/20">
+                  <td className="px-3 py-2.5 font-medium">Datenbank-Tabellen (Patienten, Anamnesen, FAQs…)</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <Database className="h-3 w-3" />
+                      Schnell-Backup
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>naturheilpraxis-backup-db-*.zip</code>
+                  </td>
+                </tr>
+                <tr className="bg-background">
+                  <td className="px-3 py-2.5 font-medium">Hochgeladene Dateien (PDFs, MP3s, MP4s, Befunde)</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <HardDrive className="h-3 w-3" />
+                      Voll-Backup
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>naturheilpraxis-backup-FULL-*.zip</code>
+                  </td>
+                </tr>
+                <tr className="bg-muted/20">
+                  <td className="px-3 py-2.5 font-medium">Patienten-Login-Konten (Auth / UUIDs)</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <Download className="h-3 w-3" />
+                      In jedem ZIP
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>auth/users.json</code>
+                  </td>
+                </tr>
+                <tr className="bg-background">
+                  <td className="px-3 py-2.5 font-medium">Secrets (API-Keys, SMTP, Relay-Passwörter)</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <Key className="h-3 w-3" />
+                      In jedem ZIP
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>SECRETS-CHECKLISTE.txt</code>
+                  </td>
+                </tr>
+                <tr className="bg-muted/20">
+                  <td className="px-3 py-2.5 font-medium">Schritt-für-Schritt-Wiederherstellung</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="gap-1">
+                      <Info className="h-3 w-3" />
+                      In jedem ZIP
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <code>BACKUP-MANIFEST.md</code>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Hinweis: Das Voll-Backup enthält <strong>alles</strong> (DB + Dateien + Auth + Manifest + Secrets-Checkliste).
+            Das Schnell-Backup enthält nur die Datenbank — ist dafür sekundenschnell und klein.
+          </p>
         </CardContent>
       </Card>
 
