@@ -934,6 +934,39 @@ export function TherapyRecommendation() {
     pseudonymIdRef.current = normalizePseudonymId(pseudonymId);
   }, [pseudonymId]);
 
+  // Letzten HP-Therapie-Check aus der DB nachladen, sobald ein Pseudonym aktiv ist.
+  // So sind PDF / HTML-Tab / HTML-Download immer sichtbar – auch nach Reload oder Patientenwechsel.
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!pid) {
+      setHpCheckHtml(""); setHpCheckMarkdown(""); setHpCheckModelLabel(""); setHpCheckTimestamp("");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("therapy_sessions")
+          .select("id, befund_html, empfehlung, befund_meta, created_at")
+          .eq("pseudonym_id", pid)
+          .eq("kind", "hp_therapy_check")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled || error || !data) return;
+        const html = (data as any).befund_html as string | null;
+        if (!html) return;
+        setHpCheckHtml(html);
+        setHpCheckMarkdown(((data as any).empfehlung as string) || "");
+        const meta = ((data as any).befund_meta || {}) as { modelLabel?: string };
+        setHpCheckModelLabel(meta.modelLabel || "");
+        const created = (data as any).created_at as string | undefined;
+        setHpCheckTimestamp(created ? new Date(created).toLocaleString("de-DE") : "");
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [pseudonymId]);
+
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => ({
     _pseudonym_id: normalizePseudonymId(pseudonymId),
     pseudonymId: normalizePseudonymId(pseudonymId),
