@@ -3802,7 +3802,7 @@ export function TherapyRecommendation() {
                   />
                   <p className="text-xs text-muted-foreground mt-1">Was bekommt der Patient aktuell an Naturheilmitteln? (inkl. Dosis) – Die KI bewertet diese kritisch und integriert / ersetzt / ergänzt sie.</p>
                 </div>
-                <div className="rounded-md border-2 border-emerald-400/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3 space-y-2">
+                <div id="hp-therapy-check-section" className="rounded-md border-2 border-emerald-400/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3 space-y-2 scroll-mt-24 transition-shadow">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <label className="text-sm font-semibold flex items-center gap-1.5">
                       🌿 Meine Therapie (Heilpraktiker) – KI-Sinnhaftigkeits-Check
