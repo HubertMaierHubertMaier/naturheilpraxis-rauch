@@ -484,7 +484,8 @@ Deno.serve(async (req) => {
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
-      for (const bucket of BUCKETS) {
+      const { buckets: dynamicBuckets } = await discoverBuckets(adminClient);
+      for (const bucket of dynamicBuckets) {
         try {
           const files = await listAllFiles(adminClient, bucket);
           const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
