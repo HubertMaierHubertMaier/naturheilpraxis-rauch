@@ -3914,7 +3914,21 @@ export function TherapyRecommendation() {
                                 w.document.close();
                               }}
                             >
-                              <ExternalLink className="h-3.5 w-3.5" /> Neuer Tab
+                              <ExternalLink className="h-3.5 w-3.5" /> HTML in neuem Tab
+                            </Button>
+                            <Button
+                              type="button" size="sm" variant="ghost" className="gap-1.5"
+                              onClick={() => {
+                                const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.html`;
+                                const blob = new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}</body></html>`], { type: "text/html;charset=utf-8" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url; a.download = filename; a.click();
+                                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                              }}
+                              title="HTML-Datei herunterladen"
+                            >
+                              <FileText className="h-3.5 w-3.5" /> HTML herunterladen
                             </Button>
                           </div>
                         )}
