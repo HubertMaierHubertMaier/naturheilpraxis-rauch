@@ -431,6 +431,15 @@ export function BackupCenter() {
 
   const runOneClick = async () => {
     if (downloading || oneClickRunning) return;
+    let githubWindow: Window | null = null;
+    if (githubRepo.trim()) {
+      // Wichtig: Das zweite Browser-Fenster muss direkt beim Klick geöffnet werden.
+      // Nach dem langen Voll-Backup blockieren Browser sonst den GitHub-ZIP-Download.
+      githubWindow = window.open("", "_blank");
+      if (githubWindow) {
+        githubWindow.document.write("<p style='font-family:system-ui;padding:24px'>Code-ZIP wartet auf Fertigstellung des Daten-Backups…</p>");
+      }
+    }
     setOneClickRunning(true);
     try {
       toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
@@ -439,7 +448,7 @@ export function BackupCenter() {
       await new Promise((r) => setTimeout(r, 800));
       if (githubRepo.trim()) {
         toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
-        downloadGithubZip();
+        downloadGithubZip(githubWindow);
       } else {
         toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
       }
@@ -855,7 +864,7 @@ export function BackupCenter() {
               </Button>
             </div>
           </div>
-          <Button onClick={downloadGithubZip} className="w-full sm:w-auto" disabled={!githubRepo.trim()}>
+          <Button onClick={() => downloadGithubZip()} className="w-full sm:w-auto" disabled={!githubRepo.trim()}>
             <Download className="mr-2 h-4 w-4" />
             GitHub-ZIP herunterladen
             <ExternalLink className="ml-2 h-3 w-3 opacity-70" />
