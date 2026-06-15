@@ -1113,6 +1113,8 @@ export function TherapyRecommendation() {
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
     if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
     if (typeof data.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(data.eigeneTherapieVorlage);
+    if (typeof data.apothekerRezept === "string") setApothekerRezept(data.apothekerRezept);
+    if (typeof data.zusatzTherapie === "string") setZusatzTherapie(data.zusatzTherapie);
     if (Array.isArray(data.mannayanOrders)) setMannayanOrders(data.mannayanOrders as MannayanOrderContext[]);
     if (Array.isArray(data.selectedCategories)) setSelectedCategories(data.selectedCategories as string[]);
     if (Array.isArray(data.bevorzugteLinie)) setBevorzugteLinie(data.bevorzugteLinie as string[]);
