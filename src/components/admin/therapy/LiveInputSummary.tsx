@@ -240,13 +240,32 @@ export function LiveInputSummary({
         )}
         {hasEigeneTherapie && (
           <div>
-            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-              <FileType className="h-3.5 w-3.5" />
-              Eigene Therapie-/Verordnungs-Vorlage ({eigeneTherapieList.length} Zeilen · {eigeneTherapieVorlage.length.toLocaleString("de-DE")} Zeichen)
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                <FileType className="h-3.5 w-3.5" />
+                Eigene Therapie-/Verordnungs-Vorlage ({eigeneTherapieList.length} Zeilen · {eigeneTherapieVorlage.length.toLocaleString("de-DE")} Zeichen)
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("hp-therapy-check-section");
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    el.classList.add("ring-2", "ring-emerald-500");
+                    setTimeout(() => el.classList.remove("ring-2", "ring-emerald-500"), 2000);
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                title="Springt zum grünen KI-Sinnhaftigkeits-Check mit PDF/HTML-Buttons"
+              >
+                → KI-Check öffnen
+              </button>
             </div>
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{eigeneTherapieVorlage}</pre>
+            <p className="text-[11px] text-muted-foreground mt-1">Das ist nur die Eingabe-Vorschau. KI-Bewertung, PDF-Export und HTML-Ansicht findest du unten im grünen Kasten <em>„Meine Therapie (Heilpraktiker)"</em>.</p>
           </div>
         )}
+
         {hasMannayanOrders && (
           <div>
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
