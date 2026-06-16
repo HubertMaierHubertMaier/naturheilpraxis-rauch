@@ -190,6 +190,13 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Begriffe, Zahlen (DE/EU), Ursachen & Versorgung Kasse vs. Privat – mit Quellen", en: "Definitions, prevalence (DE/EU), causes & care (statutory vs. private) – sourced" },
         external: true,
       },
+      {
+        label: { de: "Mitochondropathie & instabile HWS", en: "Mitochondropathy & unstable cervical spine" },
+        href: "/mitochondropathie-hws.html",
+        icon: Activity,
+        description: { de: "DNA-Vorschädigung, nitrosativer Stress, HWS-Trauma – Modell nach Dr. Kuklinski mit Buchquellen", en: "DNA pre-damage, nitrosative stress, cervical trauma – Dr. Kuklinski's model with book sources" },
+        external: true,
+      },
     ],
   },
   {
