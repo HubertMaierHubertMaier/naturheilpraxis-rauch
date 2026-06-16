@@ -54,7 +54,7 @@ export function Header() {
 
   const navItems = [
     { label: "✨ Neupatient", href: "/neupatient" },
-    ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
+    // Patienten-Verwaltung in Admin-Bereich verschoben (siehe Quick-Access / Admin-Dropdown)
   ];
 
   const quickAccessItems = isAdmin
@@ -204,7 +204,7 @@ export function Header() {
                       <Link to={withDevParam("/patienten")} className="flex items-center gap-2 cursor-pointer">
                         <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
                         <User className="h-4 w-4" />
-                        Patienten
+                        Verifizierte Anfangs-Versuch-Patienten
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
