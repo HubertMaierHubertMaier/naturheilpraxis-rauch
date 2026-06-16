@@ -183,6 +183,13 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Belastungen im Wohn- und Lebensumfeld – mit Alternativen & seriösen Quellen", en: "Daily-life burdens & alternatives with reputable sources" },
         external: true,
       },
+      {
+        label: { de: "Müdigkeit, Erschöpfung & Burnout", en: "Fatigue, Exhaustion & Burnout" },
+        href: "/muedigkeit-erschoepfung-burnout.html",
+        icon: Brain,
+        description: { de: "Begriffe, Zahlen (DE/EU), Ursachen & Versorgung Kasse vs. Privat – mit Quellen", en: "Definitions, prevalence (DE/EU), causes & care (statutory vs. private) – sourced" },
+        external: true,
+      },
     ],
   },
   {
