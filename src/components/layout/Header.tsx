@@ -54,7 +54,7 @@ export function Header() {
 
   const navItems = [
     { label: "✨ Neupatient", href: "/neupatient" },
-    ...(isAdmin ? [{ label: "👥 Patienten", href: withDevParam("/patienten") }] : []),
+    // Patienten-Verwaltung in Admin-Bereich verschoben (siehe Quick-Access / Admin-Dropdown)
   ];
 
   const quickAccessItems = isAdmin
