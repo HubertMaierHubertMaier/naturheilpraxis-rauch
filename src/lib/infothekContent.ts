@@ -16,6 +16,7 @@ import {
   Leaf,
   Microscope,
   Milk,
+  Moon,
   Pill,
   Radio,
   Route,
