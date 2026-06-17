@@ -261,7 +261,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Try to get userId from auth header
+    // Der Anamnesebogen ist nicht mehr öffentlich: gültige Sitzung erforderlich.
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -270,6 +270,12 @@ serve(async (req) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id || null;
       } catch { /* not authenticated - ok for dev mode */ }
+    }
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Anmeldung erforderlich" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // ── ACTION: SUBMIT ──────────────────────────────────────────────
@@ -288,7 +294,7 @@ serve(async (req) => {
         );
       }
 
-      const effectiveUserId = userId || tempUserId || crypto.randomUUID();
+      const effectiveUserId = userId;
       let submId: string | null = null;
 
       if (userId) {
@@ -375,7 +381,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           submissionId: submId,
-          tempUserId: userId ? undefined : effectiveUserId,
+          tempUserId: undefined,
           message: "Bestätigungscode wurde gesendet",
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -398,13 +404,7 @@ serve(async (req) => {
         );
       }
 
-      const effectiveUserId = userId || tempUserId;
-      if (!effectiveUserId) {
-        return new Response(
-          JSON.stringify({ error: "Benutzer-Identifikation fehlt" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      const effectiveUserId = userId;
 
       // Verify code
       const { data: vc, error: vcError } = await supabase
