@@ -266,6 +266,45 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_access: {
+        Row: {
+          anamnese_download: boolean
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          infothek_all: boolean
+          infothek_items: string[]
+          library_access: boolean
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          anamnese_download?: boolean
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          infothek_all?: boolean
+          infothek_items?: string[]
+          library_access?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          anamnese_download?: boolean
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          infothek_all?: boolean
+          infothek_items?: string[]
+          library_access?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patient_resources: {
         Row: {
           category: string
@@ -596,6 +635,7 @@ export type Database = {
         Returns: Json
       }
       extract_patient_snapshot_fields: { Args: { _input: Json }; Returns: Json }
+      get_my_patient_access: { Args: never; Returns: Json }
       get_therapy_patient_safe_snapshot: {
         Args: { _max_rows?: number; _pseudonym_id: string }
         Returns: Json
