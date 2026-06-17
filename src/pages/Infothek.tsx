@@ -14,7 +14,7 @@ export default function Infothek() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { canSeeInfothekItem, loading } = usePatientAccess();
-  const { isGated } = useInfothekGating();
+  const { getVisibility } = useInfothekGating();
 
   return (
     <Layout>
