@@ -33,7 +33,6 @@ export function Header() {
   const { canDownloadAnamnese } = usePatientAccess();
   // Anamnese im Header nur für Admins oder individuell freigeschaltete Patienten sichtbar.
   const showAnamnese = isAdmin || canDownloadAnamnese;
-  const showOnlineAnamnese = showAnamnese;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
