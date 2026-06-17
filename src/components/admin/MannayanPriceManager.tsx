@@ -228,8 +228,17 @@ export default function MannayanPriceManager() {
     if (!userId) { toast({ title: "Nicht angemeldet", variant: "destructive" }); return; }
 
     if (orderId) {
+      const pseudonymId = extractPseudonym(patientName);
+      if (!pseudonymId) {
+        toast({
+          title: "Pseudonym fehlt",
+          description: "Bitte im Patientenfeld das Pseudonym im Format P-YYYY-NNNN eintragen.",
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase.from("mannayan_orders" as any)
-        .update({ patient_label: patientName, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
+        .update({ patient_label: patientName, pseudonym_id: pseudonymId, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
         .eq("id", orderId);
       if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
       toast({ title: `Bestellung ${orderNumber} aktualisiert` });
@@ -257,10 +266,10 @@ export default function MannayanPriceManager() {
     }]).select().single();
     if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
     setOrderId((inserted as any).id);
-    setOrderNumber(newNum);
-    toast({ title: `Bestellung ${newNum} gespeichert` });
+    setOrderNumber((inserted as any).order_number ?? newNum);
+    toast({ title: `Bestellung ${(inserted as any).order_number ?? newNum} gespeichert` });
     refetchOrders();
-    return newNum;
+    return (inserted as any).order_number ?? newNum;
   };
 
   const loadOrder = (o: any) => {
