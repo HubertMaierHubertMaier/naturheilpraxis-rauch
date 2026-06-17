@@ -193,6 +193,11 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
+            <TabsContent value="pseudonyms">
+              <PseudonymOverview />
+            </TabsContent>
+
+
             <TabsContent value="faqs">
               <Card>
                 <CardHeader>
