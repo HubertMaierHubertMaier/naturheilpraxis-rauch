@@ -18,7 +18,7 @@ import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
-import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
+
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
 import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
@@ -91,7 +91,6 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
-          <AnamneseToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-12 max-w-6xl">

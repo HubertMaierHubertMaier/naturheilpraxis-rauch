@@ -18,7 +18,7 @@ import { translations } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
-import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
+
 import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
@@ -31,11 +31,10 @@ export function Header() {
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
-  const { enabled: anamneseEnabled } = useAnamneseEnabled();
   const { enabled: anamnesePublic } = useAnamnesePublic();
   const { canDownloadAnamnese } = usePatientAccess();
   // Anamnese im Header sichtbar, wenn: globaler Public-Modus ODER Admin ODER individuelle E-Mail-Freigabe
-  const showAnamnese = (anamneseEnabled && (anamnesePublic || isAdmin || canDownloadAnamnese));
+  const showAnamnese = anamnesePublic || isAdmin || canDownloadAnamnese;
   const showOnlineAnamnese = isAdmin || anamnesePublic || canDownloadAnamnese;
 
   const allowDevMode = isDevHost();
@@ -131,9 +130,6 @@ export function Header() {
             >
               <ClipboardList className="h-4 w-4" />
               {t("Anamnesebogen", "Anamnesis Form")}
-              {!anamneseEnabled && isAdmin && (
-                <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
-              )}
             </Link>
           ) : (
             <a
@@ -369,9 +365,6 @@ export function Header() {
               >
                 <ClipboardList className="h-4 w-4" />
                 {t("Anamnesebogen", "Anamnesis Form")}
-                {!anamneseEnabled && isAdmin && (
-                  <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
-                )}
               </Link>
             ) : (
               <a
