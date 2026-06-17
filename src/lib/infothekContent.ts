@@ -40,11 +40,30 @@ export interface InfothekItem {
   description: LocalizedText;
   external?: boolean;
   showInOverview?: boolean;
+  /**
+   * Wenn true: Item ist standardmäßig NICHT öffentlich sichtbar.
+   * Sichtbar nur für eingeloggte Patienten, deren E-Mail in `patient_access`
+   * mit `infothek_all=true` ODER mit diesem href in `infothek_items[]` freigeschaltet ist
+   * (oder Admins).
+   */
+  gated?: boolean;
 }
 
 export interface InfothekGroup {
   title: LocalizedText;
   items: InfothekItem[];
+}
+
+/** Alle Items als flache Liste – z.B. für Admin-Multi-Select */
+export function listAllInfothekItems(): Array<{ group: string; item: InfothekItem }> {
+  const out: Array<{ group: string; item: InfothekItem }> = [];
+  for (const g of infothekGroups) for (const i of g.items) out.push({ group: g.title.de, item: i });
+  return out;
+}
+
+/** Alle gated Items als flache Liste */
+export function listGatedInfothekItems(): Array<{ group: string; item: InfothekItem }> {
+  return listAllInfothekItems().filter(({ item }) => item.gated);
 }
 
 export const infothekGroups: InfothekGroup[] = [
