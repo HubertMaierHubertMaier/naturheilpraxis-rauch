@@ -105,8 +105,14 @@ export function InfothekGatingManager() {
     [allItems, draft]
   );
 
-  const renderItemRow = ({ group, item }: { group: string; item: InfothekItem }) => {
-    const checked = !!draft[item.href];
+  const renderItemRow = (
+    { group, item }: { group: string; item: InfothekItem },
+    mode: "gated" | "public" = "gated"
+  ) => {
+    const isGated = !!draft[item.href];
+    // In der Sichtbarkeits-Ansicht heißt "Häkchen = gehört in diese Liste".
+    // In der Themen-Ansicht heißt "Häkchen = gesperrt" (mode === "gated").
+    const checked = mode === "public" ? !isGated : isGated;
     return (
       <li
         key={item.href}
@@ -124,7 +130,7 @@ export function InfothekGatingManager() {
         >
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{item.label.de}</span>
-            {checked ? (
+            {isGated ? (
               <Badge variant="secondary" className="gap-1">
                 <Lock className="h-3 w-3" /> gesperrt
               </Badge>
