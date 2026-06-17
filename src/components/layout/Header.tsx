@@ -130,9 +130,6 @@ export function Header() {
             >
               <ClipboardList className="h-4 w-4" />
               {t("Anamnesebogen", "Anamnesis Form")}
-              {!anamneseEnabled && isAdmin && (
-                <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">gesperrt</span>
-              )}
             </Link>
           ) : (
             <a
