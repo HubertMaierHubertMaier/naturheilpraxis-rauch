@@ -273,7 +273,7 @@ export function InfothekGatingManager() {
                 Aktuell sind alle Artikel öffentlich.
               </div>
             ) : (
-              <ul className="divide-y">{gatedItems.map(renderItemRow)}</ul>
+              <ul className="divide-y">{gatedItems.map((row) => renderItemRow(row, "gated"))}</ul>
             )}
           </div>
         </>
