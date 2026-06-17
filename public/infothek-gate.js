@@ -17,6 +17,12 @@
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZWJxamFkbHBsdG5xYXdvaXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NjkwNTcsImV4cCI6MjA4NDI0NTA1N30.l9fm-vpCmz2FUOCxTV7amUP-IE11InHgJHA9hDdRmzY';
 
   var path = window.location.pathname;
+  var ALWAYS_PATIENT_PATHS = [
+    '/allergiebehandlung.html',
+    '/candida-diaet.html',
+    '/kraeuter-schmerz-entzuendung.html',
+    '/patienteninfo-hochohmiges-wasser.html'
+  ];
 
   // Body verstecken bis Prüfung abgeschlossen ist (kein Flash)
   var styleEl = document.createElement('style');
@@ -79,10 +85,12 @@
         '/rest/v1/infothek_gating?href=eq.' + encodeURIComponent(path) + '&select=visibility,gated',
         null
       );
-      var visibility = 'public';
+      var visibility = ALWAYS_PATIENT_PATHS.indexOf(path) >= 0 ? 'patient' : 'public';
       if (Array.isArray(rows) && rows[0]) {
         var row = rows[0];
-        if (row.visibility && ['public', 'new_patient', 'patient'].indexOf(row.visibility) >= 0) {
+        if (ALWAYS_PATIENT_PATHS.indexOf(path) >= 0) {
+          visibility = 'patient';
+        } else if (row.visibility && ['public', 'new_patient', 'patient'].indexOf(row.visibility) >= 0) {
           visibility = row.visibility;
         } else if (row.gated) {
           visibility = 'patient';

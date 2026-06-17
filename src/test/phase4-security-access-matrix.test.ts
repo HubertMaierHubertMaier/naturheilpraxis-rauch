@@ -22,11 +22,12 @@ describe("Phase 4 security access matrix", () => {
 
   it("keeps admin/patient-only routes classified as non-public", () => {
     const restrictedRoutes = routeAccessMatrix.filter((route) =>
-      ["/admin", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank"].includes(route.path)
+      ["/admin", "/anamnesebogen", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank"].includes(route.path)
     );
 
     expect(restrictedRoutes.map((route) => route.path).sort()).toEqual([
       "/admin",
+      "/anamnesebogen",
       "/dashboard",
       "/patienten",
       "/patienten-bibliothek",
@@ -45,7 +46,6 @@ describe("Phase 4 security access matrix", () => {
     expect(publicFunctions.map((fn) => fn.name).sort()).toEqual([
       "request-verification-code",
       "send-verification-email",
-      "submit-anamnesis",
       "verify-code",
     ]);
     expect(publicFunctions.every((fn) => fn.publicRationale.length >= 24)).toBe(true);
@@ -71,6 +71,7 @@ describe("Phase 4 security access matrix", () => {
     expect(publicReadTables.map((table) => table.name).sort()).toEqual([
       "app_settings",
       "faqs",
+      "infothek_gating",
       "practice_info",
       "practice_pricing",
     ]);
@@ -109,6 +110,7 @@ describe("Phase 4 security access matrix", () => {
     const adminFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.audience === "admin");
 
     expect(adminFunctions.map((fn) => fn.name).sort()).toEqual([
+      "check-hp-therapy",
       "enrich-wiki-tags",
       "extract-lab-image",
       "generate-diagnoses",
@@ -130,7 +132,6 @@ describe("Phase 4 security access matrix", () => {
     expect(publicPreSessionFunctions.map((fn) => fn.name).sort()).toEqual([
       "request-verification-code",
       "send-verification-email",
-      "submit-anamnesis",
       "verify-code",
     ]);
     expect(

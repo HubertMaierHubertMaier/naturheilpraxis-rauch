@@ -49,7 +49,7 @@ export interface TableAccessMatrixEntry {
 export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/", component: "Index", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: ["app_settings"], edgeFunctions: [], riskNote: "Public start page; feature-flag reads are column-limited." },
   { path: "/auth", component: "Auth", routeAudience: "auth", guardType: "none", sensitivity: "public", supabaseTables: ["app_settings", "anamnesis_submissions"], edgeFunctions: ["request-verification-code", "verify-code", "notify-existing-patient"], riskNote: "Pre-session auth/registration flow; no real verification data in tests." },
-  { path: "/anamnesebogen", component: "Anamnesebogen", routeAudience: "public", guardType: "AnamneseRouteGuard", sensitivity: "patient-sensitive", supabaseTables: ["app_settings", "anamnesis_submissions", "iaa_submissions"], edgeFunctions: ["submit-anamnesis", "request-verification-code", "verify-code"], riskNote: "Public only when anamnese_public is enabled; collects anamnesis data and remains highest-risk public flow." },
+  { path: "/anamnesebogen", component: "Anamnesebogen", routeAudience: "auth", guardType: "AnamneseRouteGuard", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions", "iaa_submissions"], edgeFunctions: ["submit-anamnesis", "request-verification-code", "verify-code"], riskNote: "Login-protected anamnesis route; collects health data and must never be reachable anonymously." },
   { path: "/erstanmeldung", component: "Erstanmeldung", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions", "practice_pricing"], edgeFunctions: [], riskNote: "Authenticated onboarding route." },
   { path: "/anamnesebogen-demo", component: "AnamneseDemo", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Demo route; verify no real patient submission is introduced before enabling broader use." },
   { path: "/datenschutz", component: "Datenschutz", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public legal information." },
@@ -82,6 +82,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
 ];
 
 export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
+  { name: "check-hp-therapy", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC before therapy checks", rateLimitPolicy: "Request processing is JWT-gated; admin-only therapeutic checks should remain behind platform auth.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "elevenlabs-tts", verifyJwt: true, audience: "provider-protected", authCheck: "Supabase platform JWT via verify_jwt plus local bearer-subject extraction for throttling", roleCheck: "No explicit app-level role check; provider-cost/key context", roleEnforcement: "verify_jwt platform JWT only; no admin role or user_roles lookup", rateLimitPolicy: "Local in-memory per-authenticated-user rate limit before request-body parsing and ElevenLabs provider calls, with HTTP 429 response.", usesServiceRole: false, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
   { name: "enrich-wiki-tags", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
   { name: "extract-lab-image", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
@@ -95,7 +96,7 @@ export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
   { name: "resend-submission", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing, submission queries, PDF retrieval, AI ICD-10 generation, and email resend calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "send-icd10-report", verifyJwt: true, audience: "admin", authCheck: "Authorization bearer token resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and report email sending, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "send-verification-email", verifyJwt: false, audience: "public-pre-session", authCheck: "Legacy application-level verification email flow", roleCheck: "None before session", roleEnforcement: "public legacy pre-session flow; no role before session", rateLimitPolicy: "Local in-memory rate limit per email/type for 15 minutes with HTTP 429 response.", usesServiceRole: false, cors: "public/pre-session cors", handlesPii: true, publicRationale: "Legacy pre-session verification flow remains intentionally reachable until replacement/legal review is complete." },
-  { name: "submit-anamnesis", verifyJwt: false, audience: "public-pre-session", authCheck: "Application-level public anamnesis verification flow with optional user lookup", roleCheck: "None before session", roleEnforcement: "public pre-session intake flow; optional auth.getUser only when bearer token is present", rateLimitPolicy: "Local in-memory rate limits for submission attempts with HTTP 429 responses.", usesServiceRole: true, cors: "public/pre-session cors", handlesPii: true, publicRationale: "Public anamnesis submission is intentionally reachable only as the controlled pre-session intake path." },
+  { name: "submit-anamnesis", verifyJwt: true, audience: "authenticated", authCheck: "Platform JWT required plus auth.getUser check inside the function", roleCheck: "Authenticated user required", roleEnforcement: "anonymous requests receive 401 before any anamnesis data is accepted", rateLimitPolicy: "Local in-memory rate limits for submission attempts with HTTP 429 responses.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "therapy-recommend", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "verify-code", verifyJwt: false, audience: "public-pre-session", authCheck: "Application-level verification-code completion", roleCheck: "None before session", roleEnforcement: "public pre-session flow; no role before session", rateLimitPolicy: "Local in-memory rate limit per email for 1 hour with HTTP 429 response.", usesServiceRole: true, cors: "public/pre-session cors", handlesPii: true, publicRationale: "Pre-session verification must accept unauthenticated code confirmation for login/registration/anamnesis flows." },
 ];
@@ -169,6 +170,17 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     riskNote: "Patient-submitted questionnaire data; keep public access blocked and tests synthetic.",
   },
   {
+    name: "infothek_gating",
+    audience: "public",
+    rlsEnabled: true,
+    publicRead: true,
+    publicReadRationale: "Public Infothek pages need visibility flags to render locked/free tiles consistently; writes remain admin-only.",
+    containsPatientData: false,
+    frontendConsumers: ["Infothek", "InfothekDropdown", "InfothekGateRoute"],
+    policySummary: "Public reads for gating flags; administrative policies control changes.",
+    riskNote: "Never use DB overrides to downgrade code-marked therapy content below patient-only access.",
+  },
+  {
     name: "mannayan_orders",
     audience: "admin",
     rlsEnabled: true,
@@ -200,6 +212,28 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     frontendConsumers: ["PatientLibraryManager", "PatientenBibliothek"],
     policySummary: "Admin manages resources; patients read resources assigned/available to their authenticated context.",
     riskNote: "Patient library access must remain authenticated and avoid revealing patient-specific resource assignments publicly.",
+  },
+  {
+    name: "patient_access",
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: ["usePatientAccess", "PatientManager", "PatientenBibliothek"],
+    policySummary: "Admin-managed access grants; patients receive only their own effective grants through a security-definer function.",
+    riskNote: "Contains patient emails and unlock flags; never expose direct public reads.",
+  },
+  {
+    name: "patient_snapshot",
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: ["therapy admin components"],
+    policySummary: "Admin/service-role safe snapshot access for therapy workflows.",
+    riskNote: "Contains compacted patient health context; keep behind admin/RPC access only.",
   },
   {
     name: "practice_info",

@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 const mockUseAuth = vi.fn();
 const mockUseAnamneseEnabled = vi.fn();
 const mockUseAnamnesePublic = vi.fn();
+const mockUsePatientAccess = vi.fn();
 const mockToast = vi.fn();
 const mockIsDevHost = vi.fn();
 const mockIsDevAdminBypassActive = vi.fn();
@@ -29,6 +30,10 @@ vi.mock("@/hooks/useAnamneseEnabled", () => ({
 
 vi.mock("@/hooks/useAnamnesePublic", () => ({
   useAnamnesePublic: () => mockUseAnamnesePublic(),
+}));
+
+vi.mock("@/hooks/usePatientAccess", () => ({
+  usePatientAccess: () => mockUsePatientAccess(),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -78,6 +83,9 @@ beforeEach(() => {
     loading: false,
     refresh: vi.fn(),
   });
+  mockUsePatientAccess.mockReturnValue({
+    canDownloadAnamnese: false,
+  });
   mockUseAuth.mockReturnValue({
     user: null,
     loading: false,
@@ -87,19 +95,16 @@ beforeEach(() => {
 });
 
 describe("Header Anamnese navigation smoke test", () => {
-  it("shows the blank anamnesis PDF download for anonymous visitors when anamnesis is enabled and public access is disabled", () => {
+  it("does not show anamnesis online or PDF links for anonymous visitors", () => {
     renderHeader();
 
-    const pdfDownload = screen.getByRole("link", { name: /Anamnesebogen \(PDF\)/i });
-
-    expect(pdfDownload).toHaveAttribute("href", "/anamnesebogen-blanko.pdf");
-    expect(pdfDownload).toHaveAttribute("download");
+    expect(screen.queryByRole("link", { name: /Anamnesebogen \(PDF\)/i })).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /^Anamnesebogen$/i })
     ).not.toBeInTheDocument();
   });
 
-  it("shows the online anamnesis link for anonymous visitors when public access is enabled", () => {
+  it("keeps anamnesis hidden for anonymous visitors even if an old public setting is enabled", () => {
     mockUseAnamnesePublic.mockReturnValue({
       enabled: true,
       loading: false,
@@ -108,10 +113,7 @@ describe("Header Anamnese navigation smoke test", () => {
 
     renderHeader();
 
-    const onlineLink = screen.getByRole("link", { name: /^Anamnesebogen$/i });
-
-    expect(onlineLink).toHaveAttribute("href", "/anamnesebogen");
-    expect(onlineLink).not.toHaveAttribute("download");
+    expect(screen.queryByRole("link", { name: /^Anamnesebogen$/i })).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /Anamnesebogen \(PDF\)/i })
     ).not.toBeInTheDocument();
@@ -124,6 +126,9 @@ describe("Header Anamnese navigation smoke test", () => {
       signOut: vi.fn(),
       isAdmin: false,
     });
+    mockUsePatientAccess.mockReturnValue({
+      canDownloadAnamnese: true,
+    });
 
     renderHeader();
 
@@ -135,7 +140,7 @@ describe("Header Anamnese navigation smoke test", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the online anamnesis link with locked marker for admins when anamnesis is disabled", () => {
+  it("shows the online anamnesis link for admins", () => {
     mockUseAnamneseEnabled.mockReturnValue({
       enabled: false,
       loading: false,
@@ -150,12 +155,9 @@ describe("Header Anamnese navigation smoke test", () => {
 
     renderHeader();
 
-    const lockedOnlineLink = screen.getByRole("link", {
-      name: /Anamnesebogen\s+gesperrt/i,
-    });
+    const lockedOnlineLink = screen.getByRole("link", { name: /^Anamnesebogen$/i });
 
     expect(lockedOnlineLink).toHaveAttribute("href", "/anamnesebogen");
-    expect(screen.getByText("gesperrt")).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /Anamnesebogen \(PDF\)/i })
     ).not.toBeInTheDocument();

@@ -24,11 +24,11 @@ describe("Supabase Edge Function JWT policy", () => {
   const anonymousFlowFunctions = [
     "request-verification-code",
     "verify-code",
-    "submit-anamnesis",
     "send-verification-email",
   ];
 
   const adminOnlyServiceRoleFunctions = [
+    "check-hp-therapy",
     "generate-icd10",
     "send-icd10-report",
     "resend-submission",
@@ -45,6 +45,7 @@ describe("Supabase Edge Function JWT policy", () => {
     ...adminOnlyServiceRoleFunctions,
     "elevenlabs-tts",
     "notify-existing-patient",
+    "submit-anamnesis",
   ];
 
   it("keeps required anonymous verification/anamnesis flows explicitly callable without platform JWT", () => {

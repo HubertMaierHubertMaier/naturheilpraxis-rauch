@@ -3,11 +3,45 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { sendEmail } from "../_shared/smtp.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const allowedCorsHostnames = new Set([
+  "naturheilpraxis-rauch.lovable.app",
+  "rauch-heilpraktiker.de",
+  "www.rauch-heilpraktiker.de",
+]);
+
+function isAllowedCorsOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    const isLocalDev =
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      ["5173", "4173", "5174", "4174"].includes(url.port);
+
+    return (
+      isLocalDev ||
+      allowedCorsHostnames.has(url.hostname) ||
+      url.hostname.endsWith(".lovableproject.com") ||
+      url.hostname.endsWith(".lovable.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin");
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+
+  if (isAllowedCorsOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin!;
+  }
+
+  return headers;
+}
 
 const requestSchema = z.object({
   action: z.enum(["submit", "confirm"]),
@@ -229,6 +263,7 @@ function buildICD10HtmlTable(codes: { code: string; descDe: string; category: st
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -261,7 +296,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Try to get userId from auth header
+    // Der Anamnesebogen ist nicht mehr öffentlich: gültige Sitzung erforderlich.
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -270,6 +305,12 @@ serve(async (req) => {
         const { data: { user } } = await supabase.auth.getUser(token);
         userId = user?.id || null;
       } catch { /* not authenticated - ok for dev mode */ }
+    }
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Anmeldung erforderlich" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // ── ACTION: SUBMIT ──────────────────────────────────────────────
@@ -288,7 +329,7 @@ serve(async (req) => {
         );
       }
 
-      const effectiveUserId = userId || tempUserId || crypto.randomUUID();
+      const effectiveUserId = userId;
       let submId: string | null = null;
 
       if (userId) {
@@ -375,7 +416,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           submissionId: submId,
-          tempUserId: userId ? undefined : effectiveUserId,
+          tempUserId: undefined,
           message: "Bestätigungscode wurde gesendet",
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -398,13 +439,7 @@ serve(async (req) => {
         );
       }
 
-      const effectiveUserId = userId || tempUserId;
-      if (!effectiveUserId) {
-        return new Response(
-          JSON.stringify({ error: "Benutzer-Identifikation fehlt" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      const effectiveUserId = userId;
 
       // Verify code
       const { data: vc, error: vcError } = await supabase

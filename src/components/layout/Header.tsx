@@ -19,7 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 
-import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export function Header() {
@@ -31,11 +30,9 @@ export function Header() {
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
-  const { enabled: anamnesePublic } = useAnamnesePublic();
   const { canDownloadAnamnese } = usePatientAccess();
-  // Anamnese im Header sichtbar, wenn: globaler Public-Modus ODER Admin ODER individuelle E-Mail-Freigabe
-  const showAnamnese = anamnesePublic || isAdmin || canDownloadAnamnese;
-  const showOnlineAnamnese = isAdmin || anamnesePublic || canDownloadAnamnese;
+  // Anamnese im Header nur für Admins oder individuell freigeschaltete Patienten sichtbar.
+  const showAnamnese = isAdmin || canDownloadAnamnese;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
@@ -117,8 +114,8 @@ export function Header() {
           {/* Infothek Dropdown */}
           <InfothekDropdown />
 
-          {/* Anamnesebogen – eingeloggte Patienten/Admins oder public-enabled: Online-Form; sonst: PDF-Download */}
-          {showAnamnese && (showOnlineAnamnese ? (
+          {/* Anamnesebogen – nur eingeloggte/freigeschaltete Patienten oder Admins */}
+          {showAnamnese && (
             <Link
               to="/anamnesebogen"
               className={cn(
@@ -131,17 +128,7 @@ export function Header() {
               <ClipboardList className="h-4 w-4" />
               {t("Anamnesebogen", "Anamnesis Form")}
             </Link>
-          ) : (
-            <a
-              href="/anamnesebogen-blanko.pdf"
-              download
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-100 hover:text-primary"
-              title={t("Vollständigen Blanko-Anamnesebogen als PDF herunterladen", "Download complete blank anamnesis form as PDF")}
-            >
-              <ClipboardList className="h-4 w-4" />
-              {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
-            </a>
-          ))}
+          )}
 
           
           <LanguageSwitcher className="ml-2" />
@@ -352,7 +339,7 @@ export function Header() {
             <InfothekDropdown isMobile onItemClick={() => setIsMenuOpen(false)} />
 
             {/* Anamnesebogen Mobile */}
-            {showAnamnese && (showOnlineAnamnese ? (
+            {showAnamnese && (
               <Link
                 to="/anamnesebogen"
                 onClick={() => setIsMenuOpen(false)}
@@ -366,17 +353,7 @@ export function Header() {
                 <ClipboardList className="h-4 w-4" />
                 {t("Anamnesebogen", "Anamnesis Form")}
               </Link>
-            ) : (
-              <a
-                href="/anamnesebogen-blanko.pdf"
-                download
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sage-50 hover:text-primary text-left"
-              >
-                <ClipboardList className="h-4 w-4" />
-                {t("Anamnesebogen (PDF)", "Anamnesis Form (PDF)")}
-              </a>
-            ))}
+            )}
             
             {/* Dev Mode Activate Button Mobile */}
             {showDevButton && (
