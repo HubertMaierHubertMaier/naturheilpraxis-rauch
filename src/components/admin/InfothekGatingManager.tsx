@@ -48,7 +48,7 @@ const VIS_META: Record<
     short: "Freigeschaltet",
     icon: Lock,
     tone: "text-amber-600",
-    help: "Nur für freigeschaltete Patienten (Tab „Zugänge"). Einzelne Beiträge können dort pro Patient extra freigegeben werden.",
+    help: 'Nur für freigeschaltete Patienten (Tab „Zugänge"). Einzelne Beiträge können dort pro Patient extra freigegeben werden.',
   },
 };
 
