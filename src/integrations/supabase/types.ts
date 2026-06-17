@@ -200,18 +200,21 @@ export type Database = {
           href: string
           updated_at: string
           updated_by: string | null
+          visibility: string
         }
         Insert: {
           gated?: boolean
           href: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
         Update: {
           gated?: boolean
           href?: string
           updated_at?: string
           updated_by?: string | null
+          visibility?: string
         }
         Relationships: []
       }

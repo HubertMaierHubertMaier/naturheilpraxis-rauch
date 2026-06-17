@@ -14,7 +14,7 @@ export default function Infothek() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { canSeeInfothekItem, loading } = usePatientAccess();
-  const { isGated } = useInfothekGating();
+  const { getVisibility } = useInfothekGating();
 
   return (
     <Layout>
@@ -43,11 +43,25 @@ export default function Infothek() {
 
           <div className="mx-auto max-w-5xl space-y-12">
             {groups.map((group) => {
-              // gated items: only show if user has access (or admin).
-              // `gated` kommt entweder aus DB-Override (Admin-UI „Infothek-Sichtbarkeit") oder aus infothekContent.ts
-              const itemsWithGating = group.items.map((item) => ({ item, gated: isGated(item.href, !!item.gated) }));
-              const visibleItems = itemsWithGating.filter(({ item, gated }) => !gated || canSeeInfothekItem(item.href)).map(({ item }) => item);
-              const hiddenGatedCount = itemsWithGating.filter(({ item, gated }) => gated && !canSeeInfothekItem(item.href)).length;
+              // Sichtbarkeit pro Item ermitteln und filtern:
+              //   public      → für alle sichtbar
+              //   new_patient → sichtbar wenn eingeloggt (auch unverifiziert)
+              //   patient     → nur freigeschaltete Patienten (canSeeInfothekItem)
+              const itemsWithVis = group.items.map((item) => ({
+                item,
+                vis: getVisibility(item.href, !!item.gated),
+              }));
+              const canSee = (vis: "public" | "new_patient" | "patient", href: string) => {
+                if (vis === "public") return true;
+                if (vis === "new_patient") return !!user;
+                return canSeeInfothekItem(href);
+              };
+              const visibleItems = itemsWithVis
+                .filter(({ item, vis }) => canSee(vis, item.href))
+                .map(({ item }) => item);
+              const hiddenGatedCount = itemsWithVis.filter(
+                ({ item, vis }) => !canSee(vis, item.href)
+              ).length;
               if (visibleItems.length === 0 && hiddenGatedCount === 0) return null;
 
               return (
