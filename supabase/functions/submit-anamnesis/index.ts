@@ -3,11 +3,45 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { sendEmail } from "../_shared/smtp.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const allowedCorsHostnames = new Set([
+  "naturheilpraxis-rauch.lovable.app",
+  "rauch-heilpraktiker.de",
+  "www.rauch-heilpraktiker.de",
+]);
+
+function isAllowedCorsOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  try {
+    const url = new URL(origin);
+    const isLocalDev =
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+      ["5173", "4173", "5174", "4174"].includes(url.port);
+
+    return (
+      isLocalDev ||
+      allowedCorsHostnames.has(url.hostname) ||
+      url.hostname.endsWith(".lovableproject.com") ||
+      url.hostname.endsWith(".lovable.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin");
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Vary": "Origin",
+  };
+
+  if (isAllowedCorsOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin!;
+  }
+
+  return headers;
+}
 
 const requestSchema = z.object({
   action: z.enum(["submit", "confirm"]),
