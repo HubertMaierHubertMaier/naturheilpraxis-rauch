@@ -709,6 +709,10 @@ export type Database = {
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
       next_mannayan_order_number: { Args: never; Returns: string }
+      next_mannayan_order_number_for_pseudonym: {
+        Args: { _pseudonym: string }
+        Returns: string
+      }
       upsert_therapy_autosave_draft: {
         Args: {
           _eingabe_daten: Json
