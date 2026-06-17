@@ -12,7 +12,8 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound, Eye } from "lucide-react";
+import { InfothekGatingManager } from "@/components/admin/InfothekGatingManager";
 import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
@@ -93,7 +94,7 @@ const AdminDashboard = () => {
           <AnamneseToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-11 max-w-6xl">
+            <TabsList className="grid w-full grid-cols-12 max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -101,6 +102,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="access" className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />
                 Zugänge
+              </TabsTrigger>
+              <TabsTrigger value="visibility" className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Sichtbarkeit
               </TabsTrigger>
               <TabsTrigger value="faqs" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
@@ -151,6 +156,21 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <PatientAccessManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="visibility">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Infothek-Sichtbarkeit</CardTitle>
+                  <CardDescription>
+                    Bestimme pro Beitrag, ob er für alle Besucher öffentlich oder nur für freigeschaltete Patienten sichtbar ist.
+                    Wirkt sofort auf die öffentliche Infothek-Seite.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <InfothekGatingManager />
                 </CardContent>
               </Card>
             </TabsContent>

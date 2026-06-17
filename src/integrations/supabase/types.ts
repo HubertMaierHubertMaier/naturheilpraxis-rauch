@@ -194,6 +194,27 @@ export type Database = {
         }
         Relationships: []
       }
+      infothek_gating: {
+        Row: {
+          gated: boolean
+          href: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          gated?: boolean
+          href: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          gated?: boolean
+          href?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       mannayan_orders: {
         Row: {
           created_at: string
