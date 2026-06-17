@@ -7,14 +7,25 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive } from "lucide-react";
+import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, Table as DocxTable, TableRow as DocxRow, TableCell as DocxCell, AlignmentType, WidthType, BorderStyle, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
+
+const PSEUDONYM_RE = /P-\d{4}-\d{4}/;
+
+function extractPseudonym(value: string | null | undefined): string | null {
+  return value?.match(PSEUDONYM_RE)?.[0] ?? null;
+}
+
+function expectedOrderNumberForPseudonym(pseudonym: string, sequence: number) {
+  return `B-${pseudonym.replace(/^P-/, "")}-${sequence}`;
+}
 
 interface MannayanProduct {
   id: string;
@@ -181,6 +192,30 @@ export default function MannayanPriceManager() {
       return data as any[];
     },
   });
+  const orderStatusById = useMemo(() => {
+    const grouped = new Map<string, any[]>();
+    const status = new Map<string, { pseudonym: string | null; expected: string | null; mismatch: boolean; unassigned: boolean }>();
+
+    for (const order of savedOrders) {
+      const pseudonym = extractPseudonym(order.pseudonym_id) ?? extractPseudonym(order.patient_label);
+      if (!pseudonym) {
+        status.set(order.id, { pseudonym: null, expected: null, mismatch: false, unassigned: true });
+        continue;
+      }
+      grouped.set(pseudonym, [...(grouped.get(pseudonym) ?? []), order]);
+    }
+
+    grouped.forEach((orders, pseudonym) => {
+      orders
+        .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "") || String(a.id).localeCompare(String(b.id)))
+        .forEach((order, index) => {
+          const expected = expectedOrderNumberForPseudonym(pseudonym, index + 1);
+          status.set(order.id, { pseudonym, expected, mismatch: order.order_number !== expected, unassigned: false });
+        });
+    });
+
+    return status;
+  }, [savedOrders]);
 
   const saveOrder = async (): Promise<string | undefined> => {
     if (cart.length === 0) { toast({ title: "Leere Bestellung", variant: "destructive" }); return; }
@@ -193,16 +228,25 @@ export default function MannayanPriceManager() {
     if (!userId) { toast({ title: "Nicht angemeldet", variant: "destructive" }); return; }
 
     if (orderId) {
+      const pseudonymId = extractPseudonym(patientName);
+      if (!pseudonymId) {
+        toast({
+          title: "Pseudonym fehlt",
+          description: "Bitte im Patientenfeld das Pseudonym im Format P-YYYY-NNNN eintragen.",
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase.from("mannayan_orders" as any)
-        .update({ patient_label: patientName, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
+        .update({ patient_label: patientName, pseudonym_id: pseudonymId, items: itemsPayload, total_eur: total, notes: orderNotes, updated_at: new Date().toISOString() })
         .eq("id", orderId);
       if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
       toast({ title: `Bestellung ${orderNumber} aktualisiert` });
       refetchOrders();
       return orderNumber;
     }
-    const pseudonymMatch = (patientName || "").match(/P-\d{4}-\d{4}/);
-    if (!pseudonymMatch) {
+    const pseudonymId = extractPseudonym(patientName);
+    if (!pseudonymId) {
       toast({
         title: "Pseudonym fehlt",
         description: "Bitte im Feld 'Titel, Vorname, Name' das Patienten-Pseudonym im Format P-YYYY-NNNN eintragen (z.B. P-2026-0010). Die Bestellnummer wird daraus abgeleitet.",
@@ -210,7 +254,6 @@ export default function MannayanPriceManager() {
       });
       return;
     }
-    const pseudonymId = pseudonymMatch[0];
     const { data: numData, error: numErr } = await supabase.rpc(
       "next_mannayan_order_number_for_pseudonym" as any,
       { _pseudonym: pseudonymId } as any,
@@ -223,10 +266,10 @@ export default function MannayanPriceManager() {
     }]).select().single();
     if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
     setOrderId((inserted as any).id);
-    setOrderNumber(newNum);
-    toast({ title: `Bestellung ${newNum} gespeichert` });
+    setOrderNumber((inserted as any).order_number ?? newNum);
+    toast({ title: `Bestellung ${(inserted as any).order_number ?? newNum} gespeichert` });
     refetchOrders();
-    return newNum;
+    return (inserted as any).order_number ?? newNum;
   };
 
   const loadOrder = (o: any) => {
@@ -494,7 +537,7 @@ export default function MannayanPriceManager() {
                   Mannayan-Bestellung {orderNumber && <span className="text-primary">· {orderNumber}</span>}
                 </CardTitle>
                 <CardDescription>
-                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – wird beim Export oder Speichern fortlaufend nummeriert (P-JJJJ-XXXX)."}
+                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – Nummer wird aus dem Patienten-Pseudonym gebildet, z.B. B-2026-0010-1."}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -659,28 +702,49 @@ export default function MannayanPriceManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nr.</TableHead>
+                  <TableHead>Soll / Status</TableHead>
                   <TableHead>Datum</TableHead>
                   <TableHead>Patient</TableHead>
+                  <TableHead>Pseudonym</TableHead>
                   <TableHead className="text-right">Summe</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {savedOrders.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
                 )}
-                {savedOrders.map((o: any) => (
-                  <TableRow key={o.id} className="cursor-pointer hover:bg-sage-50">
-                    <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
-                    <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
-                    <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
-                    <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {savedOrders.map((o: any) => {
+                  const status = orderStatusById.get(o.id);
+                  return (
+                    <TableRow key={o.id} className={`cursor-pointer hover:bg-sage-50 ${status?.mismatch || status?.unassigned ? "bg-destructive/5" : ""}`}>
+                      <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>
+                        {status?.unassigned ? (
+                          <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Klärfall</Badge>
+                        ) : status?.mismatch ? (
+                          <div className="space-y-1">
+                            <Badge variant="destructive">Ist ≠ Soll</Badge>
+                            <div className="font-mono text-xs text-muted-foreground">{status.expected}</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <Badge variant="secondary">passt</Badge>
+                            <div className="font-mono text-xs text-muted-foreground">{status?.expected ?? "—"}</div>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs" onClick={() => loadOrder(o)}>{status?.pseudonym ?? o.pseudonym_id ?? "nicht ermittelbar"}</TableCell>
+                      <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </DialogContent>

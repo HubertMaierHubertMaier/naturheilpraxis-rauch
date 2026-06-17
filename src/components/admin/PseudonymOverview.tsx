@@ -184,8 +184,11 @@ export function PseudonymOverview() {
               <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                 <div className="mb-2 flex items-center gap-2 font-medium text-destructive">
                   <AlertTriangle className="h-4 w-4" />
-                  Nicht zugeordnete Bestellung
+                  Klärfälle / nicht sicher zuordenbare Alt-Bestellungen
                 </div>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Diese Einträge bleiben bewusst separat stehen, damit keine Patientenzuordnung erfunden wird.
+                </p>
                 <div className="space-y-1 font-mono text-xs">
                   {unassignedOrders.map((order) => (
                     <div key={`${order.orderNumber}-${order.createdAt ?? ""}`}>
