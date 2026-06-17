@@ -201,11 +201,24 @@ export default function MannayanPriceManager() {
       refetchOrders();
       return orderNumber;
     }
-    const { data: numData, error: numErr } = await supabase.rpc("next_mannayan_order_number" as any);
+    const pseudonymMatch = (patientName || "").match(/P-\d{4}-\d{4}/);
+    if (!pseudonymMatch) {
+      toast({
+        title: "Pseudonym fehlt",
+        description: "Bitte im Feld 'Titel, Vorname, Name' das Patienten-Pseudonym im Format P-YYYY-NNNN eintragen (z.B. P-2026-0010). Die Bestellnummer wird daraus abgeleitet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const pseudonymId = pseudonymMatch[0];
+    const { data: numData, error: numErr } = await supabase.rpc(
+      "next_mannayan_order_number_for_pseudonym" as any,
+      { _pseudonym: pseudonymId } as any,
+    );
     if (numErr) { toast({ title: "Nummern-Fehler", description: numErr.message, variant: "destructive" }); return; }
     const newNum = numData as unknown as string;
     const { data: inserted, error } = await supabase.from("mannayan_orders" as any).insert([{
-      order_number: newNum, patient_label: patientName, items: itemsPayload,
+      order_number: newNum, patient_label: patientName, pseudonym_id: pseudonymId, items: itemsPayload,
       total_eur: total, notes: orderNotes, created_by: userId,
     }]).select().single();
     if (error) { toast({ title: "Fehler", description: error.message, variant: "destructive" }); return; }
