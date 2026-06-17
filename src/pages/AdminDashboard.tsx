@@ -18,7 +18,7 @@ import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
-import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
+
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
 import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
