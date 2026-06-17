@@ -71,6 +71,7 @@ describe("Phase 4 security access matrix", () => {
     expect(publicReadTables.map((table) => table.name).sort()).toEqual([
       "app_settings",
       "faqs",
+      "infothek_gating",
       "practice_info",
       "practice_pricing",
     ]);
@@ -109,6 +110,7 @@ describe("Phase 4 security access matrix", () => {
     const adminFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.audience === "admin");
 
     expect(adminFunctions.map((fn) => fn.name).sort()).toEqual([
+      "check-hp-therapy",
       "enrich-wiki-tags",
       "extract-lab-image",
       "generate-diagnoses",

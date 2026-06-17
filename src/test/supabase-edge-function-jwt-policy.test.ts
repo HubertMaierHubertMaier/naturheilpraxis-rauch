@@ -28,6 +28,7 @@ describe("Supabase Edge Function JWT policy", () => {
   ];
 
   const adminOnlyServiceRoleFunctions = [
+    "check-hp-therapy",
     "generate-icd10",
     "send-icd10-report",
     "resend-submission",
