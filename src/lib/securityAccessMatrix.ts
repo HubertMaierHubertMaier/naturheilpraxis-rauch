@@ -82,6 +82,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
 ];
 
 export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
+  { name: "check-hp-therapy", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC before therapy checks", rateLimitPolicy: "Request processing is JWT-gated; admin-only therapeutic checks should remain behind platform auth.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "elevenlabs-tts", verifyJwt: true, audience: "provider-protected", authCheck: "Supabase platform JWT via verify_jwt plus local bearer-subject extraction for throttling", roleCheck: "No explicit app-level role check; provider-cost/key context", roleEnforcement: "verify_jwt platform JWT only; no admin role or user_roles lookup", rateLimitPolicy: "Local in-memory per-authenticated-user rate limit before request-body parsing and ElevenLabs provider calls, with HTTP 429 response.", usesServiceRole: false, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
   { name: "enrich-wiki-tags", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
   { name: "extract-lab-image", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
@@ -169,6 +170,17 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     riskNote: "Patient-submitted questionnaire data; keep public access blocked and tests synthetic.",
   },
   {
+    name: "infothek_gating",
+    audience: "public",
+    rlsEnabled: true,
+    publicRead: true,
+    publicReadRationale: "Public Infothek pages need visibility flags to render locked/free tiles consistently; writes remain admin-only.",
+    containsPatientData: false,
+    frontendConsumers: ["Infothek", "InfothekDropdown", "InfothekGateRoute"],
+    policySummary: "Public reads for gating flags; administrative policies control changes.",
+    riskNote: "Never use DB overrides to downgrade code-marked therapy content below patient-only access.",
+  },
+  {
     name: "mannayan_orders",
     audience: "admin",
     rlsEnabled: true,
@@ -200,6 +212,28 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     frontendConsumers: ["PatientLibraryManager", "PatientenBibliothek"],
     policySummary: "Admin manages resources; patients read resources assigned/available to their authenticated context.",
     riskNote: "Patient library access must remain authenticated and avoid revealing patient-specific resource assignments publicly.",
+  },
+  {
+    name: "patient_access",
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: ["usePatientAccess", "PatientManager", "PatientenBibliothek"],
+    policySummary: "Admin-managed access grants; patients receive only their own effective grants through a security-definer function.",
+    riskNote: "Contains patient emails and unlock flags; never expose direct public reads.",
+  },
+  {
+    name: "patient_snapshot",
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: ["therapy admin components"],
+    policySummary: "Admin/service-role safe snapshot access for therapy workflows.",
+    riskNote: "Contains compacted patient health context; keep behind admin/RPC access only.",
   },
   {
     name: "practice_info",
