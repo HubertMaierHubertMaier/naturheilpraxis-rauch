@@ -58,7 +58,11 @@ export default function Infothek() {
     .filter((g) => g.items.length > 0);
 
   const totalLocked = enrichedGroups.reduce(
-    (sum, g) => sum + g.items.filter((i) => i.locked).length,
+    (sum, g) =>
+      sum +
+      g.items.filter(
+        ({ item }) => getVisibility(item.href, !!item.gated) === "patient"
+      ).length,
     0
   );
 

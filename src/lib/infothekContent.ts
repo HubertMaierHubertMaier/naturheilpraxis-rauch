@@ -228,6 +228,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Flower2,
         description: { de: "Ganzheitliche Allergie-Betrachtung & Therapie", en: "Holistic allergy approach & therapy" },
         external: true,
+        gated: true,
       },
       {
         label: { de: "Candida-Diät", en: "Candida Diet" },
@@ -235,6 +236,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: FileText,
         description: { de: "Ernährungsratgeber bei Candida-Pilzbefall", en: "Dietary guide for Candida infection" },
         external: true,
+        gated: true,
       },
       {
         label: { de: "Kräuter & Gewürze gegen Schmerz", en: "Herbs & Spices for Pain" },
@@ -242,6 +244,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Leaf,
         description: { de: "Phytotherapie bei Schmerz & Entzündung", en: "Phytotherapy for pain & inflammation" },
         external: true,
+        gated: true,
       },
       {
         label: { de: "Hochohmiges Wasser", en: "High-Ohm Water" },
@@ -249,6 +252,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Droplets,
         description: { de: "Mineralarmes Wasser nach der Behandlung", en: "Mineral-poor water after treatment" },
         external: true,
+        gated: true,
       },
     ],
   },
