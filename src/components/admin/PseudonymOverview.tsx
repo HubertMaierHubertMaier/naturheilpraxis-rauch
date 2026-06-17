@@ -47,7 +47,7 @@ export function PseudonymOverview() {
         map.set(pid, existing);
       }
       for (const o of ordersRes.data ?? []) {
-        const pid = extractPseudo(o.patient_label);
+        const pid = (o as any).pseudonym_id ?? extractPseudo(o.patient_label);
         if (!pid) continue;
         const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
         existing.orderCount += 1;
