@@ -33,7 +33,7 @@ export function PseudonymOverview() {
     try {
       const [therapyRes, ordersRes] = await Promise.all([
         supabase.from("therapy_sessions").select("pseudonym_id"),
-        supabase.from("mannayan_orders").select("order_number, patient_label"),
+        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id"),
       ]);
       if (therapyRes.error) throw therapyRes.error;
       if (ordersRes.error) throw ordersRes.error;
