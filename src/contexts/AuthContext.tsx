@@ -180,11 +180,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearDevAdminBypass();
   };
 
+  // Rollen-Simulator: Admin-UI bei Bedarf verstecken
+  const [simHideAdmin, setSimHideAdmin] = useState<boolean>(() => !!getSimulatedPreset()?.hideAdminUi);
+  useEffect(
+    () => onSimulatedRoleChange(() => setSimHideAdmin(!!getSimulatedPreset()?.hideAdminUi)),
+    []
+  );
+
+  const effectiveIsAdmin = simHideAdmin ? false : isAdmin;
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, roleChecked, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin: effectiveIsAdmin, realIsAdmin: isAdmin, roleChecked, signOut }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
 
 export const useAuth = () => {
