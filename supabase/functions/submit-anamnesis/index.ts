@@ -263,6 +263,7 @@ function buildICD10HtmlTable(codes: { code: string; descDe: string; category: st
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
