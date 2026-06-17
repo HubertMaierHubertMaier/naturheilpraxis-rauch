@@ -304,7 +304,48 @@ export function InfothekGatingManager() {
                   </div>
                 ) : (
                   <ul className="divide-y">
-                    {rows.map((row) => renderItemRow(row, true))}
+                    {rows.map((row) => {
+                      const isInThisTier = (draft[row.item.href] ?? "patient") === v;
+                      const fallback: InfothekVisibility =
+                        v === "public" ? "new_patient" : "public";
+                      return (
+                        <li
+                          key={row.item.href}
+                          className="flex flex-wrap items-start gap-3 px-4 py-3 hover:bg-muted/30"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isInThisTier}
+                            onChange={(e) =>
+                              setVis(row.item.href, e.target.checked ? v : fallback)
+                            }
+                            className="mt-1 h-4 w-4 cursor-pointer accent-sage-600"
+                            title={
+                              isInThisTier
+                                ? `Häkchen entfernen → verschiebt nach „${VIS_META[fallback].label}"`
+                                : `Häkchen setzen → in „${m.label}" verschieben`
+                            }
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{row.item.label.de}</span>
+                              {row.item.external && (
+                                <Badge variant="outline" className="text-[10px]">
+                                  extern
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {row.item.description.de} ·{" "}
+                              <span className="text-[10px] text-sage-500">
+                                {row.group}
+                              </span>
+                            </div>
+                          </div>
+                          <VisPicker href={row.item.href} />
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
