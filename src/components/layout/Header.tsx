@@ -18,7 +18,7 @@ import { translations } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
-import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
+
 import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
