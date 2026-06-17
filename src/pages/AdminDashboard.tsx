@@ -12,7 +12,7 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound } from "lucide-react";
 import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
 import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager";
@@ -20,6 +20,7 @@ import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
+import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
@@ -92,10 +93,14 @@ const AdminDashboard = () => {
           <AnamneseToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-10 max-w-6xl">
+            <TabsList className="grid w-full grid-cols-11 max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
+              </TabsTrigger>
+              <TabsTrigger value="access" className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4" />
+                Zugänge
               </TabsTrigger>
               <TabsTrigger value="faqs" className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
@@ -134,6 +139,21 @@ const AdminDashboard = () => {
                 Backup
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="access">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Patienten-Zugänge (per E-Mail)</CardTitle>
+                  <CardDescription>
+                    Schalte gezielt frei, was eine bestimmte Patienten-E-Mail nach dem Login sehen darf: Anamnesebogen-Download,
+                    Patienten-Bibliothek und gesperrte Infothek-Beiträge (Hypnosen etc.). Ohne Eintrag = nur öffentlicher Bereich.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PatientAccessManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="patients">
               <Card>
