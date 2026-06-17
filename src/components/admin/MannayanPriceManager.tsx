@@ -192,6 +192,30 @@ export default function MannayanPriceManager() {
       return data as any[];
     },
   });
+  const orderStatusById = useMemo(() => {
+    const grouped = new Map<string, any[]>();
+    const status = new Map<string, { pseudonym: string | null; expected: string | null; mismatch: boolean; unassigned: boolean }>();
+
+    for (const order of savedOrders) {
+      const pseudonym = extractPseudonym(order.pseudonym_id) ?? extractPseudonym(order.patient_label);
+      if (!pseudonym) {
+        status.set(order.id, { pseudonym: null, expected: null, mismatch: false, unassigned: true });
+        continue;
+      }
+      grouped.set(pseudonym, [...(grouped.get(pseudonym) ?? []), order]);
+    }
+
+    grouped.forEach((orders, pseudonym) => {
+      orders
+        .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "") || String(a.id).localeCompare(String(b.id)))
+        .forEach((order, index) => {
+          const expected = expectedOrderNumberForPseudonym(pseudonym, index + 1);
+          status.set(order.id, { pseudonym, expected, mismatch: order.order_number !== expected, unassigned: false });
+        });
+    });
+
+    return status;
+  }, [savedOrders]);
 
   const saveOrder = async (): Promise<string | undefined> => {
     if (cart.length === 0) { toast({ title: "Leere Bestellung", variant: "destructive" }); return; }
@@ -212,8 +236,8 @@ export default function MannayanPriceManager() {
       refetchOrders();
       return orderNumber;
     }
-    const pseudonymMatch = (patientName || "").match(/P-\d{4}-\d{4}/);
-    if (!pseudonymMatch) {
+    const pseudonymId = extractPseudonym(patientName);
+    if (!pseudonymId) {
       toast({
         title: "Pseudonym fehlt",
         description: "Bitte im Feld 'Titel, Vorname, Name' das Patienten-Pseudonym im Format P-YYYY-NNNN eintragen (z.B. P-2026-0010). Die Bestellnummer wird daraus abgeleitet.",
@@ -221,7 +245,6 @@ export default function MannayanPriceManager() {
       });
       return;
     }
-    const pseudonymId = pseudonymMatch[0];
     const { data: numData, error: numErr } = await supabase.rpc(
       "next_mannayan_order_number_for_pseudonym" as any,
       { _pseudonym: pseudonymId } as any,
