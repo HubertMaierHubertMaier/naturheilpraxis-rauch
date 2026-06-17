@@ -54,7 +54,8 @@ const App = () => (
           <Sonner />
           <SchemaOrg />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <CookieBanner />
+          <CookieBanner />
+          <RoleSimulator />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
