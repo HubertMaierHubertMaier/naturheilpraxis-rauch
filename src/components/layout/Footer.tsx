@@ -28,8 +28,8 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-serif text-lg font-medium text-foreground">Navigation</h3>
             <nav className="flex flex-col gap-2">
-              <Link to="/anamnesebogen" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                Anamnesebogen
+              <Link to="/neupatient" className="text-sm text-muted-foreground transition-colors hover:text-primary">
+                Neupatient
               </Link>
               <Link to="/heilpraktiker" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Was ist ein Heilpraktiker?

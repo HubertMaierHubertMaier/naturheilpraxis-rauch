@@ -143,8 +143,8 @@ const FAQ = () => {
                   </a>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/anamnesebogen">
-                    {t(tr.toAnamnesis.de, tr.toAnamnesis.en)}
+                  <Link to="/auth?type=new_patient">
+                    {t("Geschützt registrieren", "Register securely")}
                   </Link>
                 </Button>
               </div>

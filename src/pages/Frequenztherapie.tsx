@@ -228,8 +228,8 @@ const Frequenztherapie = () => {
                   </a>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/anamnesebogen">
-                    {t("Zum Anamnesebogen", "To Medical History")}
+                  <Link to="/auth?type=new_patient">
+                    {t("Geschützt registrieren", "Register securely")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
