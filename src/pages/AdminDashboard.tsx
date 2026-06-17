@@ -12,7 +12,8 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound, Eye } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound, Eye, Hash } from "lucide-react";
+import { PseudonymOverview } from "@/components/admin/PseudonymOverview";
 import { InfothekGatingManager } from "@/components/admin/InfothekGatingManager";
 import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
 import { AIModelInfo } from "@/components/admin/AIModelInfo";
@@ -93,10 +94,14 @@ const AdminDashboard = () => {
           <PatientLoginToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-12 max-w-6xl">
+            <TabsList className="grid w-full grid-cols-[repeat(13,minmax(0,1fr))] max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
+              </TabsTrigger>
+              <TabsTrigger value="pseudonyms" className="flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Pseudonyme
               </TabsTrigger>
               <TabsTrigger value="access" className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />
@@ -187,6 +192,11 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="pseudonyms">
+              <PseudonymOverview />
+            </TabsContent>
+
 
             <TabsContent value="faqs">
               <Card>
