@@ -5,13 +5,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, AlertTriangle, Hash } from "lucide-react";
+import { RefreshCw, AlertTriangle, Hash, CalendarDays } from "lucide-react";
+
+type OrderInfo = {
+  orderNumber: string;
+  createdAt: string | null;
+  expectedNumber: string;
+  sequence: number;
+};
 
 type Row = {
   pseudonym: string;
   inTherapy: boolean;
+  therapyCount: number;
   orderCount: number;
-  orderNumbers: string[];
+  orders: OrderInfo[];
+  hasMismatch: boolean;
+};
+
+type UnassignedOrder = {
+  orderNumber: string;
+  patientLabel: string | null;
+  createdAt: string | null;
 };
 
 const PSEUDO_RE = /P-2026-\d{4}/g;
@@ -22,10 +37,20 @@ function extractPseudo(s: string | null | undefined): string | null {
   return m ? m[0] : null;
 }
 
+function expectedOrderNumber(pseudonym: string, sequence: number) {
+  return `B-${pseudonym.replace(/^P-/, "")}-${sequence}`;
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+}
+
 export function PseudonymOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  const [unassignedOrders, setUnassignedOrders] = useState<UnassignedOrder[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,7 +58,7 @@ export function PseudonymOverview() {
     try {
       const [therapyRes, ordersRes] = await Promise.all([
         supabase.from("therapy_sessions").select("pseudonym_id"),
-        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id"),
+        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id, created_at"),
       ]);
       if (therapyRes.error) throw therapyRes.error;
       if (ordersRes.error) throw ordersRes.error;
@@ -42,23 +67,36 @@ export function PseudonymOverview() {
       for (const r of therapyRes.data ?? []) {
         const pid = extractPseudo(r.pseudonym_id);
         if (!pid) continue;
-        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
+        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, therapyCount: 0, orderCount: 0, orders: [], hasMismatch: false };
         existing.inTherapy = true;
+        existing.therapyCount += 1;
         map.set(pid, existing);
       }
+      const orphaned: UnassignedOrder[] = [];
       for (const o of ordersRes.data ?? []) {
         const pid = (o as any).pseudonym_id ?? extractPseudo(o.patient_label);
-        if (!pid) continue;
-        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
-        existing.orderCount += 1;
-        if (o.order_number && !existing.orderNumbers.includes(o.order_number)) {
-          existing.orderNumbers.push(o.order_number);
+        if (!pid) {
+          orphaned.push({ orderNumber: o.order_number ?? "—", patientLabel: o.patient_label ?? null, createdAt: o.created_at ?? null });
+          continue;
         }
+        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, therapyCount: 0, orderCount: 0, orders: [], hasMismatch: false };
+        existing.orderCount += 1;
+        existing.orders.push({ orderNumber: o.order_number ?? "—", createdAt: o.created_at ?? null, expectedNumber: "", sequence: 0 });
         map.set(pid, existing);
       }
       const list = Array.from(map.values()).sort((a, b) => a.pseudonym.localeCompare(b.pseudonym));
-      for (const r of list) r.orderNumbers.sort();
+      for (const r of list) {
+        r.orders.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.orderNumber.localeCompare(b.orderNumber));
+        r.orders = r.orders.map((order, index) => ({
+          ...order,
+          sequence: index + 1,
+          expectedNumber: expectedOrderNumber(r.pseudonym, index + 1),
+        }));
+        r.hasMismatch = r.orders.some((order) => order.orderNumber !== order.expectedNumber);
+      }
+      orphaned.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.orderNumber.localeCompare(b.orderNumber));
       setRows(list);
+      setUnassignedOrders(orphaned);
     } catch (e: any) {
       setError(e?.message ?? "Unbekannter Fehler");
     } finally {
@@ -70,7 +108,7 @@ export function PseudonymOverview() {
     load();
   }, [load]);
 
-  const { nextFree, gaps, usedNumbers } = useMemo(() => {
+  const { nextFree, gaps } = useMemo(() => {
     const nums = rows
       .map((r) => parseInt(r.pseudonym.slice(-4), 10))
       .filter((n) => Number.isFinite(n))
@@ -89,6 +127,7 @@ export function PseudonymOverview() {
   }, [rows]);
 
   const fmt = (n: number) => `P-2026-${String(n).padStart(4, "0")}`;
+  const mismatchCount = rows.filter((r) => r.hasMismatch).length;
 
   return (
     <Card>
@@ -120,7 +159,7 @@ export function PseudonymOverview() {
           <Skeleton className="h-64 w-full" />
         ) : (
           <>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-lg border bg-muted/30 p-3">
                 <div className="text-xs uppercase text-muted-foreground">Vergebene Nummern</div>
                 <div className="text-2xl font-semibold">{rows.length}</div>
@@ -135,32 +174,54 @@ export function PseudonymOverview() {
                   {gaps.length === 0 ? "—" : gaps.map((n) => String(n).padStart(4, "0")).join(", ")}
                 </div>
               </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs uppercase text-muted-foreground">Zuordnung prüfen</div>
+                <div className="text-2xl font-semibold text-destructive">{mismatchCount + unassignedOrders.length}</div>
+              </div>
             </div>
+
+            {unassignedOrders.length > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2 font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Nicht zugeordnete Bestellung
+                </div>
+                <div className="space-y-1 font-mono text-xs">
+                  {unassignedOrders.map((order) => (
+                    <div key={`${order.orderNumber}-${order.createdAt ?? ""}`}>
+                      {order.orderNumber} · {formatDate(order.createdAt)} · Patient/Kunde: {order.patientLabel || "leer"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Pseudonym</TableHead>
-                    <TableHead className="text-center">Therapie</TableHead>
+                    <TableHead className="text-center">Therapie-Einträge</TableHead>
                     <TableHead className="text-center">Bestellungen</TableHead>
-                    <TableHead>Bestell-Nr.</TableHead>
+                    <TableHead>Ist-Bestellung mit Datum</TableHead>
+                    <TableHead>Soll nach neuem Schema</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                         Keine Pseudonyme gefunden.
                       </TableCell>
                     </TableRow>
                   ) : (
                     rows.map((r) => (
-                      <TableRow key={r.pseudonym}>
+                      <TableRow key={r.pseudonym} className={r.hasMismatch ? "bg-destructive/5" : undefined}>
                         <TableCell className="font-mono">{r.pseudonym}</TableCell>
                         <TableCell className="text-center">
                           {r.inTherapy ? (
-                            <Badge variant="secondary">✓</Badge>
+                            <Badge variant="secondary">{r.therapyCount}</Badge>
                           ) : (
                             <Badge variant="outline" className="text-muted-foreground">—</Badge>
                           )}
@@ -173,7 +234,31 @@ export function PseudonymOverview() {
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">
-                          {r.orderNumbers.length ? r.orderNumbers.join(", ") : "—"}
+                          {r.orders.length ? (
+                            <div className="space-y-1">
+                              {r.orders.map((order) => (
+                                <div key={order.orderNumber} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                  <span>{order.orderNumber}</span>
+                                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                    <CalendarDays className="h-3 w-3" />
+                                    {formatDate(order.createdAt)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {r.orders.length ? r.orders.map((order) => order.expectedNumber).join(", ") : expectedOrderNumber(r.pseudonym, 1)}
+                        </TableCell>
+                        <TableCell>
+                          {r.orders.length === 0 ? (
+                            <Badge variant="outline" className="text-muted-foreground">keine Bestellung</Badge>
+                          ) : r.hasMismatch ? (
+                            <Badge variant="destructive">Ist ≠ Soll</Badge>
+                          ) : (
+                            <Badge variant="secondary">passt</Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
