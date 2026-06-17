@@ -537,7 +537,7 @@ export default function MannayanPriceManager() {
                   Mannayan-Bestellung {orderNumber && <span className="text-primary">· {orderNumber}</span>}
                 </CardTitle>
                 <CardDescription>
-                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – wird beim Export oder Speichern fortlaufend nummeriert (P-JJJJ-XXXX)."}
+                  {orderId ? "Geladene Bestellung – Änderungen werden beim Speichern aktualisiert." : "Neue Bestellung – Nummer wird aus dem Patienten-Pseudonym gebildet, z.B. B-2026-0010-1."}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -702,28 +702,49 @@ export default function MannayanPriceManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nr.</TableHead>
+                  <TableHead>Soll / Status</TableHead>
                   <TableHead>Datum</TableHead>
                   <TableHead>Patient</TableHead>
+                  <TableHead>Pseudonym</TableHead>
                   <TableHead className="text-right">Summe</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {savedOrders.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Noch keine gespeicherten Bestellungen</TableCell></TableRow>
                 )}
-                {savedOrders.map((o: any) => (
-                  <TableRow key={o.id} className="cursor-pointer hover:bg-sage-50">
-                    <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
-                    <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
-                    <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
-                    <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {savedOrders.map((o: any) => {
+                  const status = orderStatusById.get(o.id);
+                  return (
+                    <TableRow key={o.id} className={`cursor-pointer hover:bg-sage-50 ${status?.mismatch || status?.unassigned ? "bg-destructive/5" : ""}`}>
+                      <TableCell className="font-mono font-medium" onClick={() => loadOrder(o)}>{o.order_number}</TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>
+                        {status?.unassigned ? (
+                          <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Klärfall</Badge>
+                        ) : status?.mismatch ? (
+                          <div className="space-y-1">
+                            <Badge variant="destructive">Ist ≠ Soll</Badge>
+                            <div className="font-mono text-xs text-muted-foreground">{status.expected}</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <Badge variant="secondary">passt</Badge>
+                            <div className="font-mono text-xs text-muted-foreground">{status?.expected ?? "—"}</div>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>{new Date(o.created_at).toLocaleDateString("de-DE")}</TableCell>
+                      <TableCell onClick={() => loadOrder(o)}>{o.patient_label || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs" onClick={() => loadOrder(o)}>{status?.pseudonym ?? o.pseudonym_id ?? "nicht ermittelbar"}</TableCell>
+                      <TableCell className="text-right" onClick={() => loadOrder(o)}>{formatPrice(Number(o.total_eur))}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={() => loadOrder(o)}><FolderOpen className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteOrder(o.id, o.order_number)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </DialogContent>
