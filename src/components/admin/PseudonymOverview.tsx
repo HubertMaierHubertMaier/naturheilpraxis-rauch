@@ -33,7 +33,7 @@ export function PseudonymOverview() {
     try {
       const [therapyRes, ordersRes] = await Promise.all([
         supabase.from("therapy_sessions").select("pseudonym_id"),
-        supabase.from("mannayan_orders").select("order_number, patient_label"),
+        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id"),
       ]);
       if (therapyRes.error) throw therapyRes.error;
       if (ordersRes.error) throw ordersRes.error;
@@ -47,7 +47,7 @@ export function PseudonymOverview() {
         map.set(pid, existing);
       }
       for (const o of ordersRes.data ?? []) {
-        const pid = extractPseudo(o.patient_label);
+        const pid = (o as any).pseudonym_id ?? extractPseudo(o.patient_label);
         if (!pid) continue;
         const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
         existing.orderCount += 1;

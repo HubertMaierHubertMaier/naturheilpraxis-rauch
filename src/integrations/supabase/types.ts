@@ -227,6 +227,7 @@ export type Database = {
           notes: string | null
           order_number: string
           patient_label: string | null
+          pseudonym_id: string | null
           total_eur: number
           updated_at: string
         }
@@ -238,6 +239,7 @@ export type Database = {
           notes?: string | null
           order_number: string
           patient_label?: string | null
+          pseudonym_id?: string | null
           total_eur?: number
           updated_at?: string
         }
@@ -249,6 +251,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           patient_label?: string | null
+          pseudonym_id?: string | null
           total_eur?: number
           updated_at?: string
         }
