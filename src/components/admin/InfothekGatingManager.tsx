@@ -253,7 +253,7 @@ export function InfothekGatingManager() {
                 Aktuell sind alle Artikel gesperrt.
               </div>
             ) : (
-              <ul className="divide-y">{publicItems.map(renderItemRow)}</ul>
+              <ul className="divide-y">{publicItems.map((row) => renderItemRow(row, "public"))}</ul>
             )}
           </div>
 
