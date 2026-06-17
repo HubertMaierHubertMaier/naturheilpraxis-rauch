@@ -2,12 +2,16 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { clearDevAdminBypass, isDevAdminBypassActive } from '@/lib/devAdminBypass';
+import { getSimulatedPreset, onSimulatedRoleChange } from '@/lib/roleSimulator';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Im Rollen-Simulator ggf. auf false gezwungen, damit der Admin die Patientensicht sieht. */
   isAdmin: boolean;
+  /** Tatsächliche Admin-Rolle aus der Datenbank – wird vom Simulator nicht überschrieben. */
+  realIsAdmin: boolean;
   roleChecked: boolean;
   signOut: () => Promise<void>;
 }
@@ -17,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isAdmin: false,
+  realIsAdmin: false,
   roleChecked: false,
   signOut: async () => {},
 });
