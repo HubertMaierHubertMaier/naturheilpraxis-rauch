@@ -5,13 +5,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, AlertTriangle, Hash } from "lucide-react";
+import { RefreshCw, AlertTriangle, Hash, CalendarDays } from "lucide-react";
+
+type OrderInfo = {
+  orderNumber: string;
+  createdAt: string | null;
+  expectedNumber: string;
+  sequence: number;
+};
 
 type Row = {
   pseudonym: string;
   inTherapy: boolean;
+  therapyCount: number;
   orderCount: number;
-  orderNumbers: string[];
+  orders: OrderInfo[];
+  hasMismatch: boolean;
+};
+
+type UnassignedOrder = {
+  orderNumber: string;
+  patientLabel: string | null;
+  createdAt: string | null;
 };
 
 const PSEUDO_RE = /P-2026-\d{4}/g;
@@ -22,10 +37,20 @@ function extractPseudo(s: string | null | undefined): string | null {
   return m ? m[0] : null;
 }
 
+function expectedOrderNumber(pseudonym: string, sequence: number) {
+  return `B-${pseudonym.replace(/^P-/, "")}-${sequence}`;
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+}
+
 export function PseudonymOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  const [unassignedOrders, setUnassignedOrders] = useState<UnassignedOrder[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,7 +58,7 @@ export function PseudonymOverview() {
     try {
       const [therapyRes, ordersRes] = await Promise.all([
         supabase.from("therapy_sessions").select("pseudonym_id"),
-        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id"),
+        supabase.from("mannayan_orders").select("order_number, patient_label, pseudonym_id, created_at"),
       ]);
       if (therapyRes.error) throw therapyRes.error;
       if (ordersRes.error) throw ordersRes.error;
@@ -42,23 +67,36 @@ export function PseudonymOverview() {
       for (const r of therapyRes.data ?? []) {
         const pid = extractPseudo(r.pseudonym_id);
         if (!pid) continue;
-        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
+        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, therapyCount: 0, orderCount: 0, orders: [], hasMismatch: false };
         existing.inTherapy = true;
+        existing.therapyCount += 1;
         map.set(pid, existing);
       }
+      const orphaned: UnassignedOrder[] = [];
       for (const o of ordersRes.data ?? []) {
         const pid = (o as any).pseudonym_id ?? extractPseudo(o.patient_label);
-        if (!pid) continue;
-        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, orderCount: 0, orderNumbers: [] };
-        existing.orderCount += 1;
-        if (o.order_number && !existing.orderNumbers.includes(o.order_number)) {
-          existing.orderNumbers.push(o.order_number);
+        if (!pid) {
+          orphaned.push({ orderNumber: o.order_number ?? "—", patientLabel: o.patient_label ?? null, createdAt: o.created_at ?? null });
+          continue;
         }
+        const existing = map.get(pid) ?? { pseudonym: pid, inTherapy: false, therapyCount: 0, orderCount: 0, orders: [], hasMismatch: false };
+        existing.orderCount += 1;
+        existing.orders.push({ orderNumber: o.order_number ?? "—", createdAt: o.created_at ?? null, expectedNumber: "", sequence: 0 });
         map.set(pid, existing);
       }
       const list = Array.from(map.values()).sort((a, b) => a.pseudonym.localeCompare(b.pseudonym));
-      for (const r of list) r.orderNumbers.sort();
+      for (const r of list) {
+        r.orders.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.orderNumber.localeCompare(b.orderNumber));
+        r.orders = r.orders.map((order, index) => ({
+          ...order,
+          sequence: index + 1,
+          expectedNumber: expectedOrderNumber(r.pseudonym, index + 1),
+        }));
+        r.hasMismatch = r.orders.some((order) => order.orderNumber !== order.expectedNumber);
+      }
+      orphaned.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.orderNumber.localeCompare(b.orderNumber));
       setRows(list);
+      setUnassignedOrders(orphaned);
     } catch (e: any) {
       setError(e?.message ?? "Unbekannter Fehler");
     } finally {
