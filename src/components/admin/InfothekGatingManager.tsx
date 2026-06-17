@@ -15,6 +15,7 @@ import {
   UserPlus,
   LayoutList,
   Eye,
+  ChevronDown,
 } from "lucide-react";
 
 /**
@@ -59,7 +60,7 @@ export function InfothekGatingManager() {
   const { toast } = useToast();
   const [draft, setDraft] = useState<Record<string, InfothekVisibility>>({});
   const [saving, setSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<"group" | "visibility">("visibility");
+  const [viewMode, setViewMode] = useState<"group" | "visibility">("group");
 
   useEffect(() => {
     if (loading) return;
@@ -155,36 +156,42 @@ export function InfothekGatingManager() {
     return out;
   }, [allItems, draft]);
 
-  const VisPicker = ({ href }: { href: string }) => {
+  const VisPicker = ({ href, readOnly = false }: { href: string; readOnly?: boolean }) => {
     const current = draft[href] ?? "patient";
+    const currentMeta = VIS_META[current];
+    const CurrentIcon = currentMeta.icon;
+
     return (
-      <div className="inline-flex shrink-0 rounded-md border bg-background">
-        {ALL_VIS.map((v) => {
-          const m = VIS_META[v];
-          const Icon = m.icon;
-          const active = current === v;
-          return (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setVis(href, v)}
-              title={m.help}
-              className={`flex items-center gap-1 px-2 py-1 text-xs transition first:rounded-l-md last:rounded-r-md ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              <Icon className="h-3 w-3" />
-              <span className="hidden sm:inline">{m.short}</span>
-            </button>
-          );
-        })}
+      <div className="relative inline-block shrink-0">
+        <select
+          value={current}
+          disabled={readOnly}
+          onChange={(e) => setVis(href, e.target.value as InfothekVisibility)}
+          className={`appearance-none rounded-md border bg-background pl-2 pr-8 py-1.5 text-sm transition cursor-pointer
+            ${readOnly ? "opacity-60 cursor-default" : "hover:border-sage-300"}
+            ${current === "public" ? "border-emerald-200 text-emerald-700" : ""}
+            ${current === "new_patient" ? "border-blue-200 text-blue-700" : ""}
+            ${current === "patient" ? "border-amber-200 text-amber-700" : ""}
+          `}
+        >
+          {ALL_VIS.map((v) => {
+            const m = VIS_META[v];
+            return (
+              <option key={v} value={v}>
+                {m.label} — {m.help}
+              </option>
+            );
+          })}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
       </div>
     );
   };
 
-  const renderItemRow = ({ group, item }: { group: string; item: InfothekItem }) => {
+  const renderItemRow = (
+    { group, item }: { group: string; item: InfothekItem },
+    readOnly = false
+  ) => {
     const v = draft[item.href] ?? "patient";
     const m = VIS_META[v];
     const Icon = m.icon;
@@ -208,7 +215,7 @@ export function InfothekGatingManager() {
             <span className="text-[10px] text-sage-500">{group}</span>
           </div>
         </div>
-        <VisPicker href={item.href} />
+        <VisPicker href={item.href} readOnly={readOnly} />
       </li>
     );
   };
