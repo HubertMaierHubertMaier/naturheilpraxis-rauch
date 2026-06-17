@@ -7,14 +7,25 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive } from "lucide-react";
+import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, Table as DocxTable, TableRow as DocxRow, TableCell as DocxCell, AlignmentType, WidthType, BorderStyle, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
+
+const PSEUDONYM_RE = /P-\d{4}-\d{4}/;
+
+function extractPseudonym(value: string | null | undefined): string | null {
+  return value?.match(PSEUDONYM_RE)?.[0] ?? null;
+}
+
+function expectedOrderNumberForPseudonym(pseudonym: string, sequence: number) {
+  return `B-${pseudonym.replace(/^P-/, "")}-${sequence}`;
+}
 
 interface MannayanProduct {
   id: string;
