@@ -31,11 +31,10 @@ export function Header() {
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
-  const { enabled: anamneseEnabled } = useAnamneseEnabled();
   const { enabled: anamnesePublic } = useAnamnesePublic();
   const { canDownloadAnamnese } = usePatientAccess();
   // Anamnese im Header sichtbar, wenn: globaler Public-Modus ODER Admin ODER individuelle E-Mail-Freigabe
-  const showAnamnese = (anamneseEnabled && (anamnesePublic || isAdmin || canDownloadAnamnese));
+  const showAnamnese = anamnesePublic || isAdmin || canDownloadAnamnese;
   const showOnlineAnamnese = isAdmin || anamnesePublic || canDownloadAnamnese;
 
   const allowDevMode = isDevHost();
