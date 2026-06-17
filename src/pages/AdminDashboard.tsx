@@ -91,7 +91,6 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
-          <AnamneseToggle />
           <AnamnesePublicToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-12 max-w-6xl">
