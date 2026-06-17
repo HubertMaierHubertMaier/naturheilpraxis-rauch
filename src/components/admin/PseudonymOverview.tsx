@@ -108,7 +108,7 @@ export function PseudonymOverview() {
     load();
   }, [load]);
 
-  const { nextFree, gaps, usedNumbers } = useMemo(() => {
+  const { nextFree, gaps } = useMemo(() => {
     const nums = rows
       .map((r) => parseInt(r.pseudonym.slice(-4), 10))
       .filter((n) => Number.isFinite(n))
@@ -127,6 +127,7 @@ export function PseudonymOverview() {
   }, [rows]);
 
   const fmt = (n: number) => `P-2026-${String(n).padStart(4, "0")}`;
+  const mismatchCount = rows.filter((r) => r.hasMismatch).length;
 
   return (
     <Card>
@@ -158,7 +159,7 @@ export function PseudonymOverview() {
           <Skeleton className="h-64 w-full" />
         ) : (
           <>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-lg border bg-muted/30 p-3">
                 <div className="text-xs uppercase text-muted-foreground">Vergebene Nummern</div>
                 <div className="text-2xl font-semibold">{rows.length}</div>
@@ -173,32 +174,54 @@ export function PseudonymOverview() {
                   {gaps.length === 0 ? "—" : gaps.map((n) => String(n).padStart(4, "0")).join(", ")}
                 </div>
               </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs uppercase text-muted-foreground">Zuordnung prüfen</div>
+                <div className="text-2xl font-semibold text-destructive">{mismatchCount + unassignedOrders.length}</div>
+              </div>
             </div>
+
+            {unassignedOrders.length > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <div className="mb-2 flex items-center gap-2 font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Nicht zugeordnete Bestellung
+                </div>
+                <div className="space-y-1 font-mono text-xs">
+                  {unassignedOrders.map((order) => (
+                    <div key={`${order.orderNumber}-${order.createdAt ?? ""}`}>
+                      {order.orderNumber} · {formatDate(order.createdAt)} · Patient/Kunde: {order.patientLabel || "leer"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Pseudonym</TableHead>
-                    <TableHead className="text-center">Therapie</TableHead>
+                    <TableHead className="text-center">Therapie-Einträge</TableHead>
                     <TableHead className="text-center">Bestellungen</TableHead>
-                    <TableHead>Bestell-Nr.</TableHead>
+                    <TableHead>Ist-Bestellung mit Datum</TableHead>
+                    <TableHead>Soll nach neuem Schema</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                         Keine Pseudonyme gefunden.
                       </TableCell>
                     </TableRow>
                   ) : (
                     rows.map((r) => (
-                      <TableRow key={r.pseudonym}>
+                      <TableRow key={r.pseudonym} className={r.hasMismatch ? "bg-destructive/5" : undefined}>
                         <TableCell className="font-mono">{r.pseudonym}</TableCell>
                         <TableCell className="text-center">
                           {r.inTherapy ? (
-                            <Badge variant="secondary">✓</Badge>
+                            <Badge variant="secondary">{r.therapyCount}</Badge>
                           ) : (
                             <Badge variant="outline" className="text-muted-foreground">—</Badge>
                           )}
@@ -211,7 +234,31 @@ export function PseudonymOverview() {
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">
-                          {r.orderNumbers.length ? r.orderNumbers.join(", ") : "—"}
+                          {r.orders.length ? (
+                            <div className="space-y-1">
+                              {r.orders.map((order) => (
+                                <div key={order.orderNumber} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                  <span>{order.orderNumber}</span>
+                                  <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                    <CalendarDays className="h-3 w-3" />
+                                    {formatDate(order.createdAt)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {r.orders.length ? r.orders.map((order) => order.expectedNumber).join(", ") : expectedOrderNumber(r.pseudonym, 1)}
+                        </TableCell>
+                        <TableCell>
+                          {r.orders.length === 0 ? (
+                            <Badge variant="outline" className="text-muted-foreground">keine Bestellung</Badge>
+                          ) : r.hasMismatch ? (
+                            <Badge variant="destructive">Ist ≠ Soll</Badge>
+                          ) : (
+                            <Badge variant="secondary">passt</Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
