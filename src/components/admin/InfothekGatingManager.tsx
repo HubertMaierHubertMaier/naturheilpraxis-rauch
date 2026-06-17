@@ -1,34 +1,76 @@
 import { useEffect, useMemo, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { infothekGroups, type InfothekItem } from "@/lib/infothekContent";
-import { useInfothekGating } from "@/hooks/useInfothekGating";
-import { Loader2, Lock, Globe, LayoutList, Eye } from "lucide-react";
+import {
+  useInfothekGating,
+  type InfothekVisibility,
+} from "@/hooks/useInfothekGating";
+import {
+  Loader2,
+  Lock,
+  Globe,
+  UserPlus,
+  LayoutList,
+  Eye,
+} from "lucide-react";
 
 /**
- * Admin-UI: pro Infothek-Beitrag entscheiden, ob er öffentlich (☐) oder
- * nur für freigeschaltete Patienten (☑) sichtbar ist.
- * Speichert Overrides in `infothek_gating`.
+ * Admin-UI: pro Infothek-Beitrag eine von drei Sichtbarkeiten setzen:
+ *   - public      → für alle Besucher (auch ohne Login)
+ *   - new_patient → nur für angemeldete Nutzer (Neuanmeldung + Patient)
+ *   - patient     → nur für freigeschaltete Patienten
+ *
+ * Speichert in `infothek_gating` (Spalten visibility + gated für Backward-Compat).
  */
+const VIS_META: Record<
+  InfothekVisibility,
+  { label: string; short: string; icon: typeof Globe; tone: string; help: string }
+> = {
+  public: {
+    label: "Öffentlich",
+    short: "Alle",
+    icon: Globe,
+    tone: "text-emerald-600",
+    help: "Für alle Besucher sichtbar – auch ohne Login. Gut für SEO.",
+  },
+  new_patient: {
+    label: "Neuanmeldung",
+    short: "Login",
+    icon: UserPlus,
+    tone: "text-blue-600",
+    help: "Nur für angemeldete Nutzer – auch Neuanmeldungen, die noch nicht freigeschaltet sind.",
+  },
+  patient: {
+    label: "Patienten",
+    short: "Freigeschaltet",
+    icon: Lock,
+    tone: "text-amber-600",
+    help: "Nur für freigeschaltete Patienten (Tab „Zugänge"). Einzelne Beiträge können dort pro Patient extra freigegeben werden.",
+  },
+};
+
+const ALL_VIS: InfothekVisibility[] = ["public", "new_patient", "patient"];
+
 export function InfothekGatingManager() {
   const { overrides, loading, refresh } = useInfothekGating();
   const { toast } = useToast();
-  const [draft, setDraft] = useState<Record<string, boolean>>({});
+  const [draft, setDraft] = useState<Record<string, InfothekVisibility>>({});
   const [saving, setSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<"group" | "visibility">("group");
+  const [viewMode, setViewMode] = useState<"group" | "visibility">("visibility");
 
-  // initial draft = defaults überlagert mit DB-Overrides
   useEffect(() => {
     if (loading) return;
-    const initial: Record<string, boolean> = {};
+    const initial: Record<string, InfothekVisibility> = {};
     for (const g of infothekGroups) {
       for (const i of g.items) {
         initial[i.href] = Object.prototype.hasOwnProperty.call(overrides, i.href)
           ? overrides[i.href]
-          : !!i.gated;
+          : i.gated
+            ? "patient"
+            : "public";
       }
     }
     setDraft(initial);
@@ -37,24 +79,29 @@ export function InfothekGatingManager() {
   const dirty = useMemo(() => {
     for (const g of infothekGroups) {
       for (const i of g.items) {
-        const effective = Object.prototype.hasOwnProperty.call(overrides, i.href)
+        const effective: InfothekVisibility = Object.prototype.hasOwnProperty.call(
+          overrides,
+          i.href
+        )
           ? overrides[i.href]
-          : !!i.gated;
+          : i.gated
+            ? "patient"
+            : "public";
         if (draft[i.href] !== effective) return true;
       }
     }
     return false;
   }, [draft, overrides]);
 
-  const toggle = (href: string) => {
-    setDraft((d) => ({ ...d, [href]: !d[href] }));
-  };
+  const setVis = (href: string, v: InfothekVisibility) =>
+    setDraft((d) => ({ ...d, [href]: v }));
 
   const saveAll = async () => {
     setSaving(true);
-    const rows = Object.entries(draft).map(([href, gated]) => ({
+    const rows = Object.entries(draft).map(([href, visibility]) => ({
       href,
-      gated,
+      visibility,
+      gated: visibility !== "public", // Backward-Compat für alte Spalte
       updated_at: new Date().toISOString(),
     }));
     const { error } = await (supabase as unknown as {
@@ -81,13 +128,12 @@ export function InfothekGatingManager() {
     refresh();
   };
 
-  const setAllInGroup = (groupIdx: number, gated: boolean) => {
+  const setAllInGroup = (groupIdx: number, v: InfothekVisibility) => {
     const next = { ...draft };
-    for (const i of infothekGroups[groupIdx].items) next[i.href] = gated;
+    for (const i of infothekGroups[groupIdx].items) next[i.href] = v;
     setDraft(next);
   };
 
-  // Für die "Nach Sichtbarkeit"-Ansicht alle Items flach sammeln
   const allItems = useMemo(() => {
     const out: Array<{ group: string; item: InfothekItem }> = [];
     for (const g of infothekGroups) {
@@ -96,57 +142,73 @@ export function InfothekGatingManager() {
     return out;
   }, []);
 
-  const publicItems = useMemo(
-    () => allItems.filter(({ item }) => !draft[item.href]),
-    [allItems, draft]
-  );
-  const gatedItems = useMemo(
-    () => allItems.filter(({ item }) => !!draft[item.href]),
-    [allItems, draft]
-  );
+  const itemsByVis = useMemo(() => {
+    const out: Record<InfothekVisibility, Array<{ group: string; item: InfothekItem }>> = {
+      public: [],
+      new_patient: [],
+      patient: [],
+    };
+    for (const row of allItems) {
+      const v = draft[row.item.href] ?? "patient";
+      out[v].push(row);
+    }
+    return out;
+  }, [allItems, draft]);
 
-  const renderItemRow = (
-    { group, item }: { group: string; item: InfothekItem },
-    mode: "gated" | "public" = "gated"
-  ) => {
-    const isGated = !!draft[item.href];
-    // In der Sichtbarkeits-Ansicht heißt "Häkchen = gehört in diese Liste".
-    // In der Themen-Ansicht heißt "Häkchen = gesperrt" (mode === "gated").
-    const checked = mode === "public" ? !isGated : isGated;
+  const VisPicker = ({ href }: { href: string }) => {
+    const current = draft[href] ?? "patient";
+    return (
+      <div className="inline-flex shrink-0 rounded-md border bg-background">
+        {ALL_VIS.map((v) => {
+          const m = VIS_META[v];
+          const Icon = m.icon;
+          const active = current === v;
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVis(href, v)}
+              title={m.help}
+              className={`flex items-center gap-1 px-2 py-1 text-xs transition first:rounded-l-md last:rounded-r-md ${
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              <span className="hidden sm:inline">{m.short}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderItemRow = ({ group, item }: { group: string; item: InfothekItem }) => {
+    const v = draft[item.href] ?? "patient";
+    const m = VIS_META[v];
+    const Icon = m.icon;
     return (
       <li
         key={item.href}
-        className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30"
+        className="flex flex-wrap items-start gap-3 px-4 py-3 hover:bg-muted/30"
       >
-        <Checkbox
-          id={`gate-${item.href}`}
-          checked={checked}
-          onCheckedChange={() => toggle(item.href)}
-          className="mt-1"
-        />
-        <label
-          htmlFor={`gate-${item.href}`}
-          className="flex-1 cursor-pointer"
-        >
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{item.label.de}</span>
-            {isGated ? (
-              <Badge variant="secondary" className="gap-1">
-                <Lock className="h-3 w-3" /> gesperrt
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="gap-1">
-                <Globe className="h-3 w-3" /> öffentlich
-              </Badge>
-            )}
+            <Badge variant="outline" className={`gap-1 ${m.tone}`}>
+              <Icon className="h-3 w-3" /> {m.label}
+            </Badge>
             {item.external && (
               <Badge variant="outline" className="text-[10px]">extern</Badge>
             )}
           </div>
           <div className="text-xs text-muted-foreground">
-            {item.description.de} · <span className="text-[10px] text-sage-500">{group}</span>
+            {item.description.de} ·{" "}
+            <span className="text-[10px] text-sage-500">{group}</span>
           </div>
-        </label>
+        </div>
+        <VisPicker href={item.href} />
       </li>
     );
   };
@@ -166,16 +228,6 @@ export function InfothekGatingManager() {
         <span className="text-sm font-medium text-muted-foreground">Ansicht:</span>
         <div className="inline-flex rounded-lg border bg-card p-1">
           <button
-            onClick={() => setViewMode("group")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition ${
-              viewMode === "group"
-                ? "bg-primary text-primary-foreground shadow"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutList className="h-3.5 w-3.5" /> Nach Thema
-          </button>
-          <button
             onClick={() => setViewMode("visibility")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition ${
               viewMode === "visibility"
@@ -185,97 +237,108 @@ export function InfothekGatingManager() {
           >
             <Eye className="h-3.5 w-3.5" /> Nach Sichtbarkeit
           </button>
+          <button
+            onClick={() => setViewMode("group")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition ${
+              viewMode === "group"
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutList className="h-3.5 w-3.5" /> Nach Thema
+          </button>
         </div>
       </div>
 
+      {/* Legende */}
       <div className="rounded-lg border border-sage-200 bg-sage-50/60 p-4 text-sm text-muted-foreground">
-        <p className="mb-1 font-medium text-foreground">So funktioniert es:</p>
-        <ul className="ml-4 list-disc space-y-1">
-          <li>
-            <Globe className="mr-1 inline h-3.5 w-3.5 text-primary" />
-            Häkchen <strong>aus</strong> = Beitrag ist <strong>öffentlich</strong> für alle Besucher sichtbar (gut für Google/SEO).
-          </li>
-          <li>
-            <Lock className="mr-1 inline h-3.5 w-3.5 text-primary" />
-            Häkchen <strong>an</strong> = Beitrag ist <strong>gesperrt</strong> und nur für Patienten sichtbar,
-            die du im Tab „Zugänge" freigeschaltet hast (oder mit „Alle Infothek-Inhalte").
-          </li>
-          <li>Änderungen wirken erst nach „Speichern".</li>
+        <p className="mb-2 font-medium text-foreground">Drei Sichtbarkeits-Stufen:</p>
+        <ul className="ml-1 space-y-1">
+          {ALL_VIS.map((v) => {
+            const m = VIS_META[v];
+            const Icon = m.icon;
+            return (
+              <li key={v} className="flex items-start gap-2">
+                <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${m.tone}`} />
+                <span>
+                  <strong>{m.label}</strong> – {m.help}
+                </span>
+              </li>
+            );
+          })}
         </ul>
+        <p className="mt-2 text-xs">
+          Tipp: Im Tab „Zugänge" kannst du einzelne <em>patient</em>-Beiträge zusätzlich
+          pro E-Mail freischalten.
+        </p>
       </div>
 
-      {viewMode === "group" ? (
-        /* ─── Nach Thema gruppieren ─── */
+      {viewMode === "visibility" ? (
+        /* ─── Nach Sichtbarkeit ─── */
         <>
-          {infothekGroups.map((group, gi) => {
-            const gatedCount = group.items.filter((i) => draft[i.href]).length;
+          {ALL_VIS.map((v) => {
+            const m = VIS_META[v];
+            const Icon = m.icon;
+            const rows = itemsByVis[v];
             return (
-              <div key={group.title.de} className="rounded-lg border bg-card">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-                  <div>
-                    <h3 className="font-serif text-base font-semibold">{group.title.de}</h3>
+              <div key={v} className="rounded-lg border bg-card">
+                <div className="flex items-center gap-2 border-b px-4 py-3">
+                  <Icon className={`h-4 w-4 ${m.tone}`} />
+                  <div className="flex-1">
+                    <h3 className="font-serif text-base font-semibold">{m.label}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {gatedCount} von {group.items.length} gesperrt
+                      {rows.length} Artikel — {m.help}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setAllInGroup(gi, false)}>
-                      <Globe className="mr-1 h-3.5 w-3.5" /> Alle öffentlich
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setAllInGroup(gi, true)}>
-                      <Lock className="mr-1 h-3.5 w-3.5" /> Alle sperren
-                    </Button>
-                  </div>
                 </div>
-                <ul className="divide-y">
-                  {group.items.map((item) => renderItemRow({ group: group.title.de, item }))}
-                </ul>
+                {rows.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    Aktuell keine Artikel in dieser Stufe.
+                  </div>
+                ) : (
+                  <ul className="divide-y">{rows.map(renderItemRow)}</ul>
+                )}
               </div>
             );
           })}
         </>
       ) : (
-        /* ─── Nach Sichtbarkeit gruppieren ─── */
+        /* ─── Nach Thema ─── */
         <>
-          {/* Öffentlich */}
-          <div className="rounded-lg border bg-card">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
-              <Globe className="h-4 w-4 text-primary" />
-              <div>
-                <h3 className="font-serif text-base font-semibold">Öffentlich sichtbar</h3>
-                <p className="text-xs text-muted-foreground">
-                  {publicItems.length} Artikel — für alle Besucher & Suchmaschinen erreichbar
-                </p>
+          {infothekGroups.map((group, gi) => (
+            <div key={group.title.de} className="rounded-lg border bg-card">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+                <div>
+                  <h3 className="font-serif text-base font-semibold">{group.title.de}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {group.items.length} Artikel
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_VIS.map((v) => {
+                    const m = VIS_META[v];
+                    const Icon = m.icon;
+                    return (
+                      <Button
+                        key={v}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setAllInGroup(gi, v)}
+                      >
+                        <Icon className={`mr-1 h-3.5 w-3.5 ${m.tone}`} />
+                        Alle: {m.label}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
+              <ul className="divide-y">
+                {group.items.map((item) =>
+                  renderItemRow({ group: group.title.de, item })
+                )}
+              </ul>
             </div>
-            {publicItems.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                Aktuell sind alle Artikel gesperrt.
-              </div>
-            ) : (
-              <ul className="divide-y">{publicItems.map((row) => renderItemRow(row, "public"))}</ul>
-            )}
-          </div>
-
-          {/* Gesperrt */}
-          <div className="rounded-lg border bg-card">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
-              <Lock className="h-4 w-4 text-destructive" />
-              <div>
-                <h3 className="font-serif text-base font-semibold">Nur für Patienten</h3>
-                <p className="text-xs text-muted-foreground">
-                  {gatedItems.length} Artikel — nur nach Freischaltung sichtbar
-                </p>
-              </div>
-            </div>
-            {gatedItems.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                Aktuell sind alle Artikel öffentlich.
-              </div>
-            ) : (
-              <ul className="divide-y">{gatedItems.map((row) => renderItemRow(row, "gated"))}</ul>
-            )}
-          </div>
+          ))}
         </>
       )}
 
@@ -288,4 +351,3 @@ export function InfothekGatingManager() {
     </div>
   );
 }
-
