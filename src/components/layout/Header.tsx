@@ -19,7 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 
-import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export function Header() {
@@ -31,11 +30,10 @@ export function Header() {
   const { toast } = useToast();
   const nav = translations.nav;
   const header = translations.header;
-  const { enabled: anamnesePublic } = useAnamnesePublic();
   const { canDownloadAnamnese } = usePatientAccess();
-  // Anamnese im Header sichtbar, wenn: globaler Public-Modus ODER Admin ODER individuelle E-Mail-Freigabe
-  const showAnamnese = anamnesePublic || isAdmin || canDownloadAnamnese;
-  const showOnlineAnamnese = isAdmin || anamnesePublic || canDownloadAnamnese;
+  // Anamnese im Header nur für Admins oder individuell freigeschaltete Patienten sichtbar.
+  const showAnamnese = isAdmin || canDownloadAnamnese;
+  const showOnlineAnamnese = showAnamnese;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
