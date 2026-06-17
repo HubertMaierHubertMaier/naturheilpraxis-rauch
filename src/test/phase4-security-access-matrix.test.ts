@@ -22,11 +22,12 @@ describe("Phase 4 security access matrix", () => {
 
   it("keeps admin/patient-only routes classified as non-public", () => {
     const restrictedRoutes = routeAccessMatrix.filter((route) =>
-      ["/admin", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank"].includes(route.path)
+      ["/admin", "/anamnesebogen", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank"].includes(route.path)
     );
 
     expect(restrictedRoutes.map((route) => route.path).sort()).toEqual([
       "/admin",
+      "/anamnesebogen",
       "/dashboard",
       "/patienten",
       "/patienten-bibliothek",
