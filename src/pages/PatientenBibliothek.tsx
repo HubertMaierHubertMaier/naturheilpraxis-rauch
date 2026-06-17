@@ -38,13 +38,8 @@ const PatientenBibliothek = () => {
     if (!user || accessLoading) return;
     (async () => {
       setLoading(true);
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_verified_patient")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      // Zugang: alter Mechanismus (profiles.is_verified_patient) ODER neuer Mechanismus (patient_access.library_access) ODER Admin
-      const isVerified = !!profile?.is_verified_patient || canUseLibrary || isAdmin;
+      // Zugang nur per expliziter Bibliotheksfreigabe oder Admin.
+      const isVerified = canUseLibrary || isAdmin;
       setVerified(isVerified);
 
       if (isVerified) {
