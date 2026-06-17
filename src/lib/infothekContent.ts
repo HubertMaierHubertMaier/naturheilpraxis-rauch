@@ -257,6 +257,20 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Waves,
         description: { de: "Tiefenentspannung für Bauch, Vegetativum und Beckenboden – innere Ruhe & Gelassenheit", en: "Deep relaxation for belly, vagus nerve and pelvic floor – inner calm & ease" },
       },
+      {
+        label: { de: "Einschlaf-Hypnose für Kinder (ca. 3 J.)", en: "Bedtime Hypnosis for Children (~3 yrs)" },
+        href: "/therapie/einschlafhilfe-kind/Einschlaf-Hypnose_Kind_3J.pdf",
+        icon: Moon,
+        description: { de: "Sanftes Einschlaf-Skript für Eltern zum Vorlesen – inkl. Eltern-Erklärung (PDF)", en: "Gentle bedtime script for parents to read aloud – incl. parent guide (PDF)" },
+        external: true,
+      },
+      {
+        label: { de: "Einschlaf-Hypnose Kinder – Word-Vorlage", en: "Bedtime Hypnosis Kids – Word Template" },
+        href: "/therapie/einschlafhilfe-kind/Einschlaf-Hypnose_Kind_3J.docx",
+        icon: FileText,
+        description: { de: "Bearbeitbare DOCX-Version zum Anpassen an Name & Alter des Kindes", en: "Editable DOCX version to adapt to child's name & age" },
+        external: true,
+      },
     ],
   },
   {
