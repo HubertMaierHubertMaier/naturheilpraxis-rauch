@@ -303,7 +303,9 @@ export function InfothekGatingManager() {
                     Aktuell keine Artikel in dieser Stufe.
                   </div>
                 ) : (
-                  <ul className="divide-y">{rows.map(renderItemRow)}</ul>
+                  <ul className="divide-y">
+                    {rows.map((row) => renderItemRow(row, true))}
+                  </ul>
                 )}
               </div>
             );
