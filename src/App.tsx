@@ -63,26 +63,26 @@ const App = () => (
               <Route path="/anamnesebogen" element={<AnamneseRouteGuard><Anamnesebogen /></AnamneseRouteGuard>} />
               <Route path="/erstanmeldung" element={<ProtectedRoute><Erstanmeldung /></ProtectedRoute>} />
               <Route path="/anamnesebogen-demo" element={<AnamneseDemo />} />
-              <Route path="/datenschutz" element={<Datenschutz />} />
-              <Route path="/heilpraktiker" element={<Heilpraktiker />} />
-              <Route path="/gebueh" element={<Gebueh />} />
-              <Route path="/ernaehrung" element={<Ernaehrung />} />
-              <Route path="/milch-unvertraeglichkeit" element={<MilchUnvertraeglichkeit />} />
-              <Route path="/milch-knochengesundheit" element={<MilchKnochengesundheit />} />
-              <Route path="/rohmilch-mikrobiologie" element={<RohmilchMikrobiologie />} />
-              <Route path="/frequenztherapie" element={<Frequenztherapie />} />
-              <Route path="/faq" element={<FAQ />} />
+              <Route path="/datenschutz" element={<InfothekGateRoute><Datenschutz /></InfothekGateRoute>} />
+              <Route path="/heilpraktiker" element={<InfothekGateRoute><Heilpraktiker /></InfothekGateRoute>} />
+              <Route path="/gebueh" element={<InfothekGateRoute><Gebueh /></InfothekGateRoute>} />
+              <Route path="/ernaehrung" element={<InfothekGateRoute><Ernaehrung /></InfothekGateRoute>} />
+              <Route path="/milch-unvertraeglichkeit" element={<InfothekGateRoute defaultGated><MilchUnvertraeglichkeit /></InfothekGateRoute>} />
+              <Route path="/milch-knochengesundheit" element={<InfothekGateRoute defaultGated><MilchKnochengesundheit /></InfothekGateRoute>} />
+              <Route path="/rohmilch-mikrobiologie" element={<InfothekGateRoute defaultGated><RohmilchMikrobiologie /></InfothekGateRoute>} />
+              <Route path="/frequenztherapie" element={<InfothekGateRoute><Frequenztherapie /></InfothekGateRoute>} />
+              <Route path="/faq" element={<InfothekGateRoute><FAQ /></InfothekGateRoute>} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
               <Route path="/impressum" element={<Impressum />} />
-              <Route path="/patientenaufklaerung" element={<Patientenaufklaerung />} />
+              <Route path="/patientenaufklaerung" element={<InfothekGateRoute><Patientenaufklaerung /></InfothekGateRoute>} />
               <Route path="/neupatient" element={<Neupatient />} />
-              <Route path="/quellenhinweis" element={<Quellenhinweis />} />
-              <Route path="/raucherentwoehnung" element={<Raucherentwoehnung />} />
-              <Route path="/schilddruese-hypnose" element={<SchilddrueseHypnose />} />
-              <Route path="/reizdarm-hypnose" element={<ReizdarmHypnose />} />
+              <Route path="/quellenhinweis" element={<InfothekGateRoute><Quellenhinweis /></InfothekGateRoute>} />
+              <Route path="/raucherentwoehnung" element={<InfothekGateRoute defaultGated><Raucherentwoehnung /></InfothekGateRoute>} />
+              <Route path="/schilddruese-hypnose" element={<InfothekGateRoute defaultGated><SchilddrueseHypnose /></InfothekGateRoute>} />
+              <Route path="/reizdarm-hypnose" element={<InfothekGateRoute defaultGated><ReizdarmHypnose /></InfothekGateRoute>} />
               <Route path="/infothek" element={<Infothek />} />
-              <Route path="/reizdarm" element={<Reizdarm />} />
-              <Route path="/knieschwellung" element={<Knieschwellung />} />
+              <Route path="/reizdarm" element={<InfothekGateRoute><Reizdarm /></InfothekGateRoute>} />
+              <Route path="/knieschwellung" element={<InfothekGateRoute><Knieschwellung /></InfothekGateRoute>} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
