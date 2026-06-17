@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RoleSimulator } from "@/components/dev/RoleSimulator";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 import CookieBanner from "@/components/CookieBanner";
