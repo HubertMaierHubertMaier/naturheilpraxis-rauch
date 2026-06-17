@@ -18,11 +18,19 @@ export function SystemChangeNotice() {
               Neu ab sofort: Noch persönlicher auf Ihre Bedürfnisse zugeschnitten
             </p>
             <p className="mt-1 text-sm leading-relaxed text-amber-800">
-              Wir haben unsere App umgestellt, damit jeder genau die Inhalte sieht, die für ihn passen. 
-              Ob Sie sich nur informieren möchten, als Neupatient starten oder bereits in Behandlung sind — 
-              wählen Sie einfach Ihren Zugang. Alle wichtigen Funktionen bleiben erhalten, 
-              nur noch übersichtlicher.
+              Wir haben unsere App umgestellt, damit jeder genau die Inhalte sieht, die für ihn passen.
+              Ob Sie sich nur informieren möchten, als Neupatient starten oder bereits in Behandlung sind —
+              wählen Sie einfach Ihren Zugang. Alle wichtigen Funktionen bleiben erhalten, nur noch übersichtlicher.
             </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-800">
+              <span className="font-semibold">Warum die Infothek nicht komplett offen ist:</span> Die ausführlichen
+              Therapie- und Methodeninhalte sind bewusst unseren Patientinnen und Patienten vorbehalten.
+              Sie enthalten individuelle Hinweise, die ohne persönliches Vorgespräch leicht missverstanden
+              werden können — und unterliegen zudem den gesetzlichen Vorgaben des Heilmittelwerbegesetzes (HWG).
+              Wer „nur mal reinsehen" möchte, findet auf der Startseite und im öffentlichen Bereich alle
+              wichtigen Infos zur Praxis. Für die Tiefe genügt eine kostenlose Registrierung.
+            </p>
+
           </div>
           <button
             onClick={() => setDismissed(true)}
