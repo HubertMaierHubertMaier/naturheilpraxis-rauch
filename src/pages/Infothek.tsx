@@ -7,12 +7,14 @@ import { infothekOverviewGroups as groups } from "@/lib/infothekContent";
 import { useContentProtection } from "@/hooks/useContentProtection";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInfothekGating } from "@/hooks/useInfothekGating";
 
 export default function Infothek() {
   useContentProtection();
   const { t } = useLanguage();
   const { user } = useAuth();
   const { canSeeInfothekItem, loading } = usePatientAccess();
+  const { isGated } = useInfothekGating();
 
   return (
     <Layout>
@@ -41,9 +43,11 @@ export default function Infothek() {
 
           <div className="mx-auto max-w-5xl space-y-12">
             {groups.map((group) => {
-              // gated items: only show if user has access (or admin)
-              const visibleItems = group.items.filter((item) => !item.gated || canSeeInfothekItem(item.href));
-              const hiddenGatedCount = group.items.filter((item) => item.gated && !canSeeInfothekItem(item.href)).length;
+              // gated items: only show if user has access (or admin).
+              // `gated` kommt entweder aus DB-Override (Admin-UI „Infothek-Sichtbarkeit") oder aus infothekContent.ts
+              const itemsWithGating = group.items.map((item) => ({ item, gated: isGated(item.href, !!item.gated) }));
+              const visibleItems = itemsWithGating.filter(({ item, gated }) => !gated || canSeeInfothekItem(item.href)).map(({ item }) => item);
+              const hiddenGatedCount = itemsWithGating.filter(({ item, gated }) => gated && !canSeeInfothekItem(item.href)).length;
               if (visibleItems.length === 0 && hiddenGatedCount === 0) return null;
 
               return (
