@@ -20,6 +20,7 @@ import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 import { useAnamneseEnabled } from "@/hooks/useAnamneseEnabled";
 import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
+import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,8 +33,10 @@ export function Header() {
   const header = translations.header;
   const { enabled: anamneseEnabled } = useAnamneseEnabled();
   const { enabled: anamnesePublic } = useAnamnesePublic();
-  const showAnamnese = anamneseEnabled || anamnesePublic || isAdmin;
-  const showOnlineAnamnese = user || isAdmin || anamnesePublic;
+  const { canDownloadAnamnese } = usePatientAccess();
+  // Anamnese im Header sichtbar, wenn: globaler Public-Modus ODER Admin ODER individuelle E-Mail-Freigabe
+  const showAnamnese = (anamneseEnabled && (anamnesePublic || isAdmin || canDownloadAnamnese));
+  const showOnlineAnamnese = isAdmin || anamnesePublic || canDownloadAnamnese;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();

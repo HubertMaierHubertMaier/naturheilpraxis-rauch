@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Download, FileText, Loader2, Music, Search, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import SEOHead from "@/components/seo/SEOHead";
+import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 interface Resource {
   id: string;
@@ -26,6 +27,7 @@ const BUCKET = "patient-library";
 
 const PatientenBibliothek = () => {
   const { user, loading: authLoading, isAdmin } = useAuth();
+  const { canUseLibrary, loading: accessLoading } = usePatientAccess();
   const navigate = useNavigate();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ const PatientenBibliothek = () => {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || accessLoading) return;
     (async () => {
       setLoading(true);
       const { data: profile } = await supabase
@@ -41,7 +43,8 @@ const PatientenBibliothek = () => {
         .select("is_verified_patient")
         .eq("user_id", user.id)
         .maybeSingle();
-      const isVerified = !!profile?.is_verified_patient || isAdmin;
+      // Zugang: alter Mechanismus (profiles.is_verified_patient) ODER neuer Mechanismus (patient_access.library_access) ODER Admin
+      const isVerified = !!profile?.is_verified_patient || canUseLibrary || isAdmin;
       setVerified(isVerified);
 
       if (isVerified) {
@@ -57,7 +60,7 @@ const PatientenBibliothek = () => {
       }
       setLoading(false);
     })();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, canUseLibrary, accessLoading]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
