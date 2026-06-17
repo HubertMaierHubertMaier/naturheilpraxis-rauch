@@ -49,7 +49,7 @@ const Neupatient = () => {
     {
       icon: ClipboardList,
       title: "Anamnesebogen",
-      file: "/anamnesebogen-blanko.pdf",
+      file: null,
       why: "Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.",
     },
     {
@@ -140,19 +140,18 @@ const Neupatient = () => {
                         Komplettpaket herunterladen
                       </h2>
                       <p className="text-sm text-muted-foreground md:text-base">
-                        Alle 3 Dokumente in einem PDF · 49 Seiten · zum Ausfüllen am Computer oder
-                        Ausdrucken
+                        Der Anamnesebogen wird im geschützten Patientenbereich bereitgestellt.
+                        Vertrag und Datenschutz bleiben separat verfügbar.
                       </p>
                     </div>
                   </div>
-                  <a
-                    href="/patientenpaket-blanko.pdf"
-                    download
+                  <Link
+                    to="/auth?type=new_patient"
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
                   >
-                    <Download className="h-5 w-5" />
-                    Paket öffnen
-                  </a>
+                    <ShieldCheck className="h-5 w-5" />
+                    Geschützt registrieren
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -164,10 +163,10 @@ const Neupatient = () => {
                   Lieber einzeln herunterladen? Hier sind die 3 Dokumente separat.
                 </AccordionTrigger>
                 <AccordionContent className="space-y-3 pb-5 pt-2">
-                  {docs.map((d) => (
+                  {docs.filter((d) => d.file).map((d) => (
                     <a
                       key={d.file}
-                      href={d.file}
+                      href={d.file ?? "#"}
                       download
                       className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-primary/40 hover:bg-sage-50"
                     >
