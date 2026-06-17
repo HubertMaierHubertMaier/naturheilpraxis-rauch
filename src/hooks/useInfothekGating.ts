@@ -10,8 +10,9 @@ export type InfothekVisibility = "public" | "new_patient" | "patient";
  *   - "new_patient" = nur für angemeldete Nutzer (auch unverifizierte Neuanmeldung)
  *   - "patient"     = nur für freigeschaltete Patienten
  *
- * Ist ein Item nicht in der Tabelle, fällt die UI auf den Default
- * (`gated` aus infothekContent.ts → "patient", sonst → "public") zurück.
+   * Sicherheitsregel: Items, die im Code als `gated` markiert sind, bleiben
+   * immer "patient" – DB-Overrides dürfen sie nicht auf "new_patient" oder
+   * "public" herunterstufen.
  */
 export function useInfothekGating() {
   const [overrides, setOverrides] = useState<Record<string, InfothekVisibility>>({});
@@ -53,10 +54,11 @@ export function useInfothekGating() {
 
   const getVisibility = useCallback(
     (href: string, defaultGated: boolean): InfothekVisibility => {
+      if (defaultGated) return "patient";
       if (Object.prototype.hasOwnProperty.call(overrides, href)) {
         return overrides[href];
       }
-      return defaultGated ? "patient" : "public";
+      return "public";
     },
     [overrides]
   );
