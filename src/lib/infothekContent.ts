@@ -263,18 +263,21 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/raucherentwoehnung",
         icon: Cigarette,
         description: { de: "Selbsthypnose & Begleitskript zur E-Zigaretten-Entwöhnung", en: "Self-hypnosis & companion script for e-cigarette cessation" },
+        gated: true,
       },
       {
         label: { de: "Schilddrüsen-Hypnose", en: "Thyroid Hypnosis" },
         href: "/schilddruese-hypnose",
         icon: Wind,
         description: { de: "Verlaufstagebuch & Begleitskript bei Schilddrüsen-Knoten", en: "Progress journal & companion script for thyroid nodules" },
+        gated: true,
       },
       {
         label: { de: "Bauchwohl-Hypnose", en: "Belly Calm Hypnosis" },
         href: "/reizdarm-hypnose",
         icon: Waves,
         description: { de: "Tiefenentspannung für Bauch, Vegetativum und Beckenboden – innere Ruhe & Gelassenheit", en: "Deep relaxation for belly, vagus nerve and pelvic floor – inner calm & ease" },
+        gated: true,
       },
       {
         label: { de: "Einschlaf-Hypnose für Kinder (ca. 3 J.)", en: "Bedtime Hypnosis for Children (~3 yrs)" },
@@ -282,6 +285,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: Moon,
         description: { de: "3 Varianten (warm / neutral / lange Traumreise) + ausführliche Eltern-Anleitung mit Tipps bei wachen Kindern (PDF)", en: "3 variants (warm / neutral / long dream journey) + detailed parent guide with tips for awake children (PDF)" },
         external: true,
+        gated: true,
       },
       {
         label: { de: "Einschlaf-Hypnose Kinder – Word-Vorlage", en: "Bedtime Hypnosis Kids – Word Template" },
@@ -289,6 +293,7 @@ export const infothekGroups: InfothekGroup[] = [
         icon: FileText,
         description: { de: "Bearbeitbare DOCX – Name, Lieblings-Tier, Farben & eigene Bilder frei anpassen", en: "Editable DOCX – freely adapt name, favorite animal, colors & images" },
         external: true,
+        gated: true,
       },
     ],
   },
