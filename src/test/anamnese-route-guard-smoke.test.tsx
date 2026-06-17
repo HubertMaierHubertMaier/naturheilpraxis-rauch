@@ -3,13 +3,8 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 
-const mockUseAnamnesePublic = vi.fn();
 const mockUseAuth = vi.fn();
 const mockIsDevAdminBypassActive = vi.fn();
-
-vi.mock("@/hooks/useAnamnesePublic", () => ({
-  useAnamnesePublic: () => mockUseAnamnesePublic(),
-}));
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
@@ -21,10 +16,6 @@ vi.mock("@/lib/devAdminBypass", () => ({
 
 beforeEach(() => {
   mockIsDevAdminBypassActive.mockReturnValue(false);
-  mockUseAnamnesePublic.mockReturnValue({
-    enabled: false,
-    loading: false,
-  });
   mockUseAuth.mockReturnValue({
     user: null,
     loading: false,
@@ -68,40 +59,35 @@ function renderGuard(initialPath = "/anamnesebogen?schritt=kontakt") {
 }
 
 describe("AnamneseRouteGuard smoke test", () => {
-  it("shows an accessible loading status while the public access setting is loading", () => {
-    mockUseAnamnesePublic.mockReturnValue({
-      enabled: false,
+  it("shows an accessible loading status while authentication is loading", () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
       loading: true,
     });
 
     renderGuard();
 
     expect(
-      screen.getByRole("status", { name: /Anamnese-Zugriff wird geprüft/i })
+      screen.getByRole("status", { name: /Authentifizierung wird geprüft/i })
     ).toBeInTheDocument();
     expect(screen.queryByText(/Anamnesebogen Testinhalt/i)).not.toBeInTheDocument();
   });
 
-  it("allows public access without login when the anamnesis form is public", () => {
-    mockUseAnamnesePublic.mockReturnValue({
-      enabled: true,
+  it("still blocks anonymous visitors even if an old public setting exists", () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
       loading: false,
     });
 
     renderGuard();
 
     expect(
-      screen.getByRole("main", { name: /Anamnesebogen/i })
+      screen.getByRole("main", { name: /Authentifizierung/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Anamnesebogen Testinhalt/i })).toBeInTheDocument();
-    expect(screen.queryByRole("main", { name: /Authentifizierung/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Anamnesebogen Testinhalt/i)).not.toBeInTheDocument();
   });
 
   it("falls back to auth redirect and preserves the intended route when public access is disabled", () => {
-    mockUseAnamnesePublic.mockReturnValue({
-      enabled: false,
-      loading: false,
-    });
     mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
