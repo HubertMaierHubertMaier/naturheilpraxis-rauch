@@ -28,7 +28,9 @@ export function SystemChangeNotice() {
               Sie enthalten individuelle Hinweise, die ohne persönliches Vorgespräch leicht missverstanden
               werden können — und unterliegen zudem den gesetzlichen Vorgaben des Heilmittelwerbegesetzes (HWG).
               Wer „nur mal reinsehen" möchte, findet auf der Startseite und im öffentlichen Bereich alle
-              wichtigen Infos zur Praxis. Für die Tiefe genügt eine kostenlose Registrierung.
+              wichtigen Infos zur Praxis und unseren Therapieangeboten. Eine kostenlose Registrierung
+              schaltet weitere Übersichtsinhalte frei — den vollen Zugang mit tiefgehenden Materialien
+              erhalten Sie nach dem Erstgespräch als Patient.
             </p>
 
           </div>
