@@ -51,7 +51,10 @@ export default function Infothek() {
         const visibility = getVisibility(item.href, !!item.gated) as Visibility;
         let locked = false;
         if (visibility === "public") locked = false;
-        else if (visibility === "new_patient") locked = !user;
+        // Stufe 1 (Neupatient): nur öffentliche Inhalte sind automatisch sichtbar.
+        // "new_patient"- und "patient"-Inhalte müssen vom Admin selektiv freigeschaltet werden
+        // (entweder einzeln via infothek_items oder pauschal via infothek_all).
+        else if (!user) locked = true;
         else locked = !canSeeInfothekItem(item.href);
         return { item, locked, visibility };
       });
