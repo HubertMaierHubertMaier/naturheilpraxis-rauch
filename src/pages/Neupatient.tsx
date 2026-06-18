@@ -14,7 +14,6 @@ import {
   Sparkles,
   ChevronRight,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
@@ -121,65 +120,67 @@ const Neupatient = () => {
         </div>
       </section>
 
-      {/* Primary CTA – Komplettpaket */}
+      {/* Dokumente zum Herunterladen */}
       <section className="pb-12 md:pb-16">
         <div className="container">
           <div className="mx-auto max-w-4xl">
-            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-sage-50 via-background to-sand-50 shadow-elevated">
-              <CardContent className="p-8 md:p-10">
-                <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-5">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md">
-                      <FileText className="h-8 w-8" />
+            <h2 className="mb-6 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              Dokumente für Deinen ersten Termin
+            </h2>
+            <p className="mb-8 text-center text-muted-foreground">
+              Lade die Formulare herunter, fülle sie zu Hause aus und bringe sie zum Termin mit — oder sende sie vorab per Mail.
+            </p>
+
+            {/* Verfügbare PDFs direkt zum Download */}
+            <div className="space-y-4">
+              {docs.filter((d) => d.file).map((d) => (
+                <a
+                  key={d.file}
+                  href={d.file ?? "#"}
+                  download
+                  className="flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:border-primary/40 hover:bg-sage-50 hover:shadow-elevated"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-primary">
+                      <d.icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                        Empfohlen
-                      </p>
-                      <h2 className="mb-2 font-serif text-2xl font-semibold text-foreground md:text-3xl">
-                        Komplettpaket herunterladen
-                      </h2>
-                      <p className="text-sm text-muted-foreground md:text-base">
-                        Der Anamnesebogen wird im geschützten Patientenbereich bereitgestellt.
-                        Vertrag und Datenschutz bleiben separat verfügbar.
-                      </p>
+                      <h3 className="font-serif text-lg font-semibold text-foreground">{d.title}</h3>
+                      <p className="text-sm text-muted-foreground">{d.why}</p>
                     </div>
                   </div>
-                  <Link
-                    to="/auth?type=new_patient"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
-                  >
-                    <ShieldCheck className="h-5 w-5" />
-                    Geschützt registrieren
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                    <Download className="h-4 w-4" />
+                    PDF
+                  </div>
+                </a>
+              ))}
 
-            {/* Einzeldownloads */}
-            <Accordion type="single" collapsible className="mt-6">
-              <AccordionItem value="single" className="rounded-xl border border-border bg-card px-5">
-                <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                  Lieber einzeln herunterladen? Hier sind die 3 Dokumente separat.
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3 pb-5 pt-2">
-                  {docs.filter((d) => d.file).map((d) => (
-                    <a
-                      key={d.file}
-                      href={d.file ?? "#"}
-                      download
-                      className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-primary/40 hover:bg-sage-50"
-                    >
-                      <span className="flex items-center gap-3">
-                        <d.icon className="h-5 w-5 text-primary" />
-                        <span className="text-sm font-medium text-foreground">{d.title}</span>
-                      </span>
-                      <Download className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+              {/* Anamnesebogen – Hinweis, dass er im Patientenbereich verfügbar ist */}
+              <div className="flex items-start justify-between rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <ClipboardList className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-semibold text-foreground">Anamnesebogen</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.
+                    </p>
+                    <p className="mt-2 text-xs text-primary font-medium">
+                      Wird nach Registrierung im geschützten Patientenbereich bereitgestellt.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/auth?type=new_patient"
+                  className="flex shrink-0 items-center gap-2 rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Registrieren
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
