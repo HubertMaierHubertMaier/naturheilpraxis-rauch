@@ -622,8 +622,8 @@ const Auth: React.FC = () => {
                   ? 'Als bestehender Patient: Nach der Registrierung wird die Praxis informiert und Ihren Zugang freischalten.'
                   : 'As an existing patient: After registration, the practice will be notified and will activate your access.')
                 : (language === 'de' 
-                  ? 'Bereits registriert? Bitte wechseln Sie zum Tab "Anmelden".' 
-                  : 'Already registered? Please switch to the "Login" tab.')
+                  ? 'Neu hier? Bitte legen Sie hier Ihr Konto an. Falls Sie bereits ein Konto haben, wechseln Sie oben zum Tab „Anmelden".' 
+                  : 'New here? Create your account below. If you already have an account, switch to the "Login" tab above.')
               }
             </AlertDescription>
           </Alert>
