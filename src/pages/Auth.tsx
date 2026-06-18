@@ -206,9 +206,20 @@ const Auth: React.FC = () => {
         body: { email, type: 'registration', password },
       });
 
-      if (response.error || response.data?.error) {
-        const errorMsg = response.data?.error || response.error?.message || 'Fehler';
-        
+      // Extract real server message from FunctionsHttpError context if needed
+      let errorMsg: string | null = response.data?.error ?? null;
+      if (!errorMsg && response.error) {
+        try {
+          const ctx: any = (response.error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const parsed = await ctx.json();
+            errorMsg = parsed?.error || null;
+          }
+        } catch { /* ignore */ }
+        if (!errorMsg) errorMsg = response.error.message;
+      }
+
+      if (errorMsg) {
         // Check for "already registered" error
         if (errorMsg.includes('bereits registriert') || errorMsg.includes('already registered')) {
           toast({
