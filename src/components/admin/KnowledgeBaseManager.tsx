@@ -152,6 +152,7 @@ const DEFAULT_CATEGORIES = [
   "Naturheilpraxis Peter Rauch > Mannayan",
   "Naturheilpraxis Peter Rauch > Nutra Medix",
   "Naturheilpraxis Peter Rauch > Phytotherapie",
+  "Naturheilpraxis Peter Rauch > Vieva Pro",
   "Schilddrüse",
 ];
 
