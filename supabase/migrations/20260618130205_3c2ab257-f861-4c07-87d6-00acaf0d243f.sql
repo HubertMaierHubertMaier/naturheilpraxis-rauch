@@ -1,0 +1,1 @@
+INSERT INTO public.infothek_gating (href, visibility, gated) VALUES ('/parkinson-hypnose', 'patient', true) ON CONFLICT (href) DO UPDATE SET visibility = EXCLUDED.visibility, gated = EXCLUDED.gated;
