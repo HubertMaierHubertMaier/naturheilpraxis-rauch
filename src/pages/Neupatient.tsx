@@ -210,38 +210,10 @@ const Neupatient = () => {
       </section>
 
       {/* Online-Alternative */}
-      <section className="py-12 md:py-16">
-        <div className="container">
-          <div className="mx-auto max-w-4xl">
-            <Card className="border-accent/30 bg-accent/5 shadow-card">
-              <CardContent className="p-7 md:p-8">
-                <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-4">
-                    <Info className="mt-1 h-6 w-6 shrink-0 text-accent" />
-                    <div>
-                      <h3 className="mb-1 font-serif text-lg font-semibold text-foreground">
-                        Lieber digital ausfüllen?
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Den Anamnesebogen kannst Du auch online im geschützten Patientenbereich
-                        ausfüllen — mit automatischem Zwischenspeichern und verschlüsselter
-                        Übertragung.
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    to="/auth?type=new_patient"
-                    className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-accent/40 bg-background px-5 py-2.5 text-sm font-semibold text-accent transition-colors hover:bg-accent/10"
-                  >
-                    Online registrieren
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* Hinweis-Sektion zur Online-Variante wurde entfernt, weil das
+          Online-Formular aus Datenschutzgründen derzeit gesperrt ist.
+          Der ausfüllbare PDF-Anamnesebogen ist der einzige offizielle Weg. */}
+
 
       {/* FAQ */}
       <section className="bg-sage-50 py-12 md:py-16">

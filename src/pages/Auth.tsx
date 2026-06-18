@@ -706,10 +706,11 @@ const Auth: React.FC = () => {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {language === 'de' 
-              ? 'Nach der Registrierung können Sie Ihren Anamnesebogen online ausfüllen.' 
-              : 'After registration, you can fill out your medical history form online.'}
+            {language === 'de'
+              ? 'Nach der Registrierung kannst Du den ausfüllbaren PDF-Anamnesebogen herunterladen. Die Online-Eingabe ist aus Datenschutzgründen aktuell deaktiviert.'
+              : 'After registration, you can download the fillable PDF anamnesis form. Online entry is currently disabled for data-protection reasons.'}
           </p>
+
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (

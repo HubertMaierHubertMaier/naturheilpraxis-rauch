@@ -313,6 +313,40 @@ serve(async (req) => {
       );
     }
 
+    // Datenschutz-Kill-Switch: Online-Anamnese darf nur durch, wenn aktiviert
+    // ODER der Aufrufer Admin ist (Test/Wartung).
+    {
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      const isAdminCaller = !!roleRow;
+
+      if (!isAdminCaller) {
+        const { data: settingRow } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "anamnese_online_enabled")
+          .maybeSingle();
+        const onlineEnabled =
+          (settingRow?.value as { enabled?: boolean } | null)?.enabled === true;
+
+        if (!onlineEnabled) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "Online-Anamnese ist aus Datenschutzgründen aktuell deaktiviert. Bitte den PDF-Anamnesebogen herunterladen und ausgedruckt mitbringen.",
+            }),
+            { status: 423, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
+
+
     // ── ACTION: SUBMIT ──────────────────────────────────────────────
     if (action === "submit") {
       if (!formData) {

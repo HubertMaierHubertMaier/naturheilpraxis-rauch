@@ -9,7 +9,7 @@ const options = [
     title: "Ich bin Neupatient",
     subtitle: "Erstkontakt in 3 Schritten",
     description:
-      "Lade Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung als Komplettpaket herunter — oder fülle online aus. Ein klarer Fahrplan zum ersten Termin.",
+      "Lade Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung als Komplettpaket herunter. Ein klarer Fahrplan zum ersten Termin.",
     cta: "Zum Neupatienten-Fahrplan",
     href: "/neupatient",
     accent: true,
