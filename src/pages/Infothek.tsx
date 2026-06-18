@@ -183,7 +183,7 @@ export default function Infothek() {
                             `Locked: ${item.label.en} – approval required`
                           )}
                         >
-                          <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground ring-1 ring-sage-300">
+                          <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sand-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/70 ring-1 ring-sand-400">
                             <Lock className="h-3 w-3" />
                             {visibility === "new_patient"
                               ? t("Anmeldung", "Sign-in")
@@ -205,17 +205,17 @@ export default function Infothek() {
                     // Freigeschaltet / frei zugänglich: normales Tile mit Status-Badge
                     const badge =
                       visibility === "public" ? (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary ring-1 ring-sage-200">
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sage-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 ring-1 ring-sage-300">
                           <Sparkles className="h-3 w-3" />
                           {t("Frei", "Free")}
                         </div>
                       ) : visibility === "new_patient" ? (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/70 ring-1 ring-sage-300">
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/80 ring-1 ring-sand-400">
                           <ShieldCheck className="h-3 w-3" />
                           {t("Angemeldet", "Signed-in")}
                         </div>
                       ) : (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta ring-1 ring-terracotta/30">
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta/25 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta ring-1 ring-terracotta/50">
                           <ShieldCheck className="h-3 w-3" />
                           {t("Freigeschaltet", "Unlocked")}
                         </div>
