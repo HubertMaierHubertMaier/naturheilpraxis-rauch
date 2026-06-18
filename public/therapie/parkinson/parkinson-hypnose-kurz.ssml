@@ -1,0 +1,88 @@
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="de-DE">
+  <voice name="de-DE-FlorianMultilingualNeural">
+    <prosody rate="-50%" pitch="+0Hz">
+
+      <!-- 1. Ankommen (~1,5 Min) -->
+      Setz dich bequem.
+      <break time="1500ms"/>
+      Spür den Boden, die Lehne, das Gewicht, das du abgeben darfst.
+      <break time="2500ms"/>
+      Atme ein… <break time="1500ms"/> und länger aus.
+      <break time="3000ms"/>
+      Was dein Körper tut, darf er tun.
+      <break time="2000ms"/>
+      Du musst nichts kontrollieren.
+      <break time="3000ms"/>
+
+      <!-- 2. Abstieg zur Stille (~2 Min) -->
+      Stell dir fünf breite, sichere Stufen vor.
+      <break time="2000ms"/>
+      Mit jeder Stufe wirst du ruhiger und geerdeter.
+      <break time="2500ms"/>
+      Fünf — der Atem wird tiefer.
+      <break time="2500ms"/>
+      Vier — die Schultern sinken.
+      <break time="2500ms"/>
+      Drei — die Gedanken werden leiser.
+      <break time="2500ms"/>
+      Zwei — der Körper wird schwerer.
+      <break time="2500ms"/>
+      Eins — du stehst angekommen.
+      <break time="3000ms"/>
+
+      <!-- 3. Strom und festes Ufer (~3 Min) -->
+      Vor dir ein breiter, ruhiger Strom.
+      <break time="2000ms"/>
+      Du stehst auf einem festen Ufer.
+      <break time="2000ms"/>
+      Der Boden trägt dich.
+      <break time="2500ms"/>
+      An der Oberfläche darf Bewegung sein — kleine Wellen, ein Zittern.
+      <break time="2500ms"/>
+      Tief unten, am Grund, ist es still.
+      <break time="2500ms"/>
+      Der Grund ist unverrückbar.
+      <break time="2500ms"/>
+      So ist es in dir: Oberfläche darf bewegt sein, der Grund trägt.
+      <break time="3000ms"/>
+      Je mehr du den Grund spürst, desto ruhiger wird die Oberfläche — von selbst.
+      <break time="3000ms"/>
+      Atme ein… <break time="1500ms"/> spür den Grund.
+      <break time="2500ms"/>
+      Atme aus… <break time="1500ms"/> und es wird ein wenig glatter.
+      <break time="3500ms"/>
+
+      <!-- 4. Der Anker (~2 Min) -->
+      Leg Daumen und Zeigefinger sanft aneinander.
+      <break time="2000ms"/>
+      Solange diese Finger sich berühren, bist du am Ufer.
+      <break time="2500ms"/>
+      Innerlich:
+      <break time="1500ms"/>
+      „Das Ufer trägt. Der Atem fließt."
+      <break time="3000ms"/>
+      „Das Ufer trägt. Der Atem fließt."
+      <break time="3000ms"/>
+      Dieses Zeichen kannst du jederzeit setzen.
+      <break time="2000ms"/>
+      Dein Nervensystem erinnert sich sofort.
+      <break time="3000ms"/>
+
+      <!-- 5. Rückkehr (~1,5 Min) -->
+      Zurück in den Raum — den festen Boden nimmst du mit.
+      <break time="2500ms"/>
+      Eins — Aufmerksamkeit kommt zurück.
+      <break time="2500ms"/>
+      Zwei — Atem wird tiefer.
+      <break time="2500ms"/>
+      Drei — Finger und Zehen bewegen.
+      <break time="2500ms"/>
+      Vier — Schultern recken.
+      <break time="2500ms"/>
+      Fünf — Augen auf.
+      <break time="1500ms"/>
+      Wach, ruhig, getragen.
+
+    </prosody>
+  </voice>
+</speak>

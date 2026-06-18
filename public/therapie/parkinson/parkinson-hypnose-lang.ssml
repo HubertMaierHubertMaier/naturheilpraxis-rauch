@@ -1,0 +1,210 @@
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="de-DE">
+  <voice name="de-DE-FlorianMultilingualNeural">
+    <prosody rate="-50%" pitch="+0Hz">
+
+      <!-- 1. Ankommen (~2 Min) -->
+      Setz dich oder leg dich so hin, dass dein Körper getragen wird.
+      <break time="1500ms"/>
+      Spür den Boden unter dir, die Lehne hinter dir, das Gewicht, das du jetzt abgeben darfst.
+      <break time="2000ms"/>
+      Du musst nichts festhalten.
+      <break time="1200ms"/>
+      Nichts kontrollieren.
+      <break time="1200ms"/>
+      Nichts richtig machen.
+      <break time="2000ms"/>
+      Atme ein… <break time="1500ms"/> und langsam wieder aus.
+      <break time="2500ms"/>
+      Lass das Ausatmen länger werden als das Einatmen.
+      <break time="2000ms"/>
+      Ein… <break time="1500ms"/> und aus… <break time="2000ms"/> ein… <break time="1500ms"/> und länger aus.
+      <break time="3000ms"/>
+      Was auch immer dein Körper gerade tut — er darf es tun.
+      <break time="1500ms"/>
+      Du musst ihn nicht überzeugen, still zu sein.
+      <break time="3000ms"/>
+
+      <!-- 2. Körperwahrnehmung (~3 Min) -->
+      Wandere mit deiner Aufmerksamkeit von oben nach unten.
+      <break time="2000ms"/>
+      Die Stirn — weich.
+      <break time="1500ms"/>
+      Die Augen — schwer.
+      <break time="1500ms"/>
+      Der Kiefer — locker, die Zähne lösen sich voneinander.
+      <break time="2000ms"/>
+      Die Schultern dürfen sinken.
+      <break time="1500ms"/>
+      Tiefer.
+      <break time="1500ms"/>
+      Noch ein Stück tiefer.
+      <break time="2500ms"/>
+      Die Arme werden schwer, die Hände warm.
+      <break time="2000ms"/>
+      Der Bauch atmet von selbst, ohne dass du etwas tun musst.
+      <break time="2500ms"/>
+      Die Beine ruhen.
+      <break time="1500ms"/>
+      Die Füße stehen auf festem Grund.
+      <break time="2500ms"/>
+      Und wenn irgendwo eine Bewegung ist, ein Zittern, ein Pulsieren — gut.
+      <break time="2000ms"/>
+      Es darf da sein.
+      <break time="1500ms"/>
+      Du brauchst es nicht zu bekämpfen.
+      <break time="2000ms"/>
+      Je weniger du dagegen arbeitest, desto mehr Raum bekommt es, sich zu beruhigen.
+      <break time="3000ms"/>
+
+      <!-- 3. Treppe zum Strom (~3 Min) -->
+      Vor deinem inneren Auge entsteht eine breite, sichere Treppe aus warmem Holz.
+      <break time="2000ms"/>
+      Zehn Stufen führen hinunter zu einem Ort der Ruhe.
+      <break time="2000ms"/>
+      Ich zähle, und mit jeder Stufe wirst du ruhiger, getragener, geerdeter.
+      <break time="2500ms"/>
+      Zehn — du machst den ersten Schritt, sicher, fest.
+      <break time="2500ms"/>
+      Neun — der Atem wird tiefer.
+      <break time="2500ms"/>
+      Acht — die Schultern lösen sich weiter.
+      <break time="2500ms"/>
+      Sieben — Gedanken werden leiser, weiter weg.
+      <break time="2500ms"/>
+      Sechs — der Körper wird schwerer, ruhiger.
+      <break time="2500ms"/>
+      Fünf — die Hälfte ist geschafft, du bist sicher.
+      <break time="2500ms"/>
+      Vier — tiefer, ruhiger.
+      <break time="2500ms"/>
+      Drei — der Boden unter dir wird breiter.
+      <break time="2500ms"/>
+      Zwei — du spürst schon den Ort, an den du gehst.
+      <break time="2500ms"/>
+      Eins — du stehst angekommen.
+      <break time="3000ms"/>
+
+      <!-- 4. Der Strom und das feste Ufer (~5 Min) -->
+      Vor dir liegt ein breiter, ruhiger Strom.
+      <break time="2000ms"/>
+      Das Wasser fließt klar, gleichmäßig, ohne Eile.
+      <break time="2500ms"/>
+      Du stehst auf einem festen Ufer.
+      <break time="2000ms"/>
+      Der Boden unter deinen Füßen ist warm, trocken, trägt dich vollkommen.
+      <break time="2500ms"/>
+      Dieses Ufer trägt dich — bei jedem Atemzug spürst du es deutlicher.
+      <break time="3000ms"/>
+      Schau auf den Strom.
+      <break time="1500ms"/>
+      An manchen Stellen fließt er glatt wie Glas.
+      <break time="2000ms"/>
+      An anderen Stellen kräuselt sich die Oberfläche, kleine Wellen, ein Zittern auf dem Wasser.
+      <break time="2500ms"/>
+      Das ist normal.
+      <break time="1500ms"/>
+      Jeder Strom hat Bewegung an der Oberfläche.
+      <break time="2500ms"/>
+      Und doch — tief unten, am Grund — ist es still.
+      <break time="2500ms"/>
+      Der Grund ist fest, stabil, unverrückbar.
+      <break time="2500ms"/>
+      Die Bewegung an der Oberfläche ändert nichts am Grund.
+      <break time="3000ms"/>
+      So ist es auch in deinem Körper.
+      <break time="2000ms"/>
+      An der Oberfläche darf Bewegung sein.
+      <break time="2000ms"/>
+      Tief in dir — am Grund — ist Ruhe.
+      <break time="2500ms"/>
+      Diese Ruhe war immer da.
+      <break time="1800ms"/>
+      Sie geht nicht verloren, auch wenn die Oberfläche bewegt ist.
+      <break time="3000ms"/>
+      Je weiter du den Grund spürst, desto ruhiger wird die Oberfläche von selbst.
+      <break time="2500ms"/>
+      Nicht weil du sie zwingst.
+      <break time="1800ms"/>
+      Sondern weil der Grund trägt.
+      <break time="3000ms"/>
+      Atme ein… <break time="1500ms"/> spür den Grund.
+      <break time="2500ms"/>
+      Atme aus… <break time="1500ms"/> und die Oberfläche wird ein wenig glatter.
+      <break time="3500ms"/>
+
+      <!-- 5. Stress-Anker (~3 Min) -->
+      Wenn im Alltag etwas Druck macht — ein Termin, ein Blick, eine Aufgabe — spürst du, wie sich die Oberfläche kräuselt.
+      <break time="2500ms"/>
+      Das ist menschlich.
+      <break time="1500ms"/>
+      Wir bauen jetzt ein Zeichen, das dich sofort zurück zum festen Ufer bringt.
+      <break time="2500ms"/>
+      Leg deinen Daumen sanft an deinen Zeigefinger.
+      <break time="2000ms"/>
+      Sanft, nicht fest.
+      <break time="1500ms"/>
+      Spür den Kontakt.
+      <break time="2500ms"/>
+      Solange diese Finger sich berühren, bist du am Ufer.
+      <break time="2000ms"/>
+      Der Grund trägt.
+      <break time="1500ms"/>
+      Der Atem fließt aus, lang und ruhig.
+      <break time="3000ms"/>
+      Wiederhole innerlich:
+      <break time="1500ms"/>
+      „Das Ufer trägt. Der Atem fließt."
+      <break time="3000ms"/>
+      „Das Ufer trägt. Der Atem fließt."
+      <break time="3000ms"/>
+      Du kannst dieses Zeichen jederzeit setzen — in der Praxis, im Bus, am Tisch.
+      <break time="2000ms"/>
+      Niemand sieht es.
+      <break time="1500ms"/>
+      Aber dein Nervensystem erinnert sich sofort:
+      <break time="1500ms"/>
+      Grund. <break time="1000ms"/> Ufer. <break time="1000ms"/> Atem.
+      <break time="3000ms"/>
+
+      <!-- 6. Identität und Würde (~2 Min) -->
+      Du bist nicht dein Tremor.
+      <break time="2000ms"/>
+      Du bist der, der den Strom betrachtet — nicht der Strom selbst.
+      <break time="2500ms"/>
+      Dein Wert hängt nicht davon ab, wie still deine Hände sind.
+      <break time="2500ms"/>
+      Du bist Mensch, vollständig, mit allem, was du in deinem Leben getragen, gelernt und geliebt hast.
+      <break time="3000ms"/>
+      Was bewegt ist, darf bewegt sein.
+      <break time="2000ms"/>
+      Was ruhig ist, ist tief in dir.
+      <break time="2000ms"/>
+      Beides gehört zu dir.
+      <break time="1500ms"/>
+      Beides hat seinen Platz.
+      <break time="3000ms"/>
+
+      <!-- 7. Rückkehr (~2 Min) -->
+      Gleich kommst du zurück — wach, klar, geerdet.
+      <break time="2000ms"/>
+      Den festen Boden nimmst du mit.
+      <break time="2000ms"/>
+      Das Ufer geht nicht verloren, es ist von jetzt an in dir.
+      <break time="2500ms"/>
+      Ich zähle von eins bis fünf.
+      <break time="2000ms"/>
+      Eins — die Aufmerksamkeit kommt zurück in den Raum.
+      <break time="2500ms"/>
+      Zwei — der Atem wird etwas tiefer.
+      <break time="2500ms"/>
+      Drei — bewege sanft Finger und Zehen.
+      <break time="2500ms"/>
+      Vier — Schultern, Nacken, ein leichtes Recken.
+      <break time="2500ms"/>
+      Fünf — Augen auf.
+      <break time="1500ms"/>
+      Wach, ruhig, getragen.
+
+    </prosody>
+  </voice>
+</speak>
