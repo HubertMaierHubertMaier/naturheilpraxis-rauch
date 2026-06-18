@@ -14,7 +14,7 @@ import {
   Sparkles,
   ChevronRight,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import {
 import {
   Accordion,
   AccordionContent,
