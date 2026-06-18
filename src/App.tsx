@@ -43,6 +43,7 @@ import PatientenBibliothek from "./pages/PatientenBibliothek";
 import AppUebersicht from "./pages/AppUebersicht";
 import Neupatient from "./pages/Neupatient";
 import ReizdarmHypnose from "./pages/ReizdarmHypnose";
+import ParkinsonHypnose from "./pages/ParkinsonHypnose";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/raucherentwoehnung" element={<InfothekGateRoute defaultGated><Raucherentwoehnung /></InfothekGateRoute>} />
               <Route path="/schilddruese-hypnose" element={<InfothekGateRoute defaultGated><SchilddrueseHypnose /></InfothekGateRoute>} />
               <Route path="/reizdarm-hypnose" element={<InfothekGateRoute defaultGated><ReizdarmHypnose /></InfothekGateRoute>} />
+              <Route path="/parkinson-hypnose" element={<InfothekGateRoute defaultGated><ParkinsonHypnose /></InfothekGateRoute>} />
               <Route path="/infothek" element={<Infothek />} />
               <Route path="/reizdarm" element={<InfothekGateRoute><Reizdarm /></InfothekGateRoute>} />
               <Route path="/knieschwellung" element={<InfothekGateRoute><Knieschwellung /></InfothekGateRoute>} />
