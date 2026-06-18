@@ -140,24 +140,24 @@ export default function Infothek() {
           )}
 
           {/* Kompakte Badge-Legende */}
-          <div className="mx-auto mb-8 flex max-w-3xl flex-wrap items-center justify-center gap-3">
-            <span className="text-xs text-muted-foreground">
+          <div className="mx-auto mb-10 flex max-w-3xl flex-wrap items-center justify-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">
               {t("Legende:", "Legend:")}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-sage-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 ring-1 ring-sage-300">
-              <Sparkles className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-sage-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sage-900 ring-1 ring-sage-400">
+              <Sparkles className="h-3.5 w-3.5" />
               {t("Frei", "Free")}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-sand-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/80 ring-1 ring-sand-400">
-              <ShieldCheck className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-sand-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground ring-1 ring-sand-400">
+              <ShieldCheck className="h-3.5 w-3.5" />
               {t("Angemeldet", "Signed-in")}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-terracotta/25 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta ring-1 ring-terracotta/50">
-              <ShieldCheck className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-terracotta/30 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-terracotta ring-1 ring-terracotta/60">
+              <ShieldCheck className="h-3.5 w-3.5" />
               {t("Freigeschaltet", "Unlocked")}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-sand-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/70 ring-1 ring-sand-400">
-              <Lock className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-sand-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80 ring-1 ring-sand-500">
+              <Lock className="h-3.5 w-3.5" />
               {t("Anmeldung nötig", "Sign-in required")}
             </span>
           </div>
