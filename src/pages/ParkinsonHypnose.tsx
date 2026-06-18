@@ -3,12 +3,71 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ShieldCheck, BookOpen, Headphones, FileText, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Headphones, Download, Clock, AlertTriangle, Play, Pause } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { useRef, useState } from "react";
+
+const AudioPlayer = ({ title, duration, src }: { title: string; duration: string; src: string }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleEnded = () => setIsPlaying(false);
+
+  return (
+    <Card className="border-primary/20">
+      <CardContent className="p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={togglePlay}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              aria-label={isPlaying ? "Pause" : "Abspielen"}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+            </button>
+            <div>
+              <p className="font-medium text-foreground">{title}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" /> {duration}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <a href={src} download>
+              <Download className="mr-1.5 h-3.5 w-3.5" /> MP3
+            </a>
+          </Button>
+        </div>
+        <audio
+          ref={audioRef}
+          src={src}
+          onEnded={handleEnded}
+          className="w-full h-8"
+          controls
+          preload="none"
+        />
+      </CardContent>
+    </Card>
+  );
+};
 
 const ParkinsonHypnose = () => {
   useContentProtection();
+  const longUrl = "https://jmebqjadlpltnqawoipb.supabase.co/storage/v1/object/public/patient-library/hypnose/parkinson-hypnose-lang.mp3";
+  const shortUrl = "https://jmebqjadlpltnqawoipb.supabase.co/storage/v1/object/public/patient-library/hypnose/parkinson-hypnose-kurz.mp3";
+
   return (
     <Layout>
       <SEOHead
@@ -35,35 +94,39 @@ const ParkinsonHypnose = () => {
       <div className="container py-10 md:py-16">
         <div className="mx-auto max-w-3xl space-y-8">
           <Card className="border-primary/30 shadow-card">
-            <CardContent className="p-6 md:p-8 space-y-4">
+            <CardContent className="p-6 md:p-8 space-y-6">
               <div className="flex items-start gap-3">
-                <BookOpen className="mt-1 h-6 w-6 text-primary shrink-0" />
-                <div className="space-y-2">
+                <Headphones className="mt-1 h-6 w-6 text-primary shrink-0" />
+                <div>
                   <h2 className="font-serif text-xl font-semibold text-foreground">
-                    Materialien in deiner Patienten-Bibliothek
+                    Deine Hypnose-Audios
                   </h2>
-                  <p className="text-sm text-foreground leading-relaxed">
-                    Zwei Selbsthypnose-Audios stehen <strong>ausschließlich</strong> im
-                    geschützten Bereich für freigeschaltete Patienten bereit:
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Beide Versionen mit Florian (de-DE-FlorianMultilingualNeural) bei −50 % Geschwindigkeit gerendert.
                   </p>
-                  <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-                    <li><strong>Lange Version (~20 Min):</strong> Treppen-Induktion, Strom-Metapher, Anker-Installation, Identitätsstärkung</li>
-                    <li><strong>Kurze Version (~10 Min):</strong> Komprimierte Alltagsfassung mit Anker-Auffrischung</li>
-                    <li>Begleitskript & Übungsanleitung für den Stress-Anker (Daumen + Zeigefinger)</li>
-                  </ul>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button asChild>
-                  <Link to="/patienten-bibliothek">
-                    <Headphones className="mr-2 h-4 w-4" /> Zur Patienten-Bibliothek
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/auth?redirect=%2Fpatienten-bibliothek">
-                    <FileText className="mr-2 h-4 w-4" /> Anmelden / Registrieren
-                  </Link>
-                </Button>
+
+              <div className="space-y-4">
+                <AudioPlayer
+                  title="Lange Version – Festes Ufer, ruhiger Atem"
+                  duration="~20 Minuten"
+                  src={longUrl}
+                />
+                <AudioPlayer
+                  title="Kurze Version – Alltags-Anker"
+                  duration="~10 Minuten"
+                  src={shortUrl}
+                />
+              </div>
+
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground leading-relaxed">
+                <p className="font-medium text-foreground mb-1">So nutzt du die Audios</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Lange Version:</strong> Für tiefe Entspannung zu Hause – Treppen-Induktion, Strom-Metapher, Anker-Installation, Identitätsstärkung.</li>
+                  <li><strong>Kurze Version:</strong> Für unterwegs oder als Auffrischung – komprimiert auf die Kernelemente.</li>
+                  <li>Beide Versionen enthalten den <strong>Stress-Anker</strong> (sanftes Berühren von Daumen + Zeigefinger).</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
