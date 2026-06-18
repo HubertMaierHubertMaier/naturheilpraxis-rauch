@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, BookOpen, Lock } from "lucide-react";
+import { ChevronDown, BookOpen, Lock, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -46,6 +46,28 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
     const visibility = getVisibility(item.href, !!item.gated);
     const locked = visibility === "new_patient" ? !user : visibility === "patient" && !canSeeInfothekItem(item.href);
 
+    const statusBadge = locked ? (
+      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-sand-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-foreground/80 ring-1 ring-sand-500">
+        <Lock className="h-3 w-3" />
+        {t("Gesperrt", "Locked")}
+      </span>
+    ) : visibility === "public" ? (
+      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-900 ring-1 ring-sage-400">
+        <Sparkles className="h-3 w-3" />
+        {t("Frei", "Free")}
+      </span>
+    ) : visibility === "new_patient" ? (
+      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-sand-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-foreground ring-1 ring-sand-400">
+        <ShieldCheck className="h-3 w-3" />
+        {t("Login", "Login")}
+      </span>
+    ) : (
+      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-terracotta/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-terracotta ring-1 ring-terracotta/60">
+        <ShieldCheck className="h-3 w-3" />
+        {t("Patient", "Patient")}
+      </span>
+    );
+
     if (locked) {
       return (
         <button
@@ -63,7 +85,7 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
             );
           }}
           className={cn(
-            "flex w-full items-start gap-3 rounded-lg border border-dashed border-sage-300 bg-muted/40 text-left opacity-70 grayscale transition-colors hover:bg-muted/60",
+            "flex w-full items-start gap-3 rounded-lg border border-dashed border-sand-500 bg-sand-100/70 text-left opacity-85 transition-colors hover:bg-sand-200/80",
             compact ? "px-3 py-2.5" : "p-3"
           )}
           aria-label={t(
@@ -74,7 +96,8 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
           {compact ? (
             <>
               <Lock className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{t(item.label.de, item.label.en)}</span>
+              <span className="min-w-0 flex-1 text-sm font-medium text-muted-foreground">{t(item.label.de, item.label.en)}</span>
+              {statusBadge}
             </>
           ) : (
             <>
@@ -82,11 +105,11 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
                 <item.icon className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+                <div className="flex items-start gap-2 text-sm font-semibold text-foreground/80">
                   {t(item.label.de, item.label.en)}
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  {statusBadge}
                 </div>
-                <div className="text-xs text-muted-foreground">Freischaltung nötig</div>
+                <div className="text-xs font-medium text-muted-foreground">Freischaltung nötig</div>
               </div>
             </>
           )}
@@ -121,7 +144,10 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
                 <item.icon className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">{t(item.label.de, item.label.en)}</div>
+                <div className="flex items-start gap-2 text-sm font-medium text-foreground">
+                  <span className="min-w-0 flex-1">{t(item.label.de, item.label.en)}</span>
+                  {statusBadge}
+                </div>
                 <div className="text-xs text-muted-foreground">{t(item.description.de, item.description.en)}</div>
               </div>
             </>
@@ -155,7 +181,10 @@ export function InfothekDropdown({ isMobile = false, onItemClick }: InfothekDrop
               <item.icon className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1">
-              <div className={cn("text-sm font-medium", isActive ? "text-primary" : "text-foreground")}>{t(item.label.de, item.label.en)}</div>
+                <div className={cn("flex items-start gap-2 text-sm font-medium", isActive ? "text-primary" : "text-foreground")}>
+                  <span className="min-w-0 flex-1">{t(item.label.de, item.label.en)}</span>
+                  {statusBadge}
+                </div>
               <div className="text-xs text-muted-foreground">{t(item.description.de, item.description.en)}</div>
             </div>
           </>
