@@ -15,7 +15,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
