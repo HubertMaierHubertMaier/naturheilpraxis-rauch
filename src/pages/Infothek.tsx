@@ -192,11 +192,12 @@ export default function Infothek() {
                           {t("Angemeldet", "Signed-in")}
                         </div>
                       ) : (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta-700 ring-1 ring-terracotta-200">
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta ring-1 ring-terracotta/30">
                           <ShieldCheck className="h-3 w-3" />
                           {t("Freigeschaltet", "Unlocked")}
                         </div>
                       );
+
 
                     const content = (
                       <div className="group relative flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
