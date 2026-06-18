@@ -284,6 +284,13 @@ export const infothekGroups: InfothekGroup[] = [
         gated: true,
       },
       {
+        label: { de: "Parkinson-Hypnose", en: "Parkinson Hypnosis" },
+        href: "/parkinson-hypnose",
+        icon: Activity,
+        description: { de: "Festes Ufer, ruhiger Atem – begleitend bei Tremor und stressabhängiger Symptomverstärkung", en: "Steady shore, calm breath – companion for tremor and stress-driven symptom flare-ups" },
+        gated: true,
+      },
+      {
         label: { de: "Einschlaf-Hypnose für Kinder (ca. 3 J.)", en: "Bedtime Hypnosis for Children (~3 yrs)" },
         href: "/patienten-bibliothek",
         icon: Moon,

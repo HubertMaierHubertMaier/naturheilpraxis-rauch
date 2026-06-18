@@ -69,6 +69,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/raucherentwoehnung", component: "Raucherentwoehnung", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/schilddruese-hypnose", component: "SchilddrueseHypnose", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/reizdarm-hypnose", component: "ReizdarmHypnose", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
+  { path: "/parkinson-hypnose", component: "ParkinsonHypnose", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/infothek", component: "Infothek", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content index." },
   { path: "/reizdarm", component: "Reizdarm", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/knieschwellung", component: "Knieschwellung", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
