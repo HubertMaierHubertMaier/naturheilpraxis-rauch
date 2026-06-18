@@ -2,28 +2,72 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { ShieldCheck, Headphones, Download, Clock, AlertTriangle, Play, Pause } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { useContentProtection } from "@/hooks/useContentProtection";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const AudioPlayer = ({ title, duration, src }: { title: string; duration: string; src: string }) => {
+const AudioPlayer = ({ title, duration, objectPath, filename }: { title: string; duration: string; objectPath: string; filename: string }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [src, setSrc] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.storage
+        .from("patient-library")
+        .createSignedUrl(objectPath, 60 * 60);
+      if (cancelled) return;
+      if (error || !data?.signedUrl) {
+        toast.error("Audio konnte nicht geladen werden");
+        setLoading(false);
+        return;
+      }
+      setSrc(data.signedUrl);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [objectPath]);
+
+  const togglePlay = async () => {
+    if (!audioRef.current || !src) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play();
-      setIsPlaying(true);
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch {
+        toast.error("Abspielen fehlgeschlagen");
+      }
     }
   };
 
   const handleEnded = () => setIsPlaying(false);
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!src) return;
+    try {
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(src, "_blank");
+    }
+  };
 
   return (
     <Card className="border-primary/20">
@@ -32,7 +76,8 @@ const AudioPlayer = ({ title, duration, src }: { title: string; duration: string
           <div className="flex items-center gap-3">
             <button
               onClick={togglePlay}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              disabled={loading || !src}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               aria-label={isPlaying ? "Pause" : "Abspielen"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
@@ -44,10 +89,8 @@ const AudioPlayer = ({ title, duration, src }: { title: string; duration: string
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <a href={src} download>
-              <Download className="mr-1.5 h-3.5 w-3.5" /> MP3
-            </a>
+          <Button variant="outline" size="sm" onClick={handleDownload} disabled={loading || !src}>
+            <Download className="mr-1.5 h-3.5 w-3.5" /> MP3
           </Button>
         </div>
         <audio
@@ -65,8 +108,6 @@ const AudioPlayer = ({ title, duration, src }: { title: string; duration: string
 
 const ParkinsonHypnose = () => {
   useContentProtection();
-  const longUrl = "https://jmebqjadlpltnqawoipb.supabase.co/storage/v1/object/public/patient-library/hypnose/parkinson-hypnose-lang.mp3";
-  const shortUrl = "https://jmebqjadlpltnqawoipb.supabase.co/storage/v1/object/public/patient-library/hypnose/parkinson-hypnose-kurz.mp3";
 
   return (
     <Layout>
@@ -111,12 +152,14 @@ const ParkinsonHypnose = () => {
                 <AudioPlayer
                   title="Lange Version – Festes Ufer, ruhiger Atem"
                   duration="~20 Minuten"
-                  src={longUrl}
+                  objectPath="hypnose/parkinson-hypnose-lang.mp3"
+                  filename="parkinson-hypnose-lang.mp3"
                 />
                 <AudioPlayer
                   title="Kurze Version – Alltags-Anker"
                   duration="~10 Minuten"
-                  src={shortUrl}
+                  objectPath="hypnose/parkinson-hypnose-kurz.mp3"
+                  filename="parkinson-hypnose-kurz.mp3"
                 />
               </div>
 
