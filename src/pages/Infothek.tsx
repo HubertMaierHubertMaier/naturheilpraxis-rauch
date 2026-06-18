@@ -139,6 +139,29 @@ export default function Infothek() {
             </div>
           )}
 
+          {/* Kompakte Badge-Legende */}
+          <div className="mx-auto mb-10 flex max-w-3xl flex-wrap items-center justify-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("Legende:", "Legend:")}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-sage-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sage-900 ring-1 ring-sage-400">
+              <Sparkles className="h-3.5 w-3.5" />
+              {t("Frei", "Free")}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-sand-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground ring-1 ring-sand-400">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {t("Angemeldet", "Signed-in")}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-terracotta/30 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-terracotta ring-1 ring-terracotta/60">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {t("Freigeschaltet", "Unlocked")}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-sand-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80 ring-1 ring-sand-500">
+              <Lock className="h-3.5 w-3.5" />
+              {t("Anmeldung nötig", "Sign-in required")}
+            </span>
+          </div>
+
           <div className="mx-auto max-w-5xl space-y-12">
             {enrichedGroups.map(({ group, items }) => (
               <div key={group.title.de}>
@@ -160,8 +183,8 @@ export default function Infothek() {
                             `Locked: ${item.label.en} – approval required`
                           )}
                         >
-                          <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground ring-1 ring-sage-300">
-                            <Lock className="h-3 w-3" />
+                          <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sand-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80 ring-1 ring-sand-500">
+                            <Lock className="h-3.5 w-3.5" />
                             {visibility === "new_patient"
                               ? t("Anmeldung", "Sign-in")
                               : t("Patienten", "Patients")}
@@ -182,18 +205,18 @@ export default function Infothek() {
                     // Freigeschaltet / frei zugänglich: normales Tile mit Status-Badge
                     const badge =
                       visibility === "public" ? (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary ring-1 ring-sage-200">
-                          <Sparkles className="h-3 w-3" />
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sage-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sage-900 ring-1 ring-sage-400">
+                          <Sparkles className="h-3.5 w-3.5" />
                           {t("Frei", "Free")}
                         </div>
                       ) : visibility === "new_patient" ? (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/70 ring-1 ring-sage-300">
-                          <ShieldCheck className="h-3 w-3" />
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sand-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground ring-1 ring-sand-400">
+                          <ShieldCheck className="h-3.5 w-3.5" />
                           {t("Angemeldet", "Signed-in")}
                         </div>
                       ) : (
-                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta ring-1 ring-terracotta/30">
-                          <ShieldCheck className="h-3 w-3" />
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta/30 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-terracotta ring-1 ring-terracotta/60">
+                          <ShieldCheck className="h-3.5 w-3.5" />
                           {t("Freigeschaltet", "Unlocked")}
                         </div>
                       );
