@@ -39,23 +39,26 @@ export default function Infothek() {
   };
 
   // Pre-compute visibility & access for all groups
+  type Visibility = "public" | "new_patient" | "patient";
   type EnrichedItem = {
     item: (typeof groups)[number]["items"][number];
     locked: boolean;
+    visibility: Visibility;
   };
   const enrichedGroups = groups
     .map((group) => {
       const items: EnrichedItem[] = group.items.map((item) => {
-        const vis = getVisibility(item.href, !!item.gated);
+        const visibility = getVisibility(item.href, !!item.gated) as Visibility;
         let locked = false;
-        if (vis === "public") locked = false;
-        else if (vis === "new_patient") locked = !user; // angemeldet reicht
-        else locked = !canSeeInfothekItem(item.href); // patient → braucht Freischaltung
-        return { item, locked };
+        if (visibility === "public") locked = false;
+        else if (visibility === "new_patient") locked = !user;
+        else locked = !canSeeInfothekItem(item.href);
+        return { item, locked, visibility };
       });
       return { group, items };
     })
     .filter((g) => g.items.length > 0);
+
 
   const totalLocked = enrichedGroups.reduce(
     (sum, g) =>
