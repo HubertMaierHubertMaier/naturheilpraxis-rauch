@@ -146,7 +146,7 @@ export default function Infothek() {
                   {t(group.title.de, group.title.en)}
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {items.map(({ item, locked }) => {
+                  {items.map(({ item, locked, visibility }) => {
                     if (locked) {
                       // Gesperrt: ausgegraut + Schloss-Icon, kein echter Link
                       return (
@@ -160,33 +160,51 @@ export default function Infothek() {
                             `Locked: ${item.label.en} – approval required`
                           )}
                         >
-                          <div className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 ring-1 ring-sage-300">
-                            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground ring-1 ring-sage-300">
+                            <Lock className="h-3 w-3" />
+                            {visibility === "new_patient"
+                              ? t("Anmeldung", "Sign-in")
+                              : t("Patienten", "Patients")}
                           </div>
                           <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                             <item.icon className="h-5 w-5 text-muted-foreground" />
                           </div>
-                          <h3 className="mb-1 text-sm font-semibold text-foreground/80">
+                          <h3 className="mb-1 pr-20 text-sm font-semibold text-foreground/80">
                             {t(item.label.de, item.label.en)}
                           </h3>
                           <p className="text-xs leading-relaxed text-muted-foreground">
                             {t(item.description.de, item.description.en)}
                           </p>
-                          <div className="mt-3 inline-flex w-fit items-center gap-1 rounded-full bg-sage-100/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary/80">
-                            <Lock className="h-2.5 w-2.5" />
-                            {t("Freischaltung nötig", "Access required")}
-                          </div>
                         </button>
                       );
                     }
 
-                    // Freigeschaltet / frei zugänglich: normales Tile
+                    // Freigeschaltet / frei zugänglich: normales Tile mit Status-Badge
+                    const badge =
+                      visibility === "public" ? (
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary ring-1 ring-sage-200">
+                          <Sparkles className="h-3 w-3" />
+                          {t("Frei", "Free")}
+                        </div>
+                      ) : visibility === "new_patient" ? (
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/70 ring-1 ring-sage-300">
+                          <ShieldCheck className="h-3 w-3" />
+                          {t("Angemeldet", "Signed-in")}
+                        </div>
+                      ) : (
+                        <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-terracotta-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-terracotta-700 ring-1 ring-terracotta-200">
+                          <ShieldCheck className="h-3 w-3" />
+                          {t("Freigeschaltet", "Unlocked")}
+                        </div>
+                      );
+
                     const content = (
-                      <div className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
+                      <div className="group relative flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
+                        {badge}
                         <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sage-100">
                           <item.icon className="h-5 w-5 text-primary" />
                         </div>
-                        <h3 className="mb-1 text-sm font-semibold text-foreground">
+                        <h3 className="mb-1 pr-20 text-sm font-semibold text-foreground">
                           {t(item.label.de, item.label.en)}
                           {item.external && (
                             <ExternalLink className="ml-1.5 inline h-3 w-3 text-muted-foreground" />
@@ -216,6 +234,7 @@ export default function Infothek() {
                       </Link>
                     );
                   })}
+
                 </div>
               </div>
             ))}
