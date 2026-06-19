@@ -186,13 +186,11 @@ const Auth: React.FC = () => {
     setLoading(true);
 
     try {
-      // Check global lock for patient registration
-      const { data: setting } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'patient_login_enabled')
-        .maybeSingle();
-      const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
+      // Check global lock for patient registration (anon-safe RPC)
+      const { data: setting } = await supabase.rpc('get_public_app_setting', {
+        _key: 'patient_login_enabled',
+      });
+      const loginEnabled = (setting as { enabled?: boolean } | null)?.enabled === true;
       if (!loginEnabled) {
         throw new Error(
           language === 'de'
