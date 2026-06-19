@@ -188,16 +188,11 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex">
             <Button asChild variant="default" className="flex-1">
               <a href="/anamnesebogen-blanko.pdf" download>
                 <FileDown className="w-4 h-4 mr-2" />
                 {language === "de" ? "Anamnesebogen als PDF herunterladen" : "Download anamnesis form as PDF"}
-              </a>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <a href="/anamnesebogen-blanko.pdf" target="_blank" rel="noopener noreferrer">
-                {language === "de" ? "PDF im Browser öffnen" : "Open PDF in browser"}
               </a>
             </Button>
           </div>
@@ -1240,16 +1235,11 @@ const Anamnesebogen = () => {
                       : "Prefer to fill out offline? Acrobat Reader version (PDF) available:"}
                   </span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex">
                   <Button asChild size="sm" variant="default">
                     <a href="/anamnesebogen-blanko.pdf" download>
                       <FileDown className="w-4 h-4 mr-2" />
                       {language === "de" ? "PDF herunterladen" : "Download PDF"}
-                    </a>
-                  </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <a href="/anamnesebogen-blanko.pdf" target="_blank" rel="noopener noreferrer">
-                      {language === "de" ? "Im Browser öffnen" : "Open in browser"}
                     </a>
                   </Button>
                 </div>
