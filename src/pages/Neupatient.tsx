@@ -144,6 +144,26 @@ const Neupatient = () => {
       <section className="pb-12 md:pb-16">
         <div className="container">
           <div className="mx-auto max-w-4xl">
+            {/* Prominenter Verweis auf „Ihr Therapieweg" – garantiert im Sichtbereich */}
+            <a
+              href="/therapieweg-uebersicht.html"
+              className="mb-10 flex flex-col items-start justify-between gap-4 rounded-2xl border-2 border-primary bg-primary p-6 text-primary-foreground shadow-elevated transition-transform hover:scale-[1.01] md:flex-row md:items-center"
+            >
+              <div>
+                <h2 className="font-serif text-xl font-semibold md:text-2xl">
+                  Der gesamte Behandlungsablauf: Ihr Therapieweg
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-sage-100">
+                  Von Anamnese über Erstgespräch, Diagnostik (Metatron, Trikombin, Vieva) und Labor
+                  bis zum individuellen Therapieplan — Schritt für Schritt erklärt.
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-background px-5 py-3 text-sm font-semibold text-primary shadow-md">
+                Ihr Therapieweg ansehen
+                <ArrowUpRight className="h-4 w-4" />
+              </span>
+            </a>
+
             <h2 className="mb-3 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
               Übersicht: Anamnese & Dokumente
             </h2>
