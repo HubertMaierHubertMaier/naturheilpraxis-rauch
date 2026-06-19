@@ -8,7 +8,6 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RoleSimulator } from "@/components/dev/RoleSimulator";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 import InfothekGateRoute from "@/components/InfothekGateRoute";
 import CookieBanner from "@/components/CookieBanner";
 import SchemaOrg from "@/components/seo/SchemaOrg";
