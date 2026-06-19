@@ -40,7 +40,7 @@ const Neupatient = () => {
       n: "3",
       icon: CalendarCheck,
       title: "Erster Termin",
-      text: "Online-Anmeldung wird automatisch an die Praxis übermittelt. PDF-Variante bitte ausgefüllt zum Ersttermin mitbringen oder vorab eingescannt an anamnese@art-of-therapy.de senden.",
+      text: "Bringe den ausgefüllten Anamnesebogen zum Ersttermin mit — oder sende ihn vorab eingescannt an anamnese@art-of-therapy.de.",
     },
   ];
 
