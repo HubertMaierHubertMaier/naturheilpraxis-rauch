@@ -560,11 +560,71 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Teilbereich-Backup: liefert für einen Bereich JSON-Daten aller zugehörigen
+    // DB-Tabellen + signierte URLs der zugehörigen Storage-Dateien.
+    // Public-Assets aus `public/` lädt der Browser selbst (sind statisch ausgeliefert).
+    if (mode === "subset") {
+      const areaId = (url.searchParams.get("area") || "").toLowerCase();
+      const area = AREA_MAP[areaId];
+      if (!area) {
+        return new Response(
+          JSON.stringify({ error: `unknown area '${areaId}'`, available: Object.keys(AREA_MAP) }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const tablesOut: Record<string, { rows: Record<string, unknown>[]; error?: string }> = {};
+      for (const t of area.tables) {
+        try {
+          const rows = await fetchTableAll(adminClient, t);
+          tablesOut[t] = { rows };
+        } catch (e) {
+          tablesOut[t] = { rows: [], error: e instanceof Error ? e.message : String(e) };
+        }
+      }
+
+      const storageOut: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
+      for (const bucket of area.buckets) {
+        try {
+          const files = await listAllFiles(adminClient, bucket);
+          const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
+          const batchSize = 100;
+          for (let i = 0; i < files.length; i += batchSize) {
+            const batch = files.slice(i, i + batchSize);
+            const { data, error } = await adminClient.storage
+              .from(bucket)
+              .createSignedUrls(batch.map((f) => f.path), 60 * 60);
+            if (error) throw error;
+            for (let j = 0; j < batch.length; j++) {
+              const su = data?.[j];
+              if (su?.signedUrl) {
+                entries.push({ path: batch[j].path, size: batch[j].size, signedUrl: su.signedUrl });
+              }
+            }
+          }
+          storageOut[bucket] = entries;
+        } catch (e) {
+          console.error(`[backup-export] subset storage ${bucket}:`, e);
+          storageOut[bucket] = [];
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          area: areaId,
+          generatedAt: new Date().toISOString(),
+          tables: tablesOut,
+          storage: storageOut,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     if (mode !== "db") {
-      return new Response(JSON.stringify({ error: "mode must be stats|db|storage-list|github-code" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "mode must be stats|db|storage-list|github-code|subset" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // mode=db: nur Datenbank, serverseitig ZIP bauen (klein & schnell)
