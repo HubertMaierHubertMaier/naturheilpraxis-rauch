@@ -45,6 +45,7 @@ import {
   Droplets,
   Activity,
   Bone,
+  LogIn,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
