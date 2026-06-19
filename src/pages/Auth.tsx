@@ -642,9 +642,9 @@ const Auth: React.FC = () => {
                 <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                   <p>
                     {language === 'de' ? (
-                      <>Bitte lesen Sie vor der Registrierung unseren Artikel <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">„Ihr Therapieweg"</a> — darin finden Sie alle Informationen zu Ablauf, Wartezeiten und Erstgespräch.</>
+                      <>Die <strong>Wartezeit</strong> auf einen Ersttermin schwankt je nach Auslastung — aktuell ca. <strong>2 Wochen</strong>, in stärker gebuchten Phasen auch <strong>mehrere Wochen</strong>. Bitte ruf vorab an: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a> (AB → ich rufe zurück). Details zu Ablauf und Methoden findest Du im Artikel <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">„Ihr Therapieweg"</a>.</>
                     ) : (
-                      <>Please read our article <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">"Your Therapy Path"</a> before registering — it contains all information on procedure, waiting times and first consultation.</>
+                      <>Waiting time for a first appointment varies by workload — currently ~<strong>2 weeks</strong>, in busy periods <strong>several weeks</strong>. Please call first: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a>. Details on procedure and methods are in our article <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">"Your Therapy Path"</a>.</>
                     )}
                   </p>
                 </div>
@@ -660,8 +660,8 @@ const Auth: React.FC = () => {
                 />
                 <span className="text-sm leading-relaxed text-foreground">
                   {language === 'de'
-                    ? 'Ich habe den Artikel „Ihr Therapieweg" gelesen und verstanden, dass ein telefonischer Erstkontakt erforderlich ist.'
-                    : 'I have read the article "Your Therapy Path" and understand that a phone call is required first.'}
+                    ? 'Ich habe gelesen, dass ich zuerst telefonisch einen Termin vereinbare und dass die Wartezeit je nach Auslastung von ca. 2 Wochen bis zu mehreren Wochen betragen kann.'
+                    : 'I have read that I need to call first to book an appointment and that waiting time varies from ~2 weeks up to several weeks depending on workload.'}
                 </span>
               </label>
             </div>
