@@ -651,7 +651,10 @@ const AccordionLayout = ({
 const Anamnesebogen = () => {
   useContentProtection();
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const { enabled: anamnesePublic } = useAnamnesePublic();
+  const { enabled: anamneseOnlineEnabled } = useAnamneseOnlineEnabled();
+  const showOnlineOptions = isAdmin || (anamneseOnlineEnabled && !!user);
   const location = useLocation();
   const navigate = useNavigate();
   const cameFromErstanmeldung = (location.state as RouteState | null)?.from === "erstanmeldung";
