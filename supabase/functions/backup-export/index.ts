@@ -72,6 +72,21 @@ const FALLBACK_TABLES = [
 
 const FALLBACK_BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
 
+// Spiegel-Definition der Teilbereich-Backups (vgl. src/lib/backupAreas.ts).
+// Hier nur die serverseitig relevanten Felder (Tabellen + Buckets).
+type AreaDef = { tables: string[]; buckets: string[] };
+const AREA_MAP: Record<string, AreaDef> = {
+  "anamnesebogen":       { tables: ["anamnesis_submissions"], buckets: ["anamnesis-pdfs"] },
+  "vertrag-datenschutz": { tables: [], buckets: [] },
+  "wiki":                { tables: ["admin_knowledge_base", "faqs", "practice_pricing", "practice_info"], buckets: [] },
+  "infothek":            { tables: ["infothek_gating"], buckets: [] },
+  "hypnose":             { tables: [], buckets: [] },
+  "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
+  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
+  "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings"], buckets: [] },
+  "edge-mail":           { tables: [], buckets: [] },
+};
+
 // System-Tabellen, die niemals gesichert werden (interne Supabase-Mechanik)
 const TABLE_BLOCKLIST = new Set<string>([
   "schema_migrations",
