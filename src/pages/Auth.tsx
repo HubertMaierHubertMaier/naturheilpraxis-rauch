@@ -163,7 +163,18 @@ const Auth: React.FC = () => {
   // Handle Registration with email verification
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!acceptedPracticeNotice) {
+      toast({
+        title: language === 'de' ? 'Hinweis bestätigen' : 'Confirm notice',
+        description: language === 'de'
+          ? 'Bitte bestätige den Hinweis zum Praxisablauf, um Dich zu registrieren.'
+          : 'Please confirm the practice notice to register.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
