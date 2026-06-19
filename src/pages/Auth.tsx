@@ -635,19 +635,74 @@ const Auth: React.FC = () => {
       {/* Registration Tab */}
       <TabsContent value="registration">
         <form onSubmit={handleRegistrationSubmit} className="space-y-4">
-          <Alert className="bg-sage-50 border-sage-200">
-            <Info className="h-4 w-4 text-primary" />
-            <AlertDescription className="text-sm">
-              {isExistingPatient
-                ? (language === 'de'
+          {!isExistingPatient && (
+            <div className="rounded-xl border-2 border-primary/30 bg-sage-50 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="space-y-2 text-sm">
+                  <p className="font-serif font-semibold text-foreground text-base">
+                    {language === 'de' ? 'Bevor Du Dich registrierst — bitte kurz lesen:' : 'Before you register — please read:'}
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground leading-relaxed">
+                    <li>
+                      {language === 'de'
+                        ? 'Das Erstgespräch dauert ca. 90 Minuten und ist nur nach telefonischer Terminvereinbarung möglich.'
+                        : 'The first consultation lasts ~90 min and requires a phone appointment.'}
+                    </li>
+                    <li>
+                      {language === 'de' ? (
+                        <>
+                          Die <strong>Wartezeit</strong> auf einen Ersttermin schwankt je nach Auslastung — aktuell ca. <strong>2 Wochen</strong>, in stärker gebuchten Phasen auch <strong>mehrere Wochen</strong>. Bitte ruf vorab an: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a> (AB → ich rufe zurück).
+                        </>
+                      ) : (
+                        <>
+                          Waiting time for a first appointment varies — currently ~<strong>2 weeks</strong>, in busy periods <strong>several weeks</strong>. Please call first: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a>.
+                        </>
+                      )}
+                    </li>
+                    <li>
+                      {language === 'de'
+                        ? 'Der Anamnesebogen ist nur dann sinnvoll, wenn Du auch wirklich zum Termin kommst — er bleibt ansonsten ungenutzt.'
+                        : 'The anamnesis form only makes sense if you actually come to the appointment.'}
+                    </li>
+                    <li>
+                      {language === 'de' ? (
+                        <>Ablauf, Methoden und Kosten findest Du im Artikel <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">„Ihr Therapieweg"</a>.</>
+                      ) : (
+                        <>Procedure, methods and costs are described in our article <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">"Your Therapy Path"</a>.</>
+                      )}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2 cursor-pointer rounded-lg bg-background border border-border p-3 hover:border-primary/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={acceptedPracticeNotice}
+                  onChange={(e) => setAcceptedPracticeNotice(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-primary shrink-0"
+                  disabled={loading}
+                />
+                <span className="text-sm leading-relaxed text-foreground">
+                  {language === 'de'
+                    ? 'Ich habe gelesen, dass ich zuerst telefonisch einen Termin vereinbare und dass die Wartezeit je nach Auslastung von ca. 2 Wochen bis zu mehreren Wochen betragen kann.'
+                    : 'I have read that I need to call first to book an appointment and that waiting time varies from ~2 weeks up to several weeks depending on workload.'}
+                </span>
+              </label>
+            </div>
+          )}
+
+          {isExistingPatient && (
+            <Alert className="bg-sage-50 border-sage-200">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-sm">
+                {language === 'de'
                   ? 'Als bestehender Patient: Nach der Registrierung wird die Praxis informiert und Ihren Zugang freischalten.'
-                  : 'As an existing patient: After registration, the practice will be notified and will activate your access.')
-                : (language === 'de' 
-                  ? 'Neu hier? Bitte legen Sie hier Ihr Konto an. Falls Sie bereits ein Konto haben, wechseln Sie oben zum Tab „Anmelden".' 
-                  : 'New here? Create your account below. If you already have an account, switch to the "Login" tab above.')
-              }
-            </AlertDescription>
-          </Alert>
+                  : 'As an existing patient: After registration, the practice will be notified and will activate your access.'}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="email-register">
