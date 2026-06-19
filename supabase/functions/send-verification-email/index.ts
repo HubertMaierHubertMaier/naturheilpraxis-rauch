@@ -137,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     await client.send({
-      from: "info@rauch-heilpraktiker.de",
+      from: "praxis_rauch@icloud.com",
       to: email,
       subject: subject,
       content: "auto",

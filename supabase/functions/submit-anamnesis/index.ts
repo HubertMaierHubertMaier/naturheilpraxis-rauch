@@ -573,9 +573,9 @@ serve(async (req) => {
       // ── Send practice emails in parallel to avoid timeout from sequential delays ──
       const practiceEmails: Promise<any>[] = [];
       
-      // Anamnese notification to practice (anamnese@ address)
+      // Anamnese notification to practice
       practiceEmails.push(sendEmail({
-        to: "anamnese@art-of-therapy.de",
+        to: "praxis_rauch@icloud.com",
         subject: `Neuer Anamnesebogen eingegangen: ${escapeHtml(patientName)}`,
         html: `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -674,7 +674,7 @@ serve(async (req) => {
   <p>Ihre Angaben werden vor Ihrem Termin von Peter Rauch geprüft, um eine optimale Behandlung zu gewährleisten.</p>
   <p>Bei Fragen erreichen Sie uns unter:</p>
   <ul>
-    <li>E-Mail: info@rauch-heilpraktiker.de</li>
+    <li>E-Mail: praxis_rauch@icloud.com</li>
     <li>Telefon: 0821-4504050</li>
   </ul>
    <p>📎 Eine Kopie Ihres Anamnesebogens finden Sie als <strong>PDF im Anhang</strong> dieser E-Mail.</p>

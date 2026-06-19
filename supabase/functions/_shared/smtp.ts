@@ -34,7 +34,7 @@ function encodeSubjectRfc2047(subject: string): string {
 export async function sendEmail(
   options: SendEmailOptions
 ): Promise<{ attachmentSent: boolean }> {
-  const { to, subject, html, from = "info@rauch-heilpraktiker.de", attachment } = options;
+  const { to, subject, html, from = "praxis_rauch@icloud.com", attachment } = options;
 
   const relaySecret = Deno.env.get("RELAY_SECRET");
   if (!relaySecret) throw new Error("Email service not configured (missing RELAY_SECRET)");
@@ -146,7 +146,7 @@ async function notifyAdminPdfFailure(
         "X-Relay-Token": relaySecret,
       },
       body: JSON.stringify({
-        to: "info@rauch-heilpraktiker.de",
+        to: "praxis_rauch@icloud.com",
         subject: `[WARNUNG] PDF-Anhang fehlgeschlagen: ${filename}`,
         html: `<div style="font-family:Arial,sans-serif;padding:20px;">
           <h2 style="color:#c0392b;">⚠️ PDF-Anhang konnte nicht gesendet werden</h2>
@@ -158,7 +158,7 @@ async function notifyAdminPdfFailure(
           <hr style="margin:15px 0;border:none;border-top:1px solid #ddd;">
           <p style="color:#666;font-size:12px;">Die E-Mail wurde ohne Anhang gesendet. Bitte prüfen Sie den Vorgang im Admin-Bereich und senden Sie ggf. erneut.</p>
         </div>`,
-        from: "info@rauch-heilpraktiker.de",
+        from: "praxis_rauch@icloud.com",
       }),
     });
     console.log(`[relay] Admin notified about PDF failure for ${originalTo}`);
