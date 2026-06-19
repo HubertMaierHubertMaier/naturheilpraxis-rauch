@@ -15,7 +15,7 @@ export function LoginDisabledBanner() {
       <div className="container flex items-center gap-2 py-2 text-sm">
         <Lock className="h-4 w-4 flex-shrink-0" />
         <span>
-          <strong>Hinweis:</strong> Die Online-Anmeldung für Patientinnen und Patienten
+          <strong>Hinweis:</strong> Der Patienten-Login
           ist derzeit nicht möglich. Öffentliche <strong>Infothek</strong>-Beiträge bleiben
           lesbar; geschützte Beiträge sind mit Schloss markiert und benötigen eine
           persönliche Freischaltung. Bitte kontaktieren Sie die Praxis telefonisch.
