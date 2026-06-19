@@ -33,14 +33,14 @@ const Neupatient = () => {
     {
       n: "2",
       icon: PenLine,
-      title: "Erstanmeldung ausfüllen",
-      text: "Online im geschützten Patientenbereich (Anamnese + Patientenvertrag + Datenschutz-Einwilligung in einem geführten Formular, digital signiert) — oder klassisch als ausfüllbares PDF zum Ausdrucken.",
+      title: "Erstanmeldung als PDF ausfüllen",
+      text: "Lade das ausfüllbare PDF herunter (Anamnese + Patientenvertrag + Datenschutz-Einwilligung in einem Dokument), fülle es am Rechner oder handschriftlich aus und bringe es zum Ersttermin mit.",
     },
     {
       n: "3",
       icon: CalendarCheck,
       title: "Erster Termin",
-      text: "Online-Anmeldung wird automatisch an die Praxis übermittelt. PDF-Variante bitte ausgefüllt zum Ersttermin mitbringen oder vorab eingescannt an anamnese@art-of-therapy.de senden.",
+      text: "Bringe den ausgefüllten Anamnesebogen zum Ersttermin mit — oder sende ihn vorab eingescannt an anamnese@art-of-therapy.de.",
     },
   ];
 
@@ -85,9 +85,9 @@ const Neupatient = () => {
             </h1>
             <p className="text-lg leading-relaxed text-sage-100 md:text-xl">
               Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können, fülle
-              die Erstanmeldung bitte schon zu Hause aus — entweder bequem online (Anamnese,
-              Patientenvertrag und Datenschutz-Einwilligung in einem geführten Formular mit
-              digitaler Unterschrift) oder klassisch als PDF zum Ausdrucken.
+              die Erstanmeldung bitte schon zu Hause aus — als ausfüllbares PDF zum Herunterladen
+              und Ausdrucken (Anamnese, Patientenvertrag und Datenschutz-Einwilligung in einem
+              Dokument zusammengefasst).
             </p>
           </div>
         </div>
@@ -132,7 +132,7 @@ const Neupatient = () => {
               Alles, was Du vor dem Erstkontakt brauchst — auf einen Blick.
             </p>
 
-            {/* Anamnesebogen – beide Varianten in einer Karte */}
+            {/* Anamnesebogen – PDF-Variante */}
             <div className="mb-6 rounded-2xl border-2 border-primary/30 bg-card p-6 shadow-elevated md:p-8">
               <div className="mb-5 flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-primary">
@@ -147,44 +147,25 @@ const Neupatient = () => {
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                {/* Variante 1: Online */}
-                <Link
-                  to="/auth?type=new_patient"
-                  className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
-                >
-                  <div className="mb-2 flex items-center gap-2 text-primary">
-                    <PenLine className="h-5 w-5" />
-                    <span className="font-serif text-base font-semibold">Online ausfüllen</span>
-                  </div>
-                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-                    Im geschützten Patientenbereich — Schritt für Schritt, mit Speichern, digitaler
-                    Unterschrift und 2-Faktor-Verifizierung. Login bzw. Registrierung erforderlich.
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                    Zum Login / Registrieren <ChevronRight className="h-4 w-4" />
-                  </span>
-                </Link>
-
-                {/* Variante 2: PDF (ausfüllbarer Acrobat-Reader-Bogen) */}
-                <a
-                  href="/anamnesebogen-blanko.pdf"
-                  download
-                  className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
-                >
-                  <div className="mb-2 flex items-center gap-2 text-primary">
-                    <Download className="h-5 w-5" />
-                    <span className="font-serif text-base font-semibold">Als PDF herunterladen</span>
-                  </div>
-                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-                    Ausfüllbares PDF (43 Seiten, AcroForm) — am Rechner mit Adobe Reader / Fill &amp; Sign
-                    ausfüllen, digital unterschreiben oder ausdrucken und handschriftlich unterschreiben.
-                  </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                    PDF herunterladen <ChevronRight className="h-4 w-4" />
-                  </span>
-                </a>
-              </div>
+              {/* PDF-Variante (einzig verfügbarer Weg) */}
+              <a
+                href="/anamnesebogen-blanko.pdf"
+                download
+                className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
+              >
+                <div className="mb-2 flex items-center gap-2 text-primary">
+                  <Download className="h-5 w-5" />
+                  <span className="font-serif text-base font-semibold">Anamnesebogen als PDF herunterladen</span>
+                </div>
+                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                  Ausfüllbares PDF (43 Seiten, AcroForm) — am Rechner mit Adobe Reader / Fill &amp; Sign
+                  ausfüllen, digital unterschreiben oder ausdrucken und handschriftlich unterschreiben.
+                  Enthält bereits Patientenvertrag und Datenschutz-Einwilligung.
+                </p>
+                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
+                  PDF herunterladen <ChevronRight className="h-4 w-4" />
+                </span>
+              </a>
             </div>
 
             {/* Hinweis: Vertrag & Datenschutz sind im PDF enthalten */}
@@ -211,7 +192,7 @@ const Neupatient = () => {
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
               Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
-              was Du da unterschreibst. Sowohl online als auch im PDF sind alle drei in einem Formular zusammengefasst.
+              was Du da unterschreibst. Alle drei sind im PDF zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
@@ -228,10 +209,6 @@ const Neupatient = () => {
         </div>
       </section>
 
-      {/* Online-Alternative */}
-      {/* Hinweis-Sektion zur Online-Variante wurde entfernt, weil das
-          Online-Formular aus Datenschutzgründen derzeit gesperrt ist.
-          Der ausfüllbare PDF-Anamnesebogen ist der einzige offizielle Weg. */}
 
 
       {/* FAQ */}
