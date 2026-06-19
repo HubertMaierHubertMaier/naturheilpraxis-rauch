@@ -86,6 +86,8 @@ import SignatureSection from "@/components/anamnese/SignatureSection";
 import VerificationDialog from "@/components/anamnese/VerificationDialog";
 import IAAForm from "@/components/iaa/IAAForm";
 import { supabase } from "@/integrations/supabase/client";
+import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
+import { useAnamneseOnlineEnabled } from "@/hooks/useAnamneseOnlineEnabled";
 
 type LayoutType = "wizard" | "accordion" | null;
 
