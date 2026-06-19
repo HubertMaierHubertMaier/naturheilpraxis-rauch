@@ -294,8 +294,8 @@ export default function Erstanmeldung() {
                       </h2>
                       <p className="text-muted-foreground leading-relaxed">
                         {t(
-                          "Für Ihre Erstanmeldung in der Naturheilpraxis Peter Rauch sind 3 Dokumente erforderlich. Der Anamnesebogen enthält bereits den IAA-Fragebogen (Individuelle Austestung und Analyse). Bitte nehmen Sie sich ausreichend Zeit für das sorgfältige Ausfüllen.",
-                          "For your first registration at the Naturopathic Practice Peter Rauch, 3 documents are required. The medical history form already includes the IAA questionnaire (Individual Testing and Analysis). Please take sufficient time to fill them out carefully."
+                          "Für Ihre Erstanmeldung benötigen wir Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung. Online führen wir Sie in 3 Abschnitten durch – der Anamnesebogen enthält bereits den IAA-Fragebogen. Alternativ können Sie das kombinierte PDF herunterladen, das alle drei Teile in einem Dokument bündelt (am PC ausfüllbar, ausdruckbar oder per E-Mail zurücksenden).",
+                          "For your first registration we need the medical history form, patient contract and data protection consent. Online we guide you through 3 sections – the medical history already includes the IAA questionnaire. Alternatively download the combined PDF which bundles all three parts in one document (fillable on PC, printable or returnable by email)."
                         )}
                       </p>
                     </div>
