@@ -1,7 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import {
-  FileText,
   Download,
   PenLine,
   CalendarCheck,
@@ -13,6 +12,7 @@ import {
   Phone,
   Sparkles,
   ChevronRight,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   Accordion,
@@ -28,7 +28,7 @@ const Neupatient = () => {
       n: "1",
       icon: Phone,
       title: "Anrufen (empfohlen)",
-      text: "Kurzes Telefonat unter 0821-2621462 — wir klären Dein Anliegen und stimmen einen Termin ab. Die Wartezeit liegt aktuell bei ca. 2 Wochen, in stärker gebuchten Phasen mehrere Wochen.",
+      text: "Kurzes Telefonat unter 0821-2621462 — wir klären Dein Anliegen, die Wartezeit und den passenden Termin. Den weiteren Praxisablauf findest Du im Artikel „Ihr Therapieweg“.",
     },
     {
       n: "2",
@@ -117,6 +117,25 @@ const Neupatient = () => {
                 <p className="text-sm leading-relaxed text-muted-foreground">{s.text}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-primary/20 bg-sage-50 p-6 md:flex md:items-center md:justify-between md:gap-6">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-foreground">
+                Der gesamte Ablauf: Ihr Therapieweg
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Die Erstanmeldung ist nur der erste Schritt. Der Artikel zeigt Dir den kompletten
+                Behandlungsweg von Anamnese und Erstgespräch bis Diagnostik, Labor und Therapieplan.
+              </p>
+            </div>
+            <a
+              href="/therapieweg-uebersicht.html"
+              className="mt-4 inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-transform hover:scale-105 md:mt-0"
+            >
+              Ihr Therapieweg ansehen
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
           </div>
         </div>
       </section>
