@@ -120,19 +120,73 @@ const Neupatient = () => {
         </div>
       </section>
 
-      {/* Dokumente zum Herunterladen */}
+      {/* Übersicht: Anamnese & Dokumente */}
       <section className="pb-12 md:pb-16">
         <div className="container">
           <div className="mx-auto max-w-4xl">
-            <h2 className="mb-6 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
-              Dokumente für Deinen ersten Termin
+            <h2 className="mb-3 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
+              Übersicht: Anamnese & Dokumente
             </h2>
             <p className="mb-8 text-center text-muted-foreground">
-              Lade die Formulare herunter, fülle sie zu Hause aus und bringe sie zum Termin mit — oder sende sie vorab per Mail.
+              Alles, was Du vor dem Erstkontakt brauchst — auf einen Blick.
             </p>
 
-            {/* Verfügbare PDFs direkt zum Download */}
-            <div className="space-y-4">
+            {/* Anamnesebogen – beide Varianten in einer Karte */}
+            <div className="mb-6 rounded-2xl border-2 border-primary/30 bg-card p-6 shadow-elevated md:p-8">
+              <div className="mb-5 flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-primary">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-semibold text-foreground">Anamnesebogen</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente,
+                    Lebensumstände. Je vollständiger, desto besser der Therapieplan.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {/* Variante 1: Online */}
+                <Link
+                  to="/auth?type=new_patient"
+                  className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
+                >
+                  <div className="mb-2 flex items-center gap-2 text-primary">
+                    <PenLine className="h-5 w-5" />
+                    <span className="font-serif text-base font-semibold">Online ausfüllen</span>
+                  </div>
+                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+                    Im geschützten Patientenbereich — Schritt für Schritt, mit Speichern, digitaler
+                    Unterschrift und 2-Faktor-Verifizierung. Login bzw. Registrierung erforderlich.
+                  </p>
+                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
+                    Zum Login / Registrieren <ChevronRight className="h-4 w-4" />
+                  </span>
+                </Link>
+
+                {/* Variante 2: PDF (Komplettpaket folgt) */}
+                <div className="flex flex-col rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20 p-5">
+                  <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                    <Download className="h-5 w-5" />
+                    <span className="font-serif text-base font-semibold">Als PDF herunterladen</span>
+                  </div>
+                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+                    Ausfüllbares PDF zum Drucken oder am Rechner ausfüllen (Acrobat Reader).
+                    Komplettpaket inkl. Vertrag &amp; Datenschutz folgt in Kürze.
+                  </p>
+                  <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    In Vorbereitung
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Zusatz-Dokumente: einzeln zum Download */}
+            <p className="mb-3 text-sm font-medium text-muted-foreground">
+              Zusätzliche Dokumente (bitte ebenfalls ausfüllen &amp; mitbringen):
+            </p>
+            <div className="space-y-3">
               {docs.filter((d) => d.file).map((d) => (
                 <a
                   key={d.file}
@@ -155,31 +209,6 @@ const Neupatient = () => {
                   </div>
                 </a>
               ))}
-
-              {/* Anamnesebogen – Hinweis, dass er im Patientenbereich verfügbar ist */}
-              <div className="flex items-start justify-between rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    <ClipboardList className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-lg font-semibold text-foreground">Anamnesebogen</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.
-                    </p>
-                    <p className="mt-2 text-xs text-primary font-medium">
-                      Wird nach Registrierung im geschützten Patientenbereich bereitgestellt.
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/auth?type=new_patient"
-                  className="flex shrink-0 items-center gap-2 rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Registrieren
-                </Link>
-              </div>
             </div>
           </div>
         </div>
