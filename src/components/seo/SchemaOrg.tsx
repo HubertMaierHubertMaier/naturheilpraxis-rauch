@@ -50,7 +50,7 @@ const SchemaOrg = () => {
           priceRange: "€€",
           currenciesAccepted: "EUR",
           paymentAccepted: "Cash, EC Card",
-          image: "https://id-preview--2a361a45-233a-4659-a3f4-a2f1dda0e86d.lovable.app/og-image.png",
+          image: "https://rauch-heilpraktiker.de/og-image.png",
           sameAs: [],
           founder: {
             "@type": "Person",
