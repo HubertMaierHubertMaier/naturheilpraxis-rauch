@@ -84,9 +84,10 @@ const Neupatient = () => {
               In 3 Schritten zu Deinem ersten Termin
             </h1>
             <p className="text-lg leading-relaxed text-sage-100 md:text-xl">
-              Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können,
-              bitte ich Dich, drei Dokumente bereits zu Hause auszufüllen. Hier findest Du alles
-              in einem Paket.
+              Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können, fülle
+              die Erstanmeldung bitte schon zu Hause aus — entweder bequem online (Anamnese,
+              Patientenvertrag und Datenschutz-Einwilligung in einem geführten Formular mit
+              digitaler Unterschrift) oder klassisch als PDF zum Ausdrucken.
             </p>
           </div>
         </div>
