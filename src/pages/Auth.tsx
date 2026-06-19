@@ -59,6 +59,7 @@ const Auth: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [acceptedPracticeNotice, setAcceptedPracticeNotice] = useState(false);
 
   // Handle Login with password + 2FA
   const handleLoginSubmit = async (e: React.FormEvent) => {
