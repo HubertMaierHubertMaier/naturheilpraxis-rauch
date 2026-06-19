@@ -26,21 +26,21 @@ const Neupatient = () => {
   const steps = [
     {
       n: "1",
-      icon: Download,
-      title: "Vorbereiten",
-      text: "Komplettpaket herunterladen — Anamnese, Patientenvertrag und Datenschutz-Einwilligung in einem PDF (49 Seiten).",
+      icon: Phone,
+      title: "Anrufen (empfohlen)",
+      text: "Kurzes Telefonat unter 0821-2621462 — wir klären Dein Anliegen und stimmen einen Termin ab. Die Wartezeit liegt aktuell bei ca. 2 Wochen, in stärker gebuchten Phasen mehrere Wochen.",
     },
     {
       n: "2",
       icon: PenLine,
-      title: "Ausfüllen & Unterschreiben",
-      text: "In Ruhe zu Hause ausfüllen, Datenschutz-Einwilligung und Vertrag unterschreiben. Bei Minderjährigen unterschreiben die Sorgeberechtigten mit.",
+      title: "Erstanmeldung ausfüllen",
+      text: "Online im geschützten Patientenbereich (Anamnese + Patientenvertrag + Datenschutz-Einwilligung in einem geführten Formular, digital signiert) — oder klassisch als ausfüllbares PDF zum Ausdrucken.",
     },
     {
       n: "3",
       icon: CalendarCheck,
-      title: "Mitbringen oder vorab senden",
-      text: "Zum ersten Termin mitbringen — oder vorab eingescannt per Mail an anamnese@art-of-therapy.de senden. So gewinnen wir Zeit für die eigentliche Behandlung.",
+      title: "Erster Termin",
+      text: "Online-Anmeldung wird automatisch an die Praxis übermittelt. PDF-Variante bitte ausgefüllt zum Ersttermin mitbringen oder vorab eingescannt an anamnese@art-of-therapy.de senden.",
     },
   ];
 
@@ -84,9 +84,10 @@ const Neupatient = () => {
               In 3 Schritten zu Deinem ersten Termin
             </h1>
             <p className="text-lg leading-relaxed text-sage-100 md:text-xl">
-              Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können,
-              bitte ich Dich, drei Dokumente bereits zu Hause auszufüllen. Hier findest Du alles
-              in einem Paket.
+              Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können, fülle
+              die Erstanmeldung bitte schon zu Hause aus — entweder bequem online (Anamnese,
+              Patientenvertrag und Datenschutz-Einwilligung in einem geführten Formular mit
+              digitaler Unterschrift) oder klassisch als PDF zum Ausdrucken.
             </p>
           </div>
         </div>
@@ -223,10 +224,11 @@ const Neupatient = () => {
         <div className="container">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-3 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
-              Warum diese drei Dokumente?
+              Warum diese Unterlagen?
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
-              Kurze Begründung, damit Du weißt, was Du da unterschreibst.
+              Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
+              was Du da unterschreibst. Online sind alle drei in einem Formular zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
