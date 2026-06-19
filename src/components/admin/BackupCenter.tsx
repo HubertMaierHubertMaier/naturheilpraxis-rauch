@@ -935,6 +935,71 @@ export function BackupCenter() {
         </CardContent>
       </Card>
 
+      {/* Teilbereich-Backups: pro Themengebiet ein eigenes kleines ZIP */}
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HardDrive className="h-5 w-5 text-primary" />
+            Teilbereich-Backups (lokal, thematisch aufgeteilt)
+          </CardTitle>
+          <CardDescription>
+            Statt einem großen ZIP gibt es hier <strong>kleine, thematische ZIPs</strong>:
+            Anamnesebogen, Wiki, Infothek, Hypnose, IAA/ICD-10 etc. Jedes ZIP enthält die
+            zugehörigen <em>DB-Tabellen + Storage-Dateien + Public-Assets + Restore-Anleitung</em>.
+            <br />
+            <strong>Vorteil:</strong> Wenn nur ein Teilbereich beschädigt ist, brauchst du nur das
+            kleine ZIP für diesen Bereich an Lovable zu schicken — nicht das ganze Mega-ZIP.
+            <br />
+            <strong>Empfehlung:</strong> 1× pro Monat alle Bereiche sichern; bei intensiver Arbeit
+            an einem Bereich (z. B. Wiki-Pflege) direkt vor & nach der Sitzung das passende ZIP.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {BACKUP_AREAS.map((area) => {
+              const busy = downloading === "subset" && subsetArea === area.id;
+              const disabled = downloading !== null && !busy;
+              return (
+                <Button
+                  key={area.id}
+                  variant="outline"
+                  onClick={() => downloadAreaBackup(area)}
+                  disabled={disabled}
+                  className="h-auto flex-col items-start gap-1 whitespace-normal py-3 text-left"
+                  title={area.description}
+                >
+                  <div className="flex w-full items-center gap-2">
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span className="font-semibold leading-tight">{area.label}</span>
+                  </div>
+                  <span className="text-xs font-normal leading-tight text-muted-foreground">
+                    {busy ? "Wird erstellt…" : area.description}
+                  </span>
+                  <span className="text-[10px] font-normal text-muted-foreground/80">
+                    {area.tables.length} Tabelle(n) · {area.buckets.length} Bucket(s) ·{" "}
+                    {area.publicAssets.length} Public-Datei(en)
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Wie spiele ich ein Teilbereich-ZIP zurück?</AlertTitle>
+            <AlertDescription className="text-sm">
+              ZIP in den Lovable-Chat ziehen und schreiben:
+              <code className="ml-1 rounded bg-muted px-1 py-0.5 text-xs">
+                Bitte spiele dieses Teilbereich-Backup wieder ein
+              </code>
+              . Lovable liest die mitgelieferte <code>RESTORE-ANLEITUNG.md</code> und fragt vor
+              jedem destruktiven Schritt nach.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+
+
       <Card>
 
         <CardHeader>
