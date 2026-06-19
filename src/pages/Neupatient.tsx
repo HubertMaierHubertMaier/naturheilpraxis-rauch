@@ -224,10 +224,11 @@ const Neupatient = () => {
         <div className="container">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-3 text-center font-serif text-2xl font-semibold text-foreground md:text-3xl">
-              Warum diese drei Dokumente?
+              Warum diese Unterlagen?
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
-              Kurze Begründung, damit Du weißt, was Du da unterschreibst.
+              Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
+              was Du da unterschreibst. Online sind alle drei in einem Formular zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
