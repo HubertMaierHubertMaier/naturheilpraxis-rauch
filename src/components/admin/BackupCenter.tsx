@@ -97,7 +97,8 @@ function saveBlob(blob: Blob, filename: string) {
 export function BackupCenter() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<"db" | "full" | "code" | null>(null);
+  const [downloading, setDownloading] = useState<"db" | "full" | "code" | "subset" | null>(null);
+  const [subsetArea, setSubsetArea] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<
