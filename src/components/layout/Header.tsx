@@ -64,12 +64,7 @@ export function Header() {
         { label: "Wiki", href: withDevParam("/wissensdatenbank"), icon: BookOpen },
         { label: "Bibliothek", href: withDevParam("/patienten-bibliothek"), icon: Library },
       ]
-    : user
-      ? [
-          { label: "Dashboard", href: "/dashboard", icon: User },
-          { label: "Bibliothek", href: "/patienten-bibliothek", icon: Library },
-        ]
-      : [];
+    : [];
 
   const handleSignOut = async () => {
     await signOut();
