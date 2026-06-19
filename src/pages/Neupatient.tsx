@@ -165,20 +165,24 @@ const Neupatient = () => {
                   </span>
                 </Link>
 
-                {/* Variante 2: PDF (Komplettpaket folgt) */}
-                <div className="flex flex-col rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20 p-5">
-                  <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                {/* Variante 2: PDF (ausfüllbarer Acrobat-Reader-Bogen) */}
+                <a
+                  href="/anamnesebogen-blanko.pdf"
+                  download
+                  className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
+                >
+                  <div className="mb-2 flex items-center gap-2 text-primary">
                     <Download className="h-5 w-5" />
                     <span className="font-serif text-base font-semibold">Als PDF herunterladen</span>
                   </div>
                   <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-                    Ausfüllbares PDF zum Drucken oder am Rechner ausfüllen (Acrobat Reader).
-                    Komplettpaket inkl. Vertrag &amp; Datenschutz folgt in Kürze.
+                    Ausfüllbares PDF (43 Seiten, AcroForm) — am Rechner mit Adobe Reader / Fill &amp; Sign
+                    ausfüllen, digital unterschreiben oder ausdrucken und handschriftlich unterschreiben.
                   </p>
-                  <span className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                    In Vorbereitung
+                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
+                    PDF herunterladen <ChevronRight className="h-4 w-4" />
                   </span>
-                </div>
+                </a>
               </div>
             </div>
 
