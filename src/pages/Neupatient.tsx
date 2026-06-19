@@ -50,7 +50,18 @@ const Neupatient = () => {
       title: "Anamnesebogen",
       file: "/anamnesebogen-blanko.pdf",
       why: "Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.",
-      included: "Patientenvertrag (§ 630a BGB) und Datenschutz-Einwilligung (Art. 9 DSGVO) sind in diesem PDF enthalten.",
+    },
+    {
+      icon: ScrollText,
+      title: "Patientenvertrag",
+      file: null,
+      why: "Rechtlich vorgeschrieben (§ 630a BGB): regelt Honorar, Termine und die 48-Stunden-Absageregelung. Klare Vereinbarung schützt beide Seiten. Bereits im Anamnese-PDF enthalten.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Datenschutz-Einwilligung",
+      file: null,
+      why: "Gesundheitsdaten sind nach Art. 9 DSGVO besonders geschützt. Ohne diese Einwilligung darf ich Deine Daten nicht verarbeiten. Bereits im Anamnese-PDF enthalten.",
     },
   ];
 
