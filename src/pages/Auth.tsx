@@ -639,40 +639,14 @@ const Auth: React.FC = () => {
             <div className="rounded-xl border-2 border-primary/30 bg-sage-50 p-4 space-y-3">
               <div className="flex items-start gap-2">
                 <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div className="space-y-2 text-sm">
-                  <p className="font-serif font-semibold text-foreground text-base">
-                    {language === 'de' ? 'Bevor Du Dich registrierst — bitte kurz lesen:' : 'Before you register — please read:'}
+                <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    {language === 'de' ? (
+                      <>Bitte lesen Sie vor der Registrierung unseren Artikel <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">„Ihr Therapieweg"</a> — darin finden Sie alle Informationen zu Ablauf, Wartezeiten und Erstgespräch.</>
+                    ) : (
+                      <>Please read our article <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">"Your Therapy Path"</a> before registering — it contains all information on procedure, waiting times and first consultation.</>
+                    )}
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground leading-relaxed">
-                    <li>
-                      {language === 'de'
-                        ? 'Das Erstgespräch dauert ca. 90 Minuten und ist nur nach telefonischer Terminvereinbarung möglich.'
-                        : 'The first consultation lasts ~90 min and requires a phone appointment.'}
-                    </li>
-                    <li>
-                      {language === 'de' ? (
-                        <>
-                          Die <strong>Wartezeit</strong> auf einen Ersttermin schwankt je nach Auslastung — aktuell ca. <strong>2 Wochen</strong>, in stärker gebuchten Phasen auch <strong>mehrere Wochen</strong>. Bitte ruf vorab an: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a> (AB → ich rufe zurück).
-                        </>
-                      ) : (
-                        <>
-                          Waiting time for a first appointment varies — currently ~<strong>2 weeks</strong>, in busy periods <strong>several weeks</strong>. Please call first: <a href="tel:08212621462" className="text-primary font-medium hover:underline">0821 - 2621462</a>.
-                        </>
-                      )}
-                    </li>
-                    <li>
-                      {language === 'de'
-                        ? 'Der Anamnesebogen ist nur dann sinnvoll, wenn Du auch wirklich zum Termin kommst — er bleibt ansonsten ungenutzt.'
-                        : 'The anamnesis form only makes sense if you actually come to the appointment.'}
-                    </li>
-                    <li>
-                      {language === 'de' ? (
-                        <>Ablauf, Methoden und Kosten findest Du im Artikel <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">„Ihr Therapieweg"</a>.</>
-                      ) : (
-                        <>Procedure, methods and costs are described in our article <a href="/therapieweg-uebersicht.html" target="_blank" rel="noopener" className="text-primary font-medium hover:underline">"Your Therapy Path"</a>.</>
-                      )}
-                    </li>
-                  </ul>
                 </div>
               </div>
 
@@ -686,8 +660,8 @@ const Auth: React.FC = () => {
                 />
                 <span className="text-sm leading-relaxed text-foreground">
                   {language === 'de'
-                    ? 'Ich habe gelesen, dass ich zuerst telefonisch einen Termin vereinbare und dass die Wartezeit je nach Auslastung von ca. 2 Wochen bis zu mehreren Wochen betragen kann.'
-                    : 'I have read that I need to call first to book an appointment and that waiting time varies from ~2 weeks up to several weeks depending on workload.'}
+                    ? 'Ich habe den Artikel „Ihr Therapieweg" gelesen und verstanden, dass ein telefonischer Erstkontakt erforderlich ist.'
+                    : 'I have read the article "Your Therapy Path" and understand that a phone call is required first.'}
                 </span>
               </label>
             </div>
