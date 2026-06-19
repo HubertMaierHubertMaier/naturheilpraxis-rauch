@@ -45,6 +45,7 @@ import {
   Droplets,
   Activity,
   Bone,
+  LogIn,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -85,6 +86,8 @@ import SignatureSection from "@/components/anamnese/SignatureSection";
 import VerificationDialog from "@/components/anamnese/VerificationDialog";
 import IAAForm from "@/components/iaa/IAAForm";
 import { supabase } from "@/integrations/supabase/client";
+import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
+import { useAnamneseOnlineEnabled } from "@/hooks/useAnamneseOnlineEnabled";
 
 type LayoutType = "wizard" | "accordion" | null;
 
@@ -147,9 +150,11 @@ const getFilteredSections = (gender: string) => {
 type LayoutSelectorProps = {
   language: string;
   onSelectLayout: (layout: Exclude<LayoutType, null>) => void;
+  showOnlineOptions: boolean;
+  onNavigateToLogin?: () => void;
 };
 
-const LayoutSelector = ({ language, onSelectLayout }: LayoutSelectorProps) => (
+const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigateToLogin }: LayoutSelectorProps) => (
   <div className="container py-12">
     <div className="mx-auto max-w-4xl">
       <div className="text-center mb-10">
@@ -202,106 +207,137 @@ const LayoutSelector = ({ language, onSelectLayout }: LayoutSelectorProps) => (
       <div className="grid md:grid-cols-2 gap-6">
 
         {/* Wizard Option */}
-        <Card
-          className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
-          onClick={() => onSelectLayout("wizard")}
-        >
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="font-serif text-xl group-hover:text-primary transition-colors">
-                  {language === "de" ? "Schritt für Schritt" : "Step by Step"}
-                </CardTitle>
-                <CardDescription>
-                  {language === "de" ? "mit Emojis 👤 ❤️ 🧠" : "with Emojis 👤 ❤️ 🧠"}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2 justify-center">
-              {["👋", "👤", "👨‍👩‍👧", "🩺", "💊"].map((emoji, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
-                  {emoji}
+        {showOnlineOptions ? (
+          <>
+            <Card
+              className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
+              onClick={() => onSelectLayout("wizard")}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="font-serif text-xl group-hover:text-primary transition-colors">
+                      {language === "de" ? "Schritt für Schritt" : "Step by Step"}
+                    </CardTitle>
+                    <CardDescription>
+                      {language === "de" ? "mit Emojis 👤 ❤️ 🧠" : "with Emojis 👤 ❤️ 🧠"}
+                    </CardDescription>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-foreground">✅ {language === "de" ? "Vorteile:" : "Benefits:"}</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• {language === "de" ? "Geführte Eingabe – immer wissen, wo Sie sind" : "Guided input – always know where you are"}</li>
-                <li>• {language === "de" ? "Fortschrittsanzeige zeigt bereits ausgefüllte Bereiche" : "Progress indicator shows completed sections"}</li>
-                <li>• {language === "de" ? "Ideal für Smartphones und Tablets" : "Ideal for smartphones and tablets"}</li>
-                <li>• {language === "de" ? "Übersichtlich bei vielen Fragen" : "Clear overview with many questions"}</li>
-              </ul>
-            </div>
-
-            <p className="text-sm text-muted-foreground text-center">
-              <strong>{language === "de" ? "Empfohlen für:" : "Recommended for:"}</strong>{" "}
-              {language === "de"
-                ? "Wer Schritt für Schritt durch das Formular geführt werden möchte"
-                : "Those who want to be guided through the form step by step"}
-            </p>
-
-            <Button className="w-full" variant="outline" type="button">
-              {language === "de" ? "Diese Variante wählen" : "Choose this option"}
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Accordion Option */}
-        <Card
-          className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
-          onClick={() => onSelectLayout("accordion")}
-        >
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                <LayoutList className="w-6 h-6 text-secondary-foreground" />
-              </div>
-              <div>
-                <CardTitle className="font-serif text-xl group-hover:text-primary transition-colors">
-                  {language === "de" ? "Alle Bereiche sichtbar" : "All sections visible"}
-                </CardTitle>
-                <CardDescription>{language === "de" ? "mit Icons und Farben" : "with icons and colors"}</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2 justify-center">
-              {[User, Heart, Stethoscope, Pill, Leaf].map((IconComp, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <IconComp className="w-5 h-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2 justify-center">
+                  {["👋", "👤", "👨‍👩‍👧", "🩺", "💊"].map((emoji, i) => (
+                    <div key={i} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg">
+                      {emoji}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium text-foreground">✅ {language === "de" ? "Vorteile:" : "Benefits:"}</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• {language === "de" ? "Komplette Übersicht aller Bereiche" : "Complete overview of all sections"}</li>
-                <li>• {language === "de" ? "Beliebig zwischen Abschnitten wechseln" : "Switch freely between sections"}</li>
-                <li>• {language === "de" ? "Professionelles, klares Design" : "Professional, clear design"}</li>
-                <li>• {language === "de" ? "Schneller Zugriff auf jeden Bereich" : "Quick access to every section"}</li>
-              </ul>
-            </div>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">✅ {language === "de" ? "Vorteile:" : "Benefits:"}</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• {language === "de" ? "Geführte Eingabe – immer wissen, wo Sie sind" : "Guided input – always know where you are"}</li>
+                    <li>• {language === "de" ? "Fortschrittsanzeige zeigt bereits ausgefüllte Bereiche" : "Progress indicator shows completed sections"}</li>
+                    <li>• {language === "de" ? "Ideal für Smartphones und Tablets" : "Ideal for smartphones and tablets"}</li>
+                    <li>• {language === "de" ? "Übersichtlich bei vielen Fragen" : "Clear overview with many questions"}</li>
+                  </ul>
+                </div>
 
-            <p className="text-sm text-muted-foreground text-center">
-              <strong>{language === "de" ? "Empfohlen für:" : "Recommended for:"}</strong>{" "}
-              {language === "de" ? "Wer gerne alles im Blick hat und frei navigieren möchte" : "Those who like to have an overview and navigate freely"}
-            </p>
+                <p className="text-sm text-muted-foreground text-center">
+                  <strong>{language === "de" ? "Empfohlen für:" : "Recommended for:"}</strong>{" "}
+                  {language === "de"
+                    ? "Wer Schritt für Schritt durch das Formular geführt werden möchte"
+                    : "Those who want to be guided through the form step by step"}
+                </p>
 
-            <Button className="w-full" variant="outline" type="button">
-              {language === "de" ? "Diese Variante wählen" : "Choose this option"}
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+                <Button className="w-full" variant="outline" type="button">
+                  {language === "de" ? "Diese Variante wählen" : "Choose this option"}
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Accordion Option */}
+            <Card
+              className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
+              onClick={() => onSelectLayout("accordion")}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                    <LayoutList className="w-6 h-6 text-secondary-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="font-serif text-xl group-hover:text-primary transition-colors">
+                      {language === "de" ? "Alle Bereiche sichtbar" : "All sections visible"}
+                    </CardTitle>
+                    <CardDescription>{language === "de" ? "mit Icons und Farben" : "with icons and colors"}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2 justify-center">
+                  {[User, Heart, Stethoscope, Pill, Leaf].map((IconComp, i) => (
+                    <div key={i} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <IconComp className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-medium text-foreground">✅ {language === "de" ? "Vorteile:" : "Benefits:"}</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• {language === "de" ? "Komplette Übersicht aller Bereiche" : "Complete overview of all sections"}</li>
+                    <li>• {language === "de" ? "Beliebig zwischen Abschnitten wechseln" : "Switch freely between sections"}</li>
+                    <li>• {language === "de" ? "Professionelles, klares Design" : "Professional, clear design"}</li>
+                    <li>• {language === "de" ? "Schneller Zugriff auf jeden Bereich" : "Quick access to every section"}</li>
+                  </ul>
+                </div>
+
+                <p className="text-sm text-muted-foreground text-center">
+                  <strong>{language === "de" ? "Empfohlen für:" : "Recommended for:"}</strong>{" "}
+                  {language === "de" ? "Wer gerne alles im Blick hat und frei navigieren möchte" : "Those who like to have an overview and navigate freely"}
+                </p>
+
+                <Button className="w-full" variant="outline" type="button">
+                  {language === "de" ? "Diese Variante wählen" : "Choose this option"}
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          /* Online-Formular gesperrt – Hinweis für nicht eingeloggte Besucher */
+          <Card className="md:col-span-2 border-dashed border-muted-foreground/30 bg-muted/30">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <LogIn className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="font-serif text-xl text-muted-foreground">
+                    {language === "de" ? "Online-Ausfüllen ist gesperrt" : "Online form is locked"}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === "de"
+                      ? "Das Online-Formular ist aktuell nicht verfügbar. Bitte nutzen Sie das PDF oder melden Sie sich an."
+                      : "The online form is currently unavailable. Please use the PDF or log in."}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={onNavigateToLogin} type="button">
+                <LogIn className="w-4 h-4 mr-2" />
+                {language === "de" ? "Zum Login" : "Go to Login"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   </div>
@@ -615,7 +651,10 @@ const AccordionLayout = ({
 const Anamnesebogen = () => {
   useContentProtection();
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const { enabled: anamnesePublic } = useAnamnesePublic();
+  const { enabled: anamneseOnlineEnabled } = useAnamneseOnlineEnabled();
+  const showOnlineOptions = isAdmin || (anamneseOnlineEnabled && !!user);
   const location = useLocation();
   const navigate = useNavigate();
   const cameFromErstanmeldung = (location.state as RouteState | null)?.from === "erstanmeldung";
@@ -1162,7 +1201,12 @@ const Anamnesebogen = () => {
             <p className="text-muted-foreground">{language === "de" ? "Wird geladen..." : "Loading..."}</p>
           </div>
         ) : selectedLayout === null ? (
-          <LayoutSelector language={language} onSelectLayout={(layout) => setSelectedLayout(layout)} />
+          <LayoutSelector
+            language={language}
+            onSelectLayout={(layout) => setSelectedLayout(layout)}
+            showOnlineOptions={showOnlineOptions}
+            onNavigateToLogin={() => navigate("/auth")}
+          />
         ) : null}
 
         {/* Edit mode banner */}
