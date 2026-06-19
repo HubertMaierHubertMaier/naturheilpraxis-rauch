@@ -48,20 +48,20 @@ const Neupatient = () => {
     {
       icon: ClipboardList,
       title: "Anamnesebogen",
-      file: null,
+      file: "/anamnesebogen-blanko.pdf",
       why: "Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.",
     },
     {
       icon: ScrollText,
       title: "Patientenvertrag",
-      file: "/patientenvertrag-blanko.pdf",
-      why: "Rechtlich vorgeschrieben (§ 630a BGB): regelt Honorar, Termine und die 48-Stunden-Absageregelung. Klare Vereinbarung schützt beide Seiten.",
+      file: null,
+      why: "Rechtlich vorgeschrieben (§ 630a BGB): regelt Honorar, Termine und die 48-Stunden-Absageregelung. Klare Vereinbarung schützt beide Seiten. Bereits im Anamnese-PDF enthalten.",
     },
     {
       icon: ShieldCheck,
       title: "Datenschutz-Einwilligung",
-      file: "/datenschutz-einwilligung-blanko.pdf",
-      why: "Gesundheitsdaten sind nach Art. 9 DSGVO besonders geschützt. Ohne diese Einwilligung darf ich Deine Daten nicht verarbeiten.",
+      file: null,
+      why: "Gesundheitsdaten sind nach Art. 9 DSGVO besonders geschützt. Ohne diese Einwilligung darf ich Deine Daten nicht verarbeiten. Bereits im Anamnese-PDF enthalten.",
     },
   ];
 
@@ -187,33 +187,16 @@ const Neupatient = () => {
               </div>
             </div>
 
-            {/* Zusatz-Dokumente: einzeln zum Download */}
-            <p className="mb-3 text-sm font-medium text-muted-foreground">
-              Zusätzliche Dokumente (bitte ebenfalls ausfüllen &amp; mitbringen):
-            </p>
-            <div className="space-y-3">
-              {docs.filter((d) => d.file).map((d) => (
-                <a
-                  key={d.file}
-                  href={d.file ?? "#"}
-                  download
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-card transition-all hover:border-primary/40 hover:bg-sage-50 hover:shadow-elevated"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-primary">
-                      <d.icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-serif text-lg font-semibold text-foreground">{d.title}</h3>
-                      <p className="text-sm text-muted-foreground">{d.why}</p>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-                    <Download className="h-4 w-4" />
-                    PDF
-                  </div>
-                </a>
-              ))}
+            {/* Hinweis: Vertrag & Datenschutz sind im PDF enthalten */}
+            <div className="mb-6 rounded-xl border border-primary/20 bg-sage-50 p-4 text-sm text-muted-foreground">
+              <p className="flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <strong>Ein PDF — alle Unterlagen:</strong> Der Anamnesebogen enthält bereits den
+                  Patientenvertrag (§ 630a BGB) und die Datenschutz-Einwilligung (Art. 9 DSGVO).
+                  Du musst keine weiteren Dokumente herunterladen.
+                </span>
+              </p>
             </div>
           </div>
         </div>
@@ -228,7 +211,7 @@ const Neupatient = () => {
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
               Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
-              was Du da unterschreibst. Online sind alle drei in einem Formular zusammengefasst.
+              was Du da unterschreibst. Sowohl online als auch im PDF sind alle drei in einem Formular zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
@@ -310,8 +293,8 @@ const Neupatient = () => {
                   Wie viel Zeit muss ich einplanen?
                 </AccordionTrigger>
                 <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                  Für den vollständigen Anamnesebogen solltest Du Dir 30–45 Minuten in Ruhe nehmen.
-                  Patientenvertrag und Datenschutz sind in 10 Minuten gelesen und unterschrieben.
+                  Für das komplette PDF-Paket (Anamnese inkl. Patientenvertrag und Datenschutz-Einwilligung)
+                  solltest Du Dir ca. 30–45 Minuten in Ruhe nehmen.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
