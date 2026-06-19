@@ -211,7 +211,7 @@ const Neupatient = () => {
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
               Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
-              was Du da unterschreibst. Online sind alle drei in einem Formular zusammengefasst.
+              was Du da unterschreibst. Sowohl online als auch im PDF sind alle drei in einem Formular zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
@@ -293,8 +293,8 @@ const Neupatient = () => {
                   Wie viel Zeit muss ich einplanen?
                 </AccordionTrigger>
                 <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                  Für den vollständigen Anamnesebogen solltest Du Dir 30–45 Minuten in Ruhe nehmen.
-                  Patientenvertrag und Datenschutz sind in 10 Minuten gelesen und unterschrieben.
+                  Für das komplette PDF-Paket (Anamnese inkl. Patientenvertrag und Datenschutz-Einwilligung)
+                  solltest Du Dir ca. 30–45 Minuten in Ruhe nehmen.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
