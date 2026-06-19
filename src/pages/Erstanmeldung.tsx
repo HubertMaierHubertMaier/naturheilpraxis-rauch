@@ -39,8 +39,8 @@ const steps: StepConfig[] = [
     id: "overview",
     titleDe: "Übersicht",
     titleEn: "Overview",
-    descDe: "3 Dokumente für Ihre Erstanmeldung",
-    descEn: "3 documents for your first registration",
+    descDe: "Erstanmeldung – 3 Schritte online oder 1 kombiniertes PDF",
+    descEn: "First registration – 3 online steps or 1 combined PDF",
     icon: Info,
   },
   {
