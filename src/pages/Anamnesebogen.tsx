@@ -46,6 +46,7 @@ import {
   Activity,
   Bone,
   LogIn,
+  ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -177,11 +178,11 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
             </div>
             <div>
               <CardTitle className="font-serif text-xl">
-                {language === "de" ? "Lieber offline ausfüllen? (PDF zum Ausdrucken oder am PC)" : "Prefer offline? (PDF to print or fill on PC)"}
+                {language === "de" ? "Aktuell: Anamnesebogen als PDF" : "Currently: medical history form as PDF"}
               </CardTitle>
               <CardDescription>
                 {language === "de"
-                  ? "Acrobat-Reader-Version – am Computer ausfüllbar, ausdruckbar oder per E-Mail zurücksenden."
+                  ? "Bitte PDF herunterladen, ausfüllen, ausdrucken und zum Ersttermin mitbringen — oder vorab eingescannt an praxis_rauch@icloud.com senden."
                   : "Acrobat Reader version – fillable on computer, printable, or send back via email."}
               </CardDescription>
             </div>
@@ -196,6 +197,27 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
               </a>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6 border-primary/20 bg-sage-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-serif text-xl">
+            {language === "de" ? "Der weitere Ablauf: Ihr Therapieweg" : "The next steps: your therapy pathway"}
+          </CardTitle>
+          <CardDescription>
+            {language === "de"
+              ? "Für Erstkontakt, Wartezeit, Ersttermin, Diagnostik und Therapieplan bitte den Ablauf-Artikel öffnen."
+              : "For first contact, waiting time, first appointment, diagnostics and therapy planning, please open the pathway article."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <a href="/therapieweg-uebersicht.html">
+              {language === "de" ? "Ihr Therapieweg ansehen" : "View therapy pathway"}
+              <ArrowUpRight className="w-4 h-4 ml-2" />
+            </a>
+          </Button>
         </CardContent>
       </Card>
 
@@ -319,7 +341,7 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
                   </CardTitle>
                   <CardDescription>
                     {language === "de"
-                      ? "Das Online-Formular ist aktuell nicht verfügbar. Bitte nutzen Sie das PDF oder melden Sie sich an."
+                      ? "Das Online-Formular ist für Besucher nicht verfügbar. Bitte nutze aktuell das PDF; der restliche Ablauf steht unter „Ihr Therapieweg“."
                       : "The online form is currently unavailable. Please use the PDF or log in."}
                   </CardDescription>
                 </div>
