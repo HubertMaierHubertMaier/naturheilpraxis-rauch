@@ -20,6 +20,7 @@ import { InfothekDropdown } from "./InfothekDropdown";
 import { activateDevAdminBypass, clearDevAdminBypass, isDevAdminBypassActive, isDevHost, withDevParam } from "@/lib/devAdminBypass";
 
 import { usePatientAccess } from "@/hooks/usePatientAccess";
+import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
