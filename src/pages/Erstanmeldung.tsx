@@ -165,8 +165,8 @@ export default function Erstanmeldung() {
             </h1>
             <p className="text-muted-foreground">
               {t(
-                "Bitte füllen Sie die folgenden 3 Dokumente für Ihre Erstanmeldung aus.",
-                "Please complete the following 3 documents for your first registration."
+                "Bitte füllen Sie die folgenden 3 Abschnitte für Ihre Erstanmeldung aus – oder laden Sie alternativ das kombinierte PDF herunter (Anamnesebogen, Patientenvertrag und Datenschutz in einem Dokument).",
+                "Please complete the following 3 sections for your first registration – or alternatively download the combined PDF (medical history, patient contract and data protection in one document)."
               )}
             </p>
             {terminConfirmed && (
