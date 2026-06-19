@@ -6,7 +6,7 @@ import { FileText } from "lucide-react";
 
 export default function Erstanmeldung() {
   const { t, language } = useLanguage();
-  const pdfHref = language === "de" ? "/anamnesebogen-blanko.pdf" : "/anamnesebogen-blanko.pdf";
+  const pdfHref = "/anamnesebogen-blanko.pdf";
 
   return (
     <Layout>
@@ -41,12 +41,12 @@ export default function Erstanmeldung() {
                 "Please download the PDF, fill it out on your computer and then return it by email or bring a printed copy to your appointment."
               )}
             </p>
-            <a href="/anamnesebogen-blanko.pdf" download>
-              <Button size="lg" className="gap-2">
+            <Button size="lg" className="gap-2" asChild>
+              <a href={pdfHref} download>
                 <FileText className="h-4 w-4" />
                 {t("Erstanmeldungs-PDF herunterladen", "Download registration PDF")}
-              </Button>
-            </a>
+              </a>
+            </Button>
           </CardContent>
         </Card>
       </section>
