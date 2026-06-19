@@ -150,9 +150,11 @@ const getFilteredSections = (gender: string) => {
 type LayoutSelectorProps = {
   language: string;
   onSelectLayout: (layout: Exclude<LayoutType, null>) => void;
+  showOnlineOptions: boolean;
+  onNavigateToLogin?: () => void;
 };
 
-const LayoutSelector = ({ language, onSelectLayout }: LayoutSelectorProps) => (
+const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigateToLogin }: LayoutSelectorProps) => (
   <div className="container py-12">
     <div className="mx-auto max-w-4xl">
       <div className="text-center mb-10">
