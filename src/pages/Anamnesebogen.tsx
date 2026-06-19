@@ -163,7 +163,44 @@ const LayoutSelector = ({ language, onSelectLayout }: LayoutSelectorProps) => (
         </p>
       </div>
 
+      {/* PDF Offline-Variante */}
+      <Card className="mb-6 border-2 border-dashed border-primary/40 bg-primary/5">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <FileDown className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="font-serif text-xl">
+                {language === "de" ? "Lieber offline ausfüllen? (PDF zum Ausdrucken oder am PC)" : "Prefer offline? (PDF to print or fill on PC)"}
+              </CardTitle>
+              <CardDescription>
+                {language === "de"
+                  ? "Acrobat-Reader-Version – am Computer ausfüllbar, ausdruckbar oder per E-Mail zurücksenden."
+                  : "Acrobat Reader version – fillable on computer, printable, or send back via email."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button asChild variant="default" className="flex-1">
+              <a href="/anamnesebogen-blanko.pdf" download>
+                <FileDown className="w-4 h-4 mr-2" />
+                {language === "de" ? "Anamnesebogen als PDF herunterladen" : "Download anamnesis form as PDF"}
+              </a>
+            </Button>
+            <Button asChild variant="outline" className="flex-1">
+              <a href="/anamnesebogen-blanko.pdf" target="_blank" rel="noopener noreferrer">
+                {language === "de" ? "PDF im Browser öffnen" : "Open PDF in browser"}
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid md:grid-cols-2 gap-6">
+
         {/* Wizard Option */}
         <Card
           className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
