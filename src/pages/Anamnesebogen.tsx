@@ -1201,7 +1201,12 @@ const Anamnesebogen = () => {
             <p className="text-muted-foreground">{language === "de" ? "Wird geladen..." : "Loading..."}</p>
           </div>
         ) : selectedLayout === null ? (
-          <LayoutSelector language={language} onSelectLayout={(layout) => setSelectedLayout(layout)} />
+          <LayoutSelector
+            language={language}
+            onSelectLayout={(layout) => setSelectedLayout(layout)}
+            showOnlineOptions={showOnlineOptions}
+            onNavigateToLogin={() => navigate("/auth")}
+          />
         ) : null}
 
         {/* Edit mode banner */}
