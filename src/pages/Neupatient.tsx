@@ -132,7 +132,7 @@ const Neupatient = () => {
               Alles, was Du vor dem Erstkontakt brauchst — auf einen Blick.
             </p>
 
-            {/* Anamnesebogen – beide Varianten in einer Karte */}
+            {/* Anamnesebogen – PDF-Variante */}
             <div className="mb-6 rounded-2xl border-2 border-primary/30 bg-card p-6 shadow-elevated md:p-8">
               <div className="mb-5 flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100 text-primary">
@@ -192,7 +192,7 @@ const Neupatient = () => {
             </h2>
             <p className="mb-10 text-center text-muted-foreground">
               Anamnese, Patientenvertrag und Datenschutz-Einwilligung — kurz erklärt, damit Du weißt,
-              was Du da unterschreibst. Sowohl online als auch im PDF sind alle drei in einem Formular zusammengefasst.
+              was Du da unterschreibst. Alle drei sind im PDF zusammengefasst.
             </p>
             <div className="grid gap-5 md:grid-cols-3">
               {docs.map((d) => (
@@ -209,10 +209,6 @@ const Neupatient = () => {
         </div>
       </section>
 
-      {/* Online-Alternative */}
-      {/* Hinweis-Sektion zur Online-Variante wurde entfernt, weil das
-          Online-Formular aus Datenschutzgründen derzeit gesperrt ist.
-          Der ausfüllbare PDF-Anamnesebogen ist der einzige offizielle Weg. */}
 
 
       {/* FAQ */}
