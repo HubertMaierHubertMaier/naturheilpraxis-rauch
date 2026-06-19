@@ -284,11 +284,11 @@ export default function Datenschutz() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
                 <a
-                  href="mailto:info@rauch-heilpraktiker.de"
+                  href="mailto:praxis_rauch@icloud.com"
                   className="inline-flex items-center gap-2 text-primary hover:underline"
                 >
                   <Mail className="h-4 w-4" />
-                  info@rauch-heilpraktiker.de
+                  praxis_rauch@icloud.com
                 </a>
                 <a
                   href="tel:+498212621462"
