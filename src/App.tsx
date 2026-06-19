@@ -29,7 +29,7 @@ const Ernaehrung = lazy(() => import("./pages/Ernaehrung"));
 const MilchUnvertraeglichkeit = lazy(() => import("./pages/MilchUnvertraeglichkeit"));
 const MilchKnochengesundheit = lazy(() => import("./pages/MilchKnochengesundheit"));
 const RohmilchMikrobiologie = lazy(() => import("./pages/RohmilchMikrobiologie"));
-const Frequenztherapie = lazy(() => import("./pages/Frequenztherapie"));
+
 const FAQ = lazy(() => import("./pages/FAQ"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const PatientDashboard = lazy(() => import("./pages/PatientDashboard"));
@@ -82,7 +82,7 @@ const App = () => (
               <Route path="/milch-unvertraeglichkeit" element={<InfothekGateRoute defaultGated><MilchUnvertraeglichkeit /></InfothekGateRoute>} />
               <Route path="/milch-knochengesundheit" element={<InfothekGateRoute defaultGated><MilchKnochengesundheit /></InfothekGateRoute>} />
               <Route path="/rohmilch-mikrobiologie" element={<InfothekGateRoute defaultGated><RohmilchMikrobiologie /></InfothekGateRoute>} />
-              <Route path="/frequenztherapie" element={<InfothekGateRoute><Frequenztherapie /></InfothekGateRoute>} />
+              
               <Route path="/faq" element={<InfothekGateRoute><FAQ /></InfothekGateRoute>} />
               <Route path="/praxis-info" element={<PraxisInfo />} />
               <Route path="/impressum" element={<Impressum />} />
