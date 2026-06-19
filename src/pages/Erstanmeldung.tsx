@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 
 export default function Erstanmeldung() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const pdfHref = "/anamnesebogen-blanko.pdf";
 
   return (
