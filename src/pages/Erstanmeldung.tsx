@@ -39,8 +39,8 @@ const steps: StepConfig[] = [
     id: "overview",
     titleDe: "Übersicht",
     titleEn: "Overview",
-    descDe: "3 Dokumente für Ihre Erstanmeldung",
-    descEn: "3 documents for your first registration",
+    descDe: "Erstanmeldung – 3 Schritte online oder 1 kombiniertes PDF",
+    descEn: "First registration – 3 online steps or 1 combined PDF",
     icon: Info,
   },
   {
@@ -165,8 +165,8 @@ export default function Erstanmeldung() {
             </h1>
             <p className="text-muted-foreground">
               {t(
-                "Bitte füllen Sie die folgenden 3 Dokumente für Ihre Erstanmeldung aus.",
-                "Please complete the following 3 documents for your first registration."
+                "Bitte füllen Sie die folgenden 3 Abschnitte für Ihre Erstanmeldung aus – oder laden Sie alternativ das kombinierte PDF herunter (Anamnesebogen, Patientenvertrag und Datenschutz in einem Dokument).",
+                "Please complete the following 3 sections for your first registration – or alternatively download the combined PDF (medical history, patient contract and data protection in one document)."
               )}
             </p>
             {terminConfirmed && (
@@ -294,8 +294,8 @@ export default function Erstanmeldung() {
                       </h2>
                       <p className="text-muted-foreground leading-relaxed">
                         {t(
-                          "Für Ihre Erstanmeldung in der Naturheilpraxis Peter Rauch sind 3 Dokumente erforderlich. Der Anamnesebogen enthält bereits den IAA-Fragebogen (Individuelle Austestung und Analyse). Bitte nehmen Sie sich ausreichend Zeit für das sorgfältige Ausfüllen.",
-                          "For your first registration at the Naturopathic Practice Peter Rauch, 3 documents are required. The medical history form already includes the IAA questionnaire (Individual Testing and Analysis). Please take sufficient time to fill them out carefully."
+                          "Für Ihre Erstanmeldung benötigen wir Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung. Online führen wir Sie in 3 Abschnitten durch – der Anamnesebogen enthält bereits den IAA-Fragebogen. Alternativ können Sie das kombinierte PDF herunterladen, das alle drei Teile in einem Dokument bündelt (am PC ausfüllbar, ausdruckbar oder per E-Mail zurücksenden).",
+                          "For your first registration we need the medical history form, patient contract and data protection consent. Online we guide you through 3 sections – the medical history already includes the IAA questionnaire. Alternatively download the combined PDF which bundles all three parts in one document (fillable on PC, printable or returnable by email)."
                         )}
                       </p>
                     </div>
