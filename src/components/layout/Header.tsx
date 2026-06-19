@@ -32,8 +32,9 @@ export function Header() {
   const nav = translations.nav;
   const header = translations.header;
   const { canDownloadAnamnese } = usePatientAccess();
-  // Anamnese im Header nur für Admins oder individuell freigeschaltete Patienten sichtbar.
-  const showAnamnese = isAdmin || canDownloadAnamnese;
+  const { enabled: anamnesePublic } = useAnamnesePublic();
+  // Anamnese im Header sichtbar für: Admins, freigeschaltete Patienten, oder alle Besucher wenn PDF öffentlich freigegeben.
+  const showAnamnese = anamnesePublic || isAdmin || canDownloadAnamnese;
 
   const allowDevMode = isDevHost();
   const devActive = isDevAdminBypassActive();
