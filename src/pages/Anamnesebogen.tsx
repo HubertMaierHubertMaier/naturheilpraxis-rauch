@@ -1227,7 +1227,39 @@ const Anamnesebogen = () => {
           </div>
         )}
 
+        {/* Persistenter PDF-Download (immer sichtbar, sobald ein Layout aktiv ist) */}
+        {selectedLayout && (
+          <div className="container">
+            <div className="mx-auto max-w-3xl mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <FileDown className="w-4 h-4 text-primary" />
+                  <span>
+                    {language === "de"
+                      ? "Lieber offline ausfüllen? Acrobat-Reader-Version (PDF) verfügbar:"
+                      : "Prefer to fill out offline? Acrobat Reader version (PDF) available:"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button asChild size="sm" variant="default">
+                    <a href="/anamnesebogen-blanko.pdf" download>
+                      <FileDown className="w-4 h-4 mr-2" />
+                      {language === "de" ? "PDF herunterladen" : "Download PDF"}
+                    </a>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <a href="/anamnesebogen-blanko.pdf" target="_blank" rel="noopener noreferrer">
+                      {language === "de" ? "Im Browser öffnen" : "Open in browser"}
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content based on selected layout */}
+
         {(!hasExistingSubmission || isEditMode) && selectedLayout === "wizard" && (
           <WizardLayout
             language={language}
