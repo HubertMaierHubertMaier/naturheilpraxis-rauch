@@ -471,6 +471,193 @@ export function BackupCenter() {
     }
   };
 
+  const downloadAreaBackup = async (area: BackupArea) => {
+    if (downloading) return;
+    setDownloading("subset");
+    setSubsetArea(area.id);
+    setProgress(0);
+    setLogLines([]);
+    setLastResult(null);
+    const started = Date.now();
+    let warnings = 0;
+    try {
+      const token = await getToken();
+      const apikey = getApiKey();
+      const zip = new JSZip();
+
+      // 1) DB-Tabellen + Storage-Signed-URLs für diesen Bereich vom Server holen
+      log(`Bereich "${area.label}" — DB & Storage anfragen…`);
+      setProgress(10);
+      const res = await fetch(
+        `${getFunctionsUrl()}/backup-export?mode=subset&area=${encodeURIComponent(area.id)}`,
+        { headers: { Authorization: `Bearer ${token}`, apikey } },
+      );
+      if (!res.ok) {
+        let detail = "";
+        try { detail = (await res.json())?.error ?? ""; } catch { /* ignore */ }
+        throw new Error(`Subset HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
+      }
+      const payload = (await res.json()) as {
+        area: string;
+        generatedAt: string;
+        tables: Record<string, { rows: Record<string, unknown>[]; error?: string }>;
+        storage: Record<string, Array<{ path: string; size: number; signedUrl: string }>>;
+      };
+
+      // 2) Tabellen ablegen
+      for (const [name, t] of Object.entries(payload.tables)) {
+        if (t.error) {
+          zip.file(`db/${name}.ERROR.txt`, t.error);
+          warnings++;
+          log(`⚠ Tabelle ${name}: ${t.error}`);
+        } else {
+          zip.file(`db/${name}.json`, JSON.stringify(t.rows, null, 2));
+        }
+      }
+      setProgress(25);
+
+      // 3) Storage-Dateien laden
+      const allFiles: Array<{ bucket: string; path: string; size: number; signedUrl: string }> = [];
+      for (const [bucket, files] of Object.entries(payload.storage)) {
+        for (const f of files) allFiles.push({ bucket, ...f });
+      }
+      const totalStorageBytes = allFiles.reduce((a, f) => a + f.size, 0);
+      if (allFiles.length) {
+        log(`Storage: ${allFiles.length} Dateien · ${formatBytes(totalStorageBytes)}`);
+      }
+
+      let done = 0;
+      const queue = [...allFiles];
+      async function worker() {
+        while (queue.length) {
+          const f = queue.shift();
+          if (!f) break;
+          try {
+            const r = await fetch(f.signedUrl);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const buf = new Uint8Array(await r.arrayBuffer());
+            zip.file(`storage/${f.bucket}/${f.path}`, buf);
+          } catch (e) {
+            warnings++;
+            const msg = e instanceof Error ? e.message : String(e);
+            zip.file(`storage/${f.bucket}/${f.path}.ERROR.txt`, msg);
+            log(`⚠ ${f.bucket}/${f.path}: ${msg}`);
+          } finally {
+            done++;
+            const pct = 25 + Math.round((done / Math.max(1, allFiles.length)) * 45);
+            setProgress(pct);
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: 4 }, worker));
+      setProgress(70);
+
+      // 4) Public-Assets aus public/ direkt vom Server fetchen
+      if (area.publicAssets.length) {
+        log(`Public-Assets: ${area.publicAssets.length} Datei(en) laden…`);
+        for (let i = 0; i < area.publicAssets.length; i++) {
+          const path = area.publicAssets[i];
+          try {
+            const r = await fetch(`/${path}`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const buf = new Uint8Array(await r.arrayBuffer());
+            zip.file(`public-assets/${path}`, buf);
+          } catch (e) {
+            warnings++;
+            const msg = e instanceof Error ? e.message : String(e);
+            zip.file(`public-assets/${path}.ERROR.txt`, msg);
+            log(`⚠ public/${path}: ${msg}`);
+          }
+          setProgress(70 + Math.round(((i + 1) / area.publicAssets.length) * 15));
+        }
+      }
+
+      // 5) Area-Manifest + Restore-Anleitung
+      zip.file(
+        "AREA-MANIFEST.json",
+        JSON.stringify(
+          {
+            area: area.id,
+            label: area.label,
+            description: area.description,
+            generatedAt: payload.generatedAt,
+            tables: Object.fromEntries(
+              Object.entries(payload.tables).map(([n, t]) => [n, { rows: t.rows.length, error: t.error ?? null }]),
+            ),
+            buckets: Object.fromEntries(
+              Object.entries(payload.storage).map(([b, files]) => [
+                b,
+                { files: files.length, bytes: files.reduce((a, f) => a + f.size, 0) },
+              ]),
+            ),
+            publicAssets: area.publicAssets,
+            sourcePaths: area.sourcePaths,
+          },
+          null,
+          2,
+        ),
+      );
+      zip.file(
+        "RESTORE-ANLEITUNG.md",
+        [
+          `# Teilbereich-Restore: ${area.label}`,
+          "",
+          `Erstellt: ${payload.generatedAt}`,
+          "",
+          `## Was ist in diesem ZIP?`,
+          `- **db/** — JSON-Dump der Tabellen: ${area.tables.join(", ") || "(keine)"}`,
+          `- **storage/** — Dateien aus Buckets: ${area.buckets.join(", ") || "(keine)"}`,
+          `- **public-assets/** — Statische Dateien aus public/ (${area.publicAssets.length} Datei(en))`,
+          `- **AREA-MANIFEST.json** — Komplette Liste inkl. zugehöriger Source-Code-Pfade`,
+          "",
+          `## Wiederherstellen über Lovable-Chat`,
+          "",
+          "1. Dieses ZIP in den Lovable-Chat ziehen.",
+          `2. Schreiben: *"Bitte spiele dieses Teilbereich-Backup '${area.label}' wieder ein. ` +
+            `Lies AREA-MANIFEST.json und frage VOR jedem destruktiven Schritt um Bestätigung."*`,
+          "3. Lovable importiert nur die zu diesem Bereich gehörenden Tabellen + Dateien — ",
+          "   der Rest deiner App bleibt unangetastet.",
+          "",
+          `## Zugehörige Source-Code-Pfade`,
+          "Falls auch Code dieses Bereichs wiederhergestellt werden muss, im GitHub-Code-ZIP",
+          "gezielt diese Pfade extrahieren:",
+          "",
+          ...area.sourcePaths.map((p) => `- \`${p}\``),
+          "",
+        ].join("\n"),
+      );
+
+      // 6) ZIP bauen
+      log("Packe ZIP…");
+      setProgress(92);
+      const finalBlob = await zip.generateAsync(
+        { type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } },
+        (meta) => { if (meta.percent) setProgress(92 + Math.min(7, Math.round(meta.percent / 14))); },
+      );
+      setProgress(100);
+      const fn = `Naturheilpraxis-${area.id}-Backup-${isoTimestamp()}.zip`;
+      saveBlob(finalBlob, fn);
+      const dur = Math.round((Date.now() - started) / 1000);
+      log(`Fertig: ${fn} (${formatBytes(finalBlob.size)} in ${dur}s).`);
+      setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings });
+      if (warnings === 0) {
+        toast.success(`Teilbereich-Backup "${area.label}" gespeichert (${formatBytes(finalBlob.size)}).`);
+      } else {
+        toast.warning(
+          `Teilbereich-Backup "${area.label}" mit ${warnings} Warnung(en) gespeichert.`,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
+      log(`FEHLER: ${msg}`);
+      setLastResult({ ok: false, message: msg });
+      toast.error(`Teilbereich-Backup fehlgeschlagen: ${msg}`);
+    } finally {
+      setDownloading(null);
+      setSubsetArea(null);
+    }
+  };
+
   const runOneClick = async () => {
     if (downloading || oneClickRunning) return;
     let githubWindow: Window | null = null;
