@@ -25,7 +25,7 @@ const SchemaOrg = () => {
           description: "Naturheilpraxis für ganzheitliche Therapien, Irisdiagnose, Darmsanierung und individuelle Gesundheitsberatung in Augsburg.",
           url: "https://rauch-heilpraktiker.de",
           telephone: "+49-821-2621462",
-          email: "info@rauch-heilpraktiker.de",
+          email: "praxis_rauch@icloud.com",
           address: {
             "@type": "PostalAddress",
             streetAddress: "Friedrich-Deffner-Straße 19a",

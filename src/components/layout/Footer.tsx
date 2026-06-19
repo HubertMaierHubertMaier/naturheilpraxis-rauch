@@ -54,9 +54,9 @@ export function Footer() {
                 <Phone className="h-4 w-4" />
                 <span>0821-2621462</span>
               </a>
-              <a href="mailto:info@rauch-heilpraktiker.de" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
+              <a href="mailto:praxis_rauch@icloud.com" className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
                 <Mail className="h-4 w-4" />
-                <span>info@rauch-heilpraktiker.de</span>
+                <span>praxis_rauch@icloud.com</span>
               </a>
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" />

@@ -86,7 +86,7 @@ export const generateDatenschutzPdf = ({ language }: DatenschutzPdfOptions) => {
   doc.setFont("helvetica", "normal");
   doc.text("Friedrich-Deffner-Straße 19a, 86163 Augsburg", pageWidth / 2, yPosition, { align: "center" });
   yPosition += 5;
-  doc.text("Tel: 0821-2621462 | E-Mail: info@rauch-heilpraktiker.de", pageWidth / 2, yPosition, { align: "center" });
+  doc.text("Tel: 0821-2621462 | E-Mail: praxis_rauch@icloud.com", pageWidth / 2, yPosition, { align: "center" });
   yPosition += 10;
 
   // DSGVO Badge
@@ -178,8 +178,8 @@ export const generateDatenschutzPdf = ({ language }: DatenschutzPdfOptions) => {
     {
       title: t("Widerspruchsrecht", "Right of Objection"),
       content: t(
-        "Sofern Sie der Erhebung, Verarbeitung oder Nutzung Ihrer Daten widersprechen wollen, können Sie Ihren Widerspruch per E-Mail, Fax oder Brief senden an: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, E-Mail: info@rauch-heilpraktiker.de.",
-        "If you wish to object to the collection, processing or use of your data, you can send your objection by email, fax or letter to: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, Email: info@rauch-heilpraktiker.de."
+        "Sofern Sie der Erhebung, Verarbeitung oder Nutzung Ihrer Daten widersprechen wollen, können Sie Ihren Widerspruch per E-Mail, Fax oder Brief senden an: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, E-Mail: praxis_rauch@icloud.com.",
+        "If you wish to object to the collection, processing or use of your data, you can send your objection by email, fax or letter to: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, Email: praxis_rauch@icloud.com."
       ),
     },
     {
@@ -229,8 +229,8 @@ export const generateDatenschutzPdf = ({ language }: DatenschutzPdfOptions) => {
   );
   addParagraph(
     t(
-      "Die Daten werden ausschließlich zur Erfüllung des Behandlungsvertrages genutzt. Sie können jederzeit ohne Angabe von Gründen widerrufen (per Post oder E-Mail an info@rauch-heilpraktiker.de). Die Einwilligung erfolgt digital mit 2-Faktor-Bestätigung gemäß § 126a BGB.",
-      "Data is used exclusively for the treatment contract. You can withdraw at any time without giving reasons (by post or email to info@rauch-heilpraktiker.de). Consent is given digitally with 2-factor confirmation per § 126a BGB."
+      "Die Daten werden ausschließlich zur Erfüllung des Behandlungsvertrages genutzt. Sie können jederzeit ohne Angabe von Gründen widerrufen (per Post oder E-Mail an praxis_rauch@icloud.com). Die Einwilligung erfolgt digital mit 2-Faktor-Bestätigung gemäß § 126a BGB.",
+      "Data is used exclusively for the treatment contract. You can withdraw at any time without giving reasons (by post or email to praxis_rauch@icloud.com). Consent is given digitally with 2-factor confirmation per § 126a BGB."
     )
   );
 
@@ -238,7 +238,7 @@ export const generateDatenschutzPdf = ({ language }: DatenschutzPdfOptions) => {
   addSpacing(5);
   addSectionHeader(t("Kontakt für Datenschutzanfragen", "Contact for Privacy Inquiries"));
   addParagraph("Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg");
-  addParagraph("E-Mail: info@rauch-heilpraktiker.de | Tel: 0821-2621462");
+  addParagraph("E-Mail: praxis_rauch@icloud.com | Tel: 0821-2621462");
   addParagraph(
     t(
       "Es entstehen dabei keine anderen Kosten als die Portokosten bzw. die Übermittlungskosten nach den geltenden Tarifen.",

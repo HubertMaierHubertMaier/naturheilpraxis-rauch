@@ -196,7 +196,7 @@ serve(async (req: Request) => {
   </div>
 </div></body></html>`;
 
-    const practiceEmails = ["info@rauch-heilpraktiker.de", "praxis_rauch@icloud.com"];
+    const practiceEmails = ["praxis_rauch@icloud.com"];
     const attachment = {
       filename,
       base64: pdfBase64,

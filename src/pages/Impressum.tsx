@@ -75,8 +75,8 @@ const Impressum = () => {
                   <Mail className="mt-1 h-5 w-5 shrink-0 text-primary" />
                   <div>
                     <p className="font-medium text-foreground">{t("E-Mail", "Email")}</p>
-                    <a href="mailto:info@rauch-heilpraktiker.de" className="text-sm text-muted-foreground hover:text-primary">
-                      info@rauch-heilpraktiker.de
+                    <a href="mailto:praxis_rauch@icloud.com" className="text-sm text-muted-foreground hover:text-primary">
+                      praxis_rauch@icloud.com
                     </a>
                   </div>
                 </div>

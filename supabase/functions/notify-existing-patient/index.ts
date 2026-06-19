@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Send notification email to the practice
-    const notificationTo = "anamnese@rauch-heilpraktiker.de";
+    const notificationTo = "praxis_rauch@icloud.com";
     const safeEmail = escapeHtml(email);
     const isExistingPatient = patientType === "existing_patient";
     const subject = isExistingPatient
@@ -182,7 +182,7 @@ Deno.serve(async (req: Request) => {
         subject,
         html: htmlBody,
         from_name: "Praxis-App Benachrichtigung",
-        from_email: "anamnese@rauch-heilpraktiker.de",
+        from_email: "praxis_rauch@icloud.com",
       }),
     });
 

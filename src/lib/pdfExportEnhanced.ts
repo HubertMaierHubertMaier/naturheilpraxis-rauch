@@ -20,7 +20,7 @@ const PRACTICE_INFO = {
   street: "Friedrich-Deffner-Straße 19a",
   city: "86163 Augsburg",
   phone: "0821-2621462",
-  email: "info@rauch-heilpraktiker.de",
+  email: "praxis_rauch@icloud.com",
   web: "www.rauch-heilpraktiker.de"
 };
 

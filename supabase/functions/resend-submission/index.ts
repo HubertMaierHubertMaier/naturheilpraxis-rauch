@@ -460,7 +460,7 @@ Deno.serve(async (req: Request) => {
 
     // 1. Anamnese to practice (with PDF if available)
     emailPromises.push(sendEmail({
-      to: "anamnese@art-of-therapy.de",
+      to: "praxis_rauch@icloud.com",
       subject: `[Erneut] Anamnesebogen: ${escapeHtml(patientName)}`,
       html: `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6;">
@@ -539,7 +539,7 @@ Deno.serve(async (req: Request) => {
   ${patientPdfBase64 ? '<p>📎 Eine Kopie Ihres Anamnesebogens finden Sie als <strong>PDF im Anhang</strong>.</p>' : ''}
   <p>Bei Fragen erreichen Sie uns unter:</p>
   <ul style="list-style:none;padding:0;">
-    <li>📧 E-Mail: info@rauch-heilpraktiker.de</li>
+    <li>📧 E-Mail: praxis_rauch@icloud.com</li>
     <li>📞 Telefon: 0821-4504050</li>
   </ul>
   <div style="margin-top:30px;padding-top:15px;border-top:1px solid #ddd;color:#999;font-size:12px;">

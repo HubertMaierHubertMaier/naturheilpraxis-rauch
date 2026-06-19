@@ -89,8 +89,8 @@ export default function Datenschutz() {
       icon: Ban,
       title: t("Widerspruchsrecht", "Right of Objection"),
       content: t(
-        "Sofern Sie der Erhebung, Verarbeitung oder Nutzung Ihrer Daten durch Peter Rauch nach Maßgabe dieser Datenschutzbestimmungen insgesamt oder für einzelne Maßnahmen widersprechen wollen, können Sie Ihren Widerspruch per E-Mail, Fax oder Brief an folgende Kontaktdaten senden: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, E-Mail: info@rauch-heilpraktiker.de.",
-        "If you wish to object to the collection, processing or use of your data by Peter Rauch in accordance with these privacy provisions, in whole or for individual measures, you can send your objection by email, fax or letter to: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, Email: info@rauch-heilpraktiker.de."
+        "Sofern Sie der Erhebung, Verarbeitung oder Nutzung Ihrer Daten durch Peter Rauch nach Maßgabe dieser Datenschutzbestimmungen insgesamt oder für einzelne Maßnahmen widersprechen wollen, können Sie Ihren Widerspruch per E-Mail, Fax oder Brief an folgende Kontaktdaten senden: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, E-Mail: praxis_rauch@icloud.com.",
+        "If you wish to object to the collection, processing or use of your data by Peter Rauch in accordance with these privacy provisions, in whole or for individual measures, you can send your objection by email, fax or letter to: Peter Rauch, Friedrich-Deffner-Straße 19a, 86163 Augsburg, Email: praxis_rauch@icloud.com."
       ),
     },
     {
@@ -190,7 +190,7 @@ export default function Datenschutz() {
                 </span>
                 <span className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  info@rauch-heilpraktiker.de
+                  praxis_rauch@icloud.com
                 </span>
               </div>
             </div>
@@ -257,8 +257,8 @@ export default function Datenschutz() {
               </p>
               <p className="text-sm text-muted-foreground italic">
                 {t(
-                  "Sie können jederzeit ohne Angabe von Gründen von Ihrem Widerrufsrecht Gebrauch machen und die erteilte Einwilligungserklärung für die Zukunft abändern oder widerrufen. Der Widerruf erfolgt mittels einer Erklärung gegenüber Peter Rauch per Post oder per E-Mail an info@rauch-heilpraktiker.de. Die Einwilligung erfolgt digital im Rahmen des Anamnesebogens mit 2-Faktor-Bestätigung gemäß § 126a BGB.",
-                  "You can exercise your right of withdrawal at any time without giving reasons and modify or revoke the consent given for the future. Withdrawal is made by declaration to Peter Rauch by post or by email to info@rauch-heilpraktiker.de. Consent is given digitally as part of the medical history form with 2-factor confirmation according to § 126a BGB."
+                   "Sie können jederzeit ohne Angabe von Gründen von Ihrem Widerrufsrecht Gebrauch machen und die erteilte Einwilligungserklärung für die Zukunft abändern oder widerrufen. Der Widerruf erfolgt mittels einer Erklärung gegenüber Peter Rauch per Post oder per E-Mail an praxis_rauch@icloud.com. Die Einwilligung erfolgt digital im Rahmen des Anamnesebogens mit 2-Faktor-Bestätigung gemäß § 126a BGB.",
+                   "You can exercise your right of withdrawal at any time without giving reasons and modify or revoke the consent given for the future. Withdrawal is made by declaration to Peter Rauch by post or by email to praxis_rauch@icloud.com. Consent is given digitally as part of the medical history form with 2-factor confirmation according to § 126a BGB."
                 )}
               </p>
             </CardContent>
@@ -284,11 +284,11 @@ export default function Datenschutz() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
                 <a
-                  href="mailto:info@rauch-heilpraktiker.de"
+                  href="mailto:praxis_rauch@icloud.com"
                   className="inline-flex items-center gap-2 text-primary hover:underline"
                 >
                   <Mail className="h-4 w-4" />
-                  info@rauch-heilpraktiker.de
+                  praxis_rauch@icloud.com
                 </a>
                 <a
                   href="tel:+498212621462"

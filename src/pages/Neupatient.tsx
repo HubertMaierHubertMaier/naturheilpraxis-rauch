@@ -40,7 +40,7 @@ const Neupatient = () => {
       n: "3",
       icon: CalendarCheck,
       title: "Erster Termin",
-      text: "Bringe den ausgefüllten Anamnesebogen zum Ersttermin mit — oder sende ihn vorab eingescannt an anamnese@art-of-therapy.de.",
+      text: "Bringe den ausgefüllten Anamnesebogen bitte zum Ersttermin mit — oder sende ihn vorab eingescannt an praxis_rauch@icloud.com.",
     },
   ];
 
@@ -159,7 +159,7 @@ const Neupatient = () => {
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
                   Ausfüllbares PDF (43 Seiten, AcroForm) — am Rechner mit Adobe Reader / Fill &amp; Sign
-                  ausfüllen, digital unterschreiben oder ausdrucken und handschriftlich unterschreiben.
+                  ausfüllen, ausdrucken und handschriftlich unterschreiben.
                   Enthält bereits Patientenvertrag und Datenschutz-Einwilligung.
                 </p>
                 <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
@@ -299,11 +299,11 @@ const Neupatient = () => {
                 0821 - 2621462
               </a>
               <a
-                href="mailto:info@art-of-therapy.de"
+                href="mailto:praxis_rauch@icloud.com"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-base font-semibold text-primary-foreground backdrop-blur transition-colors hover:bg-white/20"
               >
                 <Mail className="h-5 w-5" />
-                info@art-of-therapy.de
+                praxis_rauch@icloud.com
               </a>
             </div>
           </div>
