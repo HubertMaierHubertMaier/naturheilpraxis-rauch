@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Trash2, Mail, Plus, FileText, BookOpen, Library, Loader2, Save, Search } from "lucide-react";
-import { listGatedInfothekItems } from "@/lib/infothekContent";
+import { listAllInfothekItems } from "@/lib/infothekContent";
+import { useInfothekGating } from "@/hooks/useInfothekGating";
 import { Separator } from "@/components/ui/separator";
 
 interface AccessRow {
@@ -25,8 +26,6 @@ interface AccessRow {
   updated_at: string;
 }
 
-const gatedItems = listGatedInfothekItems();
-
 const EMPTY_FORM = {
   email: "",
   note: "",
@@ -37,6 +36,7 @@ const EMPTY_FORM = {
 };
 
 export function PatientAccessManager() {
+  const { getVisibility, loading: gatingLoading } = useInfothekGating();
   const [rows, setRows] = useState<AccessRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -68,6 +68,14 @@ export function PatientAccessManager() {
     );
   }, [rows, query]);
 
+  const patientScopedItems = useMemo(
+    () =>
+      listAllInfothekItems().filter(
+        ({ item }) => getVisibility(item.href, !!item.gated) === "patient"
+      ),
+    [getVisibility]
+  );
+
   const openEdit = (row: AccessRow) => {
     setEditing(row);
     setForm({
@@ -98,7 +106,11 @@ export function PatientAccessManager() {
       anamnese_download: form.anamnese_download,
       infothek_all: form.infothek_all,
       library_access: form.library_access,
-      infothek_items: form.infothek_all ? [] : form.infothek_items,
+      infothek_items: form.infothek_all
+        ? []
+        : form.infothek_items.filter((href) =>
+            patientScopedItems.some(({ item }) => item.href === href)
+          ),
     };
     let error;
     if (editing) {
@@ -237,12 +249,15 @@ export function PatientAccessManager() {
                 </label>
               </div>
 
-              {!form.infothek_all && gatedItems.length > 0 && (
+              {!form.infothek_all && patientScopedItems.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold">Oder einzelne Infothek-Beiträge freischalten:</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Angezeigt werden die Beiträge, die im Tab „Sichtbarkeit“ aktuell auf „Patienten“ stehen.
+                  </p>
                   <div className="space-y-3">
                     {Object.entries(
-                      gatedItems.reduce<Record<string, typeof gatedItems>>((acc, x) => {
+                      patientScopedItems.reduce<Record<string, typeof patientScopedItems>>((acc, x) => {
                         (acc[x.group] ||= []).push(x);
                         return acc;
                       }, {})
@@ -291,7 +306,7 @@ export function PatientAccessManager() {
         </Dialog>
       </div>
 
-      {loading ? (
+      {loading || gatingLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade…</div>
       ) : filtered.length === 0 ? (
         <Card>

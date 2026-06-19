@@ -4,15 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 export type InfothekVisibility = "public" | "new_patient" | "patient";
 
 /**
- * Lädt die admin-konfigurierten Sichtbarkeits-Overrides aus `infothek_gating`.
+ * Lädt die admin-konfigurierten Sichtbarkeits-Regeln aus `infothek_gating`.
  * Map: href -> visibility
  *   - "public"      = für alle Besucher sichtbar (auch ohne Login, gut für SEO)
  *   - "new_patient" = nur für angemeldete Nutzer (auch unverifizierte Neuanmeldung)
  *   - "patient"     = nur für freigeschaltete Patienten
  *
-   * Sicherheitsregel: Items, die im Code als `gated` markiert sind, bleiben
-   * immer "patient" – DB-Overrides dürfen sie nicht auf "new_patient" oder
-   * "public" herunterstufen.
+ * Wichtig: Die Admin-Einstellung ist Source of Truth. `gated` im Code ist nur
+ * ein Fallback, falls für einen Beitrag noch keine DB-Regel existiert.
  */
 export function useInfothekGating() {
   const [overrides, setOverrides] = useState<Record<string, InfothekVisibility>>({});
@@ -54,11 +53,10 @@ export function useInfothekGating() {
 
   const getVisibility = useCallback(
     (href: string, defaultGated: boolean): InfothekVisibility => {
-      if (defaultGated) return "patient";
       if (Object.prototype.hasOwnProperty.call(overrides, href)) {
         return overrides[href];
       }
-      return "public";
+      return defaultGated ? "patient" : "public";
     },
     [overrides]
   );
