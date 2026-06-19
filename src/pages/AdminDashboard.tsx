@@ -21,6 +21,7 @@ import { PatientLibraryManager } from "@/components/admin/PatientLibraryManager"
 import { PatientLoginToggle } from "@/components/admin/PatientLoginToggle";
 
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
+import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
 import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
