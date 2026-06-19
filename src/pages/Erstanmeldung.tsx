@@ -194,10 +194,10 @@ export default function Erstanmeldung() {
                   </div>
                   <div>
                     <h2 className="font-serif text-xl font-semibold text-foreground">
-                      {t("Termin telefonisch vereinbaren", "Schedule Appointment by Phone")}
+                      {t("Hinweis vor dem Ausfüllen", "Note before filling out")}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {t("Voraussetzung für die Erstanmeldung", "Prerequisite for first registration")}
+                      {t("Bitte kurz lesen — dann kannst Du loslegen", "Please read briefly — then you can start")}
                     </p>
                   </div>
                 </div>
@@ -205,8 +205,8 @@ export default function Erstanmeldung() {
                 <div className="bg-sage-50 rounded-lg p-5 space-y-3">
                   <p className="text-muted-foreground leading-relaxed">
                     {t(
-                      "Bevor Sie die Erstanmeldung online ausfüllen können, bitten wir Sie, telefonisch einen Termin mit uns zu vereinbaren. Im persönlichen Gespräch klären wir Ihr Anliegen und besprechen den weiteren Ablauf.",
-                      "Before you can complete the first registration online, we ask you to schedule an appointment with us by phone. In a personal conversation, we will clarify your concerns and discuss the next steps."
+                      "Du kannst die Erstanmeldung direkt online ausfüllen — auch ohne vorherigen Anruf. Empfehlenswert ist trotzdem ein kurzes Telefonat vorab, damit wir Dein Anliegen einordnen und einen Termin abstimmen können. Die Wartezeit auf einen Ersttermin schwankt je nach Auslastung — aktuell ca. 2 Wochen, in stärker gebuchten Phasen auch mehrere Wochen.",
+                      "You can fill out the registration directly online — even without calling first. We still recommend a short phone call in advance so we can assess your concern and arrange an appointment. Waiting time for a first appointment varies — currently approx. 2 weeks, in busier periods several weeks."
                     )}
                   </p>
                   <div className="flex items-center gap-3 text-lg font-semibold text-foreground">
@@ -224,8 +224,8 @@ export default function Erstanmeldung() {
                   />
                   <Label htmlFor="termin-confirm" className="cursor-pointer leading-relaxed">
                     {t(
-                      "Ich habe bereits telefonisch einen Termin in der Naturheilpraxis Peter Rauch vereinbart und möchte nun die Erstanmeldung ausfüllen.",
-                      "I have already scheduled an appointment by phone at the Naturopathic Practice Peter Rauch and would like to complete the first registration now."
+                      "Ich habe den Hinweis gelesen und weiß, dass ein Telefonat vorab empfohlen wird und die Wartezeit auf einen Ersttermin aktuell ca. 2 Wochen, in stärker gebuchten Phasen mehrere Wochen betragen kann.",
+                      "I have read the note and understand that a phone call in advance is recommended and the waiting time for a first appointment is currently approx. 2 weeks, in busier periods several weeks."
                     )}
                   </Label>
                 </div>
