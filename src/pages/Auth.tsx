@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
@@ -60,6 +61,7 @@ const Auth: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [acceptedPracticeNotice, setAcceptedPracticeNotice] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // Handle Login with password + 2FA
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -175,6 +177,17 @@ const Auth: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast({
+        title: language === 'de' ? 'Bot-Schutz' : 'Bot protection',
+        description: language === 'de'
+          ? 'Bitte schließe die Captcha-Prüfung ab.'
+          : 'Please complete the captcha challenge.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
@@ -213,7 +226,7 @@ const Auth: React.FC = () => {
 
       // Request verification code - this also creates the unconfirmed user
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type: 'registration', password },
+        body: { email, type: 'registration', password, turnstileToken },
       });
 
       // Extract real server message from FunctionsHttpError context if needed
@@ -751,7 +764,15 @@ const Auth: React.FC = () => {
           </p>
 
 
-          <Button type="submit" className="w-full" disabled={loading || (!isExistingPatient && !acceptedPracticeNotice)}>
+          <div className="flex justify-center">
+            <TurnstileWidget
+              language={language === 'de' ? 'de' : 'en'}
+              onVerify={(t) => setTurnstileToken(t)}
+              onExpire={() => setTurnstileToken(null)}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading || (!isExistingPatient && !acceptedPracticeNotice) || !turnstileToken}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

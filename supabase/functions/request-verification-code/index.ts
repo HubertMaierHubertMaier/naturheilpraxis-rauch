@@ -24,7 +24,34 @@ const verificationRequestSchema = z.object({
   userId: z.string()
     .uuid("Ungültige Benutzer-ID")
     .optional(),
+  turnstileToken: z.string().min(10).max(4096).optional(),
 });
+
+async function verifyTurnstile(token: string, ip: string | null): Promise<boolean> {
+  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secret) {
+    console.error("TURNSTILE_SECRET_KEY not configured");
+    return false;
+  }
+  try {
+    const body = new URLSearchParams();
+    body.set("secret", secret);
+    body.set("response", token);
+    if (ip) body.set("remoteip", ip);
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body,
+    });
+    const json = await res.json();
+    if (!json.success) {
+      console.warn("Turnstile verify failed", json["error-codes"]);
+    }
+    return !!json.success;
+  } catch (e) {
+    console.error("Turnstile verify error", e);
+    return false;
+  }
+}
 
 type VerificationRequest = z.infer<typeof verificationRequestSchema>;
 
@@ -155,7 +182,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, type, password, userId: providedUserId } = parseResult.data;
+    const { email, type, password, userId: providedUserId, turnstileToken } = parseResult.data;
+
+    // Require Turnstile for registration to block bot account floods
+    if (type === "registration") {
+      if (!turnstileToken) {
+        return new Response(
+          JSON.stringify({ error: "Bot-Schutz fehlt. Bitte Captcha abschließen." }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      const clientIp = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+      const ok = await verifyTurnstile(turnstileToken, clientIp);
+      if (!ok) {
+        return new Response(
+          JSON.stringify({ error: "Bot-Schutz-Prüfung fehlgeschlagen. Bitte Captcha erneut lösen." }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
 
     const rateLimitKey = `${email}:${type}`;
     if (!checkRateLimit(rateLimitKey)) {
