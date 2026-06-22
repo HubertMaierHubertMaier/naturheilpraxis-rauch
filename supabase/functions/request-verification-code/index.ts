@@ -182,7 +182,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, type, password, userId: providedUserId } = parseResult.data;
+    const { email, type, password, userId: providedUserId, turnstileToken } = parseResult.data;
+
+    // Require Turnstile for registration to block bot account floods
+    if (type === "registration") {
+      if (!turnstileToken) {
+        return new Response(
+          JSON.stringify({ error: "Bot-Schutz fehlt. Bitte Captcha abschließen." }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      const clientIp = req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+      const ok = await verifyTurnstile(turnstileToken, clientIp);
+      if (!ok) {
+        return new Response(
+          JSON.stringify({ error: "Bot-Schutz-Prüfung fehlgeschlagen. Bitte Captcha erneut lösen." }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
 
     const rateLimitKey = `${email}:${type}`;
     if (!checkRateLimit(rateLimitKey)) {
