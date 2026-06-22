@@ -226,7 +226,7 @@ const Auth: React.FC = () => {
 
       // Request verification code - this also creates the unconfirmed user
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type: 'registration', password },
+        body: { email, type: 'registration', password, turnstileToken },
       });
 
       // Extract real server message from FunctionsHttpError context if needed
