@@ -746,8 +746,8 @@ const Auth: React.FC = () => {
 
           <p className="text-sm text-muted-foreground">
             {language === 'de'
-              ? 'Nach der Registrierung kannst Du den ausfüllbaren PDF-Anamnesebogen herunterladen. Die Online-Eingabe ist aus Datenschutzgründen aktuell deaktiviert.'
-              : 'After registration, you can download the fillable PDF anamnesis form. Online entry is currently disabled for data-protection reasons.'}
+              ? 'Wichtig: Die Registrierung allein gibt noch keinen Zugriff. Bitte vereinbare zuerst telefonisch einen Termin – nach Rücksprache schalte ich Deine E-Mail-Adresse für den Anamnesebogen (PDF-Download) frei. Die Online-Eingabe ist aus Datenschutzgründen aktuell deaktiviert.'
+              : 'Important: Registration alone does not grant access. Please call to arrange an appointment first – after that I will unlock your email address for the anamnesis form (PDF download). Online entry is currently disabled for data-protection reasons.'}
           </p>
 
 
