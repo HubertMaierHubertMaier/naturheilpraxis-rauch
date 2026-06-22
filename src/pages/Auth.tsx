@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
@@ -60,6 +61,7 @@ const Auth: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [acceptedPracticeNotice, setAcceptedPracticeNotice] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // Handle Login with password + 2FA
   const handleLoginSubmit = async (e: React.FormEvent) => {
