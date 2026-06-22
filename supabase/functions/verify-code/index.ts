@@ -78,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     } catch {
       return new Response(
         JSON.stringify({ error: "Ungültiges Anfrageformat" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Validation error: invalid verify-code request payload");
       return new Response(
         JSON.stringify({ error: firstError }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -100,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.warn("Verify rate limit exceeded");
       return new Response(
         JSON.stringify({ error: "Zu viele Versuche. Bitte warten Sie eine Stunde." }),
-        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -124,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (!profile?.user_id) {
         return new Response(
           JSON.stringify({ error: "Benutzer nicht gefunden" }),
-          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -142,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (codeError || !verificationCode) {
         return new Response(
           JSON.stringify({ error: "Ungültiger oder abgelaufener Code" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -187,7 +187,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (!profile?.user_id) {
         return new Response(
           JSON.stringify({ error: "Benutzer nicht gefunden" }),
-          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -205,7 +205,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (codeError || !verificationCode) {
         return new Response(
           JSON.stringify({ error: "Ungültiger oder abgelaufener Code" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -254,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (!profile?.user_id) {
         return new Response(
           JSON.stringify({ error: "Benutzer nicht gefunden" }),
-          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
@@ -272,14 +272,14 @@ const handler = async (req: Request): Promise<Response> => {
       if (codeError || !verificationCode) {
         return new Response(
           JSON.stringify({ error: "Ungültiger oder abgelaufener Code" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
       if (!newPassword || newPassword.length < 8) {
         return new Response(
           JSON.stringify({ error: "Neues Passwort muss mindestens 8 Zeichen lang sein" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
