@@ -24,7 +24,34 @@ const verificationRequestSchema = z.object({
   userId: z.string()
     .uuid("Ungültige Benutzer-ID")
     .optional(),
+  turnstileToken: z.string().min(10).max(4096).optional(),
 });
+
+async function verifyTurnstile(token: string, ip: string | null): Promise<boolean> {
+  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secret) {
+    console.error("TURNSTILE_SECRET_KEY not configured");
+    return false;
+  }
+  try {
+    const body = new URLSearchParams();
+    body.set("secret", secret);
+    body.set("response", token);
+    if (ip) body.set("remoteip", ip);
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body,
+    });
+    const json = await res.json();
+    if (!json.success) {
+      console.warn("Turnstile verify failed", json["error-codes"]);
+    }
+    return !!json.success;
+  } catch (e) {
+    console.error("Turnstile verify error", e);
+    return false;
+  }
+}
 
 type VerificationRequest = z.infer<typeof verificationRequestSchema>;
 
