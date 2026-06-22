@@ -163,7 +163,7 @@ async function notifyAdminPdfFailure(
           <hr style="margin:15px 0;border:none;border-top:1px solid #ddd;">
           <p style="color:#666;font-size:12px;">Die E-Mail wurde ohne Anhang gesendet. Bitte prüfen Sie den Vorgang im Admin-Bereich und senden Sie ggf. erneut.</p>
         </div>`,
-        from: "praxis_rauch@icloud.com",
+        from: "info@rauch-heilpraktiker.de",
       }),
     });
     console.log(`[relay] Admin notified about PDF failure for ${originalTo}`);
