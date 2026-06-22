@@ -764,7 +764,15 @@ const Auth: React.FC = () => {
           </p>
 
 
-          <Button type="submit" className="w-full" disabled={loading || (!isExistingPatient && !acceptedPracticeNotice)}>
+          <div className="flex justify-center">
+            <TurnstileWidget
+              language={language === 'de' ? 'de' : 'en'}
+              onVerify={(t) => setTurnstileToken(t)}
+              onExpire={() => setTurnstileToken(null)}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading || (!isExistingPatient && !acceptedPracticeNotice) || !turnstileToken}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
