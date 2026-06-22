@@ -34,7 +34,12 @@ function encodeSubjectRfc2047(subject: string): string {
 export async function sendEmail(
   options: SendEmailOptions
 ): Promise<{ attachmentSent: boolean }> {
-  const { to, subject, html, from = "praxis_rauch@icloud.com", attachment } = options;
+  // WICHTIG: Default-Absender MUSS eine Adresse auf rauch-heilpraktiker.de sein,
+  // weil sich der PHP-Relay genau dort per SMTP-Auth (info@) anmeldet.
+  // Eine fremde Domain (z.B. icloud.com) als MAIL FROM führt bei QMail/Plesk
+  // dazu, dass die Mail abgelehnt oder fälschlich an praxis_rauch@icloud.com
+  // zurück-/zugestellt wird statt an den eigentlichen Empfänger.
+  const { to, subject, html, from = "info@rauch-heilpraktiker.de", attachment } = options;
 
   const relaySecret = Deno.env.get("RELAY_SECRET");
   if (!relaySecret) throw new Error("Email service not configured (missing RELAY_SECRET)");
@@ -158,7 +163,7 @@ async function notifyAdminPdfFailure(
           <hr style="margin:15px 0;border:none;border-top:1px solid #ddd;">
           <p style="color:#666;font-size:12px;">Die E-Mail wurde ohne Anhang gesendet. Bitte prüfen Sie den Vorgang im Admin-Bereich und senden Sie ggf. erneut.</p>
         </div>`,
-        from: "praxis_rauch@icloud.com",
+        from: "info@rauch-heilpraktiker.de",
       }),
     });
     console.log(`[relay] Admin notified about PDF failure for ${originalTo}`);
