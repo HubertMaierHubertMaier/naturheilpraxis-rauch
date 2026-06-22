@@ -177,6 +177,17 @@ const Auth: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast({
+        title: language === 'de' ? 'Bot-Schutz' : 'Bot protection',
+        description: language === 'de'
+          ? 'Bitte schließe die Captcha-Prüfung ab.'
+          : 'Please complete the captcha challenge.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
