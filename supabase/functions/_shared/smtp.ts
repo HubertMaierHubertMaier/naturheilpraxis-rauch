@@ -140,7 +140,7 @@ export async function sendEmail(
 
   const startedAt = Date.now();
   let resp: Response;
-  let text = "";
+  let responseBody = "";
   try {
     resp = await fetch(relayUrl, {
       method: "POST",
@@ -150,7 +150,7 @@ export async function sendEmail(
       },
       body: JSON.stringify(payload),
     });
-    text = await resp.text();
+    responseBody = await resp.text();
   } catch (e) {
     const errMsg = (e as Error).message || String(e);
     await logEmailAttempt({
