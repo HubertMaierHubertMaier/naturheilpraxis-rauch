@@ -4,7 +4,6 @@ from io import BytesIO
 from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
