@@ -1,12 +1,11 @@
 import { Layout } from "@/components/layout/Layout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { AnamnesePdfButton } from "@/components/anamnese/AnamnesePdfButton";
 import { FileText } from "lucide-react";
 
 export default function Erstanmeldung() {
   const { t } = useLanguage();
-  const pdfHref = "/anamnesebogen-blanko.pdf";
 
   return (
     <Layout>
@@ -41,12 +40,9 @@ export default function Erstanmeldung() {
                 "Please download the PDF, fill it out on your computer and then return it by email or bring a printed copy to your appointment."
               )}
             </p>
-            <Button size="lg" className="gap-2" asChild>
-              <a href={pdfHref} download>
-                <FileText className="h-4 w-4" />
-                {t("Erstanmeldungs-PDF herunterladen", "Download registration PDF")}
-              </a>
-            </Button>
+            <AnamnesePdfButton size="lg" className="gap-2">
+              {t("Erstanmeldungs-PDF herunterladen", "Download registration PDF")}
+            </AnamnesePdfButton>
           </CardContent>
         </Card>
       </section>

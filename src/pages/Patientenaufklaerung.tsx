@@ -64,14 +64,13 @@ const Patientenaufklaerung = () => {
                   "New patient? Go to onboarding"
                 )}
               </Link>
-              <a
-                href="/patientenvertrag-blanko.pdf"
-                download
-                className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
+              <Link
+                to="/erstanmeldung"
+                className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
               >
                 <FileText className="h-4 w-4" />
-                {t("Nur Patientenvertrag (PDF)", "Contract only (PDF)")}
-              </a>
+                {t("Freigeschaltetes PDF öffnen", "Open unlocked PDF")}
+              </Link>
             </div>
           </div>
         </div>
