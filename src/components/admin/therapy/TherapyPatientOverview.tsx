@@ -282,10 +282,16 @@ export function TherapyPatientOverview() {
                             <Badge variant="secondary" className="text-xs">
                               {p.sessions_count} Sitzung{p.sessions_count === 1 ? "" : "en"}
                             </Badge>
+                            {(p.orders_count ?? 0) > 0 && (
+                              <Badge className="text-xs" title={(p.order_numbers ?? []).join(", ")}>
+                                {p.orders_count} Bestellung{p.orders_count === 1 ? "" : "en"}
+                              </Badge>
+                            )}
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               zuletzt: {fmtDateOnly(p.last_session_at)}
                             </span>
+
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 truncate">{p.latest_summary}</p>
                           {p.latest_notiz && (
