@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -196,8 +197,8 @@ def refresh_pdf(config: dict) -> None:
         writer.add_page(page)
     sig_reader = create_signature_page(config)
     writer.add_page(sig_reader.pages[0])
-    if "/AcroForm" in sig_reader.trailer["/Root"]:
-        writer._root_object.update({"/AcroForm": sig_reader.trailer["/Root"]["/AcroForm"]})
+    if "/AcroForm" in reader.trailer["/Root"]:
+        writer._root_object.update({NameObject("/AcroForm"): reader.trailer["/Root"]["/AcroForm"]})
     with config["path"].open("wb") as handle:
         writer.write(handle)
     print(f"{config['path']}: {len(reader.pages)} -> {len(writer.pages)} Seiten")
