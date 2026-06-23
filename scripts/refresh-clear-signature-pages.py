@@ -116,7 +116,7 @@ def create_signature_page(config: dict) -> PdfReader:
 
     y = H - 318
     c.setFillColor(TERRACOTTA)
-    c.roundRect(M, y - 50, W - 2 * M, 50, 5, fill=1, stroke=0)
+    c.roundRect(M, y - 66, W - 2 * M, 66, 5, fill=1, stroke=0)
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 10)
     c.drawString(M + 12, y - 17, "Digitale Unterschrift ist nur optional")
@@ -131,33 +131,28 @@ def create_signature_page(config: dict) -> PdfReader:
         leading=11,
     )
 
-    y = H - 405
+    y = H - 420
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 10)
     c.drawString(M, y, "Pflicht-Bestätigung")
-    c.acroForm.checkbox(
-        name=f"{prefix}_verstanden",
-        x=M,
-        y=y - 35,
-        size=16,
-        borderColor=BORDER,
-        fillColor=white,
-        textColor=INK,
-        buttonStyle="check",
-    )
+    c.setStrokeColor(BORDER)
+    c.setFillColor(white)
+    c.rect(M, y - 35, 16, 16, fill=1, stroke=1)
     c.setFillColor(INK)
     wrap(c, config["checkbox"], M + 24, y - 25, W - 2 * M - 24, size=9.4, leading=12)
 
-    y = H - 480
+    y = H - 500
     c.setFont("Helvetica-Bold", 8.5)
     c.drawString(M, y, "Ort")
     c.drawString(M + 180, y, "Datum")
     c.drawString(M + 310, y, "Name in Druckbuchstaben")
-    c.acroForm.textfield(name=f"{prefix}_ort", x=M, y=y - 25, width=160, height=18, borderColor=BORDER, fillColor=white, textColor=INK, fontSize=9)
-    c.acroForm.textfield(name=f"{prefix}_datum", x=M + 180, y=y - 25, width=110, height=18, borderColor=BORDER, fillColor=white, textColor=INK, fontSize=9)
-    c.acroForm.textfield(name=f"{prefix}_name", x=M + 310, y=y - 25, width=W - M - (M + 310), height=18, borderColor=BORDER, fillColor=white, textColor=INK, fontSize=9)
+    c.setStrokeColor(BORDER)
+    c.setFillColor(white)
+    c.rect(M, y - 25, 160, 18, fill=1, stroke=1)
+    c.rect(M + 180, y - 25, 110, 18, fill=1, stroke=1)
+    c.rect(M + 310, y - 25, W - M - (M + 310), 18, fill=1, stroke=1)
 
-    y = H - 550
+    y = H - 570
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 11)
     c.drawString(M, y, "Unterschrift Patient/in bzw. Sorgeberechtigte/r")
@@ -168,14 +163,16 @@ def create_signature_page(config: dict) -> PdfReader:
     c.setFont("Helvetica-Oblique", 10.5)
     c.drawString(M + 14, y - 88, "Hier bitte handschriftlich unterschreiben – oder digitale Signatur genau hier platzieren")
 
-    y = H - 705
+    y = H - 720
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 9)
     c.drawString(M, y, "Nur bei Minderjährigen")
     c.setFont("Helvetica", 8.5)
     c.drawString(M, y - 16, "Name Sorgeberechtigte/r")
     c.drawString(M + 280, y - 16, "Optional zweite Unterschrift / weiterer Sorgeberechtigter")
-    c.acroForm.textfield(name=f"{prefix}_sorgeberechtigt", x=M, y=y - 42, width=250, height=18, borderColor=BORDER, fillColor=white, textColor=INK, fontSize=9)
+    c.setStrokeColor(BORDER)
+    c.setFillColor(white)
+    c.rect(M, y - 42, 250, 18, fill=1, stroke=1)
     c.roundRect(M + 280, y - 70, W - M - (M + 280), 46, 5, fill=0, stroke=1)
 
     c.setFillColor(MUTED)
