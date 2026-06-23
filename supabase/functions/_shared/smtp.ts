@@ -172,15 +172,15 @@ export async function sendEmail(
       has_attachment: !!attachment,
     });
     if (attachment) {
-      console.warn("[relay] Failed with attachment, retrying without. Status:", resp.status, text.substring(0, 200));
-      notifyAdminPdfFailure(to, attachment.filename, resp.status, text.substring(0, 200)).catch(() => {});
+      console.warn("[relay] Failed with attachment, retrying without. Status:", resp.status, responseBody.substring(0, 200));
+      notifyAdminPdfFailure(to, attachment.filename, resp.status, responseBody.substring(0, 200)).catch(() => {});
       return sendEmail({
         ...options,
         html: html + '\n<p style="color:#999;font-size:11px;">⚠️ Hinweis: Der PDF-Anhang konnte aus technischen Gründen nicht beigefügt werden.</p>',
         attachment: undefined,
       });
     }
-    console.error("[relay] Error:", resp.status, text.substring(0, 300));
+    console.error("[relay] Error:", resp.status, responseBody.substring(0, 300));
     throw new Error(`Email delivery failed (relay status ${resp.status})`);
   }
 
