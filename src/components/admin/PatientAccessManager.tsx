@@ -46,6 +46,7 @@ const EMPTY_FORM = {
 export function PatientAccessManager() {
   const { getVisibility, loading: gatingLoading } = useInfothekGating();
   const [rows, setRows] = useState<AccessRow[]>([]);
+  const [pending, setPending] = useState<PendingProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<AccessRow | null>(null);
@@ -55,12 +56,22 @@ export function PatientAccessManager() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("patient_access")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error("Laden fehlgeschlagen: " + error.message);
-    setRows((data ?? []) as AccessRow[]);
+    const [accessRes, profilesRes] = await Promise.all([
+      supabase.from("patient_access").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("user_id, email, first_name, last_name, created_at")
+        .order("created_at", { ascending: false }),
+    ]);
+    if (accessRes.error) toast.error("Laden fehlgeschlagen: " + accessRes.error.message);
+    const accessRows = (accessRes.data ?? []) as AccessRow[];
+    setRows(accessRows);
+
+    const accessEmails = new Set(accessRows.map((r) => r.email.toLowerCase()));
+    const pendingList = ((profilesRes.data ?? []) as PendingProfile[]).filter(
+      (p) => p.email && !accessEmails.has(p.email.toLowerCase())
+    );
+    setPending(pendingList);
     setLoading(false);
   };
 
