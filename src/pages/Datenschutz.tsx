@@ -4,6 +4,7 @@ import { Shield, Lock, Database, Share2, Clock, UserCheck, Mail, Phone, MapPin, 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { generateDatenschutzPdf } from "@/lib/datenschutzPdfExport";
+import { Link } from "react-router-dom";
 
 export default function Datenschutz() {
   const { t, language } = useLanguage();
@@ -158,14 +159,13 @@ export default function Datenschutz() {
               <Download className="h-4 w-4" />
               {t("Info als PDF herunterladen", "Download info as PDF")}
             </Button>
-            <a
-              href="/datenschutz-einwilligung-blanko.pdf"
-              download
-              className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
+            <Link
+              to="/erstanmeldung"
+              className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-card px-4 py-2 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-sage-100"
             >
               <FileText className="h-4 w-4" />
-              {t("Einwilligung als ausfüllbares PDF", "Consent as fillable PDF")}
-            </a>
+              {t("Einwilligung im freigeschalteten PDF", "Consent in unlocked PDF")}
+            </Link>
           </div>
         </div>
 
