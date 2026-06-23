@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
+import { SpamFolderHint } from '@/components/auth/SpamFolderHint';
 
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
