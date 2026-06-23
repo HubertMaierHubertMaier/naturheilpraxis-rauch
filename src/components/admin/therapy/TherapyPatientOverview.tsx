@@ -23,7 +23,10 @@ interface PseudonymRow {
   first_session_at: string;
   latest_summary: string;
   latest_notiz: string | null;
+  orders_count?: number;
+  order_numbers?: string[];
 }
+
 
 interface SessionRow {
   id: string;
