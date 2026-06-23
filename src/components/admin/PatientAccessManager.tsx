@@ -26,6 +26,14 @@ interface AccessRow {
   updated_at: string;
 }
 
+interface PendingProfile {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+}
+
 const EMPTY_FORM = {
   email: "",
   note: "",
