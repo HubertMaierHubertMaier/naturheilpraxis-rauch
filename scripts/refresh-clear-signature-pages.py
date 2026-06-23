@@ -6,6 +6,8 @@ from pathlib import Path
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 W, H = A4
@@ -18,6 +20,18 @@ TERRACOTTA = HexColor("#b96b4f")
 INK = HexColor("#222222")
 MUTED = HexColor("#666666")
 BORDER = HexColor("#9aa89a")
+
+FONT_DIR = Path("/nix/store/0hdgmcjy7q8zn7h3amz8nf96l9qh7wv0-liberation-fonts-2.1.5/share/fonts/truetype")
+try:
+    pdfmetrics.registerFont(TTFont("PraxisSans", str(FONT_DIR / "LiberationSans-Regular.ttf")))
+    pdfmetrics.registerFont(TTFont("PraxisSans-Bold", str(FONT_DIR / "LiberationSans-Bold.ttf")))
+    pdfmetrics.registerFont(TTFont("PraxisSans-Italic", str(FONT_DIR / "LiberationSans-Italic.ttf")))
+except Exception:
+    pass
+
+FONT = "PraxisSans"
+BOLD = "PraxisSans-Bold"
+ITALIC = "PraxisSans-Italic"
 
 
 DOCS = [
@@ -48,7 +62,7 @@ DOCS = [
 ]
 
 
-def wrap(c: canvas.Canvas, text: str, x: float, y: float, width: float, size=10, leading=13, font="Helvetica") -> float:
+def wrap(c: canvas.Canvas, text: str, x: float, y: float, width: float, size=10, leading=13, font=FONT) -> float:
     c.setFont(font, size)
     words = text.split()
     line = ""
