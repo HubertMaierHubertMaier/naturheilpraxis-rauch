@@ -84,17 +84,21 @@ export async function sendEmail(
   // Eine fremde Domain (z.B. icloud.com) als MAIL FROM führt bei QMail/Plesk
   // dazu, dass die Mail abgelehnt oder fälschlich an praxis_rauch@icloud.com
   // zurück-/zugestellt wird statt an den eigentlichen Empfänger.
-  const { to, subject, html, from = "info@rauch-heilpraktiker.de", context, attachment } = options;
+  const { to, subject, html, text, from = "info@rauch-heilpraktiker.de", context, attachment } = options;
 
   const relaySecret = Deno.env.get("RELAY_SECRET");
   if (!relaySecret) throw new Error("Email service not configured (missing RELAY_SECRET)");
 
   const relayUrl = "https://rauch-heilpraktiker.de/mail-relay.php";
 
+  // Auto-derive plain text from HTML if no explicit text provided.
+  const plainText = text ?? htmlToPlainText(html);
+
   const payload: Record<string, unknown> = {
     to,
     subject,
     html,
+    text: plainText,
     from,
   };
 
