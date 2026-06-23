@@ -3366,7 +3366,21 @@ export function TherapyRecommendation() {
               Daten neu laden
             </Button>
           </div>
-          <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
+          {pseudonymFormatWarning && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{pseudonymFormatWarning}</span>
+            </div>
+          )}
+          {linkedOrderInfo && linkedOrderInfo.count > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              <span className="font-medium">
+                {linkedOrderInfo.count} Mannayan-Bestellung{linkedOrderInfo.count === 1 ? "" : "en"} für dieses Pseudonym:
+              </span>
+              <span className="font-mono text-muted-foreground">{linkedOrderInfo.numbers.join(", ")}</span>
+            </div>
+          )}
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
               <strong>DSGVO-Konformität:</strong> Niemals Klarnamen, Adressen, Geburtsdaten oder Kontaktdaten in den Feldern unten eingeben.
