@@ -107,9 +107,9 @@ export function PatientAccessManager() {
     });
   };
 
-  const openNew = () => {
+  const openNew = (prefillEmail?: string) => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, email: prefillEmail ?? "" });
     setNewOpen(true);
   };
 
