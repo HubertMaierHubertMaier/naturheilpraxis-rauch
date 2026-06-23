@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Mail, Plus, FileText, BookOpen, Library, Loader2, Save, Search } from "lucide-react";
+import { Trash2, Mail, Plus, FileText, BookOpen, Library, Loader2, Save, Search, UserPlus, Clock } from "lucide-react";
 import { listAllInfothekItems } from "@/lib/infothekContent";
 import { useInfothekGating } from "@/hooks/useInfothekGating";
 import { Separator } from "@/components/ui/separator";
