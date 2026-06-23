@@ -1643,8 +1643,21 @@ export function TherapyRecommendation() {
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
+    // Validierung: bei Standard-Schema P-YYYY-NNNN max. 4 Ziffern im letzten Segment zulassen
+    let cleanValue = nextValue;
+    let warning: string | null = null;
+    const standardMatch = nextValue.match(/^(P-\d{4}-)(\d+)(.*)$/);
+    if (standardMatch) {
+      const [, prefix, digits, rest] = standardMatch;
+      if (digits.length > 4) {
+        cleanValue = `${prefix}${digits.slice(0, 4)}${rest}`;
+        warning = `Mehr als 4 Ziffern sind im Schema P-${new Date().getFullYear()}-NNNN nicht erlaubt – auf 4 Ziffern gekürzt.`;
+      }
+    }
+    setPseudonymFormatWarning(warning);
+
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
-    const next = normalizePseudonymId(nextValue);
+    const next = normalizePseudonymId(cleanValue);
     const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
@@ -1659,8 +1672,31 @@ export function TherapyRecommendation() {
     }
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
-    setPseudonymId(nextValue);
+    setPseudonymId(cleanValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
+
+  // Mannayan-Bestellungen für aktuelles Pseudonym laden
+  useEffect(() => {
+    const pid = pseudonymId.trim();
+    if (!/^P-\d{4}-\d{4}$/.test(pid)) {
+      setLinkedOrderInfo(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("mannayan_orders")
+        .select("order_number, created_at")
+        .eq("pseudonym_id", pid)
+        .order("created_at", { ascending: false });
+      if (cancelled || error) return;
+      setLinkedOrderInfo({
+        count: data?.length ?? 0,
+        numbers: (data ?? []).map((o: any) => o.order_number).filter(Boolean),
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [pseudonymId]);
 
   const handleLoadSession = async (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
