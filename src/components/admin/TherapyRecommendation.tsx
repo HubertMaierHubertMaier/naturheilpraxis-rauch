@@ -834,6 +834,8 @@ const assertStrictPartialAnalysis = (partial: string) => {
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const pseudonymIdRef = useRef("");
+  const [pseudonymFormatWarning, setPseudonymFormatWarning] = useState<string | null>(null);
+  const [linkedOrderInfo, setLinkedOrderInfo] = useState<{ count: number; numbers: string[] } | null>(null);
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
