@@ -47,7 +47,6 @@ const Neupatient = () => {
     {
       icon: ClipboardList,
       title: "Anamnesebogen",
-      file: "/anamnesebogen-blanko.pdf",
       why: "Damit ich Dich ganzheitlich behandeln kann — Beschwerden, Vorerkrankungen, Medikamente, Lebensumstände. Je vollständiger, desto besser der Therapieplan.",
     },
     {
