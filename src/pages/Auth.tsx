@@ -562,6 +562,15 @@ const Auth: React.FC = () => {
     setNewPassword('');
   };
 
+  const privateEmailInputProps = {
+    type: 'text',
+    inputMode: 'email' as const,
+    autoComplete: 'off',
+    autoCorrect: 'off',
+    autoCapitalize: 'none',
+    spellCheck: false,
+  };
+
   const renderCredentialsStep = () => (
     <Tabs value={mode} onValueChange={handleModeChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -577,7 +586,7 @@ const Auth: React.FC = () => {
 
       {/* Login Tab */}
       <TabsContent value="login">
-        <form onSubmit={handleLoginSubmit} className="space-y-4">
+        <form onSubmit={handleLoginSubmit} className="space-y-4" autoComplete="off">
           <div className="space-y-2">
             <Label htmlFor="email-login">
               {language === 'de' ? 'E-Mail-Adresse' : 'Email Address'}
@@ -586,7 +595,8 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-login"
-                type="email"
+                name="praxis-login-email-private"
+                {...privateEmailInputProps}
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -648,7 +658,7 @@ const Auth: React.FC = () => {
 
       {/* Registration Tab */}
       <TabsContent value="registration">
-        <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+        <form onSubmit={handleRegistrationSubmit} className="space-y-4" autoComplete="off">
           {!isExistingPatient && (
             <div className="rounded-xl border-2 border-primary/30 bg-sage-50 p-4 space-y-3">
               <div className="flex items-start gap-2">
@@ -700,7 +710,8 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-register"
-                type="email"
+                name="praxis-registration-email-private"
+                {...privateEmailInputProps}
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -788,7 +799,7 @@ const Auth: React.FC = () => {
 
       {/* Password Reset Tab */}
       <TabsContent value="password_reset">
-        <form onSubmit={handlePasswordResetRequest} className="space-y-4">
+        <form onSubmit={handlePasswordResetRequest} className="space-y-4" autoComplete="off">
           <div className="text-center mb-4">
             <KeyRound className="mx-auto h-12 w-12 text-primary mb-2" />
             <h3 className="font-semibold">
@@ -809,7 +820,8 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-reset"
-                type="email"
+                name="praxis-reset-email-private"
+                {...privateEmailInputProps}
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
