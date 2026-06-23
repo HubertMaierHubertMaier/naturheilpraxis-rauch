@@ -11,6 +11,8 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  /** Plain-text alternative for clients without HTML rendering. */
+  text?: string;
   from?: string;
   /** Free-form context tag for analytics, e.g. "registration", "password_reset", "anamnese". */
   context?: string;
