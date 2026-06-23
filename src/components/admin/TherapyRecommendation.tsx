@@ -1580,13 +1580,28 @@ export function TherapyRecommendation() {
 
 
   const handleGeneratePseudonym = async () => {
-    const { data } = await (supabase as any)
-      .from("therapy_sessions")
-      .select("pseudonym_id")
-      .like("pseudonym_id", `P-${new Date().getFullYear()}-%`);
-    const existing = ((data || []) as Array<{ pseudonym_id: string }>).map((r) => r.pseudonym_id);
-    handlePseudonymChange(generatePseudonymId(existing));
+    const yearPrefix = `P-${new Date().getFullYear()}-`;
+    const [therapyRes, ordersRes] = await Promise.all([
+      (supabase as any)
+        .from("therapy_sessions")
+        .select("pseudonym_id")
+        .like("pseudonym_id", `${yearPrefix}%`),
+      (supabase as any)
+        .from("mannayan_orders")
+        .select("pseudonym_id, patient_label"),
+    ]);
+    const PSEUDO_RE = /P-\d{4}-\d{4}/;
+    const existing = new Set<string>();
+    for (const r of (therapyRes.data || []) as Array<{ pseudonym_id: string | null }>) {
+      if (r.pseudonym_id) existing.add(r.pseudonym_id);
+    }
+    for (const o of (ordersRes.data || []) as Array<{ pseudonym_id: string | null; patient_label: string | null }>) {
+      const pid = o.pseudonym_id || (o.patient_label?.match(PSEUDO_RE)?.[0] ?? null);
+      if (pid && pid.startsWith(yearPrefix)) existing.add(pid);
+    }
+    handlePseudonymChange(generatePseudonymId(Array.from(existing)));
   };
+
 
   const clearPatientScopedState = useCallback(() => {
     autoSaveRunIdRef.current += 1;
