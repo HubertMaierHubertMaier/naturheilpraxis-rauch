@@ -39,11 +39,6 @@ Deno.serve(async (req) => {
       return json({ error: "Bitte erneut anmelden." }, 401);
     }
 
-    const { data: isAdmin } = await adminClient.rpc("has_role", {
-      _user_id: user.id,
-      _role: "admin",
-    });
-
     const email = user.email.trim().toLowerCase();
     const { data: accessRow, error: accessError } = await adminClient
       .from("patient_access")
@@ -55,7 +50,7 @@ Deno.serve(async (req) => {
       return json({ error: "Freischaltung konnte nicht geprüft werden." }, 500);
     }
 
-    if (isAdmin !== true && accessRow?.anamnese_download !== true) {
+    if (accessRow?.anamnese_download !== true) {
       return json(
         { error: "PDF-Download ist für diese E-Mail-Adresse noch nicht freigeschaltet." },
         403
