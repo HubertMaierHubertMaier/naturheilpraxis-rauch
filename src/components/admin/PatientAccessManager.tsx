@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Mail, Plus, FileText, BookOpen, Library, Loader2, Save, Search } from "lucide-react";
+import { Trash2, Mail, Plus, FileText, BookOpen, Library, Loader2, Save, Search, UserPlus, Clock } from "lucide-react";
 import { listAllInfothekItems } from "@/lib/infothekContent";
 import { useInfothekGating } from "@/hooks/useInfothekGating";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +26,14 @@ interface AccessRow {
   updated_at: string;
 }
 
+interface PendingProfile {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+}
+
 const EMPTY_FORM = {
   email: "",
   note: "",
@@ -38,6 +46,7 @@ const EMPTY_FORM = {
 export function PatientAccessManager() {
   const { getVisibility, loading: gatingLoading } = useInfothekGating();
   const [rows, setRows] = useState<AccessRow[]>([]);
+  const [pending, setPending] = useState<PendingProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<AccessRow | null>(null);
@@ -47,12 +56,22 @@ export function PatientAccessManager() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("patient_access")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error("Laden fehlgeschlagen: " + error.message);
-    setRows((data ?? []) as AccessRow[]);
+    const [accessRes, profilesRes] = await Promise.all([
+      supabase.from("patient_access").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("user_id, email, first_name, last_name, created_at")
+        .order("created_at", { ascending: false }),
+    ]);
+    if (accessRes.error) toast.error("Laden fehlgeschlagen: " + accessRes.error.message);
+    const accessRows = (accessRes.data ?? []) as AccessRow[];
+    setRows(accessRows);
+
+    const accessEmails = new Set(accessRows.map((r) => r.email.toLowerCase()));
+    const pendingList = ((profilesRes.data ?? []) as PendingProfile[]).filter(
+      (p) => p.email && !accessEmails.has(p.email.toLowerCase())
+    );
+    setPending(pendingList);
     setLoading(false);
   };
 
@@ -88,9 +107,9 @@ export function PatientAccessManager() {
     });
   };
 
-  const openNew = () => {
+  const openNew = (prefillEmail?: string) => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, email: prefillEmail ?? "" });
     setNewOpen(true);
   };
 
@@ -165,7 +184,7 @@ export function PatientAccessManager() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="gap-2">
+            <Button onClick={() => openNew()} className="gap-2">
               <Plus className="h-4 w-4" />
               Neue E-Mail freischalten
             </Button>
@@ -305,6 +324,49 @@ export function PatientAccessManager() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {!loading && pending.length > 0 && (
+        <Card className="border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserPlus className="h-4 w-4 text-amber-700" />
+              Neu registriert – noch ohne Freischaltung ({pending.length})
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Diese Nutzer haben sich registriert, aber noch keinen Zugang. Mit einem Klick kannst du direkt die Freischaltung öffnen – die E-Mail ist vorausgefüllt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid gap-2">
+              {pending.map((p) => {
+                const name = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+                const when = new Date(p.created_at).toLocaleString("de-DE", {
+                  day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+                });
+                return (
+                  <div key={p.user_id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="font-mono truncate">{p.email}</span>
+                        {name && <span className="text-muted-foreground truncate">· {name}</span>}
+                      </div>
+                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" /> Registriert am {when}
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => openNew(p.email)} className="gap-1">
+                      <Plus className="h-3.5 w-3.5" /> Freischalten
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {loading || gatingLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade…</div>
