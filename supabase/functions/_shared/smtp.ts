@@ -12,12 +12,51 @@ interface SendEmailOptions {
   subject: string;
   html: string;
   from?: string;
+  /** Free-form context tag for analytics, e.g. "registration", "password_reset", "anamnese". */
+  context?: string;
   attachment?: {
     filename: string;
     base64: string;
     contentType: string;
   };
 }
+
+async function logEmailAttempt(entry: {
+  recipient: string;
+  subject: string;
+  context?: string;
+  from_addr: string;
+  http_status: number | null;
+  relay_success: boolean | null;
+  relay_message: string | null;
+  relay_version: string | null;
+  error_message: string | null;
+  duration_ms: number;
+  has_attachment: boolean;
+}): Promise<void> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return;
+    const sb = createClient(url, key);
+    await sb.from("email_send_log").insert({
+      recipient: entry.recipient,
+      subject: entry.subject?.substring(0, 500) ?? null,
+      context: entry.context ?? null,
+      from_addr: entry.from_addr,
+      http_status: entry.http_status,
+      relay_success: entry.relay_success,
+      relay_message: entry.relay_message?.substring(0, 2000) ?? null,
+      relay_version: entry.relay_version,
+      error_message: entry.error_message?.substring(0, 2000) ?? null,
+      duration_ms: entry.duration_ms,
+      has_attachment: entry.has_attachment,
+    });
+  } catch (e) {
+    console.warn("[email_send_log] insert failed:", (e as Error).message);
+  }
+}
+
 
 /**
  * RFC 2047 encode subject for UTF-8 (fixes umlaut display)
