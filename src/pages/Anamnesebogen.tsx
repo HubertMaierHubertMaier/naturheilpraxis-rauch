@@ -86,6 +86,7 @@ import SocialSection from "@/components/anamnese/SocialSection";
 import SignatureSection from "@/components/anamnese/SignatureSection";
 import VerificationDialog from "@/components/anamnese/VerificationDialog";
 import IAAForm from "@/components/iaa/IAAForm";
+import { AnamnesePdfButton } from "@/components/anamnese/AnamnesePdfButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { useAnamneseOnlineEnabled } from "@/hooks/useAnamneseOnlineEnabled";
@@ -190,12 +191,9 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
         </CardHeader>
         <CardContent>
           <div className="flex">
-            <Button asChild variant="default" className="flex-1">
-              <a href="/anamnesebogen-blanko.pdf" download>
-                <FileDown className="w-4 h-4 mr-2" />
-                {language === "de" ? "Anamnesebogen als PDF herunterladen" : "Download anamnesis form as PDF"}
-              </a>
-            </Button>
+            <AnamnesePdfButton variant="default" className="flex-1">
+              {language === "de" ? "Anamnesebogen als PDF herunterladen" : "Download anamnesis form as PDF"}
+            </AnamnesePdfButton>
           </div>
         </CardContent>
       </Card>
@@ -1258,12 +1256,9 @@ const Anamnesebogen = () => {
                   </span>
                 </div>
                 <div className="flex">
-                  <Button asChild size="sm" variant="default">
-                    <a href="/anamnesebogen-blanko.pdf" download>
-                      <FileDown className="w-4 h-4 mr-2" />
-                      {language === "de" ? "PDF herunterladen" : "Download PDF"}
-                    </a>
-                  </Button>
+                  <AnamnesePdfButton size="sm" variant="default">
+                    {language === "de" ? "PDF herunterladen" : "Download PDF"}
+                  </AnamnesePdfButton>
                 </div>
               </div>
             </div>
