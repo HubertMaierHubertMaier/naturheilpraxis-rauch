@@ -89,7 +89,10 @@ type PseudonymGroup = {
   first_session_at: string;
   latest_summary: string;
   latest_notiz: string | null;
+  orders_count?: number;
+  order_numbers?: string[];
 };
+
 
 function buildSummary(row: TherapySessionRow): string {
   return (
