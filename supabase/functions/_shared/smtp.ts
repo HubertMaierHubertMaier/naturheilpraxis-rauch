@@ -11,6 +11,8 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  /** Plain-text alternative for clients without HTML rendering. */
+  text?: string;
   from?: string;
   /** Free-form context tag for analytics, e.g. "registration", "password_reset", "anamnese". */
   context?: string;
@@ -57,6 +59,29 @@ async function logEmailAttempt(entry: {
   }
 }
 
+/**
+ * Minimal HTML→Text fallback. Strips tags, decodes basic entities, collapses whitespace.
+ */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .split("\n").map(l => l.trim()).join("\n")
+    .trim();
+}
+
 
 /**
  * RFC 2047 encode subject for UTF-8 (fixes umlaut display)
@@ -82,17 +107,21 @@ export async function sendEmail(
   // Eine fremde Domain (z.B. icloud.com) als MAIL FROM führt bei QMail/Plesk
   // dazu, dass die Mail abgelehnt oder fälschlich an praxis_rauch@icloud.com
   // zurück-/zugestellt wird statt an den eigentlichen Empfänger.
-  const { to, subject, html, from = "info@rauch-heilpraktiker.de", context, attachment } = options;
+  const { to, subject, html, text, from = "info@rauch-heilpraktiker.de", context, attachment } = options;
 
   const relaySecret = Deno.env.get("RELAY_SECRET");
   if (!relaySecret) throw new Error("Email service not configured (missing RELAY_SECRET)");
 
   const relayUrl = "https://rauch-heilpraktiker.de/mail-relay.php";
 
+  // Auto-derive plain text from HTML if no explicit text provided.
+  const plainText = text ?? htmlToPlainText(html);
+
   const payload: Record<string, unknown> = {
     to,
     subject,
     html,
+    text: plainText,
     from,
   };
 

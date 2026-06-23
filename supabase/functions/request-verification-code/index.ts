@@ -150,8 +150,20 @@ async function sendVerificationEmail(email: string, code: string, type: "login" 
     </html>
   `;
 
+  const plainText =
+    `Naturheilpraxis Rauch\n\n` +
+    `Guten Tag,\n\n` +
+    `${bodyText}\n\n` +
+    `   Code:  ${code}\n\n` +
+    `Dieser Code ist 10 Minuten gültig.\n\n` +
+    `Falls Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren.\n\n` +
+    `Mit freundlichen Grüßen\n` +
+    `Ihre Naturheilpraxis Rauch\n\n` +
+    `--\n` +
+    `Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese E-Mail.\n`;
+
   console.log(`[SMTP] sending ${type} verification code`);
-  await sendEmail({ to: email, subject, html: htmlContent, context: `2fa_${type}` });
+  await sendEmail({ to: email, subject, html: htmlContent, text: plainText, context: `2fa_${type}` });
 }
 
 const handler = async (req: Request): Promise<Response> => {
