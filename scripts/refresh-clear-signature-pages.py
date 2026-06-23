@@ -88,18 +88,18 @@ def create_signature_page(config: dict) -> PdfReader:
     c.setFillColor(SAGE)
     c.rect(0, H - 64, W, 64, fill=1, stroke=0)
     c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 15)
+    c.setFont(BOLD, 15)
     c.drawString(M, H - 29, config["title"])
-    c.setFont("Helvetica", 8.5)
+    c.setFont(FONT, 8.5)
     c.drawString(M, H - 47, "Naturheilpraxis Peter Rauch · bitte zusammen mit dem ausgefüllten Dokument zurückgeben")
 
     y = H - 92
     c.setFillColor(SAND)
     c.roundRect(M, y - 74, W - 2 * M, 74, 5, fill=1, stroke=0)
     c.setFillColor(INK)
-    c.setFont("Helvetica-Bold", 10.5)
+    c.setFont(BOLD, 10.5)
     c.drawString(M + 12, y - 18, "Wir bitten um Verständnis für diesen letzten Schritt")
-    c.setFont("Helvetica", 9.3)
+    c.setFont(FONT, 9.3)
     y = wrap(
         c,
         f"Damit die Unterlagen rechtlich sauber und für die Behandlung verwendbar sind, müssen Sie bestätigen, dass Sie {config['document']} nicht nur gelesen, sondern auch verstanden haben ({config['legal']}). Bitte setzen Sie das Häkchen und unterschreiben Sie unten.",
@@ -114,7 +114,7 @@ def create_signature_page(config: dict) -> PdfReader:
     c.setFillColor(SAGE_LIGHT)
     c.roundRect(M, y - 96, W - 2 * M, 96, 5, fill=1, stroke=0)
     c.setFillColor(SAGE_DARK)
-    c.setFont("Helvetica-Bold", 12)
+    c.setFont(BOLD, 12)
     c.drawString(M + 12, y - 18, "Einfachste Variante – bitte so machen")
     c.setFillColor(INK)
     steps = [
@@ -123,7 +123,7 @@ def create_signature_page(config: dict) -> PdfReader:
         "3. Unten mit Kugelschreiber unterschreiben.",
         "4. Zum Termin mitbringen oder unterschriebene Seiten einscannen/fotografieren und zurücksenden.",
     ]
-    c.setFont("Helvetica", 10)
+    c.setFont(FONT, 10)
     for i, step in enumerate(steps):
         c.drawString(M + 18, y - 41 - i * 15, step)
 
@@ -131,9 +131,9 @@ def create_signature_page(config: dict) -> PdfReader:
     c.setFillColor(TERRACOTTA)
     c.roundRect(M, y - 66, W - 2 * M, 66, 5, fill=1, stroke=0)
     c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(BOLD, 10)
     c.drawString(M + 12, y - 17, "Digitale Unterschrift ist nur optional")
-    c.setFont("Helvetica", 8.8)
+    c.setFont(FONT, 8.8)
     wrap(
         c,
         "Wenn Sie Adobe Reader sicher beherrschen: Werkzeug 'Ausfüllen und unterschreiben' öffnen, 'Unterschrift hinzufügen' wählen und die Signatur unten in das große Feld setzen. Wenn das unklar ist: einfach ausdrucken und handschriftlich unterschreiben.",
@@ -146,7 +146,7 @@ def create_signature_page(config: dict) -> PdfReader:
 
     y = H - 420
     c.setFillColor(INK)
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(BOLD, 10)
     c.drawString(M, y, "Pflicht-Bestätigung")
     c.setStrokeColor(BORDER)
     c.setFillColor(white)
@@ -155,7 +155,7 @@ def create_signature_page(config: dict) -> PdfReader:
     wrap(c, config["checkbox"], M + 24, y - 25, W - 2 * M - 24, size=9.4, leading=12)
 
     y = H - 500
-    c.setFont("Helvetica-Bold", 8.5)
+    c.setFont(BOLD, 8.5)
     c.drawString(M, y, "Ort")
     c.drawString(M + 180, y, "Datum")
     c.drawString(M + 310, y, "Name in Druckbuchstaben")
@@ -167,20 +167,20 @@ def create_signature_page(config: dict) -> PdfReader:
 
     y = H - 570
     c.setFillColor(INK)
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(BOLD, 11)
     c.drawString(M, y, "Unterschrift Patient/in bzw. Sorgeberechtigte/r")
     c.setStrokeColor(SAGE_DARK)
     c.setLineWidth(1.2)
     c.roundRect(M, y - 108, W - 2 * M, 92, 6, fill=0, stroke=1)
     c.setFillColor(MUTED)
-    c.setFont("Helvetica-Oblique", 10.5)
+    c.setFont(ITALIC, 10.5)
     c.drawString(M + 14, y - 88, "Hier bitte handschriftlich unterschreiben – oder digitale Signatur genau hier platzieren")
 
     y = H - 720
     c.setFillColor(INK)
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(BOLD, 9)
     c.drawString(M, y, "Nur bei Minderjährigen")
-    c.setFont("Helvetica", 8.5)
+    c.setFont(FONT, 8.5)
     c.drawString(M, y - 16, "Name Sorgeberechtigte/r")
     c.drawString(M + 280, y - 16, "Optional zweite Unterschrift / weiterer Sorgeberechtigter")
     c.setStrokeColor(BORDER)
@@ -189,7 +189,7 @@ def create_signature_page(config: dict) -> PdfReader:
     c.roundRect(M + 280, y - 70, W - M - (M + 280), 46, 5, fill=0, stroke=1)
 
     c.setFillColor(MUTED)
-    c.setFont("Helvetica", 7.5)
+    c.setFont(FONT, 7.5)
     c.drawRightString(W - M, 24, "Bestätigung & Unterschrift")
     c.save()
     packet.seek(0)
