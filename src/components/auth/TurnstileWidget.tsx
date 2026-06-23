@@ -54,7 +54,13 @@ interface Props {
 export const TurnstileWidget: React.FC<Props> = ({ onVerify, onExpire, language = 'de' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const onVerifyRef = useRef(onVerify);
+  const onExpireRef = useRef(onExpire);
   const [error, setError] = useState<string | null>(null);
+
+  // Callbacks immer aktuell halten, ohne Widget neu zu mounten
+  useEffect(() => { onVerifyRef.current = onVerify; }, [onVerify]);
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,8 +75,8 @@ export const TurnstileWidget: React.FC<Props> = ({ onVerify, onExpire, language 
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          callback: (token: string) => onVerify(token),
-          'expired-callback': () => onExpire?.(),
+          callback: (token: string) => onVerifyRef.current?.(token),
+          'expired-callback': () => onExpireRef.current?.(),
           'error-callback': () => setError(language === 'de' ? 'Bot-Prüfung fehlgeschlagen' : 'Bot check failed'),
           theme: 'light',
           language: language === 'de' ? 'de' : 'en',
@@ -85,7 +91,7 @@ export const TurnstileWidget: React.FC<Props> = ({ onVerify, onExpire, language 
         try { window.turnstile.remove(widgetIdRef.current); } catch { /* noop */ }
       }
     };
-  }, [language, onVerify, onExpire]);
+  }, [language]);
 
   return (
     <div className="space-y-1">
