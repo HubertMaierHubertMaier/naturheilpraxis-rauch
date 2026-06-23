@@ -3381,6 +3381,7 @@ export function TherapyRecommendation() {
               <span className="font-mono text-muted-foreground">{linkedOrderInfo.numbers.join(", ")}</span>
             </div>
           )}
+          <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
               <strong>DSGVO-Konformität:</strong> Niemals Klarnamen, Adressen, Geburtsdaten oder Kontaktdaten in den Feldern unten eingeben.
