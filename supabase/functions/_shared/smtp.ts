@@ -1,19 +1,62 @@
 /**
  * Shared email sending utility for Supabase Edge Functions.
  * Sends via PHP mail relay on the user's webserver.
+ * Persists each attempt to `email_send_log` for post-mortem analysis.
  */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
   from?: string;
+  /** Free-form context tag for analytics, e.g. "registration", "password_reset", "anamnese". */
+  context?: string;
   attachment?: {
     filename: string;
     base64: string;
     contentType: string;
   };
 }
+
+async function logEmailAttempt(entry: {
+  recipient: string;
+  subject: string;
+  context?: string;
+  from_addr: string;
+  http_status: number | null;
+  relay_success: boolean | null;
+  relay_message: string | null;
+  relay_version: string | null;
+  error_message: string | null;
+  duration_ms: number;
+  has_attachment: boolean;
+}): Promise<void> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return;
+    const sb = createClient(url, key);
+    await sb.from("email_send_log").insert({
+      recipient: entry.recipient,
+      subject: entry.subject?.substring(0, 500) ?? null,
+      context: entry.context ?? null,
+      from_addr: entry.from_addr,
+      http_status: entry.http_status,
+      relay_success: entry.relay_success,
+      relay_message: entry.relay_message?.substring(0, 2000) ?? null,
+      relay_version: entry.relay_version,
+      error_message: entry.error_message?.substring(0, 2000) ?? null,
+      duration_ms: entry.duration_ms,
+      has_attachment: entry.has_attachment,
+    });
+  } catch (e) {
+    console.warn("[email_send_log] insert failed:", (e as Error).message);
+  }
+}
+
 
 /**
  * RFC 2047 encode subject for UTF-8 (fixes umlaut display)
@@ -39,7 +82,7 @@ export async function sendEmail(
   // Eine fremde Domain (z.B. icloud.com) als MAIL FROM führt bei QMail/Plesk
   // dazu, dass die Mail abgelehnt oder fälschlich an praxis_rauch@icloud.com
   // zurück-/zugestellt wird statt an den eigentlichen Empfänger.
-  const { to, subject, html, from = "info@rauch-heilpraktiker.de", attachment } = options;
+  const { to, subject, html, from = "info@rauch-heilpraktiker.de", context, attachment } = options;
 
   const relaySecret = Deno.env.get("RELAY_SECRET");
   if (!relaySecret) throw new Error("Email service not configured (missing RELAY_SECRET)");
@@ -48,7 +91,7 @@ export async function sendEmail(
 
   const payload: Record<string, unknown> = {
     to,
-    subject, // Send subject as plain text (RFC 2047 encoding is done by PHP relay if needed)
+    subject,
     html,
     from,
   };
@@ -57,8 +100,6 @@ export async function sendEmail(
     payload.attachment = attachment;
   }
 
-  // Delay for local delivery addresses to avoid QMail timeout on same-domain routing
-  // Reduced from 60s to 5s to avoid edge function timeouts when sending multiple local emails
   const isLocalDelivery = to.endsWith("@rauch-heilpraktiker.de");
   if (isLocalDelivery) {
     const delaySec = 5;
@@ -66,27 +107,44 @@ export async function sendEmail(
     await new Promise((r) => setTimeout(r, delaySec * 1000));
   }
 
-  console.log(`[relay] sending email to ${to} (attachment: ${!!attachment})`);
+  console.log(`[relay] sending email to ${to} (attachment: ${!!attachment}, context: ${context || '-'})`);
 
-  const resp = await fetch(relayUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Relay-Token": relaySecret,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const text = await resp.text();
+  const startedAt = Date.now();
+  let resp: Response;
+  let text = "";
+  try {
+    resp = await fetch(relayUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Relay-Token": relaySecret,
+      },
+      body: JSON.stringify(payload),
+    });
+    text = await resp.text();
+  } catch (e) {
+    const errMsg = (e as Error).message || String(e);
+    await logEmailAttempt({
+      recipient: to, subject, context, from_addr: from,
+      http_status: null, relay_success: false, relay_message: null, relay_version: null,
+      error_message: `fetch failed: ${errMsg}`,
+      duration_ms: Date.now() - startedAt,
+      has_attachment: !!attachment,
+    });
+    throw e;
+  }
 
   if (!resp.ok || text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
-    // If sending WITH attachment failed, retry WITHOUT and notify admin
+    await logEmailAttempt({
+      recipient: to, subject, context, from_addr: from,
+      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      error_message: `HTTP ${resp.status} or HTML response`,
+      duration_ms: Date.now() - startedAt,
+      has_attachment: !!attachment,
+    });
     if (attachment) {
       console.warn("[relay] Failed with attachment, retrying without. Status:", resp.status, text.substring(0, 200));
-      
-      // Send admin notification about the fallback (fire-and-forget, don't block)
       notifyAdminPdfFailure(to, attachment.filename, resp.status, text.substring(0, 200)).catch(() => {});
-      
       return sendEmail({
         ...options,
         html: html + '\n<p style="color:#999;font-size:11px;">⚠️ Hinweis: Der PDF-Anhang konnte aus technischen Gründen nicht beigefügt werden.</p>',
@@ -97,24 +155,38 @@ export async function sendEmail(
     throw new Error(`Email delivery failed (relay status ${resp.status})`);
   }
 
-  let result;
+  let result: { success?: boolean; message?: string; version?: string } = {};
   try {
     result = JSON.parse(text);
   } catch {
+    await logEmailAttempt({
+      recipient: to, subject, context, from_addr: from,
+      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      error_message: "JSON parse failed",
+      duration_ms: Date.now() - startedAt,
+      has_attachment: !!attachment,
+    });
     console.error("[relay] Failed to parse response:", text.substring(0, 200));
     throw new Error("Email service response error");
   }
 
-  // Log full relay response for debugging
-  console.log(`[relay] Response for ${to}: version=${result.version || 'unknown'}, success=${result.success}, message=${result.message || '-'}, full=${JSON.stringify(result).substring(0, 500)}`);
+  console.log(`[relay] Response for ${to}: version=${result.version || 'unknown'}, success=${result.success}, message=${result.message || '-'}`);
+
+  await logEmailAttempt({
+    recipient: to, subject, context, from_addr: from,
+    http_status: resp.status,
+    relay_success: !!result.success,
+    relay_message: result.message ?? null,
+    relay_version: result.version ?? null,
+    error_message: result.success ? null : (result.message ?? "success=false"),
+    duration_ms: Date.now() - startedAt,
+    has_attachment: !!attachment,
+  });
 
   if (!result.success) {
     if (attachment) {
       console.warn("[relay] Failed with attachment (success=false), retrying without");
-      
-      // Send admin notification about the fallback (fire-and-forget)
       notifyAdminPdfFailure(to, attachment.filename, 200, result.message || "success=false").catch(() => {});
-      
       return sendEmail({
         ...options,
         html: html + '\n<p style="color:#999;font-size:11px;">⚠️ Hinweis: Der PDF-Anhang konnte aus technischen Gründen nicht beigefügt werden.</p>',
@@ -127,6 +199,7 @@ export async function sendEmail(
   console.log("[relay] Email sent successfully to", to, attachment ? "(with attachment)" : "");
   return { attachmentSent: !!attachment };
 }
+
 
 /**
  * Notify admin that a PDF attachment could not be sent.
