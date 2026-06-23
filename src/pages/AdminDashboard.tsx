@@ -296,6 +296,22 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
 
+            <TabsContent value="emails">
+              <Card>
+                <CardHeader>
+                  <CardTitle>E-Mail-Versand-Protokoll</CardTitle>
+                  <CardDescription>
+                    Persistente Logs aller verschickten Mails (Anmelde-Codes, Passwort-Reset, Anamnese-Bestätigung,
+                    ICD-10-Report). Bei Zustellproblemen mit freenet/web.de/gmx zeigen Spalte „Status" und
+                    „Relay-Nachricht" den genauen Grund. Wird live bei jedem Versand geschrieben.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <EmailLogManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="backup">
               <BackupCenter />
             </TabsContent>
