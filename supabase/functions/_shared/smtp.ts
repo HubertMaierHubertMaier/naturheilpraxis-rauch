@@ -140,7 +140,7 @@ export async function sendEmail(
 
   const startedAt = Date.now();
   let resp: Response;
-  let text = "";
+  let responseBody = "";
   try {
     resp = await fetch(relayUrl, {
       method: "POST",
@@ -150,7 +150,7 @@ export async function sendEmail(
       },
       body: JSON.stringify(payload),
     });
-    text = await resp.text();
+    responseBody = await resp.text();
   } catch (e) {
     const errMsg = (e as Error).message || String(e);
     await logEmailAttempt({
@@ -163,39 +163,39 @@ export async function sendEmail(
     throw e;
   }
 
-  if (!resp.ok || text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+  if (!resp.ok || responseBody.trim().startsWith("<!DOCTYPE") || responseBody.trim().startsWith("<html")) {
     await logEmailAttempt({
       recipient: to, subject, context, from_addr: from,
-      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      http_status: resp.status, relay_success: false, relay_message: responseBody.substring(0, 1000), relay_version: null,
       error_message: `HTTP ${resp.status} or HTML response`,
       duration_ms: Date.now() - startedAt,
       has_attachment: !!attachment,
     });
     if (attachment) {
-      console.warn("[relay] Failed with attachment, retrying without. Status:", resp.status, text.substring(0, 200));
-      notifyAdminPdfFailure(to, attachment.filename, resp.status, text.substring(0, 200)).catch(() => {});
+      console.warn("[relay] Failed with attachment, retrying without. Status:", resp.status, responseBody.substring(0, 200));
+      notifyAdminPdfFailure(to, attachment.filename, resp.status, responseBody.substring(0, 200)).catch(() => {});
       return sendEmail({
         ...options,
         html: html + '\n<p style="color:#999;font-size:11px;">⚠️ Hinweis: Der PDF-Anhang konnte aus technischen Gründen nicht beigefügt werden.</p>',
         attachment: undefined,
       });
     }
-    console.error("[relay] Error:", resp.status, text.substring(0, 300));
+    console.error("[relay] Error:", resp.status, responseBody.substring(0, 300));
     throw new Error(`Email delivery failed (relay status ${resp.status})`);
   }
 
   let result: { success?: boolean; message?: string; version?: string } = {};
   try {
-    result = JSON.parse(text);
+    result = JSON.parse(responseBody);
   } catch {
     await logEmailAttempt({
       recipient: to, subject, context, from_addr: from,
-      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      http_status: resp.status, relay_success: false, relay_message: responseBody.substring(0, 1000), relay_version: null,
       error_message: "JSON parse failed",
       duration_ms: Date.now() - startedAt,
       has_attachment: !!attachment,
     });
-    console.error("[relay] Failed to parse response:", text.substring(0, 200));
+    console.error("[relay] Failed to parse response:", responseBody.substring(0, 200));
     throw new Error("Email service response error");
   }
 
