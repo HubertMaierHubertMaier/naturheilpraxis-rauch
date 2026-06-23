@@ -1,7 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import {
-  Download,
   PenLine,
   CalendarCheck,
   ShieldCheck,
@@ -11,7 +10,6 @@ import {
   Mail,
   Phone,
   Sparkles,
-  ChevronRight,
   ArrowUpRight,
 } from "lucide-react";
 import {
@@ -21,6 +19,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import SEOHead from "@/components/seo/SEOHead";
+import { AnamnesePdfButton } from "@/components/anamnese/AnamnesePdfButton";
 
 const Neupatient = () => {
   const steps = [
@@ -167,25 +166,20 @@ const Neupatient = () => {
                 </div>
               </div>
 
-              {/* PDF-Variante (einzig verfügbarer Weg) */}
-              <a
-                href="/anamnesebogen-blanko.pdf"
-                download
-                className="group flex flex-col rounded-xl border border-border bg-background p-5 transition-all hover:border-primary/50 hover:bg-sage-50 hover:shadow-card"
-              >
+              <div className="rounded-xl border border-border bg-background p-5">
                 <div className="mb-2 flex items-center gap-2 text-primary">
-                  <Download className="h-5 w-5" />
-                  <span className="font-serif text-base font-semibold">Anamnesebogen als PDF herunterladen</span>
+                  <ClipboardList className="h-5 w-5" />
+                  <span className="font-serif text-base font-semibold">Anamnesebogen als PDF</span>
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  Ausfüllbares PDF (43 Seiten, AcroForm) — am Rechner mit Adobe Reader / Fill &amp; Sign
-                  ausfüllen, ausdrucken und handschriftlich unterschreiben.
-                  Enthält bereits Patientenvertrag und Datenschutz-Einwilligung.
+                  Der Download ist aus Datenschutz- und Praxisgründen erst nach persönlicher Freischaltung
+                  Deiner E-Mail-Adresse möglich. Wenn Deine E-Mail freigeschaltet ist, kannst Du das
+                  Komplettpaket hier herunterladen.
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                  PDF herunterladen <ChevronRight className="h-4 w-4" />
-                </span>
-              </a>
+                <AnamnesePdfButton className="w-full sm:w-auto">
+                  Freigeschaltetes PDF herunterladen
+                </AnamnesePdfButton>
+              </div>
             </div>
 
             {/* Hinweis: Vertrag & Datenschutz sind im PDF enthalten */}
