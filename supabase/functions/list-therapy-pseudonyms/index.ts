@@ -89,7 +89,10 @@ type PseudonymGroup = {
   first_session_at: string;
   latest_summary: string;
   latest_notiz: string | null;
+  orders_count?: number;
+  order_numbers?: string[];
 };
+
 
 function buildSummary(row: TherapySessionRow): string {
   return (
@@ -148,16 +151,23 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data, error } = await adminClient
-      .from("therapy_sessions")
-      .select("id, pseudonym_id, eingabe_daten, notiz, created_at, updated_at")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error("Datenbankfehler");
+    const [therapyRes, ordersRes] = await Promise.all([
+      adminClient
+        .from("therapy_sessions")
+        .select("id, pseudonym_id, eingabe_daten, notiz, created_at, updated_at")
+        .order("created_at", { ascending: false }),
+      adminClient
+        .from("mannayan_orders")
+        .select("pseudonym_id, patient_label, order_number, created_at")
+        .order("created_at", { ascending: false }),
+    ]);
+    if (therapyRes.error) throw new Error("Datenbankfehler");
+    if (ordersRes.error) throw new Error("Datenbankfehler");
 
     // Gruppieren nach pseudonym_id
     const groups = new Map<string, PseudonymGroup>();
 
-    for (const row of (data ?? []) as TherapySessionRow[]) {
+    for (const row of (therapyRes.data ?? []) as TherapySessionRow[]) {
       if (!row.pseudonym_id) continue;
 
       const existing = groups.get(row.pseudonym_id);
@@ -178,9 +188,38 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Mannayan-Bestellungen einklinken (auch Pseudonyme ohne Therapie-Session)
+    const PSEUDO_RE = /P-\d{4}-\d{4}/;
+    for (const o of (ordersRes.data ?? []) as Array<{ pseudonym_id: string | null; patient_label: string | null; order_number: string | null; created_at: string }>) {
+      const pid = o.pseudonym_id || (o.patient_label?.match(PSEUDO_RE)?.[0] ?? null);
+      if (!pid) continue;
+
+      const existing = groups.get(pid);
+      if (!existing) {
+        groups.set(pid, {
+          pseudonym_id: pid,
+          sessions_count: 0,
+          last_session_at: o.created_at,
+          first_session_at: o.created_at,
+          latest_summary: `Nur Mannayan-Bestellung (${o.order_number ?? "—"})`,
+          latest_notiz: null,
+          orders_count: 1,
+          order_numbers: o.order_number ? [o.order_number] : [],
+        });
+      } else {
+        existing.orders_count = (existing.orders_count ?? 0) + 1;
+        if (o.order_number) {
+          existing.order_numbers = [...(existing.order_numbers ?? []), o.order_number];
+        }
+        if (o.created_at < existing.first_session_at) existing.first_session_at = o.created_at;
+        if (o.created_at > existing.last_session_at) existing.last_session_at = o.created_at;
+      }
+    }
+
     const list = Array.from(groups.values()).sort((a, b) =>
       a.last_session_at < b.last_session_at ? 1 : -1,
     );
+
 
     return new Response(JSON.stringify({ pseudonyms: list }), {
       status: 200,
