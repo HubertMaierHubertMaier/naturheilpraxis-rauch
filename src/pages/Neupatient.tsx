@@ -33,7 +33,7 @@ const Neupatient = () => {
       n: "2",
       icon: PenLine,
       title: "Erstanmeldung als PDF ausfüllen",
-      text: "Lade das ausfüllbare PDF herunter (Anamnese + Patientenvertrag + Datenschutz-Einwilligung in einem Dokument), fülle es am Rechner oder handschriftlich aus und bringe es zum Ersttermin mit.",
+      text: "Nach telefonischer Rücksprache schalte ich Deine E-Mail-Adresse frei. Dann kannst Du das PDF-Paket herunterladen, ausfüllen und zum Ersttermin mitbringen.",
     },
     {
       n: "3",
@@ -68,7 +68,7 @@ const Neupatient = () => {
     <Layout>
       <SEOHead
         title="Neupatient – Ihr Erstkontakt in 3 Schritten | Naturheilpraxis Rauch"
-        description="Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung als Komplettpaket zum Herunterladen. So bereiten Sie sich auf Ihren ersten Termin vor."
+        description="Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung als Komplettpaket nach persönlicher Freischaltung. So bereiten Sie sich auf Ihren ersten Termin vor."
       />
 
       {/* Hero */}
@@ -84,7 +84,7 @@ const Neupatient = () => {
             </h1>
             <p className="text-lg leading-relaxed text-sage-100 md:text-xl">
               Damit wir die wertvolle Zeit im Erstgespräch wirklich für Dich nutzen können, fülle
-              die Erstanmeldung bitte schon zu Hause aus — als ausfüllbares PDF zum Herunterladen
+              die Erstanmeldung bitte schon zu Hause aus — als ausfüllbares PDF nach Freischaltung
               und Ausdrucken (Anamnese, Patientenvertrag und Datenschutz-Einwilligung in einem
               Dokument zusammengefasst).
             </p>
