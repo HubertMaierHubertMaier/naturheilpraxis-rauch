@@ -12,7 +12,8 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound, Eye, Hash } from "lucide-react";
+import { Shield, HelpCircle, Info, AlertTriangle, Euro, History, Brain, Users, Cpu, Library, Pill, Download, KeyRound, Eye, Hash, Mail } from "lucide-react";
+import { EmailLogManager } from "@/components/admin/EmailLogManager";
 import { PseudonymOverview } from "@/components/admin/PseudonymOverview";
 import { InfothekGatingManager } from "@/components/admin/InfothekGatingManager";
 import MannayanPriceManager from "@/components/admin/MannayanPriceManager";
@@ -96,7 +97,7 @@ const AdminDashboard = () => {
           <AnamnesePublicToggle />
           <AnamneseToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-[repeat(13,minmax(0,1fr))] max-w-6xl">
+            <TabsList className="grid w-full grid-cols-[repeat(14,minmax(0,1fr))] max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Patienten
@@ -144,6 +145,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="audit" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
                 Protokoll
+              </TabsTrigger>
+              <TabsTrigger value="emails" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                E-Mails
               </TabsTrigger>
               <TabsTrigger value="backup" className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
@@ -287,6 +292,22 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <PatientLibraryManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="emails">
+              <Card>
+                <CardHeader>
+                  <CardTitle>E-Mail-Versand-Protokoll</CardTitle>
+                  <CardDescription>
+                    Persistente Logs aller verschickten Mails (Anmelde-Codes, Passwort-Reset, Anamnese-Bestätigung,
+                    ICD-10-Report). Bei Zustellproblemen mit freenet/web.de/gmx zeigen Spalte „Status" und
+                    „Relay-Nachricht" den genauen Grund. Wird live bei jedem Versand geschrieben.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <EmailLogManager />
                 </CardContent>
               </Card>
             </TabsContent>
