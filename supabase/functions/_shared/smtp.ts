@@ -163,10 +163,10 @@ export async function sendEmail(
     throw e;
   }
 
-  if (!resp.ok || text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+  if (!resp.ok || responseBody.trim().startsWith("<!DOCTYPE") || responseBody.trim().startsWith("<html")) {
     await logEmailAttempt({
       recipient: to, subject, context, from_addr: from,
-      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      http_status: resp.status, relay_success: false, relay_message: responseBody.substring(0, 1000), relay_version: null,
       error_message: `HTTP ${resp.status} or HTML response`,
       duration_ms: Date.now() - startedAt,
       has_attachment: !!attachment,
@@ -186,16 +186,16 @@ export async function sendEmail(
 
   let result: { success?: boolean; message?: string; version?: string } = {};
   try {
-    result = JSON.parse(text);
+    result = JSON.parse(responseBody);
   } catch {
     await logEmailAttempt({
       recipient: to, subject, context, from_addr: from,
-      http_status: resp.status, relay_success: false, relay_message: text.substring(0, 1000), relay_version: null,
+      http_status: resp.status, relay_success: false, relay_message: responseBody.substring(0, 1000), relay_version: null,
       error_message: "JSON parse failed",
       duration_ms: Date.now() - startedAt,
       has_attachment: !!attachment,
     });
-    console.error("[relay] Failed to parse response:", text.substring(0, 200));
+    console.error("[relay] Failed to parse response:", responseBody.substring(0, 200));
     throw new Error("Email service response error");
   }
 
