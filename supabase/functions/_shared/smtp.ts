@@ -1,7 +1,11 @@
 /**
  * Shared email sending utility for Supabase Edge Functions.
  * Sends via PHP mail relay on the user's webserver.
+ * Persists each attempt to `email_send_log` for post-mortem analysis.
  */
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 
 interface SendEmailOptions {
   to: string;
