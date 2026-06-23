@@ -146,6 +146,10 @@ const AdminDashboard = () => {
                 <History className="h-4 w-4" />
                 Protokoll
               </TabsTrigger>
+              <TabsTrigger value="emails" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                E-Mails
+              </TabsTrigger>
               <TabsTrigger value="backup" className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Backup
