@@ -151,7 +151,7 @@ async function sendVerificationEmail(email: string, code: string, type: "login" 
   `;
 
   console.log(`[SMTP] sending ${type} verification code`);
-  await sendEmail({ to: email, subject, html: htmlContent });
+  await sendEmail({ to: email, subject, html: htmlContent, context: `2fa_${type}` });
 }
 
 const handler = async (req: Request): Promise<Response> => {
