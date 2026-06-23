@@ -870,6 +870,8 @@ const Auth: React.FC = () => {
         </p>
       </div>
 
+      <SpamFolderHint email={email} language={language as 'de' | 'en'} />
+
       <div className="flex justify-center">
         <InputOTP
           maxLength={6}
