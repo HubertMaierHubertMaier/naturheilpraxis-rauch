@@ -834,6 +834,8 @@ const assertStrictPartialAnalysis = (partial: string) => {
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
   const pseudonymIdRef = useRef("");
+  const [pseudonymFormatWarning, setPseudonymFormatWarning] = useState<string | null>(null);
+  const [linkedOrderInfo, setLinkedOrderInfo] = useState<{ count: number; numbers: string[] } | null>(null);
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
@@ -1641,8 +1643,21 @@ export function TherapyRecommendation() {
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
+    // Validierung: bei Standard-Schema P-YYYY-NNNN max. 4 Ziffern im letzten Segment zulassen
+    let cleanValue = nextValue;
+    let warning: string | null = null;
+    const standardMatch = nextValue.match(/^(P-\d{4}-)(\d+)(.*)$/);
+    if (standardMatch) {
+      const [, prefix, digits, rest] = standardMatch;
+      if (digits.length > 4) {
+        cleanValue = `${prefix}${digits.slice(0, 4)}${rest}`;
+        warning = `Mehr als 4 Ziffern sind im Schema P-${new Date().getFullYear()}-NNNN nicht erlaubt – auf 4 Ziffern gekürzt.`;
+      }
+    }
+    setPseudonymFormatWarning(warning);
+
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
-    const next = normalizePseudonymId(nextValue);
+    const next = normalizePseudonymId(cleanValue);
     const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
@@ -1657,8 +1672,31 @@ export function TherapyRecommendation() {
     }
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
-    setPseudonymId(nextValue);
+    setPseudonymId(cleanValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
+
+  // Mannayan-Bestellungen für aktuelles Pseudonym laden
+  useEffect(() => {
+    const pid = pseudonymId.trim();
+    if (!/^P-\d{4}-\d{4}$/.test(pid)) {
+      setLinkedOrderInfo(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("mannayan_orders")
+        .select("order_number, created_at")
+        .eq("pseudonym_id", pid)
+        .order("created_at", { ascending: false });
+      if (cancelled || error) return;
+      setLinkedOrderInfo({
+        count: data?.length ?? 0,
+        numbers: (data ?? []).map((o: any) => o.order_number).filter(Boolean),
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [pseudonymId]);
 
   const handleLoadSession = async (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
@@ -3328,6 +3366,21 @@ export function TherapyRecommendation() {
               Daten neu laden
             </Button>
           </div>
+          {pseudonymFormatWarning && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{pseudonymFormatWarning}</span>
+            </div>
+          )}
+          {linkedOrderInfo && linkedOrderInfo.count > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              <span className="font-medium">
+                {linkedOrderInfo.count} Mannayan-Bestellung{linkedOrderInfo.count === 1 ? "" : "en"} für dieses Pseudonym:
+              </span>
+              <span className="font-mono text-muted-foreground">{linkedOrderInfo.numbers.join(", ")}</span>
+            </div>
+          )}
           <div className="flex gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded p-2">
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
