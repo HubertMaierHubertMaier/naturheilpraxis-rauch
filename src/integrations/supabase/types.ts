@@ -125,6 +125,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_log: {
+        Row: {
+          context: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          from_addr: string | null
+          has_attachment: boolean
+          http_status: number | null
+          id: string
+          recipient: string
+          relay_message: string | null
+          relay_success: boolean | null
+          relay_version: string | null
+          subject: string | null
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          from_addr?: string | null
+          has_attachment?: boolean
+          http_status?: number | null
+          id?: string
+          recipient: string
+          relay_message?: string | null
+          relay_success?: boolean | null
+          relay_version?: string | null
+          subject?: string | null
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          from_addr?: string | null
+          has_attachment?: boolean
+          http_status?: number | null
+          id?: string
+          recipient?: string
+          relay_message?: string | null
+          relay_success?: boolean | null
+          relay_version?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer_de: string
