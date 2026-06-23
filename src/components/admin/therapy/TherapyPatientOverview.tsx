@@ -259,7 +259,7 @@ export function TherapyPatientOverview() {
               Noch keine gespeicherten Therapieempfehlungen vorhanden.
             </p>
           ) : (
-            <ScrollArea className="max-h-[700px]">
+            <ScrollArea className="h-[700px] pr-3">
               <div className="space-y-2">
                 {filtered.map((p) => {
                   const isOpen = openId === p.pseudonym_id;
