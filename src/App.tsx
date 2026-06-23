@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RoleSimulator } from "@/components/dev/RoleSimulator";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 import InfothekGateRoute from "@/components/InfothekGateRoute";
 import CookieBanner from "@/components/CookieBanner";
 import SchemaOrg from "@/components/seo/SchemaOrg";
@@ -72,7 +73,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/anamnesebogen" element={<Anamnesebogen />} />
+              <Route path="/anamnesebogen" element={<AnamneseRouteGuard><Anamnesebogen /></AnamneseRouteGuard>} />
               <Route path="/erstanmeldung" element={<ProtectedRoute><Erstanmeldung /></ProtectedRoute>} />
               <Route path="/anamnesebogen-demo" element={<AnamneseDemo />} />
               <Route path="/datenschutz" element={<InfothekGateRoute><Datenschutz /></InfothekGateRoute>} />
