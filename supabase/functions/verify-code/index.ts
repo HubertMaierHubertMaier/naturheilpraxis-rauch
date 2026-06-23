@@ -289,9 +289,10 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ used: true })
         .eq("id", verificationCode.id);
 
-      // Update password
+      // Update password AND confirm email (in case user reset password before confirming registration)
       const { error: updateError } = await supabase.auth.admin.updateUserById(profile.user_id, {
         password: newPassword,
+        email_confirm: true,
       });
 
       if (updateError) {
