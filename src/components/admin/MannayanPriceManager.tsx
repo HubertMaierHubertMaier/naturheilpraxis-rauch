@@ -55,6 +55,7 @@ export default function MannayanPriceManager() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [patientName, setPatientName] = useState("");
+  const { nextFree: nextFreePseudonym, refresh: refreshNextFreePseudonym } = useNextFreePseudonym();
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
