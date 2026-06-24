@@ -13,7 +13,7 @@ function isAllowedCorsOrigin(origin: string | null): boolean {
     const url = new URL(origin);
     const isLocalDev =
       (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-      ["5173", "4173", "5174", "4174"].includes(url.port);
+      ["5173", "4173", "5174", "4174", "8080"].includes(url.port);
 
     return (
       isLocalDev ||
