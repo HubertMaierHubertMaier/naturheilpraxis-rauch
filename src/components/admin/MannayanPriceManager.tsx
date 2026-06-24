@@ -575,6 +575,7 @@ export default function MannayanPriceManager() {
                     </button>
                   </div>
                 )}
+              </div>
               <div>
                 <Label>Produkt suchen</Label>
                 <div className="relative">
