@@ -13,7 +13,7 @@ function isAllowedCorsOrigin(origin: string | null): boolean {
     const url = new URL(origin);
     const isLocalDev =
       (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
-      ["5173", "4173", "5174", "4174"].includes(url.port);
+      ["5173", "4173", "5174", "4174", "8080"].includes(url.port);
 
     return (
       isLocalDev ||
@@ -91,6 +91,15 @@ type PseudonymGroup = {
   latest_notiz: string | null;
   orders_count?: number;
   order_numbers?: string[];
+  mannayan_orders?: MannayanOrderSummary[];
+};
+
+type MannayanOrderSummary = {
+  order_number: string;
+  created_at: string;
+  total_eur: number | null;
+  items_count: number;
+  items_preview: string[];
 };
 
 
@@ -101,6 +110,35 @@ function buildSummary(row: TherapySessionRow): string {
     row.eingabe_daten?.belastungen?.slice(0, 100) ||
     "—"
   );
+}
+
+function buildOrderSummary(o: {
+  order_number: string | null;
+  created_at: string;
+  total_eur: number | null;
+  items: unknown;
+}): MannayanOrderSummary {
+  const items = Array.isArray(o.items) ? o.items : [];
+  const itemNames = items
+    .map((item) => {
+      if (!item || typeof item !== "object") return "";
+      const row = item as Record<string, unknown>;
+      const quantity = Number(row.quantity || 0);
+      const amount = Number.isFinite(quantity) && quantity > 0 ? `${quantity}× ` : "";
+      const name = typeof row.name === "string" ? row.name.trim() : "";
+      const sku = typeof row.sku === "string" ? row.sku.trim() : "";
+      return name || sku ? `${amount}${name || sku}` : "";
+    })
+    .filter(Boolean)
+    .slice(0, 8);
+
+  return {
+    order_number: o.order_number ?? "—",
+    created_at: o.created_at,
+    total_eur: typeof o.total_eur === "number" ? o.total_eur : null,
+    items_count: items.length,
+    items_preview: itemNames,
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -158,7 +196,7 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false }),
       adminClient
         .from("mannayan_orders")
-        .select("pseudonym_id, patient_label, order_number, created_at")
+        .select("pseudonym_id, patient_label, order_number, created_at, total_eur, items")
         .order("created_at", { ascending: false }),
     ]);
     if (therapyRes.error) throw new Error("Datenbankfehler");
@@ -190,9 +228,10 @@ Deno.serve(async (req: Request) => {
 
     // Mannayan-Bestellungen einklinken (auch Pseudonyme ohne Therapie-Session)
     const PSEUDO_RE = /P-\d{4}-\d{4}/;
-    for (const o of (ordersRes.data ?? []) as Array<{ pseudonym_id: string | null; patient_label: string | null; order_number: string | null; created_at: string }>) {
+    for (const o of (ordersRes.data ?? []) as Array<{ pseudonym_id: string | null; patient_label: string | null; order_number: string | null; created_at: string; total_eur: number | null; items: unknown }>) {
       const pid = o.pseudonym_id || (o.patient_label?.match(PSEUDO_RE)?.[0] ?? null);
       if (!pid) continue;
+      const orderSummary = buildOrderSummary(o);
 
       const existing = groups.get(pid);
       if (!existing) {
@@ -205,12 +244,14 @@ Deno.serve(async (req: Request) => {
           latest_notiz: null,
           orders_count: 1,
           order_numbers: o.order_number ? [o.order_number] : [],
+          mannayan_orders: [orderSummary],
         });
       } else {
         existing.orders_count = (existing.orders_count ?? 0) + 1;
         if (o.order_number) {
           existing.order_numbers = [...(existing.order_numbers ?? []), o.order_number];
         }
+        existing.mannayan_orders = [...(existing.mannayan_orders ?? []), orderSummary];
         if (o.created_at < existing.first_session_at) existing.first_session_at = o.created_at;
         if (o.created_at > existing.last_session_at) existing.last_session_at = o.created_at;
       }

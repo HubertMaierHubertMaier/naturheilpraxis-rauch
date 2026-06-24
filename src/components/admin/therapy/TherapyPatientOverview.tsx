@@ -1,15 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Users, RefreshCw, Search, Loader2, FileText, Eye, Printer,
-  ShieldAlert, ChevronRight, ChevronDown, Trash2, Calendar
+  ShieldAlert, ChevronRight, ChevronDown, Trash2, Calendar, ShoppingCart
 } from "lucide-react";
 import { parseTherapyMarkdown } from "@/lib/therapyParser";
 import { openPrintRecipe } from "./printRecipe";
@@ -25,6 +24,15 @@ interface PseudonymRow {
   latest_notiz: string | null;
   orders_count?: number;
   order_numbers?: string[];
+  mannayan_orders?: MannayanOrderSummary[];
+}
+
+interface MannayanOrderSummary {
+  order_number: string;
+  created_at: string;
+  total_eur: number | null;
+  items_count: number;
+  items_preview: string[];
 }
 
 
@@ -51,6 +59,11 @@ const fmtDateOnly = (iso: string) =>
   new Date(iso).toLocaleDateString("de-DE", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
+
+const fmtCurrency = (value: number | null | undefined) =>
+  typeof value === "number"
+    ? value.toLocaleString("de-DE", { style: "currency", currency: "EUR" })
+    : "—";
 
 const isEmptyAutosaveOnly = (session: SessionRow): boolean => {
   if (session.kind === "event_log") return false;
@@ -196,9 +209,19 @@ export function TherapyPatientOverview() {
     return (
       p.pseudonym_id.toLowerCase().includes(q) ||
       p.latest_summary.toLowerCase().includes(q) ||
-      (p.latest_notiz || "").toLowerCase().includes(q)
+      (p.latest_notiz || "").toLowerCase().includes(q) ||
+      (p.order_numbers ?? []).some((number) => number.toLowerCase().includes(q)) ||
+      (p.mannayan_orders ?? []).some((order) =>
+        order.order_number.toLowerCase().includes(q) ||
+        order.items_preview.some((item) => item.toLowerCase().includes(q)),
+      )
     );
   });
+
+  const mannayanOrders = useMemo(() => (
+    filtered.flatMap((p) => (p.mannayan_orders ?? []).map((order) => ({ ...order, pseudonym_id: p.pseudonym_id })))
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  ), [filtered]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-4">
@@ -243,6 +266,46 @@ export function TherapyPatientOverview() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4 text-primary" />
+            {loading ? "Mannayan-Bestellungen laden..." : `${mannayanOrders.length} Mannayan-Bestellung${mannayanOrders.length === 1 ? "" : "en"}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
+          ) : mannayanOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-3">Keine Mannayan-Bestellungen zur aktuellen Suche.</p>
+          ) : (
+            <div className="max-h-[260px] overflow-y-auto pr-3 space-y-2">
+              {mannayanOrders.map((order) => (
+                <div key={`${order.pseudonym_id}-${order.order_number}-${order.created_at}`} className="rounded-md border border-border p-3 bg-muted/20">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono font-semibold text-primary">{order.pseudonym_id}</span>
+                    <Badge variant="outline" className="font-mono text-xs">{order.order_number}</Badge>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {fmtDateOnly(order.created_at)}
+                    </span>
+                    <Badge variant="secondary" className="text-xs">{order.items_count} Position{order.items_count === 1 ? "" : "en"}</Badge>
+                    <span className="text-xs font-medium">{fmtCurrency(order.total_eur)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {order.items_preview.length ? order.items_preview.join(" · ") : "Keine Positionsvorschau"}
+                    {order.items_count > order.items_preview.length ? ` · +${order.items_count - order.items_preview.length} weitere` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
             {loading ? "Lade..." : `${filtered.length} Pseudonym${filtered.length === 1 ? "" : "e"}`}
           </CardTitle>
@@ -259,11 +322,12 @@ export function TherapyPatientOverview() {
               Noch keine gespeicherten Therapieempfehlungen vorhanden.
             </p>
           ) : (
-            <ScrollArea className="h-[700px] pr-3">
+            <div className="max-h-[700px] overflow-y-auto pr-3">
               <div className="space-y-2">
                 {filtered.map((p) => {
                   const isOpen = openId === p.pseudonym_id;
                   const sessions = sessionsByPid[p.pseudonym_id] || [];
+                  const orders = p.mannayan_orders ?? [];
                   return (
                     <div key={p.pseudonym_id} className="border border-border rounded-md">
                       <button
@@ -294,6 +358,11 @@ export function TherapyPatientOverview() {
 
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 truncate">{p.latest_summary}</p>
+                          {orders.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                              Mannayan: {orders.map((order) => order.order_number).join(", ")}
+                            </p>
+                          )}
                           {p.latest_notiz && (
                             <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 italic truncate">
                               📝 {p.latest_notiz}
@@ -312,6 +381,28 @@ export function TherapyPatientOverview() {
                               Verlauf schließen
                             </Button>
                           </div>
+                          {orders.length > 0 && (
+                            <div className="rounded-md border border-border bg-background p-3 space-y-2">
+                              <div className="flex items-center gap-2 text-sm font-medium">
+                                <ShoppingCart className="h-4 w-4 text-primary" />
+                                Mannayan-Bestellungen für {p.pseudonym_id}
+                              </div>
+                              {orders.map((order) => (
+                                <div key={`${order.order_number}-${order.created_at}`} className="rounded border border-border bg-muted/20 p-2 text-xs">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="font-mono text-[11px]">{order.order_number}</Badge>
+                                    <span className="text-muted-foreground">{fmtDate(order.created_at)}</span>
+                                    <span>{fmtCurrency(order.total_eur)}</span>
+                                    <Badge variant="secondary" className="text-[11px]">{order.items_count} Position{order.items_count === 1 ? "" : "en"}</Badge>
+                                  </div>
+                                  <p className="mt-1 text-muted-foreground whitespace-normal">
+                                    {order.items_preview.length ? order.items_preview.join(" · ") : "Keine Positionsvorschau"}
+                                    {order.items_count > order.items_preview.length ? ` · +${order.items_count - order.items_preview.length} weitere` : ""}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {loadingSessions === p.pseudonym_id ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground py-3">
                               <Loader2 className="h-4 w-4 animate-spin" /> Lade Sitzungen...
@@ -497,7 +588,7 @@ export function TherapyPatientOverview() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </CardContent>
       </Card>
