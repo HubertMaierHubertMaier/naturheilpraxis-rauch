@@ -1580,6 +1580,8 @@ export function TherapyRecommendation() {
   }, [groesseCm, gewichtKg]);
 
 
+  const { nextFree: nextFreePseudonym, refresh: refreshNextFreePseudonym } = useNextFreePseudonym();
+
   const handleGeneratePseudonym = async () => {
     const yearPrefix = `P-${new Date().getFullYear()}-`;
     const [therapyRes, ordersRes] = await Promise.all([
@@ -1601,6 +1603,7 @@ export function TherapyRecommendation() {
       if (pid && pid.startsWith(yearPrefix)) existing.add(pid);
     }
     handlePseudonymChange(generatePseudonymId(Array.from(existing)));
+    void refreshNextFreePseudonym();
   };
 
 
