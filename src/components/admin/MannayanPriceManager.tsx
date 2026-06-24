@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive, AlertTriangle } from "lucide-react";
+import { Pencil, Save, X, Plus, Trash2, Upload, FileText, FileType, Search, ShoppingCart, FolderOpen, Archive, AlertTriangle, Sparkles } from "lucide-react";
+import { useNextFreePseudonym } from "@/hooks/useNextFreePseudonym";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,7 @@ export default function MannayanPriceManager() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [patientName, setPatientName] = useState("");
+  const { nextFree: nextFreePseudonym, refresh: refreshNextFreePseudonym } = useNextFreePseudonym();
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
@@ -552,6 +554,27 @@ export default function MannayanPriceManager() {
                 <Label>Patient / Kunde</Label>
                 <Input value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Pseudonym, z.B. P-2026-0001" />
                 <p className="text-xs text-muted-foreground mt-1">Für automatische Therapie-Berücksichtigung bitte die Pseudonym-ID eintragen.</p>
+                {nextFreePseudonym && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900/40 px-2 py-1.5 mt-2">
+                    <Sparkles className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
+                    <span className="text-emerald-900 dark:text-emerald-200">Nächste freie ID:</span>
+                    <button
+                      type="button"
+                      onClick={() => { setPatientName(nextFreePseudonym); void refreshNextFreePseudonym(); }}
+                      className="font-mono font-semibold underline underline-offset-2 hover:text-emerald-700 dark:hover:text-emerald-300"
+                      title="Klicken zum Übernehmen"
+                    >
+                      {nextFreePseudonym}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshNextFreePseudonym()}
+                      className="ml-auto text-[11px] text-emerald-800/70 dark:text-emerald-300/70 hover:underline"
+                    >
+                      aktualisieren
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Produkt suchen</Label>

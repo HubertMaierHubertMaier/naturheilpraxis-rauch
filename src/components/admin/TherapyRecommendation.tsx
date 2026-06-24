@@ -20,6 +20,7 @@ import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
+import { useNextFreePseudonym } from "@/hooks/useNextFreePseudonym";
 import { VersionDiffCard } from "./therapy/VersionDiffCard";
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
@@ -1579,6 +1580,8 @@ export function TherapyRecommendation() {
   }, [groesseCm, gewichtKg]);
 
 
+  const { nextFree: nextFreePseudonym, refresh: refreshNextFreePseudonym } = useNextFreePseudonym();
+
   const handleGeneratePseudonym = async () => {
     const yearPrefix = `P-${new Date().getFullYear()}-`;
     const [therapyRes, ordersRes] = await Promise.all([
@@ -1600,6 +1603,7 @@ export function TherapyRecommendation() {
       if (pid && pid.startsWith(yearPrefix)) existing.add(pid);
     }
     handlePseudonymChange(generatePseudonymId(Array.from(existing)));
+    void refreshNextFreePseudonym();
   };
 
 
@@ -3381,6 +3385,27 @@ export function TherapyRecommendation() {
               Daten neu laden
             </Button>
           </div>
+          {nextFreePseudonym && (
+            <div className="flex flex-wrap items-center gap-2 text-xs rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900/40 px-3 py-2">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
+              <span className="text-emerald-900 dark:text-emerald-200">Nächste freie Pseudonym-ID (kleinste Lücke):</span>
+              <button
+                type="button"
+                onClick={() => { handlePseudonymChange(nextFreePseudonym); void refreshNextFreePseudonym(); }}
+                className="font-mono font-semibold underline underline-offset-2 hover:text-emerald-700 dark:hover:text-emerald-300"
+                title="Klicken zum Übernehmen"
+              >
+                {nextFreePseudonym}
+              </button>
+              <button
+                type="button"
+                onClick={() => void refreshNextFreePseudonym()}
+                className="ml-auto text-[11px] text-emerald-800/70 dark:text-emerald-300/70 hover:underline"
+              >
+                aktualisieren
+              </button>
+            </div>
+          )}
           {pseudonymFormatWarning && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
