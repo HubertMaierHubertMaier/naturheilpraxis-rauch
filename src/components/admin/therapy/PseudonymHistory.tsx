@@ -784,16 +784,19 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 }
 
 /** Generiert eine Pseudonym-ID nach Schema P-YYYY-NNNN.
- *  Nummern ≥ 2000 (Test-/Demo-Range) werden ignoriert, damit die
- *  reguläre Patienten-Vergabe nicht in den Test-Bereich springt. */
+ *  Liefert die NIEDRIGSTE freie Nummer ab 0001 (Lücken werden gefüllt).
+ *  Nummern ≥ 2000 (Test-/Demo-Range) werden ignoriert. */
 export function generatePseudonymId(existing: string[] = []): string {
   const year = new Date().getFullYear();
   const prefix = `P-${year}-`;
-  const numbers = existing
-    .filter((id) => id.startsWith(prefix))
-    .map((id) => parseInt(id.slice(prefix.length), 10))
-    .filter((n) => !isNaN(n) && n < 2000);
-  const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+  const taken = new Set<number>();
+  for (const id of existing) {
+    if (!id?.startsWith(prefix)) continue;
+    const n = parseInt(id.slice(prefix.length), 10);
+    if (!isNaN(n) && n > 0 && n < 2000) taken.add(n);
+  }
+  let next = 1;
+  while (taken.has(next)) next++;
   return `${prefix}${String(next).padStart(4, "0")}`;
 }
 
