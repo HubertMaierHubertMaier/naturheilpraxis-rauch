@@ -93,7 +93,7 @@ class PdfForm:
         self.c.setFont(BOLD, 13)
         self.c.drawString(M, H - 25, "Naturheilpraxis Peter Rauch")
         self.c.setFont(FONT, 8.5)
-        self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · info@rauch-heilpraktiker.de")
+        self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · praxis_rauch@icloud.com")
         self.c.setFont(BOLD, 10.5)
         self.c.drawRightString(W - M, H - 25, "ANAMNESEBOGEN")
         self.c.setFont(FONT, 8)
@@ -855,6 +855,7 @@ pdf.draw_wrapped(
 pdf.y -= 38
 pdf.text_row("krebsUnterschrift", [("Ort", "ort", 180), ("Datum", "datum", 120), ("Name in Druckbuchstaben", "name", 220)])
 pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung", height=60)
+pdf.note("So unterschreiben Sie – kostenlos, ohne Ausdrucken:  PC/Mac: Adobe Acrobat Reader (gratis) → rechts „Ausfüllen und Unterschreiben“ → „Selbst signieren“ → Unterschrift zeichnen → in das Feld oben ziehen.  iPhone/iPad: PDF in Mail oder Dateien öffnen → Markierungs-Symbol (Stift) → „+“ → „Unterschrift“ → mit dem Finger malen → ins Feld ziehen.  Android: gratis-App „Adobe Acrobat Reader“ → gleiche Schritte wie am PC.  Alternativ: ausdrucken und handschriftlich unterschreiben.")
 
 pdf.h1("XIV. Allergien")
 pdf.h2("Inhalationsallergien – Pollen")

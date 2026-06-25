@@ -54,7 +54,7 @@ class Form:
         self.c.drawString(M, H - 24, "Naturheilpraxis Peter Rauch")
         self.c.setFont(FONT, 7.8)
         self.c.drawString(M, H - 39, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462")
-        self.c.drawString(M, H - 50, "info@rauch-heilpraktiker.de")
+        self.c.drawString(M, H - 50, "praxis_rauch@icloud.com")
         self.c.setFont(BOLD, 11)
         self.c.drawRightString(W - M, H - 24, self.title.upper())
         self.c.setFont(FONT, 7.8)
@@ -349,7 +349,7 @@ pdf = Form(
 pdf.h1("Verantwortliche Person")
 pdf.para(
     "Peter Rauch, Heilpraktiker · Friedrich-Deffner-Straße 19a, 86163 Augsburg\n"
-    "Tel. 0821-2621462 · info@rauch-heilpraktiker.de"
+    "Tel. 0821-2621462 · praxis_rauch@icloud.com"
 )
 
 pdf.h1("I. Persönliche Angaben des/der Einwilligenden")
@@ -446,7 +446,7 @@ pdf.para(
 )
 pdf.note(
     "Widerruf jederzeit ohne Angabe von Gründen für die Zukunft möglich per Post oder per E-Mail an "
-    "info@rauch-heilpraktiker.de. Der Widerruf berührt nicht die Rechtmäßigkeit der bis dahin "
+    "praxis_rauch@icloud.com. Der Widerruf berührt nicht die Rechtmäßigkeit der bis dahin "
     "erfolgten Verarbeitung. Eine Behandlung ist ohne Einwilligung nicht möglich."
 )
 
