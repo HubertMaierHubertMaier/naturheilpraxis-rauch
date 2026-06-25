@@ -40,21 +40,30 @@ Deno.serve(async (req) => {
     }
 
     const email = user.email.trim().toLowerCase();
-    const { data: accessRow, error: accessError } = await adminClient
-      .from("patient_access")
-      .select("anamnese_download")
-      .eq("email", email)
-      .maybeSingle();
 
-    if (accessError) {
-      return json({ error: "Freischaltung konnte nicht geprüft werden." }, 500);
-    }
+    // Admin bypass
+    const { data: isAdmin } = await adminClient.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
 
-    if (accessRow?.anamnese_download !== true) {
-      return json(
-        { error: "PDF-Download ist für diese E-Mail-Adresse noch nicht freigeschaltet." },
-        403
-      );
+    if (isAdmin !== true) {
+      const { data: accessRow, error: accessError } = await adminClient
+        .from("patient_access")
+        .select("anamnese_download")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (accessError) {
+        return json({ error: "Freischaltung konnte nicht geprüft werden." }, 500);
+      }
+
+      if (accessRow?.anamnese_download !== true) {
+        return json(
+          { error: "PDF-Download ist für diese E-Mail-Adresse noch nicht freigeschaltet." },
+          403
+        );
+      }
     }
 
     const body = (await req.json().catch(() => ({}))) as RequestBody;
