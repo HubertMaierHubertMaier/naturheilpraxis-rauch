@@ -349,7 +349,7 @@ pdf = Form(
 pdf.h1("Verantwortliche Person")
 pdf.para(
     "Peter Rauch, Heilpraktiker · Friedrich-Deffner-Straße 19a, 86163 Augsburg\n"
-    "Tel. 0821-2621462 · info@rauch-heilpraktiker.de"
+    "Tel. 0821-2621462 · praxis_rauch@icloud.com"
 )
 
 pdf.h1("I. Persönliche Angaben des/der Einwilligenden")
