@@ -855,6 +855,7 @@ pdf.draw_wrapped(
 pdf.y -= 38
 pdf.text_row("krebsUnterschrift", [("Ort", "ort", 180), ("Datum", "datum", 120), ("Name in Druckbuchstaben", "name", 220)])
 pdf.signature_box("krebsUnterschrift", "Zusätzliche Unterschrift Krebserkrankung", height=60)
+pdf.note("So unterschreiben Sie – kostenlos, ohne Ausdrucken:  PC/Mac: Adobe Acrobat Reader (gratis) → rechts „Ausfüllen und Unterschreiben“ → „Selbst signieren“ → Unterschrift zeichnen → in das Feld oben ziehen.  iPhone/iPad: PDF in Mail oder Dateien öffnen → Markierungs-Symbol (Stift) → „+“ → „Unterschrift“ → mit dem Finger malen → ins Feld ziehen.  Android: gratis-App „Adobe Acrobat Reader“ → gleiche Schritte wie am PC.  Alternativ: ausdrucken und handschriftlich unterschreiben.")
 
 pdf.h1("XIV. Allergien")
 pdf.h2("Inhalationsallergien – Pollen")
