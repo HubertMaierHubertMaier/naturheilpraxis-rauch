@@ -54,7 +54,7 @@ class Form:
         self.c.drawString(M, H - 24, "Naturheilpraxis Peter Rauch")
         self.c.setFont(FONT, 7.8)
         self.c.drawString(M, H - 39, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462")
-        self.c.drawString(M, H - 50, "info@rauch-heilpraktiker.de")
+        self.c.drawString(M, H - 50, "praxis_rauch@icloud.com")
         self.c.setFont(BOLD, 11)
         self.c.drawRightString(W - M, H - 24, self.title.upper())
         self.c.setFont(FONT, 7.8)
