@@ -446,7 +446,7 @@ pdf.para(
 )
 pdf.note(
     "Widerruf jederzeit ohne Angabe von Gründen für die Zukunft möglich per Post oder per E-Mail an "
-    "info@rauch-heilpraktiker.de. Der Widerruf berührt nicht die Rechtmäßigkeit der bis dahin "
+    "praxis_rauch@icloud.com. Der Widerruf berührt nicht die Rechtmäßigkeit der bis dahin "
     "erfolgten Verarbeitung. Eine Behandlung ist ohne Einwilligung nicht möglich."
 )
 
