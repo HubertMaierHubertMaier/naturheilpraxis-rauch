@@ -93,7 +93,7 @@ class PdfForm:
         self.c.setFont(BOLD, 13)
         self.c.drawString(M, H - 25, "Naturheilpraxis Peter Rauch")
         self.c.setFont(FONT, 8.5)
-        self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · info@rauch-heilpraktiker.de")
+        self.c.drawString(M, H - 41, "Friedrich-Deffner-Straße 19a · 86163 Augsburg · Tel. 0821-2621462 · praxis_rauch@icloud.com")
         self.c.setFont(BOLD, 10.5)
         self.c.drawRightString(W - M, H - 25, "ANAMNESEBOGEN")
         self.c.setFont(FONT, 8)
