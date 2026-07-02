@@ -136,14 +136,45 @@ function extractDocumentInventoryFromText(
   return items;
 }
 
+function normalizeDocName(name: string): string {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/\.[a-z0-9]{2,5}$/i, "")
+    .replace(/\(\d+\s*s\.?[^)]*\)/g, "")
+    .replace(/[\s._\-]+/g, "")
+    .trim();
+}
+
 function dedupeDocumentInventory(items: DocumentInventoryItem[]): DocumentInventoryItem[] {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = [item.name, item.archivePath || "", item.datum || "", item.location].join("|").toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 80);
+  // Eine physische Datei = eine Zeile. Fundorte werden zusammengeführt.
+  const priority: Record<DocumentInventoryItem["location"], number> = {
+    event_log: 0, snapshot: 1, current_draft: 2, befund_pdf: 3, befund_html: 4, analysis_meta: 5,
+  };
+  const buckets = new Map<string, DocumentInventoryItem & { _sources?: string[] }>();
+  for (const item of items) {
+    const key = normalizeDocName(item.name) || `__${item.location}_${item.name}`;
+    const existing = buckets.get(key);
+    if (!existing) {
+      buckets.set(key, { ...item, _sources: item.source ? [item.source] : [] });
+      continue;
+    }
+    existing.archivePath = existing.archivePath || item.archivePath;
+    existing.pages = existing.pages || item.pages;
+    existing.chars = existing.chars || item.chars;
+    existing.datum = existing.datum || item.datum;
+    existing.loadedAt = existing.loadedAt || item.loadedAt;
+    existing.fieldLabel = existing.fieldLabel || item.fieldLabel;
+    if (item.source && !existing._sources!.includes(item.source)) existing._sources!.push(item.source);
+    if (priority[item.location] < priority[existing.location]) {
+      existing.location = item.location;
+      existing.kindLabel = item.kindLabel;
+      existing.name = item.name;
+    }
+  }
+  return Array.from(buckets.values()).map(({ _sources, ...rest }) => ({
+    ...rest,
+    source: _sources && _sources.length ? _sources.join(" · ") : rest.source,
+  })).slice(0, 80);
 }
 
 async function buildDocumentInventory(adminClient: any, pseudonymId: string, draftInput: Record<string, unknown>): Promise<DocumentInventoryItem[]> {
