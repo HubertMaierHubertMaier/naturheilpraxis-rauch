@@ -3048,6 +3048,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
+    setApothekerRezept("");
+    setZusatzTherapie("");
     setMannayanOrders([]);
     setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
@@ -3061,6 +3063,13 @@ export function TherapyRecommendation() {
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
+    setSelectedAnalysisSourceKeys([]);
+    setPendingDirectBefundFiles([]);
+    setLoadedDocumentInventory([]);
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress("");
+    setDocAnalysisStats(null);
+    setLatestBefundLoadedFrom(null);
     setWorkflowStage("edit");
     autoSaveSessionIdRef.current = null;
     checkpointSessionIdRef.current = null;
