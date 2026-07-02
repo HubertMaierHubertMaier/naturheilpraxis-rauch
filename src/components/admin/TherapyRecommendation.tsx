@@ -936,6 +936,7 @@ export function TherapyRecommendation() {
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
   const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
+  const [deletingArchiveDocumentPath, setDeletingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
