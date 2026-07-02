@@ -2645,7 +2645,7 @@ export function TherapyRecommendation() {
       const file = new File([blob], doc.name || doc.archivePath.split("/").pop() || "befund.pdf", { type: blob.type || "application/pdf" });
       const extracted = await extractClinicalDocumentText(file, "doctor", toast);
       const block = `${extracted.text.trim()}\n\n[Originaldatei aus Archiv geladen: therapy-documents/${doc.archivePath}]`;
-      setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+      setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, block));
       await logTherapyEvent(pid, "documents_uploaded", { files: [{ name: doc.name, pages: extracted.pages || doc.pages, chars: extracted.chars, archivePath: doc.archivePath }], note: "Archivierte Originaldatei erneut ausgelesen und in die Befund-Auswahl übernommen." });
       toast({ title: "Archiv-PDF übernommen", description: `${doc.name} steht jetzt oben als auswählbare Quelle bereit.` });
       setHistoryRefresh((n) => n + 1);
