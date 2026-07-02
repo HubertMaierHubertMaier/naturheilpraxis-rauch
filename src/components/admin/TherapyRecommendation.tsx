@@ -203,6 +203,46 @@ const sourceKeyPart = (value: string) => value
   .slice(0, 60)
   .toLowerCase() || "quelle";
 
+// Normalisiert Dokumentnamen für Dedup (case-insensitiv, ohne Endung/"(39 S.)"/Separatoren)
+const normalizeDocumentName = (value: string) => String(value || "")
+  .toLowerCase()
+  .replace(/\.[a-z0-9]{2,5}$/i, "")
+  .replace(/\(\d+\s*s\.?[^)]*\)/g, "")
+  .replace(/[\s._\-]+/g, "")
+  .trim();
+
+// Extrahiert Dateinamen aus "=== 📄 name (39 S.) ===" Header
+const extractMarkerName = (block: string): string => {
+  const m = block.match(/===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/);
+  return m?.[1]?.trim() || "";
+};
+
+// Merged neuen Dokumentblock in bestehenden Feldtext. Ist die Datei (Marker-basiert)
+// bereits enthalten, wird der alte Block ersetzt statt zusätzlich angehängt.
+const mergeExtractedBlockIntoField = (previous: string, newBlock: string): string => {
+  const cleanNew = newBlock.trim();
+  if (!cleanNew) return previous;
+  const newName = normalizeDocumentName(extractMarkerName(cleanNew));
+  const prevTrim = previous.trim();
+  if (!prevTrim) return cleanNew;
+  if (!newName) return `${prevTrim}\n\n${cleanNew}`;
+  const markerRe = /===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/g;
+  const spans: Array<{ start: number; end: number; name: string }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = markerRe.exec(prevTrim)) !== null) {
+    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1]) });
+  }
+  for (let i = 0; i < spans.length; i++) {
+    spans[i].end = i + 1 < spans.length ? spans[i + 1].start : prevTrim.length;
+  }
+  const hit = spans.find((x) => x.name === newName);
+  if (!hit) return `${prevTrim}\n\n${cleanNew}`;
+  const before = prevTrim.slice(0, hit.start).replace(/\s+$/, "");
+  const after = prevTrim.slice(hit.end).replace(/^\s+/, "");
+  return [before, cleanNew, after].filter(Boolean).join("\n\n");
+};
+
+
 const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, text: string): SelectableAnalysisSource[] => {
   const trimmed = text.trim();
   if (!trimmed) return [];
