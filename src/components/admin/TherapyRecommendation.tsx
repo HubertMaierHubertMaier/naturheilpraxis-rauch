@@ -1100,47 +1100,11 @@ export function TherapyRecommendation() {
   useEffect(() => {
     if (draftLoadedRef.current) return;
     draftLoadedRef.current = true;
+    // Session-Draft wird NICHT mehr automatisch aus sessionStorage wiederhergestellt.
+    // Nach F5 bleibt das Formular leer, bis der Nutzer die Pseudonym-ID erneut eingibt.
+    // Danach greift der Cloud/Local-Loader (loadCloudDraft) automatisch mit den echten Patientendaten.
     try {
-      const raw = sessionStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      if (d?.sessionDraftVersion !== 5) return;
-      if (!d?._pseudonym_id && !d?.pseudonymId) return;
-      const storedPid = normalizePseudonymId(String(d?._pseudonym_id || d?.pseudonymId || ""));
-      if (!isPatientScopedStorageReady(storedPid)) return;
-      if (typeof d?.pseudonymId === "string") {
-        patientDataOwnerRef.current = storedPid;
-        setPseudonymId(storedPid);
-      }
-      if (Array.isArray(d?.pathogens) && d.pathogens.length) setPathogens(d.pathogens);
-      if (typeof d?.symptome === "string") setSymptome(d.symptome);
-      if (typeof d?.erkrankung === "string") setErkrankung(d.erkrankung);
-      if (typeof d?.alter === "string") setAlter(d.alter);
-      if (typeof d?.geschlecht === "string") setGeschlecht(d.geschlecht);
-      if (typeof d?.groesseCm === "string") setGroesseCm(d.groesseCm);
-      if (typeof d?.gewichtKg === "string") setGewichtKg(d.gewichtKg);
-      if (typeof d?.schwanger === "string") setSchwanger(d.schwanger);
-      if (typeof d?.medikamente === "string") setMedikamente(d.medikamente);
-      if (typeof d?.bisherigeMittel === "string") setBisherigeMittel(d.bisherigeMittel);
-      if (typeof d?.budget === "string") setBudget(d.budget);
-      if (typeof d?.laborErhoeht === "string") setLaborErhoeht(d.laborErhoeht);
-      if (typeof d?.laborErniedrigt === "string") setLaborErniedrigt(d.laborErniedrigt);
-      if (typeof d?.laborKomplett === "string") setLaborKomplett(d.laborKomplett);
-      if (typeof d?.laborDatum === "string") setLaborDatum(d.laborDatum);
-      if (typeof d?.stuhlbefund === "string") setStuhlbefund(d.stuhlbefund);
-      if (typeof d?.arztbericht === "string") setArztbericht(d.arztbericht);
-      if (typeof d?.arztberichtDatum === "string") setArztberichtDatum(d.arztberichtDatum);
-      if (typeof d?.metatronHeel === "string") setMetatronHeel(d.metatronHeel);
-      if (typeof d?.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(d.sonstigeUntersuchungen);
-      if (typeof d?.perplexityAnalyse === "string") setPerplexityAnalyse(d.perplexityAnalyse);
-      if (typeof d?.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(d.eigeneTherapieVorlage);
-      if (typeof d?.apothekerRezept === "string") setApothekerRezept(d.apothekerRezept);
-      if (typeof d?.zusatzTherapie === "string") setZusatzTherapie(d.zusatzTherapie);
-      if (Array.isArray(d?.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
-      if (Array.isArray(d?.selectedCategories)) setSelectedCategories(d.selectedCategories);
-      if (Array.isArray(d?.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie);
-      if (Array.isArray(d?.pinnedMittel)) setPinnedMittel(d.pinnedMittel);
-      if (typeof d?.useProModel === "boolean") setUseProModel(d.useProModel);
+      sessionStorage.removeItem(DRAFT_KEY);
     } catch {}
   }, []);
   useEffect(() => {
