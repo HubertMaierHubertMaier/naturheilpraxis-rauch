@@ -2619,10 +2619,31 @@ export function TherapyRecommendation() {
 
   const addDirectBefundFiles = (list: FileList | null) => {
     if (!list?.length) return;
+    // C) Cross-Pseudonym-Warnung: greift für ALLE P-JAHR-NNNN (2026, 2027, ...)
+    const currentPid = normalizePseudonymId(pseudonymId);
+    const pidRe = /P-\d{4}-\d{4}/i;
+    const files = Array.from(list);
+    if (currentPid) {
+      const foreign = files
+        .map((f) => ({ file: f, hit: (f.name.match(pidRe) || [""])[0].toUpperCase() }))
+        .filter((x) => x.hit && x.hit !== currentPid);
+      if (foreign.length) {
+        const details = foreign.map((x) => `• ${x.file.name}  →  ${x.hit}`).join("\n");
+        const ok = window.confirm(
+          `⚠ Warnung: Dateiname deutet auf einen ANDEREN Patienten hin.\n\n` +
+          `Aktuell geöffnet: ${currentPid}\n\nBetroffene Datei(en):\n${details}\n\n` +
+          `Trotzdem bei ${currentPid} hochladen?`,
+        );
+        if (!ok) {
+          if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+          return;
+        }
+      }
+    }
     const stamp = Date.now().toString(36);
     setPendingDirectBefundFiles((prev) => [
       ...prev,
-      ...Array.from(list).map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
+      ...files.map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
     ]);
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
@@ -2691,6 +2712,21 @@ export function TherapyRecommendation() {
     try {
       const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
       if (error) throw error;
+      // B) Serverseitig: Snapshot + Draft räumen — sonst spielt der Trigger den Block beim
+      // nächsten Autosave wieder rein (extract_patient_snapshot_fields droppt leere Strings,
+      // Merge bewahrt dann den alten Wert). Gilt generisch für alle Patienten.
+      let serverStripInfo = "";
+      try {
+        const { data: stripResult, error: stripError } = await supabase.rpc(
+          "admin_strip_document_from_patient_context",
+          { _pseudonym_id: pid, _filename: doc.name || "", _archive_path: doc.archivePath || "" },
+        );
+        if (stripError) throw stripError;
+        const r = stripResult as { snapshot_updated?: number; drafts_updated?: number } | null;
+        serverStripInfo = ` Snapshot: ${r?.snapshot_updated ?? 0} · Draft: ${r?.drafts_updated ?? 0}.`;
+      } catch (stripErr: any) {
+        toast({ title: "Server-Aufräumen fehlgeschlagen", description: stripErr?.message || "Snapshot/Draft konnten nicht bereinigt werden.", variant: "destructive" });
+      }
       // Textblöcke aus allen Befund-Feldern rausräumen — Autosave persistiert dann den bereinigten Snapshot.
       setSonstigeUntersuchungen((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
       setArztbericht((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
@@ -2704,9 +2740,9 @@ export function TherapyRecommendation() {
       }));
       await logTherapyEvent(pid, "documents_deleted", {
         files: [{ name: doc.name, archivePath: doc.archivePath }],
-        note: "Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.",
+        note: `Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.${serverStripInfo}`,
       });
-      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv und Befund-Feldern entfernt.` });
+      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv, Snapshot und Befund-Feldern entfernt.` });
       setHistoryRefresh((n) => n + 1);
       refreshDocumentInventory(false);
     } catch (error: any) {

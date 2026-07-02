@@ -705,6 +705,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _strip_doc_block: {
+        Args: { _archive_path: string; _filename: string; _text: string }
+        Returns: string
+      }
+      admin_strip_document_from_patient_context: {
+        Args: {
+          _archive_path: string
+          _filename: string
+          _pseudonym_id: string
+        }
+        Returns: Json
+      }
       compact_therapy_session_input: {
         Args: { _input: Json; _max_chars?: number }
         Returns: Json
