@@ -242,6 +242,36 @@ const mergeExtractedBlockIntoField = (previous: string, newBlock: string): strin
   return [before, cleanNew, after].filter(Boolean).join("\n\n");
 };
 
+// Entfernt einen kompletten Dokumentblock (=== 📄/📷 name ===) aus einem Feldtext,
+// wenn Dateiname (normalisiert) ODER archivePath (im Body erwähnt) matcht.
+// Räumt auch den kurzen Marker `[Originaldatei … archivePath]` auf.
+const stripDocumentBlockFromField = (previous: string, targetName?: string, archivePath?: string): string => {
+  const prev = (previous || "").trim();
+  if (!prev) return prev;
+  const targetNorm = normalizeDocumentName(String(targetName || ""));
+  const pathNeedle = String(archivePath || "").trim();
+  const markerRe = /===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/g;
+  const spans: Array<{ start: number; end: number; name: string }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = markerRe.exec(prev)) !== null) {
+    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1]) });
+  }
+  for (let i = 0; i < spans.length; i++) spans[i].end = i + 1 < spans.length ? spans[i + 1].start : prev.length;
+  const keep: string[] = [];
+  const firstStart = spans.length ? spans[0].start : prev.length;
+  const head = prev.slice(0, firstStart).trim();
+  if (head) keep.push(head);
+  for (const s of spans) {
+    const body = prev.slice(s.start, s.end);
+    const nameHit = targetNorm && s.name === targetNorm;
+    const pathHit = pathNeedle && body.includes(pathNeedle);
+    if (nameHit || pathHit) continue;
+    keep.push(body.trim());
+  }
+  return keep.filter(Boolean).join("\n\n").trim();
+};
+
+
 
 const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, text: string): SelectableAnalysisSource[] => {
   const trimmed = text.trim();
