@@ -178,9 +178,37 @@ function dedupeDocumentInventory(items: DocumentInventoryItem[]): DocumentInvent
 }
 
 async function buildDocumentInventory(adminClient: any, pseudonymId: string, draftInput: Record<string, unknown>): Promise<DocumentInventoryItem[]> {
+  // 1) Pre-scan: welche Dateien wurden bereits explizit gelöscht?
+  //    Deren Erwähnungen filtern wir aus jedem Fundort raus, damit das Patientenbild
+  //    keine Geister-Referenzen mehr zeigt.
+  const { data: allEventRows } = await adminClient
+    .from("therapy_sessions")
+    .select("created_at,befund_meta")
+    .eq("pseudonym_id", pseudonymId)
+    .eq("kind", "event_log")
+    .order("created_at", { ascending: false })
+    .limit(240);
+
+  const deletedPaths = new Set<string>();
+  const deletedNormNames = new Set<string>();
+  for (const row of Array.isArray(allEventRows) ? allEventRows : []) {
+    const meta = row?.befund_meta || {};
+    if (String(meta.event_type || "") !== "documents_deleted") continue;
+    for (const file of Array.isArray(meta.files) ? meta.files : []) {
+      if (typeof file?.archivePath === "string" && file.archivePath) deletedPaths.add(file.archivePath);
+      const n = normalizeDocName(String(file?.name || ""));
+      if (n) deletedNormNames.add(n);
+    }
+  }
+  const isDeleted = (name?: string, archivePath?: string) => {
+    if (archivePath && deletedPaths.has(archivePath)) return true;
+    const n = normalizeDocName(String(name || ""));
+    return !!n && deletedNormNames.has(n);
+  };
+
   const items: DocumentInventoryItem[] = [];
   for (const key of Object.keys(FIELD_LABELS)) {
-    items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft"));
+    items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft").filter((it) => !isDeleted(it.name, it.archivePath)));
   }
 
   const { data: snapshot } = await adminClient
@@ -190,16 +218,11 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     .maybeSingle();
   const snapshotData = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data as Record<string, unknown> : {};
   for (const key of Object.keys(FIELD_LABELS)) {
-    items.push(...extractDocumentInventoryFromText(snapshotData[key], key, "Patienten-Snapshot (fest gespeichert)", "snapshot", snapshot?.updated_at));
+    items.push(...extractDocumentInventoryFromText(snapshotData[key], key, "Patienten-Snapshot (fest gespeichert)", "snapshot", snapshot?.updated_at).filter((it) => !isDeleted(it.name, it.archivePath)));
   }
 
-  const { data: eventRows } = await adminClient
-    .from("therapy_sessions")
-    .select("created_at,befund_meta")
-    .eq("pseudonym_id", pseudonymId)
-    .eq("kind", "event_log")
-    .order("created_at", { ascending: false })
-    .limit(120);
+  const eventRows = allEventRows;
+
   for (const row of Array.isArray(eventRows) ? eventRows : []) {
     const meta = row?.befund_meta || {};
     const eventType = String(meta.event_type || "");
@@ -207,17 +230,20 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     if (["documents_uploaded", "documents_saved"].includes(eventType) && Array.isArray(meta.files)) {
       for (const file of meta.files) {
         if (!file?.name) continue;
+        const archivePath = typeof file.archivePath === "string" ? file.archivePath : undefined;
+        if (isDeleted(file.name, archivePath)) continue;
         items.push({
           name: String(file.name),
           pages: typeof file.pages === "number" ? file.pages : undefined,
           chars: typeof file.chars === "number" ? file.chars : undefined,
-          archivePath: typeof file.archivePath === "string" ? file.archivePath : undefined,
+          archivePath,
           loadedAt: row.created_at,
           source: eventType === "documents_uploaded" ? "Beim Upload erkannte Originaldatei" : "In der Cloud archivierte Originaldatei",
           kindLabel: "Hochgeladene Originaldatei (PDF/Doku)",
           location: "event_log",
         });
       }
+
     }
 
     if (eventType === "befund_pdf_saved") {
@@ -283,12 +309,16 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
       for (const f of Array.isArray(files) ? files : []) {
         if (!f?.name) continue;
         const cleanName = f.name.replace(/^\d+-[a-z0-9]+-/i, "");
+        const archivePath = `${pseudonymId}/${dir.name}/${f.name}`;
+        if (isDeleted(cleanName, archivePath)) continue;
+
         const size = f.metadata && typeof f.metadata === "object" ? (f.metadata as any).size : undefined;
         items.push({
           name: cleanName,
           datum: dir.name,
           chars: typeof size === "number" ? size : undefined,
-          archivePath: `${pseudonymId}/${dir.name}/${f.name}`,
+          archivePath,
+
           loadedAt: f.created_at || dir.name,
           source: `Storage-Archiv (therapy-documents/${pseudonymId}/${dir.name})`,
           kindLabel: "Archivierte Originaldatei im Storage-Bucket",
