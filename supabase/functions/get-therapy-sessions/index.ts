@@ -317,7 +317,8 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
           name: cleanName,
           datum: dir.name,
           chars: typeof size === "number" ? size : undefined,
-          archivePath: `${pseudonymId}/${dir.name}/${f.name}`,
+          archivePath,
+
           loadedAt: f.created_at || dir.name,
           source: `Storage-Archiv (therapy-documents/${pseudonymId}/${dir.name})`,
           kindLabel: "Archivierte Originaldatei im Storage-Bucket",
