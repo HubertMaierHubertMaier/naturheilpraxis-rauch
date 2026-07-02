@@ -2712,6 +2712,21 @@ export function TherapyRecommendation() {
     try {
       const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
       if (error) throw error;
+      // B) Serverseitig: Snapshot + Draft räumen — sonst spielt der Trigger den Block beim
+      // nächsten Autosave wieder rein (extract_patient_snapshot_fields droppt leere Strings,
+      // Merge bewahrt dann den alten Wert). Gilt generisch für alle Patienten.
+      let serverStripInfo = "";
+      try {
+        const { data: stripResult, error: stripError } = await supabase.rpc(
+          "admin_strip_document_from_patient_context",
+          { _pseudonym_id: pid, _filename: doc.name || "", _archive_path: doc.archivePath || "" },
+        );
+        if (stripError) throw stripError;
+        const r = stripResult as { snapshot_updated?: number; drafts_updated?: number } | null;
+        serverStripInfo = ` Snapshot: ${r?.snapshot_updated ?? 0} · Draft: ${r?.drafts_updated ?? 0}.`;
+      } catch (stripErr: any) {
+        toast({ title: "Server-Aufräumen fehlgeschlagen", description: stripErr?.message || "Snapshot/Draft konnten nicht bereinigt werden.", variant: "destructive" });
+      }
       // Textblöcke aus allen Befund-Feldern rausräumen — Autosave persistiert dann den bereinigten Snapshot.
       setSonstigeUntersuchungen((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
       setArztbericht((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
@@ -2725,9 +2740,9 @@ export function TherapyRecommendation() {
       }));
       await logTherapyEvent(pid, "documents_deleted", {
         files: [{ name: doc.name, archivePath: doc.archivePath }],
-        note: "Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.",
+        note: `Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.${serverStripInfo}`,
       });
-      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv und Befund-Feldern entfernt.` });
+      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv, Snapshot und Befund-Feldern entfernt.` });
       setHistoryRefresh((n) => n + 1);
       refreshDocumentInventory(false);
     } catch (error: any) {
