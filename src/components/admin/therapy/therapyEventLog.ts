@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type TherapyEventType =
   | "documents_uploaded"
   | "documents_saved"
+  | "documents_deleted"
   | "patient_context_loaded"
   | "befund_input_loaded"
   | "befund_html_success"
