@@ -309,6 +309,9 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
       for (const f of Array.isArray(files) ? files : []) {
         if (!f?.name) continue;
         const cleanName = f.name.replace(/^\d+-[a-z0-9]+-/i, "");
+        const archivePath = `${pseudonymId}/${dir.name}/${f.name}`;
+        if (isDeleted(cleanName, archivePath)) continue;
+
         const size = f.metadata && typeof f.metadata === "object" ? (f.metadata as any).size : undefined;
         items.push({
           name: cleanName,
