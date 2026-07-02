@@ -28,7 +28,11 @@ type PendingFile = {
   chars?: number;
   archivePath?: string;
   error?: string;
+  piiHits?: PiiHit[];
 };
+
+export type PiiHit = { kind: string; sample: string };
+
 
 export type ClinicalDocumentExtractionResult = {
   text: string;
