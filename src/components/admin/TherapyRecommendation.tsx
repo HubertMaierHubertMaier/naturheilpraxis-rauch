@@ -2589,7 +2589,7 @@ export function TherapyRecommendation() {
     if (!text.trim()) return;
     const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
-    setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}${header}${text}` : `${header.trim()}\n${text}`));
+    setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, `${header}${text}`));
     toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
   };
 
