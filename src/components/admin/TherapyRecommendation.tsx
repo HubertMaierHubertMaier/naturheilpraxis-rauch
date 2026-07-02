@@ -1093,7 +1093,7 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v4";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v5";
   const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
@@ -1104,6 +1104,7 @@ export function TherapyRecommendation() {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
+      if (d?.sessionDraftVersion !== 5) return;
       if (!d?._pseudonym_id && !d?.pseudonymId) return;
       const storedPid = normalizePseudonymId(String(d?._pseudonym_id || d?.pseudonymId || ""));
       if (!isPatientScopedStorageReady(storedPid)) return;
@@ -1152,6 +1153,7 @@ export function TherapyRecommendation() {
       }
       const draftPayload = {
         _pseudonym_id: currentPid,
+        sessionDraftVersion: 5,
         pseudonymId: currentPid, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders,
