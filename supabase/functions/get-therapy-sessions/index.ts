@@ -200,11 +200,46 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
       if (n) deletedNormNames.add(n);
     }
   }
+  // Storage vorab listen — Realität schlägt Event-Log-Historie.
+  const existingArchivePaths = new Set<string>();
+  const existingNormNames = new Set<string>();
+  try {
+    const { data: dateDirs } = await adminClient.storage
+      .from("therapy-documents")
+      .list(pseudonymId, { limit: 100, sortBy: { column: "name", order: "desc" } });
+    for (const dir of Array.isArray(dateDirs) ? dateDirs : []) {
+      if (!dir?.name) continue;
+      const { data: files } = await adminClient.storage
+        .from("therapy-documents")
+        .list(`${pseudonymId}/${dir.name}`, { limit: 200 });
+      for (const f of Array.isArray(files) ? files : []) {
+        if (!f?.name) continue;
+        existingArchivePaths.add(`${pseudonymId}/${dir.name}/${f.name}`);
+        const cleanName = f.name.replace(/^\d+-[a-z0-9]+-/i, "");
+        const n = normalizeDocName(cleanName);
+        if (n) existingNormNames.add(n);
+      }
+    }
+  } catch (e) {
+    console.warn("[get-therapy-sessions] pre-scan storage failed:", getErrorMessage(e));
+  }
+
   const isDeleted = (name?: string, archivePath?: string) => {
-    if (archivePath && deletedPaths.has(archivePath)) return true;
+    if (archivePath) {
+      if (deletedPaths.has(archivePath)) return true;
+      // Cross-Pseudonym-Referenz (Datei gehört zu anderem Patienten) → nie anzeigen
+      if (!archivePath.startsWith(`${pseudonymId}/`)) return true;
+      // Pfad zeigt auf diesen Patienten, existiert aber physisch nicht mehr im Bucket
+      if (existingArchivePaths.size > 0 && !existingArchivePaths.has(archivePath)) return true;
+    }
     const n = normalizeDocName(String(name || ""));
-    return !!n && deletedNormNames.has(n);
+    if (!n) return false;
+    if (deletedNormNames.has(n)) return true;
+    // Name wird in Event-Log/Snapshot/Draft erwähnt, physisch nicht mehr im Bucket dieses Patienten
+    if (existingNormNames.size > 0 && !existingNormNames.has(n) && archivePath && archivePath.startsWith(`${pseudonymId}/`)) return true;
+    return false;
   };
+
 
   const items: DocumentInventoryItem[] = [];
   for (const key of Object.keys(FIELD_LABELS)) {
