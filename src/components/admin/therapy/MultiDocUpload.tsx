@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, FileUp, X, CheckCircle2, FileText } from "lucide-react";
+import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { logTherapyEvent } from "./therapyEventLog";
@@ -28,7 +28,73 @@ type PendingFile = {
   chars?: number;
   archivePath?: string;
   error?: string;
+  piiHits?: PiiHit[];
 };
+
+export type PiiHit = { kind: string; sample: string };
+
+/**
+ * Heuristischer Klartext-Scan für Patientendaten.
+ * Läuft direkt nach Text-Extraktion, bevor der Text an die KI geht.
+ * Bewusst konservativ: eher zu viele Warnungen als zu wenige.
+ */
+export function scanForPatientPII(input: string): PiiHit[] {
+  if (!input) return [];
+  const hits: PiiHit[] = [];
+  const seen = new Set<string>();
+  const push = (kind: string, sample: string) => {
+    const key = `${kind}::${sample.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    hits.push({ kind, sample: sample.length > 80 ? sample.slice(0, 77) + "…" : sample });
+  };
+
+  // Namensfelder mit Wert dahinter: "Name: Max Mustermann", "Patient: …", "Nachname: …"
+  const nameField = /\b(Name|Nachname|Vorname|Patient(?:in)?|Versicherter)\s*[:\-]\s*([A-ZÄÖÜ][a-zäöüß\-]{1,}(?:\s+[A-ZÄÖÜ][a-zäöüß\-]{1,}){0,3})/g;
+  let m: RegExpExecArray | null;
+  while ((m = nameField.exec(input))) push("Name-Feld", `${m[1]}: ${m[2]}`);
+
+  // Anrede + Name: "Herr Müller", "Frau Dr. Schmidt-Weber"
+  const anrede = /\b(Herr|Frau|Herrn)\s+(?:Dr\.?\s+|Prof\.?\s+)?([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:\s+[A-ZÄÖÜ][a-zäöüß\-]{2,})?)/g;
+  while ((m = anrede.exec(input))) {
+    // "Herr Peter Rauch" (Behandler selbst) ausblenden
+    if (/rauch/i.test(m[2])) continue;
+    push("Anrede+Name", `${m[1]} ${m[2]}`);
+  }
+
+  // Deutsche Straße + Hausnummer
+  const strasse = /\b([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:straße|str\.|weg|allee|platz|gasse|ring|damm))\s+\d{1,4}[a-z]?/gi;
+  while ((m = strasse.exec(input))) push("Adresse", m[0]);
+
+  // PLZ + Ort (5 Ziffern + Wort mit Großbuchstaben)
+  const plz = /\b(\d{5})\s+([A-ZÄÖÜ][a-zäöüß\-]{2,}(?:\s+[A-ZÄÖÜ][a-zäöüß\-]{2,})?)/g;
+  while ((m = plz.exec(input))) push("PLZ/Ort", `${m[1]} ${m[2]}`);
+
+  // Geburtsdatum (mit Kontext, damit nicht jedes Datum aufschlägt)
+  const geb = /\b(geb\.|geboren|Geburtsdatum|Geb\.-?Datum|Geb\.-?Tag)\s*[:\.]?\s*(\d{1,2}[.\/\-]\d{1,2}[.\/\-]\d{2,4})/gi;
+  while ((m = geb.exec(input))) push("Geburtsdatum", `${m[1]} ${m[2]}`);
+
+  // Telefon (deutsche Nummern, min. 8 Ziffern)
+  const tel = /(?:Tel\.?|Telefon|Mobil|Handy|Fon)\s*[:\.]?\s*(\+?\d[\d\s\/\-()]{7,})/gi;
+  while ((m = tel.exec(input))) push("Telefon", m[0]);
+
+  // E-Mail (private Adressen — Praxis-Mails rausfiltern)
+  const mail = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+  while ((m = mail.exec(input))) {
+    const addr = m[0].toLowerCase();
+    if (/(art-of-therapy|rauch|noreply|no-reply|example)/.test(addr)) continue;
+    push("E-Mail", m[0]);
+  }
+
+  // Versicherten-/KV-Nummer
+  const kv = /\b(Versicherten-?Nr\.?|KV-?Nr\.?|Krankenkassen-?Nr\.?)\s*[:\.]?\s*([A-Z0-9]{6,})/gi;
+  while ((m = kv.exec(input))) push("Versicherten-Nr.", `${m[1]} ${m[2]}`);
+
+  return hits;
+}
+
+
+
 
 export type ClinicalDocumentExtractionResult = {
   text: string;
@@ -179,13 +245,31 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       try {
         const archivePath = await archiveOriginal(updated[i].file);
         const text = await extractOne(updated[i]);
+        const piiHits = scanForPatientPII(text);
         combined += `${text}\n\n[Originaldatei sicher archiviert: ${STORAGE_BUCKET}/${archivePath}]`;
-        updated[i] = { ...updated[i], status: "done", chars: text.length, archivePath };
+        updated[i] = { ...updated[i], status: "done", chars: text.length, archivePath, piiHits };
       } catch (e: any) {
         updated[i] = { ...updated[i], status: "error", error: e.message || "Fehler" };
       }
       setFiles([...updated]);
     }
+    // PII-Warnungen aggregiert anzeigen (nicht blockierend — Peter entscheidet)
+    const withPii = updated.filter((u) => u.status === "done" && u.piiHits && u.piiHits.length);
+    if (withPii.length) {
+      for (const pf of withPii) {
+        const preview = pf.piiHits!.slice(0, 5).map((h) => `• ${h.kind}: „${h.sample}"`).join("\n");
+        toast({
+          title: `⚠ Mögliche Patientendaten in „${pf.file.name}"`,
+          description: `${pf.piiHits!.length} Treffer — bitte prüfen, ob die Datei wirklich anonym ist:\n${preview}`,
+          variant: "destructive",
+        });
+      }
+      await logTherapyEvent(pseudonymId, "pii_warning", {
+        files: withPii.map((u) => ({ name: u.file.name, hits: u.piiHits })),
+        note: "Client-PII-Scanner hat mögliche Klartext-Patientendaten erkannt.",
+      });
+    }
+
     const failed = updated.filter((u) => u.status === "error");
     const successDocs = updated.filter((u) => u.status === "done");
     if (combined.trim()) {
@@ -240,6 +324,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
                 {pf.pages ? ` · ${pf.pages} S.` : ""}
               </span>
               {pf.archivePath && <span className="text-emerald-700 text-[10px] whitespace-nowrap" title={`${STORAGE_BUCKET}/${pf.archivePath}`}>archiviert</span>}
+              {pf.piiHits && pf.piiHits.length > 0 && (
+                <span className="flex items-center gap-1 text-rose-700 text-[10px] whitespace-nowrap" title={pf.piiHits.map((h) => `${h.kind}: ${h.sample}`).join("\n")}>
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  {pf.piiHits.length} PII
+                </span>
+              )}
               {pf.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
               {pf.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
               {pf.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pf.error}>Fehler: {pf.error || "keine Daten extrahiert"}</span>}

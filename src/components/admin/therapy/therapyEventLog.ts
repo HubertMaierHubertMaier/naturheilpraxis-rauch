@@ -18,7 +18,8 @@ export type TherapyEventType =
   | "full_analysis_started"
   | "full_analysis_success"
   | "full_analysis_failed"
-  | "patient_saved";
+  | "patient_saved"
+  | "pii_warning";
 
 export interface TherapyEventDetails {
   files?: Array<{ name: string; pages?: number; chars?: number; archivePath?: string; error?: string }>;
@@ -46,6 +47,7 @@ const labelFor = (t: TherapyEventType): string => {
     case "full_analysis_success": return "✓ Alles neu auswerten – erfolgreich";
     case "full_analysis_failed": return "✗ Alles neu auswerten – fehlgeschlagen";
     case "patient_saved": return "💾 Therapieplan finalisiert";
+    case "pii_warning": return "⚠ Mögliche Patientendaten erkannt";
   }
 };
 
