@@ -183,13 +183,31 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       try {
         const archivePath = await archiveOriginal(updated[i].file);
         const text = await extractOne(updated[i]);
+        const piiHits = scanForPatientPII(text);
         combined += `${text}\n\n[Originaldatei sicher archiviert: ${STORAGE_BUCKET}/${archivePath}]`;
-        updated[i] = { ...updated[i], status: "done", chars: text.length, archivePath };
+        updated[i] = { ...updated[i], status: "done", chars: text.length, archivePath, piiHits };
       } catch (e: any) {
         updated[i] = { ...updated[i], status: "error", error: e.message || "Fehler" };
       }
       setFiles([...updated]);
     }
+    // PII-Warnungen aggregiert anzeigen (nicht blockierend — Peter entscheidet)
+    const withPii = updated.filter((u) => u.status === "done" && u.piiHits && u.piiHits.length);
+    if (withPii.length) {
+      for (const pf of withPii) {
+        const preview = pf.piiHits!.slice(0, 5).map((h) => `• ${h.kind}: „${h.sample}"`).join("\n");
+        toast({
+          title: `⚠ Mögliche Patientendaten in „${pf.file.name}"`,
+          description: `${pf.piiHits!.length} Treffer — bitte prüfen, ob die Datei wirklich anonym ist:\n${preview}`,
+          variant: "destructive",
+        });
+      }
+      await logTherapyEvent(pseudonymId, "pii_warning", {
+        files: withPii.map((u) => ({ name: u.file.name, hits: u.piiHits })),
+        note: "Client-PII-Scanner hat mögliche Klartext-Patientendaten erkannt.",
+      });
+    }
+
     const failed = updated.filter((u) => u.status === "error");
     const successDocs = updated.filter((u) => u.status === "done");
     if (combined.trim()) {
