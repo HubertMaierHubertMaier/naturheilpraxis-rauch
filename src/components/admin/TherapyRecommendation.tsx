@@ -1093,7 +1093,7 @@ export function TherapyRecommendation() {
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
-  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v4";
+  const DRAFT_KEY = "therapy.draftInputs.patientSafe.v5";
   const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
@@ -1104,6 +1104,7 @@ export function TherapyRecommendation() {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
+      if (d?.sessionDraftVersion !== 5) return;
       if (!d?._pseudonym_id && !d?.pseudonymId) return;
       const storedPid = normalizePseudonymId(String(d?._pseudonym_id || d?.pseudonymId || ""));
       if (!isPatientScopedStorageReady(storedPid)) return;
@@ -1145,14 +1146,20 @@ export function TherapyRecommendation() {
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     try {
+      const currentPid = normalizePseudonymId(pseudonymId);
+      if (!currentPid) {
+        sessionStorage.removeItem(DRAFT_KEY);
+        return;
+      }
       const draftPayload = {
-        _pseudonym_id: normalizePseudonymId(pseudonymId),
-        pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
+        _pseudonym_id: currentPid,
+        sessionDraftVersion: 5,
+        pseudonymId: currentPid, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
-      if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+      if (isPatientScopedStorageReady(currentPid)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
@@ -1680,6 +1687,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
+    setApothekerRezept("");
+    setZusatzTherapie("");
     setMannayanOrders([]);
     setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
@@ -1698,7 +1707,16 @@ export function TherapyRecommendation() {
     setDiagnosen([]);
     setDocAnalysisHtml("");
     setDocAnalysisProgress("");
+    setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setSelectedAnalysisSourceKeys([]);
+    setPendingDirectBefundFiles([]);
+    setLoadedDocumentInventory([]);
+    setLoadingArchiveDocumentPath(null);
+    setHpCheckHtml("");
+    setHpCheckMarkdown("");
+    setHpCheckModelLabel("");
+    setHpCheckTimestamp("");
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
@@ -1728,6 +1746,13 @@ export function TherapyRecommendation() {
       });
     } else if (hasPatientScopedData && !next) {
       clearPatientScopedState();
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+        if (previous) {
+          localStorage.removeItem(`therapy.inputs.draft.patientSafe.v4.${previous}`);
+          localStorage.removeItem(`therapy.workflow.draft.${previous}`);
+        }
+      } catch {}
     }
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
@@ -3029,6 +3054,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
+    setApothekerRezept("");
+    setZusatzTherapie("");
     setMannayanOrders([]);
     setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
@@ -3042,6 +3069,17 @@ export function TherapyRecommendation() {
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
+    setSelectedAnalysisSourceKeys([]);
+    setPendingDirectBefundFiles([]);
+    setLoadedDocumentInventory([]);
+    setDocAnalysisHtml("");
+    setDocAnalysisProgress("");
+    setDocAnalysisStats(null);
+    setLatestBefundLoadedFrom(null);
+    setHpCheckHtml("");
+    setHpCheckMarkdown("");
+    setHpCheckModelLabel("");
+    setHpCheckTimestamp("");
     setWorkflowStage("edit");
     autoSaveSessionIdRef.current = null;
     checkpointSessionIdRef.current = null;
