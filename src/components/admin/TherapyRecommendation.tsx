@@ -1129,19 +1129,34 @@ export function TherapyRecommendation() {
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
   const DRAFT_KEY = "therapy.draftInputs.patientSafe.v5";
+  const PID_KEY = "therapy.currentPseudonymId.v1";
   const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
     if (draftLoadedRef.current) return;
     draftLoadedRef.current = true;
-    // Session-Draft wird NICHT mehr automatisch aus sessionStorage wiederhergestellt.
-    // Nach F5 bleibt das Formular leer, bis der Nutzer die Pseudonym-ID erneut eingibt.
-    // Danach greift der Cloud/Local-Loader (loadCloudDraft) automatisch mit den echten Patientendaten.
+    // Formular-Draft NICHT automatisch aus sessionStorage wiederherstellen.
+    // Nur die reine Pseudonym-ID zurückholen, damit ein Tab-Wechsel / PDF-Öffnen
+    // die Eingabe nicht verwirft. Der Cloud/Local-Loader füllt danach die Felder.
     try {
       sessionStorage.removeItem(DRAFT_KEY);
+      const savedPid = sessionStorage.getItem(PID_KEY);
+      if (savedPid && /^P-\d{4}-\d{1,4}$/.test(savedPid)) {
+        pseudonymIdRef.current = savedPid;
+        patientDataOwnerRef.current = savedPid;
+        setPseudonymId(savedPid);
+      }
     } catch {}
   }, []);
+  // Pseudonym-ID persistent in sessionStorage spiegeln (überlebt Tab-Wechsel).
+  useEffect(() => {
+    try {
+      const pid = normalizePseudonymId(pseudonymId);
+      if (pid) sessionStorage.setItem(PID_KEY, pid);
+      else sessionStorage.removeItem(PID_KEY);
+    } catch {}
+  }, [pseudonymId]);
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     try {
