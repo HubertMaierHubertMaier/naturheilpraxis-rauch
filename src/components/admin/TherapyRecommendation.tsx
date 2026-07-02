@@ -1145,14 +1145,19 @@ export function TherapyRecommendation() {
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     try {
+      const currentPid = normalizePseudonymId(pseudonymId);
+      if (!currentPid) {
+        sessionStorage.removeItem(DRAFT_KEY);
+        return;
+      }
       const draftPayload = {
-        _pseudonym_id: normalizePseudonymId(pseudonymId),
-        pseudonymId: normalizePseudonymId(pseudonymId), pathogens, symptome, erkrankung, alter, geschlecht,
+        _pseudonym_id: currentPid,
+        pseudonymId: currentPid, pathogens, symptome, erkrankung, alter, geschlecht,
         groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget,
         laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders,
         selectedCategories, bevorzugteLinie, pinnedMittel, useProModel,
       };
-      if (isPatientScopedStorageReady(pseudonymId)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+      if (isPatientScopedStorageReady(currentPid)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
   }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, bevorzugteLinie, pinnedMittel, useProModel, inputDraftKey]);
@@ -1680,6 +1685,8 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
+    setApothekerRezept("");
+    setZusatzTherapie("");
     setMannayanOrders([]);
     setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
@@ -1698,7 +1705,12 @@ export function TherapyRecommendation() {
     setDiagnosen([]);
     setDocAnalysisHtml("");
     setDocAnalysisProgress("");
+    setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setSelectedAnalysisSourceKeys([]);
+    setPendingDirectBefundFiles([]);
+    setLoadedDocumentInventory([]);
+    setLoadingArchiveDocumentPath(null);
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
@@ -1728,6 +1740,13 @@ export function TherapyRecommendation() {
       });
     } else if (hasPatientScopedData && !next) {
       clearPatientScopedState();
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+        if (previous) {
+          localStorage.removeItem(`therapy.inputs.draft.patientSafe.v4.${previous}`);
+          localStorage.removeItem(`therapy.workflow.draft.${previous}`);
+        }
+      } catch {}
     }
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
