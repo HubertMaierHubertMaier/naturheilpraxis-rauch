@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType, Maximize2, Minimize2, ExternalLink } from "lucide-react";
+import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType, Maximize2, Minimize2, ExternalLink, Trash2 } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
 import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
@@ -936,6 +936,7 @@ export function TherapyRecommendation() {
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
   const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
+  const [deletingArchiveDocumentPath, setDeletingArchiveDocumentPath] = useState<string | null>(null);
   const [extractedFromDocs, setExtractedFromDocs] = useState<{
     forPseudonymId: string;
     diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -2649,6 +2650,31 @@ export function TherapyRecommendation() {
     }
   };
 
+  const deleteArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
+    if (!doc.archivePath) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    const confirmed = window.confirm(
+      `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt. Bereits in „Sonstige Voruntersuchungen" eingefügter Text bleibt bestehen und muss ggf. manuell gelöscht werden.`,
+    );
+    if (!confirmed) return;
+    setDeletingArchiveDocumentPath(doc.archivePath);
+    try {
+      const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
+      if (error) throw error;
+      setLoadedDocumentInventory((current) => current.filter((item) => item.archivePath !== doc.archivePath));
+      await logTherapyEvent(pid, "documents_deleted", {
+        files: [{ name: doc.name, archivePath: doc.archivePath }],
+        note: "Archivierte Originaldatei manuell aus therapy-documents gelöscht.",
+      });
+      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus dem Cloud-Archiv entfernt.` });
+      setHistoryRefresh((n) => n + 1);
+    } catch (error: any) {
+      toast({ title: "Löschen fehlgeschlagen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
+    } finally {
+      setDeletingArchiveDocumentPath(null);
+    }
+  };
+
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".docx")) {
@@ -3206,9 +3232,13 @@ export function TherapyRecommendation() {
                     <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
                     <span className="min-w-0 flex-1 truncate" title={doc.name}>{doc.name}</span>
                     {doc.note ? <span className="hidden sm:inline text-muted-foreground whitespace-nowrap">{doc.note}</span> : null}
-                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
+                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
                       {loadingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                       In Auswahl laden
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => deleteArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" title="Archiv-PDF löschen (unwiderruflich)">
+                      {deletingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Löschen
                     </Button>
                   </div>
                 ))}
