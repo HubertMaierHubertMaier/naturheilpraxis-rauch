@@ -253,8 +253,12 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
   const sources: SelectableAnalysisSource[] = [];
   const firstIndex = matches[0].index ?? 0;
   const before = trimmed.slice(0, firstIndex).trim();
-  if (before.length > 30) {
-    sources.push({ key: `${fieldKey}:intro`, label: `${fallbackLabel} – Kopftext`, text: before, group: "befund", chars: before.length, lines: countClinicalLines(before) });
+  const beforeLines = countClinicalLines(before);
+  // Technische Mini-Reste vor dem ersten Dokumentmarker nicht als eigene „Datei" anzeigen.
+  // In der Praxis tauchten hier 1-zeilige Kopftexte wie „PDF-Drop-Ziel ..." auf;
+  // medizinisch relevant ist erst längerer Freitext oder das markierte Dokument selbst.
+  if (before.length > 120 || beforeLines > 2) {
+    sources.push({ key: `${fieldKey}:intro`, label: `${fallbackLabel} – Kopftext`, text: before, group: "befund", chars: before.length, lines: beforeLines });
   }
   matches.forEach((match, index) => {
     const start = match.index ?? 0;
@@ -284,11 +288,11 @@ const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => 
 const mergeDocumentInventory = (...groups: DocumentInventoryItem[][]): DocumentInventoryItem[] => {
   const seen = new Set<string>();
   return groups.flat().filter((item) => {
-    const key = [item.archivePath || "", item.name, item.datum || "", item.source || ""].join("|").toLowerCase();
+    const key = normalizeDocumentName(item.name) || (item.archivePath || "").toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  });
+  }).slice(0, 80);
 };
 
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
