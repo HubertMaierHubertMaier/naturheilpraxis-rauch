@@ -1711,6 +1711,10 @@ export function TherapyRecommendation() {
     setPendingDirectBefundFiles([]);
     setLoadedDocumentInventory([]);
     setLoadingArchiveDocumentPath(null);
+    setHpCheckHtml("");
+    setHpCheckMarkdown("");
+    setHpCheckModelLabel("");
+    setHpCheckTimestamp("");
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
@@ -3070,6 +3074,10 @@ export function TherapyRecommendation() {
     setDocAnalysisProgress("");
     setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setHpCheckHtml("");
+    setHpCheckMarkdown("");
+    setHpCheckModelLabel("");
+    setHpCheckTimestamp("");
     setWorkflowStage("edit");
     autoSaveSessionIdRef.current = null;
     checkpointSessionIdRef.current = null;
