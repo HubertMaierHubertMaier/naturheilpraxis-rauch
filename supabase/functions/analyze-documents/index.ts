@@ -151,7 +151,13 @@ Patientenkontext: ${patientContext(b)}
 
 Wichtig:
 - Es ist eine reine Befund-Auswertung, KEINE eigene Therapie-Empfehlung und KEINE neuen Mittel-Vorschläge.
-- VOLLSTÄNDIGKEIT IST PFLICHT. Extrahiere ALLES, was an folgenden Standard-Anamnese-Kategorien im Text vorkommt (auch wenn die Überschriften englisch, französisch oder anders benannt sind — semantisch zuordnen):
+- 📝 FORMULAR-REGEL (kritisch, gilt insbesondere für ausgefüllte Anamnesebögen, Fragebögen, Checklisten, IAA-Bögen):
+  * Es dürfen NUR Einträge extrahiert werden, bei denen der Patient tatsächlich etwas ausgefüllt oder angekreuzt hat — also freier Text, eine handschriftliche Notiz, ein sichtbares Kreuz/Häkchen (X, ✓, ☑, "ja") oder eine numerische Skalen-Antwort > 1 (die "1" ist bei IAA/Trikombin die Default-Grundausprägung "nicht/kaum" und zählt NICHT als bejahtes Symptom).
+  * Gedruckte Formular-Labels, leere Checkbox-Zeilen, Beispiel-Platzhalter ("(unleserlich)", "(Datum)", "(Jahr)", "seit …", "________"), unausgefüllte Tabellenzeilen und ganze Sektions-Überschriften ohne Patient-Antwort werden STILL VERWORFEN — sie sind keine Befunde. Niemals als leere Bullet-Punkte, "Keine Angabe"-Zeilen oder "[Datum entfernt]"-Zeilen ausgeben.
+  * Wenn eine ganze Sektion vom Patienten leer gelassen wurde: die Sektion komplett weglassen (leeres Array zurückgeben). Nicht die Frage/Label als vermeintlichen Befund übernehmen.
+  * KEINE Datum-Platzhalter erfinden: wenn im Formularabschnitt kein echtes Datum steht, "datum":"" lassen. Niemals "[Datum entfernt]", "[Datum nicht erkennbar]", "(Datum folgt aus …)" o.ä. produzieren.
+- Für Arztbriefe, Laborbefunde, Bildgebung, Entlassbriefe, Konsile gilt weiterhin: möglichst vollständig extrahieren, was im Text steht (Diagnosen, Werte, Medikamente, Anamnese-Angaben) — inkl. Datum aus Header/Probenabnahme.
+- Standard-Anamnese-Kategorien (semantisch zuordnen, EN/FR-Überschriften erkennen — aber nur mit tatsächlich vorhandenen Inhalten füllen, nicht mit leeren Formulartiteln):
   * Current medical problems / Aktuelle Beschwerden
   * Past medical history / Vorerkrankungen, OPs, stationäre Aufenthalte
   * Allergies / Allergien & Unverträglichkeiten
@@ -164,7 +170,7 @@ Wichtig:
   * Social status / Sozialanamnese (Beruf, Wohnsituation, Familie, Belastungen)
   * Physical examination / körperlicher Untersuchungsbefund
   * Additional medical investigation / weiterführende Untersuchungen (Labor, Bildgebung, Funktionsdiagnostik)
-- ALLE Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel vollständig in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Lieber zu viel als zu wenig.
+- ALLE tatsächlich dokumentierten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Leere Medikamenten-Tabellenzeilen aus Anamnesebögen NICHT übernehmen.
 - Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
 - 🇩🇪 PFLICHT-DEUTSCH: ALLE extrahierten Textinhalte (Befund-Texte, Diagnose-Bezeichnungen, Parameter-Namen, Status, Untersuchungs-Bezeichnungen, Hauptbefunde, Wirkmechanismen, Indikationen, Nebenwirkungen, terms.plain) MÜSSEN auf Deutsch sein. Englische/französische/lateinische Originalbegriffe nur in Klammern beibehalten, z.B. "Leukozyten (WBC)", "Cholesterin gesamt (Total Cholesterol)", "Reizdarmsyndrom (IBS)", "Schilddrüsen-stimulierendes Hormon (TSH)", "Gelenkschmerzen (joint pain)". Niemals nur den englischen Originaltext stehen lassen — IMMER deutsch primär. Einheiten (mg/dl, mmol/l, ng/ml …) und Eigennamen (Markennamen, Personennamen) bleiben unverändert.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
@@ -243,7 +249,7 @@ VERBINDLICHE OUTPUT-STRUKTUR:
 - Ausschließlich vollständiges HTML: <!DOCTYPE html> ... </html>
 - Deutsche Sprache, eingebettetes CSS, serifenfreie Schrift, Akzentfarbe #6b8e6b, A4/Print-tauglich, Tabellen mit dünner Border, h2 mit linker Bordleiste. Belege/Zitate in kleinerer Schrift (font-size:0.85em, color:#5a6b5a, kursiv) darstellen.
 - Keine Therapie-Empfehlung, keine Mittel-Vorschläge. Es geht um Befundübersicht, Einordnung und Vorbereitung des Erstgesprächs.
-- VOLLSTÄNDIGKEIT IST PFLICHT. Jede Sektion + Unterpunkt muss erscheinen, auch wenn leer (dann explizit "In den vorliegenden Unterlagen nicht dokumentiert.").
+- Sektions-Struktur ist vorgegeben; Sektionsüberschriften erscheinen immer. ABER: eine Unter-Kategorie/Zeile innerhalb einer Sektion nur dann anlegen, wenn dazu tatsächlich Patient-/Befund-Inhalt aus den Teilanalysen vorliegt. Wenn eine gesamte Unterkategorie leer ist (z.B. Patient hat "IV. Herz & Kreislauf" im Anamnesebogen komplett leer gelassen), einen einzigen kurzen Satz schreiben: "Vom Patienten nicht ausgefüllt." — KEINE aufgezählten Formularlabels, KEINE "[Datum entfernt]"-Platzhalterzeilen, KEINE leeren Bullet-Listen.
 - Keine Halluzination bei Anamnese-Inhalten. Pharmakologie (Wirkmechanismus/Nebenwirkungen/Indikation) darf aus medizinischem Standardwissen ergänzt und in Sektion 6 als "(Standard-Pharmakologie)" markiert werden.
 - HWG-konform: "kann unterstützen". Praktiker-Gleichrangigkeit: "Heilpraktiker oder Arzt".
 
