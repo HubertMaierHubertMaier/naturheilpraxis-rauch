@@ -2618,7 +2618,7 @@ export function TherapyRecommendation() {
         const archivePath = await archiveClinicalDocumentOriginal(item.file, pid);
         const extracted = await extractClinicalDocumentText(item.file, "doctor", toast);
         const block = `${extracted.text.trim()}\n\n[Originaldatei sicher archiviert: therapy-documents/${archivePath}]`;
-        setSonstigeUntersuchungen((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
+        setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, block));
         successful.push({ name: item.file.name, pages: extracted.pages, chars: extracted.chars, archivePath });
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "done", chars: extracted.chars, pages: extracted.pages } : row));
       } catch (error: any) {
