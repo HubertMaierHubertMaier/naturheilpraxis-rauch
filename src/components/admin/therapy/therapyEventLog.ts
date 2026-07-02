@@ -18,7 +18,8 @@ export type TherapyEventType =
   | "full_analysis_started"
   | "full_analysis_success"
   | "full_analysis_failed"
-  | "patient_saved";
+  | "patient_saved"
+  | "pii_warning";
 
 export interface TherapyEventDetails {
   files?: Array<{ name: string; pages?: number; chars?: number; archivePath?: string; error?: string }>;
