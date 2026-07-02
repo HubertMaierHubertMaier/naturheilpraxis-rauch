@@ -3232,9 +3232,13 @@ export function TherapyRecommendation() {
                     <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
                     <span className="min-w-0 flex-1 truncate" title={doc.name}>{doc.name}</span>
                     {doc.note ? <span className="hidden sm:inline text-muted-foreground whitespace-nowrap">{doc.note}</span> : null}
-                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
+                    <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
                       {loadingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                       In Auswahl laden
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => deleteArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" title="Archiv-PDF löschen (unwiderruflich)">
+                      {deletingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      Löschen
                     </Button>
                   </div>
                 ))}
