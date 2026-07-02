@@ -2619,10 +2619,31 @@ export function TherapyRecommendation() {
 
   const addDirectBefundFiles = (list: FileList | null) => {
     if (!list?.length) return;
+    // C) Cross-Pseudonym-Warnung: greift für ALLE P-JAHR-NNNN (2026, 2027, ...)
+    const currentPid = normalizePseudonymId(pseudonymId);
+    const pidRe = /P-\d{4}-\d{4}/i;
+    const files = Array.from(list);
+    if (currentPid) {
+      const foreign = files
+        .map((f) => ({ file: f, hit: (f.name.match(pidRe) || [""])[0].toUpperCase() }))
+        .filter((x) => x.hit && x.hit !== currentPid);
+      if (foreign.length) {
+        const details = foreign.map((x) => `• ${x.file.name}  →  ${x.hit}`).join("\n");
+        const ok = window.confirm(
+          `⚠ Warnung: Dateiname deutet auf einen ANDEREN Patienten hin.\n\n` +
+          `Aktuell geöffnet: ${currentPid}\n\nBetroffene Datei(en):\n${details}\n\n` +
+          `Trotzdem bei ${currentPid} hochladen?`,
+        );
+        if (!ok) {
+          if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+          return;
+        }
+      }
+    }
     const stamp = Date.now().toString(36);
     setPendingDirectBefundFiles((prev) => [
       ...prev,
-      ...Array.from(list).map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
+      ...files.map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
     ]);
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
