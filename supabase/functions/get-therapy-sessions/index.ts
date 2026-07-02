@@ -178,9 +178,37 @@ function dedupeDocumentInventory(items: DocumentInventoryItem[]): DocumentInvent
 }
 
 async function buildDocumentInventory(adminClient: any, pseudonymId: string, draftInput: Record<string, unknown>): Promise<DocumentInventoryItem[]> {
+  // 1) Pre-scan: welche Dateien wurden bereits explizit gelöscht?
+  //    Deren Erwähnungen filtern wir aus jedem Fundort raus, damit das Patientenbild
+  //    keine Geister-Referenzen mehr zeigt.
+  const { data: allEventRows } = await adminClient
+    .from("therapy_sessions")
+    .select("created_at,befund_meta")
+    .eq("pseudonym_id", pseudonymId)
+    .eq("kind", "event_log")
+    .order("created_at", { ascending: false })
+    .limit(240);
+
+  const deletedPaths = new Set<string>();
+  const deletedNormNames = new Set<string>();
+  for (const row of Array.isArray(allEventRows) ? allEventRows : []) {
+    const meta = row?.befund_meta || {};
+    if (String(meta.event_type || "") !== "documents_deleted") continue;
+    for (const file of Array.isArray(meta.files) ? meta.files : []) {
+      if (typeof file?.archivePath === "string" && file.archivePath) deletedPaths.add(file.archivePath);
+      const n = normalizeDocName(String(file?.name || ""));
+      if (n) deletedNormNames.add(n);
+    }
+  }
+  const isDeleted = (name?: string, archivePath?: string) => {
+    if (archivePath && deletedPaths.has(archivePath)) return true;
+    const n = normalizeDocName(String(name || ""));
+    return !!n && deletedNormNames.has(n);
+  };
+
   const items: DocumentInventoryItem[] = [];
   for (const key of Object.keys(FIELD_LABELS)) {
-    items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft"));
+    items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft").filter((it) => !isDeleted(it.name, it.archivePath)));
   }
 
   const { data: snapshot } = await adminClient
@@ -190,16 +218,11 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     .maybeSingle();
   const snapshotData = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data as Record<string, unknown> : {};
   for (const key of Object.keys(FIELD_LABELS)) {
-    items.push(...extractDocumentInventoryFromText(snapshotData[key], key, "Patienten-Snapshot (fest gespeichert)", "snapshot", snapshot?.updated_at));
+    items.push(...extractDocumentInventoryFromText(snapshotData[key], key, "Patienten-Snapshot (fest gespeichert)", "snapshot", snapshot?.updated_at).filter((it) => !isDeleted(it.name, it.archivePath)));
   }
 
-  const { data: eventRows } = await adminClient
-    .from("therapy_sessions")
-    .select("created_at,befund_meta")
-    .eq("pseudonym_id", pseudonymId)
-    .eq("kind", "event_log")
-    .order("created_at", { ascending: false })
-    .limit(120);
+  const eventRows = allEventRows;
+
   for (const row of Array.isArray(eventRows) ? eventRows : []) {
     const meta = row?.befund_meta || {};
     const eventType = String(meta.event_type || "");
