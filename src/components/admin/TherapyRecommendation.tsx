@@ -2650,6 +2650,31 @@ export function TherapyRecommendation() {
     }
   };
 
+  const deleteArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
+    if (!doc.archivePath) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    const confirmed = window.confirm(
+      `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt. Bereits in „Sonstige Voruntersuchungen" eingefügter Text bleibt bestehen und muss ggf. manuell gelöscht werden.`,
+    );
+    if (!confirmed) return;
+    setDeletingArchiveDocumentPath(doc.archivePath);
+    try {
+      const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
+      if (error) throw error;
+      setLoadedDocumentInventory((current) => current.filter((item) => item.archivePath !== doc.archivePath));
+      await logTherapyEvent(pid, "documents_deleted", {
+        files: [{ name: doc.name, archivePath: doc.archivePath }],
+        note: "Archivierte Originaldatei manuell aus therapy-documents gelöscht.",
+      });
+      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus dem Cloud-Archiv entfernt.` });
+      setHistoryRefresh((n) => n + 1);
+    } catch (error: any) {
+      toast({ title: "Löschen fehlgeschlagen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
+    } finally {
+      setDeletingArchiveDocumentPath(null);
+    }
+  };
+
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".docx")) {
