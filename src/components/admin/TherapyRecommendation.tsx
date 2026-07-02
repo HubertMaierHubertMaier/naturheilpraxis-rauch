@@ -2684,26 +2684,38 @@ export function TherapyRecommendation() {
     if (!doc.archivePath) return;
     const pid = normalizePseudonymId(pseudonymId);
     const confirmed = window.confirm(
-      `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt. Bereits in „Sonstige Voruntersuchungen" eingefügter Text bleibt bestehen und muss ggf. manuell gelöscht werden.`,
+      `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt.\nZusätzlich werden alle eingefügten Textblöcke dieser Datei aus den Befund-Feldern (Sonstige Voruntersuchungen, Arztbericht, Metatron/NLS, Labor, Perplexity) entfernt.`,
     );
     if (!confirmed) return;
     setDeletingArchiveDocumentPath(doc.archivePath);
     try {
       const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
       if (error) throw error;
-      setLoadedDocumentInventory((current) => current.filter((item) => item.archivePath !== doc.archivePath));
+      // Textblöcke aus allen Befund-Feldern rausräumen — Autosave persistiert dann den bereinigten Snapshot.
+      setSonstigeUntersuchungen((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      setArztbericht((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      setMetatronHeel((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      setLaborKomplett((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      setPerplexityAnalyse((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      setLoadedDocumentInventory((current) => current.filter((item) => {
+        if (item.archivePath && doc.archivePath && item.archivePath === doc.archivePath) return false;
+        if (normalizeDocumentName(item.name) === normalizeDocumentName(doc.name)) return false;
+        return true;
+      }));
       await logTherapyEvent(pid, "documents_deleted", {
         files: [{ name: doc.name, archivePath: doc.archivePath }],
-        note: "Archivierte Originaldatei manuell aus therapy-documents gelöscht.",
+        note: "Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.",
       });
-      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus dem Cloud-Archiv entfernt.` });
+      toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv und Befund-Feldern entfernt.` });
       setHistoryRefresh((n) => n + 1);
+      refreshDocumentInventory(false);
     } catch (error: any) {
       toast({ title: "Löschen fehlgeschlagen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
     } finally {
       setDeletingArchiveDocumentPath(null);
     }
   };
+
 
   const extractOwnTherapyFileText = async (file: File): Promise<string> => {
     const lower = file.name.toLowerCase();
