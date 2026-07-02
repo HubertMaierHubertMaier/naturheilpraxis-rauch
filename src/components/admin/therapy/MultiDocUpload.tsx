@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, FileUp, X, CheckCircle2, FileText } from "lucide-react";
+import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { logTherapyEvent } from "./therapyEventLog";
