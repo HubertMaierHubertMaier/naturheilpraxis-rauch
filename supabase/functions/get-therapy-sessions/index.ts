@@ -230,17 +230,20 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     if (["documents_uploaded", "documents_saved"].includes(eventType) && Array.isArray(meta.files)) {
       for (const file of meta.files) {
         if (!file?.name) continue;
+        const archivePath = typeof file.archivePath === "string" ? file.archivePath : undefined;
+        if (isDeleted(file.name, archivePath)) continue;
         items.push({
           name: String(file.name),
           pages: typeof file.pages === "number" ? file.pages : undefined,
           chars: typeof file.chars === "number" ? file.chars : undefined,
-          archivePath: typeof file.archivePath === "string" ? file.archivePath : undefined,
+          archivePath,
           loadedAt: row.created_at,
           source: eventType === "documents_uploaded" ? "Beim Upload erkannte Originaldatei" : "In der Cloud archivierte Originaldatei",
           kindLabel: "Hochgeladene Originaldatei (PDF/Doku)",
           location: "event_log",
         });
       }
+
     }
 
     if (eventType === "befund_pdf_saved") {
