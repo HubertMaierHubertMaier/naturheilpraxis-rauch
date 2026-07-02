@@ -324,6 +324,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
                 {pf.pages ? ` · ${pf.pages} S.` : ""}
               </span>
               {pf.archivePath && <span className="text-emerald-700 text-[10px] whitespace-nowrap" title={`${STORAGE_BUCKET}/${pf.archivePath}`}>archiviert</span>}
+              {pf.piiHits && pf.piiHits.length > 0 && (
+                <span className="flex items-center gap-1 text-rose-700 text-[10px] whitespace-nowrap" title={pf.piiHits.map((h) => `${h.kind}: ${h.sample}`).join("\n")}>
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  {pf.piiHits.length} PII
+                </span>
+              )}
               {pf.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
               {pf.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
               {pf.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pf.error}>Fehler: {pf.error || "keine Daten extrahiert"}</span>}
