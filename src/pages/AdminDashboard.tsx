@@ -97,6 +97,7 @@ const AdminDashboard = () => {
           <PatientLoginToggle />
           <AdminAccountsCard />
           <AnamnesePublicToggle />
+          <AnamneseToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-[repeat(14,minmax(0,1fr))] max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
