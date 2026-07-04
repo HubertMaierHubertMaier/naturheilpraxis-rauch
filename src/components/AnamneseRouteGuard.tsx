@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAnamneseOnlineEnabled } from "@/hooks/useAnamneseOnlineEnabled";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { usePatientAccess } from "@/hooks/usePatientAccess";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, FileDown, Loader2 } from "lucide-react";
+import { ShieldCheck, FileDown, Loader2, Lock } from "lucide-react";
 
 /**
  * Wrapper für `/anamnesebogen` (Online-Formular):
@@ -50,6 +51,33 @@ const OnlineLockedNotice: React.FC = () => (
   </div>
 );
 
+const AccessLockedNotice: React.FC = () => (
+  <div className="container mx-auto max-w-2xl px-4 py-16">
+    <Card className="border-amber-300">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-amber-700">
+          <Lock className="h-6 w-6" />
+          Anamnesebogen noch nicht freigeschaltet
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm leading-relaxed">
+        <p>
+          Der Zugriff auf den Anamnesebogen ist für dieses Konto aktuell noch nicht freigeschaltet.
+          Bitte wende dich an die Praxis, wenn du den Bogen erneut ausfüllen oder ergänzen sollst.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button asChild>
+            <Link to="/dashboard">Zum Patienten-Dashboard</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/">Zur Startseite</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 export const AnamneseRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <ProtectedRoute requireTwoFactor>
@@ -61,13 +89,18 @@ export const AnamneseRouteGuard: React.FC<{ children: React.ReactNode }> = ({ ch
 const AnamneseGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { enabled, loading } = useAnamneseOnlineEnabled();
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
+  const { canDownloadAnamnese, loading: accessLoading } = usePatientAccess();
 
-  if (loading || adminLoading) {
+  if (loading || adminLoading || accessLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (!canDownloadAnamnese && !isAdmin) {
+    return <AccessLockedNotice />;
   }
 
   if (!enabled && !isAdmin) {

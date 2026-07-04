@@ -5,6 +5,9 @@ import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 
 const mockUseAuth = vi.fn();
 const mockIsDevAdminBypassActive = vi.fn();
+const mockUseAnamneseOnlineEnabled = vi.fn();
+const mockUseAdminCheck = vi.fn();
+const mockUsePatientAccess = vi.fn();
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
@@ -14,8 +17,26 @@ vi.mock("@/lib/devAdminBypass", () => ({
   isDevAdminBypassActive: () => mockIsDevAdminBypassActive(),
 }));
 
+vi.mock("@/hooks/useAnamneseOnlineEnabled", () => ({
+  useAnamneseOnlineEnabled: () => mockUseAnamneseOnlineEnabled(),
+}));
+
+vi.mock("@/hooks/useAdminCheck", () => ({
+  useAdminCheck: () => mockUseAdminCheck(),
+}));
+
+vi.mock("@/hooks/usePatientAccess", () => ({
+  usePatientAccess: () => mockUsePatientAccess(),
+}));
+
 beforeEach(() => {
   mockIsDevAdminBypassActive.mockReturnValue(false);
+  mockUseAnamneseOnlineEnabled.mockReturnValue({
+    enabled: false,
+    loading: false,
+  });
+  mockUseAdminCheck.mockReturnValue({ isAdmin: false, isLoading: false });
+  mockUsePatientAccess.mockReturnValue({ canDownloadAnamnese: false, loading: false });
   mockUseAuth.mockReturnValue({
     user: null,
     loading: false,
@@ -111,5 +132,25 @@ describe("AnamneseRouteGuard smoke test", () => {
     expect(screen.getByTestId("redirect-from-search")).toHaveTextContent(
       "?schritt=kontakt"
     );
+  });
+
+  it("shows the access-locked notice for authenticated patients without anamnesis access", () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: "patient-user" },
+      loading: false,
+      twoFactorVerified: true,
+      twoFactorChecked: true,
+    });
+    mockUseAnamneseOnlineEnabled.mockReturnValue({
+      enabled: true,
+      loading: false,
+    });
+
+    renderGuard();
+
+    expect(
+      screen.getByRole("heading", { name: /Anamnesebogen noch nicht freigeschaltet/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Anamnesebogen Testinhalt/i)).not.toBeInTheDocument();
   });
 });

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { generateEnhancedAnamnesePdf } from "@/lib/pdfExportEnhanced";
 import { AnamneseFormData } from "@/lib/anamneseFormData";
 import SEOHead from "@/components/seo/SEOHead";
+import { usePatientAccess } from "@/hooks/usePatientAccess";
 
 interface AnamnesisSubmission {
   id: string;
@@ -29,6 +30,7 @@ interface AnamnesisSubmission {
 const PatientDashboard = () => {
   const { user, loading: authLoading, twoFactorVerified, twoFactorChecked } = useAuth();
   const { language, t } = useLanguage();
+  const { canDownloadAnamnese, loading: patientAccessLoading } = usePatientAccess();
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<AnamnesisSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,7 @@ const PatientDashboard = () => {
     );
   };
 
-  if (authLoading || !twoFactorChecked || loading) {
+  if (authLoading || !twoFactorChecked || patientAccessLoading || loading) {
     return (
       <Layout>
         <div className="container py-16 flex items-center justify-center">
@@ -163,37 +165,39 @@ const PatientDashboard = () => {
           </Card>
 
           {/* Anamnesebogen ergänzen */}
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/anamnesebogen")}>
-            <CardContent className="p-6 flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-950/50 transition-colors flex-shrink-0">
-                <PenTool className="h-6 w-6 text-amber-700 dark:text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold mb-1">
-                  {verifiedSubmissions.length > 0
-                    ? t("Anamnesebogen ergänzen", "Update Medical History")
-                    : t("Anamnesebogen ausfüllen", "Fill out Medical History")}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {verifiedSubmissions.length > 0
-                    ? t(
-                        "Ergänzen Sie neue Symptome oder aktualisieren Sie Ihre Angaben",
-                        "Add new symptoms or update your information"
-                      )
-                    : t(
-                        "Füllen Sie Ihren Anamnesebogen vor dem ersten Termin aus",
-                        "Fill out your medical history before your first appointment"
-                      )}
-                </p>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
-                  {verifiedSubmissions.length > 0
-                    ? t("Bogen ergänzen", "Update form")
-                    : t("Bogen ausfüllen", "Fill out form")}
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          {canDownloadAnamnese && (
+            <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/anamnesebogen")}>
+              <CardContent className="p-6 flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-950/50 transition-colors flex-shrink-0">
+                  <PenTool className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">
+                    {verifiedSubmissions.length > 0
+                      ? t("Anamnesebogen ergänzen", "Update Medical History")
+                      : t("Anamnesebogen ausfüllen", "Fill out Medical History")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {verifiedSubmissions.length > 0
+                      ? t(
+                          "Ergänzen Sie neue Symptome oder aktualisieren Sie Ihre Angaben",
+                          "Add new symptoms or update your information"
+                        )
+                      : t(
+                          "Füllen Sie Ihren Anamnesebogen vor dem ersten Termin aus",
+                          "Fill out your medical history before your first appointment"
+                        )}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
+                    {verifiedSubmissions.length > 0
+                      ? t("Bogen ergänzen", "Update form")
+                      : t("Bogen ausfüllen", "Fill out form")}
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Dokumente */}
           <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate("/datenschutz")}>
@@ -328,14 +332,16 @@ const PatientDashboard = () => {
                           ? t("Schließen", "Close") 
                           : t("Details anzeigen", "View details")}
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadPdf(submission)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        {t("PDF herunterladen", "Download PDF")}
-                      </Button>
+                      {canDownloadAnamnese && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadPdf(submission)}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          {t("PDF herunterladen", "Download PDF")}
+                        </Button>
+                      )}
                     </div>
                     
                     {/* Expanded Details */}
