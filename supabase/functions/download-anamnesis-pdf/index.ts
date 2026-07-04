@@ -39,6 +39,13 @@ Deno.serve(async (req) => {
       return json({ error: "Bitte erneut anmelden." }, 401);
     }
 
+    const { data: twoFactorVerified, error: twoFactorError } = await userClient.rpc(
+      "is_current_session_two_factor_verified"
+    );
+    if (twoFactorError || twoFactorVerified !== true) {
+      return json({ error: "Bitte Anmeldung mit E-Mail-Code vollständig abschließen." }, 403);
+    }
+
     const email = user.email.trim().toLowerCase();
 
     // Admin bypass

@@ -6,10 +6,11 @@ import { isDevAdminBypassActive } from '@/lib/devAdminBypass';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireTwoFactor?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireTwoFactor = false }) => {
+  const { user, loading, twoFactorVerified, twoFactorChecked } = useAuth();
   const location = useLocation();
 
   const devBypass = isDevAdminBypassActive();
@@ -19,7 +20,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  if (loading) {
+  if (loading || (requireTwoFactor && !twoFactorChecked)) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -34,6 +35,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!user) {
     // Redirect to auth page, saving the intended destination
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  if (requireTwoFactor && !twoFactorVerified) {
+    return <Navigate to="/auth" state={{ from: location, reason: 'two_factor_required' }} replace />;
   }
 
   return <>{children}</>;

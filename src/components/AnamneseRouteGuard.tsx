@@ -52,7 +52,7 @@ const OnlineLockedNotice: React.FC = () => (
 
 export const AnamneseRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireTwoFactor>
       <AnamneseGate>{children}</AnamneseGate>
     </ProtectedRoute>
   );

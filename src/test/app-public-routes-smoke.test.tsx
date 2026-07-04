@@ -16,14 +16,14 @@ describe("App public route smoke tests", () => {
     renderAppAtRoute("/datenschutz");
 
     expect(
-      screen.getByRole("heading", {
+      await screen.findByRole("heading", {
         level: 1,
         name: /Patienteninformationen zum Datenschutz/i,
       })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("main", { name: /Datenschutz/i })
+      await screen.findByRole("main", { name: /Datenschutz/i })
     ).toBeInTheDocument();
 
     await expectNoAppSmokeConsoleWarnings();

@@ -23,6 +23,30 @@ const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const normalizePassword = (value: string) => value.normalize('NFC').trim();
 
+async function waitForAuthenticatedSession() {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      return session;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 150 * (attempt + 1)));
+  }
+
+  throw new Error('Sitzung konnte nicht aufgebaut werden. Bitte erneut anmelden.');
+}
+
+async function finalizeTwoFactorSession(bindingToken: string) {
+  await waitForAuthenticatedSession();
+  const { data, error } = await supabase.rpc('complete_two_factor_binding' as never, {
+    _binding_token: bindingToken,
+  } as never);
+
+  if (error || data !== true) {
+    await supabase.auth.signOut().catch(() => undefined);
+    throw new Error('Zwei-Faktor-Sitzung konnte nicht finalisiert werden. Bitte erneut anmelden.');
+  }
+}
+
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
 type AuthMode = 'login' | 'registration' | 'password_reset';
 type PatientType = 'new_patient' | 'existing_patient' | null;
@@ -31,7 +55,7 @@ const Auth: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin, twoFactorVerified, twoFactorChecked } = useAuth();
 
   // Preview/Dev bypass: skip auth page entirely in non-production environments
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
@@ -47,11 +71,26 @@ const Auth: React.FC = () => {
   const hasCheckedInitialAuth = React.useRef(false);
   React.useEffect(() => {
     if (hasCheckedInitialAuth.current) return;
+    if (devBypass) {
+      hasCheckedInitialAuth.current = true;
+      navigate('/');
+      return;
+    }
+
+    if (!user) {
+      hasCheckedInitialAuth.current = true;
+      return;
+    }
+
+    if (!twoFactorChecked) {
+      return;
+    }
+
     hasCheckedInitialAuth.current = true;
-    if (user || devBypass) {
+    if (isAdmin || twoFactorVerified) {
       navigate('/');
     }
-  }, [user, navigate, devBypass]);
+  }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked]);
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [step, setStep] = useState<AuthStep>('credentials');
@@ -364,6 +403,11 @@ const Auth: React.FC = () => {
         throw new Error(response.data?.error || response.error?.message || 'Fehler bei der Verifizierung');
       }
 
+      const bindingToken = response.data?.bindingToken;
+      if (!bindingToken) {
+        throw new Error('Sitzungsbindung für 2FA fehlt. Bitte erneut anmelden.');
+      }
+
       // Use the token to sign in
       const { error: verifyError } = await supabase.auth.verifyOtp({
         token_hash: response.data.token,
@@ -373,6 +417,8 @@ const Auth: React.FC = () => {
       if (verifyError) {
         throw verifyError;
       }
+
+      await finalizeTwoFactorSession(bindingToken);
 
       toast({
         title: language === 'de' ? 'Erfolgreich' : 'Success',
@@ -422,6 +468,11 @@ const Auth: React.FC = () => {
         throw new Error(response.data?.error || response.error?.message || 'Fehler bei der Verifizierung');
       }
 
+      const bindingToken = response.data?.bindingToken;
+      if (!bindingToken) {
+        throw new Error('Sitzungsbindung für Registrierung fehlt. Bitte erneut anmelden.');
+      }
+
       // Now sign in with the new account
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: normalizeEmail(email),
@@ -431,6 +482,8 @@ const Auth: React.FC = () => {
       if (signInError) {
         throw signInError;
       }
+
+      await finalizeTwoFactorSession(bindingToken);
 
       toast({
         title: language === 'de' ? 'Erfolgreich' : 'Success',

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/Header";
 
 const mockUseAuth = vi.fn();
-const mockUseAnamneseEnabled = vi.fn();
 const mockUseAnamnesePublic = vi.fn();
 const mockUsePatientAccess = vi.fn();
 const mockToast = vi.fn();
@@ -22,10 +21,6 @@ vi.mock("@/contexts/LanguageContext", () => ({
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
-}));
-
-vi.mock("@/hooks/useAnamneseEnabled", () => ({
-  useAnamneseEnabled: () => mockUseAnamneseEnabled(),
 }));
 
 vi.mock("@/hooks/useAnamnesePublic", () => ({
@@ -73,11 +68,6 @@ beforeEach(() => {
   mockIsDevHost.mockReturnValue(false);
   mockIsDevAdminBypassActive.mockReturnValue(false);
   mockWithDevParam.mockImplementation((path: string) => path);
-  mockUseAnamneseEnabled.mockReturnValue({
-    enabled: true,
-    loading: false,
-    refresh: vi.fn(),
-  });
   mockUseAnamnesePublic.mockReturnValue({
     enabled: false,
     loading: false,
@@ -104,7 +94,7 @@ describe("Header Anamnese navigation smoke test", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps anamnesis hidden for anonymous visitors even if an old public setting is enabled", () => {
+  it("shows the online anamnesis link for anonymous visitors when the old public flag is enabled", () => {
     mockUseAnamnesePublic.mockReturnValue({
       enabled: true,
       loading: false,
@@ -113,7 +103,10 @@ describe("Header Anamnese navigation smoke test", () => {
 
     renderHeader();
 
-    expect(screen.queryByRole("link", { name: /^Anamnesebogen$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Anamnesebogen$/i })).toHaveAttribute(
+      "href",
+      "/anamnesebogen"
+    );
     expect(
       screen.queryByRole("link", { name: /Anamnesebogen \(PDF\)/i })
     ).not.toBeInTheDocument();
@@ -141,11 +134,6 @@ describe("Header Anamnese navigation smoke test", () => {
   });
 
   it("shows the online anamnesis link for admins", () => {
-    mockUseAnamneseEnabled.mockReturnValue({
-      enabled: false,
-      loading: false,
-      refresh: vi.fn(),
-    });
     mockUseAuth.mockReturnValue({
       user: { id: "admin-user" },
       loading: false,

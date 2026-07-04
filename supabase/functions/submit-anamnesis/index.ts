@@ -292,13 +292,18 @@ serve(async (req) => {
     const { action, email, formData, code, submissionId, tempUserId, pdfBase64, pdfBase64WithoutIAA, iaaPdfBase64 } =
       parseResult.data;
 
+    const authHeader = req.headers.get("Authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: authHeader?.startsWith("Bearer ") ? { headers: { Authorization: authHeader } } : undefined,
+      auth: { persistSession: false },
+    });
 
     // Der Anamnesebogen ist nicht mehr öffentlich: gültige Sitzung erforderlich.
     let userId: string | null = null;
-    const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       try {
         const token = authHeader.replace("Bearer ", "");
@@ -310,6 +315,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Anmeldung erforderlich" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: twoFactorVerified } = await userClient.rpc('is_current_session_two_factor_verified');
+    if (twoFactorVerified !== true) {
+      return new Response(
+        JSON.stringify({ error: "Bitte Anmeldung mit E-Mail-Code vollständig abschließen." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -501,6 +514,27 @@ serve(async (req) => {
 
       // Update submission status if exists
       if (submissionId) {
+        const { data: ownedSubmission, error: ownedSubmissionError } = await supabase
+          .from("anamnesis_submissions")
+          .select("id")
+          .eq("id", submissionId)
+          .eq("user_id", effectiveUserId)
+          .maybeSingle();
+
+        if (ownedSubmissionError) {
+          return new Response(
+            JSON.stringify({ error: "Einreichung konnte nicht geprüft werden." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (!ownedSubmission) {
+          return new Response(
+            JSON.stringify({ error: "Einreichung gehört nicht zur aktuellen Sitzung." }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         await supabase
           .from("anamnesis_submissions")
           .update({

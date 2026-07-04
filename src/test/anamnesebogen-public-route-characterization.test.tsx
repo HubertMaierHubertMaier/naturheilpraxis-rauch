@@ -45,6 +45,8 @@ beforeEach(() => {
     loading: false,
     signOut: vi.fn(),
     isAdmin: false,
+    twoFactorVerified: false,
+    twoFactorChecked: true,
   });
   mockUseAnamnesePublic.mockReturnValue({
     enabled: true,

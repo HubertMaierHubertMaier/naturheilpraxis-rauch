@@ -12,6 +12,8 @@ interface AuthContextType {
   isAdmin: boolean;
   /** Tatsächliche Admin-Rolle aus der Datenbank – wird vom Simulator nicht überschrieben. */
   realIsAdmin: boolean;
+  twoFactorVerified: boolean;
+  twoFactorChecked: boolean;
   roleChecked: boolean;
   signOut: () => Promise<void>;
 }
@@ -22,6 +24,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   realIsAdmin: false,
+  twoFactorVerified: false,
+  twoFactorChecked: false,
   roleChecked: false,
   signOut: async () => {},
 });
@@ -37,6 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const devBypass = isDevAdminBypassActive();
   
   const [isAdmin, setIsAdmin] = useState(devBypass);
+  const [twoFactorVerified, setTwoFactorVerified] = useState(devBypass);
+  const [twoFactorChecked, setTwoFactorChecked] = useState(devBypass);
   const [roleChecked, setRoleChecked] = useState(devBypass);
 
   useEffect(() => {
@@ -53,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setUser(null);
       if (!devBypass) setIsAdmin(false);
+      if (!devBypass) setTwoFactorVerified(false);
+      setTwoFactorChecked(true);
       setRoleChecked(true);
     };
 
@@ -66,7 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (confirmedSession?.user) {
             applySession(confirmedSession);
-            await checkAdminRole(confirmedSession.user.id);
+            setRoleChecked(false);
+            setTwoFactorChecked(false);
+            await checkSessionSecurity(confirmedSession.user.id);
           } else {
             clearSession();
           }
@@ -76,26 +86,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, 400);
     };
 
-    const checkAdminRole = async (userId: string) => {
+    const checkSessionSecurity = async (userId: string) => {
       // In preview/dev mode, keep admin bypass active even if token/role RPC fails.
       if (devBypass) {
         if (isMounted) {
           setIsAdmin(true);
+          setTwoFactorVerified(true);
+          setTwoFactorChecked(true);
           setRoleChecked(true);
         }
         return;
       }
 
+      let admin = false;
       try {
         const { data, error } = await supabase.rpc('has_role', {
           _user_id: userId,
           _role: 'admin'
         });
-        if (isMounted) setIsAdmin(!error && data === true);
+        admin = !error && data === true;
+        if (isMounted) setIsAdmin(admin);
       } catch (e) {
         if (isMounted) setIsAdmin(false);
       } finally {
         if (isMounted) setRoleChecked(true);
+      }
+
+      if (admin) {
+        if (isMounted) {
+          setTwoFactorVerified(true);
+          setTwoFactorChecked(true);
+        }
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('is_current_session_two_factor_verified' as never);
+        if (isMounted) setTwoFactorVerified(!error && data === true);
+      } catch {
+        if (isMounted) setTwoFactorVerified(false);
+      } finally {
+        if (isMounted) setTwoFactorChecked(true);
       }
     };
 
@@ -112,7 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           applySession(nextSession);
           setLoading(false);
           setRoleChecked(false);
-          setTimeout(() => checkAdminRole(nextSession.user.id), 0);
+          setTwoFactorChecked(false);
+          setTimeout(() => checkSessionSecurity(nextSession.user.id), 0);
 
            // Log sign-in events for DSGVO audit trail
            if (event === 'SIGNED_IN') {
@@ -144,10 +176,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (!isMounted) return;
 
-        applySession(session);
-
         if (session?.user) {
-          await checkAdminRole(session.user.id);
+          applySession(session);
+          setRoleChecked(false);
+          setTwoFactorChecked(false);
+          await checkSessionSecurity(session.user.id);
+        } else {
+          clearSession();
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -170,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         _action: 'logout',
         _details: {},
       }).then(() => {}, () => {});
+      await supabase.rpc('clear_current_two_factor_session' as never).then(() => {}, () => {});
     }
     intentionalSignOutRef.current = true;
     await supabase.auth.signOut();
@@ -177,6 +213,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSession(null);
     if (!devBypass) setIsAdmin(false);
+    if (!devBypass) setTwoFactorVerified(false);
+    setTwoFactorChecked(true);
     clearDevAdminBypass();
   };
 
@@ -190,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const effectiveIsAdmin = simHideAdmin ? false : isAdmin;
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin: effectiveIsAdmin, realIsAdmin: isAdmin, roleChecked, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin: effectiveIsAdmin, realIsAdmin: isAdmin, twoFactorVerified, twoFactorChecked, roleChecked, signOut }}>
       {children}
     </AuthContext.Provider>
   );

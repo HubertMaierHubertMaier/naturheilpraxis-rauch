@@ -63,6 +63,8 @@ describe("AnamneseRouteGuard smoke test", () => {
     mockUseAuth.mockReturnValue({
       user: null,
       loading: true,
+      twoFactorVerified: false,
+      twoFactorChecked: true,
     });
 
     renderGuard();
@@ -77,6 +79,8 @@ describe("AnamneseRouteGuard smoke test", () => {
     mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
+      twoFactorVerified: false,
+      twoFactorChecked: true,
     });
 
     renderGuard();
@@ -91,6 +95,8 @@ describe("AnamneseRouteGuard smoke test", () => {
     mockUseAuth.mockReturnValue({
       user: null,
       loading: false,
+      twoFactorVerified: false,
+      twoFactorChecked: true,
     });
 
     renderGuard();

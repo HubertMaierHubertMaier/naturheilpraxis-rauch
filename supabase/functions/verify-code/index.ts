@@ -33,6 +33,10 @@ function normalizePassword(value: string): string {
   return value.normalize("NFC").trim();
 }
 
+function generateBindingToken(): string {
+  return crypto.randomUUID();
+}
+
 type VerifyCodeRequest = z.infer<typeof verifyCodeSchema>;
 
 // Rate limiting for verification attempts (prevents brute force)
@@ -157,6 +161,20 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ used: true })
         .eq("id", verificationCode.id);
 
+      const bindingToken = generateBindingToken();
+      const { error: bindingError } = await supabase
+        .from("two_factor_pending_bindings")
+        .insert({
+          user_id: profile.user_id,
+          purpose: "registration",
+          binding_token: bindingToken,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        });
+
+      if (bindingError) {
+        throw bindingError;
+      }
+
       // Confirm email
       const { error: confirmError } = await supabase.auth.admin.updateUserById(profile.user_id, {
         email_confirm: true,
@@ -173,6 +191,7 @@ const handler = async (req: Request): Promise<Response> => {
           success: true,
           message: "Registrierung erfolgreich",
           userId: profile.user_id,
+          bindingToken,
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -220,6 +239,20 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ used: true })
         .eq("id", verificationCode.id);
 
+      const bindingToken = generateBindingToken();
+      const { error: bindingError } = await supabase
+        .from("two_factor_pending_bindings")
+        .insert({
+          user_id: profile.user_id,
+          purpose: "login",
+          binding_token: bindingToken,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        });
+
+      if (bindingError) {
+        throw bindingError;
+      }
+
       // Generate a magic link for sign-in
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
@@ -240,6 +273,7 @@ const handler = async (req: Request): Promise<Response> => {
           message: "2FA erfolgreich verifiziert",
           token,
           userId: profile.user_id,
+          bindingToken,
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );

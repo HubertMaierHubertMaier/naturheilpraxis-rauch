@@ -27,7 +27,7 @@ interface AnamnesisSubmission {
 }
 
 const PatientDashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, twoFactorVerified, twoFactorChecked } = useAuth();
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<AnamnesisSubmission[]>([]);
@@ -35,10 +35,10 @@ const PatientDashboard = () => {
   const [selectedSubmission, setSelectedSubmission] = useState<AnamnesisSubmission | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && twoFactorChecked && (!user || !twoFactorVerified)) {
       navigate("/auth");
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, twoFactorChecked, twoFactorVerified, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -100,7 +100,7 @@ const PatientDashboard = () => {
     );
   };
 
-  if (authLoading || loading) {
+  if (authLoading || !twoFactorChecked || loading) {
     return (
       <Layout>
         <div className="container py-16 flex items-center justify-center">
@@ -110,7 +110,7 @@ const PatientDashboard = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user || !twoFactorVerified) return null;
 
   const verifiedSubmissions = submissions.filter(s => s.status === "verified");
 

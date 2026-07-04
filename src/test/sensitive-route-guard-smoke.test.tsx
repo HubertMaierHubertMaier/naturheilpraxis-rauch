@@ -103,6 +103,8 @@ const anonymousAuthState = {
   user: null,
   loading: false,
   isAdmin: false,
+  twoFactorVerified: false,
+  twoFactorChecked: true,
   roleChecked: true,
 };
 
@@ -155,6 +157,8 @@ describe("sensitive admin and patient route guard smoke tests", () => {
       user: patientUser,
       loading: false,
       isAdmin: false,
+      twoFactorVerified: false,
+      twoFactorChecked: true,
       roleChecked: true,
     });
 
@@ -169,6 +173,8 @@ describe("sensitive admin and patient route guard smoke tests", () => {
       user: patientUser,
       loading: false,
       isAdmin: false,
+      twoFactorVerified: false,
+      twoFactorChecked: true,
       roleChecked: true,
     });
 

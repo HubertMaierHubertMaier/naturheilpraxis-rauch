@@ -14,15 +14,14 @@ function renderWithRouter(ui: React.ReactElement) {
 }
 
 describe("public Anamnese link surface characterization", () => {
-  it("keeps the footer navigation Anamnesebogen entry pointed at the online route", () => {
+  it("no longer exposes an anamnesis link in the footer navigation", () => {
     renderWithRouter(<Footer />);
 
-    const footerAnamnesisLink = screen.getByRole("link", {
-      name: /^Anamnesebogen$/i,
-    });
-
-    expect(footerAnamnesisLink).toHaveAttribute("href", "/anamnesebogen");
-    expect(footerAnamnesisLink).not.toHaveAttribute("download");
+    expect(
+      screen.queryByRole("link", {
+        name: /^Anamnesebogen$/i,
+      })
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the home feature Anamnesebogen card pointed at the online route", () => {

@@ -74,7 +74,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/anamnesebogen" element={<AnamneseRouteGuard><Anamnesebogen /></AnamneseRouteGuard>} />
-              <Route path="/erstanmeldung" element={<ProtectedRoute><Erstanmeldung /></ProtectedRoute>} />
+              <Route path="/erstanmeldung" element={<ProtectedRoute requireTwoFactor><Erstanmeldung /></ProtectedRoute>} />
               <Route path="/anamnesebogen-demo" element={<AnamneseDemo />} />
               <Route path="/datenschutz" element={<InfothekGateRoute><Datenschutz /></InfothekGateRoute>} />
               <Route path="/heilpraktiker" element={<InfothekGateRoute><Heilpraktiker /></InfothekGateRoute>} />
@@ -100,8 +100,8 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
-              <Route path="/dashboard" element={<PatientDashboard />} />
-              <Route path="/patienten-bibliothek" element={<ProtectedRoute><PatientenBibliothek /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
+              <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
               <Route path="/app-uebersicht" element={<AppUebersicht />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

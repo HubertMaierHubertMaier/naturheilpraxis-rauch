@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 
-const mockUseAnamnesePublic = vi.fn();
+const mockUseAnamneseOnlineEnabled = vi.fn();
 
-vi.mock("@/hooks/useAnamnesePublic", () => ({
-  useAnamnesePublic: () => mockUseAnamnesePublic(),
+vi.mock("@/hooks/useAnamneseOnlineEnabled", () => ({
+  useAnamneseOnlineEnabled: () => mockUseAnamneseOnlineEnabled(),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -24,7 +24,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 beforeEach(() => {
-  mockUseAnamnesePublic.mockReturnValue({
+  mockUseAnamneseOnlineEnabled.mockReturnValue({
     enabled: false,
     loading: false,
     refresh: vi.fn(),
@@ -32,28 +32,29 @@ beforeEach(() => {
 });
 
 describe("AnamnesePublicToggle admin copy", () => {
-  it("makes clear that public online anamnesis access is disabled", () => {
+  it("makes clear that the online anamnesis is blocked by the privacy kill switch", () => {
     render(<AnamnesePublicToggle />);
 
     expect(
-      screen.getByText(/Online-Anamnesebogen – öffentlicher Zugriff deaktiviert/i)
+      screen.getByText(/Online-Anamnesebogen – Datenschutz-Sperre/i)
     ).toBeInTheDocument();
     expect(
       screen.getByText((_, element) =>
         element?.textContent ===
-        "/anamnesebogen bleibt aus Datenschutz- und Sicherheitsgründen immer login-geschützt."
+        "Steuert /anamnesebogen (Online-Formular) und die Edge-Function submit-anamnesis. Unabhängig vom PDF-Download."
       )
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/eine öffentliche Online-Übermittlung wird hier nicht mehr angeboten/i)
+      screen.getByText((_, element) =>
+        element?.tagName === "P" &&
+        (element.textContent ?? "").includes("Online-Eingabe ist für Patienten blockiert")
+      )
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Login erforderlich/i)
+      screen.getByText(/Patienten sehen eine Hinweisseite mit Link zum PDF-Download/i)
     ).toBeInTheDocument();
 
-    expect(screen.queryByText(/Jeder mit dem Link kann die Form öffnen/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Test-Modus/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/nur zum Ausprobieren/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Absenden\/Speichern funktioniert ohne Login NICHT/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/öffentlicher Zugriff deaktiviert/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/eine öffentliche Online-Übermittlung wird hier nicht mehr angeboten/i)).not.toBeInTheDocument();
   });
 });
