@@ -441,7 +441,7 @@ const Auth: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      navigate(existingSub ? '/dashboard' : '/erstanmeldung');
+      navigate(resolveTarget(existingSub ? '/dashboard' : '/erstanmeldung'));
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
