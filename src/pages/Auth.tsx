@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { resolveAuthRedirectTarget, type LocationLike } from '@/lib/authRedirect';
 import { z } from 'zod';
 import { Mail, ArrowLeft, Loader2, Shield, UserPlus, LogIn, Lock, Eye, EyeOff, KeyRound, HelpCircle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +54,7 @@ type PatientType = 'new_patient' | 'existing_patient' | null;
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { language } = useLanguage();
   const { user, isAdmin, twoFactorVerified, twoFactorChecked } = useAuth();
@@ -61,7 +63,13 @@ const Auth: React.FC = () => {
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
   const searchParams = new URLSearchParams(window.location.search);
   const devBypass = isNonProduction && searchParams.get('dev') === 'true';
-  
+
+  // Post-auth redirect target resolver (state.from > ?redirect > fallback)
+  const fromState = (location.state as { from?: LocationLike } | null)?.from ?? null;
+  const redirectParam = searchParams.get('redirect');
+  const resolveTarget = (fallback: string) =>
+    resolveAuthRedirectTarget({ from: fromState, redirectParam, fallback });
+
   // Patient type from landing page selection
   const patientType: PatientType = (searchParams.get('type') as PatientType) || null;
   const isExistingPatient = patientType === 'existing_patient';
@@ -73,7 +81,7 @@ const Auth: React.FC = () => {
     if (hasCheckedInitialAuth.current) return;
     if (devBypass) {
       hasCheckedInitialAuth.current = true;
-      navigate('/');
+      navigate(resolveTarget('/'));
       return;
     }
 
@@ -88,7 +96,7 @@ const Auth: React.FC = () => {
 
     hasCheckedInitialAuth.current = true;
     if (isAdmin || twoFactorVerified) {
-      navigate('/');
+      navigate(resolveTarget('/'));
     }
   }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked]);
 
@@ -156,7 +164,7 @@ const Auth: React.FC = () => {
           title: language === 'de' ? 'Willkommen!' : 'Welcome!',
           description: language === 'de' ? 'Admin-Anmeldung erfolgreich.' : 'Admin login successful.',
         });
-        navigate('/');
+        navigate(resolveTarget('/'));
         return;
       }
 
@@ -433,7 +441,7 @@ const Auth: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      navigate(existingSub ? '/dashboard' : '/erstanmeldung');
+      navigate(resolveTarget(existingSub ? '/dashboard' : '/erstanmeldung'));
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
@@ -514,7 +522,7 @@ const Auth: React.FC = () => {
         }
       }
 
-      navigate('/erstanmeldung');
+      navigate(resolveTarget('/erstanmeldung'));
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
