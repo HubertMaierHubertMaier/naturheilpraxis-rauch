@@ -95,8 +95,8 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
+          <AdminAccountsCard />
           <AnamnesePublicToggle />
-          <AnamneseToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-[repeat(14,minmax(0,1fr))] max-w-6xl">
               <TabsTrigger value="patients" className="flex items-center gap-2">
