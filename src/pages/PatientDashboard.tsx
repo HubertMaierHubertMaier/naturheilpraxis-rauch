@@ -39,9 +39,11 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     if (!authLoading && twoFactorChecked && (!user || !twoFactorVerified)) {
-      navigate("/auth");
+      const state: { from: typeof location; reason?: string } = { from: location };
+      if (user && !twoFactorVerified) state.reason = "two_factor_required";
+      navigate("/auth", { state, replace: true });
     }
-  }, [user, authLoading, twoFactorChecked, twoFactorVerified, navigate]);
+  }, [user, authLoading, twoFactorChecked, twoFactorVerified, navigate, location]);
 
   useEffect(() => {
     if (user) {
