@@ -54,6 +54,7 @@ type PatientType = 'new_patient' | 'existing_patient' | null;
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { language } = useLanguage();
   const { user, isAdmin, twoFactorVerified, twoFactorChecked } = useAuth();
@@ -62,7 +63,13 @@ const Auth: React.FC = () => {
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
   const searchParams = new URLSearchParams(window.location.search);
   const devBypass = isNonProduction && searchParams.get('dev') === 'true';
-  
+
+  // Post-auth redirect target resolver (state.from > ?redirect > fallback)
+  const fromState = (location.state as { from?: LocationLike } | null)?.from ?? null;
+  const redirectParam = searchParams.get('redirect');
+  const resolveTarget = (fallback: string) =>
+    resolveAuthRedirectTarget({ from: fromState, redirectParam, fallback });
+
   // Patient type from landing page selection
   const patientType: PatientType = (searchParams.get('type') as PatientType) || null;
   const isExistingPatient = patientType === 'existing_patient';
