@@ -769,6 +769,17 @@ export type Database = {
         Returns: undefined
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
+      list_admin_accounts: {
+        Args: never
+        Returns: {
+          admin_since: string
+          email: string
+          first_name: string
+          last_name: string
+          profile_created_at: string
+          user_id: string
+        }[]
+      }
       next_mannayan_order_number: { Args: never; Returns: string }
       next_mannayan_order_number_for_pseudonym: {
         Args: { _pseudonym: string }

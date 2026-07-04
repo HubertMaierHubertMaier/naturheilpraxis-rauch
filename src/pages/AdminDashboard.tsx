@@ -25,6 +25,7 @@ import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
 import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
+import { AdminAccountsCard } from "@/components/admin/AdminAccountsCard";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
@@ -94,6 +95,7 @@ const AdminDashboard = () => {
       <div className="container py-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <PatientLoginToggle />
+          <AdminAccountsCard />
           <AnamnesePublicToggle />
           <AnamneseToggle />
           <Tabs defaultValue={defaultTab} className="space-y-6">
