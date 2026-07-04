@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { resolveAuthRedirectTarget, type LocationLike } from '@/lib/authRedirect';
 import { z } from 'zod';
 import { Mail, ArrowLeft, Loader2, Shield, UserPlus, LogIn, Lock, Eye, EyeOff, KeyRound, HelpCircle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
