@@ -32,6 +32,7 @@ const PatientDashboard = () => {
   const { language, t } = useLanguage();
   const { canDownloadAnamnese, loading: patientAccessLoading } = usePatientAccess();
   const navigate = useNavigate();
+  const location = useLocation();
   const [submissions, setSubmissions] = useState<AnamnesisSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<AnamnesisSubmission | null>(null);
