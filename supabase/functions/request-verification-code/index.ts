@@ -27,6 +27,10 @@ const verificationRequestSchema = z.object({
   turnstileToken: z.string().min(10).max(4096).optional(),
 });
 
+function normalizePassword(value: string): string {
+  return value.normalize("NFC").trim();
+}
+
 async function verifyTurnstile(token: string, ip: string | null): Promise<boolean> {
   const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
   if (!secret) {
@@ -194,7 +198,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, type, password, userId: providedUserId, turnstileToken } = parseResult.data;
+    const { email, type, userId: providedUserId, turnstileToken } = parseResult.data;
+    const password = parseResult.data.password ? normalizePassword(parseResult.data.password) : undefined;
 
     // Require Turnstile for registration to block bot account floods
     if (type === "registration") {

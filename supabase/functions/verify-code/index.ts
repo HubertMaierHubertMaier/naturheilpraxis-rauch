@@ -29,6 +29,10 @@ const verifyCodeSchema = z.object({
     .optional(),
 });
 
+function normalizePassword(value: string): string {
+  return value.normalize("NFC").trim();
+}
+
 type VerifyCodeRequest = z.infer<typeof verifyCodeSchema>;
 
 // Rate limiting for verification attempts (prevents brute force)
@@ -92,7 +96,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, code, type, newPassword } = parseResult.data;
+    const { email, code, type } = parseResult.data;
+    const newPassword = parseResult.data.newPassword ? normalizePassword(parseResult.data.newPassword) : undefined;
 
     // Rate limiting check for verification attempts
     const rateLimitKey = `verify:${email}`;
@@ -283,12 +288,6 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Mark code as used
-      await supabase
-        .from("verification_codes")
-        .update({ used: true })
-        .eq("id", verificationCode.id);
-
       // Update password AND confirm email (in case user reset password before confirming registration)
       const { error: updateError } = await supabase.auth.admin.updateUserById(profile.user_id, {
         password: newPassword,
@@ -298,6 +297,12 @@ const handler = async (req: Request): Promise<Response> => {
       if (updateError) {
         throw updateError;
       }
+
+      // Mark code as used only after the password was definitely accepted by Auth.
+      await supabase
+        .from("verification_codes")
+        .update({ used: true })
+        .eq("id", verificationCode.id);
 
       console.log("Password reset successfully");
 
