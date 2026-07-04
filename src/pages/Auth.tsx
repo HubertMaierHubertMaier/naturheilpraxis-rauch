@@ -20,6 +20,9 @@ import { SpamFolderHint } from '@/components/auth/SpamFolderHint';
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
 
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
+const normalizePassword = (value: string) => value.normalize('NFC').trim();
+
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
 type AuthMode = 'login' | 'registration' | 'password_reset';
 type PatientType = 'new_patient' | 'existing_patient' | null;
@@ -69,8 +72,12 @@ const Auth: React.FC = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(email);
-      passwordSchema.parse(password);
+      const normalizedEmail = normalizeEmail(email);
+      const normalizedPassword = normalizePassword(password);
+      emailSchema.parse(normalizedEmail);
+      passwordSchema.parse(normalizedPassword);
+      setEmail(normalizedEmail);
+      setPassword(normalizedPassword);
     } catch (err: any) {
       toast({
         title: language === 'de' ? 'Ungültige Eingabe' : 'Invalid Input',
@@ -86,8 +93,8 @@ const Auth: React.FC = () => {
 
       // First verify password is correct
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: normalizeEmail(email),
+        password: normalizePassword(password),
       });
 
       if (signInError) {
@@ -136,7 +143,7 @@ const Auth: React.FC = () => {
 
       // Request 2FA code
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type: 'login', userId: signInData.user?.id },
+        body: { email: normalizeEmail(email), type: 'login', userId: signInData.user?.id },
       });
 
       if (response.error || response.data?.error) {
@@ -190,10 +197,16 @@ const Auth: React.FC = () => {
     }
 
     try {
-      emailSchema.parse(email);
-      passwordSchema.parse(password);
+      const normalizedEmail = normalizeEmail(email);
+      const normalizedPassword = normalizePassword(password);
+      const normalizedConfirmPassword = normalizePassword(confirmPassword);
+      emailSchema.parse(normalizedEmail);
+      passwordSchema.parse(normalizedPassword);
+      setEmail(normalizedEmail);
+      setPassword(normalizedPassword);
+      setConfirmPassword(normalizedConfirmPassword);
       
-      if (password !== confirmPassword) {
+      if (normalizedPassword !== normalizedConfirmPassword) {
         throw new Error(
           language === 'de' 
             ? 'Passwörter stimmen nicht überein' 
@@ -227,7 +240,7 @@ const Auth: React.FC = () => {
 
       // Request verification code - this also creates the unconfirmed user
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type: 'registration', password, turnstileToken },
+        body: { email: normalizeEmail(email), type: 'registration', password: normalizePassword(password), turnstileToken },
       });
 
       // Extract real server message from FunctionsHttpError context if needed
@@ -284,7 +297,9 @@ const Auth: React.FC = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(email);
+      const normalizedEmail = normalizeEmail(email);
+      emailSchema.parse(normalizedEmail);
+      setEmail(normalizedEmail);
     } catch {
       toast({
         title: language === 'de' ? 'Ungültige E-Mail' : 'Invalid Email',
@@ -301,7 +316,7 @@ const Auth: React.FC = () => {
       await supabase.auth.signOut();
 
       const response = await supabase.functions.invoke('request-verification-code', {
-        body: { email, type: 'password_reset' },
+        body: { email: normalizeEmail(email), type: 'password_reset' },
       });
 
       if (response.error || response.data?.error) {
@@ -342,7 +357,7 @@ const Auth: React.FC = () => {
 
     try {
       const response = await supabase.functions.invoke('verify-code', {
-        body: { email, code, type: 'login' },
+        body: { email: normalizeEmail(email), code, type: 'login' },
       });
 
       if (response.error || response.data?.error) {
@@ -399,7 +414,7 @@ const Auth: React.FC = () => {
 
     try {
       const response = await supabase.functions.invoke('verify-code', {
-        body: { email, code, type: 'registration' },
+        body: { email: normalizeEmail(email), code, type: 'registration' },
       });
 
 
@@ -409,8 +424,8 @@ const Auth: React.FC = () => {
 
       // Now sign in with the new account
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: normalizeEmail(email),
+        password: normalizePassword(password),
       });
 
       if (signInError) {
@@ -470,7 +485,9 @@ const Auth: React.FC = () => {
     }
 
     try {
-      passwordSchema.parse(newPassword);
+      const normalizedNewPassword = normalizePassword(newPassword);
+      passwordSchema.parse(normalizedNewPassword);
+      setNewPassword(normalizedNewPassword);
     } catch {
       toast({
         title: language === 'de' ? 'Ungültiges Passwort' : 'Invalid Password',
@@ -484,7 +501,7 @@ const Auth: React.FC = () => {
 
     try {
       const response = await supabase.functions.invoke('verify-code', {
-        body: { email, code, type: 'password_reset', newPassword },
+        body: { email: normalizeEmail(email), code, type: 'password_reset', newPassword: normalizePassword(newPassword) },
       });
 
       if (response.error || response.data?.error) {
@@ -520,7 +537,7 @@ const Auth: React.FC = () => {
 
     try {
       const type = mode === 'password_reset' ? 'password_reset' : mode;
-      const body: Record<string, string> = { email, type };
+      const body: Record<string, string> = { email: normalizeEmail(email), type };
       if (userId) body.userId = userId;
       const response = await supabase.functions.invoke('request-verification-code', {
         body,
@@ -595,8 +612,9 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-login"
-                name="praxis-login-email-private"
+                name="username"
                 {...privateEmailInputProps}
+                autoComplete="username"
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -615,7 +633,9 @@ const Auth: React.FC = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password-login"
+                name="current-password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -710,8 +730,9 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-register"
-                name="praxis-registration-email-private"
+                name="username"
                 {...privateEmailInputProps}
+                autoComplete="username"
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -730,7 +751,9 @@ const Auth: React.FC = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password-register"
+                name="new-password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -757,7 +780,9 @@ const Auth: React.FC = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="confirm-password"
+                name="new-password-confirmation"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -820,8 +845,9 @@ const Auth: React.FC = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email-reset"
-                name="praxis-reset-email-private"
+                name="username"
                 {...privateEmailInputProps}
+                autoComplete="username"
                 placeholder="ihre.email@beispiel.de"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -985,7 +1011,9 @@ const Auth: React.FC = () => {
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             id="new-password"
+            name="new-password"
             type={showNewPassword ? 'text' : 'password'}
+            autoComplete="new-password"
             placeholder="••••••••"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
