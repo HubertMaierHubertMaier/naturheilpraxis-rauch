@@ -25,6 +25,7 @@ import { AnamnesePublicToggle } from "@/components/admin/AnamnesePublicToggle";
 import { AnamneseToggle } from "@/components/admin/AnamneseToggle";
 import { BackupCenter } from "@/components/admin/BackupCenter";
 import { PatientAccessManager } from "@/components/admin/PatientAccessManager";
+import { AdminAccountsCard } from "@/components/admin/AdminAccountsCard";
 import { isDevAdminBypassActive } from "@/lib/devAdminBypass";
 
 const AdminDashboard = () => {
