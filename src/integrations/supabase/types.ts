@@ -649,6 +649,63 @@ export type Database = {
           },
         ]
       }
+      two_factor_pending_bindings: {
+        Row: {
+          binding_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          binding_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          purpose: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          binding_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      two_factor_verified_sessions: {
+        Row: {
+          created_at: string
+          method: string
+          purpose: string
+          session_id: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string
+          method?: string
+          purpose: string
+          session_id: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          created_at?: string
+          method?: string
+          purpose?: string
+          session_id?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -717,9 +774,14 @@ export type Database = {
         }
         Returns: Json
       }
+      clear_current_two_factor_session: { Args: never; Returns: undefined }
       compact_therapy_session_input: {
         Args: { _input: Json; _max_chars?: number }
         Returns: Json
+      }
+      complete_two_factor_binding: {
+        Args: { _binding_token: string }
+        Returns: boolean
       }
       extract_patient_snapshot_fields: { Args: { _input: Json }; Returns: Json }
       get_my_patient_access: { Args: never; Returns: Json }
@@ -767,6 +829,10 @@ export type Database = {
           _user_agent?: string
         }
         Returns: undefined
+      }
+      is_current_session_two_factor_verified: {
+        Args: { _max_age?: string }
+        Returns: boolean
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
       list_admin_accounts: {
