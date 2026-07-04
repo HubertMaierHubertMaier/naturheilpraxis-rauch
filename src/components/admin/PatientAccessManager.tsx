@@ -37,7 +37,7 @@ interface PendingProfile {
 const EMPTY_FORM = {
   email: "",
   note: "",
-  anamnese_download: true,
+  anamnese_download: false,
   infothek_all: false,
   library_access: false,
   infothek_items: [] as string[],
