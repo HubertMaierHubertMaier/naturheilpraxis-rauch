@@ -164,7 +164,7 @@ const Auth: React.FC = () => {
           title: language === 'de' ? 'Willkommen!' : 'Welcome!',
           description: language === 'de' ? 'Admin-Anmeldung erfolgreich.' : 'Admin login successful.',
         });
-        navigate('/');
+        navigate(resolveTarget('/'));
         return;
       }
 
