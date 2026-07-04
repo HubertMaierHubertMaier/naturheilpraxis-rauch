@@ -81,7 +81,7 @@ const Auth: React.FC = () => {
     if (hasCheckedInitialAuth.current) return;
     if (devBypass) {
       hasCheckedInitialAuth.current = true;
-      navigate('/');
+      navigate(resolveTarget('/'));
       return;
     }
 
@@ -96,7 +96,7 @@ const Auth: React.FC = () => {
 
     hasCheckedInitialAuth.current = true;
     if (isAdmin || twoFactorVerified) {
-      navigate('/');
+      navigate(resolveTarget('/'));
     }
   }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked]);
 
