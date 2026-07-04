@@ -522,7 +522,7 @@ const Auth: React.FC = () => {
         }
       }
 
-      navigate('/erstanmeldung');
+      navigate(resolveTarget('/erstanmeldung'));
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
