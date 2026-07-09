@@ -211,6 +211,14 @@ export const infothekGroups: InfothekGroup[] = [
         external: true,
       },
       {
+        label: { de: "SIBO / Dünndarmfehlbesiedlung", en: "SIBO / Small Intestinal Bacterial Overgrowth" },
+        href: "/sibo-duenndarmfehlbesiedlung.html",
+        icon: Wind,
+        description: { de: "Definition, typische Beschwerden, Atemtest, H2S-/Schwefelwasserstoffbildner und Quellen", en: "Definition, symptoms, breath test, H2S-producing bacteria and sources" },
+        external: true,
+        gated: true,
+      },
+      {
         label: { de: "Mitochondropathie & instabile HWS", en: "Mitochondropathy & unstable cervical spine" },
         href: "/mitochondropathie-hws.html",
         icon: Activity,
