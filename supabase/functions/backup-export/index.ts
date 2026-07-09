@@ -88,7 +88,7 @@ const AREA_MAP: Record<string, AreaDef> = {
   "hypnose":             { tables: [], buckets: [] },
   "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
   "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
-  "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings"], buckets: [] },
+  "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings", "two_factor_pending_bindings", "two_factor_verified_sessions"], buckets: [] },
   "edge-mail":           { tables: [], buckets: [] },
 };
 
