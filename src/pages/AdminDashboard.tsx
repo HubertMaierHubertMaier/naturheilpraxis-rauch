@@ -95,6 +95,7 @@ const AdminDashboard = () => {
 
       <div className="container py-8">
         <div className="mx-auto max-w-5xl space-y-6">
+          <BackupReminder />
           <PatientLoginToggle />
           <AdminAccountsCard />
           <AnamnesePublicToggle />
