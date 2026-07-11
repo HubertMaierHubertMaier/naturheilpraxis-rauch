@@ -414,7 +414,9 @@ function normalizePartialAnalysisJson(raw: string) {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
-  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
+  // Hinweis: leere Teilanalysen sind erlaubt (z.B. Deckblatt/Whitespace-Chunk).
+  // Wir normalisieren zu einem leeren Objekt statt einen Fehler zu werfen,
+  // damit ein einzelnes „inhaltloses" Teilpaket nicht die gesamte Analyse killt.
   const normalized: Record<string, any> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
