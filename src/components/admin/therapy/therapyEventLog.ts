@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { deidentifyClinicalData, deidentifyClinicalText } from "../../../../supabase/functions/_shared/clinicalDeidentification";
 
 /**
  * Verlaufs-Events (zusätzlich zu den eigentlichen Sitzungen).
@@ -69,13 +70,20 @@ export async function logTherapyEvent(
     }
     const label = labelFor(type);
     const ts = new Date().toISOString();
+    const safeFiles = details.files?.map((file, index) => ({
+      name: `Dokument ${index + 1}`,
+      pages: file.pages,
+      chars: file.chars,
+      error: file.error ? deidentifyClinicalText(file.error) : undefined,
+    }));
+    const safeDetails = deidentifyClinicalData({ ...details, files: safeFiles }) as TherapyEventDetails;
     const { error } = await (supabase as any).from("therapy_sessions").insert({
       pseudonym_id: pid,
       kind: "event_log",
       eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "event_log" },
       empfehlung: "",
       notiz: label,
-      befund_meta: { event_type: type, label, ts, ...details },
+      befund_meta: { event_type: type, label, ts, ...safeDetails },
       created_by: user.id,
     });
     if (error) {

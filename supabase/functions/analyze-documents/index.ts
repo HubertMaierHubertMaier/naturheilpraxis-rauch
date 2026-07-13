@@ -4,7 +4,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildClinicallyRelevantLabHighlights } from "../_shared/labTrendAnalysis.ts";
+import {
+  buildClinicallyRelevantLabHighlights,
+  extractSensitiveLabValuesFromText,
+  isPsaParameter,
+  isTotalTestosteroneParameter,
+  normalizeLabParameter,
+} from "../_shared/labTrendAnalysis.ts";
+import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -88,8 +95,8 @@ function cleanText(value?: string) {
 function collectBlocks(b: AnalyzeBody): DocBlock[] {
   const blocks: DocBlock[] = [];
   const push = (label: string, val?: string) => {
-    const text = cleanText(val);
-    if (text) blocks.push({ label, text });
+    const text = deidentifyClinicalText(cleanText(val));
+    if (text) blocks.push({ label: deidentifyClinicalText(label), text });
   };
   push(`Labor (komplett)${b.laborDatum ? ` – ${b.laborDatum}` : ""}`, b.laborKomplett);
   push("Labor – erhöhte Werte", b.laborErhoeht);
@@ -186,6 +193,9 @@ Wichtig:
 - Im Dokumentblock-Label und im "BEFUND VOM:"-Header steht meist das Datum. Wenn wirklich nirgends auffindbar (auch nicht im Header oder Quellenlabel): datum = "" und in openQuestions notieren ("Datum von … fehlt").
 - Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge), JEDER mit gefülltem "datum".
 - ALLE erkannten Laborwerte in "labValues" übernehmen, auch Werte innerhalb des allgemeinen Referenzbereichs. Normale Werte niemals allein wegen ihrer Bewertung auslassen, weil sie für einen dokumentübergreifenden Verlauf relevant sein können.
+- SENSIBLE LABORWERTE — ZWEITER PFLICHTDURCHGANG: Suche vor der JSON-Ausgabe nochmals ausdrücklich nach PSA/PSA ultrasensitiv sowie Testosteron/Gesamt-Testosteron. Übernimm JEDEN direkt belegten Messwert mit Einheit und seinem tatsächlichen Messdatum, auch wenn er im allgemeinen Laborreferenzbereich liegt.
+- Bei flach ausgelesenen Tabellen mit mehreren Datums-/Wertspalten niemals einen älteren Wert auf das aktuelle Dokumentdatum kopieren. Ordne jeden Wert nur der belegten Datumsspalte zu. Wenn PSA oder Gesamt-Testosteron mehrfach vorkommt, alle eindeutig zuordenbaren Messzeitpunkte getrennt ausgeben und keinen Wert durch einen anderen ersetzen.
+- Parameter-Aliase wie "PSA", "PSA - ultrasensitiv", "iPSA" sowie "Testosteron", "Gesamt-Testosteron" und "Total Testosterone" nicht als Grund verwenden, einen Verlauf aufzuteilen oder einen Messwert wegzulassen.
 - Die Bewertung in diesem isolierten Teilpaket nur anhand des vorliegenden Werts, Referenzbereichs und direkt vorhandenen Kontexts vergeben. Keine fehlenden Vorwerte aus anderen Teilpaketen erfinden; die dokumentübergreifende Verlaufsbewertung erfolgt erst nach der Zusammenführung.
 - Vor dem Antworten Selbst-Check: "Hat JEDER labValues-/findings-/diagnoses-Eintrag ein nicht-leeres datum-Feld? Wenn nein → Datum aus Dokumentblock-Header übernehmen oder leeres datum dokumentieren."
 
@@ -197,6 +207,7 @@ Wichtig:
   * teil = "${index}/${total}",
   * zitat = WÖRTLICHES Kurzzitat (max. 220 Zeichen) aus dem Originaltext — KEINE Umformulierung. Wählt das prägnanteste Zitat.
 - 🚫 HALLUZINATIONSVERBOT: Was nicht im Text steht, NICHT erfinden, NICHT aus anderen Befunden schließen, KEINE Untersuchungen oder Symptome ergänzen, die nicht explizit dokumentiert sind. Lieber [] lassen. Vor dem Antworten selbst prüfen: "Steht das wörtlich/sinngemäß im Text? Wenn nein → entfernen."
+- DATENSCHUTZ AUCH IM BELEGZITAT: Patientennamen, Initialen, Anschriften, Geburtsdaten, Telefon, E-Mail, Versicherungsnummern sowie Bar-/QR-Codes niemals in "zitat" übernehmen. Solche Stellen im Zitat durch "[personenbezogene Angabe entfernt]" ersetzen; medizinischen Inhalt, Messwert und Datum erhalten.
 
 Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt mit "text" + "beleg", außer wo unten anders strukturiert):
 {
@@ -297,7 +308,7 @@ Pflicht-Sektionen in Reihenfolge:
 10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
 11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
 12. Laborwert-Verlauf (chronologisch) — PFLICHT, sortierbar pro Parameter. Tabelle: Parameter | Datum | Wert | Einheit | Referenz | Bewertung (↑/↓/normal/kritisch) | Quelle/Beleg. Werte desselben Parameters über mehrere Daten hinweg DIREKT untereinander gruppieren (z.B. Vitamin D · 12.03.2024 · 18 ng/ml ↓ — Vitamin D · 28.09.2024 · 34 ng/ml normal), damit der Verlauf sofort sichtbar ist. Der jeweils neueste Wert pro Parameter wird zusätzlich fett markiert. Wenn kein Datum auffindbar: "(Datum unbekannt)" eintragen UND in Sektion 10 als offene Frage führen.
-13. ⚠️ Auffällige oder erkrankungs-/therapiebezogen sensible Laborwerte — Kurzfassung & klinische Einordnung (PFLICHT, kommt am Schluss als Quintessenz). Parameter mit Bewertung ↑, ↓ oder „kritisch" aufnehmen. ZUSAETZLICH für jede belegte Erkrankung, Operation oder laufende/abgeschlossene Therapie prüfen, welche Laborparameter auch innerhalb des allgemeinen Referenzbereichs besonders sensibel oder verlaufsrelevant sind. Diese Werte mit dokumentiertem Kontext, Verlauf, neutraler Begründung und Beleg aufnehmen. Für PSA gilt: Bei dokumentiert behandeltem Prostatakarzinom den Verlauf behandlungsspezifisch beurteilen. Nach dokumentierter Prostatektomie bereits einen nachvollziehbaren Anstieg oder einen nachweisbaren Wert ab 0,1 ng/ml, ausdrücklich auch 0,17 oder 0,24 ng/ml, als „sensibler PSA-Verlauf — zeitnah ärztlich/urologisch kontrollieren und bestätigen" kennzeichnen. Nach Bestrahlung oder Hormontherapie keine Prostatektomie-Schwelle übertragen, sondern den belegten Verlauf neutral als kontrollbedürftig markieren. Daraus NIEMALS automatisch die Diagnose „Rezidiv" ableiten. Keine pauschale Prozent- oder Deltaregel auf andere Laborparameter anwenden. Tabelle mit Spalten: Parameter (deutsch) | Aktueller Wert + Einheit | Datum | Referenz | Richtung (↑/↓/kritisch/Verlauf) | Erkrankungs-/Therapiebezug und mögliche Bedeutung (1–2 Sätze, neutral, keine Diagnose, keine Therapie) | Beleg. Bei Verlaufslabor IMMER den neuesten Wert nehmen. Wenn weder pathologische noch kontextrelevante Werte vorhanden sind: einen entsprechenden kurzen Satz ausgeben. Diese Sektion ist die zentrale Quintessenz für das Erstgespräch.
+13. ⚠️ Auffällige oder erkrankungs-/therapiebezogen sensible Laborwerte — Kurzfassung & klinische Einordnung (PFLICHT, kommt am Schluss als Quintessenz). Parameter mit Bewertung ↑, ↓ oder „kritisch" aufnehmen. ZUSAETZLICH für jede belegte Erkrankung, Operation oder laufende/abgeschlossene Therapie prüfen, welche Laborparameter auch innerhalb des allgemeinen Referenzbereichs besonders sensibel oder verlaufsrelevant sind. Diese Werte mit dokumentiertem Kontext, Verlauf, neutraler Begründung und Beleg aufnehmen. Für PSA gilt: Bei dokumentiert behandeltem Prostatakarzinom den Verlauf behandlungsspezifisch beurteilen. Nach dokumentierter Prostatektomie bereits einen nachvollziehbaren Anstieg oder einen nachweisbaren Wert ab 0,1 ng/ml, ausdrücklich auch 0,17 oder 0,24 ng/ml, als „sensibler PSA-Verlauf — zeitnah ärztlich/urologisch kontrollieren und bestätigen" kennzeichnen. Nach Bestrahlung oder Hormontherapie keine Prostatektomie-Schwelle übertragen, sondern den belegten Verlauf neutral als kontrollbedürftig markieren. Daraus NIEMALS automatisch die Diagnose „Rezidiv" ableiten. Für Testosteron gilt: "Testosteron", "Gesamt-Testosteron" und "Total Testosterone" als denselben Gesamt-Testosteron-Parameter zusammenführen; ng/ml, ng/dl und nmol/l korrekt umrechnen. Bei belegter Androgenentzugs-/Hormontherapie des Prostatakarzinoms einen dokumentierten Anstieg nach Therapiepause oder Therapieende zusammen mit PSA und Behandlungsstatus ausdrücklich als kontrollbedürftigen Verlauf einordnen, ohne daraus automatisch Erkrankungsaktivität abzuleiten. Keine pauschale Prozent- oder Deltaregel auf andere Laborparameter anwenden. Tabelle mit Spalten: Parameter (deutsch) | Aktueller Wert + Einheit | Datum | Referenz | Richtung (↑/↓/kritisch/Verlauf) | Erkrankungs-/Therapiebezug und mögliche Bedeutung (1–2 Sätze, neutral, keine Diagnose, keine Therapie) | Beleg. Bei Verlaufslabor IMMER den neuesten Wert nehmen. Wenn weder pathologische noch kontextrelevante Werte vorhanden sind: einen entsprechenden kurzen Satz ausgeben. Diese Sektion ist die zentrale Quintessenz für das Erstgespräch.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
@@ -412,7 +423,31 @@ function parseLlmJson(raw: string): any {
   return JSON.parse(cleaned);
 }
 
-function normalizePartialAnalysisJson(raw: string) {
+function labValueIdentity(item: Record<string, unknown>) {
+  const parameter = isPsaParameter(item.parameter)
+    ? "psa"
+    : isTotalTestosteroneParameter(item.parameter)
+      ? "testosterone"
+      : normalizeLabParameter(item.parameter);
+  const value = String(item.wert ?? "").trim().replace(/,/g, ".").replace(/\s+/g, "");
+  const date = String(item.datum ?? "").trim();
+  return `${parameter}|${date}|${value}`;
+}
+
+function mergeRecoveredSensitiveLabs(existing: unknown[], recovered: Record<string, unknown>[]) {
+  const merged = existing.filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && !Array.isArray(item));
+  const identities = new Set(merged.map(labValueIdentity));
+  for (const item of recovered) {
+    const identity = labValueIdentity(item);
+    if (!identities.has(identity)) {
+      merged.push(item);
+      identities.add(identity);
+    }
+  }
+  return merged;
+}
+
+function normalizePartialAnalysisJson(raw: string, block?: DocBlock, part = "") {
   const parsed = parseLlmJson(raw);
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
@@ -422,9 +457,18 @@ function normalizePartialAnalysisJson(raw: string) {
   // damit ein einzelnes „inhaltloses" Teilpaket nicht die gesamte Analyse killt.
   const normalized: Record<string, any> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
+  if (block) {
+    normalized.labValues = mergeRecoveredSensitiveLabs(
+      normalized.labValues,
+      extractSensitiveLabValuesFromText(block.text, block.label, part),
+    );
+  }
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
-  return JSON.stringify(normalized);
+  const serialized = JSON.stringify(deidentifyClinicalData(normalized));
+  const residualIdentifiers = directIdentifierCategories(serialized);
+  if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
+  return serialized;
 }
 
 function countPartialExtractionItems(partials: string[]) {
@@ -757,7 +801,14 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string, 
           if (!/^<!DOCTYPE/i.test(finalHtml) && !/^<html/i.test(finalHtml)) {
             finalHtml = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>${finalHtml}</body></html>`;
           }
-          controller.enqueue(encoder.encode(finalHtml));
+          let safeFinalHtml = deidentifyClinicalText(finalHtml);
+          if (directIdentifierCategories(safeFinalHtml).length) {
+            const safeFallback = deidentifyClinicalText(deterministicFallbackHtml || "");
+            safeFinalHtml = safeFallback && !directIdentifierCategories(safeFallback).length
+              ? safeFallback
+              : "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"utf-8\"><title>Datenschutz-Sicherheitsstopp</title></head><body><h1>Datenschutz-Sicherheitsstopp</h1><p>Die Ausgabe wurde nicht übernommen, weil direkte Identifikatoren nicht zuverlässig entfernt werden konnten.</p></body></html>";
+          }
+          controller.enqueue(encoder.encode(safeFinalHtml));
           controller.close();
           return;
         }
@@ -800,7 +851,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         for (let i = 0; i < chunks.length; i += 1) {
           send(`<li>Teil ${i + 1}/${chunks.length}: ${chunks[i].label.replace(/[<>&]/g, "")} wird gelesen…</li>`);
           const partial = await callGatewayText(apiKey, "google/gemini-2.5-flash", buildChunkPrompt(chunks[i], i + 1, chunks.length, b));
-          partials.push(normalizePartialAnalysisJson(partial));
+          partials.push(normalizePartialAnalysisJson(partial, chunks[i], `${i + 1}/${chunks.length}`));
         }
         if (countPartialExtractionItems(partials) === 0) throw new Error("Die KI hat keine verwertbaren Befunddaten extrahiert; es wird kein leerer Bericht erzeugt.");
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
@@ -869,7 +920,13 @@ serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      body = JSON.parse(raw) as AnalyzeBody;
+      body = deidentifyClinicalData(JSON.parse(raw)) as AnalyzeBody;
+      const residualIdentifiers = directIdentifierCategories(JSON.stringify(body));
+      if (residualIdentifiers.length) {
+        return new Response(JSON.stringify({ error: `Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}` }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     } catch (e) {
       console.error("analyze-documents: JSON parse error", e);
       return new Response(JSON.stringify({ error: "Ungültiger JSON-Body" }), {
@@ -907,7 +964,7 @@ serve(async (req) => {
 
       let normalizedPartial = "";
       try {
-        normalizedPartial = normalizePartialAnalysisJson(partial);
+        normalizedPartial = normalizePartialAnalysisJson(partial, { label, text }, `${index}/${total}`);
       } catch (error) {
         return new Response(JSON.stringify({ error: `Ungültige/unkomplette Teilanalyse: ${(error as Error).message}` }), {
           status: 503,
