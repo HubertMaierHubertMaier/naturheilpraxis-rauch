@@ -54,7 +54,7 @@ export const deidentifyClinicalText = (value: unknown) => {
       candidate.split(/\s+/).some((token) => nameStopWords.has(token.toLowerCase())) ? match : `${label}: ${REDACTED}`
     ))
     .replace(/\b(Herrn?|Frau)[^\S\r\n]+(?:(?:Dr|Prof)\.?[^\S\r\n]*)?(?:med\.?[^\S\r\n]+)?[A-ZÄÖÜ][\p{L}'-]+(?:[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+){0,2}(?=,|[^\S\r\n]+(?:wohnhaft|geb\.?|Alter)\b|$)/giu, "$1 [Name entfernt]")
-    .replace(/\b(?:[Dd][Rr]|[Pp][Rr][Oo][Ff])\.?[^\S\r\n]+(?:[Mm][Ee][Dd]\.?[^\S\r\n]+)?[A-ZÄÖÜ][\p{L}'-]+(?:[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+){0,2}/gu, "[Name entfernt]")
+    .replace(/\b(?:[Dd][Rr]|[Pp][Rr][Oo][Ff])\.?[^\S\r\n]+(?:[Mm][Ee][Dd]\.?[^\S\r\n]+)?(?:[A-ZÄÖÜ]\.[^\S\r\n]+){0,3}[A-ZÄÖÜ][\p{L}'-]+(?:[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+){0,2}/gu, "[Name entfernt]")
     .replace(/\b[A-ZÄÖÜ][\p{L}'-]+[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+(?=,?[^\S\r\n]+(?:geb\.?|geboren|Geburtsdatum)\b)/giu, "[Name entfernt]")
     .replace(/((?:Name|Nachname|Vorname|Patientenname|Patient(?:in)?|Versicherte(?:r|n)?|Behandler(?:in)?|Arzt|Ärztin)\s*:?\s*<\/(?:td|th|dt|span|strong|label)>\s*<(?:td|th|dd|span|div|p)[^>]*>)(?!\s*__CLINICAL_PSEUDONYM_)\s*[^<]{2,100}/giu, `$1${REDACTED}`)
     .replace(/((?:Name|Nachname|Vorname|Patientenname|Patient(?:in)?|Versicherte(?:r|n)?|Behandler(?:in)?|Arzt|Ärztin)\s*:?\s*<\/(?:strong|span|label)>)(?!\s*__CLINICAL_PSEUDONYM_)\s*[^<]{2,100}(?=<\/(?:p|div|td|dd)>)/giu, `$1 ${REDACTED}`)
@@ -104,7 +104,7 @@ export const directIdentifierCategories = (value: unknown) => {
     ["Anschrift", /\b[\p{L}][\p{L}\s.'-]{1,50}(?:stra(?:ß|ss)e|str\.|weg|platz|allee|gasse|ring|damm)\s+\d+[a-z]?|\b\d{5}\s+[A-ZÄÖÜ][\p{L}'-]+/iu],
     ["Geburtsdatum", /\b(?:geb(?:oren)?\.?|geburtsdatum|geb\.?-?datum|geb\.?-?tag)\s*[:.]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/iu],
     ["Kontaktdaten", /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\b(?:telefon(?:nummer)?|tel\.?|mobil|handy|fon|fax|rufnummer|rückrufnummer)\s*[:.]?\s*[+()\d][\d\s()/-]{5,}|(?:\+49|0049)\s*\(?\d{2,5}\)?(?:[\s/-]*\d){5,}\b|(?<!\d)0\d{2,5}(?:[\s/-]\d{2,}){1,3}\b/iu],
-    ["Name", /\b(?:Dr|Prof)\.?[^\S\r\n]+(?:med\.?[^\S\r\n]+)?[A-ZÄÖÜ][\p{L}'-]+|\b[A-ZÄÖÜ][\p{L}'-]+[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+(?=,?[^\S\r\n]+(?:geb\.?|geboren|Geburtsdatum)\b)/iu],
+    ["Name", /\b(?:Dr|Prof)\.?[^\S\r\n]+(?:med\.?[^\S\r\n]+)?(?:[A-ZÄÖÜ]\.[^\S\r\n]+){0,3}[A-ZÄÖÜ][\p{L}'-]+|\b[A-ZÄÖÜ][\p{L}'-]+[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+(?=,?[^\S\r\n]+(?:geb\.?|geboren|Geburtsdatum)\b)/iu],
     ["Name", /\b(?:Patient(?:in)?|Versicherte(?:r|n)?)\s*[:=-](?!\s*(?:P-\d{4}-\d{1,4}|Männlich\b|Maennlich\b|Weiblich\b|Divers\b|\[personenbezogene Angabe entfernt\]|<))/iu],
     ["Identifikationsnummer", /\b(?:versicherten(?:nummer|-?nr\.?)?|kv-?nr\.?|patienten-?nr\.?|patienten-?id|fall-?nr\.?)\s*[:.]?\s*[A-Z0-9][A-Z0-9 ./-]{4,}/iu],
   ];
