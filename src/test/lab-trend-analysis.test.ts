@@ -201,6 +201,7 @@ describe("laboratory trend analysis", () => {
       "Rückrufnummer 08211234567",
       "Dr. Maria Beispiel",
       "Dr. med. Henrik Muster behandelt seit 04.08.2031; PSA 0,24 ng/ml",
+      "Dr. med. H. Beispiel kontrolliert am 05.08.2031; Testosteron 650 ng/dl",
       "Anna Beispiel, geb. 01.02.1950",
     ].join("\n");
     const result = deidentifyClinicalText(source);
@@ -213,6 +214,8 @@ describe("laboratory trend analysis", () => {
     expect(result).not.toContain("Maria Beispiel");
     expect(result).not.toContain("Henrik Muster");
     expect(result).toContain("behandelt seit 04.08.2031; PSA 0,24 ng/ml");
+    expect(result).not.toContain("H. Beispiel");
+    expect(result).toContain("kontrolliert am 05.08.2031; Testosteron 650 ng/dl");
     expect(result).not.toContain("Anna Beispiel");
     expect(directIdentifierCategories(result)).toEqual([]);
   });
