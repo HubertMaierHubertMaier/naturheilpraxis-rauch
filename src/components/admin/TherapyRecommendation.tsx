@@ -29,6 +29,7 @@ import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { archiveClinicalDocumentOriginal, extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
+import { buildClinicallyRelevantLabHighlights, extractLabQuintessenceSection } from "../../../supabase/functions/_shared/labTrendAnalysis";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -715,6 +716,14 @@ const buildClientFallbackAnalysisHtml = (
       for (const key of anamneseKeys) if (Array.isArray(obj?.anamnese?.[key])) anamnese[key].push(...obj.anamnese[key]);
     } catch { /* unparsbarer Teil bleibt in den Rohdaten erhalten */ }
   }
+  const labHighlights = buildClinicallyRelevantLabHighlights(aggregate.labValues, {
+    documents: aggregate.documents,
+    diagnoses: aggregate.diagnoses,
+    medicationsTherapies: aggregate.medicationsTherapies,
+    findings: aggregate.findings,
+    systemsPatterns: aggregate.systemsPatterns,
+    anamnese,
+  });
   const beleg = (item: any) => {
     const b = item?.beleg || {};
     const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}"` : ""].filter(Boolean).join(" · ");
@@ -779,22 +788,13 @@ ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
 <h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
 
-<h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2>
+<h2>⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch</h2>
 ${(() => {
-  const lv = (aggregate.labValues as any[]).filter((v) => {
-    const bw = String(v?.bewertung || "").trim();
-    return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
-  });
-  if (!lv.length) return `<p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p>`;
-  const newest = new Map<string, any>();
-  for (const v of lv) {
-    const p = String(v?.parameter || "");
-    const d = String(v?.datum || "");
-    const prev = newest.get(p);
-    if (!prev || d > String(prev?.datum || "")) newest.set(p, v);
-  }
-  const list = Array.from(newest.values());
-  return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${list.map((item: any) => `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (lokaler Notfall-Aufbau ohne KI-Bewertung).</em></td><td>${beleg(item)}</td></tr>`).join("\n")}</tbody></table>`;
+  if (!labHighlights.length) return `<p class="empty">Keine pathologischen oder im dokumentierten Behandlungskontext relevanten Laborverläufe erkannt.</p>`;
+  return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${labHighlights.map((highlight) => {
+    const item = highlight.item;
+    return `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(highlight.direction)}</td><td>${escapeHtml(highlight.significance)}</td><td>${beleg(item)}</td></tr>`;
+  }).join("\n")}</tbody></table>`;
 })()}
 
 <h2>6a. Laborwert-Verlauf mit Datumsangaben</h2>
@@ -819,39 +819,34 @@ ${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
  * und liefert eine fertige HTML-Sektion. Wird verwendet, um die KI-Ausgabe zu ergänzen, falls
  * das Modell Sektion 13 weggelassen hat.
  */
-const buildLabQuintessenzAppendix = (partials: string[]): string => {
+const buildLabQuintessenzAppendix = (partials: string[], contextualOnly = false): string => {
   const escapeHtml = (v: unknown) => String(v ?? "")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const lv: any[] = [];
+  const context: unknown[] = [];
   for (const p of partials) {
     if (!p) continue;
     try {
       const obj = parseLlmJson(p);
+      context.push({ documents: obj?.documents, diagnoses: obj?.diagnoses, medicationsTherapies: obj?.medicationsTherapies, findings: obj?.findings, systemsPatterns: obj?.systemsPatterns, anamnese: obj?.anamnese });
       if (Array.isArray(obj?.labValues)) lv.push(...obj.labValues);
     } catch { /* ignore */ }
   }
-  const auffaellig = lv.filter((v) => {
-    const bw = String(v?.bewertung || "").trim();
-    return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
-  });
+  const allHighlights = buildClinicallyRelevantLabHighlights(lv, context);
+  const highlights = contextualOnly ? allHighlights.filter((highlight) => highlight.derivedFromContext) : allHighlights;
   const css = `<style>.qz-wrap{margin:28px 0 8px}.qz-wrap h2{color:#4f744f;border-left:5px solid #6b8e6b;padding-left:10px}.qz-wrap table{width:100%;border-collapse:collapse;font-size:.92rem}.qz-wrap th,.qz-wrap td{border:1px solid #d9e1d6;padding:7px 8px;vertical-align:top}.qz-wrap th{background:#eef4eb;text-align:left;color:#394a37}.qz-wrap .empty{color:#6f786c;font-style:italic}.qz-wrap .note{background:#fff5e6;border:1px solid #f3cf95;padding:8px 10px;margin:6px 0 10px;color:#7a4e10;font-size:.88rem}</style>`;
-  if (!auffaellig.length) {
-    return `${css}<section class="qz-wrap"><h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte.</div><p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p></section>`;
+  if (!highlights.length) {
+    if (contextualOnly) return "";
+    return `${css}<section class="qz-wrap"><h2>⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte.</div><p class="empty">Keine pathologischen oder im dokumentierten Behandlungskontext relevanten Laborverläufe erkannt.</p></section>`;
   }
-  const newest = new Map<string, any>();
-  for (const v of auffaellig) {
-    const par = String(v?.parameter || "");
-    const d = String(v?.datum || "");
-    const prev = newest.get(par);
-    if (!prev || d > String(prev?.datum || "")) newest.set(par, v);
-  }
-  const list = Array.from(newest.values());
-  const body = list.map((item: any) => {
-    const b = item?.beleg || {};
-    const belegParts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}"` : ""].filter(Boolean).join(" · ");
-    return `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (Quintessenz lokal aus Teilanalysen rekonstruiert).</em></td><td style="font-size:.84em;color:#5a6b5a;font-style:italic">${escapeHtml(belegParts || "—")}</td></tr>`;
+  const body = highlights.map((highlight) => {
+    const item = highlight.item;
+    const belegData = item.beleg && typeof item.beleg === "object" ? item.beleg as Record<string, unknown> : {};
+    const belegParts = [belegData.quelle, belegData.teil ? `Teil ${belegData.teil}` : "", belegData.zitat ? `„${belegData.zitat}"` : ""].filter(Boolean).join(" · ");
+    return `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(highlight.direction)}</td><td>${escapeHtml(highlight.significance)}</td><td style="font-size:.84em;color:#5a6b5a;font-style:italic">${escapeHtml(belegParts || "—")}</td></tr>`;
   }).join("\n");
-  return `${css}<section class="qz-wrap"><h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte oder unvollständig war. Pro Parameter wird der jeweils <strong>neueste</strong> Wert gezeigt.</div><table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${body}</tbody></table></section>`;
+  const title = contextualOnly ? "Kontextrelevanter Laborverlauf — deterministische Ergänzung" : "⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch";
+  return `${css}<section class="qz-wrap"><h2>${title}</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte oder unvollständig war. Pro Parameter wird der jeweils <strong>neueste</strong> Wert gezeigt; dokumentierter Behandlungskontext wird berücksichtigt.</div><table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${body}</tbody></table></section>`;
 };
 
 
@@ -2418,8 +2413,15 @@ export function TherapyRecommendation() {
         throw new Error(`Alle ${chunks.length} Teilanalysen sind gespeichert, aber die finale HTML-Zusammenführung ist fehlgeschlagen: ${(finalError as Error).message}. Bitte erneut klicken – dann wird nur die finale Zusammenführung neu gestartet.`);
       }
       full = sanitizeFinalAnalysisHtml(full);
-      // Garantierte Quintessenz: anhängen, falls die KI Sektion 13 nicht ausgeliefert hat.
-      if (!/Auffällige Laborwerte/i.test(full)) {
+      // Fehlende oder kontextuell unvollständige Quintessenz deterministisch ergänzen.
+      const quintessenceSection = extractLabQuintessenceSection(full);
+      const contextualAppendix = buildLabQuintessenzAppendix(partials, true);
+      if (contextualAppendix) {
+        const deterministicAppendix = buildLabQuintessenzAppendix(partials);
+        if (quintessenceSection) full = full.replace(quintessenceSection, deterministicAppendix);
+        else if (/<\/body>/i.test(full)) full = full.replace(/<\/body>/i, `${deterministicAppendix}</body>`);
+        else full = `${full}${deterministicAppendix}`;
+      } else if (!quintessenceSection) {
         const appendix = buildLabQuintessenzAppendix(partials);
         if (/<\/body>/i.test(full)) full = full.replace(/<\/body>/i, `${appendix}</body>`);
         else full = `${full}${appendix}`;

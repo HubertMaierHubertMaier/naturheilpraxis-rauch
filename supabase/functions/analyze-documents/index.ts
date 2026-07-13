@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildClinicallyRelevantLabHighlights } from "../_shared/labTrendAnalysis.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -184,6 +185,8 @@ Wichtig:
 - Wenn ein Dokument mehrere Untersuchungstage enthält (z.B. Verlaufslabor mit Spalten 12.03.2024 | 28.09.2024): die Werte pro Tag getrennt extrahieren — NICHT zusammenwerfen. Bei Verlaufslabor: pro Parameter so viele Einträge wie Messzeitpunkte.
 - Im Dokumentblock-Label und im "BEFUND VOM:"-Header steht meist das Datum. Wenn wirklich nirgends auffindbar (auch nicht im Header oder Quellenlabel): datum = "" und in openQuestions notieren ("Datum von … fehlt").
 - Für Laborwerte zusätzlich die strukturierte Liste "labValues" füllen: pro Parameter EIN Eintrag pro Messdatum (also bei Verlauf 3× = 3 Einträge), JEDER mit gefülltem "datum".
+- ALLE erkannten Laborwerte in "labValues" übernehmen, auch Werte innerhalb des allgemeinen Referenzbereichs. Normale Werte niemals allein wegen ihrer Bewertung auslassen, weil sie für einen dokumentübergreifenden Verlauf relevant sein können.
+- Die Bewertung in diesem isolierten Teilpaket nur anhand des vorliegenden Werts, Referenzbereichs und direkt vorhandenen Kontexts vergeben. Keine fehlenden Vorwerte aus anderen Teilpaketen erfinden; die dokumentübergreifende Verlaufsbewertung erfolgt erst nach der Zusammenführung.
 - Vor dem Antworten Selbst-Check: "Hat JEDER labValues-/findings-/diagnoses-Eintrag ein nicht-leeres datum-Feld? Wenn nein → Datum aus Dokumentblock-Header übernehmen oder leeres datum dokumentieren."
 
 
@@ -294,7 +297,7 @@ Pflicht-Sektionen in Reihenfolge:
 10. Empfohlenes Vorgehen für das Erstgespräch — nummeriert: Fragen, eigene Untersuchungen (EAV/NLS/Bioresonanz/Labor-Ergänzung), fehlende Befunde, Differentialdiagnosen (jede DD mit Beleg ODER 🟡-Hypothese-Marker + Begründung warum sie zu prüfen ist), Priorität.
 11. Sicherheitshinweise / Red Flags — falls nichts kritisch: kurz vermerken. Mit Beleg.
 12. Laborwert-Verlauf (chronologisch) — PFLICHT, sortierbar pro Parameter. Tabelle: Parameter | Datum | Wert | Einheit | Referenz | Bewertung (↑/↓/normal/kritisch) | Quelle/Beleg. Werte desselben Parameters über mehrere Daten hinweg DIREKT untereinander gruppieren (z.B. Vitamin D · 12.03.2024 · 18 ng/ml ↓ — Vitamin D · 28.09.2024 · 34 ng/ml normal), damit der Verlauf sofort sichtbar ist. Der jeweils neueste Wert pro Parameter wird zusätzlich fett markiert. Wenn kein Datum auffindbar: "(Datum unbekannt)" eintragen UND in Sektion 10 als offene Frage führen.
-13. ⚠️ Auffällige Laborwerte — Kurzfassung & klinische Einordnung (PFLICHT, kommt am Schluss als Quintessenz). Nur Parameter mit Bewertung ↑, ↓ oder „kritisch" aufnehmen — normale Werte WEGLASSEN. Tabelle mit Spalten: Parameter (deutsch) | Aktueller Wert + Einheit | Datum | Referenz | Richtung (↑/↓/kritisch) | Mögliche klinische Bedeutung / Auswirkung (1–2 Sätze, neutral, "kann auf … hinweisen", keine Diagnose, keine Therapie) | Beleg. Bei Verlaufslabor IMMER den neuesten Wert nehmen. Wenn keine auffälligen Werte vorhanden: einen Satz „Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert." Diese Sektion ist die zentrale Quintessenz für das Erstgespräch.
+13. ⚠️ Auffällige oder erkrankungs-/therapiebezogen sensible Laborwerte — Kurzfassung & klinische Einordnung (PFLICHT, kommt am Schluss als Quintessenz). Parameter mit Bewertung ↑, ↓ oder „kritisch" aufnehmen. ZUSAETZLICH für jede belegte Erkrankung, Operation oder laufende/abgeschlossene Therapie prüfen, welche Laborparameter auch innerhalb des allgemeinen Referenzbereichs besonders sensibel oder verlaufsrelevant sind. Diese Werte mit dokumentiertem Kontext, Verlauf, neutraler Begründung und Beleg aufnehmen. Für PSA gilt: Bei dokumentiert behandeltem Prostatakarzinom den Verlauf behandlungsspezifisch beurteilen. Nach dokumentierter Prostatektomie bereits einen nachvollziehbaren Anstieg oder einen nachweisbaren Wert ab 0,1 ng/ml, ausdrücklich auch 0,17 oder 0,24 ng/ml, als „sensibler PSA-Verlauf — zeitnah ärztlich/urologisch kontrollieren und bestätigen" kennzeichnen. Nach Bestrahlung oder Hormontherapie keine Prostatektomie-Schwelle übertragen, sondern den belegten Verlauf neutral als kontrollbedürftig markieren. Daraus NIEMALS automatisch die Diagnose „Rezidiv" ableiten. Keine pauschale Prozent- oder Deltaregel auf andere Laborparameter anwenden. Tabelle mit Spalten: Parameter (deutsch) | Aktueller Wert + Einheit | Datum | Referenz | Richtung (↑/↓/kritisch/Verlauf) | Erkrankungs-/Therapiebezug und mögliche Bedeutung (1–2 Sätze, neutral, keine Diagnose, keine Therapie) | Beleg. Bei Verlaufslabor IMMER den neuesten Wert nehmen. Wenn weder pathologische noch kontextrelevante Werte vorhanden sind: einen entsprechenden kurzen Satz ausgeben. Diese Sektion ist die zentrale Quintessenz für das Erstgespräch.
 
 TEILANALYSEN (JSON/Notizen):
 ${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
@@ -486,6 +489,18 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     }
   }
 
+  const labHighlights = buildClinicallyRelevantLabHighlights(
+    aggregate.labValues as Record<string, unknown>[],
+    {
+      documents: aggregate.documents,
+      diagnoses: aggregate.diagnoses,
+      medicationsTherapies: aggregate.medicationsTherapies,
+      findings: aggregate.findings,
+      systemsPatterns: aggregate.systemsPatterns,
+      anamnese,
+    },
+  );
+
   const beleg = (item: any) => {
     const b = item?.beleg || {};
     const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}“` : ""].filter(Boolean).join(" · ");
@@ -604,23 +619,13 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     })}</tbody></table>`;
   })()}
 
-  <h2>⚠️ Auffällige Laborwerte — Quintessenz für das Erstgespräch</h2>
+  <h2>⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch</h2>
   ${(() => {
-    const lv = (aggregate.labValues as any[]).filter((v) => {
-      const bw = String(v?.bewertung || "").trim();
-      return bw === "↑" || bw === "↓" || /kritisch/i.test(bw);
-    });
-    if (!lv.length) return `<p class="empty">Keine pathologischen Laborabweichungen in den vorliegenden Unterlagen dokumentiert.</p>`;
-    // Pro Parameter den neuesten Wert behalten
-    const newest = new Map<string, any>();
-    for (const v of lv) {
-      const p = String(v?.parameter || "");
-      const d = String(v?.datum || "");
-      const prev = newest.get(p);
-      if (!prev || d > String(prev?.datum || "")) newest.set(p, v);
-    }
-    const list = Array.from(newest.values());
-    return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${list.map((item: any) => `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(item?.bewertung || "—")}</td><td><em>Manuelle Einordnung im Erstgespräch (lokaler Fallback ohne KI-Bewertung).</em></td><td>${beleg(item)}</td></tr>`).join("\n")}</tbody></table>`;
+    if (!labHighlights.length) return `<p class="empty">Keine pathologischen oder im dokumentierten Behandlungskontext relevanten Laborverläufe erkannt.</p>`;
+    return `<table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${labHighlights.map((highlight) => {
+      const item = highlight.item;
+      return `<tr><td><strong>${escapeHtml(item?.parameter || "—")}</strong></td><td>${escapeHtml(item?.wert || "—")} ${escapeHtml(item?.einheit || "")}</td><td>${escapeHtml(item?.datum || "(Datum unbekannt)")}</td><td>${escapeHtml(item?.referenz || "—")}</td><td>${escapeHtml(highlight.direction)}</td><td>${escapeHtml(highlight.significance)}</td><td>${beleg(item)}</td></tr>`;
+    }).join("\n")}</tbody></table>`;
   })()}
 
   <h2>6b. 🧾 Prüfung der Mannayan-Bestellungen</h2>
