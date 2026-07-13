@@ -851,6 +851,11 @@ export type Database = {
         Args: { _pseudonym: string }
         Returns: string
       }
+      redact_therapy_pii_jsonb: {
+        Args: { _parent_key?: string; _value: Json }
+        Returns: Json
+      }
+      redact_therapy_pii_text: { Args: { _value: string }; Returns: string }
       upsert_therapy_autosave_draft: {
         Args: {
           _eingabe_daten: Json
