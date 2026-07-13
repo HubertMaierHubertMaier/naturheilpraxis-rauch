@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   buildClinicallyRelevantLabHighlights,
   extractLabQuintessenceSection,
@@ -19,6 +21,12 @@ const psa = (datum: string, wert: string, bewertung = "normal") => ({
 });
 
 describe("laboratory trend analysis", () => {
+  it("invalidates checkpoints created with the previous laboratory prompt", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-context-sensitive-labs-v6"');
+    expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-datum-mannayan-v5-json-normalized"');
+  });
+
   it("recognizes common PSA labels and German decimal values", () => {
     expect(isPsaParameter("PSA")).toBe(true);
     expect(isPsaParameter("Prostataspezifisches Antigen")).toBe(true);
