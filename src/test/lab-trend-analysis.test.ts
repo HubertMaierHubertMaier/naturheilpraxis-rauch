@@ -200,6 +200,7 @@ describe("laboratory trend analysis", () => {
       "Alternative Nummer 0821 1234567",
       "Rückrufnummer 08211234567",
       "Dr. Maria Beispiel",
+      "Dr. med. Henrik Muster behandelt seit 04.08.2031; PSA 0,24 ng/ml",
       "Anna Beispiel, geb. 01.02.1950",
     ].join("\n");
     const result = deidentifyClinicalText(source);
@@ -210,7 +211,10 @@ describe("laboratory trend analysis", () => {
     expect(result).not.toContain("0821 1234567");
     expect(result).not.toContain("08211234567");
     expect(result).not.toContain("Maria Beispiel");
+    expect(result).not.toContain("Henrik Muster");
+    expect(result).toContain("behandelt seit 04.08.2031; PSA 0,24 ng/ml");
     expect(result).not.toContain("Anna Beispiel");
+    expect(directIdentifierCategories(result)).toEqual([]);
   });
 
   it("requires documented post-prostatectomy context for contextual PSA highlighting", () => {
@@ -411,6 +415,7 @@ describe("laboratory trend analysis", () => {
 
   it("adds database-side de-identification for future therapy session writes", () => {
     const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260713140500_redact_therapy_session_identifiers.sql"), "utf8");
+    const followUpMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260713144500_redact_doctor_names_in_running_text.sql"), "utf8");
     expect(migration).toContain("BEFORE INSERT OR UPDATE ON public.therapy_sessions");
     expect(migration).toContain("redact_therapy_pii_jsonb(NEW.eingabe_daten)");
     expect(migration).toContain("redact_therapy_pii_text(NEW.befund_html)");
@@ -418,5 +423,7 @@ describe("laboratory trend analysis", () => {
     expect(migration).toContain("P-[[:digit:]]{4}-[[:digit:]]{1,4}");
     expect(migration).toContain("regexp_replace(concat_ws");
     expect(migration).toContain("Existing rows are intentionally not rewritten");
+    expect(followUpMigration).toContain("CREATE OR REPLACE FUNCTION public.redact_therapy_pii_text");
+    expect(followUpMigration).toContain("{0,2}', '[Name entfernt]', 'g');");
   });
 });
