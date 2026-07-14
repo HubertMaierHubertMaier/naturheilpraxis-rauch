@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, BookOpen, Tag, X, ChevronRight, ChevronDown, RefreshCw, FolderOpen, Sparkles } from "lucide-react";
 import { TagEnrichmentDialog } from "./TagEnrichmentDialog";
@@ -71,6 +72,20 @@ interface KnowledgeEntry {
   content: string;
   created_at: string;
   updated_at: string;
+  entry_kind: string;
+  review_status: string;
+  evidence_level: string;
+  dosage_status: string;
+  rights_status: string;
+  source_citations: Array<{ url?: string; label?: string }>;
+  therapeutic_topics: string[];
+  contraindications: string[];
+  interaction_tags: string[];
+  safety_notes: string;
+  patient_facing_allowed: boolean;
+  commercial_claims_reviewed: boolean;
+  last_reviewed_at: string | null;
+  reviewed_by: string | null;
 }
 
 function HighlightText({ text, query }: { text: string; query: string }) {
@@ -127,16 +142,6 @@ function ContentSnippets({ content, query }: { content: string; query: string })
   );
 }
 
-interface KnowledgeEntry {
-  id: string;
-  title: string;
-  category: string;
-  tags: string[];
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
-
 const DEFAULT_CATEGORIES = [
   "Allgemein",
   "Anti-Aging",
@@ -188,6 +193,18 @@ export function KnowledgeBaseManager() {
   const [formCustomCategory, setFormCustomCategory] = useState("");
   const [formTags, setFormTags] = useState("");
   const [formContent, setFormContent] = useState("");
+  const [formEntryKind, setFormEntryKind] = useState("reference");
+  const [formReviewStatus, setFormReviewStatus] = useState("unreviewed");
+  const [formEvidenceLevel, setFormEvidenceLevel] = useState("unrated");
+  const [formDosageStatus, setFormDosageStatus] = useState("unverified");
+  const [formRightsStatus, setFormRightsStatus] = useState("unknown");
+  const [formSources, setFormSources] = useState("");
+  const [formTherapeuticTopics, setFormTherapeuticTopics] = useState("");
+  const [formContraindications, setFormContraindications] = useState("");
+  const [formInteractionTags, setFormInteractionTags] = useState("");
+  const [formSafetyNotes, setFormSafetyNotes] = useState("");
+  const [formPatientFacingAllowed, setFormPatientFacingAllowed] = useState(false);
+  const [formCommercialClaimsReviewed, setFormCommercialClaimsReviewed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { toast } = useToast();
@@ -359,6 +376,18 @@ export function KnowledgeBaseManager() {
     setFormCustomCategory("");
     setFormTags("");
     setFormContent("");
+    setFormEntryKind("reference");
+    setFormReviewStatus("unreviewed");
+    setFormEvidenceLevel("unrated");
+    setFormDosageStatus("unverified");
+    setFormRightsStatus("unknown");
+    setFormSources("");
+    setFormTherapeuticTopics("");
+    setFormContraindications("");
+    setFormInteractionTags("");
+    setFormSafetyNotes("");
+    setFormPatientFacingAllowed(false);
+    setFormCommercialClaimsReviewed(false);
     setDialogOpen(true);
   };
 
@@ -370,6 +399,18 @@ export function KnowledgeBaseManager() {
     setFormCustomCategory(isDefault ? "" : entry.category);
     setFormTags(entry.tags?.join(", ") || "");
     setFormContent(entry.content);
+    setFormEntryKind(entry.entry_kind || "reference");
+    setFormReviewStatus(entry.review_status || "unreviewed");
+    setFormEvidenceLevel(entry.evidence_level || "unrated");
+    setFormDosageStatus(entry.dosage_status || "unverified");
+    setFormRightsStatus(entry.rights_status || "unknown");
+    setFormSources(Array.isArray(entry.source_citations) ? entry.source_citations.map((source) => source.url || source.label || "").filter(Boolean).join("\n") : "");
+    setFormTherapeuticTopics(entry.therapeutic_topics?.join(", ") || "");
+    setFormContraindications(entry.contraindications?.join(", ") || "");
+    setFormInteractionTags(entry.interaction_tags?.join(", ") || "");
+    setFormSafetyNotes(entry.safety_notes || "");
+    setFormPatientFacingAllowed(entry.patient_facing_allowed === true);
+    setFormCommercialClaimsReviewed(entry.commercial_claims_reviewed === true);
     setDialogOpen(true);
   };
 
@@ -379,9 +420,39 @@ export function KnowledgeBaseManager() {
       toast({ title: "Titel und Kategorie sind Pflichtfelder", variant: "destructive" });
       return;
     }
+    if (formPatientFacingAllowed && (formReviewStatus !== "reviewed" || !formCommercialClaimsReviewed)) {
+      toast({ title: "Patientenausgabe nicht freigabefähig", description: "Dafür müssen Fachprüfung und Prüfung der Werbe-/Produktaussagen abgeschlossen sein.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (formReviewStatus === "reviewed" && !user) {
+      setSaving(false);
+      toast({ title: "Fachprüfung nicht gespeichert", description: "Für die Prüferzuordnung ist eine aktive Anmeldung erforderlich.", variant: "destructive" });
+      return;
+    }
     const tags = formTags.split(",").map((t) => t.trim()).filter(Boolean);
-    const payload = { title: formTitle.trim(), category: finalCategory, tags, content: formContent };
+    const commaList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+    const payload = {
+      title: formTitle.trim(),
+      category: finalCategory,
+      tags,
+      content: formContent,
+      entry_kind: formEntryKind,
+      review_status: formReviewStatus,
+      evidence_level: formEvidenceLevel,
+      dosage_status: formDosageStatus,
+      rights_status: formRightsStatus,
+      source_citations: formSources.split(/\r?\n/).map((url) => url.trim()).filter(Boolean).map((url) => ({ url })),
+      therapeutic_topics: commaList(formTherapeuticTopics),
+      contraindications: commaList(formContraindications),
+      interaction_tags: commaList(formInteractionTags),
+      safety_notes: formSafetyNotes.trim(),
+      patient_facing_allowed: formPatientFacingAllowed,
+      commercial_claims_reviewed: formCommercialClaimsReviewed,
+      last_reviewed_at: formReviewStatus === "reviewed" ? new Date().toISOString() : null,
+      reviewed_by: formReviewStatus === "reviewed" ? user?.id || null : null,
+    };
     let error;
     if (editingEntry) {
       ({ error } = await supabase.from("admin_knowledge_base").update(payload).eq("id", editingEntry.id));
@@ -433,6 +504,10 @@ export function KnowledgeBaseManager() {
                   ⭐ {phraseMatchCount} Treffer
                 </Badge>
               )}
+              <Badge variant={entry.review_status === "reviewed" ? "default" : entry.review_status === "restricted" ? "destructive" : "secondary"} className="text-[10px] shrink-0">
+                {entry.review_status === "reviewed" ? "fachlich geprüft" : entry.review_status === "restricted" ? "gesperrt" : "Prüfung offen"}
+              </Badge>
+              <Badge variant="outline" className="text-[10px] shrink-0">Evidenz: {entry.evidence_level || "unrated"}</Badge>
             </div>
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
               {entry.tags?.slice(0, 6).map((tag) => (
@@ -466,8 +541,24 @@ export function KnowledgeBaseManager() {
           <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground/80 border-t pt-3">
             {entry.content ? <HighlightText text={entry.content} query={searchQuery} /> : <span className="text-muted-foreground italic">Kein Inhalt</span>}
           </div>
+          {(entry.safety_notes || entry.contraindications?.length || entry.interaction_tags?.length) && (
+            <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-50/70 p-3 text-xs text-amber-950 dark:bg-amber-950/20 dark:text-amber-200">
+              <div className="font-semibold mb-1">Interne Sicherheitsdaten</div>
+              {entry.safety_notes && <div>{entry.safety_notes}</div>}
+              {entry.contraindications?.length > 0 && <div className="mt-1"><strong>Kontraindikationen:</strong> {entry.contraindications.join(", ")}</div>}
+              {entry.interaction_tags?.length > 0 && <div className="mt-1"><strong>Interaktionen:</strong> {entry.interaction_tags.join(", ")}</div>}
+            </div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="text-[10px]">Typ: {entry.entry_kind || "reference"}</Badge>
+            <Badge variant="outline" className="text-[10px]">Dosierung: {entry.dosage_status || "unverified"}</Badge>
+            <Badge variant="outline" className="text-[10px]">Rechte: {entry.rights_status || "unknown"}</Badge>
+            <Badge variant="outline" className="text-[10px]">Quellen: {entry.source_citations?.length || 0}</Badge>
+            <Badge variant={entry.patient_facing_allowed ? "default" : "secondary"} className="text-[10px]">Patientenausgabe: {entry.patient_facing_allowed ? "freigegeben" : "gesperrt"}</Badge>
+          </div>
           <p className="text-xs text-muted-foreground mt-3">
             Zuletzt aktualisiert: {new Date(entry.updated_at).toLocaleString("de-DE")}
+            {entry.last_reviewed_at ? ` · Fachlich geprüft: ${new Date(entry.last_reviewed_at).toLocaleString("de-DE")}` : ""}
           </p>
         </CardContent>
       )}
@@ -697,6 +788,111 @@ export function KnowledgeBaseManager() {
                 onChange={(e) => setFormTags(e.target.value)}
                 placeholder="z.B. Trichomonaden, Toxoplasmen, Parasiten"
               />
+            </div>
+            <div className="rounded-lg border border-amber-500/30 bg-amber-50/40 p-4 space-y-4 dark:bg-amber-950/10">
+              <div>
+                <div className="font-semibold text-sm">Fachliche Metadaten</div>
+                <div className="text-xs text-muted-foreground">Diese Felder steuern Prüfung und Sicherheit. Ein Wiki-Eintrag wird dadurch nicht automatisch zur Therapieempfehlung.</div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium">Eintragstyp</label>
+                  <Select value={formEntryKind} onValueChange={setFormEntryKind}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reference">Referenz</SelectItem>
+                      <SelectItem value="remedy">Mittel</SelectItem>
+                      <SelectItem value="protocol">Protokoll</SelectItem>
+                      <SelectItem value="diagnostic">Diagnostik</SelectItem>
+                      <SelectItem value="product">Produkt</SelectItem>
+                      <SelectItem value="equipment">Gerät/Zubehör</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Prüfstatus</label>
+                  <Select value={formReviewStatus} onValueChange={setFormReviewStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unreviewed">Ungeprüft</SelectItem>
+                      <SelectItem value="needs_review">Prüfung erforderlich</SelectItem>
+                      <SelectItem value="reviewed">Fachlich geprüft</SelectItem>
+                      <SelectItem value="restricted">Nicht verwenden/gesperrt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Evidenzniveau</label>
+                  <Select value={formEvidenceLevel} onValueChange={setFormEvidenceLevel}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unrated">Nicht bewertet</SelectItem>
+                      <SelectItem value="traditional">Traditionelle Anwendung</SelectItem>
+                      <SelectItem value="mechanistic">Mechanistische Hinweise</SelectItem>
+                      <SelectItem value="observational">Beobachtungsdaten</SelectItem>
+                      <SelectItem value="clinical">Klinische Daten</SelectItem>
+                      <SelectItem value="guideline">Leitlinie/Monographie</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Dosierungsstatus</label>
+                  <Select value={formDosageStatus} onValueChange={setFormDosageStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_applicable">Nicht anwendbar</SelectItem>
+                      <SelectItem value="missing">Fehlt</SelectItem>
+                      <SelectItem value="unverified">Ungeprüft</SelectItem>
+                      <SelectItem value="verified">Geprüft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-sm font-medium">Rechte-/Quellenstatus</label>
+                  <Select value={formRightsStatus} onValueChange={setFormRightsStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unknown">Unbekannt</SelectItem>
+                      <SelectItem value="own_content">Eigener Inhalt</SelectItem>
+                      <SelectItem value="licensed">Lizenziert</SelectItem>
+                      <SelectItem value="quoted">Zulässiges Zitat</SelectItem>
+                      <SelectItem value="public_domain">Gemeinfrei</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Quellen (eine URL oder Quellenangabe pro Zeile)</label>
+                <Textarea value={formSources} onChange={(e) => setFormSources(e.target.value)} rows={3} placeholder="https://..." />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium">Therapiethemen (kommagetrennt)</label>
+                  <Input value={formTherapeuticTopics} onChange={(e) => setFormTherapeuticTopics(e.target.value)} placeholder="z.B. Darm, Schlaf" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Interaktions-Tags</label>
+                  <Input value={formInteractionTags} onChange={(e) => setFormInteractionTags(e.target.value)} placeholder="z.B. Antikoagulanzien, CYP3A4" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Kontraindikationen (kommagetrennt)</label>
+                <Input value={formContraindications} onChange={(e) => setFormContraindications(e.target.value)} placeholder="z.B. Schwangerschaft, Hypertonie" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Interne Sicherheitshinweise</label>
+                <Textarea value={formSafetyNotes} onChange={(e) => setFormSafetyNotes(e.target.value)} rows={3} placeholder="Konkrete Prüf- und Überwachungshinweise..." />
+              </div>
+              <div className="space-y-3 rounded-md border bg-background/70 p-3">
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox checked={formCommercialClaimsReviewed} onCheckedChange={(checked) => setFormCommercialClaimsReviewed(checked === true)} />
+                  <span><strong>Werbe-/Produktaussagen geprüft</strong><span className="block text-xs text-muted-foreground">Indikations- und Wirkaussagen wurden auf belastbare Quellen und zulässige Formulierung geprüft.</span></span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox checked={formPatientFacingAllowed} onCheckedChange={(checked) => setFormPatientFacingAllowed(checked === true)} />
+                  <span><strong>Für Patientenausgabe freigeben</strong><span className="block text-xs text-muted-foreground">Nur möglich bei fachlich geprüftem Eintrag und geprüften Werbe-/Produktaussagen.</span></span>
+                </label>
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium">Inhalt</label>

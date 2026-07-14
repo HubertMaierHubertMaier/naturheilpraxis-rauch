@@ -164,7 +164,7 @@ export const extractSensitiveLabValuesFromText = (
       return;
     }
 
-    let measurement = candidates[0];
+    let measurement: RegExpMatchArray | undefined = candidates[0];
     const valueAfterParameter = window.match(valueAfterParameterPattern);
     const nearbyUnit = window.slice(0, 180).match(/ng\s*\/\s*m[lL]|ng\s*\/\s*d[lL]|nmol\s*\/\s*[lL]|[µμu]g\s*\/\s*[lL]/iu);
     const directValueDiffers = valueAfterParameter && measurement

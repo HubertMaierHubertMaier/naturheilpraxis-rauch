@@ -6,11 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Bug, Stethoscope, Users } from "lucide-react";
+import { BookOpen, Bug, Link2, Stethoscope, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
 import { TherapyPatientOverview } from "@/components/admin/therapy/TherapyPatientOverview";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { KnowledgeProductLinkManager } from "@/components/admin/KnowledgeProductLinkManager";
 
 interface KnowledgeEntry {
   id: string;
@@ -69,7 +70,7 @@ const Wissensdatenbank = () => {
     <Layout>
       <div className="container py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-6 sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
+          <TabsList className="mb-6 h-auto w-full flex-wrap justify-start sticky top-16 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm">
             <TabsTrigger value="wiki" className="gap-2">
               <BookOpen className="h-4 w-4" />
               Wiki
@@ -77,6 +78,10 @@ const Wissensdatenbank = () => {
             <TabsTrigger value="pathogene" className="gap-2">
               <Bug className="h-4 w-4" />
               Pathogen-Verzeichnis
+            </TabsTrigger>
+            <TabsTrigger value="zuordnungen" className="gap-2">
+              <Link2 className="h-4 w-4" />
+              Mannayan-Zuordnungen
             </TabsTrigger>
             <TabsTrigger value="therapie" className="gap-2">
               <Stethoscope className="h-4 w-4" />
@@ -92,6 +97,9 @@ const Wissensdatenbank = () => {
           </TabsContent>
           <TabsContent value="pathogene">
             <PathogenIndex entries={entries} loading={entriesLoading} />
+          </TabsContent>
+          <TabsContent value="zuordnungen">
+            <KnowledgeProductLinkManager />
           </TabsContent>
           <TabsContent value="therapie">
             <ErrorBoundary label="Therapie-Empfehlung">

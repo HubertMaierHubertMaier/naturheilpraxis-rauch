@@ -2,9 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CategoryGroup, RemedyRow } from "@/lib/therapyParser";
 import { priorityOrder } from "@/lib/therapyParser";
+import { severityLabel, type TherapySafetyWarning } from "../../../../supabase/functions/_shared/therapySafety";
 
 const TONE_STYLES: Record<CategoryGroup["tone"], { card: string; header: string; accent: string; pill: string }> = {
   sage: {
@@ -67,9 +69,10 @@ interface CategoryCardProps {
   selectedKeys?: Set<string>;
   onToggleRemedy?: (key: string) => void;
   onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
+  safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>;
 }
 
-export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemedy, onToggleAll }: CategoryCardProps) {
+export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemedy, onToggleAll, safetyWarningsByKey }: CategoryCardProps) {
   const styles = TONE_STYLES[group.tone];
   // Wir behalten Original-Indizes für stabile Selection-Keys
   const indexed = group.remedies.map((r, i) => ({ row: r, originalIndex: i }));
@@ -121,8 +124,9 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
             {sorted.map(({ row, originalIndex }) => {
               const key = `${categoryIndex}|${originalIndex}`;
               const isChecked = selectionEnabled && selectedKeys!.has(key);
+              const safetyWarnings = safetyWarningsByKey?.get(key) || [];
               return (
-                <TableRow key={key} className={cn("align-top", selectionEnabled && !isChecked && "opacity-50")}>
+                <TableRow key={key} className={cn("align-top", selectionEnabled && !isChecked && "opacity-60", safetyWarnings.length && "bg-amber-50/70 dark:bg-amber-950/20")}>
                   {selectionEnabled && (
                     <TableCell className="py-3">
                       <Checkbox
@@ -138,6 +142,24 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
                     </div>
                     {row.latin && (
                       <div className="text-xs italic text-muted-foreground mt-0.5">{row.latin}</div>
+                    )}
+                    {safetyWarnings.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {safetyWarnings.map((warning) => (
+                          <div key={warning.id} className={cn(
+                            "rounded border px-2 py-1.5 text-[11px] leading-snug",
+                            warning.severity === "avoid"
+                              ? "border-destructive/50 bg-destructive/10 text-destructive"
+                              : "border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+                          )}>
+                            <div className="flex items-center gap-1 font-semibold">
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              {severityLabel(warning.severity)}: {warning.title}
+                            </div>
+                            <div className="mt-0.5">{warning.action}</div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="py-3 font-mono text-sm">{row.dosage || "—"}</TableCell>

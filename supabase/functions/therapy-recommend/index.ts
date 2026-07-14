@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
+import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -75,10 +77,22 @@ function checkRateLimit(key: string, now = Date.now()): boolean {
 // In-Memory-Cache für die Wiki-Rohdaten (überlebt warm starts).
 // Invalidierung automatisch, sobald sich Anzahl oder max(updated_at) ändert.
 interface WikiEntry {
+  id: string;
   title: string;
   category: string;
   tags: string[];
   content: string;
+  review_status?: string;
+  evidence_level?: string;
+  dosage_status?: string;
+  rights_status?: string;
+  source_citations?: Array<{ url?: string; label?: string }>;
+  therapeutic_topics?: string[];
+  contraindications?: string[];
+  interaction_tags?: string[];
+  safety_notes?: string;
+  patient_facing_allowed?: boolean;
+  commercial_claims_reviewed?: boolean;
 }
 interface WikiCache {
   signature: string;
@@ -92,12 +106,11 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v12";
-const FORCE_FULL_WIKI_MAP_REDUCE = true;
+const CACHE_VERSION = "v13";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
-const MAP_REDUCE_TOP_N = 35; // wie viele Einträge nach Stufe 1 in Volltext an Stufe 2 gehen
+const MAP_REDUCE_TOP_N = 18; // begrenzter Fachkontext statt moeglichst vieler Mittel
 const MAP_REDUCE_MODEL = "google/gemini-2.5-flash-lite"; // billigstes Modell für Bewertung
 const MAP_REDUCE_SNIPPET_CHARS = 350; // wie viel Content-Vorschau pro Eintrag in Stufe 1
 
@@ -210,7 +223,7 @@ async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: 
   console.log(`Wiki cache MISS (new signature=${signature})`);
   const { data: wikiEntries, error: wikiError } = await client
     .from("admin_knowledge_base")
-    .select("title, category, tags, content")
+    .select("id, title, category, tags, content, review_status, evidence_level, dosage_status, rights_status, source_citations, therapeutic_topics, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
     .order("updated_at", { ascending: false });
   if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
@@ -402,11 +415,30 @@ function buildEntryContent(entry: WikiEntry, queryText: string): string {
   return combined.slice(0, MAX_ENTRY_CHARS);
 }
 
+function buildEntryMetadata(entry: WikiEntry): string {
+  const sources = Array.isArray(entry.source_citations)
+    ? entry.source_citations.map((source) => source?.url || source?.label || "").filter(Boolean)
+    : [];
+  return [
+    `Pruefstatus: ${entry.review_status || "unreviewed"}`,
+    `Evidenz: ${entry.evidence_level || "unrated"}`,
+    `Dosierungsstatus: ${entry.dosage_status || "unverified"}`,
+    `Rechtestatus: ${entry.rights_status || "unknown"}`,
+    entry.therapeutic_topics?.length ? `Therapiethemen: ${entry.therapeutic_topics.join(", ")}` : "",
+    entry.contraindications?.length ? `Kontraindikationen: ${entry.contraindications.join(", ")}` : "",
+    entry.interaction_tags?.length ? `Interaktions-Tags: ${entry.interaction_tags.join(", ")}` : "",
+    entry.safety_notes ? `Sicherheit: ${entry.safety_notes}` : "",
+    `Patientenausgabe: ${entry.patient_facing_allowed === true ? "freigegeben" : "nicht freigegeben"}`,
+    `Werbe-/Produktaussagen: ${entry.commercial_claims_reviewed === true ? "geprueft" : "nicht geprueft"}`,
+    sources.length ? `Quellen: ${sources.join("; ")}` : "Quellen: nicht strukturiert hinterlegt",
+  ].filter(Boolean).join("\n");
+}
+
 function buildContext(entries: WikiEntry[], queryText: string): string {
   let context = entries
     .map((e) => {
       const content = buildEntryContent(e, queryText);
-      return `### ${e.title} [${e.category}] Tags: ${(e.tags || []).join(", ")}\n${content}`;
+      return `### ${e.title} [${e.category}] Wiki-ID: ${e.id} Tags: ${(e.tags || []).join(", ")}\n${buildEntryMetadata(e)}\n\n${content}`;
     })
     .join("\n\n---\n\n");
 
@@ -426,7 +458,7 @@ function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
 }
 
 function entryText(e: WikiEntry): string {
-  return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
+  return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${(e.therapeutic_topics || []).join(" ")} ${(e.interaction_tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
 }
 
 function isVitaplaceProbiotic(e: WikiEntry): boolean {
@@ -477,106 +509,7 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
 }
 
 function sanitizeRecommendation(text: string): string {
-  let out = text;
-  out = out.replace(/\*{0,2}WICHTIGER HINWEIS ZUERST:?\*{0,2}[\s\S]*?(?=\n\s*##\s|\n\s*#\s|$)/gi, "");
-  out = out
-    .split(/\n{2,}/)
-    .filter((p) => !/(Red Flags|Gastroenterolog|Koloskopie|zwingend.{0,40}ärzt|Bitte\s+suchen\s+Sie.{0,80}Arzt|organische Erkrankungen.{0,80}ausschließen|ersetzt.{0,40}Arzt)/i.test(p))
-    .join("\n\n");
-  out = out.replace(
-    /(?:[-*]\s*)?Substitution prüfen\s*[–-]\s*Bifidobacterium[^\n]*/gi,
-    "- ✅ **Substitution** – Bifidobacterium auffällig/erniedrigt → Vitaplace **Biotik Balance Kapseln** bzw. **Biotik Sensitiv Pulver** sind in der Wissensdatenbank als Bifidobacterium-/Lactobacillus-haltige Praxispräparate hinterlegt."
-  );
-  return out.trim();
-}
-
-type ForcedRemedy = { group: string; line: string };
-
-function hasWikiTitle(entries: WikiEntry[], title: string): boolean {
-  return entries.some((e) => (e.title || "").toLowerCase() === title.toLowerCase());
-}
-
-function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): string {
-  const query = queryText.toLowerCase();
-  const has = (re: RegExp) => re.test(query);
-  const add = (items: ForcedRemedy[], title: string, group: string, line: string) => {
-    if (hasWikiTitle(entries, title) && !items.some((i) => i.line.includes(`**${title}`) || i.line.includes(`**${title} (`))) {
-      items.push({ group, line });
-    }
-  };
-
-  const items: ForcedRemedy[] = [];
-  const microbiome = has(/stuhl|mikrobiom|darmflora|bifido|lacto|enterococcus|escherichia|ph\s*5|pH|candida|geotrichum|dysbio|gärung|gaerung|probiotik|präbiotik|praebiotik/i);
-  const digestive = has(/bläh|blaeh|druck|spannung|aufsto|reflux|dyspeps|gastro|verdau|krampf|kolik|verstopf|durchfall|entleerung|bauch/i);
-  const weight = has(/appetit|gewichtsverlust|gewichtsabnahme|abmager|untergewicht|kachex/i);
-  const fatigue = has(/erschöpf|erschoepf|müde|mued|schwäche|schwaeche|energie|kraft|lebensqualität|lebensqualitaet/i);
-  const psyche = has(/psyche|depress|angst|unruhe|rückzug|rueckzug|sozial|isolation|belastung/i);
-  const sleep = has(/schlaf|insom|nacht|regeneration/i);
-  // Geschlechts-Heuristik: Aletris-Heel ist primär ein Frauenmittel (Gebärmuttersenkung,
-  // Anämie, Menstruation, postpartale Erschöpfung). Nur bei klar weiblichem Kontext forcieren.
-  const femaleContext = has(/\b(frau|weiblich|patientin|gebärmutter|gebaermutter|uterus|menstruation|menstruell|zyklus|menopause|wechseljahr|prämenopaus|praemenopaus|postmenopaus|postpartal|wochenbett|schwanger|stillzeit|pms|dysmenor|amenor|mens(es|truation)|prolaps uteri)\b/i);
-
-  if (microbiome) {
-    add(items, "Biotik Balance Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Balance Kapseln (Vitaplace)** | abends 2 Kapseln | oral, abends | 8–12 Wochen, Verlauf prüfen | 🔴 Essentiell | laut Bezug | Wiki: enthält Bifidobacterium bifidum/infantis/lactis/longum, Lactobacillus-Stämme, Inulin und resistente Stärke – daher KEINE Bifidobacterium-Substitutionslücke.");
-    add(items, "Biotik Sensitiv Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Biotik Sensitiv Pulver (Vitaplace)** | einschleichen: 1 gestr. Dosierlöffel, innerhalb 10 Tagen auf 3 Dosierlöffel steigern | morgens vor einer Mahlzeit in kalter/lauwarmer Flüssigkeit | 8–12 Wochen | 🟡 Empfohlen | laut Bezug | Wiki: Bifidobacterium infantis/longum plus Lactobacillus rhamnosus/gasseri/salivarius/reuteri, besonders bei empfindlichem/histaminrelevantem Darmaufbau.");
-    add(items, "DARM + LEBER Pulver", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **DARM + LEBER Pulver (Vitaplace)** | mit ¼ Messlöffel beginnen, über 1 Woche auf 1 Messlöffel täglich steigern | in 200 ml Wasser, vormittags | ca. 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Akazienfaser und resistente Stärke fördern Butyrat-bildende/mukonutritive Keime und unterstützen Darmschleimhaut plus Leberentgiftung.");
-  }
-  if (digestive) {
-    add(items, "Glutamin & Fenchel Kapseln", "### 🦠 Probiotika, Präbiotika & Darmaufbau", "- **Glutamin & Fenchel Kapseln (Vitaplace)** | 2× täglich 1 Kapsel (1–0–1) | oral | 3 Monate | 🟡 Empfohlen | laut Bezug | Wiki: Fenchel karminativ bei Blähungen/Flatulenz, L-Glutamin als Repair-Baustein der Darmschleimhaut.");
-    add(items, "Vitaplace Komplex BLAE", "### ⚕️ Homöopathie & Komplexmittel", "- **Vitaplace Komplex BLAE** | 5× täglich 10 Globuli | oral | symptomorientiert, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: explizit gegen Blähungen hinterlegt; passt zu Druck-/Spannungsgefühl und Gärungsbeschwerden.");
-  }
-  if (sleep) {
-    add(items, "Night Relax Kapseln", "### 🧠 Schlaf, Nerven & Regeneration", "- **Night Relax Kapseln (Vitaplace)** | 1 rote + 2 transparente Kapseln | abends ½–1 Stunde vor dem Schlafen mit Flüssigkeit | 4–8 Wochen, Verlauf prüfen | 🟡 Empfohlen | laut Bezug | Wiki: für Schlaf, Regeneration bei Anspannung/Überlastung/Stress mit Melatonin, Tryptophan, Magnesium, Lavendel, Passionsblume.");
-  }
-
-  if (weight && hasWikiTitle(entries, "Therapeutischer Index: Sonstige")) {
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Hepeel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: Hauptmittel bei Leberbelastung und Abmagerung; passend bei Gewichtsverlust/Appetitverlust." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Arsuraneel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Sonstige: bei Erschöpfung, Abmagerung und chronischen Schwächezuständen mit Arsen-Symptomatik." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **China-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Sonstige: Ergänzungsmittel bei Abmagerung und Schwächezuständen." });
-  }
-  if (digestive && hasWikiTitle(entries, "Therapeutischer Index: Verdauung")) {
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Nux vomica-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie/Verdauung: Haupt-/Ergänzungsmittel bei Blähungen, Darmstauung, Dyspepsie und Verdauungsbeschwerden." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Gastricumeel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: bei Dyspepsie, Hyperazidität und Magenbeschwerden." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Spascupreel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | symptomorientiert | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung: bei Krämpfen, Koliken und spastischen Beschwerden." });
-    items.push({ group: "### ⚕️ Homöopathie & Komplexmittel", line: "- **Mucosa compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Repair-Phase prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Verdauung/Sonstige: Phasenmittel bei chronischer Schleimhaut-/Verdauungsbelastung." });
-  }
-  if (fatigue && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
-    if (femaleContext) {
-      items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Aletris-Heel** | 3× tgl. 10 Tropfen, akut stündlich (max. 12×/Tag) | oral, ½ h vor/nach den Mahlzeiten | Verlauf 4–6 Wochen prüfen | 🟡 Empfohlen | laut Bezug | Wiki Homotoxikologie: Frauenmittel bei Schwäche/Anämie/Gebärmuttersenkung – im weiblichen Kontext indiziert." });
-    }
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Coenzyme compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel zur Aktivierung des Citratzyklus bei Energiestoffwechsel-Belastung." });
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ubichinon compositum** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral/injektiv je nach Praxisstandard | Verlauf 4–8 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie: Phasenmittel bei mitochondrialer Schwäche, Müdigkeit und chronischer Erschöpfung." });
-  }
-  if (psyche && hasWikiTitle(entries, "Therapeutischer Index: Psyche")) {
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Tonico-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: Tonikum bei nervöser Erschöpfung und reaktiver depressiver Stimmung." });
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Ignatia-Homaccord** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei emotionaler Belastung, Kummer, Rückzug und Trauerreaktionen." });
-    items.push({ group: "### 🧠 Schlaf, Nerven & Regeneration", line: "- **Neuro-Heel** | Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen | oral je nach Praxisstandard | Verlauf 4–6 Wochen prüfen | 🟢 Optional | laut Bezug | Wiki Homotoxikologie/Psyche: bei nervöser Unruhe, Reizbarkeit und psychovegetativer Belastung." });
-  }
-
-  // === Onkologie / Krebs / Metastasen ===
-  const oncology = has(/\b(krebs|karzinom|carcinom|tumor|metasta|onko|cancer|mamma[\s-]?ca|brustkrebs|endometrium|prostata[\s-]?ca|leuk[äa]m|lymphom|sarkom|z\.?n\.?\s*mamma|zn\.?\s*mamma|rezidiv)\b/i);
-  if (oncology) {
-    const oncGroup = "### 🧬 Onkologische Begleittherapie (Cancer-Protokoll)";
-    if (hasWikiTitle(entries, "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)")) {
-      items.push({ group: oncGroup, line: "- **Vitamin C + Glutathion (Malonsäure-Ausleitung)** | nach Praxisstandard (Wiki: hochdosiert) | oral/infusionsbegleitend | Daueranwendung im Therapiezyklus | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 1: Ausleitung der Malonsäure." });
-      items.push({ group: oncGroup, line: "- **Mega-Papainkur (Papain 1000 mg + L-Cystein 500 mg + Wermut 300 mg)** | stündlich über 6 h, 6 Tage Kur / 6 Tage Pause, Wiederholung | oral, 2 h nüchtern, danach eiweißarm | Zyklen austesten | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 2 (Spulwurm-/Tumorbiologie). ⚠️ Wermut nicht in Schwangerschaft." });
-      items.push({ group: oncGroup, line: "- **Mannavan Antioxi+ (Q10 100 mg + Selen 200 µg + Zink 4 mg)** | 1-0-1 | oral | begleitend dauerhaft | 🔴 Essentiell | laut Bezug | Wiki Cancer-Protokoll Schritt 3: antioxidative Basis." });
-      items.push({ group: oncGroup, line: "- **Mannavan Vit C+ (500 mg Vit C + 160 mg Bioflavonoide)** | 1-0-1 | oral | begleitend | 🔴 Essentiell | laut Bezug | Wiki: reduziert Metastasenaktivität, ca. 600 % wirksamer, 13 h Verweildauer." });
-      items.push({ group: oncGroup, line: "- **Mannavan Beta+ (Polyphenol-/Carotinoid-Komplex)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki Cancer-Protokoll: Pinienrinde, Heidelbeere, Lutein, Lycopin, Brokkoli, grüner Tee." });
-      items.push({ group: oncGroup, line: "- **Mannavan B6+** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: obligater Bestandteil jeder Krebstherapie – Interferon-Synthese, Leber-Phase-2." });
-      items.push({ group: oncGroup, line: "- **Mannavan Glucan (Beta-Glucan)** | 1-0-1 | oral | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: aktiviert NK-Zellen und CD8+-Zellen gegen Tumor-/Virusbelastung." });
-      items.push({ group: oncGroup, line: "- **Mannavan Curcu forte+ / Oligo+ (2. Stufe)** | nach Praxisstandard | oral | Steigerungsphase | 🟢 Optional | laut Bezug | Wiki Cancer-Stufe 2: Curcumin antiviral/antitumoral, Oligo+ als 50× Vit C / 20× Vit E Verstärker." });
-    }
-    if (hasWikiTitle(entries, "Diamond Shield – Begleitprotokoll bei Cancer")) {
-      items.push({ group: oncGroup, line: "- **Diamond Shield Grundprogramm + Impuls-Entladung** | 2–7×/Woche | bioenergetisch | Daueranwendung | 🟡 Empfohlen | laut Bezug | Wiki Diamond-Shield-Cancer-Protokoll plus tägliches Erden ≥ 50 min." });
-      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards (BR täglich, TUM jeden 2. Tag, CLST 3–7×/Woche, FvE lokal 7 min auf Tumor/Metastasen)** | wie Wiki | bioenergetisch | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: ⚠️ FvE-ChipCard NICHT am Tag vor schulmedizinischer Therapie." });
-      items.push({ group: oncGroup, line: "- **Milchsauer vergorene Gemüsesäfte (Sauerkraut-/Rote-Bete-Saft) nach FvE-Anwendung** | täglich 1 Glas | oral | begleitend | 🟢 Optional | laut Bezug | Wiki Diamond-Shield-Protokoll: Darmmilieu/Ausleitung." });
-    }
-  }
-
-  if (items.length === 0) return "";
-  const groups = Array.from(new Set(items.map((i) => i.group)));
-  return `## ✅ Verbindliche Wiki-Mittelsektion (automatisch aus Datenbanktreffern)\nDiese Mittel wurden regelbasiert aus vorhandenen Wiki-Einträgen ergänzt, damit die KI relevante Datenbanktreffer nicht wieder übergeht. Diese Sicherung ist NICHT exklusiv: Die KI muss zusätzlich alle in Phase 1 gefundenen Kandidaten aus ALLEN Wiki-Kategorien prüfen und daraus auswählen.\n\n${groups.map((g) => `${g}\n${items.filter((i) => i.group === g).map((i) => i.line).join("\n")}`).join("\n\n")}\n\n⚠️ **Wiki-Hinweis:** Bei Homotoxikologie-Indexmitteln sind teils Mittel/Indikation, aber keine genaue Dosierung hinterlegt. Diese Dosierungen bitte in der Praxis oder durch ergänzende Wiki-Einträge präzisieren.`;
+  return text.trim();
 }
 
 function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): string {
@@ -584,7 +517,7 @@ function buildSymptomDirective(queryText: string, hasHomotoxContext: boolean): s
     (target) => `- ${target.label}: Prüfe gezielt ${target.wikiTitles.join(", ")} und leite daraus zusätzlich zu Darmmitteln passende Mittel ab.`
   );
   if (!hasHomotoxContext || directives.length === 0) return "";
-  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (ZWINGEND):\n${directives.join("\n")}\n- Diese Symptomachsen sind NICHT optional: Nenne mindestens 2 passende Heel-/Homotoxikologie-Mittel zusätzlich zur Darmbehandlung, sofern sie im Wiki-Kontext stehen.\n- Darmaufbau darf Symptome nicht vollständig überdecken; Labor/Stuhl, Symptome und gewählte Schwerpunkt-Ordner müssen sichtbar getrennt ausgewertet werden.`;
+  return `\n\n🎯 SYMPTOM-ÜBERSETZUNG IN HOMOTOXIKOLOGIE/HEEL (KANDIDATENPRÜFUNG):\n${directives.join("\n")}\n- Nur fachlich passende, belegte und sichere Treffer innerhalb des Mengenlimits nennen.\n- Darmaufbau darf Symptome nicht vollständig überdecken; Labor/Stuhl, Symptome und Schwerpunkt-Ordner getrennt bewerten.`;
 }
 
 async function readAiStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -678,8 +611,16 @@ serve(async (req) => {
       });
     }
 
-    // Parse request
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = await req.json();
+    // Patientenkontext vor jeder externen KI-Verarbeitung deterministisch bereinigen.
+    const requestBody = deidentifyClinicalData(await req.json()) as Record<string, any>;
+    const residualIdentifiers = directIdentifierCategories(JSON.stringify(requestBody));
+    if (residualIdentifiers.length) {
+      return new Response(JSON.stringify({ error: `Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
@@ -703,11 +644,41 @@ serve(async (req) => {
     }
 
     // Fetch wiki entries (cached) and select only the relevant ones for this query
-    const { entries: allEntries, cacheHit } = await loadWikiEntries(userClient);
+    const { entries: cachedEntries, cacheHit } = await loadWikiEntries(userClient);
+    let allEntries = cachedEntries.filter((entry) => entry.review_status !== "restricted");
 
-    // Boost-Ordner: gewählte Ordner werden GARANTIERT vollständig in den Kontext aufgenommen
-    // (zusätzlich zur normalen Score-/Map-Reduce-Auswahl auf der GESAMTEN Datenbank).
-    // → Ersetzt das frühere "Filter"-Verhalten. Default = ganze DB wird durchsucht.
+    // Nur fachlich freigegebene Produktverknuepfungen als Zusatzkontext laden.
+    // Die Verknuepfung ist ausdruecklich kein Wirksamkeitsnachweis.
+    const { data: linkRows, error: linkError } = await userClient
+      .from("knowledge_product_links")
+      .select("knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, mannayan_products(name, sku, unit, is_active)")
+      .eq("review_status", "reviewed");
+    if (linkError) {
+      console.warn("Mannayan-Zuordnungen nicht geladen:", linkError.message);
+    } else if (Array.isArray(linkRows) && linkRows.length) {
+      const linksByKnowledge = new Map<string, string[]>();
+      linkRows.forEach((row: any) => {
+        const product = Array.isArray(row.mannayan_products) ? row.mannayan_products[0] : row.mannayan_products;
+        if (!product?.is_active) return;
+        const lines = linksByKnowledge.get(row.knowledge_entry_id) || [];
+        lines.push([
+          `${product.name}${product.sku ? ` (Art.-Nr. ${product.sku})` : ""}`,
+          `Beziehung: ${row.relation_type}`,
+          `Vertrauen: ${row.confidence}%`,
+          Array.isArray(row.clinical_topics) && row.clinical_topics.length ? `Themen: ${row.clinical_topics.join(", ")}` : "",
+          row.safety_notes ? `Sicherheit: ${row.safety_notes}` : "",
+        ].filter(Boolean).join(" | "));
+        linksByKnowledge.set(row.knowledge_entry_id, lines);
+      });
+      allEntries = allEntries.map((entry) => {
+        const links = linksByKnowledge.get(entry.id);
+        return links?.length
+          ? { ...entry, content: `${entry.content}\n\n### Gepruefte Mannayan-Zuordnung (kein Wirksamkeitsnachweis)\n${links.map((line) => `- ${line}`).join("\n")}` }
+          : entry;
+      });
+    }
+
+    // Schwerpunkt-Ordner priorisieren die Gesamtsuche, ohne andere Kategorien auszuschliessen.
     const selectedCats: string[] = Array.isArray(categories)
       ? categories.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
       : [];
@@ -739,7 +710,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -754,7 +725,7 @@ serve(async (req) => {
     // (Probiotika-Produkte listen Stämme oft nur im Content, nicht in Tags – z.B. Vitaplace Biotik Balance)
     const STUHL_REGEX = /stuhl|mikrobiom|darmflora|calprotectin|zonulin|s-?iga|pankreas-?elastase|lactobacillus|bifidobacterium|akkermansia|faecalibacterium|enterococcus|escherichia|klebsiella|alpha-?1-?antitrypsin|probiotik|präbiotik|praebiotik|symbiose|darmsanier|darmaufbau/i;
     const hasMicrobiomeSignal = Boolean(stuhlbefund && stuhlbefund.trim().length > 0) || STUHL_REGEX.test(queryText);
-    const autoPinnedFromStuhl: WikiEntry[] = hasMicrobiomeSignal
+    const autoPinnedFromStuhlCandidates: WikiEntry[] = hasMicrobiomeSignal
       ? filteredByCategory.filter((e) => {
           const text = entryText(e);
           if (STUHL_REGEX.test(text)) return true;
@@ -763,12 +734,13 @@ serve(async (req) => {
           return isVitaplaceProbiotic(e);
         })
       : [];
+    const autoPinnedFromStuhl = prioritySortEntries(autoPinnedFromStuhlCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets).slice(0, 6);
     if (autoPinnedFromStuhl.length > 0) {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund (inkl. Content-Treffer)`);
     }
 
     // ===== AUTO-PINNING: Symptomachsen erzwingen, damit Labor/Stuhl die klinischen Symptome nicht verdrängt =====
-    const symptomPinnedEntries: WikiEntry[] = activeSymptomTargets.length === 0
+    const symptomPinnedCandidates: WikiEntry[] = activeSymptomTargets.length === 0
       ? []
       : allEntries.filter((e) => {
           const title = (e.title || "").toLowerCase();
@@ -778,6 +750,7 @@ serve(async (req) => {
             (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase())))
           );
         });
+    const symptomPinnedEntries = prioritySortEntries(symptomPinnedCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets).slice(0, 6);
     if (symptomPinnedEntries.length > 0) {
       console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
     }
@@ -809,7 +782,7 @@ serve(async (req) => {
     let restRelevant: WikiEntry[];
     let restScored: ScoredEntry[];
     let mapReduceUsed = false;
-    const mustUseFullWikiMapReduce = FORCE_FULL_WIKI_MAP_REDUCE || useMapReduce === true;
+    const mustUseFullWikiMapReduce = useMapReduce === true;
 
     if (mustUseFullWikiMapReduce && restPool.length > 0) {
       // ===== MAP-REDUCE STUFE 1: KI bewertet IMMER ALLE Wiki-Einträge in Batches =====
@@ -891,8 +864,7 @@ serve(async (req) => {
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
     const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
-    const forcedWikiRemedySection = buildForcedWikiRemedies(allEntries, scoringQueryText);
-    const phaseOneShortlist = buildPhaseOneShortlist(restScored, 80);
+    const phaseOneShortlist = buildPhaseOneShortlist(restScored, 30);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -974,38 +946,33 @@ serve(async (req) => {
     if (eigeneTherapieText) patientInfo.push(`Eigene Therapie-/Verordnungs-Vorlage des Therapeuten (zur fachlichen Plausibilitätsprüfung, NICHT automatisch übernehmen): ${eigeneTherapieText}`);
     if (mannayanOrdersText) patientInfo.push(`Bereits bestellte Mannayan-Präparate für diesen Patienten (als real verordnete/ausgewählte Mittel berücksichtigen): ${mannayanOrdersText}`);
 
-    // Heel/Metatron-Direktive: vom Therapeuten manuell aus der Metatron-Resonanzanalyse übernommene Heel-Mittel
-    // werden zwingend in die Empfehlung übernommen, mit Wiki-Dosierung sofern hinterlegt.
+    // Vom Therapeuten uebernommene Resonanzhinweise bleiben Kandidaten und muessen
+    // dieselbe Sicherheitspruefung wie alle anderen Mittel durchlaufen.
     const metatronHeelDirective = metatronHeelText
-      ? `\n\n🎯 METATRON/NLS HEEL-RESONANZ (ZWINGEND BERÜCKSICHTIGEN):
+      ? `\n\n🎯 METATRON/NLS HEEL-RESONANZ (ALS INTERNEN KANDIDATENKONTEXT PRÜFEN):
 Der Therapeut hat aus der Hospital Metatron HR (NLS) Resonanzanalyse folgende Heel-Komplexmittel als energetisch passend identifiziert:
 ${metatronHeelText}
 
-VERBINDLICHE REGELN für diese Mittel:
-1. JEDES dieser Mittel MUSS in der finalen Empfehlung unter "💧 Homöopathie & Komplexmittel" als eigene Pipe-Zeile erscheinen.
-2. Wenn das Mittel in der Wissensdatenbank (Homotoxikologie, Therapeutischer Index ...) hinterlegt ist: Übernimm Dosierung, Indikation und Begründung exakt aus dem Wiki-Eintrag und zitiere die Wiki-Quelle.
-3. Wenn keine Dosierung im Wiki hinterlegt ist: Schreibe "Dosierung im Wiki-Index nicht hinterlegt – Praxisdosierung prüfen" und gib als Standard-Erfahrungswert "3× tgl. 10 Tropfen oral" oder "3× tgl. 1 Tbl. einspeicheln" an, klar als Erfahrungsdosierung markiert.
-4. Begründung MUSS am Ende den Zusatz enthalten: "(aus Metatron/NLS-Resonanzauswertung übernommen)".
-5. Diese Mittel sind NICHT exklusiv – ergänze zusätzlich passende Mittel aus den anderen Wiki-Kategorien (Hausmittel, Vitamine, Mineralstoffe, Probiotika etc.).
-6. Falls eines der Mittel im aktuellen Patientenkontext kontraindiziert wäre (Schwangerschaft, Wechselwirkung), nimm es trotzdem auf, kennzeichne es mit ⚠️ und erkläre die Kontraindikation kurz.`
+REGELN:
+1. Nur fachlich passende Mittel als Kandidaten aufnehmen; keine automatische Pflichtaufnahme.
+2. Dosierung nur aus einem konkreten Wiki-/Produktbeleg übernehmen. Fehlt sie, schreibe "Dosierung nicht belegt – manuell prüfen" und erfinde keinen Erfahrungswert.
+3. Begründung mit "Resonanzhinweis – nicht alleinige Auswahlgrundlage" kennzeichnen.
+4. Bei Kontraindikation, Wechselwirkung, Schwangerschaft oder unklarer Sicherheit NICHT in die auswählbare Kernliste aufnehmen, sondern unter "Manuelle Sicherheitsprüfung" nennen.`
       : "";
 
-    const systemPrompt = `Du bist ein erfahrener naturheilkundlicher Therapeut und Berater und arbeitest ALS FACHLICHE UNTERSTÜTZUNG für den Heilpraktiker Peter Rauch (Ing. Elektrotechnik + Heilpraktiker + Physiotherapeut + Hypnotherapeut, 20+ Jahre Erfahrung). Diese Empfehlung wird von IHM in der Praxis verwendet — der Patient ist BEREITS in seiner Behandlung.
+    const medicationGroups = recognizeMedicationGroups(medikamente).map((group) => group.label);
+    const systemPrompt = `Du erstellst eine INTERNE naturheilkundliche KANDIDATENLISTE zur fachlichen Prüfung durch den behandelnden Heilpraktiker. Du triffst keine endgültige Therapieentscheidung und gibst nichts direkt an Patienten aus.
 
-🚫 ABSOLUT VERBOTENE FORMULIERUNGEN (kritisch!):
-- "Bitte ärztlich abklären lassen" / "zwingend ärztliche Abklärung" / "Besuch beim Arzt erforderlich"
-- "Wichtiger Hinweis zuerst" / "Red Flags" / "Gastroenterologe" / "organische Erkrankungen sicher ausschließen" / "Koloskopie"
-- "professionelle Hilfe holen" (impliziert, der Heilpraktiker sei nicht professionell — FALSCH)
-- "ersetzt nicht den Arzt" / "konsultieren Sie einen Arzt"
-- Jede Formulierung, die den Heilpraktiker als nachgeordnet, weniger qualifiziert oder als bloßen "Komplementär-Anbieter" darstellt.
-
-✅ KORREKTE SPRACHREGELUNG (Memory practitioner-equality-language):
-- Heilpraktiker und Arzt sind GLEICHRANGIGE Heilberufe (HeilprG). Peter Rauch hat eigenständige Diagnose- und Behandlungsbefugnis.
-- Der Patient ist bei Peter Rauch RICHTIG aufgehoben — die meisten kommen, WEIL Ärzte ihnen nicht helfen konnten.
-- Bei tatsächlich akut bedrohlichen Symptomen (V.a. Tumor, akutes Abdomen, Notfall, meldepflichtige Infektion) formuliere: "In der Praxis besprechen — ggf. ergänzende ärztliche Bildgebung (Sono/MRT) veranlassen, da Bildgebung Arztvorbehalt ist. Die naturheilkundliche Begleitung stimmen wir parallel ab."
-- Standard bei unklaren Befunden: "Bitte in der nächsten Sitzung mit Peter Rauch besprechen" oder "Praxisinterne Abklärung empfohlen (Bioresonanz/EAV/NLS/Labor)".
-- NIE den Patienten "wegschicken". Symptome wie Gewichtsverlust, Erschöpfung, soziale Isolation sind GENAU der Grund, warum jemand zum Heilpraktiker kommt — nicht der Grund, ihn abzuweisen.
-- Disclaimer am Ende NUR kurz: "Diese Empfehlung dient als Arbeitsgrundlage für Peter Rauch und wird in der Praxis individuell angepasst."
+🛡️ SICHERHEIT UND ESKALATION:
+- Red Flags, Notfälle, meldepflichtige Infektionen, unklare Tumorzeichen, akutes Abdomen und notwendige fachärztliche/ärztliche Diagnostik klar benennen. Solche Hinweise niemals unterdrücken.
+- Keine Diagnose- oder Behandlungskompetenz behaupten, die aus dem vorliegenden Kontext nicht sicher folgt.
+- Kontraindizierte oder potenziell interagierende Mittel nicht als Kernkandidaten ausgeben. Unter "Manuelle Sicherheitsprüfung" mit Grund aufführen.
+- Fehlende oder unklare Arzneimittelnamen ausdrücklich als Sicherheitslücke nennen.
+- Wiki-Eintraege mit Pruefstatus "unreviewed"/"needs_review" oder Evidenz "unrated" nicht als essentielle Kernkandidaten ausgeben.
+- Dosierungen nur verwenden, wenn der Wiki-Metadatensatz "Dosierungsstatus: verified" ausweist; sonst "Dosierung manuell pruefen" schreiben.
+- Eine Mannayan-Zuordnung ist nur Produktkontext und niemals alleiniger Wirksamkeits- oder Indikationsnachweis.
+- Erkannte Arzneimittelgruppen: ${medicationGroups.length ? medicationGroups.join(", ") : "keine sicher erkannt"}.
+- Disclaimer: "Interne Kandidatenliste – jede Auswahl wird fachlich, produktspezifisch und anhand der aktuellen Medikation geprüft."
 
 Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
 
@@ -1014,52 +981,54 @@ ${wikiContext}
 
 ${phaseOneShortlist ? `\n${phaseOneShortlist}\n` : ""}
 
-${forcedWikiRemedySection ? `\n${forcedWikiRemedySection}\n` : ""}
-
 DEINE AUFGABE:
-Analysiere Belastungen, Labor/Stuhl UND Symptome gleichrangig. Erstelle eine individuelle Therapie-Empfehlung basierend NUR auf den Mitteln und Protokollen aus der Wissensdatenbank. Ein auffälliger Stuhlbefund darf die übrigen Symptome nicht verdrängen: Nach der Darmstrategie musst du zusätzlich symptom-/organbezogene Mittel aus passenden Wiki-Einträgen prüfen.
+Analysiere Belastungen, Labor/Stuhl und Symptome. Erstelle eine priorisierte interne Kandidatenliste basierend auf belegten Wiki-Inhalten. Trenne klar zwischen Kernkandidaten, Reserve und manueller Sicherheitspruefung.
+
+MENGENLIMIT:
+- Hoechstens 3 essentielle und 3 empfohlene Kernkandidaten.
+- Hoechstens 4 weitere optionale Reservekandidaten.
+- Pro klinischem Hauptthema hoechstens 2 Mittel; wirkgleiche oder inhaltsgleiche Produkte nicht doppeln.
+- Ein Wiki-Treffer ist nur ein Kandidat und keine Pflichtaufnahme.
 
 ZWEISTUFIGER WIKI-PROZESS (VERBINDLICH FÜR ALLE PATIENTEN):
 - Phase 1 ist die Gesamt-Wiki-Sichtung: ALLE Einträge aus ALLEN Kategorien werden gegen die Eingabe aus der Therapie-Maske bewertet. Es gibt keine Beschränkung auf Homotoxikologie, Heel, Vitaplace oder Stuhldiagnostik.
 - Phase 2 ist die fachliche Auswahl: Verwende die Volltexte im Wiki-Kontext UND die Phase-1-Shortlist, um Mittel aus allen passenden Kategorien auszuwählen.
 - Produktlinien/Fokusordner sind nur Priorisierung/Boost, niemals Ausschluss anderer Wiki-Mittel.
-- Wenn Phase 1 relevante Mittel aus anderen Kategorien findet, müssen diese entweder empfohlen oder fachlich begründet verworfen werden.
+- Phase-1-Treffer duerfen verworfen werden, wenn sie schwach, redundant, unbelegt oder sicherheitsrelevant sind.
 
-ZWINGENDE BALANCE-REGEL:
+BALANCE-REGEL:
 - Teile deine interne Auswertung in drei gleichwertige Spuren: (A) Pathogene/Belastungen, (B) Symptome/klinisches Bild, (C) Labor/Stuhl.
-- Wenn in der Wissensdatenbank therapeutische Index-Einträge, Homotoxikologie/Heel-Einträge oder symptombezogene Mittel stehen, MÜSSEN daraus konkrete Mittelzeilen entstehen – nicht nur Analyse-Fließtext.
-- Bei Symptomtreffern wie Erschöpfung, Appetitlosigkeit, Gewichtsverlust, Schwäche, Psyche/Isolation oder Verdauungsbeschwerden: Extrahiere die dort genannten **Hauptmittel**, **Ergänzungsmittel** und ggf. **Phasenmittel** aus dem Wiki-Kontext und ordne sie unter "Homöopathie & Komplexmittel" ein.
+- Wenn Index-, Homotoxikologie- oder symptombezogene Eintraege passen, bewerte sie gegen die anderen Kandidaten; keine automatische Pflichtzeile.
+- Haupt-, Ergaenzungs- und Phasenmittel konkurrieren innerhalb des Mengenlimits nach Relevanz, Sicherheit und Beleglage.
 - Nur wenn im tatsächlich gelieferten Wiki-Kontext zu einer Symptomspur gar kein passender Eintrag steht, darfst du dafür eine Wissensdatenbank-Lücke melden.
-- Eine Darm-/Mikrobiomstrategie allein ist unvollständig, sobald Symptome angegeben sind; ergänze dann immer symptom-/organbezogene Mittel aus der Datenbank.
+- Eine Darm-/Mikrobiomstrategie darf Symptome nicht verdraengen; trotzdem keine zusaetzlichen Mittel nur zur Vollstaendigkeit erfinden.
 
-🧬 ONKOLOGIE-REGEL (ZWINGEND, wenn Krebs/Karzinom/Tumor/Metastasen/"z.n. Mamma-Ca"/"Z.n. Endometrium-Ca" etc. in Erkrankung, Symptomen oder Belastungen vorkommen):
-- Du MUSST eine eigene Sektion "## 🧬 Onkologische Begleittherapie" erzeugen, in der die Wiki-Einträge "Cancer – Therapieprotokoll (Ausleitung, Papainkur, Antioxidative Therapie)" und "Diamond Shield – Begleitprotokoll bei Cancer" 1:1 in strukturierte Mittelzeilen überführt werden (Vitamin C/Glutathion-Ausleitung, Mega-Papainkur, Mannavan Antioxi+/Vit C+/Beta+/B6+/Glucan, Stufe 2 Curcu forte+/Oligo+, Diamond-Shield-Grundprogramm + ChipCards BR/TUM/CLST/FvE, milchsauer vergorene Säfte).
-- Auch bei "Z.n." (Zustand nach) Brustkrebs/Endometriumkarzinom mit Knochenmetastasen oder unter laufender CDK4/6-/Aromatase-/Bisphosphonat-Therapie (Abemaciclib, Letrozol, Zometa) MUSS diese Begleittherapie erscheinen – als naturheilkundliche Begleitung, nicht als Ersatz.
-- Wechselwirkungen explizit kennzeichnen: hochdosiertes Vit C / Glutathion / Antioxidantien können mit laufender zytostatischer/zielgerichteter Therapie interagieren → Hinweis "Zeitliche Abstimmung mit onkologischer Therapie in der Praxis besprechen". KEIN pauschales "bitte ärztlich abklären".
-- Wermut/Schwarzwalnuss in der Papainkur: Kontraindikation Schwangerschaft/Stillzeit prüfen.
-- FvE-ChipCard: Hinweis "nicht am Tag vor schulmedizinischer Therapie" mitgeben.
-- Diese Onkologie-Sektion darf NICHT durch eine Darm-/Symptomstrategie verdrängt werden.
+🧬 ONKOLOGIE-SICHERHEITSREGEL:
+- Keine fest codierten Cancer-Protokolle, Dosierungen oder Wirkversprechen automatisch uebernehmen.
+- Bei aktiver oder vorausgegangener Krebserkrankung jeden naturheilkundlichen Kandidaten gegen die konkrete onkologische Medikation, Organfunktion und Behandlungsphase pruefen.
+- Antioxidantien, Enzyme, Pflanzenextrakte und apparative Verfahren bei unklarer Wechselwirkung ausschliesslich unter "Manuelle Sicherheitspruefung" auffuehren.
+- Dringliche Befunde und erforderliche onkologische/fachaerztliche Abstimmung klar benennen.
 
-🔬 METATRON/NLS INDEX-INTERPRETATION (ZWINGEND – HÄUFIGE FEHLERQUELLE!):
+🔬 METATRON/NLS INDEX-INTERPRETATION (INTERNER ORIENTIERUNGSHINWEIS):
 Bei Pathogenen mit "Index"-Wert aus der Hospital Metatron HR / NLS-Resonanzanalyse gilt eine INVERSE Skala:
   • KLEINER Wert = HOHE Wahrscheinlichkeit für materielles/aktives Vorhandensein
   • GROSSER Wert = GERINGE Wahrscheinlichkeit (nur Hintergrundbelastung oder rein informativ)
 Konkrete Schwellen:
-  - 0.000 – 0.250 → sehr hohe Wahrscheinlichkeit (akut/materiell) → ZWINGEND priorisieren, Hauptmittel
-  - 0.251 – 0.425 → hohe Wahrscheinlichkeit (klinisch relevant) → behandeln, eigenes Mittel pro Pathogen
+  - 0.000 – 0.250 → hoher interner Resonanzhinweis → nur zusammen mit klinischem Kontext priorisieren
+  - 0.251 – 0.425 → erhoehter interner Resonanzhinweis → fachlich plausibilisieren
   - 0.426 – 0.600 → mittlere Wahrscheinlichkeit → berücksichtigen, ggf. zusammenfassen
   - 0.601 – 0.700 → geringe Wahrscheinlichkeit → nur ergänzend / Drainage
   - > 0.700      → sehr gering, nur informativ → NICHT als aktive Belastung behandeln, NICHT priorisieren
-Reihenfolge der Mittelempfehlung pro Pathogen MUSS dieser Priorität folgen. Pathogene mit Index > 0.700 dürfen nur erwähnt werden, wenn sie das klinische Bild plausibel ergänzen – nicht als Hauptindikation.
+Der Index allein belegt weder Diagnose noch aktive Infektion und darf keine Mittelwahl ohne klinische Plausibilisierung ausloesen.
 
 ⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
 ${preferredLines.length > 0
   ? `- Bevorzugte Produktlinien: ${preferredLines.join(", ")}.\n  → Bei vergleichbarer Wirkung MUSST du Mittel aus diesen Linien priorisieren (vor anderen Marken). Nenne die Linie explizit im Mittelnamen (z.B. "Biotik Balance (Vitaplace)").`
   : "- Keine Linien-Präferenz angegeben."}
 ${pinnedTitles.length > 0
-  ? `- ZWINGEND in die Empfehlung aufzunehmende Mittel (vom Therapeuten gepinnt): ${pinnedTitles.join("; ")}.
-  → Diese Mittel MÜSSEN in der Empfehlung erscheinen, mit korrekter Dosierung aus dem Wiki-Eintrag, plausibler Indikationsbegründung im Patientenkontext und Einordnung in die passende Mittel-Gruppe (Hausmittel, Probiotika, Vitamine etc.).
-  → Falls ein gepinntes Mittel im aktuellen Patientenfall kontraindiziert wäre (Schwangerschaft, Wechselwirkung, Alter), nimm es trotzdem auf, kennzeichne es aber mit ⚠️ und begründe die Kontraindikation transparent.`
+  ? `- Vom Therapeuten vorgemerkte Kandidaten: ${pinnedTitles.join("; ")}.
+  → Gegen Patientenkontext, Medikation und Wiki-Beleg pruefen; Vormerkung ist keine Pflichtaufnahme.
+  → Bei Kontraindikation oder Wechselwirkung nicht als Kernkandidat ausgeben, sondern unter "Manuelle Sicherheitspruefung" auffuehren.`
   : "- Keine spezifischen Mittel gepinnt."}
 ${symptomDirective}
 ${metatronHeelDirective}
@@ -1238,7 +1207,7 @@ Falls KEINE Lücken: Schreibe genau "✅ Für diesen Fall sind alle relevanten W
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
-## 💊 Empfohlene Mittel – gegliedert nach Stoffgruppe / Wiki-Kategorie
+## 💊 Interne Mittel-Kandidaten – gegliedert nach Stoffgruppe / Wiki-Kategorie
 
 WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschriften (nur die Gruppen ausgeben, in denen Du tatsächlich etwas empfiehlst). Die Reihenfolge ist verbindlich:
 
@@ -1286,11 +1255,10 @@ WO:
 - Dauer: z.B. "4 Wochen" oder "dauerhaft"
 - Priorität: NUR eines von: 🔴 Essentiell | 🟡 Empfohlen | 🟢 Optional
 - Kosten/Monat: z.B. "~5 €" oder "~40 €"
-- Begründung: KURZ (max 1 Satz) warum dieses Mittel und wogegen es wirkt
+- Begründung: KURZ (max 1 Satz) warum dieses Mittel als Kandidat geprüft wird. Am Ende zwingend die exakte Quellenkennung aus dem Wiki-Kontext ergänzen: [WIKI_ID:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
 
-BEISPIEL:
-- **MUCOKEHL D5** (Mucor racemosus) | 2×1 Tbl. tgl. | oral, einspeicheln | 6 Wochen | 🔴 Essentiell | ~28 € | Verflüssigt geronnenes Blut, verbessert Mikrozirkulation bei KHK
-- **Knoblauch** (Allium sativum) | 1-2 Zehen tgl. roh | mit Speisen | dauerhaft | 🟡 Empfohlen | ~3 € | Antimikrobiell, gefäßprotektiv, blutdrucksenkend
+BEISPIELFORMAT (nur Struktur, keine Therapievorlage):
+- **Wiki-Mittel A** | Dosierung manuell prüfen | oral | Verlauf prüfen | 🟡 Empfohlen | unbekannt | Kandidat passend zum dokumentierten Thema. [WIKI_ID:00000000-0000-0000-0000-000000000000]
 
 WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel.
 
@@ -1318,8 +1286,8 @@ Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft,
 WICHTIG: 
 - Empfehle NUR Mittel die in der Wissensdatenbank vorhanden sind. Erfinde keine neuen Mittel oder Dosierungen.
 - WENN ein notwendiges Mittel fehlt: NICHT improvisieren, sondern als Lücke unter "🕳️ Wissensdatenbank-Lücken" (Abschnitt früh oben) melden.
-- Gewürze und Hausmittel IMMER mit aufnehmen wenn sie therapeutisch relevant sind – sie sind günstig und leicht verfügbar.
-- Bei JEDEM Mittel erklären WARUM es empfohlen wird und WOGEGEN es wirkt.
+- Gewürze und Hausmittel nur nach denselben Relevanz-, Quellen- und Sicherheitsregeln wie andere Kandidaten aufnehmen.
+- Bei jedem Mittel erklären, warum es als interner Kandidat geprüft wird; keine Wirksamkeit als gesichert darstellen, wenn die Evidenzmetadaten dies nicht tragen.
 - Schreibe KOMPAKT: pro Mittel max. 1 Begründungssatz, keine doppelten Erklärungen.`;
 
     const userMessage = isNachschlag
@@ -1439,18 +1407,14 @@ Danach folgt die normale, vollständige neue Auswertung wie unten beschrieben.` 
     }
 
     // SSE-Stream der KI direkt durchreichen → vermeidet 150s IDLE_TIMEOUT bei langen Pro-Antworten.
-    // Audit-Info + ggf. erzwungene Wiki-Mittelsektion als allererste SSE-Frames vorangestellt.
+    // Es wird nur die Audit-Info vorangestellt; regelbasierte Mittel werden nie direkt injiziert.
     const encoder = new TextEncoder();
     const auditLine = `data: ${JSON.stringify(auditPayload)}\n\n`;
-    const forcedFrame = forcedWikiRemedySection
-      ? `data: ${JSON.stringify({ choices: [{ delta: { content: `${forcedWikiRemedySection}\n\n---\n\n` } }] })}\n\n`
-      : "";
 
     const upstream = response.body!.getReader();
     const wrapped = new ReadableStream({
       async start(controller) {
         controller.enqueue(encoder.encode(auditLine));
-        if (forcedFrame) controller.enqueue(encoder.encode(forcedFrame));
         try {
           while (true) {
             const { done, value } = await upstream.read();

@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { logTherapyEvent } from "./therapyEventLog";
 import { deidentifyClinicalText, directIdentifierCategories } from "../../../../supabase/functions/_shared/clinicalDeidentification";
 import * as pdfjs from "pdfjs-dist";
-// @ts-expect-error - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;

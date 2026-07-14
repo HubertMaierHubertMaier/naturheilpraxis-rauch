@@ -14,6 +14,7 @@ import { parseTherapyMarkdown } from "@/lib/therapyParser";
 import { openPrintRecipe } from "./printRecipe";
 import { formatPathogensForAI } from "./PathogenInput";
 import { buildStoredDetails } from "./PseudonymHistory";
+import type { TherapySafetySeverity, TherapySafetyWarning } from "../../../../supabase/functions/_shared/therapySafety";
 
 interface PseudonymRow {
   pseudonym_id: string;
@@ -67,6 +68,7 @@ const fmtCurrency = (value: number | null | undefined) =>
 
 const isEmptyAutosaveOnly = (session: SessionRow): boolean => {
   if (session.kind === "event_log") return false;
+  if (session.kind === "therapy_candidate_draft") return true;
   const input = session.eingabe_daten || {};
   const keys = Object.keys(input);
   return keys.length === 1 && keys[0] === "autoSavedDraft" && input.autoSavedDraft === true;
@@ -183,6 +185,41 @@ export function TherapyPatientOverview() {
     }
     const parsed = parseTherapyMarkdown(s.empfehlung);
     const d = s.eingabe_daten || {};
+    const storedReview = d.safetyReview || {};
+    if (mode === "patient" && (!storedReview.acknowledgedAt || storedReview.truncated === true)) {
+      toast({
+        title: "Erneute Sicherheitsprüfung erforderlich",
+        description: "Dieser gespeicherte Plan enthält keine vollständige aktuelle Sicherheitsfreigabe. Bitte in die Therapie-Maske laden, prüfen und als neue Version finalisieren.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const patientRestrictions = Array.isArray(storedReview.patientOutputRestrictions) ? storedReview.patientOutputRestrictions : [];
+    if (mode === "patient" && patientRestrictions.length) {
+      toast({
+        title: "Patientenausgabe gesperrt",
+        description: patientRestrictions.map((item: any) => item?.reason || "Nicht freigegebener Wiki-Inhalt").join("; "),
+        variant: "destructive",
+      });
+      return;
+    }
+    const normalizeRemedy = (value: unknown) => String(value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9ß]+/g, " ").trim();
+    const warningDetails = Array.isArray(storedReview.warningDetails) ? storedReview.warningDetails : [];
+    const safetyWarningsByKey = new Map<string, TherapySafetyWarning[]>();
+    parsed.categories.forEach((group, categoryIndex) => {
+      group.remedies.forEach((remedy, remedyIndex) => {
+        const matches = warningDetails.filter((item: any) => item?.remedyName && normalizeRemedy(item.remedyName) === normalizeRemedy(remedy.name));
+        if (!matches.length) return;
+        safetyWarningsByKey.set(`${categoryIndex}|${remedyIndex}`, matches.map((item: any) => ({
+          id: `stored-${normalizeRemedy(remedy.name)}-${normalizeRemedy(item.title)}`,
+          severity: (["avoid", "review", "monitor"].includes(item.severity) ? item.severity : "monitor") as TherapySafetySeverity,
+          title: String(item.title || "Gespeicherter Sicherheitshinweis"),
+          message: "",
+          action: String(item.action || "Vor Verwendung erneut prüfen."),
+          source: "Gespeicherte Sicherheitsprüfung des finalisierten Plans",
+        })));
+      });
+    });
     const belastungen = d.belastungen
       || (Array.isArray(d.pathogens) ? formatPathogensForAI(d.pathogens) : "");
     openPrintRecipe({
@@ -199,6 +236,7 @@ export function TherapyPatientOverview() {
         notiz: s.notiz || undefined,
       },
       mode,
+      safetyWarningsByKey,
       // Keine selectedKeys → alle Mittel werden gedruckt (so wie sie gespeichert wurden)
     });
   };

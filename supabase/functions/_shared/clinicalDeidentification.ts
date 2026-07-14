@@ -28,7 +28,7 @@ const protectPseudonyms = (value: string) => {
   return {
     text,
     restore: (result: string) => pseudonyms.reduce(
-      (current, pseudonym, index) => current.replaceAll(`__CLINICAL_PSEUDONYM_${index}__`, pseudonym),
+      (current, pseudonym, index) => current.split(`__CLINICAL_PSEUDONYM_${index}__`).join(pseudonym),
       result,
     ),
   };

@@ -31,6 +31,20 @@ import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocU
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import { buildClinicallyRelevantLabHighlights, extractLabQuintessenceSection } from "../../../supabase/functions/_shared/labTrendAnalysis";
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDeidentification";
+import {
+  buildSafetyContextWarnings,
+  severityLabel,
+  type TherapySafetyContext,
+  type TherapySafetyWarning,
+} from "../../../supabase/functions/_shared/therapySafety";
+import {
+  assessRemedyWithWikiSafety,
+  assessSelectedCombinationSafety,
+  buildInitialRemedySelection,
+  buildRemedySafetyMap,
+  patientOutputRestrictionsForRemedy,
+  type WikiProductSafetyLink,
+} from "@/lib/therapySelection";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -39,7 +53,25 @@ import mammoth from "mammoth";
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
-type WikiRemedyEntry = { name: string; latin?: string; dosage?: string; application?: string; reason?: string };
+type WikiRemedyEntry = {
+  id?: string;
+  title: string;
+  name: string;
+  latin?: string;
+  dosage?: string;
+  application?: string;
+  reason?: string;
+  entryKind?: string;
+  reviewStatus?: string;
+  evidenceLevel?: string;
+  dosageStatus?: string;
+  contraindications?: string[];
+  interactionTags?: string[];
+  safetyNotes?: string;
+  patientFacingAllowed?: boolean;
+  commercialClaimsReviewed?: boolean;
+  productLinks?: WikiProductSafetyLink[];
+};
 type MannayanOrderContext = {
   orderNumber: string;
   createdAt: string;
@@ -1412,9 +1444,40 @@ export function TherapyRecommendation() {
     };
   }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
-  // Selektion: bei neuem `result` initialisieren bzw. erweitern (Nachschlag).
-  // - Erste Generierung: alle Mittel anhaken.
-  // - Nachschlag: bisherige Häkchen erhalten, neu hinzugekommene Keys automatisch anhaken.
+  const therapySafetyContext = useMemo<TherapySafetyContext>(() => ({
+    medications: medikamente,
+    conditions: [erkrankung, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
+    symptoms: [symptome, metatronHeel].filter(Boolean).join("\n"),
+    pregnancy: schwanger,
+    age: alter,
+  }), [medikamente, erkrankung, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett, symptome, metatronHeel, schwanger, alter]);
+  const parsedTherapyResult = useMemo(() => parseTherapyMarkdown(result), [result]);
+  const safetyWarningsByKey = useMemo(
+    () => buildRemedySafetyMap(parsedTherapyResult, therapySafetyContext, wikiRemedies),
+    [parsedTherapyResult, therapySafetyContext, wikiRemedies],
+  );
+  const patientOutputRestrictionsByKey = useMemo(() => {
+    const restrictions = new Map<string, string[]>();
+    parsedTherapyResult.categories.forEach((group, categoryIndex) => {
+      group.remedies.forEach((remedy, remedyIndex) => {
+        const reasons = patientOutputRestrictionsForRemedy(remedy.name, wikiRemedies, remedy.reason, true);
+        if (reasons.length) restrictions.set(`${categoryIndex}|${remedyIndex}`, reasons);
+      });
+    });
+    return restrictions;
+  }, [parsedTherapyResult, wikiRemedies]);
+  const safetyContextWarnings = useMemo(
+    () => buildSafetyContextWarnings(therapySafetyContext),
+    [therapySafetyContext],
+  );
+
+  useEffect(() => {
+    if (isStreaming || safetyWarningsByKey.size === 0) return;
+    setSelectedKeys((previous) => new Set(Array.from(previous).filter((key) => !safetyWarningsByKey.has(key))));
+  }, [isStreaming, safetyWarningsByKey]);
+
+  // Kandidaten erst nach abgeschlossenem Stream initialisieren. Automatisch markiert
+  // werden hoechstens drei essentielle und drei empfohlene Mittel ohne Sicherheitswarnung.
   const lastInitResultRef = useRef<string>("");
   useEffect(() => {
     if (!result) {
@@ -1423,50 +1486,74 @@ export function TherapyRecommendation() {
       lastInitResultRef.current = "";
       return;
     }
+    if (isStreaming) return;
     if (lastInitResultRef.current === result) return;
     const isFirstInit = lastInitResultRef.current === "";
     lastInitResultRef.current = result;
     const parsed = parseTherapyMarkdown(result);
     setSelectedKeys((prev) => {
-      const next = isFirstInit ? new Set<string>() : new Set(prev);
+      if (isFirstInit) return buildInitialRemedySelection(parsed, therapySafetyContext, wikiRemedies);
+      const validKeys = new Set<string>();
       parsed.categories.forEach((g, ci) => {
-        g.remedies.forEach((r, ri) => {
-          const key = `${ci}|${ri}`;
-          if (isFirstInit) {
-            next.add(key);
-          } else if (!next.has(key)) {
-            // Beim Nachschlag: neue Mittel automatisch anhaken (sind oft mit 🆕 markiert)
-            next.add(key);
-          }
-        });
+        g.remedies.forEach((_, ri) => validKeys.add(`${ci}|${ri}`));
       });
-      return next;
+      return new Set(Array.from(prev).filter((key) => validKeys.has(key)));
     });
     // Bei neuer KI-Generierung: zurück zur ersten Workflow-Stufe
     if (isFirstInit) setWorkflowStage("edit");
-  }, [result]);
+  }, [result, isStreaming, therapySafetyContext, wikiRemedies]);
 
   // ---- Wiki-Mittel für Autocomplete laden (einmalig) ----
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any)
-        .from("admin_knowledge_base")
-        .select("title, content")
-        .limit(2000);
+      const [{ data }, { data: linkData }] = await Promise.all([
+        (supabase as any)
+          .from("admin_knowledge_base")
+          .select("id, title, content, entry_kind, review_status, evidence_level, dosage_status, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
+          .limit(2000),
+        (supabase as any)
+          .from("knowledge_product_links")
+          .select("knowledge_entry_id, relation_type, review_status, safety_notes, mannayan_products(name)"),
+      ]);
       if (!data) return;
+      const linksByEntry = new Map<string, WikiProductSafetyLink[]>();
+      for (const link of (linkData || []) as any[]) {
+        const product = Array.isArray(link.mannayan_products) ? link.mannayan_products[0] : link.mannayan_products;
+        if (!product?.name) continue;
+        const links = linksByEntry.get(link.knowledge_entry_id) || [];
+        links.push({
+          productName: product.name,
+          relationType: link.relation_type,
+          reviewStatus: link.review_status,
+          safetyNotes: link.safety_notes || "",
+        });
+        linksByEntry.set(link.knowledge_entry_id, links);
+      }
       const items: WikiRemedyEntry[] = [];
-      for (const row of data as Array<{ title: string; content: string }>) {
+      for (const row of data as any[]) {
         const title = row.title?.trim();
         if (!title) continue;
         // Latin-Name aus erster Zeile/Klammer
         const latinMatch = row.content?.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
         const content = row.content || "";
         items.push({
+          id: row.id,
+          title,
           name: title,
           latin: latinMatch?.[1],
           dosage: extractWikiField(content, ["Dosierung", "Dosis", "Einnahmeempfehlung"]),
           application: extractWikiField(content, ["Anwendung", "Einnahme", "Applikation"]),
           reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Eigenschaften", "Geeignet für", "Anwendungsgebiet", "Anwendungsgebiete"]),
+          entryKind: row.entry_kind,
+          reviewStatus: row.review_status,
+          evidenceLevel: row.evidence_level,
+          dosageStatus: row.dosage_status,
+          contraindications: row.contraindications || [],
+          interactionTags: row.interaction_tags || [],
+          safetyNotes: row.safety_notes || "",
+          patientFacingAllowed: row.patient_facing_allowed === true,
+          commercialClaimsReviewed: row.commercial_claims_reviewed === true,
+          productLinks: linksByEntry.get(row.id) || [],
         });
       }
       setWikiRemedies(items);
@@ -1516,6 +1603,18 @@ export function TherapyRecommendation() {
 
 
   const toggleRemedy = (key: string) => {
+    if (!selectedKeys.has(key)) {
+      const warnings = safetyWarningsByKey.get(key) || [];
+      if (warnings.length) {
+        const accepted = window.confirm([
+          "Sicherheitswarnung vor manueller Auswahl:",
+          ...warnings.map((item) => `- ${severityLabel(item.severity)}: ${item.title}\n  ${item.action}`),
+          "",
+          "Trotzdem als internen Kandidaten markieren?",
+        ].join("\n"));
+        if (!accepted) return;
+      }
+    }
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -1525,15 +1624,19 @@ export function TherapyRecommendation() {
   };
 
   const toggleAllInCategory = (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => {
+    const skipped = selectAll
+      ? remedyIndices.filter((ri) => safetyWarningsByKey.has(`${categoryIndex}|${ri}`)).length
+      : 0;
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       remedyIndices.forEach((ri) => {
         const k = `${categoryIndex}|${ri}`;
-        if (selectAll) next.add(k);
+        if (selectAll && !safetyWarningsByKey.has(k)) next.add(k);
         else next.delete(k);
       });
       return next;
     });
+    if (skipped) toast({ title: "Warnmittel nicht automatisch markiert", description: `${skipped} Mittel muessen einzeln fachlich geprueft werden.` });
   };
 
   const createEmptyManualRemedy = (): ManualRemedyEntry => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
@@ -1607,12 +1710,30 @@ export function TherapyRecommendation() {
   };
 
   const handlePrintPatient = () => {
+    const selectedRestrictions = Array.from(patientOutputRestrictionsByKey.entries())
+      .filter(([key]) => selectedKeys.has(key))
+      .flatMap(([, reasons]) => reasons);
+    const manualRestrictions = manualMittel
+      .filter((item) => item.name.trim())
+      .flatMap((item) => patientOutputRestrictionsForRemedy(item.name, wikiRemedies));
+    const restrictions = Array.from(new Set([...selectedRestrictions, ...manualRestrictions]));
+    if (restrictions.length) {
+      toast({
+        title: "Patientenausgabe gesperrt",
+        description: restrictions.join("; "),
+        variant: "destructive",
+      });
+      return;
+    }
     openPrintRecipe({
       parsed: parseTherapyMarkdown(result),
       patient: { alter, schwanger, medikamente, budget, belastungen: formatPathogensForAI(pathogens), symptome, erkrankung },
       mode: "patient",
       selectedKeys,
-      manualMittel: manualMittel.filter((m) => m.name.trim()),
+      safetyWarningsByKey,
+      manualMittel: manualMittel
+        .filter((m) => m.name.trim())
+        .map((m) => ({ ...m, safetyWarnings: assessRemedyWithWikiSafety(m.name, therapySafetyContext, wikiRemedies) })),
     });
   };
 
@@ -1632,8 +1753,11 @@ export function TherapyRecommendation() {
       },
       mode: "praxis",
       selectedKeys,
+      safetyWarningsByKey,
       diagnosen: [...diag, ...manualDiagnosen.filter((d) => d.diagnose.trim()).map((d) => ({ ...d, diagnose: `${d.diagnose} (manuell)` }))],
-      manualMittel: manualMittel.filter((m) => m.name.trim()),
+      manualMittel: manualMittel
+        .filter((m) => m.name.trim())
+        .map((m) => ({ ...m, safetyWarnings: assessRemedyWithWikiSafety(m.name, therapySafetyContext, wikiRemedies) })),
     });
   };
   // BMI-Berechnung & Klassifikation
@@ -1818,14 +1942,15 @@ export function TherapyRecommendation() {
       return;
     }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
+    const isDraftSession = Boolean(d.autoSavedDraft) || session.kind === "therapy_candidate_draft";
     patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
     setExtractedFromDocs(null);
     setDiagnosen([]);
     checkpointSessionIdRef.current = null;
-    autoSaveSessionIdRef.current = d.autoSavedDraft ? session.id : null;
-    lastAutoSavedPayloadRef.current = d.autoSavedDraft ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
+    autoSaveSessionIdRef.current = isDraftSession ? session.id : null;
+    lastAutoSavedPayloadRef.current = isDraftSession ? JSON.stringify({ ...d, lastAutoSaveAt: undefined }) : "";
     // Versionierung: nicht-Draft-Sessions werden als Eltern-Version übernommen → nächster Save ist neue Version
-    if (!d.autoSavedDraft) {
+    if (!isDraftSession) {
       setParentSessionId(session.id);
       setParentVersionNumber((session as any).version_number ?? null);
       setParentSnapshot(d as any);
@@ -3025,7 +3150,7 @@ export function TherapyRecommendation() {
             categories: selectedCategories.length > 0 ? selectedCategories : undefined,
             bevorzugteLinie: bevorzugteLinie.length > 0 ? bevorzugteLinie : undefined,
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
-            useMapReduce: useMapReduce || undefined,
+            useMapReduce,
             useProModel: useProModel || undefined,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
@@ -3127,7 +3252,8 @@ export function TherapyRecommendation() {
           const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
             pseudonym_id: resultPid,
             created_by: user.id,
-            eingabe_daten: safeInput,
+            kind: "therapy_candidate_draft",
+            eingabe_daten: { ...safeInput, autoSavedDraft: true, candidateDraft: true, finalized: false },
             empfehlung: safeRecommendation,
             notiz: "",
           });
@@ -3235,6 +3361,7 @@ export function TherapyRecommendation() {
     const filteredCategories = parsed.categories
       .map((g, ci) => ({
         ...g,
+        categoryIndex: ci,
         remedies: g.remedies.filter((_, ri) => selectedKeys.has(`${ci}|${ri}`)),
       }))
       .filter((g) => g.remedies.length > 0);
@@ -3245,8 +3372,13 @@ export function TherapyRecommendation() {
     filteredCategories.forEach((g) => {
       lines.push(`## ${g.emoji} ${g.title}`);
       g.remedies.forEach((r) => {
+        const remedyIndex = parsed.categories[g.categoryIndex].remedies.indexOf(r);
+        const warnings = safetyWarningsByKey.get(`${g.categoryIndex}|${remedyIndex}`) || [];
+        const warningText = warnings.length
+          ? warnings.map((item) => `SICHERHEIT ${severityLabel(item.severity)}: ${item.title}. ${item.action}`).join(" ")
+          : "";
         const name = r.latin ? `**${r.name}** (${r.latin})` : `**${r.name}**`;
-        lines.push(`- ${name} | ${r.dosage} | ${r.application} | ${r.duration} | ${r.priorityRaw} | ${r.cost} | ${r.reason}`);
+        lines.push(`- ${name} | ${r.dosage} | ${r.application} | ${r.duration} | ${r.priorityRaw} | ${r.cost} | ${[r.reason, warningText].filter(Boolean).join(" ")}`);
       });
       lines.push("");
     });
@@ -3254,7 +3386,11 @@ export function TherapyRecommendation() {
     if (mm.length) {
       lines.push(`## ✍️ Manuell ergänzte Mittel (Therapeut)`);
       mm.forEach((m) => {
-        lines.push(`- **${m.name}** | ${m.dosage || "—"} | ${m.application || "—"} | ${m.duration || "—"} | manuell | — | ${m.reason || ""}`);
+        const warnings = assessRemedyWithWikiSafety(m.name, therapySafetyContext, wikiRemedies);
+        const warningText = warnings.length
+          ? warnings.map((item) => `SICHERHEIT ${severityLabel(item.severity)}: ${item.title}. ${item.action}`).join(" ")
+          : "";
+        lines.push(`- **${m.name}** | ${m.dosage || "—"} | ${m.application || "—"} | ${m.duration || "—"} | manuell | — | ${[m.reason, warningText].filter(Boolean).join(" ")}`);
       });
       lines.push("");
     }
@@ -3273,13 +3409,84 @@ export function TherapyRecommendation() {
       toast({ title: "Pseudonym-ID fehlt oder unklar", description: "Bitte oben eine vollständige Pseudonym-ID vergeben, damit keine Patientendaten vermischt werden.", variant: "destructive" });
       return;
     }
+    const missingMedicationList = safetyContextWarnings.some((item) => item.id === "missing-medication-list");
+    if (missingMedicationList) {
+      toast({ title: "Medikationsliste fehlt", description: "Bitte aktuelle Arzneimittel eintragen oder ausdrücklich 'keine Medikamente' dokumentieren.", variant: "destructive" });
+      return;
+    }
+    const selectedWarnings = Array.from(safetyWarningsByKey.entries())
+      .filter(([key]) => selectedKeys.has(key))
+      .flatMap(([key, warnings]) => {
+        const [categoryIndex, remedyIndex] = key.split("|").map(Number);
+        const remedyName = parsedTherapyResult.categories[categoryIndex]?.remedies[remedyIndex]?.name || "";
+        return warnings.map((item) => ({ key, remedyName, ...item }));
+      });
+    const manualWarnings = manualMittel
+      .filter((item) => item.name.trim())
+      .flatMap((item) => assessRemedyWithWikiSafety(item.name, therapySafetyContext, wikiRemedies).map((warningItem) => ({ key: `manual:${item.name}`, remedyName: item.name, ...warningItem })));
+    const contextWarnings = safetyContextWarnings.map((item) => ({ key: "context", ...item }));
+    const combinationWarnings = assessSelectedCombinationSafety(
+      parsedTherapyResult,
+      selectedKeys,
+      wikiRemedies,
+      manualMittel.filter((item) => item.name.trim()).map((item) => item.name),
+      [
+        ...bisherigeMittel.split(/[\n,;]+/).map((item) => item.trim()).filter(Boolean),
+        ...mannayanOrders.flatMap((order) => order.items.map((item) => item.name).filter(Boolean)),
+      ],
+    );
+    const finalWarnings = [...contextWarnings, ...selectedWarnings, ...manualWarnings, ...combinationWarnings];
+    const selectedPatientRestrictions = Array.from(patientOutputRestrictionsByKey.entries())
+      .filter(([key]) => selectedKeys.has(key))
+      .flatMap(([key, reasons]) => {
+        const [categoryIndex, remedyIndex] = key.split("|").map(Number);
+        const remedyName = parsedTherapyResult.categories[categoryIndex]?.remedies[remedyIndex]?.name || "";
+        return reasons.map((reason) => ({ remedyName, reason }));
+      });
+    const manualPatientRestrictions = manualMittel
+      .filter((item) => item.name.trim())
+      .flatMap((item) => patientOutputRestrictionsForRemedy(item.name, wikiRemedies).map((reason) => ({ remedyName: item.name, reason })));
+    const patientOutputRestrictions = [...selectedPatientRestrictions, ...manualPatientRestrictions];
+    const blockingWarnings = finalWarnings.filter((item) => item.severity === "avoid");
+    if (blockingWarnings.length) {
+      toast({
+        title: "Roter Sicherheitsstopp",
+        description: `${blockingWarnings.map((item) => item.title).join("; ")}. Diese Mittel zuerst abwählen oder die Medikation/Diagnose korrigieren.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    const reviewWarnings = finalWarnings.filter((item) => item.severity === "review");
+    if (reviewWarnings.length && !window.confirm([
+      "Folgende Wechselwirkungswarnungen wurden erkannt:",
+      ...reviewWarnings.map((item) => `- ${item.title}: ${item.action}`),
+      "",
+      "Wurden diese Punkte fachlich geprüft und soll der interne Plan finalisiert werden?",
+    ].join("\n"))) return;
     const finalMd = deidentifyClinicalText(buildFinalMarkdown());
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "Nicht angemeldet", variant: "destructive" });
       return;
     }
-    const safeInput = buildInputData({ manualMittel, manualDiagnosen, finalized: true, autoSavedDraft: false });
+    const safeInput = buildInputData({
+      manualMittel,
+      manualDiagnosen,
+      finalized: true,
+      autoSavedDraft: false,
+      safetyReview: {
+        acknowledgedAt: new Date().toISOString(),
+        warningIds: finalWarnings.map((item) => item.id),
+        reviewedWarnings: reviewWarnings.map((item) => item.title),
+        warningDetails: finalWarnings.map((item) => ({
+          remedyName: "remedyName" in item ? item.remedyName : "",
+          severity: item.severity,
+          title: item.title,
+          action: item.action,
+        })),
+        patientOutputRestrictions,
+      },
+    });
     const residualIdentifiers = residualIdentifierCategories({ safeInput, finalMd, therapieNotiz });
     if (residualIdentifiers.length) {
       toast({ title: "Datenschutz-Sicherheitsstopp", description: `${residualIdentifiers.join(", ")} konnte nicht zuverlässig entfernt werden. Es wurde nichts gespeichert.`, variant: "destructive" });
@@ -3288,6 +3495,7 @@ export function TherapyRecommendation() {
     const { error } = await (supabase as any).from("therapy_sessions").insert({
       pseudonym_id: finalPid,
       created_by: user.id,
+      kind: "therapy_plan_finalized",
       eingabe_daten: safeInput,
       empfehlung: finalMd,
       notiz: therapieNotiz,
@@ -3316,7 +3524,7 @@ export function TherapyRecommendation() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Stethoscope className="h-7 w-7 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Therapie-Empfehlung</h1>
+        <h1 className="text-2xl font-bold text-foreground">Interne Therapie-Kandidaten</h1>
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
 
@@ -5199,6 +5407,8 @@ export function TherapyRecommendation() {
               selectedKeys={selectedKeys}
               onToggleRemedy={toggleRemedy}
               onToggleAll={toggleAllInCategory}
+              safetyWarningsByKey={safetyWarningsByKey}
+              safetyContextWarnings={safetyContextWarnings}
             />
           )}
 
@@ -5210,6 +5420,7 @@ export function TherapyRecommendation() {
               manualMittel={manualMittel.filter((m) => m.name.trim())}
               manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
               therapieNotiz={therapieNotiz}
+              safetyWarningsByKey={safetyWarningsByKey}
             />
           )}
 
@@ -5231,6 +5442,7 @@ export function TherapyRecommendation() {
                 manualMittel={manualMittel.filter((m) => m.name.trim())}
                 manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
                 therapieNotiz={therapieNotiz}
+                safetyWarningsByKey={safetyWarningsByKey}
               />
             </>
           )}
@@ -5298,7 +5510,7 @@ export function TherapyRecommendation() {
 // --- Workflow-Stepper-Indikator ---
 function WorkflowStepper({ stage }: { stage: "edit" | "addons" | "preview" | "finalized" }) {
   const steps: Array<{ key: typeof stage; label: string }> = [
-    { key: "edit", label: "1. KI-Auswahl" },
+    { key: "edit", label: "1. Kandidaten prüfen" },
     { key: "addons", label: "2. Eigene Ergänzungen" },
     { key: "preview", label: "3. Vorschau" },
     { key: "finalized", label: "✓ Gespeichert" },
@@ -5484,16 +5696,18 @@ function TherapyPreview({
   manualMittel,
   manualDiagnosen,
   therapieNotiz,
+  safetyWarningsByKey,
 }: {
   result: string;
   selectedKeys: Set<string>;
   manualMittel: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>;
   manualDiagnosen: DiagnoseEntry[];
   therapieNotiz: string;
+  safetyWarningsByKey: Map<string, TherapySafetyWarning[]>;
 }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const filteredCats = parsed.categories
-    .map((g, ci) => ({ ...g, remedies: g.remedies.filter((_, ri) => selectedKeys.has(`${ci}|${ri}`)) }))
+    .map((g, ci) => ({ ...g, categoryIndex: ci, remedies: g.remedies.filter((_, ri) => selectedKeys.has(`${ci}|${ri}`)) }))
     .filter((g) => g.remedies.length > 0);
 
   return (
@@ -5527,6 +5741,11 @@ function TherapyPreview({
                 <li key={j} className="border-l-2 border-primary/30 pl-2">
                   <strong>{r.name}</strong>{r.latin && <em className="text-muted-foreground"> ({r.latin})</em>}
                   <span className="text-muted-foreground"> · {r.dosage} · {r.application} · {r.duration}</span>
+                  {(safetyWarningsByKey.get(`${g.categoryIndex}|${parsed.categories[g.categoryIndex].remedies.indexOf(r)}`) || []).map((warning) => (
+                    <div key={warning.id} className="mt-1 text-amber-800 dark:text-amber-300">
+                      ⚠ {warning.title}: {warning.action}
+                    </div>
+                  ))}
                 </li>
               ))}
             </ul>
@@ -5568,6 +5787,8 @@ function ParsedResultView({
   selectedKeys,
   onToggleRemedy,
   onToggleAll,
+  safetyWarningsByKey,
+  safetyContextWarnings,
 }: {
   result: string;
   isStreaming: boolean;
@@ -5575,6 +5796,8 @@ function ParsedResultView({
   selectedKeys?: Set<string>;
   onToggleRemedy?: (key: string) => void;
   onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
+  safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>;
+  safetyContextWarnings?: TherapySafetyWarning[];
 }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
@@ -5649,6 +5872,18 @@ function ParsedResultView({
 
   return (
     <>
+      {!isStreaming && safetyContextWarnings && safetyContextWarnings.length > 0 && (
+        <Card className="border-amber-500/50 bg-amber-50/80 dark:bg-amber-950/20">
+          <CardContent className="py-3 space-y-2">
+            {safetyContextWarnings.map((warning) => (
+              <div key={warning.id} className="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+                <div><strong>{warning.title}:</strong> {warning.message} {warning.action}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
       {hasParsed && !isStreaming && (
         <Card className="border-dashed">
           <CardContent className="py-3">
@@ -5674,7 +5909,7 @@ function ParsedResultView({
               )}
             </div>
             <p className="text-[11px] text-muted-foreground mt-2">
-              Per Klick aus-/einblenden. Ausgeblendete Bereiche werden auch im Druck/PDF nicht mehr angezeigt.
+              Der Filter aendert nur die Bildschirmansicht. Fuer den finalen Plan und PDF zaehlen ausschliesslich die Mittel-Haekchen.
             </p>
           </CardContent>
         </Card>
@@ -5692,11 +5927,11 @@ function ParsedResultView({
         <div className="space-y-4">
           <h2 className="text-lg font-serif text-foreground flex items-center gap-2 mt-2">
             <Pill className="h-4 w-4 text-primary" />
-            Empfohlene Mittel
+            Interne Mittel-Kandidaten
             {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             {!isStreaming && selectedKeys && (
               <span className="text-xs font-normal text-muted-foreground ml-2">
-                ({selectedKeys.size} ausgewählt für Patienten-PDF – Häkchen entfernen, was nicht mit soll)
+                ({selectedKeys.size} als Kernkandidaten markiert; Warnmittel bleiben standardmäßig abgewählt)
               </span>
             )}
           </h2>
@@ -5710,6 +5945,7 @@ function ParsedResultView({
                 selectedKeys={isStreaming ? undefined : selectedKeys}
                 onToggleRemedy={onToggleRemedy}
                 onToggleAll={onToggleAll}
+                safetyWarningsByKey={safetyWarningsByKey}
               />
             );
           })}

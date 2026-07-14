@@ -114,6 +114,25 @@ function parseRemedyLine(line: string): RemedyRow | null {
   };
 }
 
+const remedyIdentity = (value: string) => value
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, " ")
+  .trim();
+
+const mergeRemedyRows = (current: RemedyRow, candidate: RemedyRow): RemedyRow => ({
+  ...current,
+  latin: current.latin || candidate.latin,
+  dosage: current.dosage || candidate.dosage,
+  application: current.application || candidate.application,
+  duration: current.duration || candidate.duration,
+  priority: priorityOrder(current.priority) <= priorityOrder(candidate.priority) ? current.priority : candidate.priority,
+  priorityRaw: priorityOrder(current.priority) <= priorityOrder(candidate.priority) ? current.priorityRaw : candidate.priorityRaw,
+  cost: current.cost || candidate.cost,
+  reason: current.reason.length >= candidate.reason.length ? current.reason : candidate.reason,
+});
+
 export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
   const result: ParsedTherapy = { intro: [], categories: [], outro: [] };
   if (!markdown) return result;
@@ -150,6 +169,9 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
   }
   if (current) blocks.push(current);
 
+  const categoryByTitle = new Map<string, CategoryGroup>();
+  const remedyByIdentity = new Map<string, RemedyRow>();
+
   for (const block of blocks) {
     if (block.kind === "category" && block.def) {
       const remedies: RemedyRow[] = [];
@@ -161,11 +183,27 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
         if (row && row.name) remedies.push(row);
       }
       if (remedies.length === 0) continue;
-      result.categories.push({
-        emoji: block.def.emoji,
-        title: block.def.title,
-        tone: block.def.tone,
-        remedies,
+      let category = categoryByTitle.get(block.def.title);
+      if (!category) {
+        category = {
+          emoji: block.def.emoji,
+          title: block.def.title,
+          tone: block.def.tone,
+          remedies: [],
+        };
+        categoryByTitle.set(block.def.title, category);
+        result.categories.push(category);
+      }
+      remedies.forEach((remedy) => {
+        const identity = remedyIdentity(remedy.name);
+        const previous = remedyByIdentity.get(identity);
+        if (previous) {
+          const merged = mergeRemedyRows(previous, remedy);
+          Object.assign(previous, merged);
+          return;
+        }
+        remedyByIdentity.set(identity, remedy);
+        category!.remedies.push(remedy);
       });
     } else if (block.kind === "free" && block.def) {
       const content = block.lines.join("\n").trim();

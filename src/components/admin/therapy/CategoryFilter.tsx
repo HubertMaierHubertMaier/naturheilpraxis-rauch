@@ -113,7 +113,7 @@ export function CategoryFilter({ selected, onChange }: Props) {
 
   const summary = useMemo(() => {
     if (selected.length === 0) return "Keine Schwerpunkte – ganze Datenbank wird normal durchsucht";
-    return `${selected.length} Schwerpunkt-${selected.length === 1 ? "Ordner" : "Ordner"} garantiert geprüft (zusätzlich zur Gesamtsuche)`;
+    return `${selected.length} Schwerpunkt-${selected.length === 1 ? "Ordner" : "Ordner"} in der Gesamtsuche priorisiert`;
   }, [selected]);
 
   if (loading) {

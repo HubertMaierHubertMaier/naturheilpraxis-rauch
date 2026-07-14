@@ -17,28 +17,70 @@ export type Database = {
       admin_knowledge_base: {
         Row: {
           category: string
+          commercial_claims_reviewed: boolean
           content: string
+          contraindications: string[]
           created_at: string
+          dosage_status: string
+          entry_kind: string
+          evidence_level: string
           id: string
+          interaction_tags: string[]
+          last_reviewed_at: string | null
+          patient_facing_allowed: boolean
+          review_status: string
+          reviewed_by: string | null
+          rights_status: string
+          safety_notes: string
+          source_citations: Json
           tags: string[]
+          therapeutic_topics: string[]
           title: string
           updated_at: string
         }
         Insert: {
           category?: string
+          commercial_claims_reviewed?: boolean
           content?: string
+          contraindications?: string[]
           created_at?: string
+          dosage_status?: string
+          entry_kind?: string
+          evidence_level?: string
           id?: string
+          interaction_tags?: string[]
+          last_reviewed_at?: string | null
+          patient_facing_allowed?: boolean
+          review_status?: string
+          reviewed_by?: string | null
+          rights_status?: string
+          safety_notes?: string
+          source_citations?: Json
           tags?: string[]
+          therapeutic_topics?: string[]
           title: string
           updated_at?: string
         }
         Update: {
           category?: string
+          commercial_claims_reviewed?: boolean
           content?: string
+          contraindications?: string[]
           created_at?: string
+          dosage_status?: string
+          entry_kind?: string
+          evidence_level?: string
           id?: string
+          interaction_tags?: string[]
+          last_reviewed_at?: string | null
+          patient_facing_allowed?: boolean
+          review_status?: string
+          reviewed_by?: string | null
+          rights_status?: string
+          safety_notes?: string
+          source_citations?: Json
           tags?: string[]
+          therapeutic_topics?: string[]
           title?: string
           updated_at?: string
         }
@@ -304,6 +346,69 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      knowledge_product_links: {
+        Row: {
+          clinical_topics: string[]
+          confidence: number
+          created_at: string
+          created_by: string | null
+          id: string
+          knowledge_entry_id: string
+          product_id: string
+          relation_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          review_status: string
+          safety_notes: string
+          updated_at: string
+        }
+        Insert: {
+          clinical_topics?: string[]
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          knowledge_entry_id: string
+          product_id: string
+          relation_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          review_status?: string
+          safety_notes?: string
+          updated_at?: string
+        }
+        Update: {
+          clinical_topics?: string[]
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          knowledge_entry_id?: string
+          product_id?: string
+          relation_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          review_status?: string
+          safety_notes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_product_links_knowledge_entry_id_fkey"
+            columns: ["knowledge_entry_id"]
+            isOneToOne: false
+            referencedRelation: "admin_knowledge_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_product_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "mannayan_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mannayan_products: {
         Row: {

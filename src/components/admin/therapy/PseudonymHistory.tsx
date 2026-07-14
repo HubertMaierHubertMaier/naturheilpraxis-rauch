@@ -453,6 +453,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
               }));
 
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
+              const isCandidateDraft = s.kind === "therapy_candidate_draft";
               const meta = s.befund_meta || {};
               const rawBefundSources: any[] = Array.isArray(meta.source_summary)
                 ? meta.source_summary
@@ -519,11 +520,14 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
 
 
               return (
-                <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                <div key={s.id} className={`border rounded-md p-3 hover:bg-muted/30 transition ${isBefund ? "border-primary/40 bg-primary/5" : isCandidateDraft ? "border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10" : "border-border"}`}>
                   <div className="flex items-start gap-2">
                     <FileText className={`h-4 w-4 mt-0.5 shrink-0 ${isBefund ? "text-primary" : "text-muted-foreground"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {isCandidateDraft && (
+                          <Badge variant="secondary" className="text-[10px] py-0 h-4">KI-Rohentwurf · nicht finalisiert</Badge>
+                        )}
                         {!isBefund && typeof s.version_number === "number" && (
                           <Badge variant="default" className="text-[10px] py-0 h-4 bg-primary/80">
                             V{s.version_number}

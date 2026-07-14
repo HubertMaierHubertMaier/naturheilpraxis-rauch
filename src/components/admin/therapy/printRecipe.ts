@@ -1,4 +1,5 @@
 import type { ParsedTherapy, CategoryGroup, RemedyRow } from "@/lib/therapyParser";
+import type { TherapySafetyWarning } from "../../../../supabase/functions/_shared/therapySafety";
 
 export interface DiagnoseEntry {
   icd10?: string;
@@ -19,14 +20,15 @@ interface PrintArgs {
     pseudonymId?: string;
     notiz?: string;
   };
-  /** "patient" = klean, ohne Warnungen/Begründungen | "praxis" = vollständig mit Diagnosen, Warnungen, Begründungen */
+  /** Patient: ohne interne Begründungen, aber mit relevanten Sicherheitshinweisen. Praxis: vollständig mit Diagnosen und Begründungen. */
   mode?: "patient" | "praxis";
   /** Set aus "categoryIndex|remedyIndex" – ausgewählte Mittel. Wenn undefined → alle. */
   selectedKeys?: Set<string>;
+  safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>;
   /** Schulmedizinische Verdachtsdiagnosen – nur für Praxis-PDF */
   diagnosen?: DiagnoseEntry[];
   /** Manuell ergänzte Mittel – erscheinen in beiden PDFs als eigene Sektion */
-  manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string }>;
+  manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string; safetyWarnings?: TherapySafetyWarning[] }>;
 }
 
 const escapeHtml = (s: unknown) => {
@@ -138,16 +140,18 @@ const mdInline = (s: unknown) => mdInlineRaw(escapeHtml(s ?? ""));
 function filterCategoriesBySelection(
   categories: CategoryGroup[],
   selectedKeys?: Set<string>,
+  safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>,
 ): { selected: CategoryGroup[]; unselected: CategoryGroup[] } {
-  if (!selectedKeys) return { selected: categories, unselected: [] };
   const selected: CategoryGroup[] = [];
   const unselected: CategoryGroup[] = [];
   categories.forEach((g, ci) => {
     const sel: RemedyRow[] = [];
     const unsel: RemedyRow[] = [];
     g.remedies.forEach((r, ri) => {
-      if (selectedKeys.has(`${ci}|${ri}`)) sel.push(r);
-      else unsel.push(r);
+      const key = `${ci}|${ri}`;
+      const row = { ...r, safetyWarnings: safetyWarningsByKey?.get(key) || [] } as RemedyRow & { safetyWarnings: TherapySafetyWarning[] };
+      if (!selectedKeys || selectedKeys.has(key)) sel.push(row);
+      else unsel.push(row);
     });
     if (sel.length) selected.push({ ...g, remedies: sel });
     if (unsel.length) unselected.push({ ...g, remedies: unsel });
@@ -155,11 +159,11 @@ function filterCategoriesBySelection(
   return { selected, unselected };
 }
 
-export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, diagnosen, manualMittel }: PrintArgs) {
+export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKeys, safetyWarningsByKey, diagnosen, manualMittel }: PrintArgs) {
   const isPraxis = mode === "praxis";
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 
-  const { selected, unselected } = filterCategoriesBySelection(parsed.categories, selectedKeys);
+  const { selected, unselected } = filterCategoriesBySelection(parsed.categories, selectedKeys, safetyWarningsByKey);
 
   const patientLine = [
     isPraxis && patient.pseudonymId ? `Pseudonym: <strong>${escapeHtml(patient.pseudonymId)}</strong>` : null,
@@ -218,6 +222,9 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
           <td>${escapeHtml(r.duration)}</td>
           ${opts.showPrio ? `<td class="prio">${escapeHtml(r.priorityRaw)}</td>` : ""}
         </tr>
+        ${(r as RemedyRow & { safetyWarnings?: TherapySafetyWarning[] }).safetyWarnings?.length
+          ? `<tr class="safety-row"><td colspan="${opts.showPrio ? 5 : 4}"><strong>⚠ Sicherheitsprüfung:</strong> ${(r as RemedyRow & { safetyWarnings: TherapySafetyWarning[] }).safetyWarnings.map((item) => `${escapeHtml(item.title)} – ${escapeHtml(item.action)}`).join("<br>")}</td></tr>`
+          : ""}
         ${opts.showReason && r.reason ? `<tr class="reason-row"><td colspan="${opts.showPrio ? 5 : 4}" class="reason">${escapeHtml(r.reason)}</td></tr>` : ""}`)
       .join("");
     return `
@@ -246,6 +253,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
                 <td>${escapeHtml(m.duration || "—")}</td>
                 ${isPraxis ? `<td class="reason-cell">${escapeHtml(m.reason || "")}</td>` : ""}
               </tr>`).join("")}
+            ${manualMittel.flatMap((m) => (m.safetyWarnings || []).map((item) => `<tr class="safety-row"><td colspan="${isPraxis ? 5 : 4}"><strong>⚠ ${escapeHtml(m.name)}:</strong> ${escapeHtml(item.title)} – ${escapeHtml(item.action)}</td></tr>`)).join("")}
           </tbody>
         </table>
       </section>`
@@ -258,11 +266,8 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
       </section>`
     : "";
 
-  // Outro: Patient bekommt nur "neutrale" Outros (Begleitmaßnahmen, Therapieprotokoll, Kosten).
-  // Ausgeschlossene Mittel (variant: danger) und Wissensdatenbank-Lücken (warning) NUR Praxis.
-  const outroSections = isPraxis
-    ? parsed.outro
-    : parsed.outro.filter((s) => s.variant !== "danger" && s.variant !== "warning");
+  // Freie KI-Nachtexte besitzen keine zeilenbezogene Quellenfreigabe und bleiben praxisintern.
+  const outroSections = isPraxis ? parsed.outro : [];
 
   const outroHtml = outroSections
     .map((s) => `<section class="outro"><h3>${s.emoji} ${escapeHtml(s.title)}</h3><div class="outro-content">${mdBlock(s.content)}</div></section>`)
@@ -326,6 +331,7 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
   td.mono, .mono { font-family: 'JetBrains Mono', Menlo, monospace; font-size: 9pt; }
   td.prio { font-size: 8.5pt; white-space: nowrap; }
   tr.reason-row td.reason { color: #666; font-size: 8.5pt; padding-top: 0; padding-bottom: 8px; padding-left: 14px; border-bottom: 1px solid #ececec; font-style: italic; }
+  tr.safety-row td { color: #7c2d12; background: #fff7ed; font-size: 8.5pt; padding: 6px 10px; border-left: 3px solid #ea580c; border-bottom: 1px solid #fed7aa; }
   .reserve { margin-top: 18px; padding-top: 10px; border-top: 1px dashed #c8b89e; }
   .reserve > h2 { font-size: 13pt; color: #8a6f3a; margin-bottom: 8px; }
   .outro { margin-top: 14px; page-break-inside: avoid; font-size: 9.5pt; }

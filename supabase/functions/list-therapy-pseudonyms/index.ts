@@ -73,7 +73,9 @@ function checkRateLimit(key: string, now = Date.now()): boolean {
 
 type TherapySessionRow = {
   pseudonym_id: string | null;
+  kind: string | null;
   eingabe_daten: {
+    autoSavedDraft?: boolean | null;
     symptome?: string | null;
     erkrankung?: string | null;
     belastungen?: string | null;
@@ -192,7 +194,7 @@ Deno.serve(async (req: Request) => {
     const [therapyRes, ordersRes] = await Promise.all([
       adminClient
         .from("therapy_sessions")
-        .select("id, pseudonym_id, eingabe_daten, notiz, created_at, updated_at")
+        .select("id, pseudonym_id, kind, eingabe_daten, notiz, created_at, updated_at")
         .order("created_at", { ascending: false }),
       adminClient
         .from("mannayan_orders")
@@ -207,6 +209,8 @@ Deno.serve(async (req: Request) => {
 
     for (const row of (therapyRes.data ?? []) as TherapySessionRow[]) {
       if (!row.pseudonym_id) continue;
+      if (row.eingabe_daten?.autoSavedDraft) continue;
+      if (["therapy_candidate_draft", "event_log", "befund_checkpoint", "quarantine_patient_mismatch", "befund_auswertung", "hp_therapy_check"].includes(row.kind || "")) continue;
 
       const existing = groups.get(row.pseudonym_id);
       const summary = buildSummary(row);
