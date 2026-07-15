@@ -24,7 +24,6 @@ describe("Supabase Edge Function JWT policy", () => {
   const anonymousFlowFunctions = [
     "request-verification-code",
     "verify-code",
-    "send-verification-email",
   ];
 
   const adminOnlyServiceRoleFunctions = [
@@ -45,6 +44,7 @@ describe("Supabase Edge Function JWT policy", () => {
     ...adminOnlyServiceRoleFunctions,
     "elevenlabs-tts",
     "notify-existing-patient",
+    "send-verification-email",
     "submit-anamnesis",
   ];
 
@@ -146,14 +146,20 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).not.toMatch(/error:\s*(?:e|err|error)\?\.message/);
   });
 
-  it("keeps legacy verification email protected by local in-memory rate limiting", () => {
+  it("disables the legacy arbitrary-recipient verification email endpoint", () => {
     const source = readFunctionSource("send-verification-email");
 
-    expect(source).toMatch(/rateLimitMap/);
-    expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
-    expect(source).toMatch(/checkRateLimit/);
-    expect(source).toMatch(/status:\s*429/);
-    expect(source).toMatch(/const rateLimitKey = `verification-email:\$\{email\}:\$\{type\}`/);
+    expect(getVerifyJwt("send-verification-email")).toBe(true);
+    expect(source).toMatch(/status:\s*410/);
+    expect(source).not.toMatch(/SMTPClient|\.send\(|req\.json\(|SMTP_PASSWORD/);
+  });
+
+  it("verifies provider and notification bearer tokens with Supabase Auth", () => {
+    for (const functionName of ["elevenlabs-tts", "notify-existing-patient"]) {
+      const source = readFunctionSource(functionName);
+      expect(source, functionName).toMatch(/auth\.getUser\(token\)/);
+      expect(source, functionName).not.toMatch(/\batob\(|payloadSegment/);
+    }
   });
 
   it("keeps get-patients admin patient-list access behind local per-admin rate limiting", () => {

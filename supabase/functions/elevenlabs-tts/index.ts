@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -62,26 +63,19 @@ function checkRateLimit(key: string): boolean {
   return true;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function extractAuthenticatedSubject(req: Request): string | null {
+async function getAuthenticatedSubject(req: Request): Promise<string | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice("Bearer ".length).trim();
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!token || !supabaseUrl || !supabaseAnonKey) return null;
 
-  const [, payloadSegment] = authHeader.replace("Bearer ", "").split(".");
-  if (!payloadSegment) return null;
-
-  try {
-    const normalized = payloadSegment.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    const payload = JSON.parse(atob(padded)) as unknown;
-    if (!isRecord(payload) || typeof payload.sub !== "string") return null;
-    return payload.sub;
-  } catch {
-    return null;
-  }
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: { user }, error } = await client.auth.getUser(token);
+  return error ? null : user?.id ?? null;
 }
 
 serve(async (req) => {
@@ -91,7 +85,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const authenticatedSubject = extractAuthenticatedSubject(req);
+  const authenticatedSubject = await getAuthenticatedSubject(req);
   if (!authenticatedSubject) {
     return new Response(JSON.stringify({ error: "Nicht autorisiert" }), {
       status: 401,

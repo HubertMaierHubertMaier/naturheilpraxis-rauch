@@ -49,7 +49,6 @@ describe("Phase 4 security access matrix", () => {
 
     expect(publicFunctions.map((fn) => fn.name).sort()).toEqual([
       "request-verification-code",
-      "send-verification-email",
       "verify-code",
     ]);
     expect(publicFunctions.every((fn) => fn.publicRationale.length >= 24)).toBe(true);
@@ -145,7 +144,6 @@ describe("Phase 4 security access matrix", () => {
 
     expect(publicPreSessionFunctions.map((fn) => fn.name).sort()).toEqual([
       "request-verification-code",
-      "send-verification-email",
       "verify-code",
     ]);
     expect(
