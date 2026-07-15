@@ -1,1 +1,0 @@
-REVOKE UPDATE ON public.admin_knowledge_base FROM sandbox_exec;

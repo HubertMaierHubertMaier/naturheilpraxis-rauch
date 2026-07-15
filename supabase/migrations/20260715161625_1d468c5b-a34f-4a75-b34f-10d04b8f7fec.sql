@@ -1,1 +1,0 @@
-GRANT UPDATE ON public.admin_knowledge_base TO sandbox_exec;
