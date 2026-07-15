@@ -9,7 +9,7 @@ const appRoutePaths = Array.from(appSource.matchAll(/<Route\s+path="([^"]+)"/g))
 const configuredFunctionNames = Array.from(configSource.matchAll(/\[functions\.([^\]]+)\]/g)).map((match) => match[1]);
 const supabaseTypesSource = readFileSync("src/integrations/supabase/types.ts", "utf8");
 const infothekGatingGrantMigration = readFileSync(
-  "supabase/migrations/20260715185500_restrict_infothek_gating_public_columns.sql",
+  "supabase/migrations/20260715170606_f314dfe0-f8d4-4689-bc4d-efdb61700575.sql",
   "utf8"
 );
 const databaseTableNames = Array.from(
