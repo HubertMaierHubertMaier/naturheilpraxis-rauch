@@ -188,8 +188,8 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     publicReadRationale: "Public Infothek pages need visibility flags to render locked/free tiles consistently; writes remain admin-only.",
     containsPatientData: false,
     frontendConsumers: ["Infothek", "InfothekDropdown", "InfothekGateRoute"],
-    policySummary: "Public reads for gating flags; administrative policies control changes.",
-    riskNote: "Never use DB overrides to downgrade code-marked therapy content below patient-only access.",
+    policySummary: "Column-limited public reads expose href/gated/visibility only; administrative policies control changes.",
+    riskNote: "Keep updated_by hidden from public roles and never use DB overrides to downgrade code-marked therapy content below patient-only access.",
   },
   {
     name: "knowledge_product_links",

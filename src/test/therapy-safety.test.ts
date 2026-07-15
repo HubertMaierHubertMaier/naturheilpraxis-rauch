@@ -19,7 +19,7 @@ describe("therapy safety", () => {
   });
 
   it("keeps wiki-product links admin-only and reviewed before AI use", () => {
-    const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260714160000_therapy_knowledge_safety_model.sql"), "utf8");
+    const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql"), "utf8");
     const edgeSource = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
 
     expect(migration).toContain("ALTER TABLE public.knowledge_product_links ENABLE ROW LEVEL SECURITY");

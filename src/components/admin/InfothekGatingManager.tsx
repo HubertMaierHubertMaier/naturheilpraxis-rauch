@@ -103,7 +103,6 @@ export function InfothekGatingManager() {
       href,
       visibility,
       gated: visibility !== "public", // Backward-Compat für alte Spalte
-      updated_at: new Date().toISOString(),
     }));
     const { error } = await (supabase as unknown as {
       from: (t: string) => {

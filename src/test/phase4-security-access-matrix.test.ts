@@ -8,6 +8,10 @@ const configSource = readFileSync("supabase/config.toml", "utf8");
 const appRoutePaths = Array.from(appSource.matchAll(/<Route\s+path="([^"]+)"/g)).map((match) => match[1]);
 const configuredFunctionNames = Array.from(configSource.matchAll(/\[functions\.([^\]]+)\]/g)).map((match) => match[1]);
 const supabaseTypesSource = readFileSync("src/integrations/supabase/types.ts", "utf8");
+const infothekGatingGrantMigration = readFileSync(
+  "supabase/migrations/20260715185500_restrict_infothek_gating_public_columns.sql",
+  "utf8"
+);
 const databaseTableNames = Array.from(
   supabaseTypesSource
     .split("Tables: {", 2)[1]
@@ -77,6 +81,16 @@ describe("Phase 4 security access matrix", () => {
     ]);
     expect(publicReadTables).not.toContainEqual(expect.objectContaining({ containsPatientData: true }));
     expect(publicReadTables.every((table) => table.publicReadRationale.length >= 24)).toBe(true);
+  });
+
+  it("limits public Infothek gating reads to non-sensitive columns", () => {
+    expect(infothekGatingGrantMigration).toContain(
+      "REVOKE SELECT ON public.infothek_gating FROM anon, authenticated"
+    );
+    expect(infothekGatingGrantMigration).toContain(
+      "GRANT SELECT (href, gated, visibility) ON public.infothek_gating TO anon, authenticated"
+    );
+    expect(infothekGatingGrantMigration).not.toMatch(/GRANT SELECT \([^)]*updated_by/);
   });
 
   it("keeps route table references synchronized with the table/RLS matrix", () => {
