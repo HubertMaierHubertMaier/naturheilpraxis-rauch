@@ -380,7 +380,8 @@ export const getAndrogenDeprivationPhase = (context: unknown): AndrogenDeprivati
   };
   collect(context);
 
-  const phases = entries.flatMap((entry) => {
+  type PhaseObservation = { phase: Exclude<AndrogenDeprivationPhase, "none">; rank: number };
+  const phases: PhaseObservation[] = entries.flatMap<PhaseObservation>((entry): PhaseObservation[] => {
     if (!hasPositiveContextMatch(entry.text, treatmentPattern)) return [];
     if (/(?:abgebrochen|abgesetzt)\s+vor\s+beginn|nicht\s+(?:durchgef[uü]hrt|begonnen|erfolgt)/i.test(entry.text)) return [];
     const endedMatches = Array.from(entry.text.matchAll(/abgeschlossen|abgesetzt|beendet|pausiert|unterbrochen|therapiepause|therapiefrei|status\s+post/gi));
