@@ -2947,16 +2947,6 @@ export function TherapyRecommendation() {
     }
   }, [extractedFromDocs, pseudonymId]);
 
-
-  // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
-  const appendNachgereicht = (text: string, sourcePseudonymId: string) => {
-    if (!text.trim() || normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-    const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
-    setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, `${header}${text}`));
-    toast({ title: "Nachgereichte Befunde angehängt", description: `${text.length.toLocaleString("de-DE")} Zeichen ergänzt. Jetzt erneut „Nur Befund-Auswertung" ausführen.` });
-  };
-
   const addDirectBefundFiles = (list: FileList | null) => {
     if (!list?.length) return;
     // C) Cross-Pseudonym-Warnung: greift für ALLE P-JAHR-NNNN (2026, 2027, ...)
@@ -3849,6 +3839,16 @@ export function TherapyRecommendation() {
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})
             </Button>
+            <details className="w-full rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
+              <summary className="cursor-pointer font-medium text-muted-foreground">Erweiterte Aktion</summary>
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
+                <Button type="button" size="sm" variant="outline" onClick={handleReAnalyzeAll} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="gap-1.5 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Befund-Auswertung komplett neu starten
+                </Button>
+                <span className="text-muted-foreground">Löscht nur Zwischenstände und startet die gewählten Quellen neu. Fertige Verlaufsberichte bleiben erhalten.</span>
+              </div>
+            </details>
           </div>
           {analysisSources.length ? (
             <div className="max-h-80 overflow-auto rounded-md border bg-background divide-y">
@@ -3886,9 +3886,9 @@ export function TherapyRecommendation() {
           )}
 
           {/* 🔬 Diagnose-Übersicht: zeigt für JEDES Backing-Feld die Zeichenanzahl, damit klar wird wo PDFs gelandet sind */}
-          <details className="rounded-md border border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10 p-2 text-xs" open>
+          <details className="rounded-md border border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10 p-2 text-xs">
             <summary className="cursor-pointer font-semibold text-amber-800 dark:text-amber-200">
-              🔬 Diagnose: Zeichen pro Eingabefeld (zum Eingrenzen, wo die PDFs gelandet sind)
+              Technische Quellenkontrolle (nur falls eine PDF fehlt)
             </summary>
             <div className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
               {[
@@ -3923,86 +3923,6 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
-
-      <div className="fixed bottom-4 left-1/2 z-50 w-[min(calc(100vw-2rem),64rem)] -translate-x-1/2 rounded-lg border border-primary/30 bg-background/95 p-3 shadow-xl backdrop-blur print:hidden">
-        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
-          <strong className="text-foreground">Start-Aktionen · immer sichtbar</strong>
-          <span className="text-muted-foreground">{analysisSourceTotals.selected}/{analysisSourceTotals.all} Quellen gewählt</span>
-        </div>
-        <div className="grid gap-2 md:grid-cols-3">
-          <Button onClick={() => handleSubmit()} disabled={isStreaming} className="justify-start gap-2 text-xs sm:text-sm">
-            {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {isStreaming ? "Analyse läuft…" : "Therapie-Empfehlung generieren"}
-          </Button>
-          <Button
-            onClick={handleAnalyzeDocuments}
-            disabled={isAnalyzingDocs || isStreaming}
-            variant="outline"
-            className="justify-start gap-2 border-sage-600 text-xs text-sage-700 hover:bg-sage-50 sm:text-sm"
-          >
-            {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-            {isAnalyzingDocs && docAnalysisStats?.total ? `Befund läuft ${docAnalysisStats.current}/${docAnalysisStats.total}` : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
-          </Button>
-          <Button
-            onClick={handleReAnalyzeAll}
-            disabled={isAnalyzingDocs || isStreaming}
-            variant="outline"
-            className="justify-start gap-2 border-terracotta-600 text-xs text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30 sm:text-sm"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Alles neu auswerten
-          </Button>
-        </div>
-      </div>
-
-      <Card className="border-primary/40 bg-primary/5">
-        <CardContent className="pt-4 space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div className="text-sm font-semibold text-foreground">Start-Aktionen</div>
-              <p className="text-xs text-muted-foreground">Diese drei Hauptbuttons stehen jetzt immer direkt oben im Therapie-Empfehlungs-Panel.</p>
-            </div>
-            <Badge variant="outline" className="text-[10px]">oben sichtbar</Badge>
-          </div>
-          <div className="grid gap-3 lg:grid-cols-3">
-            <div className="space-y-1">
-              <Button onClick={() => handleSubmit()} disabled={isStreaming} className="w-full justify-start gap-2">
-                {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft…" : "Analyse läuft…") : "Therapie-Empfehlung generieren"}
-              </Button>
-              <p className="text-[11px] leading-snug text-muted-foreground">Kompletter Therapieplan mit Mittel-Auswahl, Prioritäten und Sicherheitsprüfung.</p>
-            </div>
-            <div className="space-y-1">
-              <Button
-                onClick={handleAnalyzeDocuments}
-                disabled={isAnalyzingDocs || isStreaming}
-                variant="outline"
-                className="w-full justify-start gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
-              >
-                {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-                {isAnalyzingDocs && docAnalysisStats?.total
-                  ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
-                  : isAnalyzingDocs
-                    ? "Befund-Auswertung läuft…"
-                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
-              </Button>
-              <p className="text-[11px] leading-snug text-muted-foreground">Nur die unten angehakten Quellen werden zusammen ausgewertet.</p>
-            </div>
-            <div className="space-y-1">
-              <Button
-                onClick={handleReAnalyzeAll}
-                disabled={isAnalyzingDocs || isStreaming}
-                variant="outline"
-                className="w-full justify-start gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Alles neu auswerten
-              </Button>
-              <p className="text-[11px] leading-snug text-muted-foreground">Nur bei stark geänderter Anamnese oder bewusstem kompletten Neustart.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Pseudonym & DSGVO-Hinweis */}
       <Card className="border-primary/30 bg-primary/5">
@@ -4148,69 +4068,6 @@ export function TherapyRecommendation() {
                   Für diese Pseudonym-ID sind aktuell keine Labor-, Arztbrief- oder sonstigen Befunddaten geladen.
                 </div>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/50 bg-primary/[0.04]">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-            <ClipboardList className="h-4 w-4 text-primary" />
-            Befund-Quellen auswählen
-            <Badge variant="secondary" className="text-xs">
-              {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
-              Alle Quellen anhaken
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.filter((source) => source.group === "dokument" || source.group === "befund").map((source) => source.key))} disabled={!analysisSources.length}>
-              Nur Befunde/PDFs anhaken
-            </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedAnalysisSourceKeys([])} disabled={!analysisSources.length}>
-              Auswahl leeren
-            </Button>
-            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
-              {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
-              Ausgewählte Befunde auswerten
-            </Button>
-          </div>
-          {analysisSources.length ? (
-            <div className="max-h-72 overflow-auto rounded-md border bg-background divide-y">
-              {analysisSources.map((source) => {
-                const checked = selectedAnalysisSourceKeys.includes(source.key);
-                return (
-                  <label key={source.key} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/40">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        setSelectedAnalysisSourceKeys((current) => e.target.checked
-                          ? Array.from(new Set([...current, source.key]))
-                          : current.filter((key) => key !== source.key));
-                      }}
-                      className="mt-1 h-4 w-4 accent-primary"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm break-words">{source.label}</span>
-                        <Badge variant="outline" className="text-[10px]">{source.group === "dokument" ? "PDF/Datei" : source.group === "kontext" ? "Kontext" : source.group === "recherche" ? "Recherche" : "Befund"}</Badge>
-                      </div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">
-                        {source.chars.toLocaleString("de-DE")} Zeichen · {source.lines.toLocaleString("de-DE")} Zeilen
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-md border border-dashed bg-background p-3 text-sm text-muted-foreground">
-              Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten“ hochladen und „Datei(en) auslesen & einfügen“ klicken.
             </div>
           )}
         </CardContent>
@@ -5088,57 +4945,6 @@ export function TherapyRecommendation() {
           {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
         </Button>
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleAnalyzeDocuments}
-                disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0}
-                variant="outline"
-                className="gap-2 border-sage-600 text-sage-700 hover:bg-sage-50"
-              >
-                {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-                {isAnalyzingDocs && docAnalysisStats?.total
-                  ? `Befund läuft: Teil ${docAnalysisStats.current}/${docAnalysisStats.total}`
-                  : isAnalyzingDocs
-                    ? "Befund-Auswertung läuft…"
-                    : `Ausgewählte Befunde auswerten (${analysisSourceTotals.selected})`}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
-              <p className="font-semibold mb-1">In 90 % der Fälle die richtige Wahl:</p>
-              <ul className="list-disc pl-4 space-y-1 mb-2">
-                <li><strong>Token/Coins sparen</strong> — die Anamnese ist meist schon analysiert und im Pseudonym-Verlauf gespeichert. Sie nochmal durchzujagen kostet bei P-2026-0006-Größe richtig Geld, ohne neue Erkenntnisse.</li>
-                <li><strong>Keine Datenverlust-Gefahr</strong> — bestehende Auswertungen/Checkpoints bleiben unangetastet. Der neue Befund wird nur ergänzend dazugerechnet.</li>
-                <li><strong>Schneller fertig</strong> — weniger Chunks = weniger Stellen an denen was schiefgehen kann (genau das Problem von gestern).</li>
-              </ul>
-              <p className="text-[10px] text-muted-foreground italic">Faustregel: Neuer Laborbefund / NLS-Befund kommt rein → „Nur Befund-Auswertung".</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleReAnalyzeAll}
-                disabled={isAnalyzingDocs || isStreaming}
-                variant="outline"
-                className="gap-2 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Alles neu auswerten
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-md p-4 text-xs leading-relaxed">
-              <p className="font-semibold mb-1">Nur in diesen Fällen:</p>
-              <ul className="list-disc pl-4 space-y-1 mb-2">
-                <li>die Anamnese sich <strong>wesentlich geändert</strong> hat (neue Medikamente, neue Diagnosen, neue Beschwerden)</li>
-                <li>der vorherige Lauf <strong>abgebrochen</strong> ist und du einen sauberen Neustart willst</li>
-                <li>du ein <strong>anderes KI-Modell</strong> testen willst</li>
-              </ul>
-              <p className="text-[10px] text-muted-foreground italic">Faustregel: Patient war 6 Monate weg und kommt mit komplett neuer Geschichte → „Alles neu auswerten".</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
         {isAnalyzingDocs && docAnalysisStats?.total && (
           <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-md border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
             <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
@@ -5349,27 +5155,6 @@ export function TherapyRecommendation() {
         </Card>
 
       )}
-
-      {/* 📎 Weitere Dokumente nachladen */}
-      <div className="rounded-md border border-sage-300/70 bg-sage-50/40 dark:bg-sage-950/10 p-3 flex items-start gap-3 flex-wrap">
-        <div className="flex-1 min-w-[260px]">
-          <div className="text-sm font-semibold flex items-center gap-1.5">
-            <FileUp className="h-4 w-4 text-sage-700" />
-            Weitere Befunde nachladen
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Patient hat zusätzliche Unterlagen geschickt? Hier hochladen — der extrahierte Text wird mit Zeitstempel an „Sonstige Voruntersuchungen" angehängt. Danach erneut <strong>„Nur Befund-Auswertung (HTML)"</strong> klicken, um die Auswertung zu ergänzen.
-          </p>
-        </div>
-        <div className="shrink-0">
-          <MultiDocUpload
-            pseudonymId={pseudonymId}
-            ocrMode="doctor"
-            label="📎 Nachgereichte textlesbare PDFs sicher einlesen"
-            onExtracted={appendNachgereicht}
-          />
-        </div>
-      </div>
 
       {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
       {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0 || extractedFromDocs.medications.length > 0) && (
