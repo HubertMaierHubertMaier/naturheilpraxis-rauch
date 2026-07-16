@@ -982,6 +982,10 @@ export type Database = {
         Returns: Json
       }
       redact_therapy_pii_text: { Args: { _value: string }; Returns: string }
+      strip_recently_deleted_document_markers: {
+        Args: { _data: Json; _pseudonym_id: string }
+        Returns: Json
+      }
       upsert_therapy_autosave_draft: {
         Args: {
           _eingabe_daten: Json
