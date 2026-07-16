@@ -499,26 +499,32 @@ const residualIdentifierCategories = (value: unknown) => directIdentifierCategor
   typeof value === "string" ? value : JSON.stringify(value),
 );
 
-const writeLatestBefundDisplay = (pseudonymId: string, snapshot: { html: string; progress: string; meta?: any; createdAt?: string }) => {
+type LatestBefundDisplay = { html: string; progress: string; reportKind: "befund_auswertung"; meta?: any; createdAt?: string };
+
+const writeLatestBefundDisplay = (pseudonymId: string, snapshot: Omit<LatestBefundDisplay, "reportKind">) => {
   try {
     const pid = normalizePseudonymId(pseudonymId);
     if (!pid || !snapshot.html.trim()) return;
-    const safeSnapshot = deidentifyClinicalData({ ...snapshot, html: deidentifyClinicalText(snapshot.html), pseudonymId: pid });
+    const safeSnapshot = deidentifyClinicalData({ ...snapshot, reportKind: "befund_auswertung", html: deidentifyClinicalText(snapshot.html), pseudonymId: pid });
     if (residualIdentifierCategories(safeSnapshot).length) return;
     localStorage.setItem(getLatestBefundDisplayKey(pid), JSON.stringify(safeSnapshot));
   } catch { /* lokale Anzeige-Sicherung optional */ }
 };
 
-const readLatestBefundDisplay = (pseudonymId: string): { html: string; progress: string; meta?: any; createdAt?: string } | null => {
+const readLatestBefundDisplay = (pseudonymId: string): LatestBefundDisplay | null => {
   try {
     const pid = normalizePseudonymId(pseudonymId);
     const raw = localStorage.getItem(getLatestBefundDisplayKey(pid));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (normalizePseudonymId(parsed?.pseudonymId || "") !== pid) return null;
+    if (parsed?.reportKind && parsed.reportKind !== "befund_auswertung" || parsed?.meta?.kind === "hp_therapy_check") {
+      localStorage.removeItem(getLatestBefundDisplayKey(pid));
+      return null;
+    }
     const html = deidentifyClinicalText(parsed?.html || "");
     if (!html) return null;
-    return { html, progress: String(parsed?.progress || ""), meta: parsed?.meta, createdAt: parsed?.createdAt };
+    return { html, progress: String(parsed?.progress || ""), reportKind: "befund_auswertung", meta: parsed?.meta, createdAt: parsed?.createdAt };
   } catch {
     return null;
   }
@@ -531,7 +537,10 @@ const readAnalysisCheckpoint = (key: string, fingerprint: string, totalChunks: n
     const checkpoint = deidentifyClinicalData(JSON.parse(raw)) as AnalysisCheckpoint;
     if (![2, 3].includes(checkpoint?.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
     if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
-    if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
+    if (!Number.isInteger(checkpoint.completedChunks) || checkpoint.completedChunks < 0 || checkpoint.completedChunks > totalChunks || checkpoint.partials.length < checkpoint.completedChunks) return null;
+    if (checkpoint.partials.some((partial) => {
+      try { assertStrictPartialAnalysis(String(partial)); return false; } catch { return true; }
+    })) return null;
     return checkpoint;
   } catch {
     return null;
@@ -550,7 +559,10 @@ const parseAnalysisCheckpoint = (value: unknown, fingerprint: string, totalChunk
   const checkpoint = deidentifyClinicalData(value) as AnalysisCheckpoint | null;
   if (!checkpoint || ![2, 3].includes(checkpoint.version) || checkpoint.fingerprint !== fingerprint || checkpoint.totalChunks !== totalChunks || !Array.isArray(checkpoint.partials)) return null;
   if (normalizePseudonymId(checkpoint.pseudonymId || "") !== normalizePseudonymId(pseudonymId)) return null;
-  if (checkpoint.partials.some((p) => /technisch nicht ausgewertet|technische Lücke/i.test(String(p)))) return null;
+  if (!Number.isInteger(checkpoint.completedChunks) || checkpoint.completedChunks < 0 || checkpoint.completedChunks > totalChunks || checkpoint.partials.length < checkpoint.completedChunks) return null;
+  if (checkpoint.partials.some((partial) => {
+    try { assertStrictPartialAnalysis(String(partial)); return false; } catch { return true; }
+  })) return null;
   return checkpoint;
 };
 
@@ -703,10 +715,12 @@ const normalizePartialAnalysisJson = (raw: string) => {
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
   const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
-  if (countAnalysisObjectItems(source) === 0) throw new Error("Inhaltlose Teilanalyse: keine extrahierten Daten aus diesem Teilpaket erhalten");
+  if (!ANALYSIS_REQUIRED_ARRAY_KEYS.every((key) => Array.isArray(source[key]))) throw new Error("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
+  if (!source.anamnese || typeof source.anamnese !== "object" || Array.isArray(source.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
+  const sourceAnamnese = source.anamnese as Record<string, unknown>;
+  if (!ANALYSIS_ANAMNESE_KEYS.every((key) => Array.isArray(sourceAnamnese[key]))) throw new Error("Teilanalysen-JSON hat nicht alle Anamnese-Listen");
   const normalized: Record<string, unknown> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
-  const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese as Record<string, unknown> : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   const serialized = JSON.stringify(deidentifyClinicalData(normalized));
   const residualIdentifiers = residualIdentifierCategories(serialized);
@@ -1017,7 +1031,7 @@ const prepareAnalysisChunks = (blocks: AnalysisDocChunk[]): PreparedAnalysis => 
   };
 };
 
-const assertStrictPartialAnalysis = (partial: string) => {
+function assertStrictPartialAnalysis(partial: string) {
   if (/technisch nicht ausgewertet|technische Lücke|Teilpaket konnte technisch/i.test(partial)) {
     throw new Error("Teilpaket wurde nur als technische Lücke beantwortet – strikte Auswertung stoppt hier.");
   }
@@ -1026,7 +1040,7 @@ const assertStrictPartialAnalysis = (partial: string) => {
   } catch (error) {
     throw new Error(`Ungültige/unkomplette Teilanalyse: ${(error as Error).message}`);
   }
-};
+}
 
 export function TherapyRecommendation() {
   const [pseudonymId, setPseudonymId] = useState("");
@@ -1116,6 +1130,7 @@ export function TherapyRecommendation() {
   const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const docAbortRef = useRef<AbortController | null>(null);
+  const patientScopeGenerationRef = useRef(0);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -1125,6 +1140,7 @@ export function TherapyRecommendation() {
   const autoSaveTimerRef = useRef<number | null>(null);
   const autoSaveRunIdRef = useRef(0);
   const autoSaveSuppressedRef = useRef(false);
+  const archiveDeleteRunIdRef = useRef(0);
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
   const lastAutoSavedPayloadRef = useRef("");
@@ -1369,6 +1385,8 @@ export function TherapyRecommendation() {
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     let loadedFromCloud = false;
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -1380,6 +1398,7 @@ export function TherapyRecommendation() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (draftError) throw draftError;
+      if (!scopeIsCurrent()) return;
 
       const draftRow = (draftData as any)?.draft;
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
@@ -1397,6 +1416,7 @@ export function TherapyRecommendation() {
         await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Auto-Sicherung", draftInput, {
           draft_updated_at: draftRow?.updated_at,
         }));
+        if (!scopeIsCurrent()) return;
         setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
       }
@@ -1406,6 +1426,7 @@ export function TherapyRecommendation() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
+      if (!scopeIsCurrent()) return;
 
       const snapshotDocumentInventory = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.snapshot?.document_inventory);
       if (snapshotDocumentInventory.length) setLoadedDocumentInventory((current) => mergeDocumentInventory(snapshotDocumentInventory, current));
@@ -1427,6 +1448,7 @@ export function TherapyRecommendation() {
           snapshot_updated_at: snapshot.snapshotUpdatedAt,
           draft_updated_at: draftRow?.updated_at,
         }));
+        if (!scopeIsCurrent()) return;
         setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
       }
@@ -1437,11 +1459,13 @@ export function TherapyRecommendation() {
           await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Lokale Browser-Sicherung", normalizedLocal, {
             local_saved_at: localData?.savedAt,
           }));
+          if (!scopeIsCurrent()) return;
           setHistoryRefresh((n) => n + 1);
         }
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
     }
@@ -1450,6 +1474,8 @@ export function TherapyRecommendation() {
   const refreshDocumentInventory = useCallback(async (showToast = true) => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     setIsRefreshingDocumentInventory(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -1460,13 +1486,15 @@ export function TherapyRecommendation() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
+      if (!scopeIsCurrent()) return;
       const next = normalizeDocumentInventory((data as any)?.document_inventory || (data as any)?.draft?.document_inventory);
       setLoadedDocumentInventory((current) => mergeDocumentInventory(next, current));
       if (showToast) toast({ title: "PDF-Archiv aktualisiert", description: next.length ? `${next.filter((doc) => doc.archivePath).length} archivierte Datei(en) gefunden.` : "Keine archivierten PDFs für dieses Pseudonym gefunden." });
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       if (showToast) toast({ title: "PDF-Archiv nicht geladen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
     } finally {
-      setIsRefreshingDocumentInventory(false);
+      if (scopeIsCurrent()) setIsRefreshingDocumentInventory(false);
     }
   }, [pseudonymId, toast]);
 
@@ -1525,13 +1553,17 @@ export function TherapyRecommendation() {
     };
   }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
+  const manualDiagnosisContext = useMemo(() => manualDiagnosen
+    .filter((entry) => entry.diagnose.trim())
+    .map((entry) => [entry.icd10, entry.diagnose, entry.begruendung].filter(Boolean).join(" | "))
+    .join("\n"), [manualDiagnosen]);
   const therapySafetyContext = useMemo<TherapySafetyContext>(() => ({
     medications: medikamente,
-    conditions: [erkrankung, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
+    conditions: [erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
     symptoms: [symptome, metatronHeel].filter(Boolean).join("\n"),
     pregnancy: schwanger,
     age: alter,
-  }), [medikamente, erkrankung, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett, symptome, metatronHeel, schwanger, alter]);
+  }), [medikamente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett, symptome, metatronHeel, schwanger, alter]);
   const parsedTherapyResult = useMemo(() => parseTherapyMarkdown(result), [result]);
   const safetyWarningsByKey = useMemo(
     () => buildRemedySafetyMap(parsedTherapyResult, therapySafetyContext, wikiRemedies),
@@ -1948,10 +1980,12 @@ export function TherapyRecommendation() {
     setPendingDirectBefundFiles([]);
     setLoadedDocumentInventory([]);
     setLoadingArchiveDocumentPath(null);
+    setDeletingArchiveDocumentPath(null);
     setHpCheckHtml("");
     setHpCheckMarkdown("");
     setHpCheckModelLabel("");
     setHpCheckTimestamp("");
+    setHpCheckLoading(false);
   }, []);
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
@@ -1970,6 +2004,24 @@ export function TherapyRecommendation() {
 
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(cleanValue);
+    if (previous !== next) {
+      patientScopeGenerationRef.current += 1;
+      autoSaveRunIdRef.current += 1;
+      archiveDeleteRunIdRef.current += 1;
+      autoSaveSuppressedRef.current = false;
+      abortRef.current?.abort();
+      docAbortRef.current?.abort();
+      abortRef.current = null;
+      docAbortRef.current = null;
+      setIsStreaming(false);
+      setIsAnalyzingDocs(false);
+      setPendingDirectBefundFiles([]);
+      setExtractedFromDocs(null);
+      setLoadingArchiveDocumentPath(null);
+      setDeletingArchiveDocumentPath(null);
+      setIsRefreshingDocumentInventory(false);
+      setHpCheckLoading(false);
+    }
     const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
@@ -2125,6 +2177,8 @@ export function TherapyRecommendation() {
   const restoreLatestBefundForPid = useCallback(async (pidValue: string, options?: { quiet?: boolean }) => {
     const pid = normalizePseudonymId(pidValue);
     if (!isPatientScopedStorageReady(pid) || isAnalyzingDocs) return false;
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
 
     let localSnapshot = readLatestBefundDisplay(pid);
     let localTs = localSnapshot?.createdAt ? Date.parse(localSnapshot.createdAt) : 0;
@@ -2137,6 +2191,7 @@ export function TherapyRecommendation() {
         .from("therapy_sessions")
         .select("id, pseudonym_id, created_at, befund_html, befund_meta")
         .eq("pseudonym_id", pid)
+        .eq("kind", "befund_auswertung")
         .not("befund_html", "is", null)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -2150,6 +2205,7 @@ export function TherapyRecommendation() {
         .limit(1);
       latestCheckpoint = Array.isArray(checkpointRows) ? checkpointRows[0] : null;
     } catch { /* offline → lokal weiter unten */ }
+    if (!scopeIsCurrent()) return false;
 
     let cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
     let cloudHtml = sanitizeFinalAnalysisHtml(String(cloudRow?.befund_html || ""));
@@ -2229,11 +2285,13 @@ export function TherapyRecommendation() {
     const ok = window.confirm(
       `„Alles neu auswerten" für ${pid}\n\n` +
       `• Löscht alle lokalen und Cloud-Checkpoints dieser Befundauswertung\n` +
-      `• Löscht außerdem den zuletzt gespeicherten fertigen Befundbericht in der Cloud (sonst wird er automatisch wieder geladen)\n` +
+      `• Blendet den lokalen Anzeige-Cache aus; fertige Berichte im Patientenverlauf bleiben erhalten\n` +
       `• Startet danach die strikte Befund-Auswertung komplett neu\n\n` +
       `Hinweis: Bild-/Scan-Uploads (Laborfotos, Arztbrief-Scans) müssen separat über „Laborbild auswerten" / „Arztbericht-Bild auswerten" neu durch die OCR geschickt werden – nur dort werden die neuen Datumsangaben pro Zeile erzeugt.\n\nFortfahren?`
     );
     if (!ok) return;
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === normalizePseudonymId(pid);
 
     try {
       // 1) Lokale Checkpoints + lokalen Anzeige-Snapshot für dieses Pseudonym entfernen
@@ -2259,21 +2317,13 @@ export function TherapyRecommendation() {
           .eq("pseudonym_id", pid)
           .eq("kind", "befund_checkpoint");
       } catch { /* Cloud-Reset optional */ }
-
-      // 2b) Letzten fertigen Cloud-Befund (befund_html) entfernen, sonst lädt restoreLatestBefundForPid ihn sofort wieder
-      try {
-        await (supabase as any)
-          .from("therapy_sessions")
-          .delete()
-          .eq("pseudonym_id", pid)
-          .not("befund_html", "is", null);
-      } catch { /* Cloud-Reset optional */ }
+      if (!scopeIsCurrent()) return;
 
       checkpointSessionIdRef.current = null;
 
       toast({
         title: "Cache geleert",
-        description: `${toDelete.length} lokale Sicherungen + Cloud-Checkpoints + alter fertiger Bericht für ${pid} entfernt. Auswertung startet neu …`,
+        description: `${toDelete.length} lokale Sicherungen + Cloud-Checkpoints für ${pid} entfernt. Fertige Verlaufsberichte bleiben erhalten; Auswertung startet neu …`,
       });
 
       // 3) Strikte Auswertung neu starten
@@ -2288,6 +2338,9 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async () => {
+    const analysisPid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === analysisPid;
     const clickedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisHtml("");
@@ -2518,6 +2571,8 @@ export function TherapyRecommendation() {
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
       }
+      partials.forEach(assertStrictPartialAnalysis);
+      if (partials.length < chunks.length) throw new Error("Der Analyse-Zwischenstand ist unvollständig; die Abschluss-Zusammenführung wurde blockiert.");
       const extractedItemCount = countPartialExtractionItems(partials);
       if (!partials.length || extractedItemCount === 0) {
         await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: 0, partials: [], duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
@@ -2618,6 +2673,7 @@ export function TherapyRecommendation() {
             body: JSON.stringify({
               analysisMode: "final",
               partials,
+              expectedChunks: chunks.length,
               duplicateNotes: prepared.duplicateNotes,
               totalChars,
               alter: alter.trim() || undefined,
@@ -2692,6 +2748,7 @@ export function TherapyRecommendation() {
       }
 
       full = sanitizeFinalAnalysisHtml(full);
+      if (!scopeIsCurrent()) return;
       setDocAnalysisHtml(full);
       writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
@@ -2776,6 +2833,7 @@ export function TherapyRecommendation() {
       }
 
     } catch (e) {
+      if (!scopeIsCurrent()) return;
       const msg = (e as Error).message;
       if ((e as Error).name === "AbortError" || docController.signal.aborted) {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
@@ -2787,8 +2845,10 @@ export function TherapyRecommendation() {
         await logTherapyEvent(pseudonymId, "befund_html_failed", { error: msg });
       }
     } finally {
-      setIsAnalyzingDocs(false);
-      docAbortRef.current = null;
+      if (scopeIsCurrent()) {
+        setIsAnalyzingDocs(false);
+        docAbortRef.current = null;
+      }
     }
   };
 
@@ -2889,8 +2949,8 @@ export function TherapyRecommendation() {
 
 
   // Weitere Dokumente nachladen: extrahierter Text wird mit Zeitstempel an "Sonstige Voruntersuchungen" angehängt
-  const appendNachgereicht = (text: string) => {
-    if (!text.trim()) return;
+  const appendNachgereicht = (text: string, sourcePseudonymId: string) => {
+    if (!text.trim() || normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
     const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     const header = `\n\n=== 📎 Nachgereichte Befunde · ${ts} ===\n`;
     setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, `${header}${text}`));
@@ -2934,21 +2994,29 @@ export function TherapyRecommendation() {
       toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auslesen.", variant: "destructive" });
       return;
     }
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const queue = pendingDirectBefundFiles.filter((item) => item.status !== "done");
     if (!queue.length) return;
     const successful: Array<{ pages?: number; chars?: number; removedIdentifierCategories?: string[] }> = [];
     for (const item of queue) {
+      if (!scopeIsCurrent()) return;
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
-        const extracted = await extractClinicalDocumentText(item.file, "doctor", toast);
+        const extracted = await extractClinicalDocumentText(item.file, "doctor", (message) => {
+          if (scopeIsCurrent()) toast(message);
+        });
+        if (!scopeIsCurrent()) return;
         setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, extracted.text));
         successful.push({ pages: extracted.pages, chars: extracted.chars, removedIdentifierCategories: extracted.removedIdentifierCategories });
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "done", chars: extracted.chars, pages: extracted.pages } : row));
       } catch (error: any) {
+        if (!scopeIsCurrent()) return;
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", error: error?.message || "Fehler beim Auslesen" } : row));
       }
     }
     if (successful.length) {
+      if (!scopeIsCurrent()) return;
       const identifierCategories = Array.from(new Set(successful.flatMap((item) => item.removedIdentifierCategories || [])));
       await logTherapyEvent(pid, "documents_uploaded", {
         document_count: successful.length,
@@ -2958,6 +3026,7 @@ export function TherapyRecommendation() {
         original_archived: false,
         privacy_mode: "local-deidentification",
       });
+      if (!scopeIsCurrent()) return;
       toast({ title: "PDFs datenschutzbereinigt übernommen", description: `${successful.length} Datei(en) stehen zum Anhaken bereit; Originale wurden nicht archiviert.` });
       setHistoryRefresh((n) => n + 1);
     }
@@ -2966,12 +3035,18 @@ export function TherapyRecommendation() {
   const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
     if (!doc.archivePath) return;
     const pid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     setLoadingArchiveDocumentPath(doc.archivePath);
     try {
       const { data: blob, error } = await supabase.storage.from("therapy-documents").download(doc.archivePath);
       if (error || !blob) throw error || new Error("Archivdatei konnte nicht geladen werden.");
+      if (!scopeIsCurrent()) return;
       const file = new File([blob], doc.name || doc.archivePath.split("/").pop() || "befund.pdf", { type: blob.type || "application/pdf" });
-      const extracted = await extractClinicalDocumentText(file, "doctor", toast);
+      const extracted = await extractClinicalDocumentText(file, "doctor", (message) => {
+        if (scopeIsCurrent()) toast(message);
+      });
+      if (!scopeIsCurrent()) return;
       setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, extracted.text));
       await logTherapyEvent(pid, "documents_uploaded", {
         document_count: 1,
@@ -2981,22 +3056,29 @@ export function TherapyRecommendation() {
         privacy_mode: "local-deidentification",
         note: "Bestehende Archivdatei lokal ausgelesen; Dateiname und Speicherpfad nicht erneut protokolliert.",
       });
+      if (!scopeIsCurrent()) return;
       toast({ title: "Archiv-PDF datenschutzbereinigt übernommen", description: "Die Datei steht als neutral benannte Quelle bereit." });
       setHistoryRefresh((n) => n + 1);
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       toast({ title: "Archiv-PDF nicht auslesbar", description: error?.message || "Bitte Datei erneut direkt auswählen.", variant: "destructive" });
     } finally {
-      setLoadingArchiveDocumentPath(null);
+      if (scopeIsCurrent()) setLoadingArchiveDocumentPath(null);
     }
   };
 
   const deleteArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
     if (!doc.archivePath) return;
     const pid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
     const confirmed = window.confirm(
       `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt.\nZusätzlich werden alle eingefügten Textblöcke dieser Datei aus den Befund-Feldern (Sonstige Voruntersuchungen, Arztbericht, Metatron/NLS, Labor, Perplexity) entfernt.`,
     );
     if (!confirmed) return;
+    const deleteRunId = ++archiveDeleteRunIdRef.current;
+    const scopeIsCurrent = () => deleteRunId === archiveDeleteRunIdRef.current
+      && scopeGeneration === patientScopeGenerationRef.current
+      && pseudonymIdRef.current === pid;
     autoSaveSuppressedRef.current = true;
     autoSaveRunIdRef.current += 1;
     if (autoSaveTimerRef.current) {
@@ -3006,9 +3088,11 @@ export function TherapyRecommendation() {
     setDeletingArchiveDocumentPath(doc.archivePath);
     try {
       const { data: archivedBlob, error: downloadError } = await supabase.storage.from("therapy-documents").download(doc.archivePath);
+      if (!scopeIsCurrent()) return;
       if (downloadError || !archivedBlob) throw downloadError || new Error("Archivdatei konnte vor dem sicheren Löschen nicht gelesen werden.");
       const archivedFile = new File([archivedBlob], doc.name || "befund.pdf", { type: archivedBlob.type || "application/pdf" });
       const extracted = await extractClinicalDocumentText(archivedFile, "doctor");
+      if (!scopeIsCurrent()) return;
       const insertedDocumentMarker = extractMarkerName(extracted.text);
       if (!insertedDocumentMarker) throw new Error("Der zugehörige neutrale Dokumentmarker konnte nicht rekonstruiert werden. Die Archivdatei wurde nicht gelöscht.");
 
@@ -3019,6 +3103,7 @@ export function TherapyRecommendation() {
         "admin_strip_document_from_patient_context",
         { _pseudonym_id: pid, _filename: insertedDocumentMarker, _archive_path: doc.archivePath || "" },
       );
+      if (!scopeIsCurrent()) return;
       if (stripError) throw new Error(`Server-Aufräumen fehlgeschlagen: ${stripError.message}`);
       const r = stripResult as { snapshot_updated?: number; drafts_updated?: number; removed_fields?: number } | null;
       if (!r || Number(r.removed_fields || 0) < 1) {
@@ -3027,6 +3112,7 @@ export function TherapyRecommendation() {
       const serverStripInfo = ` Snapshot: ${r.snapshot_updated ?? 0} · Draft: ${r.drafts_updated ?? 0} · bereinigte Felder: ${r.removed_fields}.`;
 
       const { error: storageError } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
+      if (!scopeIsCurrent()) return;
       if (storageError) throw storageError;
       // Textblöcke aus allen Befund-Feldern rausräumen — Autosave persistiert dann den bereinigten Snapshot.
       const markerOrName = insertedDocumentMarker;
@@ -3044,14 +3130,18 @@ export function TherapyRecommendation() {
         files: [{ name: doc.name, archivePath: doc.archivePath }],
         note: `Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.${serverStripInfo}`,
       });
+      if (!scopeIsCurrent()) return;
       toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv, Snapshot und Befund-Feldern entfernt.` });
       setHistoryRefresh((n) => n + 1);
       refreshDocumentInventory(false);
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       toast({ title: "Löschen fehlgeschlagen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
     } finally {
-      autoSaveSuppressedRef.current = false;
-      setDeletingArchiveDocumentPath(null);
+      if (deleteRunId === archiveDeleteRunIdRef.current) {
+        autoSaveSuppressedRef.current = false;
+        if (scopeIsCurrent()) setDeletingArchiveDocumentPath(null);
+      }
     }
   };
 
@@ -3077,14 +3167,19 @@ export function TherapyRecommendation() {
   };
 
   const appendOwnTherapyFile = async (file: File) => {
+    const sourcePid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === sourcePid;
     try {
       const text = await extractOwnTherapyFileText(file);
+      if (!scopeIsCurrent()) return;
       if (!text) throw new Error("Datei enthält keinen auslesbaren Text.");
       const ts = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
       const block = `=== Eigene Therapie-/Verordnungs-Vorlage · ${file.name} · ${ts} ===\n${text}`;
       setEigeneTherapieVorlage((prev) => (prev.trim() ? `${prev.trim()}\n\n${block}` : block));
       toast({ title: "Therapie-Vorlage übernommen", description: `${text.length.toLocaleString("de-DE")} Zeichen aus ${file.name} eingefügt.` });
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       toast({ title: "Datei konnte nicht gelesen werden", description: error?.message || "Unbekannter Fehler", variant: "destructive" });
     }
   };
@@ -3147,6 +3242,8 @@ export function TherapyRecommendation() {
   const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     setIsLoadingMannayanOrders(true);
     try {
       const { data, error } = await (supabase as any)
@@ -3156,6 +3253,7 @@ export function TherapyRecommendation() {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
+      if (!scopeIsCurrent()) return;
       const orders = ((data || []) as any[]).map((row) => ({
         orderNumber: row.order_number || "—",
         createdAt: row.created_at || "",
@@ -3171,9 +3269,10 @@ export function TherapyRecommendation() {
       setMannayanOrders(orders);
       if (orders.length) toast({ title: "Mannayan-Bestellungen geladen", description: `${orders.length} Bestellung(en) für ${pid} werden in der Therapieprüfung berücksichtigt.` });
     } catch (error: any) {
+      if (!scopeIsCurrent()) return;
       toast({ title: "Mannayan-Bestellungen nicht geladen", description: error?.message || "Bitte später erneut versuchen.", variant: "destructive" });
     } finally {
-      setIsLoadingMannayanOrders(false);
+      if (scopeIsCurrent()) setIsLoadingMannayanOrders(false);
     }
   }, [pseudonymId, toast]);
 
@@ -3190,9 +3289,13 @@ export function TherapyRecommendation() {
 
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
+    const submitPid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === submitPid;
     const belastungenText = formatPathogensForAI(pathogens);
     const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage].some((x) => x.trim()) || mannayanOrders.length > 0;
-    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc) {
+    const hasManualDiagnosis = manualDiagnosen.some((entry) => entry.diagnose.trim());
+    if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc && !hasManualDiagnosis) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
       return;
     }
@@ -3243,6 +3346,9 @@ export function TherapyRecommendation() {
             belastungen: belastungenText,
             symptome: symptome.trim(),
             erkrankung: erkrankung.trim(),
+            manualDiagnosen: manualDiagnosen
+              .filter((entry) => entry.diagnose.trim())
+              .map(({ icd10, diagnose, begruendung }) => ({ icd10, diagnose, begruendung })),
             alter: alter.trim() || undefined,
             geschlecht: geschlecht || undefined,
             groesseCm: groesseCm.trim() || undefined,
@@ -3336,6 +3442,7 @@ export function TherapyRecommendation() {
             }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
+              if (!scopeIsCurrent()) return;
               accumulated += content;
               setResult(accumulated);
               // Auto-scroll
@@ -3351,6 +3458,7 @@ export function TherapyRecommendation() {
       }
 
       if (!completed && accumulated.trim()) {
+        if (!scopeIsCurrent()) return;
         setResult(accumulated);
         toast({
           title: "Zwischenstand gesichert",
@@ -3386,6 +3494,7 @@ export function TherapyRecommendation() {
         }
       }
     } catch (e: any) {
+      if (!scopeIsCurrent()) return;
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
         if (!isErweitern) await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: e.message, duration_ms: Date.now() - fullAnalysisStartedAt });
@@ -3393,8 +3502,10 @@ export function TherapyRecommendation() {
         await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: "Vom Benutzer abgebrochen", duration_ms: Date.now() - fullAnalysisStartedAt });
       }
     } finally {
-      setIsStreaming(false);
-      abortRef.current = null;
+      if (scopeIsCurrent()) {
+        setIsStreaming(false);
+        abortRef.current = null;
+      }
     }
   };
 
@@ -4373,9 +4484,9 @@ export function TherapyRecommendation() {
                       pseudonymId={pseudonymId}
                       ocrMode="doctor"
                       label="📂 Textlesbare PDFs sicher einlesen"
-                      onExtracted={(t) => {
-                        const next = sonstigeUntersuchungen ? `${sonstigeUntersuchungen.trim()}\n\n${t}` : t;
-                        setSonstigeUntersuchungen(next);
+                      onExtracted={(t, sourcePseudonymId) => {
+                        if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
+                        setSonstigeUntersuchungen((previous) => previous ? `${previous.trim()}\n\n${t}` : t);
                       }}
                     />
                   </div>
@@ -4475,6 +4586,9 @@ export function TherapyRecommendation() {
                             toast({ title: "Leeres Feld", description: "Bitte zuerst deinen Therapieplan eingeben.", variant: "destructive" });
                             return;
                           }
+                          const checkPid = normalizePseudonymId(pseudonymId);
+                          const scopeGeneration = patientScopeGenerationRef.current;
+                          const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === checkPid;
                           setHpCheckLoading(true);
                           setHpCheckHtml("");
                           setHpCheckMarkdown("");
@@ -4484,7 +4598,7 @@ export function TherapyRecommendation() {
                               .filter((s) => s.trim()).join("\n");
                             const { data, error } = await supabase.functions.invoke("check-hp-therapy", {
                               body: {
-                                pseudonymId: pseudonymId.trim(),
+                                pseudonymId: checkPid,
                                 meineTherapie: eigeneTherapieVorlage,
                                 apothekerRezept,
                                 zusatzTherapie,
@@ -4498,6 +4612,7 @@ export function TherapyRecommendation() {
                                 usePro: useProModel,
                               },
                             });
+                            if (!scopeIsCurrent()) return;
                             if (error) throw error;
                             const payload = data as { html?: string; markdown?: string; modelLabel?: string; sessionId?: string; error?: string };
                             if (payload?.error) throw new Error(payload.error);
@@ -4508,9 +4623,10 @@ export function TherapyRecommendation() {
                             setHpCheckTimestamp(new Date().toLocaleString("de-DE"));
                             toast({ title: "Prüfung fertig", description: "Bewertung deiner Therapie steht unten." });
                           } catch (e) {
+                            if (!scopeIsCurrent()) return;
                             toast({ title: "Prüfung fehlgeschlagen", description: e instanceof Error ? e.message : "Unbekannter Fehler", variant: "destructive" });
                           } finally {
-                            setHpCheckLoading(false);
+                            if (scopeIsCurrent()) setHpCheckLoading(false);
                           }
                         }}
                       >
@@ -4545,7 +4661,8 @@ export function TherapyRecommendation() {
                           pseudonymId={pseudonymId}
                           ocrMode="doctor"
                           label="Apotheker-Rezept als textlesbare PDF"
-                          onExtracted={(text) => {
+                          onExtracted={(text, sourcePseudonymId) => {
+                            if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
                             setApothekerRezept((prev) => (prev ? `${prev}\n\n${text}` : text).trim());
                             toast({ title: "✓ Apotheker-Rezept übernommen", description: "Text extrahiert und ins Feld eingefügt." });
                           }}

@@ -11,7 +11,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -1129,14 +1129,14 @@ const Auth: React.FC = () => {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Shield className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl">
+            <h1 className="text-2xl font-semibold leading-none tracking-tight">
               {isExistingPatient 
                 ? (language === 'de' ? 'Bestehender Patient' : 'Existing Patient')
                 : patientType === 'new_patient'
                   ? (language === 'de' ? 'Neupatient – Registrierung' : 'New Patient – Registration')
                   : (language === 'de' ? 'Praxis-Login' : 'Practice Login')
               }
-            </CardTitle>
+            </h1>
             <CardDescription>
               {isExistingPatient
                 ? (language === 'de' 

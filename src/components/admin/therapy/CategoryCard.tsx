@@ -73,6 +73,7 @@ interface CategoryCardProps {
   wikiEntries?: Array<{
     id?: string;
     title: string;
+    entryKind?: string;
     reviewStatus?: string;
     evidenceLevel?: string;
     dosageStatus?: string;
@@ -159,8 +160,9 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
                      {wikiId && (
                        <div className="mt-2 rounded border border-blue-300/60 bg-blue-50/60 p-2 text-[11px] leading-snug text-blue-950 dark:border-blue-900/60 dark:bg-blue-950/20 dark:text-blue-100">
                          <div className="font-mono break-all"><strong>Wiki-ID:</strong> {wikiId}</div>
-                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                           <span><strong>Review:</strong> {wikiEntry?.reviewStatus || "nicht auflösbar"}</span>
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                            <span><strong>Art:</strong> {wikiEntry?.entryKind || "unbekannt"}</span>
+                            <span><strong>Review:</strong> {wikiEntry?.reviewStatus || "nicht auflösbar"}</span>
                            <span><strong>Evidenz:</strong> {wikiEntry?.evidenceLevel || "unrated"}</span>
                            <span><strong>Dosierung:</strong> {wikiEntry?.dosageStatus || "unverified"}</span>
                          </div>

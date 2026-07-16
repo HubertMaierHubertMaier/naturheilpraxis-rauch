@@ -12,6 +12,19 @@ afterEach(() => {
 });
 
 describe("App public route smoke tests", () => {
+  it("renders the public login with a primary heading", async () => {
+    renderAppAtRoute("/auth");
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /Praxis-Login/i,
+      })
+    ).toBeInTheDocument();
+
+    await expectNoAppSmokeConsoleWarnings();
+  });
+
   it("renders the public privacy page at /datenschutz with an accessible main landmark", async () => {
     renderAppAtRoute("/datenschutz");
 

@@ -76,6 +76,15 @@ describe("laboratory trend analysis", () => {
     expect(result.map((item) => item.wert)).toEqual(["0,10", "0,24"]);
   });
 
+  it("pairs a flattened multi-date total-testosterone series", () => {
+    const source = "01.01.2031 10.07.2031 Gesamt-Testosteron 0,15 1,20 ng/ml";
+    const result = extractSensitiveLabValuesFromText(source, "Synthetischer Verlauf");
+
+    expect(result).toHaveLength(2);
+    expect(result.map((item) => item.datum)).toEqual(["01.01.2031", "10.07.2031"]);
+    expect(result.map((item) => item.wert)).toEqual(["0,15", "1,20"]);
+  });
+
   it("does not promote a PSA reference limit to a dated measurement", () => {
     const source = "01.01.2031 10.07.2031 PSA 0,24 <4,0 ng/ml";
     const result = extractSensitiveLabValuesFromText(source, "Synthetischer Verlauf");
@@ -400,7 +409,11 @@ describe("laboratory trend analysis", () => {
     expect(getAndrogenDeprivationPhase("Prostatakarzinom; Hormontherapie erwogen; Physiotherapie aktiv")).toBe("none");
     expect(getAndrogenDeprivationPhase("Prostatakarzinom. Leuprorelin, aktuell laufend.")).toBe("active");
     expect(getAndrogenDeprivationPhase("Prostatakarzinom. Androgendeprivation begonnen und aktuell laufend.")).toBe("active");
-    expect(getAndrogenDeprivationPhase("Prostatakarzinom. Hormontherapie pausiert, danach wieder aktiv.")).toBe("active");
+    expect(getAndrogenDeprivationPhase("Hormontherapie bei Prostatakarzinom pausiert, danach wieder aktiv.")).toBe("active");
+    expect(getAndrogenDeprivationPhase({
+      diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }],
+      medicationsTherapies: [{ name: "Hormontherapie", indikation: "Mammakarzinom", status: "beendet" }],
+    })).toBe("none");
   });
 
   it("does not infer a treated-prostate-cancer PSA rise without two distinct valid dates", () => {
@@ -552,6 +565,40 @@ describe("laboratory trend analysis", () => {
     expect(listMigration).toContain("jsonb_array_length(ts.befund_meta->'lab_values_v1')");
   });
 
+  it("preserves completed report history and invalidates stale patient-scoped work", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    expect(source).toContain('.eq("kind", "befund_auswertung")');
+    expect(source).not.toMatch(/\.delete\(\)[\s\S]{0,120}\.eq\("pseudonym_id", pid\)[\s\S]{0,120}\.not\("befund_html"/);
+    expect(source).toContain("fertige Berichte im Patientenverlauf bleiben erhalten");
+    expect(source).toContain("patientScopeGenerationRef.current += 1");
+    expect(source).toContain("scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid");
+    expect(source).toContain("docAbortRef.current?.abort()");
+    expect(source).toContain("if (!scopeIsCurrent()) return");
+  });
+
+  it("includes imported diagnoses in safety and recommendation context and rejects corrupt checkpoints", () => {
+    const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const analysisSource = readFileSync(resolve(process.cwd(), "supabase/functions/analyze-documents/index.ts"), "utf8");
+    const recommendationSource = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
+    expect(clientSource).toContain("manualDiagnosisContext");
+    expect(clientSource).toContain("conditions: [erkrankung, manualDiagnosisContext");
+    expect(clientSource).toContain("manualDiagnosen: manualDiagnosen");
+    expect(clientSource).toContain("const hasManualDiagnosis = manualDiagnosen.some");
+    expect(clientSource).toContain("!hasAnyDoc && !hasManualDiagnosis");
+    expect(clientSource).toContain("partials.forEach(assertStrictPartialAnalysis)");
+    expect(clientSource).toContain("checkpoint.partials.length < checkpoint.completedChunks");
+    expect(clientSource).toContain("expectedChunks: chunks.length");
+    expect(clientSource).toContain('reportKind: "befund_auswertung"');
+    expect(clientSource).toContain('parsed?.meta?.kind === "hp_therapy_check"');
+    expect(clientSource).toContain("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
+    expect(analysisSource).toContain("validateNormalizedPartialAnalysisJson");
+    expect(analysisSource).toContain("Ungültiger Zwischenstand");
+    expect(analysisSource).toContain("Unvollständige Teilanalysen zur Zusammenführung übergeben");
+    expect(analysisSource).toContain("rawPartials.length < expectedChunks");
+    expect(recommendationSource).toContain("manualDiagnosesText");
+    expect(recommendationSource).toContain("Manuell/aus Befund übernommene Diagnosen");
+  });
+
   it("does not archive original analysis documents or send scans to external OCR", () => {
     const uploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/MultiDocUpload.tsx"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
@@ -565,7 +612,12 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
     expect(uploadSource).toContain("📄 Dokument-${documentId}");
     expect(uploadSource).toContain('crypto.subtle.digest("SHA-256"');
+    expect(uploadSource).toContain("extractionRunRef.current");
+    expect(uploadSource).toContain("onExtracted(combined.trim(), sourcePseudonymId)");
+    expect(uploadSource).not.toContain('trim().toUpperCase()');
+    expect(uploadSource).toContain("if (scopeIsCurrent()) toast(message)");
     expect(clientSource).toContain("directIdentifierCategories");
+    expect(clientSource).toContain("normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current");
     expect(clientSource).toContain("insertedDocumentMarker = extractMarkerName(extracted.text)");
     expect(clientSource).toContain("_filename: insertedDocumentMarker");
     expect(clientSource).toContain("Die Archivdatei wurde nicht gelöscht");

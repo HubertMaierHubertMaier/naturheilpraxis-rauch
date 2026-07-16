@@ -144,7 +144,7 @@ export default function Datenschutz() {
           <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-3">
             <Shield className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="font-serif text-3xl font-bold text-foreground md:text-4xl">
+          <h1 className="break-words font-serif text-3xl font-bold text-foreground md:text-4xl">
             {t("Patienteninformationen zum Datenschutz", "Patient Privacy Information")}
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -223,14 +223,14 @@ export default function Datenschutz() {
         <div className="mx-auto max-w-4xl space-y-6">
           {sections.map((section, index) => (
             <Card key={index} className="border-sage-200">
-              <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <CardHeader className="flex min-w-0 flex-row items-center gap-4 pb-2">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
                   <section.icon className="h-5 w-5 text-primary" />
                 </div>
-                <CardTitle className="font-serif text-xl">{section.title}</CardTitle>
+                <CardTitle className="min-w-0 break-words font-serif text-xl">{section.title}</CardTitle>
               </CardHeader>
-              <CardContent className="pl-[4.5rem]">
-                <div className="text-muted-foreground leading-relaxed whitespace-pre-line">{section.content}</div>
+              <CardContent className="pl-6 sm:pl-[4.5rem]">
+                <div className="break-words text-muted-foreground leading-relaxed whitespace-pre-line">{section.content}</div>
               </CardContent>
             </Card>
           ))}

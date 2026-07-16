@@ -86,6 +86,7 @@ describe("therapy safety", () => {
     const wikiEntries = [{
       id: "11111111-1111-4111-8111-111111111111",
       title: "Testmittel",
+      entryKind: "remedy",
       reviewStatus: "reviewed",
       dosageStatus: "verified",
       contraindications: ["Hypertonie"],
@@ -129,7 +130,7 @@ describe("therapy safety", () => {
     const categorySource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/CategoryCard.tsx"), "utf8");
     const recommendationSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
 
-    for (const label of ["Wiki-ID:", "Review:", "Evidenz:", "Dosierung:", "Kontraindikationen:", "Interaktionen:"]) {
+    for (const label of ["Wiki-ID:", "Art:", "Review:", "Evidenz:", "Dosierung:", "Kontraindikationen:", "Interaktionen:"]) {
       expect(categorySource).toContain(label);
     }
     expect(categorySource).toContain("wikiEntry?.safetyNotes");
@@ -154,6 +155,12 @@ describe("therapy safety", () => {
       medications: "keine Medikamente",
     })).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "prostate-cancer-testosterone-support" }),
+    ]));
+    expect(assessRemedySafety("DHEA", {
+      conditions: "Prostatakarzinom 2020 ausgeschlossen; Prostatakarzinom 2024 gesichert",
+      medications: "keine Medikamente",
+    })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "prostate-cancer-testosterone-support", severity: "avoid" }),
     ]));
   });
 
@@ -202,6 +209,7 @@ describe("therapy safety", () => {
     const wiki = [{
       id: "11111111-1111-4111-8111-111111111111",
       title: "Testmittel",
+      entryKind: "remedy",
       reviewStatus: "reviewed",
       evidenceLevel: "unrated",
       dosageStatus: "verified",
@@ -211,6 +219,27 @@ describe("therapy safety", () => {
     expect(buildInitialRemedySelection(parsed, context, wiki).size).toBe(0);
     expect(buildRemedySafetyMap(parsed, context, wiki).get("0|0")).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "wiki-evidence-unrated", severity: "review" }),
+    ]));
+  });
+
+  it("does not auto-select diagnostic or reference Wiki entries as remedies", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Spezialpräparate",
+      "- **Diagnostik-Eintrag** | 1 | oral | 1 Woche | Essentiell | - | Quelle [WIKI_ID:22222222-2222-4222-8222-222222222222]",
+    ].join("\n"));
+    const wiki = [{
+      id: "22222222-2222-4222-8222-222222222222",
+      title: "Diagnostik-Eintrag",
+      entryKind: "diagnostic",
+      reviewStatus: "reviewed",
+      evidenceLevel: "clinical",
+      dosageStatus: "not_applicable",
+    }];
+    const context = { medications: "Ramipril 5 mg" };
+
+    expect(buildInitialRemedySelection(parsed, context, wiki).size).toBe(0);
+    expect(buildRemedySafetyMap(parsed, context, wiki).get("0|0")).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-entry-kind-ineligible", severity: "avoid" }),
     ]));
   });
 });

@@ -73,6 +73,14 @@ const parsedAge = (value: unknown) => {
   return match ? Number(match[0]) : null;
 };
 
+const prostateCancerPattern = /\b(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)\b/i;
+const prostateCancerNegationPattern = /(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von)\s+[^.;\n]{0,30}(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)|(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)[^.;\n]{0,35}(?:ausgeschlossen|verneint)/i;
+const hasPositiveProstateCancerContext = (value: unknown) => normalize(value)
+  .split(/[;.\n]+|\b(?:aber|jedoch|hingegen)\b/)
+  .map((clause) => clause.trim())
+  .filter(Boolean)
+  .some((clause) => prostateCancerPattern.test(clause) && !prostateCancerNegationPattern.test(clause));
+
 export const assessRemedySafety = (
   remedyName: unknown,
   context: TherapySafetyContext,
@@ -86,8 +94,7 @@ export const assessRemedySafety = (
     if (!warnings.some((existing) => existing.id === item.id)) warnings.push(item);
   };
 
-  const prostateCancerContext = /\b(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)\b/i.test(clinicalText)
-    && !/(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von)\s+[^.;\n]{0,30}(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)|(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)[^.;\n]{0,35}(?:ausgeschlossen|verneint)/i.test(clinicalText);
+  const prostateCancerContext = hasPositiveProstateCancerContext(clinicalText);
   const testosteroneSupporting = /\b(?:testosteron|dhea|dehydroepiandrosteron|maca|lepidium\s+meyenii|tribulus)\b/i.test(remedy);
   if (testosteroneSupporting && (prostateCancerContext || hasGroup(medications, "androgen_deprivation"))) {
     add(warning(
@@ -244,8 +251,7 @@ export const buildSafetyContextWarnings = (context: TherapySafetyContext): Thera
     ));
   }
   const clinicalText = normalize(`${String(context.conditions ?? "")} ${String(context.symptoms ?? "")}`);
-  const hasProstateCancer = /\b(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)\b/i.test(clinicalText)
-    && !/(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von)\s+[^.;\n]{0,30}(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)|(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)[^.;\n]{0,35}(?:ausgeschlossen|verneint)/i.test(clinicalText);
+  const hasProstateCancer = hasPositiveProstateCancerContext(clinicalText);
   const hasAdtMedication = recognizeMedicationGroups(medicationText).some((group) => group.id === "androgen_deprivation");
   if (hasProstateCancer || hasAdtMedication) {
     warnings.push(warning(

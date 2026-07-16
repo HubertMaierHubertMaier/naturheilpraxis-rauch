@@ -78,6 +78,7 @@ function checkRateLimit(key: string, now = Date.now()): boolean {
 // Invalidierung automatisch, sobald sich Anzahl oder max(updated_at) ändert.
 interface WikiEntry {
   id: string;
+  entry_kind?: string;
   title: string;
   category: string;
   tags: string[];
@@ -223,7 +224,7 @@ async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: 
   console.log(`Wiki cache MISS (new signature=${signature})`);
   const { data: wikiEntries, error: wikiError } = await client
     .from("admin_knowledge_base")
-    .select("id, title, category, tags, content, review_status, evidence_level, dosage_status, rights_status, source_citations, therapeutic_topics, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
+    .select("id, title, category, tags, content, entry_kind, review_status, evidence_level, dosage_status, rights_status, source_citations, therapeutic_topics, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
     .order("updated_at", { ascending: false });
   if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
 
@@ -420,6 +421,7 @@ function buildEntryMetadata(entry: WikiEntry): string {
     ? entry.source_citations.map((source) => source?.url || source?.label || "").filter(Boolean)
     : [];
   return [
+    `Eintragsart: ${entry.entry_kind || "unknown"}`,
     `Pruefstatus: ${entry.review_status || "unreviewed"}`,
     `Evidenz: ${entry.evidence_level || "unrated"}`,
     `Dosierungsstatus: ${entry.dosage_status || "unverified"}`,
@@ -620,7 +622,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { belastungen, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const manualDiagnosesText = Array.isArray(manualDiagnosen)
+      ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
+          .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
+      : "";
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
@@ -639,7 +645,7 @@ serve(async (req) => {
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !sonstigeUntersuchungenText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
+    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
@@ -710,7 +716,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -1285,6 +1291,7 @@ Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft,
 
 WICHTIG: 
 - Empfehle NUR Mittel die in der Wissensdatenbank vorhanden sind. Erfinde keine neuen Mittel oder Dosierungen.
+- Als Mittel automatisch ausgeben darfst du nur Wiki-Eintraege mit Eintragsart remedy oder product oder ein ueber eine gepruefte exact_product-Verknuepfung benanntes Produkt. Diagnose-, Protokoll-, Geraete- und allgemeine Referenzeintraege duerfen nur als Kontext dienen.
 - WENN ein notwendiges Mittel fehlt: NICHT improvisieren, sondern als Lücke unter "🕳️ Wissensdatenbank-Lücken" (Abschnitt früh oben) melden.
 - Gewürze und Hausmittel nur nach denselben Relevanz-, Quellen- und Sicherheitsregeln wie andere Kandidaten aufnehmen.
 - Bei jedem Mittel erklären, warum es als interner Kandidat geprüft wird; keine Wirksamkeit als gesichert darstellen, wenn die Evidenzmetadaten dies nicht tragen.
@@ -1297,6 +1304,7 @@ ${patientInfo.join("\n")}
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}
 Erkrankung: ${erkrankung || "Nicht angegeben"}
+Manuell/aus Befund übernommene Diagnosen: ${manualDiagnosesText || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
@@ -1327,6 +1335,7 @@ ${patientInfo.join("\n")}
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}  
 Erkrankung: ${erkrankung || "Nicht angegeben"}
+Manuell/aus Befund übernommene Diagnosen: ${manualDiagnosesText || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}

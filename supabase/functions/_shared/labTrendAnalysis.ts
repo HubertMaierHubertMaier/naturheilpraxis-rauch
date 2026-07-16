@@ -198,8 +198,15 @@ export const extractSensitiveLabValuesFromText = (
       ? possibleMultiMeasurements
       : [];
 
-    if (isPsaParameter(parameterMatch[0]) && multiMeasurements.length > 1) {
-      const dates = datesBefore.length >= multiMeasurements.length
+    const canPairDatedSeries = datesBefore.length >= multiMeasurements.length;
+    const isUndatedPsaDetectionSeries = isPsaParameter(parameterMatch[0])
+      && datesBefore.length === 0
+      && multiMeasurements.some((measurement) => /^[<>≤≥]/u.test(measurement.value))
+      && multiMeasurements.some((measurement) => !/^[<>≤≥]/u.test(measurement.value));
+    if ((isPsaParameter(parameterMatch[0]) || isTotalTestosteroneParameter(parameterMatch[0]))
+      && multiMeasurements.length > 1
+      && (canPairDatedSeries || isUndatedPsaDetectionSeries)) {
+      const dates = canPairDatedSeries
         ? datesBefore.slice(-multiMeasurements.length)
         : multiMeasurements.map(() => nearbyDate(text, parameterMatch.index ?? 0));
       const quoteStart = Math.max(0, (parameterMatch.index ?? 0) - 120);
@@ -333,6 +340,8 @@ export type AndrogenDeprivationPhase = "none" | "active" | "paused_or_ended" | "
 
 export const getAndrogenDeprivationPhase = (context: unknown): AndrogenDeprivationPhase => {
   const cancerPattern = /prostata(?:karzinom|-?ca)|prostate\s+cancer|(?:^|\W)c61(?:\W|$)/i;
+  const specificAdtPattern = /androgen(?:deprivation|-?entzug)|lhrh|gnrh|(?:^|\W)adt(?:\W|$)|leuprorelin|leuprolid|triptorelin|goserelin|degarelix|relugolix|bicalutamid|enzalutamid|apalutamid|darolutamid|abirateron/i;
+  const genericHormonePattern = /hormontherapie/i;
   const treatmentPattern = /androgen(?:deprivation|-?entzug)|hormontherapie|lhrh|gnrh|(?:^|\W)adt(?:\W|$)|leuprorelin|leuprolid|triptorelin|goserelin|degarelix|relugolix|bicalutamid|enzalutamid|apalutamid|darolutamid|abirateron/i;
   const contextText = normalizeContextText(context);
   if (!hasPositiveContextMatch(contextText, cancerPattern)) return "none";
@@ -348,7 +357,8 @@ export const getAndrogenDeprivationPhase = (context: unknown): AndrogenDeprivati
         currentTreatmentClause = "";
       };
       text.split(/[;,\n.!?]+|\b(?:und|sowie|aber|jedoch)\b/).map((segment) => segment.trim()).filter(Boolean).forEach((segment) => {
-        if (treatmentPattern.test(segment)) {
+        const linkedGenericHormone = genericHormonePattern.test(segment) && cancerPattern.test(segment);
+        if (specificAdtPattern.test(segment) || linkedGenericHormone) {
           flush();
           currentTreatmentClause = segment;
         } else if (currentTreatmentClause && statusContinuation.test(segment)) {
@@ -368,9 +378,12 @@ export const getAndrogenDeprivationPhase = (context: unknown): AndrogenDeprivati
     const object = value as Record<string, unknown>;
     const therapyName = normalizeContextText(object.name ?? object.wirkstoff ?? object.therapie ?? object.bezeichnung ?? "");
     const explicitStatus = normalizeContextText(object.status ?? object.therapiestatus ?? "");
-    if (treatmentPattern.test(therapyName)) {
+    const indication = normalizeContextText(object.indikation ?? object.diagnose ?? object.grundVerordnung ?? "");
+    const therapyContext = `${therapyName} ${explicitStatus} ${indication}`.trim();
+    const linkedGenericHormone = genericHormonePattern.test(therapyName) && cancerPattern.test(therapyContext);
+    if (specificAdtPattern.test(therapyName) || linkedGenericHormone) {
       entries.push({
-        text: `${therapyName} ${explicitStatus}`.trim(),
+        text: therapyContext,
         rank: dateRank(object.datum ?? object.date ?? object.beginn ?? object.ende),
       });
     } else {

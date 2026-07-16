@@ -493,6 +493,18 @@ function normalizePartialAnalysisJson(raw: string, block?: DocBlock, part = "") 
   return serialized;
 }
 
+function validateNormalizedPartialAnalysisJson(raw: string) {
+  const parsed = parseLlmJson(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  if (!ANALYSIS_REQUIRED_ARRAY_KEYS.every((key) => Array.isArray(parsed[key]))) throw new Error("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
+  if (!parsed.anamnese || typeof parsed.anamnese !== "object" || Array.isArray(parsed.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
+  if (!ANALYSIS_ANAMNESE_KEYS.every((key) => Array.isArray(parsed.anamnese[key]))) throw new Error("Teilanalysen-JSON hat nicht alle Anamnese-Listen");
+  const serialized = JSON.stringify(deidentifyClinicalData(parsed));
+  const residualIdentifiers = directIdentifierCategories(serialized);
+  if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
+  return serialized;
+}
+
 function countPartialExtractionItems(partials: string[]) {
   return partials.reduce((sum, partial) => {
     try {
@@ -1013,10 +1025,29 @@ serve(async (req) => {
     }
 
     if (body.analysisMode === "final") {
-      const partials = Array.isArray(body.partials) ? body.partials.filter((x) => typeof x === "string" && x.trim()) : [];
-      if (!partials.length) {
+      const rawPartials = Array.isArray(body.partials) ? body.partials : [];
+      if (!rawPartials.length) {
         return new Response(JSON.stringify({ error: "Keine Teilanalysen zur Zusammenführung übergeben" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (rawPartials.some((partial) => typeof partial !== "string" || !partial.trim())) {
+        return new Response(JSON.stringify({ error: "Unvollständige Teilanalysen zur Zusammenführung übergeben" }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const expectedChunks = Number(body.expectedChunks || 0);
+      if (!Number.isInteger(expectedChunks) || expectedChunks < 1 || rawPartials.length < expectedChunks) {
+        return new Response(JSON.stringify({ error: "Teilanalysen fehlen; Abschluss-Zusammenführung blockiert" }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      let partials: string[];
+      try {
+        partials = rawPartials.map(validateNormalizedPartialAnalysisJson);
+      } catch (error) {
+        return new Response(JSON.stringify({ error: `Ungültiger Zwischenstand: ${(error as Error).message}` }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (countPartialExtractionItems(partials) === 0) {

@@ -111,6 +111,14 @@ export const assessRemedyWithWikiSafety = (
     verifiedMatches = [];
   }
   verifiedMatches.forEach((entry) => {
+    const hasReviewedExactProduct = (entry.productLinks || []).some((link) => (
+      link.reviewStatus === "reviewed"
+      && link.relationType === "exact_product"
+      && sameRemedy(remedyName, link.productName)
+    ));
+    if (!/^(?:remedy|product)$/i.test(entry.entryKind || "") && !hasReviewedExactProduct) {
+      add(wikiWarning("wiki-entry-kind-ineligible", "avoid", "Wiki-Eintrag ist kein Mittel/Produkt", `${entry.title} hat die Eintragsart ${entry.entryKind || "unbekannt"}.`, "Nicht automatisch auswaehlen; nur gepruefte Mittel-/Produkteintraege oder exakt verknuepfte Produkte verwenden."));
+    }
     if (entry.reviewStatus === "restricted") {
       add(wikiWarning("wiki-restricted", "avoid", "Wiki-Eintrag ist gesperrt", `${entry.title} ist intern als nicht verwendbar markiert.`, "Nicht auswaehlen, bis der Eintrag fachlich neu freigegeben wurde."));
     } else if (entry.reviewStatus !== "reviewed") {
