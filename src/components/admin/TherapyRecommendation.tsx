@@ -29,7 +29,20 @@ import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
-import { buildClinicallyRelevantLabHighlights, extractLabQuintessenceSection } from "../../../supabase/functions/_shared/labTrendAnalysis";
+import {
+  downloadClinicalReportHtml,
+  openClinicalReportWindow,
+  sanitizeClinicalReportFragment,
+  sanitizeClinicalReportHtml,
+} from "@/lib/clinicalReportHtml";
+import {
+  buildClinicallyRelevantLabHighlights,
+  extractLabQuintessenceSection,
+  labParameterKey,
+  normalizeLabUnit,
+  type LabHighlight,
+  type LabValueRecord,
+} from "../../../supabase/functions/_shared/labTrendAnalysis";
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import {
   buildSafetyContextWarnings,
@@ -131,7 +144,7 @@ type PendingDirectBefundFile = { id: string; file: File; status: "queued" | "pro
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v8";
+const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -185,7 +198,7 @@ type AnalysisCheckpoint = {
   partials: string[];
   sourceSummary?: AnalysisSourceSummary[];
   duplicateNotes?: string[];
-  status?: "in_progress" | "all_chunks_complete" | "final_complete";
+  status?: "in_progress" | "paused" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
 };
 
@@ -245,10 +258,10 @@ const normalizeDocumentName = (value: string) => String(value || "")
   .replace(/[\s._\-]+/g, "")
   .trim();
 
-// Extrahiert Dateinamen aus "=== 📄 name (39 S.) ===" Header
+// Unterstützt alte Dateimarker und neue neutrale, inhaltsbasierte Dokument-IDs.
 const extractMarkerName = (block: string): string => {
-  const m = block.match(/===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/);
-  return m?.[1]?.trim() || "";
+  const m = block.match(/===\s*(?:(?:📄|📷)\s*([^=\n]+?)|KLINISCHES\s+DOKUMENT\s+([a-f0-9]{12})(?:\s*\(\d+\s*S\.\))?)\s*===/i);
+  return m?.[1]?.trim() || (m?.[2] ? `Dokument-${m[2]}` : "");
 };
 
 // Merged neuen Dokumentblock in bestehenden Feldtext. Ist die Datei (Marker-basiert)
@@ -260,11 +273,11 @@ const mergeExtractedBlockIntoField = (previous: string, newBlock: string): strin
   const prevTrim = previous.trim();
   if (!prevTrim) return cleanNew;
   if (!newName) return `${prevTrim}\n\n${cleanNew}`;
-  const markerRe = /===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/g;
+  const markerRe = /===\s*(?:(?:📄|📷)\s*([^=\n]+?)|KLINISCHES\s+DOKUMENT\s+([a-f0-9]{12})(?:\s*\(\d+\s*S\.\))?)\s*===/gi;
   const spans: Array<{ start: number; end: number; name: string }> = [];
   let m: RegExpExecArray | null;
   while ((m = markerRe.exec(prevTrim)) !== null) {
-    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1]) });
+    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1] || `Dokument-${m[2]}`) });
   }
   for (let i = 0; i < spans.length; i++) {
     spans[i].end = i + 1 < spans.length ? spans[i + 1].start : prevTrim.length;
@@ -284,11 +297,11 @@ const stripDocumentBlockFromField = (previous: string, targetName?: string, arch
   if (!prev) return prev;
   const targetNorm = normalizeDocumentName(String(targetName || ""));
   const pathNeedle = String(archivePath || "").trim();
-  const markerRe = /===\s*(?:📄|📷)\s*([^=\n]+?)\s*===/g;
+  const markerRe = /===\s*(?:(?:📄|📷)\s*([^=\n]+?)|KLINISCHES\s+DOKUMENT\s+([a-f0-9]{12})(?:\s*\(\d+\s*S\.\))?)\s*===/gi;
   const spans: Array<{ start: number; end: number; name: string }> = [];
   let m: RegExpExecArray | null;
   while ((m = markerRe.exec(prev)) !== null) {
-    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1]) });
+    spans.push({ start: m.index, end: -1, name: normalizeDocumentName(m[1] || `Dokument-${m[2]}`) });
   }
   for (let i = 0; i < spans.length; i++) spans[i].end = i + 1 < spans.length ? spans[i + 1].start : prev.length;
   const keep: string[] = [];
@@ -310,7 +323,7 @@ const stripDocumentBlockFromField = (previous: string, targetName?: string, arch
 const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, text: string): SelectableAnalysisSource[] => {
   const trimmed = text.trim();
   if (!trimmed) return [];
-  const markerPattern = /(?:^|\n)(===\s*(?:📄|📷)\s*([^=\n]+?)\s*===)\n?/g;
+  const markerPattern = /(?:^|\n)(===\s*(?:(?:📄|📷)\s*([^=\n]+?)|KLINISCHES\s+DOKUMENT\s+([a-f0-9]{12})(?:\s*\((\d+)\s*S\.\))?)\s*===)\n?/gi;
   const matches = Array.from(trimmed.matchAll(markerPattern));
   if (!matches.length) return [{ key: fieldKey, label: fallbackLabel, text: trimmed, group: "befund", chars: trimmed.length, lines: countClinicalLines(trimmed) }];
 
@@ -329,7 +342,10 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
     const end = index + 1 < matches.length ? (matches[index + 1].index ?? trimmed.length) : trimmed.length;
     const block = trimmed.slice(start, end).trim();
     if (!block) return;
-    const rawName = (match[2] || match[1] || `${fallbackLabel} ${index + 1}`).replace(/^=+|=+$/g, "").trim();
+    const rawName = match[2]
+      || (match[3] ? `Dokument ${index + 1}${match[4] ? ` · ${match[4]} S.` : ""}` : "")
+      || match[1]
+      || `${fallbackLabel} ${index + 1}`;
     const label = rawName.replace(/^\s*(?:📄|📷)\s*/, "").trim() || `${fallbackLabel} ${index + 1}`;
     sources.push({
       key: `${fieldKey}:doc:${index}:${sourceKeyPart(label)}`,
@@ -552,8 +568,8 @@ const stripAnalysisFence = (value: string) => value.replace(/^\s*```(?:json|html
 
 const sanitizeFinalAnalysisHtml = (value: string) => {
   const safeHtml = deidentifyClinicalText(stripAnalysisFence(value));
-  if (!residualIdentifierCategories(safeHtml).length) return safeHtml;
-  return "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"utf-8\"><title>Datenschutz-Sicherheitsstopp</title></head><body><h1>Datenschutz-Sicherheitsstopp</h1><p>Diese Ausgabe wurde nicht angezeigt oder gespeichert, weil direkte Identifikatoren nicht zuverlässig entfernt werden konnten.</p></body></html>";
+  if (!residualIdentifierCategories(safeHtml).length) return sanitizeClinicalReportHtml(safeHtml);
+  return sanitizeClinicalReportHtml("<h1>Datenschutz-Sicherheitsstopp</h1><p>Diese Ausgabe wurde nicht angezeigt oder gespeichert, weil direkte Identifikatoren nicht zuverlässig entfernt werden konnten.</p>");
 };
 
 const extractJsonSubstring = (value: string) => {
@@ -707,6 +723,46 @@ const countPartialExtractionItems = (partials: string[]) => partials.reduce((sum
   }
 }, 0);
 
+const patientOnlyAnamneseContext = (value: unknown) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([key]) => key !== "familyHistory"));
+};
+
+const collectStructuredLabData = (partials: string[]): { labValues: LabValueRecord[]; labAlerts: LabHighlight[] } => {
+  const values = new Map<string, LabValueRecord>();
+  const clinicalContext: unknown[] = [];
+  for (const partial of partials) {
+    try {
+      const parsed = parseLlmJson(partial);
+      clinicalContext.push({
+        documents: parsed?.documents,
+        diagnoses: parsed?.diagnoses,
+        medicationsTherapies: parsed?.medicationsTherapies,
+        findings: parsed?.findings,
+        systemsPatterns: parsed?.systemsPatterns,
+        anamnese: patientOnlyAnamneseContext(parsed?.anamnese),
+      });
+      if (!Array.isArray(parsed?.labValues)) continue;
+      for (const rawValue of parsed.labValues) {
+        if (!rawValue || typeof rawValue !== "object" || Array.isArray(rawValue)) continue;
+        const value = deidentifyClinicalData(rawValue) as LabValueRecord;
+        const identity = [
+          labParameterKey(value.parameter),
+          String(value.datum ?? "").trim(),
+          String(value.wert ?? "").trim().replace(/,/g, ".").replace(/\s+/g, ""),
+          normalizeLabUnit(value.einheit),
+        ].join("|");
+        if (identity.replace(/\|/g, "")) values.set(identity, value);
+      }
+    } catch { /* ungültige Teilanalyse wurde bereits vor dem Abschluss abgefangen */ }
+  }
+  const labValues = Array.from(values.values());
+  return {
+    labValues,
+    labAlerts: buildClinicallyRelevantLabHighlights(labValues, clinicalContext),
+  };
+};
+
 const isFalseEmptyBefundHtml = (html: string) => {
   const visible = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   return /Automatisch ergänzt aus den Teilanalysen/i.test(visible)
@@ -769,7 +825,7 @@ const buildClientFallbackAnalysisHtml = (
     medicationsTherapies: aggregate.medicationsTherapies,
     findings: aggregate.findings,
     systemsPatterns: aggregate.systemsPatterns,
-    anamnese,
+    anamnese: patientOnlyAnamneseContext(anamnese),
   });
   const beleg = (item: any) => {
     const b = item?.beleg || {};
@@ -875,7 +931,7 @@ const buildLabQuintessenzAppendix = (partials: string[], contextualOnly = false)
     if (!p) continue;
     try {
       const obj = parseLlmJson(p);
-      context.push({ documents: obj?.documents, diagnoses: obj?.diagnoses, medicationsTherapies: obj?.medicationsTherapies, findings: obj?.findings, systemsPatterns: obj?.systemsPatterns, anamnese: obj?.anamnese });
+      context.push({ documents: obj?.documents, diagnoses: obj?.diagnoses, medicationsTherapies: obj?.medicationsTherapies, findings: obj?.findings, systemsPatterns: obj?.systemsPatterns, anamnese: patientOnlyAnamneseContext(obj?.anamnese) });
       if (Array.isArray(obj?.labValues)) lv.push(...obj.labValues);
     } catch { /* ignore */ }
   }
@@ -894,6 +950,30 @@ const buildLabQuintessenzAppendix = (partials: string[], contextualOnly = false)
   }).join("\n");
   const title = contextualOnly ? "Kontextrelevanter Laborverlauf — deterministische Ergänzung" : "⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch";
   return `${css}<section class="qz-wrap"><h2>${title}</h2><div class="note">Automatisch ergänzt aus den Teilanalysen, da die KI-Sektion fehlte oder unvollständig war. Pro Parameter wird der jeweils <strong>neueste</strong> Wert gezeigt; dokumentierter Behandlungskontext wird berücksichtigt.</div><table><thead><tr><th>Parameter</th><th>Wert</th><th>Datum</th><th>Referenz</th><th>Richtung</th><th>Mögliche klinische Bedeutung</th><th>Beleg</th></tr></thead><tbody>${body}</tbody></table></section>`;
+};
+
+const removeContextualLabRowsFromSection = (section: string, highlights: LabHighlight[]) => {
+  const parameterKeys = new Set(highlights.map((highlight) => labParameterKey(highlight.item.parameter)).filter(Boolean));
+  if (!parameterKeys.size) return section;
+  const normalizeVisible = (value: string) => value
+    .replace(/<[^>]+>/g, " ")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return section.replace(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi, (row) => {
+    const parameterCell = row.match(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/i)?.[1] || "";
+    const visible = normalizeVisible(parameterCell);
+    const matches = Array.from(parameterKeys).some((key) => (
+      key === "psa"
+        ? /(?:^|\s)(?:i?psa|prostataspezifisches antigen)(?:\s|$)/.test(visible)
+        : key === "testosterone"
+          ? /(?:^|\s)(?:testosteron|testosterone)(?:\s|$)/.test(visible)
+          : new RegExp(`(?:^|\\s)${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(visible)
+    ));
+    return matches ? "" : row;
+  });
 };
 
 
@@ -1044,6 +1124,7 @@ export function TherapyRecommendation() {
   const { toast } = useToast();
   const autoSaveTimerRef = useRef<number | null>(null);
   const autoSaveRunIdRef = useRef(0);
+  const autoSaveSuppressedRef = useRef(false);
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
   const lastAutoSavedPayloadRef = useRef("");
@@ -1399,7 +1480,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (!isPatientScopedStorageReady(pid) || !hasMeaningfulInput || workflowStage === "finalized") return;
+    if (autoSaveSuppressedRef.current || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput || workflowStage === "finalized") return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
@@ -1421,7 +1502,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
+      if (autoSaveSuppressedRef.current || runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -2393,7 +2474,6 @@ export function TherapyRecommendation() {
       };
 
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
-      const skippedChunks: Array<{ index: number; label: string; reason: string }> = [];
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
@@ -2404,41 +2484,43 @@ export function TherapyRecommendation() {
           const message = (error as Error).message || "";
           // Echter Benutzer-Abbruch → wirklich stoppen
           if (docController.signal.aborted) {
-            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "in_progress", updatedAt: new Date().toISOString() });
+            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
             throw new Error("Auswertung vom Benutzer abgebrochen.");
           }
-          let anyRecovered = false;
+          let recoveredPartials: string[] | null = null;
+          let retryFailure = "";
           if (isRecoverableAnalysisTimeout(message) && chunks[i].text.length > ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
             const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
+            const retryResults: string[] = [];
             writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
             for (let r = 0; r < retryChunks.length; r += 1) {
               writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${retryChunks.length} wird gelesen…`);
               try {
                 const retryPartial = await analyzeChunk(retryChunks[r], `${i + 1}.${r + 1}`, chunks.length + retryChunks.length - 1);
-                partials.push(retryPartial);
-                anyRecovered = true;
+                retryResults.push(retryPartial);
               } catch (retryError) {
-                const retryMessage = (retryError as Error).message || String(retryError);
-                writeProgress(`  ⚠ Unter-Teil ${i + 1}.${r + 1} fehlgeschlagen (${retryMessage}). Wird übersprungen, Lauf geht weiter.`);
-                skippedChunks.push({ index: i + 1, label: `${chunks[i].label} (Unter-Teil ${r + 1}/${retryChunks.length})`, reason: retryMessage });
+                retryFailure = (retryError as Error).message || String(retryError);
+                writeProgress(`  ✗ Unter-Teil ${i + 1}.${r + 1} fehlgeschlagen (${retryFailure}). Der Bericht wird nicht unvollständig fortgesetzt.`);
+                break;
               }
             }
+            if (!retryFailure && retryResults.length === retryChunks.length) recoveredPartials = retryResults;
           }
-          if (!anyRecovered) {
-            writeProgress(`⚠ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${message}). Wird übersprungen, Lauf geht weiter.`);
-            skippedChunks.push({ index: i + 1, label: chunks[i].label, reason: message });
+          if (!recoveredPartials) {
+            const failureReason = retryFailure || message;
+            writeProgress(`✗ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${failureReason}). Zwischenstand bleibt bei ${i}/${chunks.length}; es wird kein unvollständiger Bericht erzeugt.`);
+            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
+            throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden. Bitte den Lauf fortsetzen oder erneut starten.`);
           }
+          partials.push(...recoveredPartials);
         }
         await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
       }
-      if (skippedChunks.length) {
-        writeProgress(`\n⚠ Hinweis: ${skippedChunks.length} Teil(e) konnten nicht ausgewertet werden und fehlen im Bericht:\n${skippedChunks.map(s => `  • Teil ${s.index}: ${s.label} — ${s.reason}`).join("\n")}\nDer Bericht wird trotzdem aus den ${partials.length} erfolgreichen Teil(en) erstellt. Du kannst die Auswertung später erneut starten — die übersprungenen Teile werden dann erneut versucht.`);
-      }
       const extractedItemCount = countPartialExtractionItems(partials);
       if (!partials.length || extractedItemCount === 0) {
-        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: 0, partials: [], duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
         throw new Error(`Die KI hat aus ${chunks.length} Teilpaket(en) keine verwertbaren Befunddaten extrahiert. Deshalb wird kein leerer „Keine Laborabweichungen"-Bericht mehr erzeugt. Bitte mit „Nur Befund-Auswertung (HTML)" fortsetzen/erneut versuchen.`);
       }
 
@@ -2519,6 +2601,7 @@ export function TherapyRecommendation() {
         }
       } catch { /* nicht kritisch */ }
 
+      const structuredLabData = collectStructuredLabData(partials);
       let full = "";
       let model = "pending";
       let analysisMode = "client-checkpoint-strict";
@@ -2576,7 +2659,11 @@ export function TherapyRecommendation() {
       const contextualAppendix = buildLabQuintessenzAppendix(partials, true);
       if (contextualAppendix) {
         const deterministicAppendix = buildLabQuintessenzAppendix(partials);
-        if (quintessenceSection) full = full.replace(quintessenceSection, deterministicAppendix);
+        if (quintessenceSection) {
+          const contextualHighlights = structuredLabData.labAlerts.filter((highlight) => highlight.derivedFromContext);
+          const remainingAiSection = removeContextualLabRowsFromSection(quintessenceSection, contextualHighlights);
+          full = full.replace(quintessenceSection, `${remainingAiSection}${contextualAppendix}`);
+        }
         else if (/<\/body>/i.test(full)) full = full.replace(/<\/body>/i, `${deterministicAppendix}</body>`);
         else full = `${full}${deterministicAppendix}`;
       } else if (!quintessenceSection) {
@@ -2612,7 +2699,17 @@ export function TherapyRecommendation() {
         writeLatestBefundDisplay(pseudonymId.trim(), {
           html: full,
           progress: finalProgress,
-          meta: { analysis_mode: analysisMode, chunk_count: chunks.length, total_chars: totalChars, model },
+          meta: {
+            analysis_mode: analysisMode,
+            chunk_count: chunks.length,
+            total_chars: totalChars,
+            model,
+            lab_values_v1: structuredLabData.labValues,
+            lab_alerts_v1: structuredLabData.labAlerts,
+            lab_schema_version: 1,
+            lab_rules_version: ANALYSIS_PROMPT_VERSION,
+            analysis_fingerprint: fingerprint,
+          },
           createdAt: new Date().toISOString(),
         });
         setLatestBefundLoadedFrom("local");
@@ -2638,9 +2735,14 @@ export function TherapyRecommendation() {
                   original_chars: prepared.originalChars,
                   source_summary: sourceSummary,
                   sources: chunks.map((c) => c.label),
-                  duplicate_notes: prepared.duplicateNotes,
-                  strict_complete: true,
-                  saved_at: new Date().toISOString(),
+                   duplicate_notes: prepared.duplicateNotes,
+                   strict_complete: true,
+                   lab_values_v1: structuredLabData.labValues,
+                   lab_alerts_v1: structuredLabData.labAlerts,
+                   lab_schema_version: 1,
+                   lab_rules_version: ANALYSIS_PROMPT_VERSION,
+                   analysis_fingerprint: fingerprint,
+                   saved_at: new Date().toISOString(),
                 },
                 created_by: user.id,
               });
@@ -2656,9 +2758,11 @@ export function TherapyRecommendation() {
                   chunk_count: chunks.length,
                   model,
                   source: analysisMode,
-                  source_summary: sourceSummary,
-                  sources: chunks.map((c) => c.label),
-                  note: "HTML in Patientenverlauf gespeichert",
+                   source_summary: sourceSummary,
+                   sources: chunks.map((c) => c.label),
+                   lab_value_count: structuredLabData.labValues.length,
+                   lab_alert_count: structuredLabData.labAlerts.length,
+                   note: "HTML in Patientenverlauf gespeichert",
                 });
               }
             }
@@ -2893,31 +2997,44 @@ export function TherapyRecommendation() {
       `Archiv-PDF wirklich löschen?\n\n${doc.name}\n\nDas Original wird aus dem sicheren Cloud-Speicher (therapy-documents) unwiderruflich entfernt.\nZusätzlich werden alle eingefügten Textblöcke dieser Datei aus den Befund-Feldern (Sonstige Voruntersuchungen, Arztbericht, Metatron/NLS, Labor, Perplexity) entfernt.`,
     );
     if (!confirmed) return;
+    autoSaveSuppressedRef.current = true;
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     setDeletingArchiveDocumentPath(doc.archivePath);
     try {
-      const { error } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
-      if (error) throw error;
+      const { data: archivedBlob, error: downloadError } = await supabase.storage.from("therapy-documents").download(doc.archivePath);
+      if (downloadError || !archivedBlob) throw downloadError || new Error("Archivdatei konnte vor dem sicheren Löschen nicht gelesen werden.");
+      const archivedFile = new File([archivedBlob], doc.name || "befund.pdf", { type: archivedBlob.type || "application/pdf" });
+      const extracted = await extractClinicalDocumentText(archivedFile, "doctor");
+      const insertedDocumentMarker = extractMarkerName(extracted.text);
+      if (!insertedDocumentMarker) throw new Error("Der zugehörige neutrale Dokumentmarker konnte nicht rekonstruiert werden. Die Archivdatei wurde nicht gelöscht.");
+
       // B) Serverseitig: Snapshot + Draft räumen — sonst spielt der Trigger den Block beim
       // nächsten Autosave wieder rein (extract_patient_snapshot_fields droppt leere Strings,
       // Merge bewahrt dann den alten Wert). Gilt generisch für alle Patienten.
-      let serverStripInfo = "";
-      try {
-        const { data: stripResult, error: stripError } = await supabase.rpc(
-          "admin_strip_document_from_patient_context",
-          { _pseudonym_id: pid, _filename: doc.name || "", _archive_path: doc.archivePath || "" },
-        );
-        if (stripError) throw stripError;
-        const r = stripResult as { snapshot_updated?: number; drafts_updated?: number } | null;
-        serverStripInfo = ` Snapshot: ${r?.snapshot_updated ?? 0} · Draft: ${r?.drafts_updated ?? 0}.`;
-      } catch (stripErr: any) {
-        toast({ title: "Server-Aufräumen fehlgeschlagen", description: stripErr?.message || "Snapshot/Draft konnten nicht bereinigt werden.", variant: "destructive" });
+      const { data: stripResult, error: stripError } = await supabase.rpc(
+        "admin_strip_document_from_patient_context",
+        { _pseudonym_id: pid, _filename: insertedDocumentMarker, _archive_path: doc.archivePath || "" },
+      );
+      if (stripError) throw new Error(`Server-Aufräumen fehlgeschlagen: ${stripError.message}`);
+      const r = stripResult as { snapshot_updated?: number; drafts_updated?: number; removed_fields?: number } | null;
+      if (!r || Number(r.removed_fields || 0) < 1) {
+        throw new Error("Kein eindeutig zugehöriger Textblock wurde im Snapshot oder Entwurf entfernt. Die Archivdatei wurde nicht gelöscht.");
       }
+      const serverStripInfo = ` Snapshot: ${r.snapshot_updated ?? 0} · Draft: ${r.drafts_updated ?? 0} · bereinigte Felder: ${r.removed_fields}.`;
+
+      const { error: storageError } = await supabase.storage.from("therapy-documents").remove([doc.archivePath]);
+      if (storageError) throw storageError;
       // Textblöcke aus allen Befund-Feldern rausräumen — Autosave persistiert dann den bereinigten Snapshot.
-      setSonstigeUntersuchungen((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
-      setArztbericht((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
-      setMetatronHeel((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
-      setLaborKomplett((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
-      setPerplexityAnalyse((prev) => stripDocumentBlockFromField(prev, doc.name, doc.archivePath));
+      const markerOrName = insertedDocumentMarker;
+      setSonstigeUntersuchungen((prev) => stripDocumentBlockFromField(prev, markerOrName, doc.archivePath));
+      setArztbericht((prev) => stripDocumentBlockFromField(prev, markerOrName, doc.archivePath));
+      setMetatronHeel((prev) => stripDocumentBlockFromField(prev, markerOrName, doc.archivePath));
+      setLaborKomplett((prev) => stripDocumentBlockFromField(prev, markerOrName, doc.archivePath));
+      setPerplexityAnalyse((prev) => stripDocumentBlockFromField(prev, markerOrName, doc.archivePath));
       setLoadedDocumentInventory((current) => current.filter((item) => {
         if (item.archivePath && doc.archivePath && item.archivePath === doc.archivePath) return false;
         if (normalizeDocumentName(item.name) === normalizeDocumentName(doc.name)) return false;
@@ -2933,6 +3050,7 @@ export function TherapyRecommendation() {
     } catch (error: any) {
       toast({ title: "Löschen fehlgeschlagen", description: error?.message || "Bitte erneut versuchen.", variant: "destructive" });
     } finally {
+      autoSaveSuppressedRef.current = false;
       setDeletingArchiveDocumentPath(null);
     }
   };
@@ -4472,37 +4590,25 @@ export function TherapyRecommendation() {
                           <div className="flex gap-2">
                             <Button
                               type="button" size="sm" variant="outline" className="gap-1.5"
-                              onClick={() => {
-                                const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.pdf`;
-                                const w = window.open("", "_blank");
-                                if (!w) return;
-                                w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),400));</script></body></html>`);
-                                w.document.close();
+                               onClick={() => {
+                                 const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.pdf`;
+                                 openClinicalReportWindow(hpCheckHtml, filename, true);
                               }}
                               title="Öffnet HTML in neuem Tab und startet den Druck-Dialog – dort Als PDF speichern wählen."
                             >
                               <FileText className="h-3.5 w-3.5" /> Als PDF speichern
                             </Button>
                             <Button
-                              type="button" size="sm" variant="ghost" className="gap-1.5"
-                              onClick={() => {
-                                const w = window.open("", "_blank");
-                                if (!w) return;
-                                w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>HP-Therapie-Check</title></head><body>${hpCheckHtml}</body></html>`);
-                                w.document.close();
-                              }}
+                               type="button" size="sm" variant="ghost" className="gap-1.5"
+                               onClick={() => openClinicalReportWindow(hpCheckHtml, "HP-Therapie-Check")}
                             >
                               <ExternalLink className="h-3.5 w-3.5" /> HTML in neuem Tab
                             </Button>
                             <Button
                               type="button" size="sm" variant="ghost" className="gap-1.5"
-                              onClick={() => {
-                                const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.html`;
-                                const blob = new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body>${hpCheckHtml}</body></html>`], { type: "text/html;charset=utf-8" });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url; a.download = filename; a.click();
-                                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                               onClick={() => {
+                                 const filename = `HP-Therapie-Check_${pseudonymId.trim() || "patient"}_${new Date().toISOString().slice(0,10)}.html`;
+                                 downloadClinicalReportHtml(hpCheckHtml, filename);
                               }}
                               title="HTML-Datei herunterladen"
                             >
@@ -4516,10 +4622,10 @@ export function TherapyRecommendation() {
                           <Loader2 className="h-4 w-4 animate-spin" /> KI prüft deinen Therapieplan im HP-Rahmen…
                         </div>
                       ) : (
-                        <div
-                          className="prose prose-sm dark:prose-invert max-w-none [&_table]:text-xs [&_th]:bg-emerald-50 dark:[&_th]:bg-emerald-900/30 [&_h2]:text-emerald-700 dark:[&_h2]:text-emerald-300 max-h-[600px] overflow-y-auto"
-                          dangerouslySetInnerHTML={{ __html: hpCheckHtml }}
-                        />
+                         <div
+                           className="prose prose-sm dark:prose-invert max-w-none [&_table]:text-xs [&_th]:bg-emerald-50 dark:[&_th]:bg-emerald-900/30 [&_h2]:text-emerald-700 dark:[&_h2]:text-emerald-300 max-h-[600px] overflow-y-auto"
+                           dangerouslySetInnerHTML={{ __html: sanitizeClinicalReportFragment(hpCheckHtml) }}
+                         />
                       )}
                     </div>
                   )}
@@ -5004,13 +5110,8 @@ export function TherapyRecommendation() {
               <>
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const blob = new Blob([docAnalysisHtml], { type: "text/html;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, "_blank", "noopener,noreferrer");
-                    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-                  }}
+                   variant="outline"
+                   onClick={() => openClinicalReportWindow(docAnalysisHtml, "Befund-Auswertung")}
                   className="gap-1"
                   title="HTML in neuem Browser-Tab öffnen (vergrößert, druckbar, separat scrollbar)"
                 >
@@ -5019,19 +5120,10 @@ export function TherapyRecommendation() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    const dateStr = new Date().toISOString().slice(0, 10);
-                    const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
-                    const injected = docAnalysisHtml.includes("</body>")
-                      ? docAnalysisHtml.replace(
-                          "</body>",
-                          `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
-                        )
-                      : `<!doctype html><html><head><title>${filename}</title></head><body>${docAnalysisHtml}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
-                    const blob = new Blob([injected], { type: "text/html;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, "_blank", "noopener,noreferrer");
-                    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                   onClick={() => {
+                     const dateStr = new Date().toISOString().slice(0, 10);
+                     const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                     openClinicalReportWindow(docAnalysisHtml, filename, true);
                   }}
                   className="gap-1"
                   title="Öffnet das HTML in neuem Tab und startet den Druck-Dialog — dort „Als PDF speichern“ wählen"
@@ -5066,10 +5158,12 @@ export function TherapyRecommendation() {
                   <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary shrink-0">
                     Ergebnis ist geladen. Tipp: „Vollbild" für mehr Lesefläche oder „HTML in neuem Tab" für eine separate Browser-Ansicht (zoomen mit Strg/⌘ + +).
                   </div>
-                  <iframe
-                    title="Befund-Auswertung HTML direkt sichtbar"
-                    srcDoc={docAnalysisHtml}
-                    className={`w-full rounded-md border bg-background ${isDocAnalysisPanelFullscreen ? "flex-1 min-h-[400px]" : "h-[62vh]"}`}
+                   <iframe
+                     title="Befund-Auswertung HTML direkt sichtbar"
+                     srcDoc={docAnalysisHtml}
+                     sandbox=""
+                     referrerPolicy="no-referrer"
+                     className={`w-full rounded-md border bg-background ${isDocAnalysisPanelFullscreen ? "flex-1 min-h-[400px]" : "h-[62vh]"}`}
                   />
                 </>
               ) : (
@@ -5096,19 +5190,10 @@ export function TherapyRecommendation() {
                   <Button
                     size="sm"
                     variant="default"
-                    onClick={() => {
-                      const dateStr = new Date().toISOString().slice(0, 10);
-                      const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
-                      const injected = docAnalysisHtml.includes("</body>")
-                        ? docAnalysisHtml.replace(
-                            "</body>",
-                            `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
-                          )
-                        : `<!doctype html><html><head><title>${filename}</title></head><body>${docAnalysisHtml}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
-                      const blob = new Blob([injected], { type: "text/html;charset=utf-8" });
-                      const url = URL.createObjectURL(blob);
-                      window.open(url, "_blank", "noopener,noreferrer");
-                      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                     onClick={() => {
+                       const dateStr = new Date().toISOString().slice(0, 10);
+                       const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                       openClinicalReportWindow(docAnalysisHtml, filename, true);
                     }}
                     className="gap-1"
                     title="Öffnet das HTML in neuem Tab und startet den Druck-Dialog — dort „Als PDF speichern“ wählen"
@@ -5117,13 +5202,8 @@ export function TherapyRecommendation() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const blob = new Blob([docAnalysisHtml], { type: "text/html;charset=utf-8" });
-                      const url = URL.createObjectURL(blob);
-                      window.open(url, "_blank", "noopener,noreferrer");
-                      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-                    }}
+                     variant="outline"
+                     onClick={() => openClinicalReportWindow(docAnalysisHtml, "Befund-Auswertung")}
                     className="gap-1"
                     title="HTML in neuem Browser-Tab öffnen"
                   >
@@ -5140,10 +5220,12 @@ export function TherapyRecommendation() {
               </pre>
             )}
             {docAnalysisHtml && (
-              <iframe
-                title="Befund-Auswertung HTML"
-                srcDoc={docAnalysisHtml}
-                className="h-[72vh] w-full rounded-md border bg-background"
+               <iframe
+                 title="Befund-Auswertung HTML"
+                 srcDoc={docAnalysisHtml}
+                 sandbox=""
+                 referrerPolicy="no-referrer"
+                 className="h-[72vh] w-full rounded-md border bg-background"
               />
             )}
           </CardContent>
@@ -5407,8 +5489,9 @@ export function TherapyRecommendation() {
               selectedKeys={selectedKeys}
               onToggleRemedy={toggleRemedy}
               onToggleAll={toggleAllInCategory}
-              safetyWarningsByKey={safetyWarningsByKey}
-              safetyContextWarnings={safetyContextWarnings}
+               safetyWarningsByKey={safetyWarningsByKey}
+               safetyContextWarnings={safetyContextWarnings}
+               wikiEntries={wikiRemedies}
             />
           )}
 
@@ -5789,6 +5872,7 @@ function ParsedResultView({
   onToggleAll,
   safetyWarningsByKey,
   safetyContextWarnings,
+  wikiEntries,
 }: {
   result: string;
   isStreaming: boolean;
@@ -5798,6 +5882,7 @@ function ParsedResultView({
   onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
   safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>;
   safetyContextWarnings?: TherapySafetyWarning[];
+  wikiEntries?: WikiRemedyEntry[];
 }) {
   const parsed = useMemo(() => parseTherapyMarkdown(result), [result]);
   const deterministicGapSection = useMemo(() => buildStoolGapSection(stuhlbefund, result), [stuhlbefund, result]);
@@ -5944,8 +6029,9 @@ function ParsedResultView({
                 categoryIndex={isStreaming ? undefined : originalIndex}
                 selectedKeys={isStreaming ? undefined : selectedKeys}
                 onToggleRemedy={onToggleRemedy}
-                onToggleAll={onToggleAll}
-                safetyWarningsByKey={safetyWarningsByKey}
+                 onToggleAll={onToggleAll}
+                 safetyWarningsByKey={safetyWarningsByKey}
+                 wikiEntries={wikiEntries}
               />
             );
           })}

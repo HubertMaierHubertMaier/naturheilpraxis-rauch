@@ -16,6 +16,7 @@ describe("therapy safety", () => {
     expect(source).not.toContain("nimm es trotzdem auf");
     expect(source).not.toContain("ca. 600 % wirksamer");
     expect(source).not.toContain("ABSOLUT VERBOTENE FORMULIERUNGEN");
+    expect(source).toContain("bei dokumentiertem Prostatakarzinom oder Androgendeprivation niemals automatisch als Kernkandidat");
   });
 
   it("keeps wiki-product links admin-only and reviewed before AI use", () => {
@@ -124,6 +125,38 @@ describe("therapy safety", () => {
     ]));
   });
 
+  it("shows source, review, evidence, dosage and interaction metadata for each Wiki candidate", () => {
+    const categorySource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/CategoryCard.tsx"), "utf8");
+    const recommendationSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+
+    for (const label of ["Wiki-ID:", "Review:", "Evidenz:", "Dosierung:", "Kontraindikationen:", "Interaktionen:"]) {
+      expect(categorySource).toContain(label);
+    }
+    expect(categorySource).toContain("wikiEntry?.safetyNotes");
+    expect(recommendationSource).toContain("wikiEntries={wikiRemedies}");
+  });
+
+  it("blocks testosterone-supporting candidates from automatic selection in prostate cancer or ADT context", () => {
+    const context = {
+      conditions: "Prostatakarzinom, Zustand nach Behandlung",
+      medications: "Leuprorelin Depot laufend",
+    };
+    for (const remedy of ["Maca", "DHEA", "Testosteron Support", "Tribulus terrestris"]) {
+      expect(assessRemedySafety(remedy, context)).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: "prostate-cancer-testosterone-support", severity: "avoid" }),
+      ]));
+    }
+    expect(buildSafetyContextWarnings(context)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "prostate-cancer-hormonal-candidate-review" }),
+    ]));
+    expect(assessRemedySafety("Maca", {
+      conditions: "Prostatakarzinom ausgeschlossen",
+      medications: "keine Medikamente",
+    })).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "prostate-cancer-testosterone-support" }),
+    ]));
+  });
+
   it("requires manual medication review when no known active ingredient is recognized", () => {
     expect(buildSafetyContextWarnings({ medications: "Unbekannte Tablette morgens" })).toEqual([
       expect.objectContaining({ id: "unrecognized-medication-list" }),
@@ -148,6 +181,7 @@ describe("therapy safety", () => {
       id: "11111111-1111-4111-8111-111111111111",
       title: "Testquelle",
       reviewStatus: "reviewed",
+      evidenceLevel: "moderate",
       dosageStatus: "verified",
       productLinks: ["Vitamin C", "Vitamin D", "Vitamin B12", "Lakritz", "Magnesium", "Zink", "Selen", "Omega 3", "Optionales Mittel"].map((productName) => ({ productName, relationType: "exact_product", reviewStatus: "reviewed" })),
     }];
@@ -158,5 +192,25 @@ describe("therapy safety", () => {
     expect(selected.has("0|3")).toBe(false);
     expect(warnings.get("0|3")?.[0].id).toBe("liquorice-hypertension");
     expect(selected.has("0|8")).toBe(false);
+  });
+
+  it("does not auto-select a candidate with unrated evidence even if the Wiki review is otherwise complete", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Phytotherapie",
+      "- **Testmittel** | 1 | oral | 1 Woche | Essentiell | - | Quelle [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+    ].join("\n"));
+    const wiki = [{
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "Testmittel",
+      reviewStatus: "reviewed",
+      evidenceLevel: "unrated",
+      dosageStatus: "verified",
+    }];
+    const context = { medications: "Ramipril 5 mg" };
+
+    expect(buildInitialRemedySelection(parsed, context, wiki).size).toBe(0);
+    expect(buildRemedySafetyMap(parsed, context, wiki).get("0|0")).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-evidence-unrated", severity: "review" }),
+    ]));
   });
 });

@@ -38,7 +38,13 @@ export const deidentifyClinicalText = (value: unknown) => {
   const raw = String(value ?? "");
   const detectedNames = collectLikelyPersonNames(raw);
   const protectedValue = protectPseudonyms(raw);
-  let redacted = protectedValue.text
+  const safeDocumentMarkers: string[] = [];
+  const markerProtected = protectedValue.text.replace(/===\s*(?:📄|📷)\s*Dokument-[a-f0-9]{12}\s*\(\d+\s*S\.?\)\s*===/giu, (match) => {
+    const token = `__CLINICAL_DOCUMENT_MARKER_${safeDocumentMarkers.length}__`;
+    safeDocumentMarkers.push(match);
+    return token;
+  });
+  let redacted = markerProtected
     .replace(/===\s*(?:📄|📷)\s*[^=\n]+\s*===/gu, "=== Dokument ===")
     .replace(/^\s*\[Originaldatei[^\]\n]*\]\s*$/gimu, "")
     .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, "[E-Mail entfernt]")
@@ -66,7 +72,11 @@ export const deidentifyClinicalText = (value: unknown) => {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n");
   for (const name of detectedNames) redacted = redacted.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`, "giu"), "[Name entfernt]");
-  return protectedValue.restore(redacted).trim();
+  const restoredPseudonyms = protectedValue.restore(redacted);
+  return safeDocumentMarkers.reduce(
+    (current, marker, index) => current.split(`__CLINICAL_DOCUMENT_MARKER_${index}__`).join(marker),
+    restoredPseudonyms,
+  ).trim();
 };
 
 const normalizedSensitiveKeys = new Set([

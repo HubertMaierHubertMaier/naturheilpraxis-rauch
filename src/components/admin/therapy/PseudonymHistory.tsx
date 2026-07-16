@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye, X } from "lucide-react";
 import { logTherapyEvent } from "./therapyEventLog";
+import { openClinicalReportWindow } from "@/lib/clinicalReportHtml";
 
 export interface TherapySession {
   id: string;
@@ -478,12 +479,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                   onShowBefund(row);
                   return;
                 }
-                const w = window.open("", "_blank");
-                if (w) {
-                  w.document.open();
-                  w.document.write(row.befund_html as string);
-                  w.document.close();
-                }
+                openClinicalReportWindow(row.befund_html as string, "Befund-Auswertung");
               };
 
               const saveBefundPdf = async () => {
@@ -492,23 +488,11 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                   row = await fetchFullSession(s.id, true);
                   if (!row?.befund_html) return;
                 }
-                const w = window.open("", "_blank");
-                if (!w) return;
                 const d = new Date(s.created_at);
                 const pad = (n: number) => String(n).padStart(2, "0");
                 const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
                 const filename = `Befund-Auswertung_${pseudonymId}_${dateStr}`;
-                const html = row.befund_html as string;
-                // Inject print trigger + filename hint (browser uses document.title as default PDF name)
-                const injected = html.includes("</body>")
-                  ? html.replace(
-                      "</body>",
-                      `<script>document.title=${JSON.stringify(filename)};window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body>`,
-                    )
-                  : `<!doctype html><html><head><title>${filename}</title></head><body>${html}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));</script></body></html>`;
-                w.document.open();
-                w.document.write(injected);
-                w.document.close();
+                if (!openClinicalReportWindow(row.befund_html as string, filename, true)) return;
                 await logTherapyEvent(pseudonymId, "befund_pdf_saved", {
                   filename: `${filename}.pdf`,
                   note: `PDF-Druckdialog für „${filename}" geöffnet`,

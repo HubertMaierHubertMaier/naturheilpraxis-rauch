@@ -5,6 +5,7 @@ import {
   buildClinicallyRelevantLabHighlights,
   extractLabQuintessenceSection,
   extractSensitiveLabValuesFromText,
+  getAndrogenDeprivationPhase,
   hasAndrogenDeprivationContext,
   hasPostProstatectomyContext,
   hasTreatedProstateCancerContext,
@@ -31,7 +32,8 @@ const psa = (datum: string, wert: string, bewertung = "normal") => ({
 describe("laboratory trend analysis", () => {
   it("invalidates checkpoints created with the previous laboratory prompt", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v8"');
+    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9"');
+    expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v8"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-sensitive-lab-extraction-v7"');
   });
 
@@ -101,6 +103,7 @@ describe("laboratory trend analysis", () => {
       "Telefon: 01234 567890, E-Mail: erika@example.test",
       "Versicherten-Nr.: A123456789",
       "Pseudonym: P-2031-0042",
+      "=== 📄 Dokument-a1b2c3d4e5f6 (3 S.) ===",
       "Prostatektomie am 12.03.2030",
       "Befunddatum: 04.08.2031, PSA 0,31 ng/ml, Gesamt-Testosteron 650 ng/dl",
     ].join("\n");
@@ -112,6 +115,7 @@ describe("laboratory trend analysis", () => {
     expect(result).not.toContain("01234 567890");
     expect(result).not.toContain("A123456789");
     expect(result).toContain("P-2031-0042");
+    expect(result).toContain("=== 📄 Dokument-a1b2c3d4e5f6 (3 S.) ===");
     expect(result).toContain("12.03.2030");
     expect(result).toContain("04.08.2031");
     expect(result).toContain("PSA 0,31 ng/ml");
@@ -323,6 +327,7 @@ describe("laboratory trend analysis", () => {
       medicationsTherapies: [{ name: "GnRH-Analogon", indikation: "Androgendeprivation bei Prostatakarzinom", status: "abgesetzt" }],
     };
     expect(hasAndrogenDeprivationContext(context)).toBe(true);
+    expect(getAndrogenDeprivationPhase(context)).toBe("paused_or_ended");
 
     const result = buildClinicallyRelevantLabHighlights([
       { datum: "2030-01-10", parameter: "Testosteron", wert: "0,20", einheit: "ng/ml", bewertung: "normal" },
@@ -346,6 +351,66 @@ describe("laboratory trend analysis", () => {
     expect(buildClinicallyRelevantLabHighlights(values, "Prostatakarzinom ohne Hormontherapie")).toHaveLength(0);
   });
 
+  it("distinguishes active ADT and requires different valid measurement dates", () => {
+    const activeContext = {
+      diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }],
+      medicationsTherapies: [{ name: "GnRH-Analogon", indikation: "Androgendeprivation bei Prostatakarzinom", status: "laufend" }],
+    };
+    expect(getAndrogenDeprivationPhase(activeContext)).toBe("active");
+
+    const sameDate = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-07-10", parameter: "Testosteron", wert: "20", einheit: "ng/dl", bewertung: "normal" },
+      { datum: "2030-07-10", parameter: "Gesamt-Testosteron", wert: "80", einheit: "ng/dl", bewertung: "normal" },
+    ], activeContext);
+    expect(sameDate).toHaveLength(0);
+
+    const datedRise = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-01-10", parameter: "Testosteron", wert: "20", einheit: "ng/dl", bewertung: "normal" },
+      { datum: "2030-07-10", parameter: "Gesamt-Testosteron", wert: "80", einheit: "ng/dl", bewertung: "normal" },
+    ], activeContext);
+    expect(datedRise).toHaveLength(1);
+    expect(datedRise[0].significance).toContain("als laufend erfasster");
+  });
+
+  it("links prostate cancer and a concrete ADT drug across document chunks and treats conflicting phases as unknown", () => {
+    expect(getAndrogenDeprivationPhase([
+      { diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }] },
+      { medicationsTherapies: [{ name: "Leuprorelin", status: "laufend" }] },
+    ])).toBe("active");
+
+    expect(getAndrogenDeprivationPhase([
+      { diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }] },
+      { medicationsTherapies: [{ name: "Leuprorelin", status: "abgesetzt" }] },
+      { medicationsTherapies: [{ name: "Leuprorelin", status: "laufend" }] },
+    ])).toBe("unknown");
+
+    expect(getAndrogenDeprivationPhase([
+      { diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }] },
+      { medicationsTherapies: [{ name: "Leuprorelin", status: "abgesetzt" }] },
+      { medicationsTherapies: [{ name: "Ramipril", status: "laufend" }] },
+      { findings: [{ text: "Erneute Hormontherapie erwogen" }] },
+    ])).toBe("paused_or_ended");
+
+    expect(getAndrogenDeprivationPhase({
+      diagnoses: [{ diagnose: "Prostatakarzinom", status: "gesichert" }],
+      medicationsTherapies: [{ name: "Leuprorelin", status: "abgesetzt", plan: "Erneute Hormontherapie erwogen" }],
+    })).toBe("paused_or_ended");
+
+    expect(getAndrogenDeprivationPhase("Prostatakarzinom; Hormontherapie geplant; Ramipril abgesetzt")).toBe("none");
+    expect(getAndrogenDeprivationPhase("Prostatakarzinom; Hormontherapie erwogen; Physiotherapie aktiv")).toBe("none");
+    expect(getAndrogenDeprivationPhase("Prostatakarzinom. Leuprorelin, aktuell laufend.")).toBe("active");
+    expect(getAndrogenDeprivationPhase("Prostatakarzinom. Androgendeprivation begonnen und aktuell laufend.")).toBe("active");
+    expect(getAndrogenDeprivationPhase("Prostatakarzinom. Hormontherapie pausiert, danach wieder aktiv.")).toBe("active");
+  });
+
+  it("does not infer a treated-prostate-cancer PSA rise without two distinct valid dates", () => {
+    const context = {
+      medicationsTherapies: [{ name: "Strahlentherapie", indikation: "Prostatakarzinom", status: "abgeschlossen" }],
+    };
+    expect(buildClinicallyRelevantLabHighlights([psa("", "0,10"), psa("", "0,24")], context)).toHaveLength(0);
+    expect(buildClinicallyRelevantLabHighlights([psa("2026-07-01", "0,10"), psa("2026-07-01", "0,24")], context)).toHaveLength(0);
+  });
+
   it("does not infer a rise from a lower-bounded previous PSA value", () => {
     const context = {
       medicationsTherapies: [{ name: "Strahlentherapie", indikation: "Prostatakarzinom", status: "abgeschlossen" }],
@@ -365,16 +430,89 @@ describe("laboratory trend analysis", () => {
     expect(buildClinicallyRelevantLabHighlights([{ ...psa("2026-07-01", "0,24"), einheit: "µg/l" }], context)).toHaveLength(1);
   });
 
-  it("keeps conventionally abnormal laboratory values in the highlights", () => {
+  it("does not present a historical abnormal value as currently abnormal after normalization", () => {
     const result = buildClinicallyRelevantLabHighlights([
       { datum: "2026-01-01", parameter: "CRP", wert: "22", bewertung: "↑" },
       { datum: "2026-07-01", parameter: "CRP", wert: "4", bewertung: "normal" },
     ], "Kein besonderer Kontext");
 
+    expect(result).toHaveLength(0);
+  });
+
+  it("keeps the newest conventionally abnormal laboratory value in the highlights", () => {
+    const result = buildClinicallyRelevantLabHighlights([
+      { datum: "2026-01-01", parameter: "CRP", wert: "4", bewertung: "normal" },
+      { datum: "2026-07-01", parameter: "CRP", wert: "22", bewertung: "↑" },
+    ], "Kein besonderer Kontext");
+
     expect(result).toHaveLength(1);
-    expect(result[0].direction).toBe("↑");
     expect(result[0].item.wert).toBe("22");
     expect(result[0].derivedFromContext).toBe(false);
+  });
+
+  it("adds a disease-specific conventional medical clarification path without diagnosing", () => {
+    const result = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-07-01", parameter: "eGFR", wert: "42", einheit: "ml/min", bewertung: "↓" },
+    ], { diagnoses: [{ diagnose: "Chronische Nierenerkrankung", status: "gesichert" }] });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].ruleId).toBe("kidney-function");
+    expect(result[0].derivedFromContext).toBe(true);
+    expect(result[0].significance).toContain("nephrologisch abklären");
+  });
+
+  it("keeps a normal but disease-relevant latest value in the contextual timeline", () => {
+    const result = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-07-01", parameter: "Kalium", wert: "4,2", einheit: "mmol/l", bewertung: "normal" },
+    ], { diagnoses: [{ diagnose: "Chronische Nierenerkrankung", status: "gesichert" }] });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].direction).toBe("Verlauf");
+    expect(result[0].ruleId).toBe("kidney-function");
+    expect(result[0].significance).toContain("nicht als pathologisch bewertet");
+  });
+
+  it("does not activate disease rules for an explicitly excluded diagnosis", () => {
+    const result = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-07-01", parameter: "eGFR", wert: "42", einheit: "ml/min", bewertung: "↓" },
+    ], { diagnoses: [{ diagnose: "Chronische Nierenerkrankung ausgeschlossen" }] });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].ruleId).toBeUndefined();
+    expect(result[0].derivedFromContext).toBe(false);
+    expect(result[0].significance).toContain("Keine Diagnose oder Therapieänderung allein aus diesem Einzelwert");
+  });
+
+  it("does not activate patient disease rules from family history", () => {
+    const result = buildClinicallyRelevantLabHighlights([
+      { datum: "2030-07-01", parameter: "HbA1c", wert: "5,4", einheit: "%", bewertung: "normal" },
+    ], { anamnese: { familyHistory: [{ text: "Vater: Diabetes mellitus Typ 2" }] } });
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("does not treat a remote historical carcinoma as active oncology treatment", () => {
+    const value = [{ datum: "2030-07-01", parameter: "Hämoglobin", wert: "10,2", einheit: "g/dl", bewertung: "↓" }];
+    const historical = buildClinicallyRelevantLabHighlights(value, "Z. n. Basalzellkarzinom, vollständig entfernt 2010");
+    const active = buildClinicallyRelevantLabHighlights(value, "Aktive Chemotherapie, Zyklus 3 laufend");
+
+    expect(historical[0].ruleId).toBeUndefined();
+    expect(active[0].ruleId).toBe("oncology-blood-count");
+
+    const activeDrug = buildClinicallyRelevantLabHighlights(value, {
+      medicationsTherapies: [{
+        name: "Docetaxel",
+        dosis: "individuell",
+        vonWem: "Onkologie",
+        datum: "2030-06-01",
+        indikation: "Tumorerkrankung",
+        wirkmechanismus: "Mikrotubuli-Hemmung",
+        nebenwirkungen: "Blutbildveränderungen",
+        grundVerordnung: "Systemtherapie",
+        status: "laufend",
+      }],
+    });
+    expect(activeDrug[0].ruleId).toBe("oncology-blood-count");
   });
 
   it("detects when an existing quintessence still omits PSA", () => {
@@ -397,19 +535,48 @@ describe("laboratory trend analysis", () => {
     expect(source).toContain("deidentifyClinicalData(normalized)");
     expect(source).toContain("deidentifyClinicalData(JSON.parse(raw))");
     expect(source).toContain("deidentifyClinicalText(finalHtml)");
+    expect(source).toContain("normalizeLabUnit(item.einheit)");
+  });
+
+  it("persists structured laboratory values, alerts and rule versions with the completed report", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const listMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716094500_trim_structured_labs_from_therapy_session_lists.sql"), "utf8");
+    expect(source).toContain("collectStructuredLabData(partials)");
+    expect(source).toContain("lab_values_v1: structuredLabData.labValues");
+    expect(source).toContain("lab_alerts_v1: structuredLabData.labAlerts");
+    expect(source).toContain("analysis_fingerprint: fingerprint");
+    expect(source).toContain("strict_complete: true");
+    expect(source).toContain("removeContextualLabRowsFromSection(quintessenceSection, contextualHighlights)");
+    expect(source).toContain("const parameterCell = row.match");
+    expect(listMigration).toContain("- 'lab_values_v1' - 'lab_alerts_v1'");
+    expect(listMigration).toContain("jsonb_array_length(ts.befund_meta->'lab_values_v1')");
   });
 
   it("does not archive original analysis documents or send scans to external OCR", () => {
     const uploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/MultiDocUpload.tsx"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
     const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716095500_confirm_document_context_cleanup.sql"), "utf8");
     expect(uploadSource).not.toContain("archiveClinicalDocumentOriginal");
     expect(uploadSource).not.toContain("extract-lab-image");
     expect(uploadSource).not.toContain('from("therapy-documents")');
     expect(uploadSource).toContain("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet");
     expect(uploadSource).toContain("pagesWithInsufficientImageText.length");
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
+    expect(uploadSource).toContain("📄 Dokument-${documentId}");
+    expect(uploadSource).toContain('crypto.subtle.digest("SHA-256"');
     expect(clientSource).toContain("directIdentifierCategories");
+    expect(clientSource).toContain("insertedDocumentMarker = extractMarkerName(extracted.text)");
+    expect(clientSource).toContain("_filename: insertedDocumentMarker");
+    expect(clientSource).toContain("Die Archivdatei wurde nicht gelöscht");
+    expect(clientSource).toContain("Number(r.removed_fields || 0) < 1");
+    expect(clientSource).toContain("autoSaveSuppressedRef.current = true");
+    expect(clientSource.indexOf('admin_strip_document_from_patient_context')).toBeLessThan(clientSource.indexOf('.remove([doc.archivePath])'));
+    expect(cleanupMigration).toContain("'removed_fields', removed_fields");
+    expect(cleanupMigration).toContain("IF has_document_match THEN");
+    expect(cleanupMigration).toContain("prevent_deleted_document_replay_in_snapshot");
+    expect(cleanupMigration).toContain("prevent_deleted_document_replay_in_therapy_session");
+    expect(cleanupMigration).toContain("REVOKE EXECUTE ON FUNCTION public.strip_recently_deleted_document_markers(text,jsonb) FROM PUBLIC, anon, authenticated");
     expect(clientSource).toContain("original_archived: false");
     expect(clientSource).not.toContain("await archiveClinicalDocumentOriginal(item.file, pid)");
     expect(imageUploadSource).not.toContain("extract-lab-image");

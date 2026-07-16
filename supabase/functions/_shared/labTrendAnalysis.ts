@@ -5,7 +5,60 @@ export type LabHighlight = {
   direction: string;
   significance: string;
   derivedFromContext: boolean;
+  ruleId?: string;
 };
+
+type DiseaseLabRule = {
+  id: string;
+  context: RegExp;
+  parameters: RegExp;
+  action: string;
+};
+
+export const DISEASE_LAB_RULES: DiseaseLabRule[] = [
+  {
+    id: "kidney-function",
+    context: /niereninsuffizienz|chronische\s+nieren(?:erkrankung|krankheit)|nephropathie|\bckd\b/i,
+    parameters: /^(?:egfr|kreatinin|cystatin c|kalium|harnstoff|albuminurie|albumin kreatinin quotient)$/i,
+    action: "Im dokumentierten Nierenkontext Verlauf und Wiederholungsmessung, Hydratation sowie potenziell nierengängige oder nephrotoxische Medikamente ärztlich prüfen; je nach Ausmaß nephrologisch abklären.",
+  },
+  {
+    id: "liver-function",
+    context: /leberzirrhose|leberinsuffizienz|hepatitis|fettleber|steatohepatitis|cholestase/i,
+    parameters: /^(?:alt|gpt|ast|got|ggt|gamma gt|bilirubin|albumin|inr|quick|alkalische phosphatase|ap)$/i,
+    action: "Im dokumentierten Leberkontext Befund und Verlauf ärztlich bestätigen, Arznei- und Alkoholeinflüsse prüfen und je nach Muster hepatologisch abklären.",
+  },
+  {
+    id: "diabetes-control",
+    context: /diabetes mellitus|typ\s*[12]\s*diabetes|diabetische/i,
+    parameters: /^(?:glukose|glucose|nuchternblutzucker|blutzucker|hba1c|ketone|beta hydroxybutyrat)$/i,
+    action: "Im dokumentierten Diabeteskontext Messung, Verlauf und aktuelle Therapie ärztlich abgleichen; bei deutlicher Abweichung oder Beschwerden zeitnah diabetologisch kontrollieren.",
+  },
+  {
+    id: "thyroid-function",
+    context: /hypothyreose|hyperthyreose|hashimoto|morbus basedow|schilddrusen(?:erkrankung|unterfunktion|uberfunktion)/i,
+    parameters: /^(?:tsh|ft3|freies t3|ft4|freies t4|tpo ak|trak|thyreoglobulin)$/i,
+    action: "Im dokumentierten Schilddrüsenkontext Messzeitpunkt, Einnahmeabstand und Therapiedosis ärztlich prüfen und den Verlauf gegebenenfalls endokrinologisch abklären.",
+  },
+  {
+    id: "anticoagulation",
+    context: /antikoagulation|phenprocoumon|marcumar|warfarin|apixaban|rivaroxaban|edoxaban|dabigatran/i,
+    parameters: /^(?:inr|quick|thrombozyten|hamoglobin|hb|kreatinin|egfr)$/i,
+    action: "Bei dokumentierter Gerinnungshemmung Blutungszeichen, Einnahme, Nierenfunktion und relevante Begleitmedikation ärztlich prüfen; Kontrollweg und Dringlichkeit richten sich nach Ausmaß und Beschwerden.",
+  },
+  {
+    id: "anemia-workup",
+    context: /anamie|eisenmangel|vitamin b12 mangel|folsauremangel/i,
+    parameters: /^(?:hamoglobin|hb|hamatokrit|mcv|mch|ferritin|transferrin|transferrinsattigung|vitamin b12|holotranscobalamin|folsaure|retikulozyten)$/i,
+    action: "Im dokumentierten Anämie- oder Mangelkontext Verlauf und Ursachen ärztlich klären; je nach Konstellation Blutverlust, Eisenstatus, Vitaminversorgung, Nierenfunktion und Entzündung differenzieren.",
+  },
+  {
+    id: "oncology-blood-count",
+    context: /(?:laufende|aktive)\s+(?:chemotherapie|immuntherapie|onkologische\s+therapie)|(?:chemotherapie|zytostatik|immuntherapie|onkologische\s+therapie)[^.;\n]{0,35}(?:laufend|aktiv|fortgef[uü]hrt|therapietag|zyklus)|(?:docetaxel|cabazitaxel|abemaciclib|palbociclib|ribociclib|capecitabin|methotrexat|enzalutamid|apalutamid|darolutamid|abirateron)[^{}]{0,80}(?:laufend|aktiv|fortgef[uü]hrt)/i,
+    parameters: /^(?:leukozyten|neutrophile|absolute neutrophile|thrombozyten|hamoglobin|hb|kreatinin|egfr|alt|gpt|ast|got|bilirubin)$/i,
+    action: "Im dokumentierten onkologischen Kontext Therapietag, Verlauf und mögliche Nebenwirkungen zeitnah mit dem behandelnden Fachteam abgleichen; keine Therapieänderung allein aus diesem Einzelwert ableiten.",
+  },
+];
 
 const reportedAbnormal = (value: unknown) => {
   const assessment = String(value ?? "").trim();
@@ -34,7 +87,7 @@ export const isTotalTestosteroneParameter = (value: unknown) => {
     || /(^|\s)testosterone($|\s)/.test(parameter);
 };
 
-const labParameterKey = (value: unknown) => {
+export const labParameterKey = (value: unknown) => {
   if (isPsaParameter(value)) return "psa";
   if (isTotalTestosteroneParameter(value)) return "testosterone";
   return normalizeLabParameter(value);
@@ -63,7 +116,7 @@ const parseBoundedNumber = (value: unknown) => {
   };
 };
 
-const normalizeLabUnit = (value: unknown) => String(value ?? "")
+export const normalizeLabUnit = (value: unknown) => String(value ?? "")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
   .toLowerCase()
@@ -276,24 +329,130 @@ export const hasTreatedProstateCancerContext = (context: unknown) => {
   return inspect(context);
 };
 
-export const hasAndrogenDeprivationContext = (context: unknown) => {
-  const mentionsCancer = (text: string) => /prostata(?:karzinom|-?ca)|prostate\s+cancer|(?:^|\W)c61(?:\W|$)/i.test(text);
-  const mentionsTreatment = (text: string) => /androgen(?:deprivation|-?entzug)|hormontherapie|lhrh|gnrh|(?:^|\W)adt(?:\W|$)/i.test(text);
-  const excluded = (text: string) => /(?:keine|ohne|nie)\s+(?:eine\s+)?(?:androgen(?:deprivation|-?entzug)|hormontherapie|lhrh|gnrh|adt)|(?:abgebrochen|abgesetzt)\s+vor\s+beginn|nicht\s+(?:durchgef[uü]hrt|begonnen|erfolgt)|geplant|erwogen|besprochen|empfohlen|option/i.test(text);
-  const activeOrPast = (text: string) => /durchgef[uü]hrt|erfolgt|abgeschlossen|abgesetzt|laufend|fortgef[uü]hrt|seit\s+\d|z\.?\s*n\.?|status\s+post/i.test(text);
+export type AndrogenDeprivationPhase = "none" | "active" | "paused_or_ended" | "unknown";
 
-  const inspect = (value: unknown): boolean => {
-    if (typeof value === "string") return mentionsCancer(value) && mentionsTreatment(value) && !excluded(value) && activeOrPast(value);
-    if (Array.isArray(value)) return value.some(inspect);
-    if (!value || typeof value !== "object") return false;
-    const values = Object.values(value);
-    const immediateText = values.filter((entry): entry is string => typeof entry === "string").join(" ");
-    if (mentionsCancer(immediateText) && mentionsTreatment(immediateText) && !excluded(immediateText) && activeOrPast(immediateText)) return true;
-    return values.filter((entry) => typeof entry !== "string").some(inspect);
+export const getAndrogenDeprivationPhase = (context: unknown): AndrogenDeprivationPhase => {
+  const cancerPattern = /prostata(?:karzinom|-?ca)|prostate\s+cancer|(?:^|\W)c61(?:\W|$)/i;
+  const treatmentPattern = /androgen(?:deprivation|-?entzug)|hormontherapie|lhrh|gnrh|(?:^|\W)adt(?:\W|$)|leuprorelin|leuprolid|triptorelin|goserelin|degarelix|relugolix|bicalutamid|enzalutamid|apalutamid|darolutamid|abirateron/i;
+  const contextText = normalizeContextText(context);
+  if (!hasPositiveContextMatch(contextText, cancerPattern)) return "none";
+
+  const entries: Array<{ text: string; rank: number }> = [];
+  const collect = (value: unknown) => {
+    if (typeof value === "string") {
+      const text = normalizeContextText(value);
+      const statusContinuation = /^(?:(?:danach|wieder|aktuell|derzeit|nun|weiterhin|jetzt|seitdem)\s+)*(?:abgeschlossen|abgesetzt|beendet|pausiert|unterbrochen|laufend|aktiv|fortgef[uü]hrt|weitergef[uü]hrt|begonnen|durchgef[uü]hrt|erfolgt)(?:\s+(?:seit|am|zum)\s+[\d./-]+)?$/i;
+      let currentTreatmentClause = "";
+      const flush = () => {
+        if (currentTreatmentClause) entries.push({ text: currentTreatmentClause, rank: Number.NEGATIVE_INFINITY });
+        currentTreatmentClause = "";
+      };
+      text.split(/[;,\n.!?]+|\b(?:und|sowie|aber|jedoch)\b/).map((segment) => segment.trim()).filter(Boolean).forEach((segment) => {
+        if (treatmentPattern.test(segment)) {
+          flush();
+          currentTreatmentClause = segment;
+        } else if (currentTreatmentClause && statusContinuation.test(segment)) {
+          currentTreatmentClause = `${currentTreatmentClause} ${segment}`;
+        } else {
+          flush();
+        }
+      });
+      flush();
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach(collect);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    const object = value as Record<string, unknown>;
+    const therapyName = normalizeContextText(object.name ?? object.wirkstoff ?? object.therapie ?? object.bezeichnung ?? "");
+    const explicitStatus = normalizeContextText(object.status ?? object.therapiestatus ?? "");
+    if (treatmentPattern.test(therapyName)) {
+      entries.push({
+        text: `${therapyName} ${explicitStatus}`.trim(),
+        rank: dateRank(object.datum ?? object.date ?? object.beginn ?? object.ende),
+      });
+    } else {
+      Object.values(object).filter((entry) => typeof entry === "string").forEach(collect);
+    }
+    Object.values(object).filter((entry) => typeof entry !== "string").forEach(collect);
   };
+  collect(context);
 
-  return inspect(context);
+  const phases = entries.flatMap((entry) => {
+    if (!hasPositiveContextMatch(entry.text, treatmentPattern)) return [];
+    if (/(?:abgebrochen|abgesetzt)\s+vor\s+beginn|nicht\s+(?:durchgef[uü]hrt|begonnen|erfolgt)/i.test(entry.text)) return [];
+    const endedMatches = Array.from(entry.text.matchAll(/abgeschlossen|abgesetzt|beendet|pausiert|unterbrochen|therapiepause|therapiefrei|status\s+post/gi));
+    const activeMatches = Array.from(entry.text.matchAll(/laufend|fortgef[uü]hrt|aktiv|aktuell|seit\s+\d|weitergef[uü]hrt/gi));
+    const lastEnded = endedMatches.at(-1)?.index ?? -1;
+    const lastActive = activeMatches.at(-1)?.index ?? -1;
+    if (lastEnded >= 0 || lastActive >= 0) {
+      return [{ phase: lastActive > lastEnded ? "active" as const : "paused_or_ended" as const, rank: entry.rank }];
+    }
+    if (/durchgef[uü]hrt|erfolgt|begonnen|z\.?\s*n\.?/i.test(entry.text)) return [{ phase: "unknown" as const, rank: entry.rank }];
+    if (/nur\s+geplant|\b(?:geplant|erwogen|besprochen|empfohlen|option)\b/i.test(entry.text)) return [];
+    return [];
+  });
+  if (!phases.length) return "none";
+  const dated = phases.filter((entry) => Number.isFinite(entry.rank)).sort((a, b) => b.rank - a.rank);
+  if (dated.length && (dated.length === 1 || dated[0].rank > dated[1].rank)) return dated[0].phase;
+  const unique = new Set(phases.map((entry) => entry.phase));
+  return unique.size === 1 ? phases[0].phase : "unknown";
 };
+
+const withoutFamilyHistory = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(withoutFamilyHistory);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([key]) => !/family\s*history|familienanamnese/i.test(key))
+    .map(([key, entry]) => [key, withoutFamilyHistory(entry)]));
+};
+
+const normalizeContextText = (value: unknown) => String(
+  typeof value === "string" ? value : JSON.stringify(value ?? ""),
+).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+const hasPositiveContextMatch = (text: string, pattern: RegExp) => {
+  const matcher = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`);
+  for (const match of text.matchAll(matcher)) {
+    const start = match.index ?? 0;
+    const before = text.slice(Math.max(0, start - 55), start);
+    const after = text.slice(start + match[0].length, start + match[0].length + 55);
+    if (/(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von|verdacht\s+nicht\s+bestatigt)\s+[^.;\n]{0,35}$/i.test(before)) continue;
+    if (/^[^.;\n]{0,35}(?:ausgeschlossen|verneint|nicht\s+bestatigt|nur\s+verdacht)/i.test(after)) continue;
+    return true;
+  }
+  return false;
+};
+
+const hasActiveOncologyTherapy = (value: unknown): boolean => {
+  const therapyPattern = /chemotherapie|zytostatik|immuntherapie|onkologische\s+therapie/i;
+  const medicationPattern = /docetaxel|cabazitaxel|abemaciclib|palbociclib|ribociclib|capecitabin|methotrexat|enzalutamid|apalutamid|darolutamid|abirateron/i;
+  const activePattern = /laufend|aktiv|fortgef[uü]hrt|therapietag|zyklus/i;
+  if (typeof value === "string") {
+    const text = normalizeContextText(value);
+    return (therapyPattern.test(text) || medicationPattern.test(text)) && activePattern.test(text);
+  }
+  if (Array.isArray(value)) return value.some(hasActiveOncologyTherapy);
+  if (!value || typeof value !== "object") return false;
+  const object = value as Record<string, unknown>;
+  const name = normalizeContextText(object.name ?? object.wirkstoff ?? object.therapie ?? "");
+  const status = normalizeContextText(object.status ?? object.therapiestatus ?? "");
+  if ((therapyPattern.test(name) || medicationPattern.test(name)) && activePattern.test(status)) return true;
+  return Object.values(object).filter((entry) => typeof entry !== "string").some(hasActiveOncologyTherapy);
+};
+
+const diseaseRuleFor = (item: LabValueRecord, clinicalContext: unknown) => {
+  const contextText = normalizeContextText(clinicalContext);
+  const parameter = labParameterKey(item.parameter);
+  return DISEASE_LAB_RULES.find((rule) => (
+    (rule.id === "oncology-blood-count" ? hasActiveOncologyTherapy(clinicalContext) : hasPositiveContextMatch(contextText, rule.context))
+    && rule.parameters.test(parameter)
+  ));
+};
+
+export const hasAndrogenDeprivationContext = (context: unknown) => getAndrogenDeprivationPhase(context) !== "none";
 
 const testosteroneInNgDl = (value: unknown, unit: unknown) => {
   const measurement = parseBoundedNumber(value);
@@ -340,20 +499,27 @@ export const buildClinicallyRelevantLabHighlights = (
   labValues: LabValueRecord[],
   clinicalContext: unknown,
 ): LabHighlight[] => {
-  const newestAbnormal = newestByParameter(labValues.filter((item) => reportedAbnormal(item.bewertung)));
+  const patientClinicalContext = withoutFamilyHistory(clinicalContext);
+  const newestValues = newestByParameter(labValues);
   const highlights = new Map<string, LabHighlight>();
 
-  for (const [key, candidate] of newestAbnormal) {
+  for (const [key, candidate] of newestValues) {
+    const diseaseRule = diseaseRuleFor(candidate.item, patientClinicalContext);
+    const abnormal = reportedAbnormal(candidate.item.bewertung);
+    if (!abnormal && !diseaseRule) continue;
     highlights.set(key, {
       item: candidate.item,
-      direction: String(candidate.item.bewertung ?? "auffällig"),
-      significance: "Auffälliger Laborwert laut dokumentierter Bewertung; im klinischen Kontext prüfen.",
-      derivedFromContext: false,
+      direction: abnormal ? String(candidate.item.bewertung ?? "auffällig") : "Verlauf",
+      significance: diseaseRule
+        ? `${abnormal ? "Auffälliger Laborwert laut dokumentierter Bewertung." : "Aktuell nicht als pathologisch bewerteter, im dokumentierten Erkrankungs- oder Therapiekontext jedoch verlaufsrelevanter Laborwert."} ${diseaseRule.action}`
+        : "Auffälliger Laborwert laut dokumentierter Bewertung; Datum, Einheit, Referenzbereich und Verlauf prüfen und die Abweichung je nach Ausmaß ärztlich bestätigen. Keine Diagnose oder Therapieänderung allein aus diesem Einzelwert ableiten.",
+      derivedFromContext: !!diseaseRule,
+      ruleId: diseaseRule?.id,
     });
   }
 
-  const postProstatectomy = hasPostProstatectomyContext(clinicalContext);
-  const treatedProstateCancer = postProstatectomy || hasTreatedProstateCancerContext(clinicalContext);
+  const postProstatectomy = hasPostProstatectomyContext(patientClinicalContext);
+  const treatedProstateCancer = postProstatectomy || hasTreatedProstateCancerContext(patientClinicalContext);
   if (!treatedProstateCancer) return Array.from(highlights.values());
 
   const psaValues = labValues
@@ -368,6 +534,9 @@ export const buildClinicallyRelevantLabHighlights = (
     const documentedRise = latestMeasurement.bound === "exact"
       && previous?.measurement !== null
       && previous?.measurement !== undefined
+      && Number.isFinite(latest.rank)
+      && Number.isFinite(previous.rank)
+      && latest.rank > previous.rank
       && previous.measurement.bound !== "lower"
       && latestMeasurement.numeric > previous.measurement.numeric;
     const postProstatectomySignal = postProstatectomy && latestMeasurement.bound !== "upper" && latestMeasurement.numeric >= 0.1;
@@ -386,7 +555,8 @@ export const buildClinicallyRelevantLabHighlights = (
     }
   }
 
-  if (hasAndrogenDeprivationContext(clinicalContext)) {
+  const androgenDeprivationPhase = getAndrogenDeprivationPhase(patientClinicalContext);
+  if (androgenDeprivationPhase !== "none") {
     const testosteroneValues = labValues
       .map((item, index) => ({
         item,
@@ -407,6 +577,9 @@ export const buildClinicallyRelevantLabHighlights = (
     const comparableRise = latestTestosterone?.measurement?.bound === "exact"
       && previousTestosterone?.measurement !== null
       && previousTestosterone?.measurement !== undefined
+      && Number.isFinite(latestTestosterone.rank)
+      && Number.isFinite(previousTestosterone.rank)
+      && latestTestosterone.rank > previousTestosterone.rank
       && previousTestosterone.measurement.bound !== "lower"
       && latestTestosterone.measurement.numeric > previousTestosterone.measurement.numeric;
 
@@ -414,7 +587,11 @@ export const buildClinicallyRelevantLabHighlights = (
       highlights.set("testosterone", {
         item: latestTestosterone.item,
         direction: "Verlauf",
-        significance: "Dokumentierter Testosteron-Anstieg bei zugeordneter Androgenentzugs-/Hormontherapie des Prostatakarzinoms; zusammen mit PSA und Behandlungsstatus zeitnah ärztlich beziehungsweise urologisch bewerten. Keine automatische Aussage über Erkrankungsaktivität.",
+        significance: androgenDeprivationPhase === "paused_or_ended"
+          ? "Dokumentierter Testosteron-Anstieg nach pausierter oder beendeter Androgenentzugs-/Hormontherapie des Prostatakarzinoms; zusammen mit PSA, Messzeitpunkten und Behandlungsstatus ärztlich beziehungsweise urologisch bewerten. Keine automatische Aussage über Erkrankungsaktivität."
+          : androgenDeprivationPhase === "active"
+            ? "Dokumentierter Testosteron-Anstieg bei als laufend erfasster Androgenentzugs-/Hormontherapie des Prostatakarzinoms; Messzeitpunkte, Therapiephase und Verlauf zusammen mit PSA zeitnah ärztlich beziehungsweise urologisch prüfen. Keine automatische Aussage über Erkrankungsaktivität."
+            : "Dokumentierter Testosteron-Anstieg bei zugeordneter Androgenentzugs-/Hormontherapie des Prostatakarzinoms; Therapiephase und Messzeitpunkte sind nicht eindeutig und müssen zusammen mit PSA ärztlich beziehungsweise urologisch geklärt werden. Keine automatische Aussage über Erkrankungsaktivität.",
         derivedFromContext: true,
       });
     }

@@ -43,7 +43,8 @@ const MEDICATION_GROUPS: MedicationGroup[] = [
   { id: "hormonal_contraceptive", label: "hormonelle Kontrazeptiva", pattern: /\b(?:antibabypille|kontrazeptiv|ethinylestradiol|levonorgestrel|desogestrel|dienogest)\b/i },
   { id: "diabetes", label: "Antidiabetika", pattern: /\b(?:insulin|metformin|glimepirid|gliclazid|empagliflozin|dapagliflozin|semaglutid|ozempic|tirzepatid|mounjaro)\b/i },
   { id: "thyroid", label: "Schilddruesenhormone", pattern: /\b(?:levothyroxin|l-thyroxin|euthyrox|thyronajod|liothyronin)\b/i },
-  { id: "oncology", label: "onkologische Arzneimittel", pattern: /\b(?:abemaciclib|verzenios|letrozol|tamoxifen|anastrozol|exemestan|palbociclib|ribociclib|capecitabin|methotrexat)\b/i },
+  { id: "oncology", label: "onkologische Arzneimittel", pattern: /\b(?:abemaciclib|verzenios|letrozol|tamoxifen|anastrozol|exemestan|palbociclib|ribociclib|capecitabin|methotrexat|docetaxel|cabazitaxel)\b/i },
+  { id: "androgen_deprivation", label: "Androgendeprivation/Prostataonkologie", pattern: /\b(?:leuprorelin|leuprolid|triptorelin|goserelin|degarelix|relugolix|bicalutamid|enzalutamid|apalutamid|darolutamid|abirateron)\b/i },
 ];
 
 const warning = (
@@ -84,6 +85,20 @@ export const assessRemedySafety = (
   const add = (item: TherapySafetyWarning) => {
     if (!warnings.some((existing) => existing.id === item.id)) warnings.push(item);
   };
+
+  const prostateCancerContext = /\b(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)\b/i.test(clinicalText)
+    && !/(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von)\s+[^.;\n]{0,30}(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)|(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)[^.;\n]{0,35}(?:ausgeschlossen|verneint)/i.test(clinicalText);
+  const testosteroneSupporting = /\b(?:testosteron|dhea|dehydroepiandrosteron|maca|lepidium\s+meyenii|tribulus)\b/i.test(remedy);
+  if (testosteroneSupporting && (prostateCancerContext || hasGroup(medications, "androgen_deprivation"))) {
+    add(warning(
+      "prostate-cancer-testosterone-support",
+      "avoid",
+      "Testosteron-stuetzender Kandidat bei Prostatakarzinom/ADT",
+      "Eine hormonell ausgerichtete Ergaenzung kann im dokumentierten Prostatakarzinom- oder Androgendeprivationskontext fachlich relevant sein und darf nicht automatisch als Kernkandidat erscheinen.",
+      "Nicht automatisch auswaehlen; konkretes Mittel, Behandlungsphase, PSA-/Testosteronverlauf und onkologische Therapie mit dem behandelnden Fachteam pruefen.",
+      "Interne onkologische Sicherheitsregel; konkrete Fach- und Produktinformation pruefen.",
+    ));
+  }
 
   const liquorice = /\b(?:lakritz|su(?:ss|ß|ess)holz|glycyrrhizin|liquorice|licorice)\b/i.test(remedy);
   if (liquorice && /\b(?:hyperton|bluthochdruck|arterielle\s+hypertonie)\b/i.test(clinicalText)) {
@@ -208,27 +223,41 @@ export const assessRemedySafety = (
 
 export const buildSafetyContextWarnings = (context: TherapySafetyContext): TherapySafetyWarning[] => {
   const medicationText = normalize(context.medications).trim();
+  const warnings: TherapySafetyWarning[] = [];
   if (!medicationText) {
-    return [warning(
+    warnings.push(warning(
       "missing-medication-list",
       "monitor",
       "Medikationsliste fehlt",
       "Ohne aktuelle Arzneimittelliste ist keine belastbare Wechselwirkungspruefung moeglich.",
       "Vor Finalisierung aktuelle Arzneimittel, Dosen und Einnahmezeiten erfassen.",
       "Interne Sicherheitsregel.",
-    )];
-  }
-  if (!recognizeMedicationGroups(medicationText).length) {
-    return [warning(
+    ));
+  } else if (!recognizeMedicationGroups(medicationText).length) {
+    warnings.push(warning(
       "unrecognized-medication-list",
       "review",
       "Medikation nicht strukturiert erkannt",
       "Die Arzneimittelliste ist vorhanden, konnte aber keiner hinterlegten Wirkstoffgruppe sicher zugeordnet werden.",
       "Wirkstoffnamen und Dosierungen manuell kontrollieren; Warnsystem nicht als vollstaendig betrachten.",
       "Interne Sicherheitsregel.",
-    )];
+    ));
   }
-  return [];
+  const clinicalText = normalize(`${String(context.conditions ?? "")} ${String(context.symptoms ?? "")}`);
+  const hasProstateCancer = /\b(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)\b/i.test(clinicalText)
+    && !/(?:kein(?:e|en|er|es)?|ohne|ausschluss\s+von)\s+[^.;\n]{0,30}(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)|(?:prostatakarzinom|prostata\s*ca|prostate\s+cancer|c61)[^.;\n]{0,35}(?:ausgeschlossen|verneint)/i.test(clinicalText);
+  const hasAdtMedication = recognizeMedicationGroups(medicationText).some((group) => group.id === "androgen_deprivation");
+  if (hasProstateCancer || hasAdtMedication) {
+    warnings.push(warning(
+      "prostate-cancer-hormonal-candidate-review",
+      "review",
+      "Prostatakarzinom/Androgendeprivation dokumentiert",
+      "Hormonell oder testosteron-stuetzend ausgerichtete Mittel duerfen nicht automatisch als Kernkandidaten uebernommen werden.",
+      "PSA, Gesamt-Testosteron, Behandlungsphase und onkologische Medikation vor der finalen Auswahl gemeinsam fachlich pruefen.",
+      "Interne onkologische Sicherheitsregel.",
+    ));
+  }
+  return warnings;
 };
 
 export const severityLabel = (severity: TherapySafetySeverity) => (

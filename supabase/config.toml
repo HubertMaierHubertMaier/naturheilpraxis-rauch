@@ -27,6 +27,9 @@ verify_jwt = true
 [functions.therapy-recommend]
 verify_jwt = true
 
+[functions.analyze-documents]
+verify_jwt = true
+
 [functions.check-hp-therapy]
 verify_jwt = true
 

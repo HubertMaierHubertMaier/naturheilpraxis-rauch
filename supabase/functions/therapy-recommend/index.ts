@@ -1048,7 +1048,7 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 2b. **Geschlecht**: ${geschlecht || "Nicht angegeben"}
    - Bei "weiblich": gynäkologische Mittel (Aletris-Heel, Sepia, Pulsatilla, Lachesis, Cimicifuga, Mönchspfeffer/Vitex) bei passender Indikation berücksichtigen.
    - Bei "männlich": KEINE primär gynäkologischen Mittel (z.B. Aletris-Heel) – bei Erschöpfung stattdessen China-Homaccord, Nux vomica-Homaccord, Coenzyme/Ubichinon compositum.
-   - Männerspezifika: Prostata (Sabal, Brennnesselwurzel, Kürbiskern, Lycopin), Testosteron-Stützung (Zink, Maca) bei passender Indikation.
+   - Männerspezifika: Prostata (Sabal, Brennnesselwurzel, Kürbiskern, Lycopin). Testosteron-stuetzende Kandidaten nur bei passender, fachlich belegter Indikation; bei dokumentiertem Prostatakarzinom oder Androgendeprivation niemals automatisch als Kernkandidat, sondern ausschliesslich zur manuellen onkologischen Sicherheitspruefung.
 
 2c. **Körperkonstitution & BMI**: ${typeof bmi === "number" ? `BMI ${bmi} (${bmiKategorie})` : (groesseCm && gewichtKg ? `Größe ${groesseCm} cm, Gewicht ${gewichtKg} kg` : "Nicht angegeben")}
    - **BMI < 18.5 (Untergewicht)**: Aufbau-/Mitochondrienstrategie, Eiweiß (Whey/Lupinen), B-Komplex, Coenzyme compositum, Zink, kein zusätzliches Fasten/Detox, KEINE appetithemmenden Bitterstoffe in hoher Dosis. Eigene Sektion "🥗 Ernährung & Aufbau" mit konkreten Empfehlungen (3–5 Mahlzeiten, kalorisch dichte gesunde Fette, Eiweißanteil ≥1.2 g/kg).

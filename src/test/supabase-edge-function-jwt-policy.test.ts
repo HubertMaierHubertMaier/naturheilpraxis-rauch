@@ -27,6 +27,7 @@ describe("Supabase Edge Function JWT policy", () => {
   ];
 
   const adminOnlyServiceRoleFunctions = [
+    "analyze-documents",
     "check-hp-therapy",
     "generate-icd10",
     "send-icd10-report",
@@ -152,6 +153,18 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(getVerifyJwt("send-verification-email")).toBe(true);
     expect(source).toMatch(/status:\s*410/);
     expect(source).not.toMatch(/SMTPClient|\.send\(|req\.json\(|SMTP_PASSWORD/);
+  });
+
+  it("rate-limits admin document analysis before parsing clinical request bodies", () => {
+    const source = readFunctionSource("analyze-documents");
+    const rateLimitIndex = source.indexOf("checkRateLimit(`analyze-documents:admin:${user.id}`)");
+    const bodyParsingIndex = source.indexOf("await req.text()");
+
+    expect(source).toContain("RATE_LIMIT_MAX_REQUESTS");
+    expect(source).toMatch(/status:\s*429/);
+    expect(rateLimitIndex).toBeGreaterThan(-1);
+    expect(bodyParsingIndex).toBeGreaterThan(-1);
+    expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
   });
 
   it("verifies provider and notification bearer tokens with Supabase Auth", () => {

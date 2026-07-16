@@ -123,6 +123,7 @@ describe("Phase 4 security access matrix", () => {
     const adminFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.audience === "admin");
 
     expect(adminFunctions.map((fn) => fn.name).sort()).toEqual([
+      "analyze-documents",
       "check-hp-therapy",
       "enrich-wiki-tags",
       "extract-lab-image",

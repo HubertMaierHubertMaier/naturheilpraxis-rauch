@@ -87,7 +87,10 @@ export async function extractClinicalDocumentText(
 
   const joined = parts.map((text, index) => `--- Seite ${index + 1} ---\n${text}`).join("\n\n");
   const removedIdentifierCategories = directIdentifierCategories(joined);
-  const text = deidentifyClinicalText(`=== 📄 Dokument (${doc.numPages} S.) ===\n${joined}`);
+  const safeBody = deidentifyClinicalText(joined);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(safeBody));
+  const documentId = Array.from(new Uint8Array(digest)).slice(0, 6).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const text = `=== 📄 Dokument-${documentId} (${doc.numPages} S.) ===\n${safeBody}`;
   const residualIdentifiers = directIdentifierCategories(text);
   if (residualIdentifiers.length) {
     throw new Error(`Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")} konnte nicht zuverlässig entfernt werden.`);

@@ -695,6 +695,27 @@ export type Database = {
         }
         Relationships: []
       }
+      therapy_deleted_document_markers: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          marker_name: string
+          pseudonym_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          marker_name: string
+          pseudonym_id: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          marker_name?: string
+          pseudonym_id?: string
+        }
+        Relationships: []
+      }
       therapy_sessions: {
         Row: {
           befund_html: string | null

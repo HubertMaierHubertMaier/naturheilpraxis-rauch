@@ -73,7 +73,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/reizdarm", component: "Reizdarm", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/knieschwellung", component: "Knieschwellung", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/admin", component: "AdminDashboard", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles", "app_settings", "audit_log"], edgeFunctions: ["get-patients", "generate-icd10", "send-icd10-report"], riskNote: "Admin page enforces access in component via useAuth/useAdminCheck plus local-only dev bypass." },
-  { path: "/wissensdatenbank", component: "Wissensdatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "knowledge_product_links", "mannayan_products", "therapy_sessions"], edgeFunctions: ["therapy-recommend", "get-therapy-sessions", "enrich-wiki-tags", "extract-lab-image", "generate-diagnoses"], riskNote: "Admin-only knowledge/therapy workspace; component redirects non-admins." },
+  { path: "/wissensdatenbank", component: "Wissensdatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "knowledge_product_links", "mannayan_products", "therapy_sessions"], edgeFunctions: ["analyze-documents", "therapy-recommend", "get-therapy-sessions", "enrich-wiki-tags", "extract-lab-image", "generate-diagnoses"], riskNote: "Admin-only knowledge/therapy workspace; component redirects non-admins." },
   { path: "/patienten", component: "PatientenManagerPage", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles"], edgeFunctions: ["get-patients"], riskNote: "Admin-only patient list; component denies non-admins and dev bypass is localhost-restricted." },
   { path: "/dashboard", component: "PatientDashboard", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions"], edgeFunctions: [], riskNote: "Patient dashboard requires an authenticated and 2FA-bound session; RLS must constrain submissions to the signed-in patient." },
   { path: "/patienten-bibliothek", component: "PatientenBibliothek", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["patient_resources", "profiles"], edgeFunctions: [], riskNote: "Authenticated patient library route." },
@@ -82,6 +82,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
 ];
 
 export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
+  { name: "analyze-documents", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC before request-body parsing and AI calls", rateLimitPolicy: "Best-effort local per-isolate admin rate limit before body parsing and AI calls; JWT and admin role are the primary access controls.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "check-hp-therapy", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through has_role RPC", roleEnforcement: "admin enforced via has_role RPC before therapy checks", rateLimitPolicy: "Request processing is JWT-gated; admin-only therapeutic checks should remain behind platform auth.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: true, publicRationale: "" },
   { name: "elevenlabs-tts", verifyJwt: true, audience: "provider-protected", authCheck: "Supabase platform JWT plus auth.getUser token verification", roleCheck: "Authenticated user required; no admin role for patient-facing TTS", roleEnforcement: "verified Supabase user required before provider access", rateLimitPolicy: "Local in-memory per-authenticated-user rate limit before request-body parsing and ElevenLabs provider calls, with HTTP 429 response.", usesServiceRole: false, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
   { name: "enrich-wiki-tags", verifyJwt: true, audience: "admin", authCheck: "Authorization header resolved with auth.getUser", roleCheck: "Admin enforced through user_roles lookup", roleEnforcement: "admin enforced via service-role user_roles lookup after auth.getUser", rateLimitPolicy: "Local in-memory per-admin rate limit before request-body parsing and AI provider calls, with HTTP 429 response.", usesServiceRole: true, cors: "request-aware allowlist", handlesPii: false, publicRationale: "" },
@@ -289,6 +290,17 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     frontendConsumers: ["PatientManager", "PatientenBibliothek"],
     policySummary: "Users access own profile; admin policies support patient management.",
     riskNote: "Profile data can identify patients/users; never expose as public read.",
+  },
+  {
+    name: "therapy_deleted_document_markers",
+    audience: "service-role",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: [],
+    policySummary: "No direct client policies; security-definer cleanup functions and triggers use short-lived marker tombstones.",
+    riskNote: "Contains pseudonym-scoped deletion markers; keep inaccessible to anon and authenticated clients.",
   },
   {
     name: "therapy_sessions",

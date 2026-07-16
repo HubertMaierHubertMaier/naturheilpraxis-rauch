@@ -116,6 +116,9 @@ export const assessRemedyWithWikiSafety = (
     } else if (entry.reviewStatus !== "reviewed") {
       add(wikiWarning("wiki-unreviewed", "review", "Wiki-Eintrag noch nicht fachlich geprüft", `${entry.title} hat den Status ${entry.reviewStatus || "unreviewed"}.`, "Quelle, Evidenz, Dosierung und Produktsicherheit vor Auswahl prüfen."));
     }
+    if (!entry.evidenceLevel || /^(?:unrated|unknown|unverified|insufficient)$/i.test(entry.evidenceLevel)) {
+      add(wikiWarning("wiki-evidence-unrated", "review", "Evidenzstatus nicht ausreichend bewertet", `${entry.title} hat den Evidenzstatus ${entry.evidenceLevel || "unrated"}.`, "Nicht automatisch als Kernkandidat auswählen; Quellenlage und Übertragbarkeit auf den Patientenkontext fachlich prüfen."));
+    }
     if (entry.dosageStatus && !["verified", "not_applicable"].includes(entry.dosageStatus)) {
       add(wikiWarning("wiki-dosage-unverified", "review", "Dosierung im Wiki nicht geprüft", `Dosierungsstatus: ${entry.dosageStatus}.`, "Dosierung nicht ungeprüft übernehmen; konkrete Produktinformation verwenden."));
     }

@@ -70,9 +70,19 @@ interface CategoryCardProps {
   onToggleRemedy?: (key: string) => void;
   onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
   safetyWarningsByKey?: Map<string, TherapySafetyWarning[]>;
+  wikiEntries?: Array<{
+    id?: string;
+    title: string;
+    reviewStatus?: string;
+    evidenceLevel?: string;
+    dosageStatus?: string;
+    contraindications?: string[];
+    interactionTags?: string[];
+    safetyNotes?: string;
+  }>;
 }
 
-export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemedy, onToggleAll, safetyWarningsByKey }: CategoryCardProps) {
+export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemedy, onToggleAll, safetyWarningsByKey, wikiEntries = [] }: CategoryCardProps) {
   const styles = TONE_STYLES[group.tone];
   // Wir behalten Original-Indizes für stabile Selection-Keys
   const indexed = group.remedies.map((r, i) => ({ row: r, originalIndex: i }));
@@ -121,11 +131,14 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map(({ row, originalIndex }) => {
-              const key = `${categoryIndex}|${originalIndex}`;
-              const isChecked = selectionEnabled && selectedKeys!.has(key);
-              const safetyWarnings = safetyWarningsByKey?.get(key) || [];
-              return (
+             {sorted.map(({ row, originalIndex }) => {
+               const key = `${categoryIndex}|${originalIndex}`;
+               const isChecked = selectionEnabled && selectedKeys!.has(key);
+               const safetyWarnings = safetyWarningsByKey?.get(key) || [];
+               const wikiId = row.reason.match(/\[WIKI_ID:([0-9a-f-]{36})\]/i)?.[1]?.toLowerCase();
+               const wikiEntry = wikiId ? wikiEntries.find((entry) => entry.id?.toLowerCase() === wikiId) : undefined;
+               const visibleReason = row.reason.replace(/\s*\[WIKI_ID:[0-9a-f-]{36}\]\s*/gi, " ").trim();
+               return (
                 <TableRow key={key} className={cn("align-top", selectionEnabled && !isChecked && "opacity-60", safetyWarnings.length && "bg-amber-50/70 dark:bg-amber-950/20")}>
                   {selectionEnabled && (
                     <TableCell className="py-3">
@@ -140,9 +153,22 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
                     <div className={cn("text-base md:text-lg font-bold leading-tight font-serif", styles.accent)}>
                       {row.name}
                     </div>
-                    {row.latin && (
-                      <div className="text-xs italic text-muted-foreground mt-0.5">{row.latin}</div>
-                    )}
+                     {row.latin && (
+                       <div className="text-xs italic text-muted-foreground mt-0.5">{row.latin}</div>
+                     )}
+                     {wikiId && (
+                       <div className="mt-2 rounded border border-blue-300/60 bg-blue-50/60 p-2 text-[11px] leading-snug text-blue-950 dark:border-blue-900/60 dark:bg-blue-950/20 dark:text-blue-100">
+                         <div className="font-mono break-all"><strong>Wiki-ID:</strong> {wikiId}</div>
+                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                           <span><strong>Review:</strong> {wikiEntry?.reviewStatus || "nicht auflösbar"}</span>
+                           <span><strong>Evidenz:</strong> {wikiEntry?.evidenceLevel || "unrated"}</span>
+                           <span><strong>Dosierung:</strong> {wikiEntry?.dosageStatus || "unverified"}</span>
+                         </div>
+                         <div className="mt-1"><strong>Kontraindikationen:</strong> {wikiEntry?.contraindications?.length ? wikiEntry.contraindications.join(", ") : "keine strukturiert hinterlegt"}</div>
+                         <div><strong>Interaktionen:</strong> {wikiEntry?.interactionTags?.length ? wikiEntry.interactionTags.join(", ") : "keine strukturiert hinterlegt"}</div>
+                         {wikiEntry?.safetyNotes && <div><strong>Sicherheit:</strong> {wikiEntry.safetyNotes}</div>}
+                       </div>
+                     )}
                     {safetyWarnings.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {safetyWarnings.map((warning) => (
@@ -167,7 +193,7 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
                   <TableCell className="py-3 text-sm">{row.duration || "—"}</TableCell>
                   <TableCell className="py-3"><PriorityBadge row={row} /></TableCell>
                   <TableCell className="py-3 text-right font-mono text-sm whitespace-nowrap">{row.cost || "—"}</TableCell>
-                  <TableCell className="py-3 text-xs text-muted-foreground">{row.reason || "—"}</TableCell>
+                   <TableCell className="py-3 text-xs text-muted-foreground">{visibleReason || "—"}</TableCell>
                 </TableRow>
               );
             })}
