@@ -1,4 +1,6 @@
 import type React from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -6,6 +8,13 @@ import {
   expectNoAppSmokeConsoleWarnings,
   renderAppAtRoute,
 } from "./appSmokeTestUtils";
+import {
+  ANAMNESIS_DRAFT_TTL_MS,
+  purgeLegacyAnamnesisStorage,
+  readAnamnesisSessionDraft,
+  removeAnamnesisSessionDraft,
+  writeAnamnesisSessionDraft,
+} from "@/lib/anamnesisDraftStorage";
 
 const {
   mockUseAnamnesePublic,
@@ -167,9 +176,54 @@ afterEach(() => {
   clearAppSmokeConsoleSpies();
   window.history.pushState({}, "", "/");
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 describe("/anamnesebogen public submission safety characterization", () => {
+  it("keeps sensitive drafts session-scoped and removes legacy persistent caches", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/pages/Anamnesebogen.tsx"), "utf8");
+
+    expect(source).not.toContain("localStorage.getItem(draftStorageKey)");
+    expect(source).not.toContain("localStorage.setItem(");
+    expect(source).toContain("readAnamnesisSessionDraft");
+    expect(source).toContain("writeAnamnesisSessionDraft");
+    expect(source).toContain("ANAMNESIS_DRAFT_TTL_MS");
+    expect(source).toContain("removeAnamnesisSessionDraft");
+
+    localStorage.setItem("anamnesebogen:draft:first", "medical-data");
+    localStorage.setItem("anamnesebogen:email-cache:test@example.invalid", "medical-data");
+    localStorage.setItem("cookie-consent", "accepted");
+    purgeLegacyAnamnesisStorage(localStorage);
+    expect(localStorage.getItem("anamnesebogen:draft:first")).toBeNull();
+    expect(localStorage.getItem("anamnesebogen:email-cache:test@example.invalid")).toBeNull();
+    expect(localStorage.getItem("cookie-consent")).toBe("accepted");
+  });
+
+  it("enforces the fixed eight-hour session draft boundary", () => {
+    const key = "anamnesebogen:draft:synthetic-user";
+    const startedAt = Date.UTC(2026, 6, 16, 8);
+    const expiresAt = startedAt + ANAMNESIS_DRAFT_TTL_MS;
+    const draft = { formData: { diagnose: "synthetic" }, iaaData: { item1: 2 } };
+
+    expect(writeAnamnesisSessionDraft(sessionStorage, key, draft, expiresAt, startedAt)).toBe(true);
+    expect(readAnamnesisSessionDraft(sessionStorage, key, expiresAt - 1)).toEqual({ data: draft, expiresAt });
+    expect(readAnamnesisSessionDraft(sessionStorage, key, expiresAt)).toBeNull();
+    expect(sessionStorage.getItem(key)).toBeNull();
+    expect(writeAnamnesisSessionDraft(sessionStorage, key, draft, expiresAt, expiresAt + 1)).toBe(false);
+  });
+
+  it("fails closed when browser storage methods are unavailable", () => {
+    const unavailableStorage = {
+      getItem: () => { throw new Error("blocked"); },
+      setItem: () => { throw new Error("blocked"); },
+      removeItem: () => { throw new Error("blocked"); },
+    } as unknown as Storage;
+
+    expect(readAnamnesisSessionDraft(unavailableStorage, "draft", 0)).toBeNull();
+    expect(writeAnamnesisSessionDraft(unavailableStorage, "draft", { medical: true }, 2, 1)).toBe(false);
+    expect(() => removeAnamnesisSessionDraft(unavailableStorage, "draft")).not.toThrow();
+  });
+
   it("does not render the form or invoke submission for anonymous visitors", async () => {
     renderAppAtRoute("/anamnesebogen");
 

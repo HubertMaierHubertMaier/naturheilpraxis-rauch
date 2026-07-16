@@ -90,6 +90,12 @@ import { AnamnesePdfButton } from "@/components/anamnese/AnamnesePdfButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAnamnesePublic } from "@/hooks/useAnamnesePublic";
 import { useAnamneseOnlineEnabled } from "@/hooks/useAnamneseOnlineEnabled";
+import {
+  ANAMNESIS_DRAFT_TTL_MS,
+  readAnamnesisSessionDraft,
+  removeAnamnesisSessionDraft,
+  writeAnamnesisSessionDraft,
+} from "@/lib/anamnesisDraftStorage";
 
 type LayoutType = "wizard" | "accordion" | null;
 
@@ -104,6 +110,14 @@ const getErrorMessage = (error: unknown) => {
     if (typeof message === "string") return message;
   }
   return "";
+};
+
+const getAvailableSessionStorage = () => {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 };
 
 // Icon mapping for dynamic icon rendering
@@ -747,67 +761,63 @@ const Anamnesebogen = () => {
     return `anamnesebogen:draft:${user.id}`;
   }, [user?.id]);
 
-  // Restore draft after (re-)login – first try user-specific draft, then email-based cache
+  const draftExpiresAtRef = useRef<number | null>(null);
+  const draftExpiredRef = useRef(false);
+
+  // Keep sensitive drafts tab-scoped with a hard, non-renewing lifetime.
   useEffect(() => {
     if (!draftStorageKey) return;
-    try {
-      const raw = localStorage.getItem(draftStorageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw) as {
-          formData?: AnamneseFormData;
-          selectedLayout?: LayoutType;
-          wizardStep?: number;
-          openAccordionItems?: string[];
-          iaaData?: Record<string, number>;
-        };
-        if (parsed.formData) setFormData((prev) => ({ ...prev, ...parsed.formData }));
-        if (parsed.selectedLayout !== undefined) setSelectedLayout(parsed.selectedLayout);
-        if (typeof parsed.wizardStep === "number") setWizardStep(parsed.wizardStep);
-        if (Array.isArray(parsed.openAccordionItems) && parsed.openAccordionItems.length)
-          setOpenAccordionItems(parsed.openAccordionItems);
-        if (parsed.iaaData && Object.keys(parsed.iaaData).length > 0) setIaaData(parsed.iaaData);
-        return;
-      }
-      // Fallback: try to restore from email-based cache (e.g. after account reset)
-      const email = user?.email;
-      if (email) {
-        const emailCacheKey = `anamnesebogen:email-cache:${email.toLowerCase()}`;
-        const emailRaw = localStorage.getItem(emailCacheKey);
-        if (emailRaw) {
-          const parsed = JSON.parse(emailRaw) as {
-            formData?: AnamneseFormData;
-            iaaData?: Record<string, number>;
-          };
-          if (parsed.formData) setFormData((prev) => ({ ...prev, ...parsed.formData }));
-          if (parsed.iaaData && Object.keys(parsed.iaaData).length > 0) setIaaData(parsed.iaaData);
-        }
-      }
-    } catch {
-      // ignore corrupted draft
+    const storage = getAvailableSessionStorage();
+    if (!storage) {
+      draftExpiredRef.current = true;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const now = Date.now();
+    const stored = readAnamnesisSessionDraft<{
+      formData?: AnamneseFormData;
+      selectedLayout?: LayoutType;
+      wizardStep?: number;
+      openAccordionItems?: string[];
+      iaaData?: Record<string, number>;
+    }>(storage, draftStorageKey, now);
+    const expiresAt = stored?.expiresAt ?? now + ANAMNESIS_DRAFT_TTL_MS;
+    draftExpiresAtRef.current = expiresAt;
+    draftExpiredRef.current = false;
+
+    if (stored?.data.formData) setFormData((prev) => ({ ...prev, ...stored.data.formData }));
+    if (stored?.data.selectedLayout !== undefined) setSelectedLayout(stored.data.selectedLayout);
+    if (typeof stored?.data.wizardStep === "number") setWizardStep(stored.data.wizardStep);
+    if (stored?.data.openAccordionItems?.length) setOpenAccordionItems(stored.data.openAccordionItems);
+    if (stored?.data.iaaData && Object.keys(stored.data.iaaData).length > 0) setIaaData(stored.data.iaaData);
+
+    const expiryTimer = window.setTimeout(() => {
+      draftExpiredRef.current = true;
+      removeAnamnesisSessionDraft(storage, draftStorageKey);
+    }, expiresAt - now);
+    return () => {
+      window.clearTimeout(expiryTimer);
+    };
   }, [draftStorageKey]);
 
-  // Autosave draft while typing (prevents losing data on logout)
+  // Autosave while the current browser tab remains open and the fixed lifetime is valid.
   const autosaveTimerRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!draftStorageKey) return;
+    const expiresAt = draftExpiresAtRef.current;
+    if (!draftStorageKey || !expiresAt || draftExpiredRef.current) return;
     if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = window.setTimeout(() => {
-      try {
-        localStorage.setItem(
-          draftStorageKey,
-          JSON.stringify({
-            formData,
-            selectedLayout,
-            wizardStep,
-            openAccordionItems,
-            iaaData,
-          })
-        );
-      } catch {
-        // ignore storage errors
+      const storage = getAvailableSessionStorage();
+      if (!storage) {
+        draftExpiredRef.current = true;
+        return;
       }
+      const written = writeAnamnesisSessionDraft(
+        storage,
+        draftStorageKey,
+        { formData, selectedLayout, wizardStep, openAccordionItems, iaaData },
+        expiresAt,
+      );
+      if (!written) draftExpiredRef.current = true;
     }, 300);
 
     return () => {
@@ -953,13 +963,11 @@ const Anamnesebogen = () => {
       
       setShowVerification(false);
       
-      // Clear draft after successful submission, but save email-based cache for future use
-      if (draftStorageKey) localStorage.removeItem(draftStorageKey);
-      if (formData.email) {
-        try {
-          const emailCacheKey = `anamnesebogen:email-cache:${formData.email.toLowerCase()}`;
-          localStorage.setItem(emailCacheKey, JSON.stringify({ formData, iaaData }));
-        } catch { /* ignore */ }
+      if (draftStorageKey) {
+        draftExpiredRef.current = true;
+        if (autosaveTimerRef.current) window.clearTimeout(autosaveTimerRef.current);
+        const storage = getAvailableSessionStorage();
+        if (storage) removeAnamnesisSessionDraft(storage, draftStorageKey);
       }
 
       // Save IAA data if filled
