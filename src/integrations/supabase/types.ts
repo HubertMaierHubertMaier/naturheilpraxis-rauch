@@ -695,6 +695,27 @@ export type Database = {
         }
         Relationships: []
       }
+      therapy_deleted_document_markers: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          marker_name: string
+          pseudonym_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          marker_name: string
+          pseudonym_id: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          marker_name?: string
+          pseudonym_id?: string
+        }
+        Relationships: []
+      }
       therapy_sessions: {
         Row: {
           befund_html: string | null
@@ -961,6 +982,10 @@ export type Database = {
         Returns: Json
       }
       redact_therapy_pii_text: { Args: { _value: string }; Returns: string }
+      strip_recently_deleted_document_markers: {
+        Args: { _data: Json; _pseudonym_id: string }
+        Returns: Json
+      }
       upsert_therapy_autosave_draft: {
         Args: {
           _eingabe_daten: Json
