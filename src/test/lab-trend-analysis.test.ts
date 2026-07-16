@@ -540,7 +540,7 @@ describe("laboratory trend analysis", () => {
 
   it("persists structured laboratory values, alerts and rule versions with the completed report", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    const listMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716094500_trim_structured_labs_from_therapy_session_lists.sql"), "utf8");
+    const listMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716091434_f8d421fd-0ce1-40fb-bf8f-ea57038c5492.sql"), "utf8");
     expect(source).toContain("collectStructuredLabData(partials)");
     expect(source).toContain("lab_values_v1: structuredLabData.labValues");
     expect(source).toContain("lab_alerts_v1: structuredLabData.labAlerts");
@@ -556,7 +556,7 @@ describe("laboratory trend analysis", () => {
     const uploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/MultiDocUpload.tsx"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
     const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716095500_confirm_document_context_cleanup.sql"), "utf8");
+    const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716091513_26f2af2b-0701-4c0b-afce-73f1006c6b8e.sql"), "utf8");
     expect(uploadSource).not.toContain("archiveClinicalDocumentOriginal");
     expect(uploadSource).not.toContain("extract-lab-image");
     expect(uploadSource).not.toContain('from("therapy-documents")');
