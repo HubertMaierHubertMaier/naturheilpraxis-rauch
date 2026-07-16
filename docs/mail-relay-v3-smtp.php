@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ============================================
 // KONFIGURATION - BITTE ANPASSEN!
 // ============================================
-$RELAY_SECRET = '998a476a-cf1c-7443-ea47-3e329d70e934';
+$RELAY_SECRET = getenv('RELAY_SECRET') ?: '';
 
 // SMTP-Zugangsdaten (Plesk-Postfach, QMail SMTP auf Port 587)
 $SMTP_HOST  = '185.248.141.144';           // QMail SMTP auf Server-IP (Port 587, alle IPs aktiviert)

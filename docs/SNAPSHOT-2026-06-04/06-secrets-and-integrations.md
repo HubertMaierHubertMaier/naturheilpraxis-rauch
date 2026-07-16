@@ -9,7 +9,7 @@
 | `SUPABASE_URL` | `https://jmebqjadlpltnqawoipb.supabase.co` | Edge Functions intern |
 | `SUPABASE_ANON_KEY` | (siehe `.env`) | Edge Functions User-Auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Vault | Privilegierte Admin-Operationen |
-| `RELAY_SECRET` | `998a476a-cf1c-7443-ea47-3e329d70e934` | PHP-Mail-Relay `X-Relay-Token` |
+| `RELAY_SECRET` | `[REDACTED - vor Verwendung rotieren]` | PHP-Mail-Relay `X-Relay-Token` |
 | `LOVABLE_API_KEY` | Vault (auto) | Lovable AI Gateway (Gemini/GPT) |
 | `ELEVENLABS_API_KEY` | Vault (optional) | Fallback-TTS (Standard: Edge-TTS) |
 

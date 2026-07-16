@@ -33,7 +33,7 @@ Edge Function → HTTPS POST → mail-relay.php → SMTP Auth (Port 587) → Pos
 ## Konfiguration im PHP-Skript
 
 ```php
-$RELAY_SECRET = '998a476a-cf1c-7443-ea47-3e329d70e934';
+$RELAY_SECRET = getenv('RELAY_SECRET') ?: '';
 $SMTP_HOST    = 'localhost';
 $SMTP_PORT    = 587;
 $SMTP_USER    = 'info@rauch-heilpraktiker.de';

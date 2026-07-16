@@ -15,7 +15,7 @@ VITE_SUPABASE_PROJECT_ID="<supabase-project-ref>"
 ```
 
 ## Critical Secrets (Supabase Edge Functions)
-- `RELAY_SECRET`: `998a476a-cf1c-7443-ea47-3e329d70e934`
+- `RELAY_SECRET`: `[REDACTED - vor Verwendung rotieren]`
 - `SUPABASE_SERVICE_ROLE_KEY`: (set via Lovable Cloud Secrets)
 
 ## NPM Dependencies (exact versions)

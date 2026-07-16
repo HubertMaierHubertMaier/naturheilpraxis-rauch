@@ -17,6 +17,7 @@ const textExtensions = new Set([
   ".json",
   ".jsx",
   ".md",
+  ".php",
   ".toml",
   ".ts",
   ".tsx",
@@ -44,6 +45,10 @@ const secretPatterns: Array<[string, RegExp]> = [
   [
     "secret_assignment_literal",
     /\b(?:api[_-]?key|secret|token|password|smtp_password|service_role|anon_key|publishable_key)\b\s*[:=]\s*["'](?!\[?REDACTED\]?|<|your_|placeholder|CHANGE_ME|example|dummy|test|xxxx|$)([^"']{12,})["']/gi,
+  ],
+  [
+    "relay_secret_uuid",
+    /\bRELAY_SECRET\b[^\r\n]{0,80}\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
   ],
 ];
 

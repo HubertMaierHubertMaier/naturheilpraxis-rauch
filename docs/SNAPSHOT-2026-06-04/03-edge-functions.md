@@ -139,7 +139,7 @@ Vorteile:
 
 | Secret | Verwendung |
 |--------|------------|
-| `RELAY_SECRET` | PHP-Mail-Relay Auth (`998a476a-cf1c-7443-ea47-3e329d70e934`) |
+| `RELAY_SECRET` | PHP-Mail-Relay Auth (`[REDACTED - vor Verwendung rotieren]`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-Role für Admin-Operationen |
 | `LOVABLE_API_KEY` | Lovable AI Gateway (Gemini, GPT) |
 | `ELEVENLABS_API_KEY` | (optional, falls TTS-Fallback aktiv) |

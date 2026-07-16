@@ -41,7 +41,7 @@
 
 | Secret | Speicherort | Verwendung |
 |--------|-------------|------------|
-| `RELAY_SECRET` | Lovable Cloud Secrets + PHP-Relay | `998a476a-cf1c-7443-ea47-3e329d70e934` |
+| `RELAY_SECRET` | Lovable Cloud Secrets + PHP-Relay | `[REDACTED - vor Verwendung rotieren]` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Lovable Cloud Secrets | Edge Functions Admin-Zugriff |
 | `SMTP_PASS` | PHP-Relay auf Server | Postfach-Passwort `info@rauch-heilpraktiker.de` |
 
