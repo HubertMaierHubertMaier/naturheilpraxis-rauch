@@ -13,7 +13,6 @@ dist-ssr
 *.local
 *.tsbuildinfo
 public/vendor/
-public/*.html
 
 # Local environment files: never commit real Supabase/API values.
 .env

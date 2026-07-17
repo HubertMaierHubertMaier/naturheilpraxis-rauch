@@ -11,7 +11,6 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "pretest": "npm run prepare:infothek",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
