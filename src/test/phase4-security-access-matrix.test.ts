@@ -48,6 +48,7 @@ describe("Phase 4 security access matrix", () => {
     const publicFunctions = edgeFunctionAccessMatrix.filter((fn) => fn.verifyJwt === false);
 
     expect(publicFunctions.map((fn) => fn.name).sort()).toEqual([
+      "get-infothek-html",
       "request-verification-code",
       "verify-code",
     ]);
@@ -132,6 +133,7 @@ describe("Phase 4 security access matrix", () => {
       "get-patients",
       "get-therapy-sessions",
       "list-therapy-pseudonyms",
+      "migrate-infothek-html",
       "resend-submission",
       "send-icd10-report",
       "therapy-recommend",

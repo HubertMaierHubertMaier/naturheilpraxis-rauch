@@ -53,3 +53,9 @@ verify_jwt = true
 
 [functions.notify-existing-patient]
 verify_jwt = true
+
+[functions.get-infothek-html]
+verify_jwt = false
+
+[functions.migrate-infothek-html]
+verify_jwt = true
