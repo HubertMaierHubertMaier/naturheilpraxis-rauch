@@ -956,6 +956,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_current_session_two_factor_completed: {
+        Args: { _max_age?: string }
+        Returns: boolean
+      }
       is_current_session_two_factor_verified: {
         Args: { _max_age?: string }
         Returns: boolean
