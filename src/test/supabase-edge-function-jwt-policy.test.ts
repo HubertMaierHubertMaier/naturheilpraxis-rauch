@@ -95,7 +95,7 @@ describe("Supabase Edge Function JWT policy", () => {
     const source = readFunctionSource("notify-existing-patient");
     const rateLimitIndex = source.indexOf("checkRateLimit(rateLimitKey)");
     const bodyParsingIndex = source.indexOf("await req.json()");
-    const relayFetchIndex = source.indexOf("fetch(relayUrl");
+    const relaySendIndex = source.indexOf("await sendEmail({");
 
     expect(source).toMatch(/rateLimitMap/);
     expect(source).toMatch(/RATE_LIMIT_WINDOW_MS/);
@@ -104,9 +104,13 @@ describe("Supabase Edge Function JWT policy", () => {
     expect(source).toMatch(/status:\s*429/);
     expect(rateLimitIndex).toBeGreaterThan(-1);
     expect(bodyParsingIndex).toBeGreaterThan(-1);
-    expect(relayFetchIndex).toBeGreaterThan(-1);
+    expect(relaySendIndex).toBeGreaterThan(-1);
     expect(rateLimitIndex).toBeLessThan(bodyParsingIndex);
-    expect(rateLimitIndex).toBeLessThan(relayFetchIndex);
+    expect(rateLimitIndex).toBeLessThan(relaySendIndex);
+    expect(source).toContain('from: "info@rauch-heilpraktiker.de"');
+    expect(source).toContain('context: "notify-existing-patient"');
+    expect(source).not.toContain("naturheilpraxis-rauch.de/api/mail-relay-v3-smtp.php");
+    expect(source).not.toContain("X-Relay-Secret");
   });
 
   it("does not log or return raw Error objects in notify-existing-patient handling", () => {

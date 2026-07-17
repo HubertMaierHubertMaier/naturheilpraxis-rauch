@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendEmail } from "../_shared/smtp.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -9,8 +10,6 @@ const allowedCorsHostnames = new Set([
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-const RELAY_SECRET = Deno.env.get("RELAY_SECRET")!;
 
 type NotifyExistingPatientBody = {
   email?: unknown;
@@ -163,26 +162,15 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
-    // Use the PHP relay to send email
-    const relayUrl = "https://naturheilpraxis-rauch.de/api/mail-relay-v3-smtp.php";
-
-    const relayResponse = await fetch(relayUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Relay-Secret": RELAY_SECRET,
-      },
-      body: JSON.stringify({
+    try {
+      await sendEmail({
         to: notificationTo,
         subject,
         html: htmlBody,
-        from_name: "Praxis-App Benachrichtigung",
-        from_email: "praxis_rauch@icloud.com",
-      }),
-    });
-
-    await relayResponse.text();
-    if (!relayResponse.ok) {
+        from: "info@rauch-heilpraktiker.de",
+        context: "notify-existing-patient",
+      });
+    } catch {
       console.error("[notify-existing-patient] relay failed");
       return new Response(
         JSON.stringify({ error: "Notification failed" }),
