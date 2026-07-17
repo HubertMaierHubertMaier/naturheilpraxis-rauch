@@ -68,8 +68,10 @@ describe("Infothek indexing policy", () => {
     );
   });
 
-  it("does not publish an app sitemap", () => {
-    expect(existsSync(resolve(root, "public/sitemap.xml"))).toBe(false);
+  it("publishes only an empty app sitemap tombstone", () => {
+    const sitemap = readFileSync(resolve(root, "public/sitemap.xml"), "utf8");
+    expect(sitemap).toMatch(/<urlset\b/);
+    expect(sitemap).not.toMatch(/<url>|<loc>/);
     const robots = readFileSync(resolve(root, "public/robots.txt"), "utf8");
     expect(robots).not.toMatch(/^Sitemap:/m);
   });
