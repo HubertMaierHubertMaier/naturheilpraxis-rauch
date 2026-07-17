@@ -29,7 +29,7 @@ describe("Infothek indexing policy", () => {
       const html = readFileSync(resolve(root, "public", file), "utf8");
       expect(Buffer.byteLength(html)).toBeLessThan(1_000);
       expect(html).toMatch(/<meta name="robots" content="noindex, nofollow">/);
-      expect(html).toContain(`url=/infothek-dokument/${file}`);
+      expect(html).toContain(`url=/infothek-dokument/${file.replace(/\.html$/, "")}`);
       expect(html).not.toMatch(
         /(?:infothek-gate|content-protection)\.js|fonts\.(?:googleapis|gstatic)\.com|cdn\./,
       );

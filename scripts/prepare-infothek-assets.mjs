@@ -59,7 +59,7 @@ for (const fileName of redirectFiles) {
     throw new Error(`Invalid Infothek redirect filename: ${fileName}`);
   }
 
-  const appPath = `/infothek-dokument/${fileName}`;
+  const appPath = `/infothek-dokument/${fileName.replace(/\.html$/, "")}`;
   const redirectHtml = `<!doctype html>
 <html lang="de">
 <head>

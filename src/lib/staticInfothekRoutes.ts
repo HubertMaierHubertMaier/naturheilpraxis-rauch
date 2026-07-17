@@ -6,7 +6,7 @@ export interface StaticInfothekRoute {
 }
 
 export const staticInfothekAppPath = (contentPath: string) =>
-  `/infothek-dokument${contentPath}`;
+  `/infothek-dokument${contentPath.replace(/\.html$/, "")}`;
 
 export const staticInfothekRoutes: StaticInfothekRoute[] = [
   { path: "/allergiebehandlung.html", title: "Allergiebehandlung", defaultGated: true },
