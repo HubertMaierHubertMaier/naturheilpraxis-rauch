@@ -1,0 +1,100 @@
+# Project Memory
+
+## Core
+- **Tech Stack**: Supabase (Lovable Cloud) with RLS. Linux Root Server target. Edge functions via Deno. Optional external AI (Gemini 2.5 Pro).
+- **Security**: Mandatory 2FA for login/registration (admin bypass). Strict API hardening. HIBP password check. SECURITY DEFINER for audit/roles.
+- **Privacy/DSGVO**: 10y retention. NO console logging of health data. §126a BGB digital signatures. DPA with explicit AI training opt-out. PII-Scrubbing for medical data.
+- **Design**: Sage green (Primary), sand (Secondary), terracotta (Accent). Playfair Display (headings), Source Sans 3 (body). Neutral/symbolic images.
+- **Architecture**: Hybrid Auth in Edge Functions. 3-tier access: Visitor, New Patient, Verified Patient. Sequential chunking for large document analysis. RPC-based data stripping for resource-heavy Edge Functions.
+- **Content Policy**: HWG/UWG compliant ("kann unterstützen"). Public Infothek is dosage-free; Admin Wiki contains exact dosages. Anonymize protocols.
+- **Practitioner Equality Language**: NEVER default to "bitte ärztlich abklären". Use "Heilpraktiker oder Arzt" gleichrangig.
+- **Email Routing**: Split transmission (Anamnese vs. IAA). PHP relay v3.6.
+- **Hypnose-TTS-Standard**: Edge-TTS, Stimme `de-DE-FlorianMultilingualNeural`, Rate `-50%`, Pitch `±0 Hz`.
+- **Vite-Fallbacks**: Hardcoded fallback values in `vite.config.ts` for Supabase URL/Key/Project-ID to prevent production crashes.
+- **HTML Infothek**: Produktionsstand 17.07.2026, GitHub-main `65f4d0e` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, 2FA, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer.
+
+## Memories
+- [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
+- [DSGVO Compliance](mem://compliance/dsgvo-specifics) — 10y retention, E2E encryption, explicit consent workflow
+- [Multilingual Support](mem://features/multilingual-support) — DE/EN support, LanguageProvider and Switcher
+- [Anamnesis Layout](mem://features/anamnesebogen-layout-selection) — Wizard (emoji) vs Accordion (icon) user choice
+- [Patient Contract Workflow](mem://features/patientenvertrag-workflow) — 2FA signature integration and auto-email
+- [Backend Supabase Cloud](mem://infrastructure/backend-supabase-cloud) — Lovable Cloud, RLS, multilingual practice tables
+- [Anamnesis Validation Structure](mem://features/anamnesebogen-validation-structure) — 25 sections, complete digital signature, nuclear med warning
+- [Consent Integration](mem://compliance/consent-integration-anamnese) — Interactive consent checkbox, no specific device names
+- [Legal Notice (Impressum)](mem://compliance/legal-notice-impressum) — Legal requirements § 5 TMG for Peter Rauch
+- [Admin Dashboard CRUD](mem://features/admin-dashboard-crud) — Admin dashboard for FAQs and practice_info management
+- [Patient Dashboard](mem://features/patient-dashboard) — Central hub for verified patients, anamnesis history, PDF downloads
+- [Practice Policies](mem://features/info-faq-practice-policies) — Appointment durations, 48h cancellation rule, mandatory pre-call
+- [Two-Factor Auth](mem://auth/two-factor-authentication) — Mandatory 2FA via HTTPS relay
+- [Anamnesis Filtered Summary](mem://features/anamnesis-filtered-summary) — Filtered view of filled sections with auto ICD-10 codes
+- [Submission Verification](mem://features/anamnesis-form-submission-verification-flow) — 6-digit OTP verification for submission
+- [Demo Utility](mem://infrastructure/anamnesis-demo-utility) — '/anamnesebogen-demo' route for testing submissions
+- [IAA Questionnaire System](mem://features/iaa-questionnaire-system) — Section XXIV integration for Trikombin scale
+- [Patient Legal Terms](mem://features/patient-disclosure-legal-terms) — Pricing disclosure, mandatory checkbox integration
+- [Admin Pricing Management](mem://features/admin-pricing-management) — Dynamic pricing management via 'practice_pricing'
+- [Privacy Policy Page](mem://features/privacy-policy-page) — Specific diagnostic consent info, 30-year retention rule
+- [Admin 2FA Bypass](mem://auth/admin-2fa-bypass) — Bypass logic for admin role via RPC
+- [ICD-10 Generation Logic](mem://features/icd10-generation-logic) — Hybrid fixed mapping and Gemini AI analysis
+- [Hosting Requirements](mem://constraints/hosting-requirements) — Linux Root Servers, portablity
+- [Audit Log System](mem://compliance/audit-log-system) — DSGVO-compliant audit logging via SECURITY DEFINER
+- [Test & Admin Accounts](mem://auth/test-and-admin-accounts) — Pre-configured accounts for administration and testing
+- [ICD-10 Reports](mem://features/icd10-berichte) — Auto-generation and dispatch to iaa@art-of-therapy.de
+- [Minor Guardian Logic](mem://features/anamnesis-form-minor-guardian-logic) — Guardian sections and age validation for minors
+- [Transmission Disclosure](mem://compliance/anamnesis-transmission-disclosure) — Art. 13 DSGVO notice for split data transmission
+- [Email Routing Logic](mem://infrastructure/email-destination-routing-logic) — Split data transmission (anamnese@ vs iaa@)
+- [Admin Patient Management](mem://features/admin-patient-management) — Tabular management, manual verification, email resend
+- [Email Relay Solution](mem://infrastructure/email-relay-loesung) — PHP relay v3.6, Port 587, CRLF endings, mail() fallback
+- [Medical Safety Warnings](mem://content/medical-safety-warnings) — Dosage removal for public, strict contraindication warnings
+- [Complementary Med Integration](mem://content/infothek-complementary-medical-integration) — 4 pillars (Baklayan, Metatron, Zapper, Lab)
+- [Presentation Frameworks](mem://tech/infothek-presentation-frameworks) — Reveal.js for HTML, Embla for React
+- [Legal Compliance Standards](mem://compliance/legal-compliance-standards-v2) — HWG/UWG compliant language ("kann unterstützen")
+- [Therapy Recommendation Tool](mem://features/admin-therapy-recommendation-tool) — AI tool for therapy plans with safety checks
+- [Therapy Cost Logic](mem://features/admin-therapy-recommendation-cost-logic) — Cost-effective remedy prioritization in AI
+- [Wiki Pathogen Nomenclature](mem://features/admin-wiki-pathogen-nomenclature) — Mandatory Latin nomenclature for pathogens
+- [Medical Dosage Policy](mem://content/medical-dosage-policy) — Public (dosage-free) vs Admin (detailed dosages) distinction
+- [Wiki Access Security](mem://auth/wiki-access-security) — RLS protection for admin_knowledge_base
+- [Edge Function Auth Context](mem://infrastructure/edge-function-auth-context) — Hybrid Auth (User JWT + Service Role)
+- [TTS Engine & Hypnose-Standards](mem://integrations/tts-engine) — Edge-TTS Florian -50% / ±0 Hz, verbindlich für alle Hypnose-Module
+- [Scope-Disziplin](mem://preferences/scope-discipline) — Keine eigenmächtigen Kürzungen oder Setting-Änderungen
+- [Smoking Cessation Module](mem://features/infothek/smoking-cessation-module) — 3-pillar therapy module for vaping cessation
+- [Self-Hypnosis System](mem://features/self-hypnosis-system) — MP3 generation at -50% speed, PDF handouts
+- [Onboarding Presentation](mem://features/infothek/patient-onboarding-presentation) — "Ihr Therapieweg" Reveal.js presentation
+- [Medical Anonymization Policy](mem://compliance/medical-content-anonymization-policy) — Removal of authors/brands for copyright compliance
+- [DSGVO Security Practices](mem://compliance/security-dsgvo) — 2FA enforcement, prohibition of health data console logging
+- [Digital Signature Standard](mem://compliance/digital-signature-legal-standard) — Legal implementation of § 126a BGB
+- [Onboarding PDF Logic](mem://features/onboarding-wizard-logic) — /erstanmeldung is PDF-only; online wizard inactive
+- [Anamnesis PDF Management](mem://features/anamnesis-pdf-management) — 4MB payload limit, synchronous bucket saving
+- [Anamnesis Data Structure](mem://features/anamnesis-medical-data-structure) — Type-first pattern (Begin, Status, End) validation
+- [Evidence Grading System](mem://content/knowledge-base-evidence-grading) — 3-star evidence rating for Wiki protocols
+- [Therapy Recommendation Logic](mem://features/admin-therapy-recommendation-logic) — Critical evaluation of existing patient remedies
+- [Access Model Restructuring](mem://features/access-model-restructuring) — 3-tier model with prominent homepage tiles
+- [Brand Identity](mem://style/brand-identity) — Sage green, sand, terracotta color palette
+- [Overview & Contact](mem://project/overview-and-contact) — Contact details for Naturheilpraxis Peter Rauch
+- [Patient Verification Workflow](mem://auth/patient-verification-workflow) — Manual admin verification for existing patients
+- [API Access Hardening](mem://security/api-access-hardening) — Strict administrative endpoints, RLS on core tables
+- [Password Policy](mem://security/password-policy) — Have I Been Pwned (HIBP) checks enabled
+- [Content Protection Policy](mem://security/content-protection-policy) — Access gates preferred over UI blocking techniques
+- [Visitor Access Sanitization](mem://features/infothek/visitor-access-sanitization) — Hiding specific links from non-logged-in users
+- [Anamnesis Versioning](mem://features/anamnesis-versioning-system) — Pre-filled updates generating new chronological records
+- [DSGVO Audit Results](mem://compliance/dsgvo-lovable-audit-results) — Lovable DPA, explicit AI training opt-out for health data
+- [Budget Compliance](mem://constraints/budget-compliance) — Considerations for Pro-plan or EU-based Supabase instances
+- [Practitioner Equality Language](mem://content/practitioner-equality-language) — "Heilpraktiker oder Arzt" gleichrangig; "ärztlich" nur bei echtem Arztvorbehalt
+- [Therapy Preferred Remedies](mem://features/admin-therapy-preferred-remedies) — Produktlinien bevorzugen (Vitaplace etc.) + einzelne Wiki-Mittel zwingend pinnen
+- [Therapy Knowledge Search Boost](mem://features/therapy-knowledge-search-boost) — Ordnerauswahl ist Boost (garantiert), kein Filter; Suche immer auf ganzer DB
+- [NLS Befund Disclosure](mem://compliance/nls-befund-disclosure) — Patienten-PDF klärt automatisch über Metapathia/NLS-Herkunft auf, sobald Pathogene eingegeben sind
+- [Patient Library](mem://features/patient-library) — Geschützte PDF/MP3-Sammlung für verifizierte Patienten (separat von Wiki/Infothek)
+- [External Branch Merge Policy](mem://workflow/external-branch-merge-policy) — Lovable kann nicht selbst mergen; Compare-Link + GitHub-PR-Workflow
+- [Document Analysis System](mem://features/admin-therapy-document-analysis) — Multi-pass, chunked analysis with skipping and content validation
+- [Therapy Workload Estimator](mem://features/admin-therapy-workload-estimator) — Cost/time logic based on character counts
+- [PII Anonymization Policy](mem://security/pii-anonymization-medical-data) — Automated PII scrubbing for medical document analysis
+- [Vite Production Fallbacks](mem://infrastructure/vite-production-fallbacks) — Supabase fallbacks to prevent white-screen crashes
+- [Therapy Analysis Persistence](mem://features/admin-therapy-analysis-persistence) — Local/Cloud checkpoints and report storage
+- [Database Security Definer Policy](mem://security/database-security-definer-policy) — Rationale for SECURITY DEFINER usage in roles/audits
+- [Therapy Analysis Deduplication](mem://features/admin-therapy-analysis-deduplication) — Automatic input text deduplication for analysis
+- [Therapy Session History](mem://features/admin-therapy-session-history) — Slim-Mode loading, event_log audit trail, and pseudonymization
+- [Therapy Report Export](mem://features/admin-therapy-report-export) — Timestamped PDF export and HTML report header timing
+- [Therapy Recommendation UI](mem://features/admin-therapy-recommendation-ui) — Minimized analysis panel and mode-selection tooltips
+- [Edge Function Optimization](mem://infrastructure/edge-function-resource-optimization) — RPC stripping and lazy-loading for Edge Function stability
+- [Repeated Error Policy](mem://preferences/repeated-error-policy) — Stopping patches after 2 repeated infrastructure errors
+- [HTML Infothek Delivery Status](mem://features/infothek-html-delivery-status) — Produktionsstand 17.07.2026, serverseitige Auslieferung aus patient-library/infothek
