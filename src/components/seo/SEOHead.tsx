@@ -20,7 +20,7 @@ const SEOHead = ({
   type = "website",
   image = "https://id-preview--2a361a45-233a-4659-a3f4-a2f1dda0e86d.lovable.app/og-image.png",
   url,
-  noIndex = false,
+  noIndex = true,
 }: SEOHeadProps) => {
   const { language } = useLanguage();
 
@@ -82,14 +82,18 @@ const SEOHead = ({
     updateMeta("twitter:description", finalDescription);
     updateMeta("twitter:image", image);
 
-    // Canonical URL
-    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.setAttribute("rel", "canonical");
-      document.head.appendChild(canonical);
+    // A noindex app route must not claim equivalence with a public website URL.
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (noIndex) {
+      canonical?.remove();
+    } else {
+      if (!canonical) {
+        canonical = document.createElement("link");
+        canonical.setAttribute("rel", "canonical");
+        document.head.appendChild(canonical);
+      }
+      canonical.setAttribute("href", currentUrl);
     }
-    canonical.setAttribute("href", currentUrl);
 
     // Cleanup function
     return () => {

@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { isDevAdminBypassActive } from '@/lib/devAdminBypass';
+import { useNoIndex } from '@/hooks/useNoIndex';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireTwoFactor = false }) => {
   const { user, loading, twoFactorVerified, twoFactorChecked } = useAuth();
   const location = useLocation();
+  useNoIndex();
 
   const devBypass = isDevAdminBypassActive();
 

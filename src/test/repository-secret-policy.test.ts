@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -73,6 +73,9 @@ function collectFindings(): SecretFinding[] {
     }
 
     const absolutePath = resolve(process.cwd(), file);
+    if (!existsSync(absolutePath)) {
+      continue;
+    }
     if (statSync(absolutePath).size > 300_000) {
       continue;
     }

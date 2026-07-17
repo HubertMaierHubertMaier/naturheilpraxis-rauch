@@ -1,0 +1,166 @@
+{
+  "publicOrigin": "https://rauch-heilpraktiker.de",
+  "defaultAuthor": "Peter Rauch, Heilpraktiker",
+  "requiredBeforeIndexing": [
+    "medical-content-review",
+    "source-and-link-check",
+    "visible-author-reviewer-and-date",
+    "healing-claims-and-hwg-review",
+    "mobile-accessibility-review"
+  ],
+  "pages": [
+    {
+      "file": "allergiebehandlung.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "ass-salicylat-histamin.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/ass-salicylat-histamin-intoleranz",
+      "risk": "high",
+      "reviewTrack": "medical",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "candida-diaet.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "diabetes-handout.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/diabetes-handout",
+      "risk": "high",
+      "reviewTrack": "medical-and-pharmaceutical",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "krankheit-ist-messbar.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/frequenztherapie",
+      "risk": "high",
+      "reviewTrack": "evidence-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "kraeuter-schmerz-entzuendung.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-and-pharmaceutical",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "logi-ernaehrung-mitochondrien.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/logi-ernaehrung-mitochondrien",
+      "risk": "high",
+      "reviewTrack": "medical-and-nutrition",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "mitochondropathie-hws.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/mitochondropathie-hws",
+      "risk": "high",
+      "reviewTrack": "medical-and-evidence",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "muedigkeit-erschoepfung-burnout.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/muedigkeit-erschoepfung-burnout",
+      "risk": "high",
+      "reviewTrack": "medical-and-psychological",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "parasiten-deutschland.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/parasiten-deutschland",
+      "risk": "high",
+      "reviewTrack": "medical-and-infectiology",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "patienteninfo-hochohmiges-wasser.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-and-evidence",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "sibo-duenndarmfehlbesiedlung.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-and-gastroenterology",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "therapieweg-uebersicht.html",
+      "visibility": "public",
+      "targetPath": "/patienteninfo/therapieweg",
+      "risk": "high",
+      "reviewTrack": "scope-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "umwelt-alltag-gesundheit.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/umwelt-alltag-gesundheit",
+      "risk": "medium",
+      "reviewTrack": "evidence-and-risk-communication",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "vieva-pro-vitalanalyse.html",
+      "visibility": "public",
+      "targetPath": "/praxis/vieva-pro-vitalanalyse",
+      "risk": "high",
+      "reviewTrack": "medical-device-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "viren-bakterien-deutschland.html",
+      "visibility": "public",
+      "targetPath": "/ratgeber/viren-bakterien-deutschland",
+      "risk": "high",
+      "reviewTrack": "medical-and-infectiology",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "zapper-diamond-shield.html",
+      "visibility": "public",
+      "targetPath": "/praxis/diamond-shield-zapper",
+      "risk": "high",
+      "reviewTrack": "medical-device-evidence-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    }
+  ]
+}

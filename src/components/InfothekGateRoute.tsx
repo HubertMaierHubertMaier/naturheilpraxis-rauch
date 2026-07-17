@@ -4,6 +4,7 @@ import { Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInfothekGating } from "@/hooks/useInfothekGating";
 import { usePatientAccess } from "@/hooks/usePatientAccess";
+import { useNoIndex } from "@/hooks/useNoIndex";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +25,8 @@ export default function InfothekGateRoute({
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { getVisibility, loading: gatingLoading } = useInfothekGating();
   const { canSeeInfothekItem, loading: accessLoading } = usePatientAccess();
+  const vis = getVisibility(location.pathname, defaultGated);
+  useNoIndex(gatingLoading || vis !== "public");
 
   if (authLoading || gatingLoading || accessLoading) {
     return (
@@ -37,8 +40,6 @@ export default function InfothekGateRoute({
 
   // Admins dürfen immer alles sehen (Vorschau-/Pflege-Zwecke)
   if (isAdmin) return <>{children}</>;
-
-  const vis = getVisibility(location.pathname, defaultGated);
 
   if (vis === "public") return <>{children}</>;
 

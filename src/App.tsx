@@ -12,6 +12,8 @@ import AnamneseRouteGuard from "@/components/AnamneseRouteGuard";
 import InfothekGateRoute from "@/components/InfothekGateRoute";
 import CookieBanner from "@/components/CookieBanner";
 import SchemaOrg from "@/components/seo/SchemaOrg";
+import { useNoIndex } from "@/hooks/useNoIndex";
+import { staticInfothekRoutes } from "@/lib/staticInfothekRoutes";
 
 // Eager: Startseite + häufig genutzte öffentliche Seiten
 import Index from "./pages/Index";
@@ -49,6 +51,7 @@ const AppUebersicht = lazy(() => import("./pages/AppUebersicht"));
 const Neupatient = lazy(() => import("./pages/Neupatient"));
 const ReizdarmHypnose = lazy(() => import("./pages/ReizdarmHypnose"));
 const ParkinsonHypnose = lazy(() => import("./pages/ParkinsonHypnose"));
+const InfothekHtml = lazy(() => import("./pages/InfothekHtml"));
 
 const queryClient = new QueryClient();
 
@@ -57,6 +60,11 @@ const PageFallback = () => (
     <div className="animate-pulse">Lädt …</div>
   </div>
 );
+
+const NoIndexRoute = ({ children }: { children: React.ReactNode }) => {
+  useNoIndex();
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -72,7 +80,7 @@ const App = () => (
             <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<NoIndexRoute><Auth /></NoIndexRoute>} />
               <Route path="/anamnesebogen" element={<AnamneseRouteGuard><Anamnesebogen /></AnamneseRouteGuard>} />
               <Route path="/erstanmeldung" element={<ProtectedRoute requireTwoFactor><Erstanmeldung /></ProtectedRoute>} />
               <Route path="/anamnesebogen-demo" element={<AnamneseDemo />} />
@@ -103,6 +111,23 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
               <Route path="/app-uebersicht" element={<AppUebersicht />} />
+              {staticInfothekRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={
+                    route.internal ? (
+                      <ProtectedRoute requireTwoFactor>
+                        <InfothekHtml routePath={route.path} title={route.title} />
+                      </ProtectedRoute>
+                    ) : (
+                      <InfothekGateRoute defaultGated={route.defaultGated}>
+                        <InfothekHtml routePath={route.path} title={route.title} />
+                      </InfothekGateRoute>
+                    )
+                  }
+                />
+              ))}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
