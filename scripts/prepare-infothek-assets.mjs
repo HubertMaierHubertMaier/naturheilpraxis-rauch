@@ -1,9 +1,10 @@
-import { copyFile, mkdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const vendorRoot = join(projectRoot, "public", "vendor");
+const publicRoot = join(projectRoot, "public");
+const vendorRoot = join(publicRoot, "vendor");
 const revealSource = join(projectRoot, "node_modules", "reveal.js", "dist");
 const revealTarget = join(vendorRoot, "reveal");
 const fontsTarget = join(vendorRoot, "fonts");
@@ -42,3 +43,33 @@ for (const { family, packageName, weights } of fontFaces) {
 }
 
 await writeFile(join(vendorRoot, "infothek-fonts.css"), `${fontCss.join("\n\n")}\n`, "utf8");
+
+// Lovable retains removed static paths between deployments. Replace the old
+// public documents with noindex redirects to routes that enforce app access.
+const manifest = JSON.parse(
+  await readFile(join(projectRoot, "website-content", "infothek", "manifest.json"), "utf8"),
+);
+const redirectFiles = [
+  ...manifest.pages.map((page) => page.file),
+  "datenschutz-fahrplan.html",
+];
+
+for (const fileName of redirectFiles) {
+  if (!/^[a-z0-9-]+\.html$/.test(fileName)) {
+    throw new Error(`Invalid Infothek redirect filename: ${fileName}`);
+  }
+
+  const appPath = `/infothek-dokument/${fileName}`;
+  const redirectHtml = `<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="refresh" content="0; url=${appPath}">
+  <title>Weiterleitung</title>
+</head>
+<body><a href="${appPath}">Sicher oeffnen</a></body>
+</html>
+`;
+  await writeFile(join(publicRoot, fileName), redirectHtml, "utf8");
+}

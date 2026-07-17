@@ -13,7 +13,7 @@ import InfothekGateRoute from "@/components/InfothekGateRoute";
 import CookieBanner from "@/components/CookieBanner";
 import SchemaOrg from "@/components/seo/SchemaOrg";
 import { useNoIndex } from "@/hooks/useNoIndex";
-import { staticInfothekRoutes } from "@/lib/staticInfothekRoutes";
+import { staticInfothekAppPath, staticInfothekRoutes } from "@/lib/staticInfothekRoutes";
 
 // Eager: Startseite + häufig genutzte öffentliche Seiten
 import Index from "./pages/Index";
@@ -111,23 +111,28 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
               <Route path="/app-uebersicht" element={<AppUebersicht />} />
-              {staticInfothekRoutes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={
-                    route.internal ? (
-                      <ProtectedRoute requireTwoFactor>
-                        <InfothekHtml routePath={route.path} title={route.title} />
-                      </ProtectedRoute>
-                    ) : (
-                      <InfothekGateRoute defaultGated={route.defaultGated}>
-                        <InfothekHtml routePath={route.path} title={route.title} />
-                      </InfothekGateRoute>
-                    )
-                  }
-                />
-              ))}
+              {staticInfothekRoutes.flatMap((route) =>
+                [route.path, staticInfothekAppPath(route.path)].map((appPath) => (
+                  <Route
+                    key={appPath}
+                    path={appPath}
+                    element={
+                      route.internal ? (
+                        <ProtectedRoute requireTwoFactor>
+                          <InfothekHtml routePath={route.path} title={route.title} />
+                        </ProtectedRoute>
+                      ) : (
+                        <InfothekGateRoute
+                          defaultGated={route.defaultGated}
+                          contentPath={route.path}
+                        >
+                          <InfothekHtml routePath={route.path} title={route.title} />
+                        </InfothekGateRoute>
+                      )
+                    }
+                  />
+                )),
+              )}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

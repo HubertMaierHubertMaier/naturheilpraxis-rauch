@@ -17,15 +17,18 @@ import { Button } from "@/components/ui/button";
 export default function InfothekGateRoute({
   children,
   defaultGated = false,
+  contentPath,
 }: {
   children: ReactNode;
   defaultGated?: boolean;
+  contentPath?: string;
 }) {
   const location = useLocation();
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { getVisibility, loading: gatingLoading } = useInfothekGating();
   const { canSeeInfothekItem, loading: accessLoading } = usePatientAccess();
-  const vis = getVisibility(location.pathname, defaultGated);
+  const gatingPath = contentPath ?? location.pathname;
+  const vis = getVisibility(gatingPath, defaultGated);
   useNoIndex(gatingLoading || vis !== "public");
 
   if (authLoading || gatingLoading || accessLoading) {
@@ -75,7 +78,7 @@ export default function InfothekGateRoute({
   }
 
   // vis === "patient" → nur freigeschaltete Patienten
-  if (user && canSeeInfothekItem(location.pathname)) {
+  if (user && canSeeInfothekItem(gatingPath)) {
     return <>{children}</>;
   }
 

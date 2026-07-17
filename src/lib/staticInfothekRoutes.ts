@@ -5,6 +5,9 @@ export interface StaticInfothekRoute {
   internal?: boolean;
 }
 
+export const staticInfothekAppPath = (contentPath: string) =>
+  `/infothek-dokument${contentPath}`;
+
 export const staticInfothekRoutes: StaticInfothekRoute[] = [
   { path: "/allergiebehandlung.html", title: "Allergiebehandlung", defaultGated: true },
   { path: "/ass-salicylat-histamin.html", title: "ASS, Salicylat und Histamin" },

@@ -20,9 +20,20 @@ const manifest = JSON.parse(
 };
 
 describe("Infothek indexing policy", () => {
-  it("does not publish raw Infothek HTML from the app asset directory", () => {
+  it("replaces retained public HTML paths with noindex redirect stubs", () => {
     const publicHtmlFiles = readdirSync(resolve(root, "public")).filter((file) => file.endsWith(".html"));
-    expect(publicHtmlFiles).toEqual([]);
+    expect(publicHtmlFiles.sort()).toEqual(
+      [...sourceHtmlFiles, "datenschutz-fahrplan.html"].sort(),
+    );
+    for (const file of publicHtmlFiles) {
+      const html = readFileSync(resolve(root, "public", file), "utf8");
+      expect(Buffer.byteLength(html)).toBeLessThan(1_000);
+      expect(html).toMatch(/<meta name="robots" content="noindex, nofollow">/);
+      expect(html).toContain(`url=/infothek-dokument/${file}`);
+      expect(html).not.toMatch(
+        /(?:infothek-gate|content-protection)\.js|fonts\.(?:googleapis|gstatic)\.com|cdn\./,
+      );
+    }
     expect(existsSync(resolve(root, "public/infothek-gate.js"))).toBe(false);
     expect(existsSync(resolve(root, "public/content-protection.js"))).toBe(false);
   });
