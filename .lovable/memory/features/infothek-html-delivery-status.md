@@ -43,3 +43,7 @@ Dieser Memory-Eintrag dokumentiert ausschließlich den Stand. Für Änderungen a
 - Die Einschränkung, manuelle Therapieverfahren nicht zu bewerben, gilt ausschließlich für Texte der späteren öffentlichen Website. Sie ist keine Vorgabe zum Entfernen solcher Erklärungen aus App-Inhalten.
 - Medizinische, pharmazeutische oder HWG-relevante Textänderungen erfolgen nur seitenweise nach Peters ausdrücklicher Freigabe.
 - In `mitochondropathie-hws.html` wurde deshalb der ursprüngliche Wortlaut `Sanfte HWS-Therapie (Osteopathie, Atlas-/CMD-Behandlung)` wiederhergestellt.
+
+## Vorschau-Synchronisierung
+
+Am 21.07.2026 war die Lovable-Vorschau noch auf `c18e6ad`, obwohl GitHub-main bereits den korrigierten App-Code enthielt. Nach externen GitHub-Änderungen muss deshalb neben Produktion und Repository auch der tatsächlich in der Vorschau ausgelieferte Source-Stand geprüft werden. Maßgeblich sind hier `is_current_session_two_factor_completed` im Auth-Kontext, die Admin-2FA im Login und der konkrete 2FA-Hinweis in `InfothekHtml.tsx`.
