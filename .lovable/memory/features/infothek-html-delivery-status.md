@@ -47,3 +47,9 @@ Dieser Memory-Eintrag dokumentiert ausschließlich den Stand. Für Änderungen a
 ## Vorschau-Synchronisierung
 
 Am 21.07.2026 war die Lovable-Vorschau noch auf `c18e6ad`, obwohl GitHub-main bereits den korrigierten App-Code enthielt. Nach externen GitHub-Änderungen muss deshalb neben Produktion und Repository auch der tatsächlich in der Vorschau ausgelieferte Source-Stand geprüft werden. Maßgeblich sind hier `is_current_session_two_factor_completed` im Auth-Kontext, die Admin-2FA im Login und der konkrete 2FA-Hinweis in `InfothekHtml.tsx`.
+
+## Darstellungskorrektur vom 21.07.2026
+
+Der produktive App-Code `f26dd55` bereitet Reveal-Inhalte ausschließlich technisch für den sandboxed App-Frame auf: URL-Hash-Navigation ist dort deaktiviert, relative Bildpfade werden korrigiert, alte Schutzskripte werden entfernt und `A- / 100% / A+` steuert die Textgröße. Frequenztherapie und Therapieweg wurden in Vorschau und Produktion mit Edge-Status `200`, geladenen Bildern, funktionierendem Folienwechsel und ohne App-/Supabase-Fehler geprüft.
+
+Die medizinischen Texte blieben unverändert. Bei `krankheit-ist-messbar.html` sind die Folien 11, 16 und 20 reine Überschriftsfolien; Folie 21 enthält nur eine längere Überschrift. Folie 28 wiederholt Folie 27 und ergänzt einen Abschlusssatz. Ergänzen, zusammenlegen oder löschen ist eine separate Inhaltsentscheidung und benötigt Peters ausdrückliche Freigabe.
