@@ -12,7 +12,7 @@
 - **Email Routing**: Split transmission (Anamnese vs. IAA). PHP relay v3.6.
 - **Hypnose-TTS-Standard**: Edge-TTS, Stimme `de-DE-FlorianMultilingualNeural`, Rate `-50%`, Pitch `±0 Hz`.
 - **Vite-Fallbacks**: Hardcoded fallback values in `vite.config.ts` for Supabase URL/Key/Project-ID to prevent production crashes.
-- **HTML Infothek**: Produktionsstand 17.07.2026, GitHub-main `65f4d0e` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, 2FA, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer.
+- **HTML Infothek**: Produktionsstand 21.07.2026, App-Code `105a46a` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, sitzungsgebundener 2FA auch für Admins, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer. Der ursprüngliche HWS-Therapiesatz ist wiederhergestellt.
 
 ## Memories
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch

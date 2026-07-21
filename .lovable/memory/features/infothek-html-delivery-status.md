@@ -1,14 +1,13 @@
 ---
 name: HTML Infothek Delivery Status
-description: Produktionsstand 17.07.2026 – HTML-Infothek-Inhalte werden serverseitig aus patient-library/infothek ausgeliefert, nicht mehr als öffentliche App-Assets
+description: Produktionsstand 21.07.2026 – HTML-Infothek-Inhalte werden serverseitig aus patient-library/infothek ausgeliefert, nicht mehr als öffentliche App-Assets
 type: feature
 ---
 
 # HTML Infothek – aktueller Produktionsstand
 
-**Gültig ab:** 17.07.2026  
-**Inhaltsregel präzisiert:** 21.07.2026
-**GitHub-main:** `65f4d0e`  
+**Gültig ab:** 21.07.2026
+**Produktiver App-Code:** `105a46a`
 **Lovable-Produktion:** `naturheilpraxis-rauch.lovable.app` ist Up to date.
 
 ## Status-Point
@@ -32,6 +31,9 @@ Die 18 alten `.html`-URLs enthalten nur kleine `noindex`-Weiterleitungen auf die
 - Freigeschalteter Patient: `200`
 - Interne Seite für Nicht-Admin: `403`
 - Direkter Storage-Zugriff: blockiert
+- Admin-Login verlangt jetzt ebenfalls die sitzungsgebundene 2FA, die das Infothek-Backend voraussetzt.
+- Die Lovable-Vorschau mit Rollen-Simulator ersetzt keine echte Admin-2FA; ein entsprechendes `403` wird in der App verständlich erklärt.
+- `patient-library/infothek/mitochondropathie-hws.html` enthält wieder den ursprünglichen HWS-Therapiesatz; kein anderes Storage-Objekt wurde bei dieser Korrektur ersetzt.
 
 ## Verbindliche Grenzen
 
