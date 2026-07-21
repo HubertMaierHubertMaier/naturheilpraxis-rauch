@@ -49,12 +49,30 @@ describe("Infothek indexing policy", () => {
     expect(html).not.toContain("manuelle Verfahren werden in dieser Praxis derzeit nicht angeboten");
   });
 
-  it("keeps the approved safety warning and local illustrations on frequency slide 6", () => {
+  it("keeps the approved illustrations on frequency slide 7 after removing the old slide 6", () => {
     const html = readFileSync(resolve(websiteSource, "krankheit-ist-messbar.html"), "utf8");
+    expect(html.match(/<section(?:\s|>)/g)).toHaveLength(30);
+    expect(html).not.toContain("Nun das habe ich natürlich sofort ausprobiert");
+    expect(html.indexOf("<!-- Slide 6 -->")).toBeLessThan(html.indexOf("Der missglückte Energie-Versuch"));
+    expect(html.indexOf("<!-- Slide 7 -->")).toBeLessThan(
+      html.indexOf("/bilder/frequenz-herdplatte-humor.jpg"),
+    );
     expect(html).toContain("/bilder/frequenz-herdplatte-humor.jpg");
     expect(html).toContain("/bilder/frequenz-steckdose-humor.svg");
     expect(html).toContain("Nicht ausprobieren - Lebensgefahr!");
     expect(existsSync(resolve(root, "public/bilder/frequenz-steckdose-humor.svg"))).toBe(true);
+  });
+
+  it("keeps the approved concept illustrations on frequency slides 10, 13, and 15", () => {
+    const html = readFileSync(resolve(websiteSource, "krankheit-ist-messbar.html"), "utf8");
+    for (const file of [
+      "frequenz-einstein-rubbia-dialog.svg",
+      "frequenz-arm-energiequanten.svg",
+      "frequenz-allianz-arena-masse.svg",
+    ]) {
+      expect(html).toContain(`/bilder/${file}`);
+      expect(existsSync(resolve(root, "public/bilder", file))).toBe(true);
+    }
   });
 
   it("classifies every source page and keeps it on review hold", () => {

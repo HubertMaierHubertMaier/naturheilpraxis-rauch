@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+  <title id="title">Einstein und Rubbia: Energie und Materie im Dialog</title>
+  <desc id="desc">Zwei stilisierte Wissenschaftler stehen für Einsteins Formel und Rubbias Teilchenexperimente. Zwischen ihnen verbinden leuchtende Pfeile Energie und Materie.</desc>
+  <defs>
+    <linearGradient id="space" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#183b32"/>
+      <stop offset="0.52" stop-color="#315e50"/>
+      <stop offset="1" stop-color="#142f29"/>
+    </linearGradient>
+    <radialGradient id="energy" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff7b2"/>
+      <stop offset="0.35" stop-color="#f7ca57"/>
+      <stop offset="1" stop-color="#dc785f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#071b16" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="650" rx="34" fill="url(#space)"/>
+  <g fill="#dcebe5" opacity="0.34">
+    <circle cx="82" cy="82" r="4"/><circle cx="170" cy="130" r="3"/><circle cx="1038" cy="94" r="4"/>
+    <circle cx="1110" cy="180" r="3"/><circle cx="750" cy="78" r="3"/><circle cx="455" cy="104" r="4"/>
+    <circle cx="683" cy="560" r="4"/><circle cx="1080" cy="545" r="3"/><circle cx="154" cy="548" r="4"/>
+  </g>
+
+  <g transform="translate(72 88)" filter="url(#shadow)">
+    <rect width="350" height="470" rx="30" fill="#f8f4ec"/>
+    <path d="M72 150C55 62 122 24 178 65c53-46 135-5 116 88 37 7 52 58 21 84-13 12-29 16-46 12H91c-45 4-64-58-19-99Z" fill="#eef1ec" stroke="#b4c2bc" stroke-width="8"/>
+    <ellipse cx="180" cy="215" rx="91" ry="105" fill="#edbd92" stroke="#654438" stroke-width="8"/>
+    <path d="M88 183c-20-8-22-39 2-48m181 48c21-9 24-39 0-49" fill="none" stroke="#eef1ec" stroke-width="31" stroke-linecap="round"/>
+    <path d="M109 155c11-37 45-57 72-58m67 60c-10-39-42-59-69-60" fill="none" stroke="#eef1ec" stroke-width="35" stroke-linecap="round"/>
+    <ellipse cx="145" cy="205" rx="14" ry="11" fill="#fff" stroke="#49342d" stroke-width="5"/>
+    <ellipse cx="216" cy="205" rx="14" ry="11" fill="#fff" stroke="#49342d" stroke-width="5"/>
+    <circle cx="145" cy="206" r="5" fill="#263b35"/><circle cx="216" cy="206" r="5" fill="#263b35"/>
+    <path d="M180 212l-10 40 26 1" fill="none" stroke="#9d6a54" stroke-width="7" stroke-linecap="round"/>
+    <path d="M127 268q53 28 106 0" fill="none" stroke="#654438" stroke-width="7" stroke-linecap="round"/>
+    <path d="M131 255q50-30 99 1" fill="none" stroke="#f3f1e8" stroke-width="20" stroke-linecap="round"/>
+    <path d="M95 430c10-91 54-132 86-132 39 0 77 44 87 132" fill="#46715b"/>
+    <text x="175" y="372" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="700" fill="#fff">E = mc²</text>
+    <text x="175" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#315e50">ALBERT EINSTEIN</text>
+  </g>
+
+  <g transform="translate(778 88)" filter="url(#shadow)">
+    <rect width="350" height="470" rx="30" fill="#f8f4ec"/>
+    <circle cx="176" cy="202" r="104" fill="#e8b58b" stroke="#604033" stroke-width="8"/>
+    <path d="M81 172c4-92 55-132 109-127 53 5 91 45 84 111-41-24-104-36-193 16Z" fill="#5a493e"/>
+    <path d="M119 202h45m24 0h45m-69 0h24" fill="none" stroke="#263b35" stroke-width="7"/>
+    <rect x="115" y="180" width="53" height="42" rx="18" fill="none" stroke="#263b35" stroke-width="6"/>
+    <rect x="184" y="180" width="53" height="42" rx="18" fill="none" stroke="#263b35" stroke-width="6"/>
+    <circle cx="143" cy="201" r="5" fill="#263b35"/><circle cx="210" cy="201" r="5" fill="#263b35"/>
+    <path d="M176 210l-9 39 25 1m-58 30q43 33 86 0" fill="none" stroke="#835843" stroke-width="7" stroke-linecap="round"/>
+    <path d="M84 430c12-90 54-130 92-130 42 0 80 44 91 130" fill="#c66a51"/>
+    <g transform="translate(175 367)" fill="none" stroke="#fff" stroke-width="7">
+      <ellipse rx="72" ry="27"/><ellipse rx="72" ry="27" transform="rotate(60)"/><ellipse rx="72" ry="27" transform="rotate(120)"/>
+      <circle r="10" fill="#f7ca57" stroke="none"/>
+    </g>
+    <text x="175" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#315e50">CARLO RUBBIA</text>
+  </g>
+
+  <g transform="translate(450 155)">
+    <circle cx="150" cy="155" r="118" fill="url(#energy)" opacity="0.9"/>
+    <circle cx="150" cy="155" r="49" fill="#f7ca57" filter="url(#glow)"/>
+    <g fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13 105h178l-35-35m35 35-35 35"/>
+      <path d="M287 205H109l35-35m-35 35 35 35"/>
+    </g>
+    <text x="150" y="24" text-anchor="middle" font-family="Arial, sans-serif" font-size="31" font-weight="800" fill="#f7e7b7">ENERGIE</text>
+    <text x="150" y="304" text-anchor="middle" font-family="Arial, sans-serif" font-size="31" font-weight="800" fill="#f7e7b7">MATERIE</text>
+    <g fill="#fff" filter="url(#glow)">
+      <circle cx="73" cy="164" r="8"/><circle cx="101" cy="127" r="6"/><circle cx="205" cy="172" r="7"/>
+      <circle cx="226" cy="127" r="5"/><circle cx="138" cy="220" r="7"/><circle cx="176" cy="92" r="6"/>
+    </g>
+  </g>
+</svg>
