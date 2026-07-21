@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import SEOHead from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { prepareInfothekHtmlForFrame } from "@/lib/infothekHtmlPresentation";
 
 type LoadState =
   | { status: "loading" }
@@ -51,7 +52,7 @@ export default function InfothekHtml({ routePath, title }: { routePath: string; 
           setState({ status: "error", code: response.status, reason });
           return;
         }
-        setState({ status: "ready", html: await response.text() });
+        setState({ status: "ready", html: prepareInfothekHtmlForFrame(await response.text()) });
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
           setState({ status: "error", code: 0 });
