@@ -49,6 +49,14 @@ describe("Infothek indexing policy", () => {
     expect(html).not.toContain("manuelle Verfahren werden in dieser Praxis derzeit nicht angeboten");
   });
 
+  it("keeps the approved safety warning and local illustrations on frequency slide 6", () => {
+    const html = readFileSync(resolve(websiteSource, "krankheit-ist-messbar.html"), "utf8");
+    expect(html).toContain("/bilder/frequenz-herdplatte-humor.jpg");
+    expect(html).toContain("/bilder/frequenz-steckdose-humor.svg");
+    expect(html).toContain("Nicht ausprobieren - Lebensgefahr!");
+    expect(existsSync(resolve(root, "public/bilder/frequenz-steckdose-humor.svg"))).toBe(true);
+  });
+
   it("classifies every source page and keeps it on review hold", () => {
     expect(manifest.pages.map((page) => page.file).sort()).toEqual(sourceHtmlFiles.sort());
     expect(manifest.pages.every((page) => page.reviewStatus === "pending")).toBe(true);

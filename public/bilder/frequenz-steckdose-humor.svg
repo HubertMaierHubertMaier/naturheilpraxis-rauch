@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" role="img" aria-labelledby="title desc">
+  <title id="title">Humorvolle Warnung vor Strom aus der Steckdose</title>
+  <desc id="desc">Eine erschrockene Comicfigur zieht die Hand von einer Steckdose zurück. Ihre Haare stehen durch einen gezeichneten Stromschlag zu Berge.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef7f4"/>
+      <stop offset="1" stop-color="#dceae5"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dc785f"/>
+      <stop offset="1" stop-color="#b84f3d"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#19372e" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="650" rx="36" fill="url(#wall)"/>
+  <path d="M0 525H900V650H0Z" fill="#c9b79e"/>
+  <path d="M0 525H900" stroke="#8f7d67" stroke-width="8"/>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="238" width="190" height="228" rx="28" fill="#fff" stroke="#496b60" stroke-width="10"/>
+    <circle cx="187" cy="315" r="34" fill="#dce4e1" stroke="#496b60" stroke-width="8"/>
+    <circle cx="174" cy="309" r="7" fill="#263b35"/>
+    <circle cx="200" cy="309" r="7" fill="#263b35"/>
+    <rect x="154" y="370" width="66" height="26" rx="13" fill="#dce4e1" stroke="#496b60" stroke-width="7"/>
+  </g>
+
+  <g fill="#f4c542" stroke="#8f5b00" stroke-width="6" stroke-linejoin="round">
+    <path d="M284 318l62-46-22 58 55-5-82 78 20-62-48 8z"/>
+    <path d="M338 205l42-68 5 60 53-26-43 92-12-54z"/>
+    <path d="M362 426l60-30-27 51 52 8-91 52 34-53z"/>
+  </g>
+
+  <g transform="translate(390 65)" filter="url(#shadow)">
+    <path d="M150 475c-2-90 42-145 128-145 91 0 141 61 150 145z" fill="url(#shirt)" stroke="#5f2d26" stroke-width="10"/>
+
+    <path d="M122 139L53 63l89 27-22-81 74 65 20-92 49 91 59-80 4 101 93-43-56 90z" fill="#51352a" stroke="#2f211c" stroke-width="11" stroke-linejoin="round"/>
+    <ellipse cx="245" cy="203" rx="132" ry="129" fill="#f2b684" stroke="#5f3428" stroke-width="10"/>
+    <ellipse cx="130" cy="226" rx="32" ry="43" fill="#f2b684" stroke="#5f3428" stroke-width="9"/>
+
+    <ellipse cx="203" cy="184" rx="28" ry="38" fill="#fff" stroke="#3e2a24" stroke-width="7"/>
+    <ellipse cx="286" cy="184" rx="28" ry="38" fill="#fff" stroke="#3e2a24" stroke-width="7"/>
+    <circle cx="194" cy="194" r="10" fill="#2d3436"/>
+    <circle cx="277" cy="194" r="10" fill="#2d3436"/>
+    <path d="M244 196l-14 48 32 2" fill="none" stroke="#874f39" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="178" cy="250" rx="35" ry="20" fill="#e65e5b" opacity="0.72"/>
+    <ellipse cx="309" cy="250" rx="35" ry="20" fill="#e65e5b" opacity="0.72"/>
+    <path d="M186 285q58 69 119 0-57 26-119 0z" fill="#6d2828" stroke="#3e2020" stroke-width="7"/>
+    <path d="M210 296h70" stroke="#fff" stroke-width="13" stroke-linecap="round"/>
+
+    <path d="M151 373c-70-15-119-38-174-83" fill="none" stroke="#f2b684" stroke-width="40" stroke-linecap="round"/>
+    <path d="M-26 288l-40-22m43 24l-49 5m50-4l-39 30" fill="none" stroke="#5f3428" stroke-width="12" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(560 30)">
+    <path d="M0 0h275a24 24 0 0 1 24 24v82a24 24 0 0 1-24 24H132l-46 46 8-46H0a24 24 0 0 1-24-24V24A24 24 0 0 1 0 0Z" fill="#fff" stroke="#46715b" stroke-width="8"/>
+    <text x="137" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="#b42318">ZZZAPP!</text>
+  </g>
+
+  <g transform="translate(65 555)">
+    <rect width="770" height="68" rx="18" fill="#fff1f0" stroke="#b42318" stroke-width="7"/>
+    <path d="M40 52L67 12l27 40z" fill="#b42318"/>
+    <rect x="64" y="26" width="6" height="15" rx="3" fill="#fff"/>
+    <circle cx="67" cy="46" r="3.5" fill="#fff"/>
+    <text x="420" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="31" font-weight="800" fill="#7a1712">NICHT NACHMACHEN - LEBENSGEFAHR!</text>
+  </g>
+</svg>

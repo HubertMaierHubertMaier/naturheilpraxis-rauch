@@ -72,6 +72,49 @@
         .reveal ul { margin-left: 1.5rem !important; display: block !important; }
         .highlight { color: var(--accent); font-weight: bold; }
 
+        .humor-image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .humor-image-card {
+            margin: 0;
+            padding: 0.75rem;
+            border: 1px solid rgba(70, 113, 91, 0.18);
+            border-radius: 0.85rem;
+            background: #ffffff;
+            text-align: center;
+        }
+        .humor-image-card img {
+            display: block;
+            width: 100%;
+            height: 230px;
+            object-fit: contain;
+            border-radius: 0.6rem;
+        }
+        .humor-image-card figcaption {
+            margin-top: 0.5rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .danger-warning {
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            border: 3px solid #b42318;
+            border-radius: 0.85rem;
+            background: #fff1f0;
+            color: #7a1712;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        @media (max-width: 760px) {
+            .humor-image-grid { grid-template-columns: 1fr; }
+            .humor-image-card img { height: 190px; }
+        }
+
         /* Design-Hilfsklassen aus Frequenztherapie-Template */
         .theme-dark {
             background: var(--primary) !important;
@@ -200,6 +243,19 @@ meinen Patienten und habe Sie auf die heiße Herdplatte
 gesetzt und mal in die Steckdose langen lassen.</h2>
                 <div class='space-y-4'>
                     <p>Meine Patienten waren vom Ergebnis nicht sehr begeistert.</p>
+                    <div class="humor-image-grid">
+                        <figure class="humor-image-card">
+                            <img src="/bilder/frequenz-herdplatte-humor.jpg" alt="Humorvolle Zeichnung: Eine Person berührt eine heiße Herdplatte und bekommt einen roten Kopf">
+                            <figcaption>Heiße Herdplatte: sehr schlechte Idee</figcaption>
+                        </figure>
+                        <figure class="humor-image-card">
+                            <img src="/bilder/frequenz-steckdose-humor.svg" alt="Humorvolle Zeichnung: Eine Person greift an eine Steckdose und die Haare stehen zu Berge">
+                            <figcaption>Steckdose: Haare zu Berge, aber nicht zum Lachen</figcaption>
+                        </figure>
+                    </div>
+                    <div class="danger-warning" role="alert">
+                        Nicht ausprobieren - Lebensgefahr! Heiße Herdplatten verursachen schwere Verbrennungen. Strom aus Steckdosen kann tödlich sein.
+                    </div>
                 </div>
             </section>
 
