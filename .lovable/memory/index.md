@@ -2,11 +2,12 @@
 
 ## Core
 - **Tech Stack**: Supabase (Lovable Cloud) with RLS. Linux Root Server target. Edge functions via Deno. Optional external AI (Gemini 2.5 Pro).
-- **Security**: Mandatory 2FA for login/registration (admin bypass). Strict API hardening. HIBP password check. SECURITY DEFINER for audit/roles.
+- **Security**: Mandatory session-bound 2FA for login/registration, including admins. Strict API hardening. HIBP password check. SECURITY DEFINER for audit/roles.
 - **Privacy/DSGVO**: 10y retention. NO console logging of health data. §126a BGB digital signatures. DPA with explicit AI training opt-out. PII-Scrubbing for medical data.
 - **Design**: Sage green (Primary), sand (Secondary), terracotta (Accent). Playfair Display (headings), Source Sans 3 (body). Neutral/symbolic images.
 - **Architecture**: Hybrid Auth in Edge Functions. 3-tier access: Visitor, New Patient, Verified Patient. Sequential chunking for large document analysis. RPC-based data stripping for resource-heavy Edge Functions.
 - **Content Policy**: HWG/UWG compliant ("kann unterstützen"). Public Infothek is dosage-free; Admin Wiki contains exact dosages. Anonymize protocols.
+- **App Content Boundary**: Erklärende HTML-Seiten in der geschützten App nicht inhaltlich ändern oder kürzen. Die Vorgabe, manuelle Therapieverfahren nicht zu bewerben, gilt nur für die spätere öffentliche Website. Medizinische/HWG-Textänderungen ausschließlich seitenweise nach Peters ausdrücklicher Freigabe.
 - **Practitioner Equality Language**: NEVER default to "bitte ärztlich abklären". Use "Heilpraktiker oder Arzt" gleichrangig.
 - **Email Routing**: Split transmission (Anamnese vs. IAA). PHP relay v3.6.
 - **Hypnose-TTS-Standard**: Edge-TTS, Stimme `de-DE-FlorianMultilingualNeural`, Rate `-50%`, Pitch `±0 Hz`.
@@ -34,7 +35,7 @@
 - [Patient Legal Terms](mem://features/patient-disclosure-legal-terms) — Pricing disclosure, mandatory checkbox integration
 - [Admin Pricing Management](mem://features/admin-pricing-management) — Dynamic pricing management via 'practice_pricing'
 - [Privacy Policy Page](mem://features/privacy-policy-page) — Specific diagnostic consent info, 30-year retention rule
-- [Admin 2FA Bypass](mem://auth/admin-2fa-bypass) — Bypass logic for admin role via RPC
+- [Admin 2FA](mem://auth/admin-2fa-bypass) — Legacy bypass memory; current login requires session-bound 2FA for admins too
 - [ICD-10 Generation Logic](mem://features/icd10-generation-logic) — Hybrid fixed mapping and Gemini AI analysis
 - [Hosting Requirements](mem://constraints/hosting-requirements) — Linux Root Servers, portablity
 - [Audit Log System](mem://compliance/audit-log-system) — DSGVO-compliant audit logging via SECURITY DEFINER

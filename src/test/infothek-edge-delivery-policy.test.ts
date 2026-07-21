@@ -16,6 +16,8 @@ const policySource = readFileSync(
   resolve(root, "supabase/migrations/20260718090000_secure_infothek_delivery_policies.sql"),
   "utf8",
 );
+const authPageSource = readFileSync(resolve(root, "src/pages/Auth.tsx"), "utf8");
+const authContextSource = readFileSync(resolve(root, "src/contexts/AuthContext.tsx"), "utf8");
 
 const expectedRoutes = [
   "/allergiebehandlung.html",
@@ -106,6 +108,14 @@ describe("secure Infothek Edge delivery policy", () => {
     expect(serviceRoleIndex).toBeGreaterThan(twoFactorIndex);
     expect(migrateSource).toContain("if (isAdmin !== true)");
     expect(migrateSource).toContain("if (twoFactorCompleted !== true)");
+  });
+
+  it("routes admin logins through the same completed session 2FA", () => {
+    expect(authPageSource).toContain("if (isAdminData !== true)");
+    expect(authPageSource).toContain("const session = await finalizeTwoFactorSession(bindingToken)");
+    expect(authPageSource).not.toContain("Admin: direct login, no 2FA needed");
+    expect(authContextSource).toContain("rpc('is_current_session_two_factor_completed')");
+    expect(authContextSource).not.toContain("rpc('is_current_session_two_factor_verified' as never)");
   });
 
   it("does not create service-role clients until delivery callers are authorized", () => {

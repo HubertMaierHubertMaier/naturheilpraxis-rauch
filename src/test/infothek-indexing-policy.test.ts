@@ -43,6 +43,12 @@ describe("Infothek indexing policy", () => {
     expect(existsSync(internalSource)).toBe(true);
   });
 
+  it("keeps the approved HWS therapy explanation unchanged", () => {
+    const html = readFileSync(resolve(websiteSource, "mitochondropathie-hws.html"), "utf8");
+    expect(html).toContain("Sanfte HWS-Therapie (Osteopathie, Atlas-/CMD-Behandlung)");
+    expect(html).not.toContain("manuelle Verfahren werden in dieser Praxis derzeit nicht angeboten");
+  });
+
   it("classifies every source page and keeps it on review hold", () => {
     expect(manifest.pages.map((page) => page.file).sort()).toEqual(sourceHtmlFiles.sort());
     expect(manifest.pages.every((page) => page.reviewStatus === "pending")).toBe(true);

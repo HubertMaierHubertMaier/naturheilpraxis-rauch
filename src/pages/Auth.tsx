@@ -37,7 +37,7 @@ async function waitForAuthenticatedSession() {
 }
 
 async function finalizeTwoFactorSession(bindingToken: string) {
-  await waitForAuthenticatedSession();
+  const session = await waitForAuthenticatedSession();
   const { data, error } = await supabase.rpc('complete_two_factor_binding' as never, {
     _binding_token: bindingToken,
   } as never);
@@ -46,6 +46,8 @@ async function finalizeTwoFactorSession(bindingToken: string) {
     await supabase.auth.signOut().catch(() => undefined);
     throw new Error('Zwei-Faktor-Sitzung konnte nicht finalisiert werden. Bitte erneut anmelden.');
   }
+
+  return session;
 }
 
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
@@ -57,7 +59,7 @@ const Auth: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { language } = useLanguage();
-  const { user, isAdmin, twoFactorVerified, twoFactorChecked } = useAuth();
+  const { user, twoFactorVerified, twoFactorChecked } = useAuth();
 
   // Preview/Dev bypass: skip auth page entirely in non-production environments
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
@@ -95,10 +97,10 @@ const Auth: React.FC = () => {
     }
 
     hasCheckedInitialAuth.current = true;
-    if (isAdmin || twoFactorVerified) {
+    if (twoFactorVerified) {
       navigate(resolveTarget('/'));
     }
-  }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked]);
+  }, [user, navigate, devBypass, twoFactorVerified, twoFactorChecked]);
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [step, setStep] = useState<AuthStep>('credentials');
@@ -152,40 +154,31 @@ const Auth: React.FC = () => {
         );
       }
 
-      // Check if user is admin – admins skip 2FA AND bypass login lock
+      // Admins bypass the patient login lock, but complete the same session-bound 2FA.
       const { data: isAdminData } = await supabase.rpc('has_role', {
         _user_id: signInData.user?.id,
         _role: 'admin',
       });
 
-      if (isAdminData === true) {
-        // Admin: direct login, no 2FA needed
-        toast({
-          title: language === 'de' ? 'Willkommen!' : 'Welcome!',
-          description: language === 'de' ? 'Admin-Anmeldung erfolgreich.' : 'Admin login successful.',
-        });
-        navigate(resolveTarget('/'));
-        return;
+      if (isAdminData !== true) {
+        const { data: setting } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'patient_login_enabled')
+          .maybeSingle();
+        const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
+
+        if (!loginEnabled) {
+          await supabase.auth.signOut();
+          throw new Error(
+            language === 'de'
+              ? 'Die Patienten-Anmeldung ist derzeit nicht möglich. Bitte kontaktieren Sie die Praxis telefonisch.'
+              : 'Patient login is currently disabled. Please contact the practice by phone.'
+          );
+        }
       }
 
-      // Non-admin: check global lock
-      const { data: setting } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'patient_login_enabled')
-        .maybeSingle();
-      const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
-
-      if (!loginEnabled) {
-        await supabase.auth.signOut();
-        throw new Error(
-          language === 'de'
-            ? 'Die Patienten-Anmeldung ist derzeit nicht möglich. Bitte kontaktieren Sie die Praxis telefonisch.'
-            : 'Patient login is currently disabled. Please contact the practice by phone.'
-        );
-      }
-
-      // Non-admin: Sign out and require 2FA
+      // Start a fresh session only after the emailed code has been verified.
       await supabase.auth.signOut();
 
       // Request 2FA code
@@ -426,12 +419,21 @@ const Auth: React.FC = () => {
         throw verifyError;
       }
 
-      await finalizeTwoFactorSession(bindingToken);
+      const session = await finalizeTwoFactorSession(bindingToken);
 
       toast({
         title: language === 'de' ? 'Erfolgreich' : 'Success',
         description: language === 'de' ? 'Anmeldung erfolgreich!' : 'Login successful!',
       });
+
+      const { data: isAdminData } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin',
+      });
+      if (isAdminData === true) {
+        navigate(resolveTarget('/'));
+        return;
+      }
 
       // Check if patient has existing submissions → dashboard, otherwise onboarding
       const { data: existingSub } = await supabase

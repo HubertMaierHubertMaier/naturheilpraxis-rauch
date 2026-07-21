@@ -7,6 +7,7 @@ type: feature
 # HTML Infothek – aktueller Produktionsstand
 
 **Gültig ab:** 17.07.2026  
+**Inhaltsregel präzisiert:** 21.07.2026
 **GitHub-main:** `65f4d0e`  
 **Lovable-Produktion:** `naturheilpraxis-rauch.lovable.app` ist Up to date.
 
@@ -35,3 +36,8 @@ Die 18 alten `.html`-URLs enthalten nur kleine `noindex`-Weiterleitungen auf die
 ## Verbindliche Grenzen
 
 Dieser Memory-Eintrag dokumentiert ausschließlich den Stand. Für Änderungen an Code, Git, Datenbank, Functions, Storage, Secrets, Deployment oder Publish ist ein separater Arbeitsschritt erforderlich.
+
+- Erklärende HTML-Seiten innerhalb der geschützten App bleiben fachlich unverändert. Technische Anpassungen für Zugriffsschutz, Datenschutz, Recht und SEO dürfen den erklärenden Inhalt weder umformulieren noch kürzen.
+- Die Einschränkung, manuelle Therapieverfahren nicht zu bewerben, gilt ausschließlich für Texte der späteren öffentlichen Website. Sie ist keine Vorgabe zum Entfernen solcher Erklärungen aus App-Inhalten.
+- Medizinische, pharmazeutische oder HWG-relevante Textänderungen erfolgen nur seitenweise nach Peters ausdrücklicher Freigabe.
+- In `mitochondropathie-hws.html` wurde deshalb der ursprüngliche Wortlaut `Sanfte HWS-Therapie (Osteopathie, Atlas-/CMD-Behandlung)` wiederhergestellt.

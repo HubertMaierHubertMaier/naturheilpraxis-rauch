@@ -112,16 +112,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isMounted) setRoleChecked(true);
       }
 
-      if (admin) {
-        if (isMounted) {
-          setTwoFactorVerified(true);
-          setTwoFactorChecked(true);
-        }
-        return;
-      }
-
       try {
-        const { data, error } = await supabase.rpc('is_current_session_two_factor_verified' as never);
+        const { data, error } = await supabase.rpc('is_current_session_two_factor_completed');
         if (isMounted) setTwoFactorVerified(!error && data === true);
       } catch {
         if (isMounted) setTwoFactorVerified(false);

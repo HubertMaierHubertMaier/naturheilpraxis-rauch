@@ -9,7 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
 type LoadState =
   | { status: "loading" }
   | { status: "ready"; html: string }
-  | { status: "error"; code: number };
+  | { status: "error"; code: number; reason?: string };
+
+const errorMessage = (code: number, reason?: string) => {
+  if (reason === "Two-factor authentication required") {
+    return "Bitte melden Sie sich ab und anschließend erneut an. Nach der Passwortprüfung erhalten Sie den 2FA-Code per E-Mail.";
+  }
+  if (code === 401) return "Bitte melden Sie sich an, um diesen Beitrag zu öffnen.";
+  if (code === 403) return "Dieser Beitrag ist für Ihr Konto noch nicht freigeschaltet.";
+  return "Der Beitrag konnte momentan nicht sicher geladen werden. Bitte versuchen Sie es später erneut.";
+};
 
 export default function InfothekHtml({ routePath, title }: { routePath: string; title: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -34,7 +43,12 @@ export default function InfothekHtml({ routePath, title }: { routePath: string; 
           { headers, signal: controller.signal },
         );
         if (!response.ok) {
-          setState({ status: "error", code: response.status });
+          const payload = await response.json().catch(() => null);
+          const reason =
+            payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+              ? payload.error
+              : undefined;
+          setState({ status: "error", code: response.status, reason });
           return;
         }
         setState({ status: "ready", html: await response.text() });
@@ -70,13 +84,7 @@ export default function InfothekHtml({ routePath, title }: { routePath: string; 
           <div>
             <AlertTriangle className="mx-auto mb-4 h-9 w-9 text-amber-600" aria-hidden="true" />
             <h1 className="mb-3 font-serif text-2xl font-semibold">Beitrag nicht verfügbar</h1>
-            <p className="mb-6 text-muted-foreground">
-              {state.code === 401
-                ? "Bitte melden Sie sich an, um diesen Beitrag zu öffnen."
-                : state.code === 403
-                  ? "Dieser Beitrag ist für Ihr Konto noch nicht freigeschaltet."
-                  : "Der Beitrag konnte momentan nicht sicher geladen werden. Bitte versuchen Sie es später erneut."}
-            </p>
+            <p className="mb-6 text-muted-foreground">{errorMessage(state.code, state.reason)}</p>
             <div className="flex justify-center gap-3">
               {state.code === 401 && (
                 <Button asChild>
