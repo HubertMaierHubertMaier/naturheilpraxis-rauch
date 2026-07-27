@@ -656,3 +656,14 @@ Die neuen Lesepfade werden dann per Feature Flag deaktiviert. Die alte Wiki blei
 Vor SQL-Migrationen oder UI-Umbauten wird der vollstaendige Live-Bestand von `admin_knowledge_base` autorisiert exportiert und in einer isolierten Umgebung wiederhergestellt. In der aktuellen Sitzung fehlen Supabase-Zugang und Projektverknuepfung; deshalb wurde bewusst noch keine Live-Abfrage oder Migration ausgefuehrt.
 
 Nach erfolgreicher Sicherung wird Phase 1 als kleine additive Migration mit Kernobjekten, Quellen, Revisionen und RLS vorbereitet. Die sieben Pilotdatensaetze folgen erst danach im Pruefbereich.
+
+## Stopppunkt fuer die naechste Sitzung
+
+Stand vom 27.07.2026:
+
+1. Der vollstaendige technische Wiki-Datenbank-Bauplan ist erstellt und in dieser Datei dauerhaft dokumentiert.
+2. Der Bauplan und die allgemeine Speicher-/Datenschutzregel wurden mit Commit `9076ae3` auf GitHub `main` gesichert.
+3. Die neue Datenbankstruktur wurde noch nicht als Migration implementiert und nicht live ausgerollt.
+4. Die bestehende Wiki und alle bisherigen Daten bleiben unveraendert.
+5. Die naechste Sitzung beginnt mit Phase 0: vollstaendiger autorisierter Export von `admin_knowledge_base`, Inventur mit IDs und Hashes sowie ein isolierter Restore-Test.
+6. Ohne nachgewiesene Vollstaendigkeit und erfolgreichen Restore wird keine neue Wissensdatenbankmigration gestartet.
