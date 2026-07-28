@@ -667,3 +667,24 @@ Stand vom 27.07.2026:
 4. Die bestehende Wiki und alle bisherigen Daten bleiben unveraendert.
 5. Die naechste Sitzung beginnt mit Phase 0: vollstaendiger autorisierter Export von `admin_knowledge_base`, Inventur mit IDs und Hashes sowie ein isolierter Restore-Test.
 6. Ohne nachgewiesene Vollstaendigkeit und erfolgreichen Restore wird keine neue Wissensdatenbankmigration gestartet.
+
+## Phase-0-Ergebnis vom 28.07.2026
+
+Phase 0 wurde erfolgreich abgeschlossen:
+
+1. Lokales Vollbackup: `Naturheilpraxis-DATEN-voll-Backup-2026-07-28_08-18.zip`, SHA-256 `26f0a4fa33b5333c37c4a5f944145c58d4b42b0a50fc6251f00cf3a7122e8502`.
+2. Lokales Codebackup: `Naturheilpraxis-CODE-Backup-2026-07-28_08-18.zip`, SHA-256 `165dae9ec05b17ee9627129687c4258c2c301880075eef0c6b9772105e1a445d`.
+3. Beide ZIPs sind lesbar und enthalten keine `.ERROR.txt`-Eintraege.
+4. Das Codebackup entspricht GitHub-Commit `12bfd05` und enthaelt Bauplan, Speicherregel, Migrationen und Backup-Function.
+5. Wiki-Export: 436 erwartete und 436 vorhandene Zeilen, 436 eindeutige gueltige UUIDs, keine fehlenden Pflichtfelder.
+6. Bestand: 32 Kategorien und 1087 eindeutige Tags.
+7. Es gibt 12 normalisierte Titel-Dublettengruppen, darunter zwei exakt doppelte Vitaplace-Titel. Diese werden nur dokumentiert und nicht automatisch zusammengefuehrt.
+8. Die Live-Datenbank enthaelt zusaetzlich `knowledge_product_links` mit 2 ungeprueften Verknuepfungen und `mannayan_products` mit 542 allgemeinen Produkten.
+9. Beide Produktverknuepfungen zeigen auf vorhandene Wiki- und Produkt-UUIDs; es gibt keine verwaisten Beziehungen.
+10. Der isolierte PostgreSQL-kompatible Restore-Test hat 436/436 Wiki-Zeilen, 542/542 Produkte und 2/2 Verknuepfungen mit exakten Feldvergleichen wiederhergestellt.
+
+Die Rohbackups und extrahierten Daten bleiben ausschliesslich lokal ausserhalb des Git-Repositories. Auf GitHub wird nur der technische Pruefbericht ohne Patientendaten gesichert.
+
+Wichtiger neuer Schemazustand: `knowledge_product_links` ist live vorhanden, fehlt aber im lokal generierten Supabase-Typstand und wurde in den bisherigen Repository-Migrationen nicht gefunden. Vor Phase 1 muss diese Schemadrift explizit geklaert und reproduzierbar dokumentiert werden.
+
+Naechster Schritt: additive Phase-1-Migration zunaechst lokal entwerfen und testen; keine Live-Ausrollung ohne erneute Pruefung.
