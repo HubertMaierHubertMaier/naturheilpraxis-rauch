@@ -48,10 +48,30 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return headers;
 }
 
+const REQUIRED_KB_TABLES = [
+  "kb_entity_types",
+  "kb_identifier_schemes",
+  "kb_relation_types",
+  "kb_relation_type_domains",
+  "kb_entities",
+  "kb_entity_revisions",
+  "kb_entity_names",
+  "kb_entity_identifiers",
+  "kb_sources",
+  "kb_source_revisions",
+  "kb_assertions",
+  "kb_entity_relations",
+  "kb_assertion_sources",
+  "kb_articles",
+  "kb_article_revisions",
+  "kb_article_entities",
+  "kb_change_proposals",
+] as const;
+
 // Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
 // Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
 // damit neue Tabellen/Buckets automatisch mitgesichert werden.
-const FALLBACK_TABLES = [
+const FALLBACK_TABLES = [...new Set([
   "admin_knowledge_base",
   "anamnesis_submissions",
   "app_settings",
@@ -60,6 +80,8 @@ const FALLBACK_TABLES = [
   "faqs",
   "iaa_submissions",
   "infothek_gating",
+  ...REQUIRED_KB_TABLES,
+  "knowledge_product_links",
   "mannayan_orders",
   "mannayan_products",
   "patient_access",
@@ -73,7 +95,7 @@ const FALLBACK_TABLES = [
   "two_factor_verified_sessions",
   "user_roles",
   "verification_codes",
-];
+])].sort();
 
 const FALLBACK_BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-documents"];
 
@@ -83,7 +105,18 @@ type AreaDef = { tables: string[]; buckets: string[] };
 const AREA_MAP: Record<string, AreaDef> = {
   "anamnesebogen":       { tables: ["anamnesis_submissions"], buckets: ["anamnesis-pdfs"] },
   "vertrag-datenschutz": { tables: [], buckets: [] },
-  "wiki":                { tables: ["admin_knowledge_base", "faqs", "practice_pricing", "practice_info"], buckets: [] },
+  "wiki": {
+    tables: [
+      "admin_knowledge_base",
+      "mannayan_products",
+      "knowledge_product_links",
+      ...REQUIRED_KB_TABLES,
+      "faqs",
+      "practice_pricing",
+      "practice_info",
+    ],
+    buckets: [],
+  },
   "infothek":            { tables: ["infothek_gating"], buckets: [] },
   "hypnose":             { tables: [], buckets: [] },
   "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
@@ -116,9 +149,10 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
         if (m) names.add(m[1]);
       }
     }
-    const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/")).sort();
+    const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/"));
     if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
-    return { tables: filtered, source: "openapi" };
+    const tables = [...new Set([...filtered, ...REQUIRED_KB_TABLES])].sort();
+    return { tables, source: "openapi" };
   } catch (err) {
     console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
     return { tables: FALLBACK_TABLES, source: "fallback" };
@@ -594,13 +628,27 @@ Deno.serve(async (req) => {
       }
 
       const tablesOut: Record<string, { rows: Record<string, unknown>[]; error?: string }> = {};
+      const tableErrors: Array<{ table: string; message: string }> = [];
       for (const t of area.tables) {
         try {
           const rows = await fetchTableAll(adminClient, t);
           tablesOut[t] = { rows };
         } catch (e) {
-          tablesOut[t] = { rows: [], error: e instanceof Error ? e.message : String(e) };
+          const message = e instanceof Error ? e.message : String(e);
+          tablesOut[t] = { rows: [], error: message };
+          tableErrors.push({ table: t, message });
         }
+      }
+
+      if (tableErrors.length > 0) {
+        return new Response(
+          JSON.stringify({
+            error: "subset_table_export_failed",
+            area: areaId,
+            tableErrors,
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
 
       const storageOut: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
@@ -652,6 +700,7 @@ Deno.serve(async (req) => {
     const stats = await gatherStats(adminClient);
 
     const tableNamesForDb = stats.tables.map((t) => t.name);
+    const tableErrors: Array<{ table: string; message: string }> = [];
     for (const table of tableNamesForDb) {
       try {
         const rows = await fetchTableAll(adminClient, table);
@@ -659,8 +708,15 @@ Deno.serve(async (req) => {
         zip.file(`db/${table}.csv`, rowsToCsv(rows));
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        zip.file(`db/${table}.ERROR.txt`, msg);
+        tableErrors.push({ table, message: msg });
       }
+    }
+
+    if (tableErrors.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "database_table_export_failed", tableErrors }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // Auth-Benutzerkonten (kritisch für Wiederherstellung — Passwörter NICHT exportierbar)

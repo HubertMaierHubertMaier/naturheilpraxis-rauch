@@ -45,7 +45,7 @@ Der Restore wurde in einer temporaeren PostgreSQL-kompatiblen PGlite-Datenbank a
 
 | Datengruppe | Erwartet | Wiederhergestellt | Exakter Feldvergleich |
 |---|---:|---:|---:|
-| Wiki | 436 | 436 | 436 |
+| Wiki (alle 21 Felder) | 436 | 436 | 436 |
 | Mannayan-Produkte | 542 | 542 | 542 |
 | Produktverknuepfungen | 2 | 2 | 2 |
 
@@ -55,4 +55,4 @@ Ergebnis: **BESTANDEN**.
 
 ## Naechster Schritt
 
-Die additive Phase-1-Migration wird lokal vorbereitet und gegen eine isolierte Datenbank getestet. `admin_knowledge_base` bleibt unveraendert; eine Live-Ausrollung erfolgt erst nach gesonderter Pruefung und Freigabe.
+Die additive Phase-1-Migration wurde lokal vorbereitet und gegen eine isolierte Datenbank getestet. Der technische Stand ist in `docs/wiki-phase1-core-schema-2026-07-28.md` dokumentiert. `admin_knowledge_base` bleibt unveraendert; eine Live-Ausrollung erfolgt erst nach gesonderter Pruefung und Freigabe.
