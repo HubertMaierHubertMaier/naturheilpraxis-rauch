@@ -622,13 +622,14 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
     const manualDiagnosesText = Array.isArray(manualDiagnosen)
       ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
           .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
       : "";
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
+    const vievaPlusText: string = typeof vievaPlus === "string" ? vievaPlus.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
     const eigeneTherapieText: string = typeof eigeneTherapieVorlage === "string" ? eigeneTherapieVorlage.trim() : "";
     const mannayanOrdersText: string = Array.isArray(mannayanOrders)
@@ -638,14 +639,14 @@ serve(async (req) => {
         }).filter(Boolean).join("\n\n")
       : "";
     // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
-    const totalPatientChars = (sonstigeUntersuchungenText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    const totalPatientChars = (sonstigeUntersuchungenText.length + vievaPlusText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
     if (totalPatientChars > 80_000) {
       console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
     }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
+    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !vievaPlusText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
@@ -716,7 +717,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, vievaPlusText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -919,6 +920,7 @@ serve(async (req) => {
         symptomAxes: activeSymptomTargets.map((t) => t.label),
         metatronHeelInput: metatronHeelText || null,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
+        vievaPlusChars: vievaPlusText.length,
         perplexityAnalyseChars: perplexityAnalyseText.length,
         eigeneTherapieChars: eigeneTherapieText.length,
         mannayanOrdersCount: Array.isArray(mannayanOrders) ? mannayanOrders.length : 0,
@@ -946,8 +948,9 @@ serve(async (req) => {
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor${laborDatum ? ` (Befunddatum: ${laborDatum})` : ""}: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
-    if (metatronHeelText) patientInfo.push(`Heel-Mittel aus Metatron-/NLS-Resonanzauswertung: ${metatronHeelText}`);
+    if (metatronHeelText) patientInfo.push(`Metatron-Hospital-/NLS-Analyse${metatronDatum ? ` (erstellt am: ${metatronDatum})` : ""} (Resonanzhinweise getrennt von gesicherten Befunden bewerten): ${metatronHeelText}`);
     if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
+    if (vievaPlusText) patientInfo.push(`Vieva-Plus-Auswertung${vievaPlusDatum ? ` (erstellt am: ${vievaPlusDatum})` : ""} (Vitamin-/Mineralstoffstatus, Aminosäuren und HRV, ${vievaPlusText.length} Zeichen): ${vievaPlusText}`);
     if (perplexityAnalyseText) patientInfo.push(`Externe Perplexity-/AI-Recherche & Literaturauswertung (Zusatzkontext, ${perplexityAnalyseText.length} Zeichen): ${perplexityAnalyseText}`);
     if (eigeneTherapieText) patientInfo.push(`Eigene Therapie-/Verordnungs-Vorlage des Therapeuten (zur fachlichen Plausibilitätsprüfung, NICHT automatisch übernehmen): ${eigeneTherapieText}`);
     if (mannayanOrdersText) patientInfo.push(`Bereits bestellte Mannayan-Präparate für diesen Patienten (als real verordnete/ausgewählte Mittel berücksichtigen): ${mannayanOrdersText}`);
@@ -955,8 +958,9 @@ serve(async (req) => {
     // Vom Therapeuten uebernommene Resonanzhinweise bleiben Kandidaten und muessen
     // dieselbe Sicherheitspruefung wie alle anderen Mittel durchlaufen.
     const metatronHeelDirective = metatronHeelText
-      ? `\n\n🎯 METATRON/NLS HEEL-RESONANZ (ALS INTERNEN KANDIDATENKONTEXT PRÜFEN):
-Der Therapeut hat aus der Hospital Metatron HR (NLS) Resonanzanalyse folgende Heel-Komplexmittel als energetisch passend identifiziert:
+      ? `\n\n🎯 METATRON-HOSPITAL-/NLS-ANALYSE (RESONANZHINWEISE ALS INTERNEN KANDIDATENKONTEXT PRÜFEN):
+Der folgende Text kann Organ-/Resonanzbefunde, Belastungshinweise und vorgeschlagene Heel-Komplexmittel enthalten. Extrahiere Mittel nur, wenn sie im Text tatsächlich als Mittel genannt sind:
+${metatronDatum ? `Erstellt am: ${metatronDatum}\n` : ""}
 ${metatronHeelText}
 
 REGELN:
@@ -1115,12 +1119,17 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - **DATUMS-EXTRAKTION (PFLICHT):** Lies systematisch jedes Untersuchungsdatum aus dem Freitext (Formate: TT.MM.JJJJ, JJJJ-MM-TT, "März 2024", "vor 2 Jahren", "Q1/25" usw.). Ordne JEDEM Befund sein Datum + den Untersuchungstyp zu. Erstelle dazu im Output unter "🗂️ Voruntersuchungen – chronologische Auswertung" eine **chronologisch sortierte Liste** (neueste zuerst) im Format:
      - **[TT.MM.JJJJ] – [Untersuchungstyp] ([Quelle/Praxis falls genannt])** → Befund: [Kernbefund kurz]. Therapierelevanz: [konkret]. Einordnung: [a/b/c].
    - Sortiere intern, was davon (a) **gesicherter schulmedizinischer Befund** (Bildgebung, Histologie, Labor mit Arztstempel), (b) **komplementär-/bioenergetische Resonanzaussage** (EAV, NLS, Bioresonanz, Kinesiologie) oder (c) **Verlaufs-/Selbstmessung** (RR, HRV, CGM, Schmerztagebuch) ist – jede Gruppe wird unterschiedlich gewichtet.
-   - **Tiefen-Diff.-Diagnostik (PFLICHT bei diesem Block):** Leite aus den Befunden eine eigene Sektion "## 🔎 Differentialdiagnostik (vertieft)" ab — mindestens 3–6 Differentialdiagnosen mit (i) passenden Befunden DAFÜR, (ii) Befunden DAGEGEN, (iii) zusätzlich nötigen Untersuchungen zur Abklärung, (iv) Wahrscheinlichkeit (gering/mittel/hoch). Verwende ICD-10-Codes wenn möglich. Quelle: Wiki-Einträge + genannte Voruntersuchungen + Perplexity-Recherche (6d), niemals erfundene Werte.
+     - **Tiefen-Diff.-Diagnostik (PFLICHT bei diesem Block):** Leite aus den Befunden eine eigene Sektion "## 🔎 Differentialdiagnostik (vertieft)" ab — mindestens 3–6 Differentialdiagnosen mit (i) passenden Befunden DAFÜR, (ii) Befunden DAGEGEN, (iii) zusätzlich nötigen Untersuchungen zur Abklärung, (iv) Wahrscheinlichkeit (gering/mittel/hoch). Verwende ICD-10-Codes wenn möglich. Quelle: Wiki-Einträge + genannte Voruntersuchungen + Perplexity-Recherche (6e), niemals erfundene Werte.
    - Leite konkrete Therapie-Konsequenzen ab: Organfokus aus Bildgebung, Resonanz-Hinweise aus EAV/NLS, Verlaufstrends aus Selbstmessungen, Anamnese-Kontext aus Reha-/Kurberichten.
    - Bei NLS-/Bioresonanz-Hinweisen: kennzeichne Empfehlungen klar als „resonanz-basiert" und vermische sie nicht mit gesicherten schulmedizinischen Diagnosen.
    - Bei onkologischen, kardiovaskulären, neurologischen oder anderen schwerwiegenden Diagnosen: Strikte begleitende Therapie, keine Empfehlungen, die mit ärztlicher Behandlung kollidieren.
 
-6d. **Externe Perplexity-/AI-Recherche & Literaturauswertung (${perplexityAnalyseText.length} Zeichen)**: ${perplexityAnalyseText || "Nicht angegeben"}
+6d. **Vieva Plus${vievaPlusDatum ? ` – erstellt am ${vievaPlusDatum}` : ""} (Vitamin-/Mineralstoffstatus, Aminosäuren und HRV, ${vievaPlusText.length} Zeichen)**: ${vievaPlusText || "Nicht angegeben"}
+   - Werte vollständig mit Einheit, Referenz-/Zielbereich und Messdatum übernehmen, soweit im Befund vorhanden; fehlende Angaben nicht erfinden.
+   - Vitamin-, Mineralstoff- und Aminosäurehinweise mit klassischem Labor, Beschwerden, Diagnosen und Medikation abgleichen. Messmethodisch nicht gleichwertige Aussagen ausdrücklich kennzeichnen.
+   - HRV-Werte als Verlaufs-/Regulationsmessung einordnen, nicht als alleinigen Diagnosenachweis. Auffällige kardiovaskuläre Hinweise ärztlich abklären lassen.
+
+6e. **Externe Perplexity-/AI-Recherche & Literaturauswertung (${perplexityAnalyseText.length} Zeichen)**: ${perplexityAnalyseText || "Nicht angegeben"}
    - VERBINDLICH: Auch dieser Block ist VOLLSTÄNDIG zu lesen – egal wie lang. KEIN Trimmen, KEIN Stichprobenlesen.
    - Inhalt sind in der Regel: Perplexity-Antworten mit Zitaten, PubMed-Treffer, S3-Leitlinien-Auszüge, Cochrane-Reviews, Lehrbuch-Exzerpte, Spezialisten-Forenposts, AI-generierte Differentialdiagnose-Listen.
    - Verwendung im Therapieplan:

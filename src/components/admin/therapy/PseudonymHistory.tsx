@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { History, FileText, Trash2, Save, ShieldAlert, Loader2, Eye, X } from "lucide-react";
 import { logTherapyEvent } from "./therapyEventLog";
 import { openClinicalReportWindow } from "@/lib/clinicalReportHtml";
+import { parseSourceHistoryReport } from "@/lib/analysisSourceHistory";
 
 export interface TherapySession {
   id: string;
@@ -132,8 +133,9 @@ export const buildStoredDetails = (input: any): StoredDetail[] => {
   add("Laborwerte", e.laborKomplett || [e.laborErhoeht && `↑ Erhöht:\n${e.laborErhoeht}`, e.laborErniedrigt && `↓ Erniedrigt:\n${e.laborErniedrigt}`].filter(Boolean).join("\n\n"));
   add("Stuhlbefund", e.stuhlbefund);
   add("Arztbericht", e.arztbericht);
-  add("Metatron / HEEL", e.metatronHeel);
+  add("Metatron Hospital / NLS", [e.metatronDatum && `Letztes Erfassungsdatum: ${e.metatronDatum}`, e.metatronHeel].filter(Boolean).join("\n"));
   add("Sonstige Untersuchungen / hochgeladene Dokumente", e.sonstigeUntersuchungen);
+  add("Vieva Plus", [e.vievaPlusDatum && `Letztes Erfassungsdatum: ${e.vievaPlusDatum}`, e.vievaPlus].filter(Boolean).join("\n"));
   add("Zusätzliche Analyse", e.perplexityAnalyse);
   add("Eigene Therapievorlage", e.eigeneTherapieVorlage);
   add("Ausgewählte Kategorien", summarizeGenericArray(e.selectedCategories));
@@ -151,16 +153,23 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const loadRunRef = useRef(0);
+  const activePseudonymRef = useRef("");
   const { toast } = useToast();
+  activePseudonymRef.current = pseudonymId.trim();
 
   const loadSessions = useCallback(async () => {
-    if (!pseudonymId.trim()) {
+    const pid = pseudonymId.trim();
+    const runId = ++loadRunRef.current;
+    const requestIsCurrent = () => loadRunRef.current === runId && activePseudonymRef.current === pid;
+    if (!pid) {
       setSessions([]);
       return;
     }
     setLoading(true);
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
+    if (!requestIsCurrent()) return;
 
     if (!accessToken) {
       toast({ title: "Nicht angemeldet", description: "Bitte erneut einloggen.", variant: "destructive" });
@@ -170,9 +179,10 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
     }
 
     const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
-      body: { pseudonym_id: pseudonymId.trim() },
+      body: { pseudonym_id: pid },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    if (!requestIsCurrent()) return;
 
     if (error) {
       toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
@@ -188,11 +198,17 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
   }, [pseudonymId, toast]);
 
   useEffect(() => {
+    loadRunRef.current += 1;
+    setSessions([]);
+    setLoading(false);
     setHistoryOpen(true);
     setExpandedId(null);
     setEditNoteId(null);
     const t = setTimeout(loadSessions, 300);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      loadRunRef.current += 1;
+    };
   }, [loadSessions]);
 
   /**
@@ -202,6 +218,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
    * keeps working with the same TherapySession shape.
    */
   const fetchFullSession = useCallback(async (id: string, includeBefundHtml = false): Promise<TherapySession | null> => {
+    const pid = activePseudonymRef.current;
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     if (!accessToken) return null;
@@ -209,6 +226,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
       body: { session_id: id, include_befund_html: includeBefundHtml },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    if (activePseudonymRef.current !== pid) return null;
     if (error) {
       toast({ title: "Fehler beim Laden", description: error.message, variant: "destructive" });
       return null;
@@ -456,18 +474,8 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
               const isBefund = s.kind === "befund_auswertung" || s.has_befund_html === true || !!s.befund_html;
               const isCandidateDraft = s.kind === "therapy_candidate_draft";
               const meta = s.befund_meta || {};
-              const rawBefundSources: any[] = Array.isArray(meta.source_summary)
-                ? meta.source_summary
-                : Array.isArray(e.sourceSummary)
-                ? e.sourceSummary
-                : Array.isArray((meta as any).sources_fallback)
-                ? (meta as any).sources_fallback
-                : Array.isArray(e.sources)
-                ? e.sources
-                : [];
-              const befundSources: Array<{ label?: string; chars?: number; lines?: number }> = rawBefundSources.map((src) =>
-                typeof src === "string" ? { label: src } : (src || {})
-              );
+              const befundReport = parseSourceHistoryReport({ created_at: s.created_at, befund_meta: meta, eingabe_daten: e });
+              const befundSources = befundReport.entries;
               const befundSourcesMissing = isBefund && befundSources.length === 0;
               const openBefund = async () => {
                 let row: TherapySession | null = s;
@@ -517,7 +525,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                             V{s.version_number}
                           </Badge>
                         )}
-                        <span className="text-xs font-medium text-foreground">{date}</span>
+                        <span className="text-xs font-medium text-foreground">{isBefund ? `Ausgewertet am ${date}` : date}</span>
                         {isBefund && (
                           <Badge variant="default" className="text-[10px] py-0 h-4">📄 Befund-Auswertung</Badge>
                         )}
@@ -572,12 +580,17 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                       )}
                       {isBefund && befundSources.length > 0 && (
                         <div className="mt-2 rounded-md border border-primary/40 bg-primary/10 p-2 space-y-1">
-                          <p className="text-[11px] font-semibold text-foreground">📎 Quell-Dateien dieser Auswertung</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-[11px] font-semibold text-foreground">In dieser Auswertung enthalten</p>
+                            <Badge variant={befundReport.legacy ? "outline" : "secondary"} className="text-[10px] py-0 h-4">
+                              {befundReport.legacy ? "Status offen · Altbestand" : "Nachvollziehbar · Manifest v1"}
+                            </Badge>
+                          </div>
                           {befundSources.slice(0, 12).map((source, i) => (
                             <div key={`${source.label || "Quelle"}-${i}`} className="text-[11px] text-muted-foreground">
                               <span className="font-mono text-foreground">{String(source.label || "Quelle")}</span>
                               {(source.chars || source.lines) ? (
-                                <span> · {Number(source.chars || 0).toLocaleString("de-DE")} Z. · {Number(source.lines || 0).toLocaleString("de-DE")} Z.</span>
+                                <span> · {Number(source.chars || 0).toLocaleString("de-DE")} Zeichen · {Number(source.lines || 0).toLocaleString("de-DE")} Zeilen</span>
                               ) : null}
                             </div>
                           ))}
@@ -587,7 +600,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                       {befundSourcesMissing && (
                         <div className="mt-2 rounded-md border border-amber-300/50 bg-amber-50/60 dark:bg-amber-950/15 p-2">
                           <p className="text-[11px] text-amber-900 dark:text-amber-200">
-                            ⚠ Für diese ältere Auswertung wurden die Quell-Dateinamen noch nicht protokolliert. Ab jetzt wird bei jeder neuen Befund-Auswertung automatisch festgehalten, aus welchen Dateien sie entstanden ist.
+                            <strong>Status offen · Altbestand:</strong> Für diese ältere Auswertung wurden keine einzeln nachvollziehbaren Quellen protokolliert. Sie wird deshalb niemals automatisch als unverändert bewertet.
                           </p>
                         </div>
                       )}

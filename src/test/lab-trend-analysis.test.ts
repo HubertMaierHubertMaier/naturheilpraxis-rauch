@@ -798,6 +798,7 @@ describe("laboratory trend analysis", () => {
     const ocrSource = readFileSync(resolve(process.cwd(), "src/lib/localBrowserOcr.ts"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
     const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const persistenceSource = readFileSync(resolve(process.cwd(), "src/lib/patientInputPersistence.ts"), "utf8");
     const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716091513_26f2af2b-0701-4c0b-afce-73f1006c6b8e.sql"), "utf8");
     expect(uploadSource).not.toContain("archiveClinicalDocumentOriginal");
     expect(uploadSource).not.toContain("extract-lab-image");
@@ -820,12 +821,12 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("failedOcrPages.push(pageNumber)");
     expect(uploadSource).toContain("await terminateAndResetWorkerSession(ocrSession)");
     expect(uploadSource).toContain("const ocrSession: OcrExtractionSession = { signal: controller.signal, initializationAttempts: 0 }");
-    expect(uploadSource).toContain("}, ocrSession)");
+    expect(uploadSource).toContain("}, ocrSession, extractionDocumentDate");
     expect(uploadSource).toContain("activeExtractionRef.current");
     expect(uploadSource).toContain("activeExtraction?.controller.abort()");
     expect(uploadSource).toContain("if (scopeIsCurrent()) setLoading(false)");
     expect(uploadSource).toContain("📄 Dokument-${documentId}");
-    expect(uploadSource).toContain('crypto.subtle.digest("SHA-256"');
+    expect(persistenceSource).toContain('crypto.subtle.digest("SHA-256"');
     expect(uploadSource).toContain("extractionRunRef.current");
     expect(uploadSource).toContain("onExtracted(combined.trim(), sourcePseudonymId)");
     expect(uploadSource).not.toContain('trim().toUpperCase()');
@@ -859,7 +860,8 @@ describe("laboratory trend analysis", () => {
     expect(laboratoryTab).toContain('ocrMode="lab"');
     expect(laboratoryTab).toContain('label="📄 Vollständige Labor-PDF einlesen"');
     expect(laboratoryTab).toContain("normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current");
-    expect(laboratoryTab).toContain('saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte")');
+    expect(laboratoryTab).toContain("setLaborKomplett((previous) => previous ?");
+    expect(clientSource).toContain("upsertAutoSaveDraft(pid");
     expect(laboratoryTab).not.toContain("Fotos/Scans hochladen");
   });
 

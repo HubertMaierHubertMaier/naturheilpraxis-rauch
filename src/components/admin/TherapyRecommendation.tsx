@@ -58,6 +58,26 @@ import {
   patientOutputRestrictionsForRemedy,
   type WikiProductSafetyLink,
 } from "@/lib/therapySelection";
+import {
+  buildSourceManifest,
+  completeSuccessfulSourceAnalysis,
+  compareSourcesWithHistory,
+  neutralAnalysisSourceLabel,
+  normalizeAnalysisSourceId,
+  parseSourceHistoryReport,
+  reconcileSourceSelection,
+  setManualSourceSelection,
+  type SourceHistoryReport,
+  type SourceManifestEntry,
+  type SourceSelectionState,
+} from "@/lib/analysisSourceHistory";
+import {
+  mergeExtractedDiagnoses,
+  mergeExtractedMedications,
+  mergeExtractedSymptoms,
+  missingPatientProfileFields,
+  shouldApplyCloudDraft,
+} from "@/lib/patientInputPersistence";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -140,6 +160,12 @@ type AnalysisSourceSummary = { key: string; label: string; chars: number; lines:
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
 type PendingDirectBefundFile = { id: string; file: File; status: "queued" | "processing" | "done" | "error"; chars?: number; pages?: number; error?: string };
+type ExtractedBefundInputs = {
+  forPseudonymId: string;
+  diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
+  symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
+  medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
+};
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
@@ -196,7 +222,8 @@ type AnalysisCheckpoint = {
   totalChars: number;
   completedChunks: number;
   partials: string[];
-  sourceSummary?: AnalysisSourceSummary[];
+  sourceSummary?: SourceManifestEntry[];
+  sourceManifestV1?: SourceManifestEntry[];
   duplicateNotes?: string[];
   status?: "in_progress" | "paused" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
@@ -347,8 +374,9 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
       || match[1]
       || `${fallbackLabel} ${index + 1}`;
     const label = rawName.replace(/^\s*(?:📄|📷)\s*/, "").trim() || `${fallbackLabel} ${index + 1}`;
+    const stableDocumentId = match[3] || label.match(/Dokument-([a-f0-9]{12})/i)?.[1];
     sources.push({
-      key: `${fieldKey}:doc:${index}:${sourceKeyPart(label)}`,
+      key: `${fieldKey}:doc:${index}:${stableDocumentId ? `dokument-${stableDocumentId.toLowerCase()}` : sourceKeyPart(label)}`,
       label,
       text: block,
       group: "dokument",
@@ -358,6 +386,43 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
   });
   return sources;
 };
+
+const includeStandaloneAnalysisDate = (text: string, date: string, documentType: string) => {
+  const trimmed = text.trim();
+  if (!trimmed || !date.trim() || /===\s*(?:📄|📷|KLINISCHES\s+DOKUMENT)/i.test(trimmed)) return trimmed;
+  return `Dokumenttyp: ${documentType}\nErstellt am: ${date.trim()}\n${trimmed}`;
+};
+
+const sameBefundSourceRevision = (left: SelectableAnalysisSource[] | null, right: SelectableAnalysisSource[]) => {
+  if (!left) return false;
+  const leftSources = left.filter((source) => source.group !== "kontext");
+  const rightSources = right.filter((source) => source.group !== "kontext");
+  return leftSources.length === rightSources.length && leftSources.every((source, index) => (
+    source.key === rightSources[index].key && source.text === rightSources[index].text && source.group === rightSources[index].group
+  ));
+};
+
+const neutralSourceLabel = (source: SelectableAnalysisSource, fallbackIndex: number) => {
+  void fallbackIndex;
+  return neutralAnalysisSourceLabel(normalizeAnalysisSourceId(source.key), source.group);
+};
+
+const createSourceManifest = (sources: SelectableAnalysisSource[]) => buildSourceManifest(sources.map((source) => ({
+  sourceId: normalizeAnalysisSourceId(source.key),
+  group: source.group,
+  text: deidentifyClinicalText(source.text),
+})));
+
+const formatAnalysisTimestamp = (value: string | null | undefined) => value
+  ? new Date(value).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+  : "";
+
+const BefundSourceStand = ({ stand }: { stand: DisplayedBefundSourceStand | null }) => stand ? (
+  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground shrink-0">
+    <div><strong className="text-foreground">Quellenstand:</strong> Ausgewertet am {formatAnalysisTimestamp(stand.createdAt) || "Zeitpunkt aus Altbestand offen"} · {stand.entries.length} Quelle(n)</div>
+    {stand.entries.length > 0 && <div className="mt-1 text-foreground">{stand.entries.map((entry) => entry.label).join(" · ")}</div>}
+  </div>
+) : null;
 
 const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => Array.isArray(value)
   ? value
@@ -398,8 +463,9 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
   addText("laborErniedrigt", "Labor – erniedrigte Werte", d.laborErniedrigt);
   addText("stuhlbefund", "Stuhlbefund", d.stuhlbefund);
   addText("arztbericht", "Arztbericht", d.arztbericht);
-  addText("metatronHeel", "Metatron / HEEL / NLS", d.metatronHeel);
+  addText("metatronHeel", "Metatron Hospital / HEEL / NLS", d.metatronHeel);
   addText("sonstigeUntersuchungen", "Sonstige Untersuchungen / Dokumente", d.sonstigeUntersuchungen);
+  addText("vievaPlus", "Vieva Plus", d.vievaPlus);
   addText("perplexityAnalyse", "Zusätzliche Analyse / Recherche", d.perplexityAnalyse);
   addText("eigeneTherapieVorlage", "Eigene Therapievorlage", d.eigeneTherapieVorlage);
   addArray("mannayanOrders", "Mannayan-Bestellungen", d.mannayanOrders);
@@ -436,6 +502,7 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
     labor_lines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
     arzt_chars: countStringChars(d.arztbericht),
     sonstige_chars: countStringChars(d.sonstigeUntersuchungen),
+    vieva_plus_chars: countStringChars(d.vievaPlus),
     note: sourceSummary.length
       ? `${source}: ${sourceSummary.length} geladene Feldgruppe(n), ${totalChars.toLocaleString("de-DE")} Zeichen.`
       : `${source}: keine gespeicherten Patientendaten geladen.`,
@@ -446,7 +513,7 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
 const countLoadedClinicalChars = (d: Record<string, unknown>) => [
   d.symptome, d.erkrankung, d.medikamente, d.bisherigeMittel, d.belastungen,
   d.laborKomplett, d.laborErhoeht, d.laborErniedrigt, d.stuhlbefund,
-  d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.perplexityAnalyse,
+  d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.vievaPlus, d.perplexityAnalyse,
   d.eigeneTherapieVorlage,
 ].reduce<number>((sum, value) => sum + countStringChars(value), 0);
 
@@ -462,14 +529,7 @@ const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], 
   loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
 });
 
-const summarizeAnalysisSources = (blocks: AnalysisDocChunk[]): AnalysisSourceSummary[] => blocks.map((block) => ({
-  key: block.label,
-  label: block.label,
-  chars: block.text.trim().length,
-  lines: countClinicalLines(block.text),
-}));
-
-const formatSourceSummaryForProgress = (sources: AnalysisSourceSummary[]) => sources
+const formatSourceSummaryForProgress = (sources: Array<{ label: string; chars: number; lines: number }>) => sources
   .map((source) => `• ${source.label}: ${source.chars.toLocaleString("de-DE")} Zeichen / ${source.lines.toLocaleString("de-DE")} Zeile(n)`)
   .join("\n");
 
@@ -500,6 +560,7 @@ const residualIdentifierCategories = (value: unknown) => directIdentifierCategor
 );
 
 type LatestBefundDisplay = { html: string; progress: string; reportKind: "befund_auswertung"; meta?: any; createdAt?: string };
+type DisplayedBefundSourceStand = { createdAt: string; entries: SourceManifestEntry[] };
 
 const writeLatestBefundDisplay = (pseudonymId: string, snapshot: Omit<LatestBefundDisplay, "reportKind">) => {
   try {
@@ -1066,7 +1127,10 @@ export function TherapyRecommendation() {
   const [arztbericht, setArztbericht] = useState("");
   const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
+  const [metatronDatum, setMetatronDatum] = useState("");
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
+  const [vievaPlus, setVievaPlus] = useState("");
+  const [vievaPlusDatum, setVievaPlusDatum] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
   const [apothekerRezept, setApothekerRezept] = useState("");
@@ -1097,18 +1161,20 @@ export function TherapyRecommendation() {
   const [isDocAnalysisPanelMinimized, setIsDocAnalysisPanelMinimized] = useState(false);
   const [isDocAnalysisPanelFullscreen, setIsDocAnalysisPanelFullscreen] = useState(false);
   const [latestBefundLoadedFrom, setLatestBefundLoadedFrom] = useState<"local" | "cloud" | null>(null);
+  const [displayedBefundSourceStand, setDisplayedBefundSourceStand] = useState<DisplayedBefundSourceStand | null>(null);
   const [selectedAnalysisSourceKeys, setSelectedAnalysisSourceKeys] = useState<string[]>([]);
+  const [analysisSourceManifest, setAnalysisSourceManifest] = useState<SourceManifestEntry[]>([]);
+  const [manifestSourceRevision, setManifestSourceRevision] = useState<SelectableAnalysisSource[] | null>(null);
+  const [sourceHistoryReports, setSourceHistoryReports] = useState<SourceHistoryReport[]>([]);
+  const [isSourceManifestLoading, setIsSourceManifestLoading] = useState(true);
+  const [isSourceHistoryLoading, setIsSourceHistoryLoading] = useState(true);
+  const [sourceManifestError, setSourceManifestError] = useState("");
+  const [sourceHistoryError, setSourceHistoryError] = useState("");
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
   const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
   const [deletingArchiveDocumentPath, setDeletingArchiveDocumentPath] = useState<string | null>(null);
-  const [extractedFromDocs, setExtractedFromDocs] = useState<{
-    forPseudonymId: string;
-    diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
-    symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
-    medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
-  } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [diagnosen, setDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [isLoadingDiagnosen, setIsLoadingDiagnosen] = useState(false);
@@ -1129,7 +1195,9 @@ export function TherapyRecommendation() {
   // Wiki-Autocomplete für manuelle Mittel
   const [wikiRemedies, setWikiRemedies] = useState<WikiRemedyEntry[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const therapyRunIdRef = useRef(0);
   const docAbortRef = useRef<AbortController | null>(null);
+  const docAnalysisRunIdRef = useRef(0);
   const patientScopeGenerationRef = useRef(0);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
   const directBefundFileRef = useRef<HTMLInputElement>(null);
@@ -1143,6 +1211,11 @@ export function TherapyRecommendation() {
   const archiveDeleteRunIdRef = useRef(0);
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
+  const sourceSelectionRef = useRef<SourceSelectionState>({ selectedSourceIds: [], manualSelections: {} });
+  const recentlyCompletedSourcesRef = useRef<{ sourceRevision: SelectableAnalysisSource[] | null; sourceIds: Set<string> }>({
+    sourceRevision: null,
+    sourceIds: new Set(),
+  });
   const lastAutoSavedPayloadRef = useRef("");
   const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -1207,7 +1280,10 @@ export function TherapyRecommendation() {
       arztbericht,
       arztberichtDatum,
       metatronHeel,
+      metatronDatum,
       sonstigeUntersuchungen,
+      vievaPlus,
+      vievaPlusDatum,
       perplexityAnalyse,
       eigeneTherapieVorlage,
       apothekerRezept,
@@ -1223,7 +1299,7 @@ export function TherapyRecommendation() {
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
+  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1238,37 +1314,6 @@ export function TherapyRecommendation() {
     if (error) throw error;
     return typeof data === "string" ? data : null;
   }, []);
-
-  const saveClinicalSnapshot = useCallback(async (extra: Record<string, unknown>, label: string) => {
-    const pid = pseudonymId.trim();
-    if (!isPatientScopedStorageReady(pid)) {
-      toast({ title: "Pseudonym-ID fehlt", description: `${label} wurde ins Formular geladen, aber noch nicht in der Cloud gespeichert.`, variant: "destructive" });
-      return;
-    }
-    autoSaveRunIdRef.current += 1;
-    if (autoSaveTimerRef.current) {
-      window.clearTimeout(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = null;
-    }
-    setAutoSaveStatus("saving");
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Nicht angemeldet");
-      const payload = buildInputData({ ...extra, autoSavedDraft: true, finalized: false, immediateClinicalSave: true, lastAutoSaveAt: new Date().toISOString() });
-      const residualIdentifiers = residualIdentifierCategories(payload);
-      if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}`);
-      assertPayloadMatchesPseudonym(pid, payload);
-      const draftId = await upsertAutoSaveDraft(pid, payload);
-      autoSaveSessionIdRef.current = draftId ?? autoSaveSessionIdRef.current;
-      lastAutoSavedPayloadRef.current = JSON.stringify({ ...payload, lastAutoSaveAt: undefined });
-      setAutoSaveStatus("saved");
-      setHistoryRefresh((n) => n + 1);
-      toast({ title: "Sofort gespeichert", description: `${label} wurde für ${pid} in der Cloud gesichert.` });
-    } catch (error: any) {
-      setAutoSaveStatus("error");
-      toast({ title: "Sofort-Speicherung fehlgeschlagen", description: error?.message || "Bitte erneut anmelden.", variant: "destructive" });
-    }
-  }, [pseudonymId, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft, toast]);
 
   // ---- Eingaben in sessionStorage spiegeln, damit ein versehentlicher Re-Mount
   // (z. B. durch Auth-Refresh oder Tab-Wechsel) die Daten nicht verliert. ----
@@ -1345,7 +1390,10 @@ export function TherapyRecommendation() {
     if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
+    if (typeof data.metatronDatum === "string") setMetatronDatum(data.metatronDatum);
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
+    if (typeof data.vievaPlus === "string") setVievaPlus(data.vievaPlus);
+    if (typeof data.vievaPlusDatum === "string") setVievaPlusDatum(data.vievaPlusDatum);
     if (typeof data.perplexityAnalyse === "string") setPerplexityAnalyse(data.perplexityAnalyse);
     if (typeof data.eigeneTherapieVorlage === "string") setEigeneTherapieVorlage(data.eigeneTherapieVorlage);
     if (typeof data.apothekerRezept === "string") setApothekerRezept(data.apothekerRezept);
@@ -1388,6 +1436,7 @@ export function TherapyRecommendation() {
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     let loadedFromCloud = false;
+    let selectedBaseInput = normalizeTherapyInput(localData || {});
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
@@ -1409,8 +1458,9 @@ export function TherapyRecommendation() {
         || countDiagnoseEntries(draftInput.diagnosen) > 0
         || countArrayEntries(draftInput.pathogens) > 0
         || [draftInput.alter, draftInput.geschlecht, draftInput.groesseCm, draftInput.gewichtKg, draftInput.schwanger].some((value) => typeof value === "string" && value.trim());
-      if (hasDraftClinicalData) {
+      if (hasDraftClinicalData && shouldApplyCloudDraft(localTs, draftRow?.updated_at)) {
         applyDraftPayload(draftInput, pid);
+        selectedBaseInput = draftInput;
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", draftInput, 1));
         loadedFromCloud = true;
         await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Auto-Sicherung", draftInput, {
@@ -1421,7 +1471,7 @@ export function TherapyRecommendation() {
         toast({ title: "Patientenkontext geladen", description: `Cloud-Auto-Sicherung für ${pid} geladen und im Verlauf protokolliert.` });
       }
 
-      const { data, error } = loadedFromCloud ? { data: null, error: null } : await supabase.functions.invoke("get-therapy-sessions", {
+      const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
         body: { snapshot_pseudonym_id: pid },
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -1442,6 +1492,7 @@ export function TherapyRecommendation() {
       const hasSnapshotData = Object.keys(snapshotWithDraftAdmin).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
       if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
         applyDraftPayload(snapshotWithDraftAdmin, pid);
+        selectedBaseInput = snapshotWithDraftAdmin;
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshotWithDraftAdmin, 1));
         loadedFromCloud = true;
         await logTherapyEvent(pid, "patient_context_loaded", buildPatientLoadEventDetails("Cloud-Snapshot + aktuelle Auto-Sicherung", snapshotWithDraftAdmin, {
@@ -1452,6 +1503,8 @@ export function TherapyRecommendation() {
         setHistoryRefresh((n) => n + 1);
         toast({ title: "Patientenkontext geladen", description: `Cloud-Snapshot für ${pid} geladen und im Verlauf protokolliert.` });
       }
+      const missingProfileFields = missingPatientProfileFields(selectedBaseInput, snapshot);
+      if (Object.keys(missingProfileFields).length) applyDraftPayload({ ...missingProfileFields, _pseudonym_id: pid }, pid);
       if (localData && localTs > 0) {
         if (!loadedFromCloud) {
           const normalizedLocal = normalizeTherapyInput(localData);
@@ -1501,10 +1554,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage];
+    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
     return textFields.some((v) => v.trim()) || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -1559,11 +1612,11 @@ export function TherapyRecommendation() {
     .join("\n"), [manualDiagnosen]);
   const therapySafetyContext = useMemo<TherapySafetyContext>(() => ({
     medications: medikamente,
-    conditions: [erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
+    conditions: [erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
     symptoms: [symptome, metatronHeel].filter(Boolean).join("\n"),
     pregnancy: schwanger,
     age: alter,
-  }), [medikamente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, sonstigeUntersuchungen, laborErhoeht, laborErniedrigt, laborKomplett, symptome, metatronHeel, schwanger, alter]);
+  }), [medikamente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett, symptome, schwanger, alter]);
   const parsedTherapyResult = useMemo(() => parseTherapyMarkdown(result), [result]);
   const safetyWarningsByKey = useMemo(
     () => buildRemedySafetyMap(parsedTherapyResult, therapySafetyContext, wikiRemedies),
@@ -1951,7 +2004,10 @@ export function TherapyRecommendation() {
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
+    setMetatronDatum("");
     setSonstigeUntersuchungen("");
+    setVievaPlus("");
+    setVievaPlusDatum("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
     setApothekerRezept("");
@@ -1967,7 +2023,6 @@ export function TherapyRecommendation() {
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
-    setExtractedFromDocs(null);
     setClinicalLoadInfo(null);
     setWorkflowStage("edit");
     setAutoSaveStatus("idle");
@@ -1976,7 +2031,17 @@ export function TherapyRecommendation() {
     setDocAnalysisProgress("");
     setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setDisplayedBefundSourceStand(null);
     setSelectedAnalysisSourceKeys([]);
+    setAnalysisSourceManifest([]);
+    setManifestSourceRevision(null);
+    setSourceHistoryReports([]);
+    setIsSourceManifestLoading(true);
+    setIsSourceHistoryLoading(true);
+    setSourceManifestError("");
+    setSourceHistoryError("");
+    sourceSelectionRef.current = { selectedSourceIds: [], manualSelections: {} };
+    recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
     setPendingDirectBefundFiles([]);
     setLoadedDocumentInventory([]);
     setLoadingArchiveDocumentPath(null);
@@ -2016,11 +2081,21 @@ export function TherapyRecommendation() {
       setIsStreaming(false);
       setIsAnalyzingDocs(false);
       setPendingDirectBefundFiles([]);
-      setExtractedFromDocs(null);
       setLoadingArchiveDocumentPath(null);
       setDeletingArchiveDocumentPath(null);
       setIsRefreshingDocumentInventory(false);
       setHpCheckLoading(false);
+      setAnalysisSourceManifest([]);
+      setManifestSourceRevision(null);
+      setSourceHistoryReports([]);
+      setSelectedAnalysisSourceKeys([]);
+      setIsSourceManifestLoading(true);
+      setIsSourceHistoryLoading(true);
+      setSourceManifestError("");
+      setSourceHistoryError("");
+      setDisplayedBefundSourceStand(null);
+      sourceSelectionRef.current = { selectedSourceIds: [], manualSelections: {} };
+      recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
     }
     const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (hasPatientScopedData && next && previous !== next) {
@@ -2077,7 +2152,6 @@ export function TherapyRecommendation() {
     const d = normalizeTherapyInput(session.eingabe_daten || {});
     const isDraftSession = Boolean(d.autoSavedDraft) || session.kind === "therapy_candidate_draft";
     patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
-    setExtractedFromDocs(null);
     setDiagnosen([]);
     checkpointSessionIdRef.current = null;
     autoSaveSessionIdRef.current = isDraftSession ? session.id : null;
@@ -2100,10 +2174,10 @@ export function TherapyRecommendation() {
     }
     setSymptome(asText(d.symptome));
     setErkrankung(asText(d.erkrankung));
-    setAlter(asText(d.alter));
-    setGeschlecht(asText(d.geschlecht));
-    setGroesseCm(asText(d.groesseCm));
-    setGewichtKg(asText(d.gewichtKg));
+    if (asText(d.alter).trim()) setAlter(asText(d.alter));
+    if (asText(d.geschlecht).trim()) setGeschlecht(asText(d.geschlecht));
+    if (asText(d.groesseCm).trim()) setGroesseCm(asText(d.groesseCm));
+    if (asText(d.gewichtKg).trim()) setGewichtKg(asText(d.gewichtKg));
     // Hinweis, falls die alte Sitzung die neuen Felder noch nicht enthielt
     const missingNew = !d.geschlecht && !d.groesseCm && !d.gewichtKg;
     if (missingNew) {
@@ -2112,7 +2186,7 @@ export function TherapyRecommendation() {
         description: "Geschlecht, Größe und Gewicht waren in dieser Sitzung noch nicht erfasst. Bitte erneut eingeben – die nächste Generierung speichert sie dauerhaft mit.",
       });
     }
-    setSchwanger(asText(d.schwanger, "nein"));
+    if (asText(d.schwanger).trim()) setSchwanger(asText(d.schwanger));
     setMedikamente(asText(d.medikamente));
     setBisherigeMittel(asText(d.bisherigeMittel));
     setBudget(asText(d.budget));
@@ -2124,7 +2198,10 @@ export function TherapyRecommendation() {
     setArztbericht(asText(d.arztbericht));
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
+    setMetatronDatum(asText(d.metatronDatum));
     setSonstigeUntersuchungen(asText(d.sonstigeUntersuchungen));
+    setVievaPlus(asText(d.vievaPlus));
+    setVievaPlusDatum(asText(d.vievaPlusDatum));
     setPerplexityAnalyse(asText(d.perplexityAnalyse));
     setEigeneTherapieVorlage(asText(d.eigeneTherapieVorlage));
     setApothekerRezept(asText(d.apothekerRezept));
@@ -2164,7 +2241,9 @@ export function TherapyRecommendation() {
       return;
     }
     const meta = session.befund_meta || {};
+    const sourceReport = parseSourceHistoryReport({ created_at: session.created_at, befund_meta: meta, eingabe_daten: session.eingabe_daten });
     setDocAnalysisHtml(html);
+    setDisplayedBefundSourceStand({ createdAt: session.created_at, entries: sourceReport.entries });
     const progress = `Gespeicherte Befund-Auswertung geladen.\nPseudonym: ${session.pseudonym_id}\nErstellt: ${new Date(session.created_at).toLocaleString("de-DE")}${meta.total_chars ? `\nUmfang: ${Number(meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}`;
     setDocAnalysisProgress(progress);
     writeLatestBefundDisplay(session.pseudonym_id, { html, progress, meta, createdAt: session.created_at });
@@ -2237,6 +2316,7 @@ export function TherapyRecommendation() {
       const total = Number(checkpoint?.totalChunks || 0);
       const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
       setDocAnalysisHtml("");
+      setDisplayedBefundSourceStand(null);
       setDocAnalysisProgress(
         `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nEs wurde kein vollständig fertiger Bericht gefunden. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen. Bitte NICHT „Alles neu auswerten“, außer du willst bewusst komplett neu starten.`
       );
@@ -2250,6 +2330,8 @@ export function TherapyRecommendation() {
       const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
       const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(cloudHtml);
+      const cloudSourceReport = parseSourceHistoryReport({ created_at: cloudRow.created_at, befund_meta: cloudRow.befund_meta });
+      setDisplayedBefundSourceStand({ createdAt: cloudRow.created_at, entries: cloudSourceReport.entries });
       setDocAnalysisProgress(progress);
       setIsDocAnalysisPanelMinimized(true);
       setLatestBefundLoadedFrom("cloud");
@@ -2262,6 +2344,8 @@ export function TherapyRecommendation() {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(sanitizeFinalAnalysisHtml(localSnapshot.html));
+      const localSourceReport = parseSourceHistoryReport({ created_at: localSnapshot.createdAt, befund_meta: localSnapshot.meta });
+      setDisplayedBefundSourceStand({ createdAt: localSnapshot.createdAt || "", entries: localSourceReport.entries });
       setDocAnalysisProgress(progress);
       setIsDocAnalysisPanelMinimized(true);
       setLatestBefundLoadedFrom("local");
@@ -2308,6 +2392,7 @@ export function TherapyRecommendation() {
       setDocAnalysisStats(null);
       setDocAnalysisProgress("Starte komplette Neuauswertung…\nAlte fertige Anzeige wurde ausgeblendet, damit kein veralteter Stand mit dem neuen Lauf verwechselt wird.");
       setLatestBefundLoadedFrom(null);
+      setDisplayedBefundSourceStand(null);
 
       // 2a) Cloud-Checkpoints entfernen
       try {
@@ -2327,7 +2412,9 @@ export function TherapyRecommendation() {
       });
 
       // 3) Strikte Auswertung neu starten
-      await handleAnalyzeDocuments();
+      const allSourceIds = analysisSources.map((source) => normalizeAnalysisSourceId(source.key));
+      setSelectedAnalysisSourceKeys(allSourceIds);
+      await handleAnalyzeDocuments({ sourceIds: allSourceIds });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast({ title: "Reset fehlgeschlagen", description: msg, variant: "destructive" });
@@ -2337,20 +2424,55 @@ export function TherapyRecommendation() {
 
 
 
-  const handleAnalyzeDocuments = async () => {
+  const handleAnalyzeDocuments = async (options?: unknown) => {
+    if (docAbortRef.current) {
+      toast({ title: "Befund läuft bereits", description: "Bitte den laufenden Befund-Lauf abwarten oder zuerst abbrechen." });
+      return;
+    }
     const analysisPid = normalizePseudonymId(pseudonymId);
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === analysisPid;
+    const runId = ++docAnalysisRunIdRef.current;
+    const docController = new AbortController();
+    docAbortRef.current = docController;
+    setIsAnalyzingDocs(true);
+    const runIsCurrent = () => scopeIsCurrent() && docAnalysisRunIdRef.current === runId && docAbortRef.current === docController && !docController.signal.aborted;
+    const releaseRun = () => {
+      if (docAnalysisRunIdRef.current === runId && docAbortRef.current === docController) {
+        docAbortRef.current = null;
+        setIsAnalyzingDocs(false);
+      }
+    };
     const clickedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisHtml("");
     setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setDisplayedBefundSourceStand(null);
     setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\nPrüfe jetzt, ob auswertbare Befund-/PDF-Daten in den Eingabefeldern stehen…`);
     window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
 
-    const selectedSourceSet = new Set(selectedAnalysisSourceKeys);
-    const selectedSources = analysisSources.filter((source) => selectedSourceSet.has(source.key));
+    const requestedSourceIds = options && typeof options === "object" && Array.isArray((options as { sourceIds?: unknown }).sourceIds)
+      ? (options as { sourceIds: string[] }).sourceIds
+      : null;
+    const selectedSourceIds = requestedSourceIds ?? selectedAnalysisSourceKeys;
+    const selectedSourceSet = new Set(selectedSourceIds);
+    const selectedSources = analysisSources.filter((source) => selectedSourceSet.has(normalizeAnalysisSourceId(source.key)));
+    let sourceManifest: SourceManifestEntry[];
+    try {
+      sourceManifest = await createSourceManifest(selectedSources);
+      if (!runIsCurrent()) {
+        releaseRun();
+        return;
+      }
+    } catch (error) {
+      if (!scopeIsCurrent()) return;
+      const message = (error as Error).message || "Quellen-Hashes konnten nicht gebildet werden.";
+      setDocAnalysisProgress(`Sicherheitsstopp: ${message}`);
+      toast({ title: "Quellenvergleich fehlgeschlagen", description: "Die Auswertung wurde nicht gestartet.", variant: "destructive" });
+      releaseRun();
+      return;
+    }
     const rawBlocks = selectedSources.map((source, index) => ({
       label: source.group === "dokument" ? `Dokument ${index + 1}` : deidentifyClinicalText(source.label),
       text: deidentifyClinicalText(source.text),
@@ -2359,9 +2481,10 @@ export function TherapyRecommendation() {
     if (unresolvedIdentifiers.length) {
       setDocAnalysisProgress(`Sicherheitsstopp: Nicht vollständig entfernte Identifikatoren erkannt (${unresolvedIdentifiers.join(", ")}). Es wurden keine Daten an den Analyse-Dienst gesendet.`);
       toast({ title: "Datenschutz-Sicherheitsstopp", description: "Die Dokumente wurden nicht versendet. Bitte die markierten Identifikatoren lokal entfernen.", variant: "destructive" });
+      releaseRun();
       return;
     }
-    const sourceSummary = summarizeAnalysisSources(rawBlocks);
+    const sourceSummary = sourceManifest;
     const prepared = prepareAnalysisChunks(rawBlocks);
     const chunks = prepared.chunks;
     if (!chunks.length) {
@@ -2371,15 +2494,13 @@ export function TherapyRecommendation() {
           : `Klick angekommen (${clickedAt}), aber die Auswertung wurde NICHT gestartet.\n\nGrund: keine auswertbaren Daten in Labor, Arztbericht, Sonstige Voruntersuchungen oder Perplexity gefunden.\n\nWenn du gerade eine PDF gewählt hast: Bitte erst den daneben erscheinenden Button „1 Datei(en) auslesen & einfügen“ drücken und prüfen, dass Text im großen Feld „Sonstige / unsortierte Voruntersuchungen“ steht. Danach erneut „Nur Befund-Auswertung (HTML)“ klicken.`
       );
       toast({ title: analysisSources.length ? "Keine Quelle ausgewählt" : "Keine Dokumente vorhanden", description: analysisSources.length ? "Bitte mindestens eine Quelle anhaken." : "Bitte mindestens ein Dokument-Feld füllen (Labor, Arztbericht, sonstige Untersuchungen, Perplexity …).", variant: "destructive" });
+      releaseRun();
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, pseudonymId, selectedAnalysisSourceKeys.join("|"), prepared.duplicateNotes.join("|")].join("|"));
-    const checkpointKey = getAnalysisCheckpointKey(pseudonymId, fingerprint);
-    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, pseudonymId);
-    setIsAnalyzingDocs(true);
-    const docController = new AbortController();
-    docAbortRef.current = docController;
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, analysisPid, selectedSourceIds.join("|"), prepared.duplicateNotes.join("|")].join("|"));
+    const checkpointKey = getAnalysisCheckpointKey(analysisPid, fingerprint);
+    let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, analysisPid);
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
     setDocAnalysisProgress(`Klick angekommen (${clickedAt}).\n✓ ${chunks.length} Teilpaket(e) mit ${totalChars.toLocaleString("de-DE")} Zeichen gefunden.\n\nGeladene Quellen für diesen Befund-Lauf:\n${formatSourceSummaryForProgress(sourceSummary)}\n\nStart…\nAlte fertige Anzeige wurde ausgeblendet, damit nur der aktuelle Lauf sichtbar ist.${prepared.duplicateNotes.length ? `\n✓ ${prepared.duplicateNotes.length} doppelte(r) Textabschnitt(e) erkannt und nur einmal analysiert.` : ""}${checkpoint?.partials?.length ? `\n✓ ${checkpoint.partials.length}/${chunks.length} Teilpaket(e) aus Sicherung gefunden – ich mache dort weiter.` : ""}`);
     try {
@@ -2396,25 +2517,29 @@ export function TherapyRecommendation() {
       // Initial einmal prüfen, ob überhaupt eine Session existiert
       const { data: { session }, error: sessErr } = await supabase.auth.getSession();
       if (sessErr || !session) throw new Error("Nicht angemeldet");
-      await logTherapyEvent(pseudonymId.trim(), "befund_input_loaded", {
+      if (!runIsCurrent()) return;
+      await logTherapyEvent(analysisPid, "befund_input_loaded", {
         source: "befund-run-start",
         total_chars: totalChars,
         chunk_count: chunks.length,
         source_summary: sourceSummary,
+        source_manifest_v1: sourceManifest,
+        source_manifest_version: 1,
         note: `Befund-Lauf gestartet mit ${chunks.length} Teilpaket(en) / ${totalChars.toLocaleString("de-DE")} Zeichen.`,
       });
+      if (!runIsCurrent()) return;
       const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-documents`;
-      if (pseudonymId.trim()) {
+      if (analysisPid) {
         try {
           const { data: cloudRows } = await (supabase as any)
             .from("therapy_sessions")
             .select("id, eingabe_daten, updated_at")
-            .eq("pseudonym_id", pseudonymId.trim())
+            .eq("pseudonym_id", analysisPid)
             .eq("kind", "befund_checkpoint")
             .order("updated_at", { ascending: false })
             .limit(1);
           const cloudRow = Array.isArray(cloudRows) ? cloudRows[0] : null;
-          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length, pseudonymId);
+          const cloudCheckpoint = parseAnalysisCheckpoint(cloudRow?.eingabe_daten?.checkpoint, fingerprint, chunks.length, analysisPid);
           const cloudUpdatedAt = cloudRow?.updated_at ? Date.parse(cloudRow.updated_at) : 0;
           if (cloudCheckpoint && (!checkpoint || new Date(cloudCheckpoint.updatedAt).getTime() > new Date(checkpoint.updatedAt).getTime())) {
             checkpoint = cloudCheckpoint;
@@ -2428,11 +2553,10 @@ export function TherapyRecommendation() {
             const updated = new Date(cloudRow.updated_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
             setDocAnalysisStats({ current: cloudDone, total: cloudTotal, label: "läuft bereits im Hintergrund" });
             setDocAnalysisProgress(
-              `Befund-Auswertung läuft bereits im Hintergrund weiter.\nPseudonym: ${pseudonymId.trim()}\nFortschritt: ${cloudDone}/${cloudTotal} Teilpakete\nLetzter gespeicherter Fortschritt: ${updated}\n\nBitte jetzt keinen neuen Lauf starten. Diese Sperre verhindert doppelte parallele Auswertungen und unnötige Credits. Sobald kein Fortschritt mehr kommt, kannst du mit „Nur Befund-Auswertung (HTML)“ fortsetzen.`
+              `Befund-Auswertung läuft bereits im Hintergrund weiter.\nPseudonym: ${analysisPid}\nFortschritt: ${cloudDone}/${cloudTotal} Teilpakete\nLetzter gespeicherter Fortschritt: ${updated}\n\nBitte jetzt keinen neuen Lauf starten. Diese Sperre verhindert doppelte parallele Auswertungen und unnötige Credits. Sobald kein Fortschritt mehr kommt, kannst du mit „Nur Befund-Auswertung (HTML)“ fortsetzen.`
             );
             toast({ title: "Befund läuft bereits", description: `Backend-Fortschritt ${cloudDone}/${cloudTotal} · bitte kurz warten.` });
-            setIsAnalyzingDocs(false);
-            docAbortRef.current = null;
+            releaseRun();
             return;
           }
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
@@ -2457,7 +2581,7 @@ export function TherapyRecommendation() {
                 chunk: { ...chunk, index: indexLabel, total: totalLabel },
                 alter: alter.trim() || undefined,
                 geschlecht: geschlecht || undefined,
-                pseudonymId: pseudonymId || undefined,
+                pseudonymId: analysisPid || undefined,
                 mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               }),
             });
@@ -2493,19 +2617,20 @@ export function TherapyRecommendation() {
 
 
       const saveCheckpoint = async (checkpointData: AnalysisCheckpoint) => {
-        const safeCheckpoint = deidentifyClinicalData(checkpointData) as AnalysisCheckpoint;
+        if (!runIsCurrent()) return;
+        const safeCheckpoint = deidentifyClinicalData({ ...checkpointData, sourceSummary, sourceManifestV1: sourceManifest }) as AnalysisCheckpoint;
         const residualIdentifiers = residualIdentifierCategories(safeCheckpoint);
         if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp im Checkpoint: ${residualIdentifiers.join(", ")}`);
         writeAnalysisCheckpoint(checkpointKey, safeCheckpoint);
-        const pid = pseudonymId.trim();
+        const pid = analysisPid;
         if (!pid) return;
         try {
           const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+          if (!user || !runIsCurrent()) return;
           const row = {
             pseudonym_id: pid,
             kind: "befund_checkpoint",
-            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, sourceSummary, checkpoint: { ...safeCheckpoint, sourceSummary } },
+            eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_checkpoint", fingerprint, sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1, checkpoint: safeCheckpoint },
             empfehlung: "Automatische Zwischen-Sicherung der Befund-Auswertung.",
             notiz: `Befund-Zwischenstand: ${safeCheckpoint.completedChunks}/${safeCheckpoint.totalChunks} Teilpakete`,
             created_by: user.id,
@@ -2519,10 +2644,11 @@ export function TherapyRecommendation() {
               .eq("pseudonym_id", pid)
               .select("id")
               .maybeSingle();
+            if (!runIsCurrent()) return;
             if (!error && updatedCheckpoint?.id) return;
           }
           const { data, error } = await (supabase as any).from("therapy_sessions").insert(row).select("id").single();
-          if (!error && data?.id) checkpointSessionIdRef.current = data.id;
+          if (runIsCurrent() && !error && data?.id) checkpointSessionIdRef.current = data.id;
         } catch { /* Cloud-Checkpoint ist Zusatzsicherung; lokale Sicherung bleibt maßgeblich */ }
       };
 
@@ -2537,8 +2663,7 @@ export function TherapyRecommendation() {
           const message = (error as Error).message || "";
           // Echter Benutzer-Abbruch → wirklich stoppen
           if (docController.signal.aborted) {
-            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
-            throw new Error("Auswertung vom Benutzer abgebrochen.");
+            throw new DOMException("Auswertung vom Benutzer abgebrochen.", "AbortError");
           }
           let recoveredPartials: string[] | null = null;
           let retryFailure = "";
@@ -2562,12 +2687,12 @@ export function TherapyRecommendation() {
           if (!recoveredPartials) {
             const failureReason = retryFailure || message;
             writeProgress(`✗ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${failureReason}). Zwischenstand bleibt bei ${i}/${chunks.length}; es wird kein unvollständiger Bericht erzeugt.`);
-            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
+            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
             throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden. Bitte den Lauf fortsetzen oder erneut starten.`);
           }
           partials.push(...recoveredPartials);
         }
-        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
       }
@@ -2575,11 +2700,12 @@ export function TherapyRecommendation() {
       if (partials.length < chunks.length) throw new Error("Der Analyse-Zwischenstand ist unvollständig; die Abschluss-Zusammenführung wurde blockiert.");
       const extractedItemCount = countPartialExtractionItems(partials);
       if (!partials.length || extractedItemCount === 0) {
-        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: 0, partials: [], duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
+        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: 0, partials: [], duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
         throw new Error(`Die KI hat aus ${chunks.length} Teilpaket(en) keine verwertbaren Befunddaten extrahiert. Deshalb wird kein leerer „Keine Laborabweichungen"-Bericht mehr erzeugt. Bitte mit „Nur Befund-Auswertung (HTML)" fortsetzen/erneut versuchen.`);
       }
 
       // Diagnosen + Symptome aus den Teilanalysen extrahieren für Auto-Übernahme in Eingabemaske
+      if (!runIsCurrent()) return;
       try {
         const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
         const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
@@ -2652,7 +2778,7 @@ export function TherapyRecommendation() {
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
         const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
         if (dedupDiag.length || dedupSym.length || dedupMed.length) {
-          setExtractedFromDocs({ forPseudonymId: normalizePseudonymId(pseudonymId), diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
+          applyExtractedToInputs({ forPseudonymId: analysisPid, diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
         }
       } catch { /* nicht kritisch */ }
 
@@ -2678,7 +2804,7 @@ export function TherapyRecommendation() {
               totalChars,
               alter: alter.trim() || undefined,
               geschlecht: geschlecht || undefined,
-              pseudonymId: pseudonymId || undefined,
+              pseudonymId: analysisPid || undefined,
               useProModel: useProModel || undefined,
               mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               previousResultForCompare: addPreviousComparison && result && result.trim().length > 200
@@ -2706,7 +2832,8 @@ export function TherapyRecommendation() {
         }
         full += decoder.decode();
       } catch (finalError) {
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        if (docController.signal.aborted) throw finalError;
+        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
         throw new Error(`Alle ${chunks.length} Teilanalysen sind gespeichert, aber die finale HTML-Zusammenführung ist fehlgeschlagen: ${(finalError as Error).message}. Bitte erneut klicken – dann wird nur die finale Zusammenführung neu gestartet.`);
       }
       full = sanitizeFinalAnalysisHtml(full);
@@ -2733,10 +2860,10 @@ export function TherapyRecommendation() {
       const hasMeaningfulAnalysisContent = hasCoreAnalysisSections && extractedItemCount > 0 && visibleFinalText.length > 300 && !isFalseEmptyBefundHtml(full);
       const hasInlineErrorMarker = full.includes("❌ Fehler");
       if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: pseudonymId.trim(), totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
         writeProgress(`⚠ Server-HTML ${hasInlineErrorMarker ? "enthielt eine Fehlermeldung" : "war leer/unvollständig"} – baue Befund lokal aus den ${partials.length} gespeicherten Teilanalysen auf…`);
         full = buildClientFallbackAnalysisHtml(partials, {
-          pseudonymId: pseudonymId.trim() || undefined,
+          pseudonymId: analysisPid || undefined,
           alter: alter.trim() || undefined,
           geschlecht: geschlecht || undefined,
           totalChars,
@@ -2753,7 +2880,8 @@ export function TherapyRecommendation() {
       writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
         const finalProgress = `${docAnalysisProgress || "Start…"}\n✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.`;
-        writeLatestBefundDisplay(pseudonymId.trim(), {
+        const browserCompletedAt = new Date().toISOString();
+        writeLatestBefundDisplay(analysisPid, {
           html: full,
           progress: finalProgress,
           meta: {
@@ -2766,22 +2894,29 @@ export function TherapyRecommendation() {
             lab_schema_version: 1,
             lab_rules_version: ANALYSIS_PROMPT_VERSION,
             analysis_fingerprint: fingerprint,
+            source_summary: sourceSummary,
+            source_manifest_v1: sourceManifest,
+            source_manifest_version: 1,
+            strict_complete: true,
           },
-          createdAt: new Date().toISOString(),
+          createdAt: browserCompletedAt,
         });
+        setDisplayedBefundSourceStand({ createdAt: browserCompletedAt, entries: sourceManifest });
         setLatestBefundLoadedFrom("local");
         toast({ title: "Befund-Auswertung vollständig fertig", description: `${totalChars.toLocaleString("de-DE")} Zeichen ausgewertet · ${chunks.length} Teilpaket(e) · ${analysisMode} · ${model}${prepared.duplicateNotes.length ? ` · ${prepared.duplicateNotes.length} Duplikat(e) erkannt` : ""}` });
 
         // Auto-Save in therapy_sessions (DSGVO-konform, nur Pseudonym)
-        const pid = pseudonymId.trim();
+        const pid = analysisPid;
         if (pid) {
           try {
+            if (!runIsCurrent()) return;
             const { data: { user } } = await supabase.auth.getUser();
+            if (!runIsCurrent()) return;
             if (user) {
-              const { error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
+              const { data: savedReport, error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: chunks.map((c) => c.label), sourceSummary },
+                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: sourceManifest.map((source) => source.label), sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1 },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
@@ -2789,9 +2924,11 @@ export function TherapyRecommendation() {
                   analysis_mode: analysisMode,
                   chunk_count: chunks.length,
                   total_chars: totalChars,
-                  original_chars: prepared.originalChars,
-                  source_summary: sourceSummary,
-                  sources: chunks.map((c) => c.label),
+                   original_chars: prepared.originalChars,
+                   source_summary: sourceSummary,
+                   source_manifest_v1: sourceManifest,
+                   source_manifest_version: 1,
+                   sources: sourceManifest.map((source) => source.label),
                    duplicate_notes: prepared.duplicateNotes,
                    strict_complete: true,
                    lab_values_v1: structuredLabData.labValues,
@@ -2802,12 +2939,28 @@ export function TherapyRecommendation() {
                    saved_at: new Date().toISOString(),
                 },
                 created_by: user.id,
-              });
+              }).select("created_at").abortSignal(docController.signal).single();
+              if (!runIsCurrent()) return;
               if (saveErr) {
                 toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
                 await logTherapyEvent(pid, "befund_html_failed", { error: saveErr.message, note: "Auswertung erstellt, aber DB-Speichern fehlgeschlagen" });
               } else {
+                const canonicalCreatedAt = String(savedReport?.created_at || browserCompletedAt);
+                setDisplayedBefundSourceStand({ createdAt: canonicalCreatedAt, entries: sourceManifest });
+                writeLatestBefundDisplay(pid, {
+                  html: full,
+                  progress: finalProgress,
+                  meta: { source_summary: sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1, strict_complete: true, analysis_fingerprint: fingerprint },
+                  createdAt: canonicalCreatedAt,
+                });
                 try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
+                const completedSelection = completeSuccessfulSourceAnalysis(sourceSelectionRef.current, sourceManifest.map((source) => source.sourceId));
+                recentlyCompletedSourcesRef.current = {
+                  sourceRevision: analysisSources,
+                  sourceIds: new Set(sourceManifest.map((source) => source.sourceId)),
+                };
+                sourceSelectionRef.current = completedSelection;
+                setSelectedAnalysisSourceKeys(completedSelection.selectedSourceIds);
                 setHistoryRefresh((n) => n + 1);
                 toast({ title: "📄 Auswertung gespeichert", description: `Im Verlauf von ${pid} abrufbar.` });
                 await logTherapyEvent(pid, "befund_html_success", {
@@ -2816,14 +2969,17 @@ export function TherapyRecommendation() {
                   model,
                   source: analysisMode,
                    source_summary: sourceSummary,
-                   sources: chunks.map((c) => c.label),
+                   source_manifest_v1: sourceManifest,
+                   source_manifest_version: 1,
+                   sources: sourceManifest.map((source) => source.label),
                    lab_value_count: structuredLabData.labValues.length,
                    lab_alert_count: structuredLabData.labAlerts.length,
-                   note: "HTML in Patientenverlauf gespeichert",
+                    note: "HTML in Patientenverlauf gespeichert",
                 });
               }
             }
           } catch (saveEx) {
+            if (!runIsCurrent()) return;
             toast({ title: "Speichern fehlgeschlagen", description: (saveEx as Error).message, variant: "destructive" });
             await logTherapyEvent(pid, "befund_html_failed", { error: (saveEx as Error).message });
           }
@@ -2838,31 +2994,26 @@ export function TherapyRecommendation() {
       if ((e as Error).name === "AbortError" || docController.signal.aborted) {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n⏹ Auswertung durch Benutzer abgebrochen.`);
         toast({ title: "Auswertung abgebrochen", description: "Der laufende Befund-Lauf wurde gestoppt.", variant: "default" as any });
-        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: "Vom Benutzer abgebrochen" });
       } else {
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n❌ Fehler: ${msg}`);
         toast({ title: "Auswertung fehlgeschlagen", description: msg, variant: "destructive" });
-        await logTherapyEvent(pseudonymId, "befund_html_failed", { error: msg });
+        await logTherapyEvent(analysisPid, "befund_html_failed", { error: msg });
       }
     } finally {
-      if (scopeIsCurrent()) {
-        setIsAnalyzingDocs(false);
-        docAbortRef.current = null;
-      }
+      releaseRun();
     }
   };
 
   // Übernimmt extrahierte Diagnosen + Symptome aus der Befund-Auswertung in die Eingabemaske
-  const applyExtractedToInputs = () => {
-    if (!extractedFromDocs) return;
-    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
-      setExtractedFromDocs(null);
+  function applyExtractedToInputs(extracted: ExtractedBefundInputs) {
+    if (normalizePseudonymId(extracted.forPseudonymId) !== pseudonymIdRef.current) {
       toast({ title: "Sicherheitsstopp", description: "Extrahierte Befunddaten gehören zu einem anderen Pseudonym und wurden nicht übernommen.", variant: "destructive" });
       return;
     }
-    const { diagnoses, symptoms, medications } = extractedFromDocs;
+    const { diagnoses, symptoms, medications } = extracted;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
+      setErkrankung((existing) => mergeExtractedDiagnoses(existing, diagnoses));
       setManualDiagnosen((existing) => {
         const known = new Set(existing.map((d) => d.diagnose.trim().toLowerCase()));
         const additions: DiagnoseEntry[] = [];
@@ -2885,67 +3036,22 @@ export function TherapyRecommendation() {
     }
     // Symptome → Textarea (mit Quelle/Datum) — vorhandenen Text bewahren
     if (symptoms.length) {
-      setSymptome((prev) => {
-        const existingLines = new Set(
-          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
-        );
-        const newLines: string[] = [];
-        for (const s of symptoms) {
-          if (existingLines.has(s.text.toLowerCase())) continue;
-          existingLines.add(s.text.toLowerCase());
-          const meta: string[] = [];
-          if (s.quelle) meta.push(s.quelle);
-          if (s.zitat) meta.push(`„${s.zitat}"`);
-          newLines.push(`• ${s.text}${meta.length ? ` (📄 ${meta.join(" · ")})` : ""}`);
-        }
-        if (!newLines.length) return prev;
-        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
-      });
+      setSymptome((existing) => mergeExtractedSymptoms(existing, symptoms));
     }
     // Medikamente → Textarea "medikamente" (mit Arzt/„unbekannt", Datum, Indikation, Wirkmech., NW)
     if (medications.length) {
-      setMedikamente((prev) => {
-        const existingLines = new Set(
-          prev.split(/\n+/).map((l) => l.replace(/^[•\-\s]+/, "").trim().toLowerCase()).filter(Boolean)
-        );
-        const newLines: string[] = [];
-        for (const m of medications) {
-          const head = `${m.name}${m.dosis ? ` ${m.dosis}` : ""}`.trim();
-          if (existingLines.has(head.toLowerCase())) continue;
-          existingLines.add(head.toLowerCase());
-          const meta: string[] = [];
-          meta.push(`verordnet von: ${m.vonWem?.trim() || "unbekannt"}`);
-          meta.push(`Datum: ${m.datum?.trim() || "unbekannt"}`);
-          if (m.indikation?.trim()) meta.push(`Indikation: ${m.indikation.trim()}`);
-          if (m.grundVerordnung?.trim()) meta.push(`Grund: ${m.grundVerordnung.trim()}`);
-          if (m.wirkmechanismus?.trim()) meta.push(`Wirkung: ${m.wirkmechanismus.trim()}`);
-          if (m.nebenwirkungen?.trim()) meta.push(`NW: ${m.nebenwirkungen.trim()}`);
-          if (m.status?.trim()) meta.push(`Status: ${m.status.trim()}`);
-          if (m.quelle?.trim()) meta.push(`📄 ${m.quelle.trim()}`);
-          if (m.zitat?.trim()) meta.push(`„${m.zitat.trim()}"`);
-          newLines.push(`• ${head} — ${meta.join(" · ")}`);
-        }
-        if (!newLines.length) return prev;
-        return prev.trim() ? `${prev.trim()}\n${newLines.join("\n")}` : newLines.join("\n");
-      });
+      setMedikamente((existing) => mergeExtractedMedications(existing, medications));
     }
     toast({
-      title: "Automatisch in Eingabemaske eingetragen",
+      title: "Befunddaten automatisch übernommen",
       description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) ergänzt — jeweils mit Quelle (Dokument), Datum (sonst „unbekannt") und wörtlichem Zitat.`,
     });
 
-    setExtractedFromDocs(null);
   };
 
-  // Keine automatische Übernahme mehr: extrahierte Befunddaten werden nur nach
-  // bewusstem Klick in die Eingabemaske geschrieben. Das verhindert stille
-  // Patientendaten-Vermischung durch Browser-/Autosave-Zustände.
   useEffect(() => {
-    if (!extractedFromDocs) return;
-    if (normalizePseudonymId(extractedFromDocs.forPseudonymId) !== normalizePseudonymId(pseudonymId)) {
-      setExtractedFromDocs(null);
-    }
-  }, [extractedFromDocs, pseudonymId]);
+    if (geschlecht === "maennlich" && schwanger !== "nein") setSchwanger("nein");
+  }, [geschlecht, schwanger]);
 
   const addDirectBefundFiles = (list: FileList | null) => {
     if (!list?.length) return;
@@ -3202,25 +3308,109 @@ export function TherapyRecommendation() {
       ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
       ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
-      ...addSimple("metatronHeel", "Metatron / NLS / Bioresonanz", metatronHeel, "befund"),
+      ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
+      ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
-  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse]);
+  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
 
   useEffect(() => {
-    const availableKeys = analysisSources.map((source) => source.key);
-    setSelectedAnalysisSourceKeys((current) => {
-      const stillAvailable = current.filter((key) => availableKeys.includes(key));
-      const added = availableKeys.filter((key) => !stillAvailable.includes(key));
-      if (stillAvailable.length === current.length && added.length === 0) return current;
-      return [...stillAvailable, ...added];
-    });
-  }, [analysisSources]);
+    let cancelled = false;
+    setIsSourceManifestLoading(true);
+    setSourceManifestError("");
+    createSourceManifest(analysisSources)
+      .then((manifest) => {
+        if (!cancelled) {
+          setAnalysisSourceManifest(manifest);
+          setManifestSourceRevision(analysisSources);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setAnalysisSourceManifest([]);
+          setManifestSourceRevision(null);
+          setSourceManifestError((error as Error).message || "Quellen-Hashes konnten nicht gebildet werden.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsSourceManifestLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [analysisSources, pseudonymId]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    const scopeGeneration = patientScopeGenerationRef.current;
+    if (!isPatientScopedStorageReady(pid)) {
+      setSourceHistoryReports([]);
+      setIsSourceHistoryLoading(false);
+      setSourceHistoryError("");
+      return;
+    }
+    let cancelled = false;
+    setIsSourceHistoryLoading(true);
+    setSourceHistoryError("");
+    (async () => {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (sessionError || !accessToken) throw sessionError || new Error("Nicht angemeldet");
+        if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
+        const { data, error } = await supabase.functions.invoke("get-therapy-sessions", {
+          body: { pseudonym_id: pid },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (error) throw error;
+        if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
+        const sessions = Array.isArray((data as { sessions?: unknown[] } | null)?.sessions) ? (data as { sessions: any[] }).sessions : [];
+        setSourceHistoryReports(sessions
+          .filter((session) => session?.kind === "befund_auswertung" && session?.has_befund_html === true)
+          .map(parseSourceHistoryReport));
+      } catch (error) {
+        if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
+        setSourceHistoryReports([]);
+        setSourceHistoryError((error as Error).message || "Frühere Befundauswertungen konnten nicht geladen werden.");
+      } finally {
+        if (!cancelled && scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid) setIsSourceHistoryLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pseudonymId, historyRefresh]);
+
+  const analysisSourceComparisons = useMemo(
+    () => compareSourcesWithHistory(analysisSourceManifest, sourceHistoryReports),
+    [analysisSourceManifest, sourceHistoryReports],
+  );
+  const comparisonBySourceId = useMemo(
+    () => new Map(analysisSourceComparisons.map((comparison) => [comparison.sourceId, comparison])),
+    [analysisSourceComparisons],
+  );
+  const isSourceManifestComparisonLoading = isSourceManifestLoading || manifestSourceRevision !== analysisSources;
+  const isSourceComparisonLoading = isSourceManifestComparisonLoading || isSourceHistoryLoading;
+  const isBefundManifestComparisonLoading = !sameBefundSourceRevision(manifestSourceRevision, analysisSources);
+  const sourceComparisonError = sourceManifestError || sourceHistoryError;
+
+  useEffect(() => {
+    if (isSourceComparisonLoading || sourceComparisonError) return;
+    const next = reconcileSourceSelection(sourceSelectionRef.current, analysisSourceComparisons);
+    sourceSelectionRef.current = next;
+    setSelectedAnalysisSourceKeys(next.selectedSourceIds);
+  }, [analysisSourceComparisons, isSourceComparisonLoading, sourceComparisonError]);
+
+  useEffect(() => {
+    if (!isSourceHistoryLoading) recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
+  }, [isSourceHistoryLoading]);
+
+  const applyManualAnalysisSelection = (sourceIds: string[], affectedSourceIds?: string[]) => {
+    const next = setManualSourceSelection(sourceSelectionRef.current, analysisSourceComparisons, sourceIds, affectedSourceIds);
+    sourceSelectionRef.current = next;
+    setSelectedAnalysisSourceKeys(next.selectedSourceIds);
+  }
 
   const selectedAnalysisSources = useMemo(() => {
     const selected = new Set(selectedAnalysisSourceKeys);
-    return analysisSources.filter((source) => selected.has(source.key));
+    return analysisSources.filter((source) => selected.has(normalizeAnalysisSourceId(source.key)));
   }, [analysisSources, selectedAnalysisSourceKeys]);
 
   const analysisSourceTotals = useMemo(() => ({
@@ -3228,6 +3418,26 @@ export function TherapyRecommendation() {
     all: analysisSources.length,
     chars: selectedAnalysisSources.reduce((sum, source) => sum + source.chars, 0),
   }), [analysisSources.length, selectedAnalysisSources]);
+  const nonContextAnalysisSources = analysisSources.filter((source) => source.group !== "kontext");
+  const hasEffectivelySelectedBefundSources = nonContextAnalysisSources.some((source) => {
+    const sourceId = normalizeAnalysisSourceId(source.key);
+    if (Object.prototype.hasOwnProperty.call(sourceSelectionRef.current.manualSelections, sourceId)) {
+      return sourceSelectionRef.current.manualSelections[sourceId];
+    }
+    if (isBefundManifestComparisonLoading) return true;
+    const recentlyCompleted = recentlyCompletedSourcesRef.current;
+    if (isSourceHistoryLoading && sameBefundSourceRevision(recentlyCompleted.sourceRevision, analysisSources) && recentlyCompleted.sourceIds.has(sourceId)) {
+      return false;
+    }
+    const comparison = comparisonBySourceId.get(sourceId);
+    return !comparison || comparison.status !== "unchanged";
+  });
+  const allBefundSourcesManuallyDeselected = nonContextAnalysisSources.length > 0 && nonContextAnalysisSources.every((source) => (
+    sourceSelectionRef.current.manualSelections[normalizeAnalysisSourceId(source.key)] === false
+  ));
+  const therapyStartBlockedByBefund = isAnalyzingDocs
+    || hasEffectivelySelectedBefundSources
+    || (nonContextAnalysisSources.length > 0 && !allBefundSourcesManuallyDeselected && !docAnalysisHtml);
 
   const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
     const pid = normalizePseudonymId(pseudonymId);
@@ -3278,17 +3488,30 @@ export function TherapyRecommendation() {
 
 
   const handleSubmit = async (opts?: { nachschlag?: string; previousResult?: string }) => {
+    if (abortRef.current) {
+      toast({ title: "Therapie-Auswertung läuft bereits", description: "Bitte den laufenden Vorgang abwarten oder zuerst abbrechen." });
+      return;
+    }
+    if (therapyStartBlockedByBefund) {
+      toast({ title: "Befund-Auswertung zuerst abschließen", description: "Es sind noch neue oder geänderte Befundquellen zur Auswertung ausgewählt.", variant: "destructive" });
+      return;
+    }
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
     const submitPid = normalizePseudonymId(pseudonymId);
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === submitPid;
     const belastungenText = formatPathogensForAI(pathogens);
-    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, eigeneTherapieVorlage].some((x) => x.trim()) || mannayanOrders.length > 0;
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage].some((x) => x.trim()) || mannayanOrders.length > 0;
     const hasManualDiagnosis = manualDiagnosen.some((entry) => entry.diagnose.trim());
     if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc && !hasManualDiagnosis) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
       return;
     }
+    const runId = ++therapyRunIdRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const ownsRun = () => scopeIsCurrent() && therapyRunIdRef.current === runId && abortRef.current === controller;
+    const runIsCurrent = () => ownsRun() && !controller.signal.aborted;
 
     if (!isErweitern) {
       setResult("");
@@ -3297,16 +3520,14 @@ export function TherapyRecommendation() {
     setIsNachschlag(isErweitern);
     setIsStreaming(true);
     const fullAnalysisStartedAt = Date.now();
-    if (!isErweitern) {
-      await logTherapyEvent(pseudonymId, "full_analysis_started", { note: "Alles neu auswerten – gestartet" });
-    }
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     try {
+      if (!isErweitern) {
+        await logTherapyEvent(submitPid, "full_analysis_started", { note: "Alles neu auswerten – gestartet" });
+        if (!runIsCurrent()) return;
+      }
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
+      if (!runIsCurrent()) return;
 
       let activeSession = session;
       const expiresSoon = activeSession?.expires_at
@@ -3316,11 +3537,11 @@ export function TherapyRecommendation() {
       if (!activeSession || expiresSoon) {
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError || !refreshData.session) {
-          toast({ title: "Sitzung abgelaufen", description: "Bitte erneut anmelden.", variant: "destructive" });
-          setIsStreaming(false);
+          if (runIsCurrent()) toast({ title: "Sitzung abgelaufen", description: "Bitte erneut anmelden.", variant: "destructive" });
           return;
         }
         activeSession = refreshData.session;
+        if (!runIsCurrent()) return;
       }
 
       const resp = await fetch(
@@ -3357,7 +3578,10 @@ export function TherapyRecommendation() {
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
+            metatronDatum: metatronDatum.trim() || undefined,
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
+            vievaPlus: vievaPlus.trim() || undefined,
+            vievaPlusDatum: vievaPlusDatum.trim() || undefined,
             perplexityAnalyse: perplexityAnalyse.trim() || undefined,
             eigeneTherapieVorlage: eigeneTherapieVorlage.trim() || undefined,
             mannayanOrders: mannayanOrders.length > 0 ? mannayanOrders : undefined,
@@ -3375,6 +3599,7 @@ export function TherapyRecommendation() {
           signal: controller.signal,
         }
       );
+      if (!runIsCurrent()) return;
 
       let completed = false;
 
@@ -3387,7 +3612,6 @@ export function TherapyRecommendation() {
         } else {
           toast({ title: "Fehler", description: err.error || `HTTP ${resp.status}`, variant: "destructive" });
         }
-        setIsStreaming(false);
         return;
       }
 
@@ -3419,6 +3643,7 @@ export function TherapyRecommendation() {
 
           try {
             const parsed = JSON.parse(jsonStr);
+            if (!runIsCurrent()) return;
             // Audit-Frame (zuerst gesendet vor dem KI-Stream)
             if (parsed && parsed.__audit__) {
               const audit = parsed.__audit__ as WikiAuditInfo;
@@ -3432,7 +3657,7 @@ export function TherapyRecommendation() {
             }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
-              if (!scopeIsCurrent()) return;
+               if (!runIsCurrent()) return;
               accumulated += content;
               setResult(accumulated);
               // Auto-scroll
@@ -3446,9 +3671,10 @@ export function TherapyRecommendation() {
           }
         }
       }
+      if (!runIsCurrent()) return;
 
       if (!completed && accumulated.trim()) {
-        if (!scopeIsCurrent()) return;
+        if (!runIsCurrent()) return;
         setResult(accumulated);
         toast({
           title: "Zwischenstand gesichert",
@@ -3457,9 +3683,10 @@ export function TherapyRecommendation() {
       }
 
       // Auto-Save nur bei vollständiger, eindeutig patientengebundener Pseudonym-ID
-      const resultPid = normalizePseudonymId(pseudonymId);
+      const resultPid = submitPid;
       if (isPatientScopedStorageReady(resultPid) && patientDataOwnerRef.current === resultPid && accumulated.trim()) {
         const { data: { user } } = await supabase.auth.getUser();
+        if (!runIsCurrent()) return;
         if (user) {
           const safeInput = buildInputData({ autoSavedDraft: false });
           const safeRecommendation = deidentifyClinicalText(accumulated);
@@ -3473,26 +3700,25 @@ export function TherapyRecommendation() {
             empfehlung: safeRecommendation,
             notiz: "",
           });
+          if (!runIsCurrent()) return;
           if (saveErr) {
             toast({ title: "Speichern fehlgeschlagen", description: saveErr.message, variant: "destructive" });
             if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_failed", { error: saveErr.message, duration_ms: Date.now() - fullAnalysisStartedAt });
           } else {
-            toast({ title: "Sitzung gespeichert", description: `Pseudonym ${pseudonymId.trim()}` });
+            toast({ title: "Sitzung gespeichert", description: `Pseudonym ${submitPid}` });
             setHistoryRefresh((n) => n + 1);
             if (!isErweitern) await logTherapyEvent(resultPid, "full_analysis_success", { duration_ms: Date.now() - fullAnalysisStartedAt, note: "Therapieempfehlung erstellt und gespeichert" });
           }
         }
       }
     } catch (e: any) {
-      if (!scopeIsCurrent()) return;
+      if (!ownsRun()) return;
       if (e.name !== "AbortError") {
         toast({ title: "Fehler", description: e.message, variant: "destructive" });
-        if (!isErweitern) await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: e.message, duration_ms: Date.now() - fullAnalysisStartedAt });
-      } else if (!isErweitern) {
-        await logTherapyEvent(pseudonymId, "full_analysis_failed", { error: "Vom Benutzer abgebrochen", duration_ms: Date.now() - fullAnalysisStartedAt });
+        if (!isErweitern) await logTherapyEvent(submitPid, "full_analysis_failed", { error: e.message, duration_ms: Date.now() - fullAnalysisStartedAt });
       }
     } finally {
-      if (scopeIsCurrent()) {
+      if (ownsRun()) {
         setIsStreaming(false);
         abortRef.current = null;
       }
@@ -3501,16 +3727,21 @@ export function TherapyRecommendation() {
 
   const handleCancel = () => {
     abortRef.current?.abort();
-    setIsStreaming(false);
   };
 
   const handleCancelAnalysis = () => {
     docAbortRef.current?.abort();
-    setIsAnalyzingDocs(false);
   };
 
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
+    patientScopeGenerationRef.current += 1;
+    abortRef.current?.abort();
+    docAbortRef.current?.abort();
+    abortRef.current = null;
+    docAbortRef.current = null;
+    setIsStreaming(false);
+    setIsAnalyzingDocs(false);
     pseudonymIdRef.current = "";
     setPseudonymId("");
     setPathogens([emptyEntry()]);
@@ -3532,7 +3763,10 @@ export function TherapyRecommendation() {
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
+    setMetatronDatum("");
     setSonstigeUntersuchungen("");
+    setVievaPlus("");
+    setVievaPlusDatum("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
     setApothekerRezept("");
@@ -3545,18 +3779,26 @@ export function TherapyRecommendation() {
     setUseMapReduce(true);
     setResult("");
     setAuditInfo(null);
-    setExtractedFromDocs(null);
     setDiagnosen([]);
     setManualMittel([]);
     setManualDiagnosen([]);
     setTherapieNotiz("");
     setSelectedAnalysisSourceKeys([]);
+    setAnalysisSourceManifest([]);
+    setManifestSourceRevision(null);
+    setSourceHistoryReports([]);
+    setIsSourceHistoryLoading(false);
+    setSourceManifestError("");
+    setSourceHistoryError("");
+    sourceSelectionRef.current = { selectedSourceIds: [], manualSelections: {} };
+    recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
     setPendingDirectBefundFiles([]);
     setLoadedDocumentInventory([]);
     setDocAnalysisHtml("");
     setDocAnalysisProgress("");
     setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
+    setDisplayedBefundSourceStand(null);
     setHpCheckHtml("");
     setHpCheckMarkdown("");
     setHpCheckModelLabel("");
@@ -3764,8 +4006,19 @@ export function TherapyRecommendation() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Hier siehst du jede hochgeladene PDF und jedes Befundfeld einzeln. Hake an, was zusammen ausgewertet werden soll — z.B. beide PDFs (Eisen-Werte + Arztbericht) gleichzeitig.
+            Standardmäßig sind nur neue oder geänderte Quellen ausgewählt. Unveränderte Quellen können manuell ergänzt werden; so verbrauchen sie nicht automatisch erneut Analyse-Credits.
           </p>
+          <div className="rounded-md border border-primary/30 bg-background px-3 py-2 text-xs">
+            {isSourceComparisonLoading ? (
+              <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Vergleiche Quellen mit bis zu 50 fertigen Befundauswertungen …</span>
+            ) : sourceComparisonError ? (
+              <span className="text-destructive">Vergleich nicht verfügbar: {sourceComparisonError} Die Analyse bleibt zum Schutz vor Doppelverbrauch deaktiviert.</span>
+            ) : sourceHistoryReports.length > 0 ? (
+              <span>Letzte fertige Auswertung: <strong>{formatAnalysisTimestamp(sourceHistoryReports[0].createdAt)}</strong> · <strong>{sourceHistoryReports[0].entries.length}</strong> Quelle(n)</span>
+            ) : (
+              <span>Noch keine fertige Befundauswertung für dieses Pseudonym vorhanden.</span>
+            )}
+          </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <input ref={directBefundFileRef} type="file" accept="application/pdf,image/*" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
@@ -3826,53 +4079,68 @@ export function TherapyRecommendation() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.map((source) => source.key))} disabled={!analysisSources.length}>
+            <Button type="button" size="sm" variant="outline" onClick={() => applyManualAnalysisSelection(analysisSourceComparisons.map((source) => source.sourceId))} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Alle Quellen anhaken
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAnalysisSourceKeys(analysisSources.filter((source) => source.group === "dokument" || source.group === "befund").map((source) => source.key))} disabled={!analysisSources.length}>
+            <Button type="button" size="sm" variant="outline" onClick={() => applyManualAnalysisSelection(analysisSources.filter((source) => source.group === "dokument" || source.group === "befund").map((source) => normalizeAnalysisSourceId(source.key)))} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Nur Befunde/PDFs anhaken
             </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedAnalysisSourceKeys([])} disabled={!analysisSources.length}>
+            <Button type="button" size="sm" variant="ghost" onClick={() => applyManualAnalysisSelection([])} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Auswahl leeren
             </Button>
-            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
+            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})
             </Button>
             <details className="w-full rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Erweiterte Aktion</summary>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <Button type="button" size="sm" variant="outline" onClick={handleReAnalyzeAll} disabled={isAnalyzingDocs || isStreaming || analysisSourceTotals.selected === 0} className="gap-1.5 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30">
+                <Button type="button" size="sm" variant="outline" onClick={handleReAnalyzeAll} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSources.length === 0} className="gap-1.5 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Befund-Auswertung komplett neu starten
                 </Button>
-                <span className="text-muted-foreground">Löscht nur Zwischenstände und startet die gewählten Quellen neu. Fertige Verlaufsberichte bleiben erhalten.</span>
+                <span className="text-muted-foreground">Löscht nur Zwischenstände und wertet ausnahmsweise alle aktuellen Quellen neu aus. Fertige Verlaufsberichte bleiben erhalten.</span>
               </div>
             </details>
           </div>
           {analysisSources.length ? (
             <div className="max-h-80 overflow-auto rounded-md border bg-background divide-y">
-              {analysisSources.map((source) => {
-                const checked = selectedAnalysisSourceKeys.includes(source.key);
+              {analysisSources.map((source, sourceIndex) => {
+                const sourceId = normalizeAnalysisSourceId(source.key);
+                const comparison = comparisonBySourceId.get(sourceId);
+                const checked = selectedAnalysisSourceKeys.includes(sourceId);
+                const statusLabel = comparison?.status === "unchanged"
+                  ? "UNVERÄNDERT"
+                  : comparison?.status === "changed"
+                  ? "GEÄNDERT"
+                  : comparison?.status === "legacy_changed"
+                  ? "GEÄNDERT* (Altbestand)"
+                  : "NEU";
                 return (
                   <label key={source.key} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/40">
                     <input
                       type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        setSelectedAnalysisSourceKeys((current) => e.target.checked
-                          ? Array.from(new Set([...current, source.key]))
-                          : current.filter((key) => key !== source.key));
-                      }}
+                       checked={checked}
+                       onChange={(e) => {
+                         const next = e.target.checked
+                           ? Array.from(new Set([...selectedAnalysisSourceKeys, sourceId]))
+                           : selectedAnalysisSourceKeys.filter((key) => key !== sourceId);
+                         applyManualAnalysisSelection(next, [sourceId]);
+                       }}
+                       disabled={isSourceComparisonLoading || !!sourceComparisonError}
                       className="mt-1 h-4 w-4 accent-primary"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm break-words">{source.label}</span>
+                        <span className="font-medium text-sm break-words">{comparison?.label || neutralSourceLabel(source, sourceIndex)}</span>
                         <Badge variant="outline" className="text-[10px]">{source.group === "dokument" ? "PDF/Datei" : source.group === "kontext" ? "Kontext" : source.group === "recherche" ? "Recherche" : "Befund"}</Badge>
+                        <Badge variant={comparison?.status === "unchanged" ? "secondary" : "default"} className="text-[10px]">{statusLabel}</Badge>
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {source.chars.toLocaleString("de-DE")} Zeichen · {source.lines.toLocaleString("de-DE")} Zeilen
+                        {(comparison?.chars ?? source.chars).toLocaleString("de-DE")} Zeichen · {(comparison?.lines ?? source.lines).toLocaleString("de-DE")} Zeilen
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {comparison?.lastAnalyzedAt ? `zuletzt ausgewertet ${formatAnalysisTimestamp(comparison.lastAnalyzedAt)}` : "noch nie ausgewertet"}
                       </div>
                     </div>
                   </label>
@@ -3893,6 +4161,7 @@ export function TherapyRecommendation() {
             <div className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 { label: "Sonstige Voruntersuchungen (PDF-Drop-Ziel)", val: sonstigeUntersuchungen },
+                { label: "Vieva Plus", val: vievaPlus },
                 { label: "Labor komplett", val: laborKomplett },
                 { label: "Labor erhöht", val: laborErhoeht },
                 { label: "Labor erniedrigt", val: laborErniedrigt },
@@ -4126,14 +4395,14 @@ export function TherapyRecommendation() {
                 Patientenbefund
               </span>
               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/13 Felder
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/14 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-4">
             <Tabs defaultValue="befund" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 h-auto gap-1 bg-muted/60">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1 bg-muted/60">
                 <TabsTrigger value="befund" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🩺 Befund</span>
                   <span className="text-[9px] opacity-70 font-mono">
@@ -4147,9 +4416,9 @@ export function TherapyRecommendation() {
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="arzt" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
-                  <span>📄 Arzt/NLS</span>
+                  <span>📄 Arzt</span>
                   <span className="text-[9px] opacity-70 font-mono">
-                    {[arztbericht, metatronHeel].filter((s) => s.trim()).length}
+                    {arztbericht.trim() ? "1" : "0"}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger value="grossdaten" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-950/40">
@@ -4157,6 +4426,14 @@ export function TherapyRecommendation() {
                   <span className="text-[9px] opacity-70 font-mono">
                     {((sonstigeUntersuchungen.length + perplexityAnalyse.length) / 1000).toFixed(0)}k Z.
                   </span>
+                </TabsTrigger>
+                <TabsTrigger value="vieva-plus" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-cyan-100 dark:data-[state=active]:bg-cyan-950/40">
+                  <span>Vieva Plus</span>
+                  <span className="text-[9px] opacity-70 font-mono">{vievaPlus.trim() ? "1" : "0"}</span>
+                </TabsTrigger>
+                <TabsTrigger value="metatron" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-amber-100 dark:data-[state=active]:bg-amber-950/40">
+                  <span>Metatron Hospital</span>
+                  <span className="text-[9px] opacity-70 font-mono">{metatronHeel.trim() ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>💊 Mittel</span>
@@ -4186,10 +4463,11 @@ export function TherapyRecommendation() {
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Erkrankung / Diagnose</label>
-                  <Input
+                  <Textarea
                     value={erkrankung}
                     onChange={(e) => setErkrankung(e.target.value)}
                     placeholder="z.B. Borreliose, Hashimoto, CFS..."
+                    rows={3}
                   />
                 </div>
               </TabsContent>
@@ -4226,9 +4504,7 @@ export function TherapyRecommendation() {
                       label="📄 Vollständige Labor-PDF einlesen"
                       onExtracted={(text, sourcePseudonymId) => {
                         if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                        const next = laborKomplett ? `${laborKomplett.trim()}\n\n${text}` : text;
-                        setLaborKomplett(next);
-                        saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
+                        setLaborKomplett((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
                       }}
                     />
                   </div>
@@ -4272,9 +4548,7 @@ export function TherapyRecommendation() {
                     <div className="flex items-center gap-2 ml-auto">
                       <WorkloadBadge chars={arztbericht.length} hint="Arztbrief: Diagnosen, Anamnese, Beurteilung, Therapie verstehen" />
                       <LabImageUpload mode="doctor" onExtracted={(t) => {
-                        const next = arztbericht ? `${arztbericht.trim()}\n\n${t}` : t;
-                        setArztbericht(next);
-                        saveClinicalSnapshot({ arztbericht: next }, "Arztbrief");
+                        setArztbericht((previous) => previous ? `${previous.trim()}\n\n${t}` : t);
                       }} />
                     </div>
                   </div>
@@ -4298,27 +4572,88 @@ export function TherapyRecommendation() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
                 </div>
-                <div className="rounded-md border border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/10 p-3">
-                  <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
-                    <Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
-                    Heel-Mittel aus Metatron-/NLS-Auswertung
-                  </label>
+              </TabsContent>
+
+              {/* ===== TAB: Metatron Hospital ===== */}
+              <TabsContent value="metatron" className="space-y-3 mt-4">
+                <div className="rounded-md border border-amber-300/60 bg-gradient-to-br from-amber-50/60 to-background dark:from-amber-950/15 dark:border-amber-900/40 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                    <div>
+                      <label className="text-sm font-semibold flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />Metatron-Hospital-Analyse</label>
+                      <p className="text-xs text-muted-foreground">NLS-/Resonanzanalyse, Organbefunde, Belastungen und vorgeschlagene Heel-Mittel.</p>
+                    </div>
+                    <WorkloadBadge chars={metatronHeel.length} hint="Metatron Hospital: Resonanzbefunde und Mittel vollständig einordnen" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="text-xs font-medium whitespace-nowrap">Analyse erstellt am:</label>
+                    <Input type="date" value={metatronDatum} onChange={(event) => setMetatronDatum(event.target.value)} className="h-8 w-auto text-xs" />
+                    {metatronDatum && <button type="button" onClick={() => setMetatronDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>}
+                  </div>
+                  <MultiDocUpload
+                    pseudonymId={pseudonymId}
+                    ocrMode="doctor"
+                    label="Metatron-Hospital-PDF aufnehmen"
+                    documentDate={metatronDatum}
+                    documentType="Metatron Hospital"
+                    requireDocumentDate
+                    onExtracted={(text, sourcePseudonymId) => {
+                      if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
+                      setMetatronHeel((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
+                    }}
+                  />
                   <Textarea
                     value={metatronHeel}
-                    onChange={(e) => setMetatronHeel(e.target.value)}
-                    placeholder="z.B. Lymphomyosot, Traumeel S, Hepeel, Nux vomica-Homaccord, Engystol, Mucosa compositum, Coenzyme compositum, Galium-Heel..."
-                    rows={3}
+                    onChange={(event) => setMetatronHeel(event.target.value)}
+                    placeholder="Metatron-Hospital-/NLS-Auswertung hier einfügen oder oben als PDF sicher einlesen: Organbefunde, Resonanzen, Belastungen und vorgeschlagene Heel-Mittel."
+                    rows={12}
+                    className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Die Metatron-/NLS-Resonanzanalyse listet u.a. Heel-Komplexmittel. Hier eingegebene Mittel werden <strong>zwingend</strong> in die KI-Auswertung übernommen (passend zur Indikation, mit Wiki-Dosierung sofern hinterlegt) und in der Empfehlung mit der Begründung „aus Metatron/NLS-Resonanz" markiert.
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">Die Angaben werden als eigenständige Befundquelle ausgewertet. Genannte Heel-Mittel werden passend zur Indikation und mit hinterlegten Sicherheitsinformationen geprüft. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen.</p>
+                </div>
+              </TabsContent>
+
+              {/* ===== TAB: Vieva Plus ===== */}
+              <TabsContent value="vieva-plus" className="space-y-3 mt-4">
+                <div className="rounded-md border border-cyan-300/70 bg-gradient-to-br from-cyan-50/60 to-background dark:from-cyan-950/15 dark:border-cyan-900/40 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                    <div>
+                      <label className="text-sm font-semibold block">Vieva-Plus-Auswertung</label>
+                      <p className="text-xs text-muted-foreground">Vitamin- und Mineralstoffstatus, Aminosäuren sowie HRV-Test.</p>
+                    </div>
+                    <WorkloadBadge chars={vievaPlus.length} hint="Vieva Plus: Mikronährstoffe, Aminosäuren und HRV vollständig auswerten" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <label className="text-xs font-medium whitespace-nowrap">Analyse erstellt am:</label>
+                    <Input type="date" value={vievaPlusDatum} onChange={(event) => setVievaPlusDatum(event.target.value)} className="h-8 w-auto text-xs" />
+                    {vievaPlusDatum && <button type="button" onClick={() => setVievaPlusDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>}
+                  </div>
+                  <MultiDocUpload
+                    pseudonymId={pseudonymId}
+                    ocrMode="lab"
+                    label="Vieva-Plus-PDF aufnehmen"
+                    documentDate={vievaPlusDatum}
+                    documentType="Vieva Plus"
+                    requireDocumentDate
+                    onExtracted={(text, sourcePseudonymId) => {
+                      if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
+                      setVievaPlus((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
+                    }}
+                  />
+                  <Textarea
+                    value={vievaPlus}
+                    onChange={(event) => setVievaPlus(event.target.value)}
+                    placeholder="Vieva-Plus-Auswertung hier einfügen oder oben als PDF sicher einlesen: Vitamine, Mineralstoffe, Aminosäuren, HRV-Parameter und Empfehlungen."
+                    rows={12}
+                    className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Die PDF wird lokal im Browser gelesen und bei Bedarf lokal per OCR erkannt. Direkte Identifikatoren werden vor Speicherung und Analyse entfernt; das Original wird nicht archiviert. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen.</p>
                 </div>
               </TabsContent>
 
               {/* ===== TAB: Großdaten (Sonstige + Perplexity) — viel Platz, 100+ Seiten ===== */}
               <TabsContent value="grossdaten" className="space-y-4 mt-4">
                 <WorkloadTotal
-                  chars={laborKomplett.length + arztbericht.length + metatronHeel.length + sonstigeUntersuchungen.length + perplexityAnalyse.length}
+                  chars={laborKomplett.length + arztbericht.length + metatronHeel.length + sonstigeUntersuchungen.length + vievaPlus.length + perplexityAnalyse.length}
                   label="Gesamter Sichtungs-/Auswertungsaufwand (Honorar-Basis 100 €/h)"
                 />
                 <div className="rounded-md border border-indigo-300/70 bg-gradient-to-br from-indigo-50/60 to-background dark:from-indigo-950/15 dark:border-indigo-900/40 p-3">
@@ -4732,7 +5067,7 @@ export function TherapyRecommendation() {
               <div className="text-xs font-semibold uppercase tracking-wider text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
                 <Heart className="h-3.5 w-3.5" /> Schwangerschaft / Stillzeit
               </div>
-              <Select value={schwanger} onValueChange={setSchwanger}>
+              <Select value={schwanger} onValueChange={setSchwanger} disabled={geschlecht === "maennlich"}>
                 <SelectTrigger className="bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -4743,6 +5078,7 @@ export function TherapyRecommendation() {
                   <SelectItem value="kinderwunsch">Kinderwunsch</SelectItem>
                 </SelectContent>
               </Select>
+              {geschlecht === "maennlich" && <p className="text-xs text-muted-foreground">Für diesen männlichen Patienten als „Nein / nicht relevant“ hinterlegt.</p>}
               {schwanger !== "nein" && (
                 <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Viele Naturheilmittel sind kontraindiziert!</p>
               )}
@@ -4798,6 +5134,7 @@ export function TherapyRecommendation() {
         arztberichtDatum={arztberichtDatum}
         metatronHeel={metatronHeel}
         sonstigeUntersuchungen={sonstigeUntersuchungen}
+        vievaPlus={vievaPlus}
         perplexityAnalyse={perplexityAnalyse}
         eigeneTherapieVorlage={eigeneTherapieVorlage}
         mannayanOrders={mannayanOrders}
@@ -4945,12 +5282,8 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
+      {/* Laufende Prozesse und Ergebnisaktionen */}
       <div className="flex gap-3 flex-wrap">
-        <Button onClick={() => handleSubmit()} disabled={isStreaming} className="gap-2">
-          {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
-        </Button>
         {isAnalyzingDocs && docAnalysisStats?.total && (
           <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-md border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
             <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
@@ -5087,6 +5420,7 @@ export function TherapyRecommendation() {
                   <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary shrink-0">
                     Ergebnis ist geladen. Tipp: „Vollbild" für mehr Lesefläche oder „HTML in neuem Tab" für eine separate Browser-Ansicht (zoomen mit Strg/⌘ + +).
                   </div>
+                  <BefundSourceStand stand={displayedBefundSourceStand} />
                    <iframe
                      title="Befund-Auswertung HTML direkt sichtbar"
                      srcDoc={docAnalysisHtml}
@@ -5149,70 +5483,43 @@ export function TherapyRecommendation() {
               </pre>
             )}
             {docAnalysisHtml && (
-               <iframe
-                 title="Befund-Auswertung HTML"
-                 srcDoc={docAnalysisHtml}
-                 sandbox=""
-                 referrerPolicy="no-referrer"
-                 className="h-[72vh] w-full rounded-md border bg-background"
-              />
+              <>
+                <BefundSourceStand stand={displayedBefundSourceStand} />
+                <iframe
+                  title="Befund-Auswertung HTML"
+                  srcDoc={docAnalysisHtml}
+                  sandbox=""
+                  referrerPolicy="no-referrer"
+                  className="h-[72vh] w-full rounded-md border bg-background"
+                />
+              </>
             )}
           </CardContent>
         </Card>
 
       )}
 
-      {/* 📥 Diagnosen + Symptome aus Befund-Auswertung in Eingabemaske übernehmen */}
-      {extractedFromDocs && (extractedFromDocs.diagnoses.length > 0 || extractedFromDocs.symptoms.length > 0 || extractedFromDocs.medications.length > 0) && (
-        <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 dark:bg-emerald-950/15 p-3">
-          <div className="flex items-start gap-3 flex-wrap">
-            <div className="flex-1 min-w-[260px]">
-              <div className="text-sm font-semibold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
-                <CheckCircle2 className="h-4 w-4" />
-                Aus der Befund-Auswertung extrahiert
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                <strong>{extractedFromDocs.diagnoses.length}</strong> Diagnose(n), <strong>{extractedFromDocs.symptoms.length}</strong> Beschwerde(n) und <strong>{extractedFromDocs.medications.length}</strong> ärztlich verordnete(s) Medikament(e) gefunden — inkl. Quelle, Datum (sonst „unbekannt") und wörtlichem Zitat. In die Eingabemaske oben übernehmen?
-              </p>
-              {extractedFromDocs.medications.length > 0 && (
-                <details className="mt-1.5">
-                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Medikamente</summary>
-                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
-                    {extractedFromDocs.medications.slice(0, 8).map((m, i) => (
-                      <li key={i}>
-                        <strong>{m.name}</strong>{m.dosis ? ` ${m.dosis}` : ""}
-                        <span className="text-muted-foreground"> · von: {m.vonWem?.trim() || "unbekannt"} · {m.datum?.trim() || "unbekannt"}</span>
-                      </li>
-                    ))}
-                    {extractedFromDocs.medications.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.medications.length - 8} weitere</li>}
-                  </ul>
-                </details>
-              )}
-              {extractedFromDocs.diagnoses.length > 0 && (
-                <details className="mt-1.5">
-                  <summary className="text-xs cursor-pointer text-emerald-800 dark:text-emerald-300">Vorschau Diagnosen</summary>
-                  <ul className="text-xs mt-1 space-y-0.5 list-disc pl-5">
-                    {extractedFromDocs.diagnoses.slice(0, 8).map((d, i) => (
-                      <li key={i}>
-                        {d.icd10 && <code className="mr-1">{d.icd10}</code>}
-                        <strong>{d.diagnose}</strong>
-                        {d.quelle && <span className="text-muted-foreground"> · 📄 {d.quelle}</span>}
-                      </li>
-                    ))}
-                    {extractedFromDocs.diagnoses.length > 8 && <li className="text-muted-foreground italic">… und {extractedFromDocs.diagnoses.length - 8} weitere</li>}
-                  </ul>
-                </details>
-              )}
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button size="sm" onClick={applyExtractedToInputs} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white">
-                <Plus className="h-3.5 w-3.5" /> In Eingabemaske übernehmen
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setExtractedFromDocs(null)}>verwerfen</Button>
-            </div>
+      <Card className="border-emerald-400/50 bg-gradient-to-r from-emerald-50/70 via-background to-primary/5 dark:from-emerald-950/20">
+        <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Nächster Schritt: Therapie aus dem vollständigen Befund ableiten</div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Erst alle Quellen prüfen und die Befund-Auswertung abschließen. Danach werden Symptome, Diagnosen, Medikamente und Sicherheitsangaben in die Therapieempfehlung einbezogen.
+            </p>
           </div>
-        </div>
-      )}
+          <Button
+            onClick={() => handleSubmit()}
+            disabled={isStreaming || therapyStartBlockedByBefund}
+            className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white"
+          >
+            {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
+          </Button>
+          {therapyStartBlockedByBefund && !isStreaming && !isAnalyzingDocs && (
+            <p className="w-full text-xs text-amber-700 dark:text-amber-300">Bitte zuerst oben alle ausgewählten neuen oder geänderten Befundquellen vollständig auswerten.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Workflow-Stage-Indikator */}
       {result && !isStreaming && (
@@ -5281,7 +5588,7 @@ export function TherapyRecommendation() {
                       handleSubmit({ nachschlag: txt, previousResult: result });
                       setErgaenzung("");
                     }}
-                    disabled={isStreaming || !ergaenzung.trim()}
+                    disabled={isStreaming || therapyStartBlockedByBefund || !ergaenzung.trim()}
                     className="gap-2 bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap"
                     size="sm"
                   >

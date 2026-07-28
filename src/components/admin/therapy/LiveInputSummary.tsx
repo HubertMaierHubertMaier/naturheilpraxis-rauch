@@ -34,6 +34,7 @@ interface Props {
   arztberichtDatum?: string;
   metatronHeel?: string;
   sonstigeUntersuchungen?: string;
+  vievaPlus?: string;
   perplexityAnalyse?: string;
   eigeneTherapieVorlage?: string;
   mannayanOrders?: MannayanOrderContext[];
@@ -53,7 +54,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", perplexityAnalyse = "", eigeneTherapieVorlage = "", mannayanOrders = [],
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", vievaPlus = "", perplexityAnalyse = "", eigeneTherapieVorlage = "", mannayanOrders = [],
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
@@ -67,6 +68,7 @@ export function LiveInputSummary({
   const arztberichtList = splitLines(arztbericht);
   const metatronList = splitLines(metatronHeel);
   const sonstigeList = splitLines(sonstigeUntersuchungen);
+  const vievaPlusList = splitLines(vievaPlus);
   const perplexityList = splitLines(perplexityAnalyse);
   const eigeneTherapieList = splitLines(eigeneTherapieVorlage);
 
@@ -75,6 +77,7 @@ export function LiveInputSummary({
   const hasArzt = arztberichtList.length > 0;
   const hasMetatron = metatronList.length > 0;
   const hasSonstige = sonstigeList.length > 0;
+  const hasVievaPlus = vievaPlusList.length > 0;
   const hasPerplexity = perplexityList.length > 0;
   const hasEigeneTherapie = eigeneTherapieList.length > 0;
   const hasMannayanOrders = mannayanOrders.length > 0;
@@ -82,7 +85,7 @@ export function LiveInputSummary({
   const totalCount =
     filledPathogens.length + symptomList.length + erkrankungList.length +
     laborErhoehtList.length + laborErniedrigtList.length + laborKomplettList.length +
-    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + perplexityList.length + eigeneTherapieList.length + mannayanOrders.reduce((sum, order) => sum + order.items.length, 0);
+    stuhlList.length + arztberichtList.length + metatronList.length + sonstigeList.length + vievaPlusList.length + perplexityList.length + eigeneTherapieList.length + mannayanOrders.reduce((sum, order) => sum + order.items.length, 0);
 
   const hasAny = totalCount > 0;
   if (!hasAny) return null;
@@ -213,7 +216,7 @@ export function LiveInputSummary({
           <div>
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-fuchsia-700 dark:text-fuchsia-300">
               <Radio className="h-3.5 w-3.5" />
-              Metatron / NLS / HEEL ({metatronList.length} Zeilen)
+              Metatron Hospital / NLS / HEEL ({metatronList.length} Zeilen)
             </div>
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
           </div>
@@ -226,6 +229,16 @@ export function LiveInputSummary({
               Sonstige / unsortierte Voruntersuchungen ({sonstigeList.length} Zeilen · {sonstigeUntersuchungen.length.toLocaleString("de-DE")} Zeichen)
             </div>
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{sonstigeUntersuchungen}</pre>
+          </div>
+        )}
+
+        {hasVievaPlus && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-300">
+              <Activity className="h-3.5 w-3.5" />
+              Vieva Plus - Mikronährstoffe, Aminosäuren und HRV ({vievaPlusList.length} Zeilen)
+            </div>
+            <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-72 overflow-y-auto">{vievaPlus}</pre>
           </div>
         )}
 

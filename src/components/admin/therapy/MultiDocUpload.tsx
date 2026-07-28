@@ -21,6 +21,7 @@ import {
   waitForPdfRender,
   type ExtractedPdfPage,
 } from "@/lib/clinicalPdfExtraction";
+import { addAnalysisDocumentMetadata, createNeutralDocumentId } from "@/lib/patientInputPersistence";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -29,6 +30,9 @@ interface Props {
   pseudonymId?: string;
   ocrMode?: "doctor" | "lab";
   label?: string;
+  documentDate?: string;
+  documentType?: string;
+  requireDocumentDate?: boolean;
 }
 
 type PendingFile = {
@@ -88,6 +92,7 @@ export async function extractClinicalDocumentText(
   notify?: ToastFn,
   onProgress?: (status: string) => void,
   sharedOcrSession?: OcrExtractionSession,
+  identitySalt = "",
 ): Promise<ClinicalDocumentExtractionResult> {
   if (file.type.startsWith("image/")) {
     throw new Error("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet. Bitte den sicheren PDF-Import verwenden.");
@@ -226,8 +231,7 @@ export async function extractClinicalDocumentText(
   const joined = assembleExtractedPdfPages(pages);
   const removedIdentifierCategories = directIdentifierCategories(joined);
   const safeBody = removeResidualDirectIdentifierLines(deidentifyClinicalText(joined));
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(safeBody));
-  const documentId = Array.from(new Uint8Array(digest)).slice(0, 6).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const documentId = await createNeutralDocumentId(safeBody, identitySalt);
   const text = `=== 📄 Dokument-${documentId} (${totalPages} S.) ===\n${safeBody}`;
   const residualIdentifiers = directIdentifierCategories(text);
   if (residualIdentifiers.length) {
@@ -243,7 +247,7 @@ export async function extractClinicalDocumentText(
   };
 }
 
-export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF hochladen" }: Props) {
+export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pseudonymIdRef = useRef(pseudonymId);
   const extractionRunRef = useRef(0);
@@ -283,6 +287,11 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
 
   const runExtraction = async () => {
     if (!files.length) return;
+    const extractionDocumentDate = documentDate.trim();
+    if (requireDocumentDate && !extractionDocumentDate) {
+      toast({ title: "Erstellungsdatum fehlt", description: "Bitte vor dem Auslesen das Datum der Analyse eintragen.", variant: "destructive" });
+      return;
+    }
     const runId = ++extractionRunRef.current;
     const sourcePseudonymId = (pseudonymId || "").trim();
     const scopeIsCurrent = () => runId === extractionRunRef.current
@@ -313,10 +322,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             if (!scopeIsCurrent()) return;
             updated[index] = { ...updated[index], progress };
             setFiles([...updated]);
-          }, ocrSession);
+          }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "");
           if (!scopeIsCurrent()) return;
           const piiHits = (extracted.removedIdentifierCategories || []).map((kind) => ({ kind }));
-          combined = [combined, extracted.text].filter(Boolean).join("\n\n");
+          const datedText = extractionDocumentDate
+            ? addAnalysisDocumentMetadata(extracted.text, extractionDocumentDate, documentType)
+            : extracted.text;
+          combined = [combined, datedText].filter(Boolean).join("\n\n");
           updated[index] = {
             ...updated[index],
             status: "done",

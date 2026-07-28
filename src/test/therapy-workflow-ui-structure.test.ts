@@ -17,5 +17,16 @@ describe("therapy workflow UI structure", () => {
     expect(source).not.toContain("Start-Aktionen");
     expect(source).not.toContain("fixed bottom-4");
     expect(source).not.toContain("Weitere Befunde nachladen");
+    expect(source.indexOf("Nächster Schritt: Therapie aus dem vollständigen Befund ableiten"))
+      .toBeGreaterThan(source.indexOf("Befund-Auswertung {isAnalyzingDocs"));
+    expect(source).toContain('TabsTrigger value="vieva-plus"');
+    expect(source).toContain('TabsTrigger value="metatron"');
+    expect(count(source, "requireDocumentDate")).toBe(2);
+    expect(source).toContain("applyExtractedToInputs({ forPseudonymId: analysisPid");
+    expect(source).toContain("if (docAbortRef.current)");
+    expect(source).toContain("if (abortRef.current)");
+    expect(source).toContain("disabled={isStreaming || therapyStartBlockedByBefund}");
+    expect(source).toContain("hasEffectivelySelectedBefundSources");
+    expect(source).toContain("sameBefundSourceRevision(recentlyCompleted.sourceRevision, analysisSources)");
   });
 });
