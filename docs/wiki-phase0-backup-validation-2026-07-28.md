@@ -37,7 +37,7 @@ Die Dubletten bleiben bis zur fachlichen Pruefung getrennte Datensaetze.
 - verwaiste Wiki-Verknuepfungen: 0
 - verwaiste Produkt-Verknuepfungen: 0
 
-`knowledge_product_links` ist im Live-Backup vorhanden, fehlt aber in den lokal generierten Supabase-Typen und wurde in den Repository-Migrationen nicht gefunden. Diese Schemadrift muss vor dem Phase-1-Schema reproduzierbar aufgeloest werden.
+`knowledge_product_links` ist im Live-Backup, in der aktuellen GitHub-Migration `20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql` und im aktuellen Supabase-Typstand vorhanden. Der erste Vergleich gegen den stark zurueckliegenden lokalen Hauptarbeitsstand war unvollstaendig; das aktuelle Codebackup hat den korrekten Stand bestaetigt.
 
 ## Isolierter Restore-Test
 

@@ -685,6 +685,6 @@ Phase 0 wurde erfolgreich abgeschlossen:
 
 Die Rohbackups und extrahierten Daten bleiben ausschliesslich lokal ausserhalb des Git-Repositories. Auf GitHub wird nur der technische Pruefbericht ohne Patientendaten gesichert.
 
-Wichtiger neuer Schemazustand: `knowledge_product_links` ist live vorhanden, fehlt aber im lokal generierten Supabase-Typstand und wurde in den bisherigen Repository-Migrationen nicht gefunden. Vor Phase 1 muss diese Schemadrift explizit geklaert und reproduzierbar dokumentiert werden.
+Abgleich mit dem aktuellen Codebackup: `knowledge_product_links` ist in der GitHub-Migration `20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql` und im dortigen Supabase-Typstand korrekt enthalten. Nur der alte, stark zurueckliegende lokale Hauptarbeitsstand kannte diese Dateien noch nicht. Es besteht deshalb keine fehlende Live-Migration fuer diese Tabelle. Die bestehende Migration hat ausserdem bereits Review-, Evidenz-, Dosierungs-, Quellen- und Sicherheitsfelder an `admin_knowledge_base` ergaenzt; Phase 1 muss darauf aufbauen und darf diese Arbeit nicht duplizieren.
 
 Naechster Schritt: additive Phase-1-Migration zunaechst lokal entwerfen und testen; keine Live-Ausrollung ohne erneute Pruefung.
