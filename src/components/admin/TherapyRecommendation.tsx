@@ -4217,14 +4217,20 @@ export function TherapyRecommendation() {
                 <div>
                   <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
                     <label className="text-sm font-medium block">🧪 Alle Laborwerte (Klassisches Labor)</label>
-                    <div className="flex items-center gap-2 ml-auto">
-                      <WorkloadBadge chars={laborKomplett.length} hint="Labor: Werte abgleichen, Referenzbereiche, Verlauf" />
-                      <LabImageUpload onExtracted={(t) => {
-                        const next = laborKomplett ? `${laborKomplett.trim()}\n\n${t}` : t;
+                    <WorkloadBadge chars={laborKomplett.length} hint="Labor: Werte abgleichen, Referenzbereiche, Verlauf" />
+                  </div>
+                  <div className="mb-2">
+                    <MultiDocUpload
+                      pseudonymId={pseudonymId}
+                      ocrMode="lab"
+                      label="📄 Vollständige Labor-PDF einlesen"
+                      onExtracted={(text, sourcePseudonymId) => {
+                        if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
+                        const next = laborKomplett ? `${laborKomplett.trim()}\n\n${text}` : text;
                         setLaborKomplett(next);
                         saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte");
-                      }} />
-                    </div>
+                      }}
+                    />
                   </div>
                   <Textarea
                     value={laborKomplett}
@@ -4244,7 +4250,7 @@ export function TherapyRecommendation() {
                       <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) – manuell eintragen oder Fotos/Scans hochladen (KI extrahiert automatisch).</p>
+                  <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) manuell eintragen oder als textlesbare PDF sicher einlesen. Die PDF wird lokal ausgelesen und vor Speicherung anonymisiert; reine Scan-/Foto-PDFs werden nicht an externe OCR-Dienste gesendet.</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>

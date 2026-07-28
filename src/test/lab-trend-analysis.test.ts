@@ -635,6 +635,18 @@ describe("laboratory trend analysis", () => {
     expect(imageUploadSource).toContain("Foto-, Screenshot- und Scan-OCR ist deaktiviert");
   });
 
+  it("offers the safe text-readable PDF import directly in the laboratory tab", () => {
+    const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const laboratoryTab = clientSource.match(/\{\/\* ===== TAB: Labor ===== \*\/\}([\s\S]*?)\{\/\* ===== TAB: Arzt & NLS ===== \*\/\}/)?.[1] || "";
+
+    expect(laboratoryTab).toContain("<MultiDocUpload");
+    expect(laboratoryTab).toContain('ocrMode="lab"');
+    expect(laboratoryTab).toContain('label="📄 Vollständige Labor-PDF einlesen"');
+    expect(laboratoryTab).toContain("normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current");
+    expect(laboratoryTab).toContain('saveClinicalSnapshot({ laborKomplett: next }, "Laborwerte")');
+    expect(laboratoryTab).not.toContain("Fotos/Scans hochladen");
+  });
+
   it("adds database-side de-identification for future therapy session writes", () => {
     const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260713140500_redact_therapy_session_identifiers.sql"), "utf8");
     const followUpMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260713144500_redact_doctor_names_in_running_text.sql"), "utf8");
