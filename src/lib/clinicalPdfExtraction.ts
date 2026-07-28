@@ -10,6 +10,18 @@ export type ExtractedPdfPage = {
   ocrText?: string;
 };
 
+export type PdfJsTextItemLike = {
+  str?: unknown;
+  hasEOL?: unknown;
+  transform?: unknown;
+};
+
+type PositionedPdfTextItem = {
+  text: string;
+  x: number;
+  y: number;
+};
+
 export type DocumentExtractionDecision = {
   status: "accept" | "accept-with-warning" | "reject";
   failedOcrPages: number[];
@@ -27,6 +39,53 @@ export function normalizeExtractedText(text: string): string {
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+export function reconstructPdfTextLines(items: readonly unknown[], yTolerance = 2.5): string {
+  const positioned: PositionedPdfTextItem[] = [];
+  const unpositionedLines: string[] = [];
+  let unpositionedLine: string[] = [];
+  const flushUnpositionedLine = () => {
+    if (unpositionedLine.length) unpositionedLines.push(unpositionedLine.join(" "));
+    unpositionedLine = [];
+  };
+
+  for (const rawItem of items) {
+    if (!rawItem || typeof rawItem !== "object" || !("str" in rawItem)) continue;
+    const item = rawItem as PdfJsTextItemLike;
+    const transform = Array.isArray(item.transform) ? item.transform : [];
+    const x = typeof transform[4] === "number" && Number.isFinite(transform[4])
+      ? transform[4]
+      : undefined;
+    const y = typeof transform[5] === "number" && Number.isFinite(transform[5])
+      ? transform[5]
+      : undefined;
+    const text = String(item.str ?? "").replace(/\s+/g, " ").trim();
+
+    if (text && x !== undefined && y !== undefined) {
+      positioned.push({ text, x, y });
+    } else if (text) {
+      unpositionedLine.push(text);
+    }
+    if (item.hasEOL === true && (x === undefined || y === undefined)) flushUnpositionedLine();
+  }
+  flushUnpositionedLine();
+
+  const clusters: Array<{ y: number; items: PositionedPdfTextItem[] }> = [];
+  for (const item of positioned.sort((left, right) => right.y - left.y || left.x - right.x)) {
+    const cluster = clusters.find((candidate) => Math.abs(candidate.y - item.y) <= yTolerance);
+    if (cluster) {
+      cluster.items.push(item);
+      cluster.y = cluster.items.reduce((sum, entry) => sum + entry.y, 0) / cluster.items.length;
+    } else {
+      clusters.push({ y: item.y, items: [item] });
+    }
+  }
+
+  const positionedLines = clusters
+    .sort((left, right) => right.y - left.y)
+    .map((cluster) => cluster.items.sort((left, right) => left.x - right.x).map((item) => item.text).join(" "));
+  return normalizeExtractedText([...positionedLines, ...unpositionedLines].join("\n"));
 }
 
 export function countMeaningfulTextCharacters(text: string): number {

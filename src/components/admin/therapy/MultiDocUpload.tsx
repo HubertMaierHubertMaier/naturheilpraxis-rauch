@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logTherapyEvent } from "./therapyEventLog";
-import { deidentifyClinicalText, directIdentifierCategories } from "../../../../supabase/functions/_shared/clinicalDeidentification";
+import {
+  deidentifyClinicalText,
+  directIdentifierCategories,
+  removeResidualDirectIdentifierLines,
+} from "../../../../supabase/functions/_shared/clinicalDeidentification";
 import * as pdfjs from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
@@ -11,6 +15,7 @@ import {
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
   MAX_OCR_WORKER_INITIALIZATION_ATTEMPTS,
+  reconstructPdfTextLines,
   shouldRunLocalOcr,
   terminateAndResetWorkerSession,
   waitForPdfRender,
@@ -133,9 +138,7 @@ export async function extractClinicalDocumentText(
         const operators = await page.getOperatorList();
         const containsRasterImage = operators.fnArray.some((operatorId) => rasterImageOperatorIds.has(operatorId));
         const content = await page.getTextContent();
-        const pageText = content.items.map((item: unknown) => (
-          item && typeof item === "object" && "str" in item ? String((item as { str: unknown }).str) : ""
-        )).join(" ").trim();
+        const pageText = reconstructPdfTextLines(content.items);
         const extractedPage: ExtractedPdfPage = { pageNumber, textLayer: pageText };
 
         if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText })) {
@@ -222,7 +225,7 @@ export async function extractClinicalDocumentText(
 
   const joined = assembleExtractedPdfPages(pages);
   const removedIdentifierCategories = directIdentifierCategories(joined);
-  const safeBody = deidentifyClinicalText(joined);
+  const safeBody = removeResidualDirectIdentifierLines(deidentifyClinicalText(joined));
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(safeBody));
   const documentId = Array.from(new Uint8Array(digest)).slice(0, 6).map((byte) => byte.toString(16).padStart(2, "0")).join("");
   const text = `=== 📄 Dokument-${documentId} (${totalPages} S.) ===\n${safeBody}`;

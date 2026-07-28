@@ -6,6 +6,7 @@ import {
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
   hasPracticalDocumentText,
+  reconstructPdfTextLines,
   selectPreferredPageText,
   shouldRunLocalOcr,
   terminateAndResetWorkerSession,
@@ -13,6 +14,38 @@ import {
 } from "@/lib/clinicalPdfExtraction";
 
 describe("clinical PDF extraction decisions", () => {
+  it("reconstructs PDF.js text items from EOL markers and y changes without splitting table rows", () => {
+    const items = [
+      { str: "Name:", transform: [1, 0, 0, 1, 20, 700] },
+      { str: "Erika Beispiel", hasEOL: true, transform: [1, 0, 0, 1, 90, 700] },
+      { str: "CRP", transform: [1, 0, 0, 1, 20, 680] },
+      { str: "4,2", transform: [1, 0, 0, 1, 180, 680] },
+      { str: "mg/l", transform: [1, 0, 0, 1, 240, 680] },
+      { str: "Ferritin", transform: [1, 0, 0, 1, 20, 660] },
+      { str: "52", transform: [1, 0, 0, 1, 180, 660] },
+      { str: "ng/ml", transform: [1, 0, 0, 1, 240, 660] },
+    ];
+
+    expect(reconstructPdfTextLines(items)).toBe([
+      "Name: Erika Beispiel",
+      "CRP 4,2 mg/l",
+      "Ferritin 52 ng/ml",
+    ].join("\n"));
+  });
+
+  it("clusters visual rows and x-sorts cells when PDF.js streams table columns out of order", () => {
+    const columnStreamItems = [
+      { str: "CRP", hasEOL: true, transform: [1, 0, 0, 1, 20, 680] },
+      { str: "Ferritin", hasEOL: true, transform: [1, 0, 0, 1, 20, 660] },
+      { str: "4,2", transform: [1, 0, 0, 1, 180, 680] },
+      { str: "52", transform: [1, 0, 0, 1, 180, 660] },
+      { str: "mg/l", transform: [1, 0, 0, 1, 240, 680] },
+      { str: "ng/ml", transform: [1, 0, 0, 1, 240, 660] },
+    ];
+
+    expect(reconstructPdfTextLines(columnStreamItems)).toBe("CRP 4,2 mg/l\nFerritin 52 ng/ml");
+  });
+
   it("runs OCR only for raster pages with an insufficient text layer", () => {
     const sufficientText = "A".repeat(MIN_TEXT_PER_PAGE);
 

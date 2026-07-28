@@ -17,6 +17,7 @@ import {
   deidentifyClinicalData,
   deidentifyClinicalText,
   directIdentifierCategories,
+  removeResidualDirectIdentifierLines,
 } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 const psa = (datum: string, wert: string, bewertung = "normal") => ({
@@ -130,6 +131,199 @@ describe("laboratory trend analysis", () => {
     expect(result).toContain("PSA 0,31 ng/ml");
     expect(result).toContain("Gesamt-Testosteron 650 ng/dl");
     expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("removes synthetic laboratory header names and addresses while retaining measurements", () => {
+    const source = [
+      "Name: Erika Beispiel",
+      "Beispielstraße 12",
+      "12345 Berlin",
+      "CRP 4,2 mg/l",
+      "Ferritin 52 ng/ml",
+      "TSH 1,8 mIU/l",
+    ].join("\n");
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    expect(result).not.toContain("Erika Beispiel");
+    expect(result).not.toContain("Beispielstraße");
+    expect(result).not.toContain("12345 Berlin");
+    expect(result).toContain("CRP 4,2 mg/l");
+    expect(result).toContain("Ferritin 52 ng/ml");
+    expect(result).toContain("TSH 1,8 mIU/l");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("handles missing separators, comma-order names, and common OCR label substitutions", () => {
+    const source = [
+      "Patient Beispiel, Erika",
+      "Nachname Muster",
+      "Vorname Klara",
+      "Narne Probe, Paula",
+      "Anschrift Beispielweg 8",
+      "PLZ Ort 12345 Berlin",
+      "CRP 3,1 mg/l",
+    ].join("\n");
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    for (const identifier of ["Beispiel, Erika", "Muster", "Klara", "Probe, Paula", "Beispielweg", "12345 Berlin"]) {
+      expect(result).not.toContain(identifier);
+    }
+    expect(result).toContain("CRP 3,1 mg/l");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("removes clinician and laboratory or practice addresses without removing laboratory values", () => {
+    const source = [
+      "Labor und Praxis Dr. Ada Muster",
+      "Laborallee 8",
+      "12345 Beispielstadt",
+      "Ferritin 48 ng/ml",
+      "TSH 2,0 mIU/l",
+    ].join("\n");
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    expect(result).not.toContain("Ada Muster");
+    expect(result).not.toContain("Laborallee");
+    expect(result).not.toContain("12345 Beispielstadt");
+    expect(result).toContain("Ferritin 48 ng/ml");
+    expect(result).toContain("TSH 2,0 mIU/l");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("keeps pseudonyms through OCR-header deidentification", () => {
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText([
+      "Patient P-2031-0042",
+      "CRP 2,4 mg/l",
+    ].join("\n")));
+
+    expect(result).toContain("P-2031-0042");
+    expect(result).toContain("CRP 2,4 mg/l");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("removes a residual mixed header conservatively while retaining clean markers and laboratory lines", () => {
+    const firstPass = deidentifyClinicalText([
+      "=== 📄 Dokument-a1b2c3d4e5f6 (1 S.) ===",
+      "Patient: Erika Beispiel Prostata Karzinom CRP 5,0 mg/l",
+      "Ferritin 42 ng/ml",
+    ].join("\n"));
+    expect(directIdentifierCategories(firstPass)).toContain("Name");
+
+    const result = removeResidualDirectIdentifierLines(firstPass);
+    expect(result).not.toContain("Erika Beispiel");
+    expect(result).toContain("=== 📄 Dokument-a1b2c3d4e5f6 (1 S.) ===");
+    expect(result).toContain("CRP 5,0 mg/l");
+    expect(result).toContain("Ferritin 42 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("removes explicit identifier prefixes while preserving arbitrary measured parameters", () => {
+    const source = [
+      "Name: Erika Beispiel Ferritin 42 ng/ml",
+      "Patient Erika Beispiel Natrium 140 mmol/l",
+      "Narne Probe, Paula Kalium 4,2 mmol/l",
+      "Nachnarne Muster, Klara Albumin 41 g/l",
+      "Patlent Test, Tina eGFR 93 ml/min",
+      "Anschrift: Am Bach 8",
+      "PLZ: 12345",
+      "Ort: Berlin",
+      "Pseudonym: P-2031-0042",
+    ].join("\n");
+    expect(directIdentifierCategories(source)).toEqual(expect.arrayContaining(["Name", "Anschrift"]));
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    for (const identifier of ["Erika Beispiel", "Probe", "Paula", "Muster", "Klara", "Test", "Tina", "Am Bach", "12345", "Berlin"]) {
+      expect(result).not.toContain(identifier);
+    }
+    for (const measurement of ["Ferritin 42 ng/ml", "Natrium 140 mmol/l", "Kalium 4,2 mmol/l", "Albumin 41 g/l", "eGFR 93 ml/min"]) {
+      expect(result).toContain(measurement);
+    }
+    expect(result).toContain("P-2031-0042");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("does not trust a name redaction marker while a comma-order first name remains before a measurement", () => {
+    for (const [source, lastName, firstName, measurement] of [
+      ["Narne Probe, Paula Kalium 4,2 mmol/l", "Probe", "Paula", "Kalium 4,2 mmol/l"],
+      ["Nachnarne Muster, Klara Albumin 41 g/l", "Muster", "Klara", "Albumin 41 g/l"],
+      ["Patlent Test, Tina eGFR 93 ml/min", "Test", "Tina", "eGFR 93 ml/min"],
+    ]) {
+      const firstPass = deidentifyClinicalText(source);
+      expect(directIdentifierCategories(firstPass)).toContain("Name");
+
+      const result = removeResidualDirectIdentifierLines(firstPass);
+      expect(result).not.toContain(lastName);
+      expect(result).not.toContain(firstName);
+      expect(result).toContain(measurement);
+      expect(directIdentifierCategories(result)).toEqual([]);
+    }
+  });
+
+  it("does not interpret five-digit laboratory values with units as postal locations", () => {
+    const source = [
+      "Ferritin 12345 ng/ml",
+      "Ferritin 12345 NG/ml",
+      "Natrium 12345 mmol/l",
+    ].join("\n");
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    expect(result).toBe(source);
+    expect(directIdentifierCategories(result)).toEqual([]);
+
+    const measurementThenAddress = "Ferritin 42 ng/ml 12345 Berlin";
+    expect(directIdentifierCategories(measurementThenAddress)).toContain("Anschrift");
+    const cleaned = removeResidualDirectIdentifierLines(deidentifyClinicalText(measurementThenAddress));
+    expect(cleaned).toContain("Ferritin 42 ng/ml");
+    expect(cleaned).not.toContain("12345 Berlin");
+    expect(directIdentifierCategories(cleaned)).toEqual([]);
+  });
+
+  it("removes postal prefixes without consuming an overlapping clinical parameter", () => {
+    for (const [source, measurement] of [
+      ["PLZ: 12345 Natrium 140 mmol/l", "Natrium 140 mmol/l"],
+      ["12345 Berlin Natrium 140 mmol/l", "Natrium 140 mmol/l"],
+      ["PLZ Ort 12345 Kalium 4,1 mmol/l", "Kalium 4,1 mmol/l"],
+      ["12345 Hamburg Albumin 40 g/l", "Albumin 40 g/l"],
+    ]) {
+      const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+      expect(result).not.toMatch(/12345|Berlin|Hamburg/);
+      expect(result).toContain(measurement);
+      expect(directIdentifierCategories(result)).toEqual([]);
+    }
+
+    const combined = removeResidualDirectIdentifierLines(deidentifyClinicalText([
+      "PLZ: 12345 Natrium 140 mmol/l",
+      "12345 Berlin Natrium 140 mmol/l",
+      "PLZ Ort 12345 Kalium 4,1 mmol/l",
+      "12345 Hamburg Albumin 40 g/l",
+    ].join("\n")));
+    expect(combined).toContain("Natrium 140 mmol/l");
+    expect(combined).toContain("Kalium 4,1 mmol/l");
+    expect(combined).toContain("Albumin 40 g/l");
+  });
+
+  it("detects and removes concatenated OCR street and postal addresses", () => {
+    const source = [
+      "Musterweg8",
+      "Beispielstraße12",
+      "12345Berlin",
+      "Ferritin 12345 ng/ml",
+    ].join("\n");
+    expect(directIdentifierCategories(source)).toContain("Anschrift");
+
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+    expect(result).not.toContain("Musterweg8");
+    expect(result).not.toContain("Beispielstraße12");
+    expect(result).not.toContain("12345Berlin");
+    expect(result).toContain("Ferritin 12345 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("leaves an ambiguously mixed identifier line residual so the mandatory check fails closed", () => {
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText("Name: Erika Beispiel Spezialwert 7 Score"));
+
+    expect(result).toContain("Erika Beispiel");
+    expect(directIdentifierCategories(result)).toContain("Name");
   });
 
   it("sanitizes nested source labels and direct identifier fields before persistence", () => {
