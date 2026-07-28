@@ -10,7 +10,7 @@ export function LabImageUpload(_props: Props) {
     <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
-        <strong>Datenschutzmodus:</strong> Foto-, Screenshot- und Scan-OCR ist deaktiviert, weil ein ungeschwärztes Bild sonst vor der Anonymisierung an einen externen KI-Dienst übertragen würde. Bitte Werte manuell eintragen oder eine textlesbare PDF über den sicheren PDF-Import verwenden.
+        <strong>Datenschutzmodus:</strong> Direkte Foto- und Screenshot-Uploads bleiben deaktiviert. Bitte Werte manuell eintragen oder den sicheren PDF-Import verwenden; textarme Rasterseiten in PDFs werden ausschließlich lokal im Browser erkannt und nicht an einen OCR-Cloud-Dienst übertragen.
       </span>
     </div>
   );

@@ -601,15 +601,35 @@ describe("laboratory trend analysis", () => {
 
   it("does not archive original analysis documents or send scans to external OCR", () => {
     const uploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/MultiDocUpload.tsx"), "utf8");
+    const ocrSource = readFileSync(resolve(process.cwd(), "src/lib/localBrowserOcr.ts"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
     const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
     const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716091513_26f2af2b-0701-4c0b-afce-73f1006c6b8e.sql"), "utf8");
     expect(uploadSource).not.toContain("archiveClinicalDocumentOriginal");
     expect(uploadSource).not.toContain("extract-lab-image");
     expect(uploadSource).not.toContain('from("therapy-documents")');
+    expect(uploadSource).not.toContain("fetch(");
+    expect(uploadSource).not.toContain(".functions.invoke(");
+    expect(ocrSource).not.toContain("fetch(");
+    expect(ocrSource).not.toContain("supabase");
     expect(uploadSource).toContain("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet");
-    expect(uploadSource).toContain("pagesWithInsufficientImageText.length");
+    expect(uploadSource).toContain("shouldRunLocalOcr({ containsRasterImage, textLayer: pageText })");
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
+    expect(uploadSource).toContain('await import("@/lib/localBrowserOcr")');
+    expect(ocrSource).toContain("const nativeWorker = new Worker(workerUrl)");
+    expect(ocrSource).toContain("OCR_INITIALIZATION_TIMEOUT_MS");
+    expect(ocrSource).toContain("nativeWorker.terminate()");
+    expect(ocrSource).not.toContain("Promise.race");
+    expect(ocrSource).toContain("@tesseract.js-data/deu/4.0.0_best_int/deu.traineddata.gz?url");
+    expect(ocrSource).toContain("@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz?url");
+    expect(uploadSource).toContain("MAX_OCR_WORKER_INITIALIZATION_ATTEMPTS");
+    expect(uploadSource).toContain("failedOcrPages.push(pageNumber)");
+    expect(uploadSource).toContain("await terminateAndResetWorkerSession(ocrSession)");
+    expect(uploadSource).toContain("const ocrSession: OcrExtractionSession = { signal: controller.signal, initializationAttempts: 0 }");
+    expect(uploadSource).toContain("}, ocrSession)");
+    expect(uploadSource).toContain("activeExtractionRef.current");
+    expect(uploadSource).toContain("activeExtraction?.controller.abort()");
+    expect(uploadSource).toContain("if (scopeIsCurrent()) setLoading(false)");
     expect(uploadSource).toContain("📄 Dokument-${documentId}");
     expect(uploadSource).toContain('crypto.subtle.digest("SHA-256"');
     expect(uploadSource).toContain("extractionRunRef.current");
@@ -631,8 +651,10 @@ describe("laboratory trend analysis", () => {
     expect(cleanupMigration).toContain("REVOKE EXECUTE ON FUNCTION public.strip_recently_deleted_document_markers(text,jsonb) FROM PUBLIC, anon, authenticated");
     expect(clientSource).toContain("original_archived: false");
     expect(clientSource).not.toContain("await archiveClinicalDocumentOriginal(item.file, pid)");
+    expect(clientSource).not.toContain("sonst reiner Scan → manuell eintippen");
+    expect(clientSource).toContain("textarme Scan-Seiten werden lokal im Browser nacherkannt");
     expect(imageUploadSource).not.toContain("extract-lab-image");
-    expect(imageUploadSource).toContain("Foto-, Screenshot- und Scan-OCR ist deaktiviert");
+    expect(imageUploadSource).toContain("textarme Rasterseiten in PDFs werden ausschließlich lokal im Browser erkannt");
   });
 
   it("offers the safe text-readable PDF import directly in the laboratory tab", () => {

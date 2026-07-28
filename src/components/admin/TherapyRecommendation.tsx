@@ -4250,7 +4250,7 @@ export function TherapyRecommendation() {
                       <button type="button" onClick={() => setLaborDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) manuell eintragen oder als textlesbare PDF sicher einlesen. Die PDF wird lokal ausgelesen und vor Speicherung anonymisiert; reine Scan-/Foto-PDFs werden nicht an externe OCR-Dienste gesendet.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Vollständige Laborübersicht (auch unauffällige Werte) manuell eintragen oder als PDF sicher einlesen. Textebenen werden lokal bevorzugt; textarme Rasterseiten werden lokal im Browser erkannt und nicht an externe OCR-Dienste gesendet. Vor der Speicherung wird der Text anonymisiert.</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">🧫 Stuhlbefund / Mikrobiom</label>
@@ -4537,7 +4537,7 @@ export function TherapyRecommendation() {
                         <span className={apothekerRezept.trim().length >= 5 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>
                           {apothekerRezept.trim().length >= 5
                             ? `✓ ${apothekerRezept.trim().length} Zeichen erkannt – wird ausgewertet.`
-                            : `⚠ Noch ${apothekerRezept.trim().length} Zeichen – nach Upload bitte prüfen, ob Text erschienen ist (sonst reiner Scan → manuell eintippen).`}
+                            : `⚠ Noch ${apothekerRezept.trim().length} Zeichen – nach Upload bitte prüfen, ob Text erschienen ist; textarme Scan-Seiten werden lokal im Browser nacherkannt.`}
                         </span>
                       </p>
                     </div>

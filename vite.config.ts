@@ -1,6 +1,7 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { readFile } from "node:fs/promises";
 import { componentTagger } from "lovable-tagger";
 
 // Public, client-safe fallback values for the Supabase publishable config.
@@ -31,6 +32,35 @@ const FALLBACK_SUPABASE_PUBLISHABLE_KEY = [
   "mzY",
 ].join("");
 const FALLBACK_SUPABASE_PROJECT_ID = "jmebqjadlpltnqawoipb";
+const LOCAL_OCR_ASSET_NAMES = new Set([
+  "tesseract-core-lstm.wasm.js",
+  "tesseract-core-simd-lstm.wasm.js",
+  "tesseract-core-relaxedsimd-lstm.wasm.js",
+  "deu.traineddata.gz",
+  "eng.traineddata.gz",
+]);
+const LOCAL_OCR_DEV_ASSETS = new Map([
+  ["deu.traineddata.gz", path.resolve(__dirname, "node_modules/@tesseract.js-data/deu/4.0.0_best_int/deu.traineddata.gz")],
+  ["eng.traineddata.gz", path.resolve(__dirname, "node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz")],
+]);
+const localOcrDevAssetsPlugin: Plugin = {
+  name: "local-ocr-dev-assets",
+  apply: "serve",
+  configureServer(server) {
+    server.middlewares.use("/assets/local-ocr", async (request, response, next) => {
+      try {
+        const fileName = new URL(request.url || "/", "http://localhost").pathname.replace(/^\/+/, "");
+        const sourcePath = LOCAL_OCR_DEV_ASSETS.get(fileName);
+        if (!sourcePath) return next();
+        response.statusCode = 200;
+        response.setHeader("Content-Type", "application/gzip");
+        response.end(await readFile(sourcePath));
+      } catch (error) {
+        next(error);
+      }
+    });
+  },
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -49,7 +79,7 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+    plugins: [react(), localOcrDevAssetsPlugin, mode === "development" && componentTagger()].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
@@ -61,6 +91,15 @@ export default defineConfig(({ mode }) => {
         supabasePublishableKey,
       ),
       "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify(supabaseProjectId),
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          assetFileNames: (assetInfo) => LOCAL_OCR_ASSET_NAMES.has(assetInfo.name || "")
+            ? "assets/local-ocr/[name][extname]"
+            : "assets/[name]-[hash][extname]",
+        },
+      },
     },
   };
 });
