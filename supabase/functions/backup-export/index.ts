@@ -9,6 +9,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
+import { validateWikiSnapshotShape } from "../_shared/wikiSnapshotValidation.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -68,6 +69,58 @@ const REQUIRED_KB_TABLES = [
   "kb_change_proposals",
 ] as const;
 
+const REQUIRED_KB_PHASE3_TABLES = [
+  "kb_import_batches",
+  "kb_source_candidates",
+  "kb_entity_candidates",
+  "kb_relation_candidates",
+  "kb_dosage_candidates",
+  "kb_safety_candidates",
+  "kb_review_decisions",
+  "kb_import_errors",
+] as const;
+
+const REQUIRED_KB_PROMOTION_TABLES = [
+  "kb_source_candidate_draft_promotions",
+] as const;
+
+const REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES = [
+  "kb_entity_candidate_contracts",
+  "kb_entity_candidate_names",
+  "kb_entity_candidate_assertions",
+  "kb_entity_candidate_assertion_sources",
+  "kb_entity_candidate_preparation_details",
+  "kb_entity_candidate_homeopathic_details",
+  "kb_entity_candidate_botanical_details",
+  "kb_entity_candidate_nutrient_details",
+  "kb_entity_candidate_product_variant_details",
+  "kb_entity_candidate_components",
+] as const;
+
+const REQUIRED_KB_THERAPEUTIC_TABLES = [
+  "kb_preparation_revision_details",
+  "kb_homeopathic_revision_details",
+  "kb_botanical_revision_details",
+  "kb_nutrient_revision_details",
+  "kb_product_variant_revision_details",
+  "kb_composition_components",
+] as const;
+
+const WIKI_SNAPSHOT_TABLES = [
+  "admin_knowledge_base",
+  "mannayan_products",
+  "knowledge_product_links",
+  ...REQUIRED_KB_TABLES,
+  ...REQUIRED_KB_PHASE3_TABLES,
+  ...REQUIRED_KB_PROMOTION_TABLES,
+  ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
+  ...REQUIRED_KB_THERAPEUTIC_TABLES,
+  "faqs",
+  "practice_pricing",
+  "practice_info",
+] as const;
+const WIKI_SNAPSHOT_TABLE_SET = new Set<string>(WIKI_SNAPSHOT_TABLES);
+
 // Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
 // Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
 // damit neue Tabellen/Buckets automatisch mitgesichert werden.
@@ -81,6 +134,10 @@ const FALLBACK_TABLES = [...new Set([
   "iaa_submissions",
   "infothek_gating",
   ...REQUIRED_KB_TABLES,
+  ...REQUIRED_KB_PHASE3_TABLES,
+  ...REQUIRED_KB_PROMOTION_TABLES,
+  ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
+  ...REQUIRED_KB_THERAPEUTIC_TABLES,
   "knowledge_product_links",
   "mannayan_orders",
   "mannayan_products",
@@ -111,6 +168,31 @@ const AREA_MAP: Record<string, AreaDef> = {
       "mannayan_products",
       "knowledge_product_links",
       ...REQUIRED_KB_TABLES,
+      "kb_import_batches",
+      "kb_source_candidates",
+      "kb_entity_candidates",
+      "kb_relation_candidates",
+      "kb_dosage_candidates",
+      "kb_safety_candidates",
+      "kb_review_decisions",
+      "kb_import_errors",
+      "kb_entity_candidate_contracts",
+      "kb_entity_candidate_names",
+      "kb_entity_candidate_assertions",
+      "kb_entity_candidate_assertion_sources",
+      "kb_entity_candidate_preparation_details",
+      "kb_entity_candidate_homeopathic_details",
+      "kb_entity_candidate_botanical_details",
+      "kb_entity_candidate_nutrient_details",
+      "kb_entity_candidate_product_variant_details",
+      "kb_entity_candidate_components",
+      "kb_source_candidate_draft_promotions",
+      "kb_preparation_revision_details",
+      "kb_homeopathic_revision_details",
+      "kb_botanical_revision_details",
+      "kb_nutrient_revision_details",
+      "kb_product_variant_revision_details",
+      "kb_composition_components",
       "faqs",
       "practice_pricing",
       "practice_info",
@@ -151,7 +233,10 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
     }
     const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/"));
     if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
-    const tables = [...new Set([...filtered, ...REQUIRED_KB_TABLES])].sort();
+    const tables = [...new Set([
+      ...filtered,
+      ...WIKI_SNAPSHOT_TABLES,
+    ])].sort();
     return { tables, source: "openapi" };
   } catch (err) {
     console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
@@ -253,6 +338,43 @@ async function fetchTableAll(
     from += pageSize;
   }
   return all;
+}
+
+type WikiSnapshotValidation = {
+  legacy_rows: number;
+  mapped_articles: number;
+  legacy_snapshot_revisions: number;
+  missing_articles: number;
+  invalid_current_snapshots: number;
+  orphaned_active_articles: number;
+  invalid_source_promotions: number;
+  invalid_therapeutic_catalog_revisions: number;
+  invalid_entity_candidate_contracts: number;
+};
+
+type WikiSnapshot = {
+  tables: Record<(typeof WIKI_SNAPSHOT_TABLES)[number], Record<string, unknown>[]>;
+  manifest: Record<string, { rows: number; sha256: string }>;
+  validation: WikiSnapshotValidation;
+};
+
+const WIKI_ZERO_VALIDATION_KEYS = [
+  "missing_articles",
+  "invalid_current_snapshots",
+  "orphaned_active_articles",
+  "invalid_source_promotions",
+  "invalid_therapeutic_catalog_revisions",
+  "invalid_entity_candidate_contracts",
+] as const;
+
+async function fetchWikiSnapshot(
+  client: ReturnType<typeof createClient>,
+): Promise<WikiSnapshot> {
+  const { data, error } = await client.rpc("kb_export_wiki_snapshot");
+  if (error) throw new Error(`Wiki-Snapshot: ${error.message}`);
+  const snapshot = data as WikiSnapshot | null;
+  validateWikiSnapshotShape(snapshot, WIKI_SNAPSHOT_TABLES, WIKI_ZERO_VALIDATION_KEYS);
+  return snapshot;
 }
 
 async function gatherStats(client: ReturnType<typeof createClient>) {
@@ -464,6 +586,17 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("4. **Secrets eintragen**: alle Namen aus `SECRETS-CHECKLISTE.txt` in Lovable-Cloud → Settings → Secrets.");
   lines.push("5. **Auth-Benutzer wiederherstellen**: User aus `auth/users.json` via Admin-API anlegen (ID übernehmen!). Passwort-Reset-Mails an alle Patienten verschicken.");
   lines.push("6. **Tabellen-Daten zurückspielen**: Die JSON-Dateien aus `db/` per Skript einspielen (z. B. via `psql \\copy` oder Restore-Edge-Function). CSVs sind für manuelle Inspektion in Excel/LibreOffice.");
+  if (stats.tables.some((table) => table.name === "kb_import_batches")) {
+    lines.push("");
+    lines.push(`**Verbindlicher Wiki-Restore für alle ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen:**`);
+    lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten; zuerst `SET CONSTRAINTS ALL DEFERRED`.");
+    lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`; vorhandene Wiki-Daten und Migration-Seeds ohne fachfremdes \`CASCADE\` in umgekehrter FK-Reihenfolge leeren.`);
+    lines.push("- Importreihenfolge: kontrollierte Typen; Kernobjekte vor Revisionen/Abhängigkeiten; Import-Batches vor Kandidaten/Audit; Legacy-Wiki und Produkte vor Produktlinks.");
+    lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten zuletzt laden.");
+    lines.push(`- Danach \`SET CONSTRAINTS ALL IMMEDIATE\` und auf allen ${WIKI_SNAPSHOT_TABLES.length} Tabellen \`ENABLE TRIGGER USER\`.`);
+    lines.push("- `kb_export_wiki_snapshot()` ausführen: alle Fehlerzähler müssen 0 sein und das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
+    lines.push("- Bei jeder Abweichung die gesamte Transaktion zurückrollen.");
+  }
   if (mode === "full") {
     lines.push("7. **Storage-Dateien hochladen**: Dateien aus `storage/<bucket>/` in die neu angelegten Buckets hochladen (Cloud → Files oder via Skript).");
   }
@@ -629,9 +762,20 @@ Deno.serve(async (req) => {
 
       const tablesOut: Record<string, { rows: Record<string, unknown>[]; error?: string }> = {};
       const tableErrors: Array<{ table: string; message: string }> = [];
+      let wikiSnapshot: WikiSnapshot | null = null;
+      if (area.tables.some((table) => WIKI_SNAPSHOT_TABLE_SET.has(table))) {
+        try {
+          wikiSnapshot = await fetchWikiSnapshot(adminClient);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          tableErrors.push({ table: "wiki_snapshot", message });
+        }
+      }
       for (const t of area.tables) {
         try {
-          const rows = await fetchTableAll(adminClient, t);
+          if (WIKI_SNAPSHOT_TABLE_SET.has(t) && !wikiSnapshot) continue;
+          const rows = wikiSnapshot?.tables[t as keyof WikiSnapshot["tables"]]
+            ?? await fetchTableAll(adminClient, t);
           tablesOut[t] = { rows };
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
@@ -683,6 +827,8 @@ Deno.serve(async (req) => {
           generatedAt: new Date().toISOString(),
           tables: tablesOut,
           storage: storageOut,
+          wikiSnapshotManifest: wikiSnapshot?.manifest ?? null,
+          legacyBridgeValidation: wikiSnapshot?.validation ?? null,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -699,11 +845,27 @@ Deno.serve(async (req) => {
     const zip = new JSZip();
     const stats = await gatherStats(adminClient);
 
-    const tableNamesForDb = stats.tables.map((t) => t.name);
+    const tableNamesForDb = [...new Set([
+      ...stats.tables.map((table) => table.name),
+      ...WIKI_SNAPSHOT_TABLES,
+    ])].sort();
     const tableErrors: Array<{ table: string; message: string }> = [];
+    let wikiSnapshot: WikiSnapshot | null = null;
+    if (tableNamesForDb.some((table) => WIKI_SNAPSHOT_TABLE_SET.has(table))) {
+      try {
+        wikiSnapshot = await fetchWikiSnapshot(adminClient);
+        zip.file("db/kb_wiki_snapshot_manifest.json", JSON.stringify(wikiSnapshot.manifest, null, 2));
+        zip.file("db/kb_legacy_bridge_validation.json", JSON.stringify(wikiSnapshot.validation, null, 2));
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        tableErrors.push({ table: "wiki_snapshot", message });
+      }
+    }
     for (const table of tableNamesForDb) {
       try {
-        const rows = await fetchTableAll(adminClient, table);
+        if (WIKI_SNAPSHOT_TABLE_SET.has(table) && !wikiSnapshot) continue;
+        const rows = wikiSnapshot?.tables[table as keyof WikiSnapshot["tables"]]
+          ?? await fetchTableAll(adminClient, table);
         zip.file(`db/${table}.json`, JSON.stringify(rows, null, 2));
         zip.file(`db/${table}.csv`, rowsToCsv(rows));
       } catch (e) {

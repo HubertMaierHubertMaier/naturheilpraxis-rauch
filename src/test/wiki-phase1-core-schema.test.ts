@@ -31,12 +31,47 @@ const kbTables = [
   "kb_article_entities",
   "kb_change_proposals",
 ];
+const kbPhase3Tables = [
+  "kb_import_batches",
+  "kb_source_candidates",
+  "kb_entity_candidates",
+  "kb_relation_candidates",
+  "kb_dosage_candidates",
+  "kb_safety_candidates",
+  "kb_review_decisions",
+  "kb_import_errors",
+];
+const kbPromotionTables = ["kb_source_candidate_draft_promotions"];
+const kbEntityCandidateContractTables = [
+  "kb_entity_candidate_contracts",
+  "kb_entity_candidate_names",
+  "kb_entity_candidate_assertions",
+  "kb_entity_candidate_assertion_sources",
+  "kb_entity_candidate_preparation_details",
+  "kb_entity_candidate_homeopathic_details",
+  "kb_entity_candidate_botanical_details",
+  "kb_entity_candidate_nutrient_details",
+  "kb_entity_candidate_product_variant_details",
+  "kb_entity_candidate_components",
+];
+const kbTherapeuticTables = [
+  "kb_preparation_revision_details",
+  "kb_homeopathic_revision_details",
+  "kb_botanical_revision_details",
+  "kb_nutrient_revision_details",
+  "kb_product_variant_revision_details",
+  "kb_composition_components",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
   "mannayan_products",
   "knowledge_product_links",
   ...kbTables,
+  ...kbPhase3Tables,
+  ...kbEntityCandidateContractTables,
+  ...kbPromotionTables,
+  ...kbTherapeuticTables,
   "faqs",
   "practice_pricing",
   "practice_info",
@@ -400,7 +435,12 @@ describe("Wiki Phase 1 backup coverage", () => {
   });
 
   it("always merges required KB tables into successful OpenAPI discovery", () => {
-    expect(backupExportSource).toContain("new Set([...filtered, ...REQUIRED_KB_TABLES])");
+    expect(backupExportSource).toContain("...WIKI_SNAPSHOT_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_PHASE3_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_PROMOTION_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');
   });
 
@@ -425,5 +465,6 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(dbBlock).toContain('error: "database_table_export_failed"');
     expect(dbBlock).toMatch(/tableErrors\.length > 0[\s\S]*?status: 500/);
     expect(dbBlock).not.toContain(".ERROR.txt");
+    expect(dbBlock).toContain("...WIKI_SNAPSHOT_TABLES");
   });
 });
