@@ -120,6 +120,8 @@ export const BACKUP_AREAS: BackupArea[] = [
       "kb_entity_candidate_product_variant_details",
       "kb_entity_candidate_components",
       "kb_source_candidate_draft_promotions",
+      "kb_entity_candidate_draft_promotions",
+      "kb_entity_candidate_draft_promotion_assertions",
       "kb_preparation_revision_details",
       "kb_homeopathic_revision_details",
       "kb_botanical_revision_details",

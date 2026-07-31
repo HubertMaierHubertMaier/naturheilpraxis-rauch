@@ -1,20 +1,21 @@
 # Wiki Phase 3.3: Typisierter Entitaetskandidatenvertrag
 
-Stand: 2026-07-30
+Stand: 2026-07-31
 
-Status: lokal implementiert und geprueft, nicht nach Supabase ausgerollt, nicht
-committiert und nicht gepusht.
+Status: Schritt 2A ist mit Commit `5c9488e` auf
+`publish-wiki-blueprint-20260727` committed und gepusht. Er wurde nicht nach
+Supabase ausgerollt.
 
 ## Ziel
 
-Schritt 2A schliesst die Luecke zwischen dem generischen Import-Staging und einer
-spaeteren kontrollierten Entity-Promotion. `accepted_as_draft` allein ist keine
+Schritt 2A schliesst die Luecke zwischen dem generischen Import-Staging und der
+nachfolgenden kontrollierten Entity-Promotion. `accepted_as_draft` allein ist keine
 technische Promotionsfreigabe. Ein neuer Entitaetsentwurf darf erst entstehen,
 wenn ein typisierter, unveraenderlicher und quellengebundener Kandidatenvertrag
 vollstaendig geprueft werden kann.
 
 Dieser Block schreibt noch keine Entitaet, Revision, Aussage oder Relation in das
-Kernwissen. Die eigentliche Promotion bleibt Schritt 2B.
+Kernwissen. Die eigentliche Promotion erfolgt getrennt in Schritt 2B.
 
 ## Migration
 
@@ -108,7 +109,9 @@ Das gemeinsame Wiki-Inventar wurde von 38 auf 48 Tabellen erweitert.
 
 - Frontend-, Edge-, Fallback-, OpenAPI- und Datenbank-ZIP-Inventar enthalten
   dieselben Tabellen.
-- Der SQL-Snapshot nimmt neue `kb_*`-Tabellen automatisch auf.
+- Der SQL-Snapshot entdeckt `kb_*`-Tabellen zur Laufzeit. Die exakten Edge-,
+  Fallback- und Restore-Inventare muessen bei Schemaaenderungen trotzdem
+  aktualisiert und validiert werden.
 - Fehlende oder unerwartete Tabellen beziehungsweise Manifesteintraege fuehren
   zum Abbruch.
 - `invalid_entity_candidate_contracts` muss vor einem Backup 0 sein.
@@ -145,10 +148,19 @@ Der Build meldet nur bereits bekannte Hinweise zu veralteten Browserslist-Daten,
 - keine Aenderung am sichtbaren Therapieempfehlungspfad
 - kein Remote-Deployment oder Live-Rollbacktest ohne Supabase-Zugang
 
-## Naechster Block
+## Nachfolgeblock Schritt 2B
 
-Schritt 2B darf erst auf diesem Vertrag aufbauen. Er muss die Readiness unter
-Locks erneut berechnen und dann atomar Kernentitaet, Revision 1 als `draft`,
-Namen, quellengebundene Aussagen, typgerechte Details, Hash und unveraenderliche
-Promotionsprovenienz erzeugen. Bestehende Entitaeten bleiben ein getrenntes
+Schritt 2B baut ausschliesslich auf diesem Vertrag auf. Die Migration
+`20260730150000_create_kb_entity_draft_promotion.sql` berechnet die Readiness
+unter Locks erneut und erzeugt atomar Kernentitaet, Revision 1 als `draft`,
+Namen, quellengebundene Aussagen mit exakten Quellenrevisionen, typgerechte
+Details und Komponenten, kanonische Hashes und unveraenderliche
+Promotionsprovenienz. Bestehende Entitaeten bleiben ein getrenntes
 Revisionsverfahren.
+
+Die lokale Schritt-2B-Implementierung erweitert Snapshot und Restore von 48 auf
+50 Wiki-Tabellen und ist in
+`docs/wiki-phase3-4-entity-draft-promotion-implementation-2026-07-31.md`
+dokumentiert. Sie ist implementiert und verifiziert, gehoert auf den
+Feature-Zweig `publish-wiki-blueprint-20260727` und wurde nicht nach Supabase
+ausgerollt.

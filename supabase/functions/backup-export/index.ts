@@ -82,6 +82,8 @@ const REQUIRED_KB_PHASE3_TABLES = [
 
 const REQUIRED_KB_PROMOTION_TABLES = [
   "kb_source_candidate_draft_promotions",
+  "kb_entity_candidate_draft_promotions",
+  "kb_entity_candidate_draft_promotion_assertions",
 ] as const;
 
 const REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES = [
@@ -112,8 +114,8 @@ const WIKI_SNAPSHOT_TABLES = [
   "knowledge_product_links",
   ...REQUIRED_KB_TABLES,
   ...REQUIRED_KB_PHASE3_TABLES,
-  ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
+  ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
   "faqs",
   "practice_pricing",
@@ -135,8 +137,8 @@ const FALLBACK_TABLES = [...new Set([
   "infothek_gating",
   ...REQUIRED_KB_TABLES,
   ...REQUIRED_KB_PHASE3_TABLES,
-  ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
+  ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
   "knowledge_product_links",
   "mannayan_orders",
@@ -187,6 +189,8 @@ const AREA_MAP: Record<string, AreaDef> = {
       "kb_entity_candidate_product_variant_details",
       "kb_entity_candidate_components",
       "kb_source_candidate_draft_promotions",
+      "kb_entity_candidate_draft_promotions",
+      "kb_entity_candidate_draft_promotion_assertions",
       "kb_preparation_revision_details",
       "kb_homeopathic_revision_details",
       "kb_botanical_revision_details",
@@ -350,6 +354,7 @@ type WikiSnapshotValidation = {
   invalid_source_promotions: number;
   invalid_therapeutic_catalog_revisions: number;
   invalid_entity_candidate_contracts: number;
+  invalid_entity_candidate_draft_promotions: number;
 };
 
 type WikiSnapshot = {
@@ -365,6 +370,7 @@ const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_source_promotions",
   "invalid_therapeutic_catalog_revisions",
   "invalid_entity_candidate_contracts",
+  "invalid_entity_candidate_draft_promotions",
 ] as const;
 
 async function fetchWikiSnapshot(
@@ -592,9 +598,10 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
     lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten; zuerst `SET CONSTRAINTS ALL DEFERRED`.");
     lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`; vorhandene Wiki-Daten und Migration-Seeds ohne fachfremdes \`CASCADE\` in umgekehrter FK-Reihenfolge leeren.`);
     lines.push("- Importreihenfolge: kontrollierte Typen; Kernobjekte vor Revisionen/Abhängigkeiten; Import-Batches vor Kandidaten/Audit; Legacy-Wiki und Produkte vor Produktlinks.");
+    lines.push("- Kernzeilen, Kandidatenverträge und `kb_source_candidate_draft_promotions` zuerst laden; danach `kb_entity_candidate_draft_promotions` (Entitäts-Eltern-Promotionen) und zuletzt `kb_entity_candidate_draft_promotion_assertions` (Assertion-Zuordnungen).");
     lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten zuletzt laden.");
     lines.push(`- Danach \`SET CONSTRAINTS ALL IMMEDIATE\` und auf allen ${WIKI_SNAPSHOT_TABLES.length} Tabellen \`ENABLE TRIGGER USER\`.`);
-    lines.push("- `kb_export_wiki_snapshot()` ausführen: alle Fehlerzähler müssen 0 sein und das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
+    lines.push("- `kb_export_wiki_snapshot()` ausführen: `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts` und `invalid_entity_candidate_draft_promotions` müssen jeweils 0 sein; das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
     lines.push("- Bei jeder Abweichung die gesamte Transaktion zurückrollen.");
   }
   if (mode === "full") {

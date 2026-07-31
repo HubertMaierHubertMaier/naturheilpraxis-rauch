@@ -1,7 +1,11 @@
 # Wiki Phase 3.2+: Therapeutischer Katalog und erklaerbares Retrieval
 
-Datum: 29.07.2026
-Status: Schritt 1 lokal implementiert und verifiziert; nicht committed, nicht ausgerollt. Schritte 2 bis 7 bleiben Planung.
+Datum: 29.07.2026, aktualisiert am 31.07.2026
+Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
+`publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
+implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
+Feature-Zweig. Kein Schritt wurde nach Supabase ausgerollt. Schritte 3 bis 7
+bleiben Planung.
 
 ## Ziel
 
@@ -317,18 +321,31 @@ Unklare Potenz, chemische Form, Produktvariante oder Basisrelation fuehrt zu
 
 ### Schritt 2A: Kandidatenvertrag
 
-Lokal umgesetzt am 2026-07-30: normalisierte, append-only Kandidatenzeilen fuer
-Namen, Aussagen, Quellenbindungen und therapeutische Details, ein versiegelter
-SHA-256-Vertrag sowie ein deterministischer, schreibfreier Promotion-Readiness-
-Pruefer. Backup und gemeinsamer Snapshot umfassen damit 48 Wiki-Tabellen. Dieser
-Teilschritt erzeugt noch kein Kernwissen.
+Am 2026-07-30 umgesetzt und mit Commit `5c9488e` auf
+`publish-wiki-blueprint-20260727` gepusht: normalisierte, append-only
+Kandidatenzeilen fuer Namen, Aussagen, Quellenbindungen und therapeutische
+Details, ein versiegelter SHA-256-Vertrag sowie ein deterministischer,
+schreibfreier Promotion-Readiness-Pruefer. Backup und gemeinsamer Snapshot
+umfassen damit 48 Wiki-Tabellen. Dieser Teilschritt erzeugt selbst noch kein
+Kernwissen und wurde nicht nach Supabase ausgerollt.
 
 ### Schritt 2B: Atomare Draft-Promotion
 
-Naechster Datenbankblock. Er schreibt nur bei erneut bestandener Readiness eine
-neue Kernentitaet mit Revision 1 als `draft`, typisierten Namen, Aussagen,
-Details, Hash und unveraenderlicher Importprovenienz. Kandidaten fuer bestehende
-Entitaeten bleiben ein getrenntes Revisionsverfahren.
+Am 2026-07-31 implementiert und verifiziert. Der admin-only RPC prueft die
+Readiness unter Locks erneut und erzeugt in einer Transaktion eine neue
+Kernentitaet, Revision 1 als `draft`, Namen, quellengebundene Aussagen mit den
+exakten Quellenrevisionen sowie typisierte Details und Komponenten. Wiederholung
+liefert nach erneuter Integritaetspruefung dieselben IDs und legt keine Duplikate
+an. Kandidaten fuer bestehende Entitaeten bleiben ein getrenntes
+Revisionsverfahren.
+
+Zwei append-only Provenienztabellen frieren das strukturierte Eingangsmanifest,
+das Aufloesungsmanifest, die initialen Inhalts-Hashes und alle direkten oder aus
+Kandidaten aufgeloesten Revisionsabhaengigkeiten ein. Der gemeinsame
+Snapshot-/Restore-Vertrag umfasst damit exakt 50 Wiki-Tabellen. Schritt 2B legt
+keine Relationen, Dosierungen, Sicherheitsregeln oder Patientendaten an. Die
+Aenderungen gehoeren ausschliesslich auf den Feature-Zweig und wurden nicht nach
+Supabase ausgerollt.
 
 ## Schritt 3: Strukturierte Patientenfakten
 
@@ -512,9 +529,9 @@ fehlende Daten, deterministische Replay-Hashes, Laufzeit und Validatorfehler.
 Die sichtbare Empfehlung bleibt bis zur fachlichen, technischen,
 datenschutzrechtlichen und Restore-Abnahme im bisherigen Pfad.
 
-## Erster Implementierungsblock
+## Historischer erster Implementierungsblock
 
-Der naechste Codeblock umfasst ausschliesslich Schritt 1:
+Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
 
 1. therapeutische Katalogmigration mit sechs Revisionstabellen
 2. kontrollierte Entitaets- und Relations-Erweiterungen
@@ -528,30 +545,22 @@ Der naechste Codeblock umfasst ausschliesslich Schritt 1:
 Keine echten medizinischen Mittel, Dosierungen, Rubriken oder Patientendaten
 werden in diesem Block angelegt.
 
-## Lokale Ausfuehrungsgrenzen fuer diesen Block
+## Ausfuehrungsgrenzen fuer diesen Block
 
-Die aktuelle Windowsumgebung besitzt vier CPU-Kerne und 16 GB RAM. Bei der
-Bestandsaufnahme waren nur etwa 2,2 bis 2,6 GB physischer Speicher frei; die
-Auslagerungsdatei wurde bereits genutzt. OpenCode, CodeAgentSwarm und Node
-belegten gemeinsam rund 3 GB RAM. Drei bestehende Vite-Prozesse lauschten auf
-`127.0.0.1:4173`, `:4174` und `:4175`.
+Die Verifikation erfolgte auf einer Windowsumgebung mit vier CPU-Kernen und
+16 GB RAM. Fuer reproduzierbare Abschlusslaeufe gilt:
 
-Fuer die Implementierung gilt deshalb:
-
-- hoechstens zwei schwere Agenten-, Test- oder Buildaufgaben parallel
+- hoechstens zwei schwere Test- oder Buildaufgaben parallel
 - fokussierte Tests waehrend der Entwicklung; voller Test und Build
   nacheinander als Abschlussgates
 - bestehende Prozesse nicht ungeprueft beenden, da sie zu parallelen Arbeiten
   gehoeren koennen
-- vor weiterem umfangreichem Code eine ShadowCopy des uncommittierten
-  Temp-Worktrees ausserhalb temporaerer Verzeichnisse erstellen
 - aktuelles aktives Worktree nicht verschieben oder bereinigen
-- neue saubere Worktrees bevorzugt auf dem freien Laufwerk `G:` anlegen
 - Projektbefehle mit der dokumentierten Node-20-/npm-10-Basis ausfuehren; die
   globale Node-24-/npm-11-Installation nicht als neue Projektbaseline behandeln
 - Git-Zeilenenden erst in einem eigenen geprueften Block mit `.gitattributes`
   vereinheitlichen; die 18 bestehenden HTML-Statusaenderungen nicht mitsichern
-- `git worktree prune`, `git gc`, Prozessstopps und OpenCode-/Pluginupdates nur
+- `git worktree prune`, `git gc` und Prozessstopps nur
   nach separater Bestands- und Freigabepruefung
 
 ## Betroffene Dateien des ersten Blocks
@@ -564,7 +573,6 @@ Fuer die Implementierung gilt deshalb:
 - `src/test/wiki-phase2-legacy-bridge.test.ts`
 - `src/test/wiki-phase3-import-staging.test.ts`
 - neu: `src/test/wiki-phase3-2-therapeutic-catalog.test.ts`
-- `OpenCode-Erinnerung/10-Wiki-Datenstruktur.md`
 - Wiki-Phasendokumentation unter `docs/`
 
 ## Verifikation des ersten Blocks

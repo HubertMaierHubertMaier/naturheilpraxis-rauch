@@ -11,6 +11,10 @@ const backupExportSource = readFileSync(
   resolve(process.cwd(), "supabase/functions/backup-export/index.ts"),
   "utf8",
 );
+const backupCenterSource = readFileSync(
+  resolve(process.cwd(), "src/components/admin/BackupCenter.tsx"),
+  "utf8",
+);
 
 const kbTables = [
   "kb_entity_types",
@@ -41,7 +45,11 @@ const kbPhase3Tables = [
   "kb_review_decisions",
   "kb_import_errors",
 ];
-const kbPromotionTables = ["kb_source_candidate_draft_promotions"];
+const kbPromotionTables = [
+  "kb_source_candidate_draft_promotions",
+  "kb_entity_candidate_draft_promotions",
+  "kb_entity_candidate_draft_promotion_assertions",
+];
 const kbEntityCandidateContractTables = [
   "kb_entity_candidate_contracts",
   "kb_entity_candidate_names",
@@ -86,6 +94,34 @@ function requiredBlock(source: string, pattern: RegExp, description: string): st
   const match = source.match(pattern);
   expect(match, `Missing ${description}`).not.toBeNull();
   return match![1];
+}
+
+function expandTableArray(
+  source: string,
+  constants: Record<string, readonly string[]> = {},
+): string[] {
+  const tables: string[] = [];
+  for (const match of source.matchAll(/"([a-z0-9_-]+)"|\.\.\.([A-Z0-9_]+)/g)) {
+    if (match[1]) {
+      tables.push(match[1]);
+      continue;
+    }
+
+    const spreadName = match[2];
+    const spreadTables = constants[spreadName];
+    if (!spreadTables) throw new Error(`Unparsed table-array spread: ${spreadName}`);
+    tables.push(...spreadTables);
+  }
+  return tables;
+}
+
+function requiredTableConstant(source: string, name: string): string[] {
+  const block = requiredBlock(
+    source,
+    new RegExp(`const ${name} = \\[([\\s\\S]*?)\\] as const;`),
+    name,
+  );
+  return expandTableArray(block);
 }
 
 function sqlTableNames(source: string): string[] {
@@ -382,7 +418,39 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("keeps the frontend and Edge Function wiki lists identical and complete", () => {
+  it("parses every production Wiki inventory as the same exact 50-table set", () => {
+    const requiredTables = {
+      REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
+      REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_PHASE3_TABLES",
+      ),
+      REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES",
+      ),
+      REQUIRED_KB_PROMOTION_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_PROMOTION_TABLES",
+      ),
+      REQUIRED_KB_THERAPEUTIC_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_THERAPEUTIC_TABLES",
+      ),
+    };
+    expect(requiredTables).toEqual({
+      REQUIRED_KB_TABLES: kbTables,
+      REQUIRED_KB_PHASE3_TABLES: kbPhase3Tables,
+      REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES: kbEntityCandidateContractTables,
+      REQUIRED_KB_PROMOTION_TABLES: kbPromotionTables,
+      REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
+    });
+
+    const snapshotBlock = requiredBlock(
+      backupExportSource,
+      /const WIKI_SNAPSHOT_TABLES = \[([\s\S]*?)\] as const;/,
+      "Wiki snapshot tables",
+    );
     const frontendWikiBlock = requiredBlock(
       backupAreasSource,
       /id: "wiki"[\s\S]*?tables: \[([\s\S]*?)\],\s*buckets:/,
@@ -393,45 +461,96 @@ describe("Wiki Phase 1 backup coverage", () => {
       /"wiki": \{[\s\S]*?tables: \[([\s\S]*?)\],\s*buckets:/,
       "Edge Function wiki backup tables",
     );
-    const frontendTables = quotedValues(frontendWikiBlock, "double");
-    const requiredKbBlock = requiredBlock(
-      backupExportSource,
-      /const REQUIRED_KB_TABLES = \[([\s\S]*?)\] as const;/,
-      "required KB tables",
-    );
-    const requiredKbTables = quotedValues(requiredKbBlock, "double");
-    const edgeLiteralTables = quotedValues(edgeWikiBlock, "double");
-    const edgeTables = [
-      ...edgeLiteralTables.slice(0, 3),
-      ...requiredKbTables,
-      ...edgeLiteralTables.slice(3),
-    ];
-
-    expect(frontendTables).toEqual(wikiBackupTables);
-    expect(requiredKbTables).toEqual(kbTables);
-    expect(edgeWikiBlock).toContain("...REQUIRED_KB_TABLES");
-    for (const table of kbTables) {
-      expect(backupExportSource.match(new RegExp(`"${table}"`, "g"))).toHaveLength(1);
-    }
-    expect(edgeTables).toEqual(wikiBackupTables);
-    expect(edgeTables).toEqual(frontendTables);
-    expect(new Set(frontendTables).size).toBe(frontendTables.length);
-  });
-
-  it("includes every new wiki table in the Edge Function fallback inventory", () => {
     const fallbackBlock = requiredBlock(
       backupExportSource,
       /const FALLBACK_TABLES = \[\.\.\.new Set\(\[([\s\S]*?)\]\)\]\.sort\(\);/,
       "Edge Function fallback tables",
     );
-    const fallbackTables = quotedValues(fallbackBlock, "double");
 
-    expect(fallbackBlock).toContain("...REQUIRED_KB_TABLES");
-    expect(fallbackTables).toEqual(expect.arrayContaining([
-      "mannayan_products",
-      "knowledge_product_links",
-    ]));
-    expect(fallbackTables.some((table) => table.startsWith("kb_"))).toBe(false);
+    const snapshotTables = expandTableArray(snapshotBlock, requiredTables);
+    const frontendTables = expandTableArray(frontendWikiBlock, requiredTables);
+    const edgeTables = expandTableArray(edgeWikiBlock, requiredTables);
+    const fallbackTables = [
+      ...new Set(expandTableArray(fallbackBlock, requiredTables)),
+    ].sort();
+    const nonKbWikiTables = new Set(
+      snapshotTables.filter((table) => !table.startsWith("kb_")),
+    );
+    const fallbackWikiTables = fallbackTables.filter(
+      (table) => table.startsWith("kb_") || nonKbWikiTables.has(table),
+    );
+
+    expect(snapshotTables).toEqual(wikiBackupTables);
+    expect(edgeTables).toEqual(frontendTables);
+    expect(frontendTables).toEqual(snapshotTables);
+    expect(fallbackWikiTables).toEqual([...snapshotTables].sort());
+
+    for (const [name, tables] of Object.entries({
+      WIKI_SNAPSHOT_TABLES: snapshotTables,
+      BACKUP_AREAS: frontendTables,
+      AREA_MAP: edgeTables,
+      FALLBACK_TABLES: fallbackWikiTables,
+    })) {
+      expect(tables, `${name} length`).toHaveLength(50);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(50);
+    }
+
+    const sourcePromotion = "kb_source_candidate_draft_promotions";
+    const entityPromotion = "kb_entity_candidate_draft_promotions";
+    const assertionMappings = "kb_entity_candidate_draft_promotion_assertions";
+    for (const tables of [snapshotTables, frontendTables, edgeTables]) {
+      const sourcePromotionIndex = tables.indexOf(sourcePromotion);
+      for (const contractTable of requiredTables.REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES) {
+        expect(tables.indexOf(contractTable)).toBeLessThan(sourcePromotionIndex);
+      }
+      expect(sourcePromotionIndex).toBeLessThan(tables.indexOf(entityPromotion));
+      expect(tables.indexOf(entityPromotion)).toBeLessThan(tables.indexOf(assertionMappings));
+    }
+  });
+
+  it("wires Step 2B validation through Edge and both restore instructions", () => {
+    const validationKey = "invalid_entity_candidate_draft_promotions";
+    const validationTypeBlock = requiredBlock(
+      backupExportSource,
+      /type WikiSnapshotValidation = \{([\s\S]*?)\};/,
+      "Wiki snapshot validation type",
+    );
+    const zeroValidationBlock = requiredBlock(
+      backupExportSource,
+      /const WIKI_ZERO_VALIDATION_KEYS = \[([\s\S]*?)\] as const;/,
+      "zero-valued Wiki snapshot validation keys",
+    );
+    const edgeRestoreBlock = requiredBlock(
+      backupExportSource,
+      /if \(stats\.tables\.some\(\(table\) => table\.name === "kb_import_batches"\)\) \{([\s\S]*?)\n {2}\}/,
+      "full Wiki restore instructions",
+    );
+    const subsetRestoreBlock = requiredBlock(
+      backupCenterSource,
+      /const wikiBridgeRestoreLines = area\.id === "wiki" \? \[([\s\S]*?)\] : \[\];/,
+      "subset Wiki restore instructions",
+    );
+
+    expect(validationTypeBlock).toContain(`${validationKey}: number;`);
+    expect(quotedValues(zeroValidationBlock, "double")).toContain(validationKey);
+    expect(backupExportSource).toContain(
+      "validateWikiSnapshotShape(snapshot, WIKI_SNAPSHOT_TABLES, WIKI_ZERO_VALIDATION_KEYS);",
+    );
+
+    for (const instructions of [edgeRestoreBlock, subsetRestoreBlock]) {
+      const entityPromotionIndex = instructions.indexOf("kb_entity_candidate_draft_promotions");
+      const assertionMappingsIndex = instructions.indexOf(
+        "kb_entity_candidate_draft_promotion_assertions",
+      );
+      expect(entityPromotionIndex).toBeGreaterThan(-1);
+      expect(assertionMappingsIndex).toBeGreaterThan(entityPromotionIndex);
+      expect(instructions).toContain(`\`${validationKey}\``);
+    }
+    expect(edgeRestoreBlock).toContain("Kernzeilen, Kandidatenverträge");
+    expect(edgeRestoreBlock).toContain("`kb_source_candidate_draft_promotions`");
+    expect(subsetRestoreBlock).toContain(
+      "Kernzeilen, Kandidatenvertraege und Quellen-Promotionen",
+    );
   });
 
   it("always merges required KB tables into successful OpenAPI discovery", () => {
