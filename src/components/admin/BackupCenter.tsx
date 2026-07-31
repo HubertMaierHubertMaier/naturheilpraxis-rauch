@@ -591,10 +591,10 @@ export function BackupCenter() {
         "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren und `SET CONSTRAINTS ALL DEFERRED` setzen.",
         `2. Auf allen ${wikiTableCount} Wiki-Tabellen \`DISABLE TRIGGER USER\` setzen. Fremdschluesseltrigger bleiben aktiv; Review-, Snapshot-, Import-, Promotion- und Capture-Trigger werden fuer den exakten Reimport pausiert.`,
         "3. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds in umgekehrter Fremdschluesselreihenfolge leeren. Kein `CASCADE` auf nicht zum Wiki gehoerende Tabellen anwenden.",
-        "4. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
+        "4. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; alle Kernzeilen, Kandidatenvertraege und Quellen-Promotionen vor `kb_entity_candidate_draft_promotions`; `kb_entity_candidate_draft_promotion_assertions` zuletzt nach ihrer Entitaets-Eltern-Promotion; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
         "5. Nach dem Import `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren. Nur wenn alle Fremdschluessel gueltig sind, fortfahren.",
         `6. Auf allen ${wikiTableCount} Tabellen \`ENABLE TRIGGER USER\` setzen, bevor validiert oder committet wird.`,
-        "7. `kb_export_wiki_snapshot()` ausfuehren und nur committen, wenn `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions` und `invalid_entity_candidate_contracts` jeweils 0 sind.",
+        "7. `kb_export_wiki_snapshot()` ausfuehren und nur committen, wenn `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts` und `invalid_entity_candidate_draft_promotions` jeweils 0 sind.",
         "8. Jede Zeilenzahl und jeden SHA-256-Wert des neuen Manifests exakt mit `kb_wiki_snapshot_manifest.json` aus diesem Backup vergleichen.",
         "9. Bei jeder Abweichung Transaktion zurueckrollen; niemals Brueckenzeilen automatisch zusammenfuehren oder neu nummerieren.",
       ] : [];
@@ -949,12 +949,12 @@ export function BackupCenter() {
             </table>
           </div>
           <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
-            <p className="font-semibold text-primary mb-1">🤖 Diese Sicherung wächst automatisch mit</p>
+            <p className="font-semibold text-primary mb-1">🤖 Diese Sicherung erkennt viele Erweiterungen automatisch</p>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
               <li><strong>Neue Source-/HTML-/PDF-/MP3-/MP4-Dateien</strong> in <code>src/</code>, <code>public/</code>, <code>supabase/functions/</code>, <code>docs/</code>, <code>scripts/</code> landen automatisch in der nächsten GitHub-ZIP.</li>
-              <li><strong>Neue DB-Tabellen</strong> werden zur Laufzeit aus dem PostgREST-Schema gelesen und automatisch mitgesichert (keine Pflege nötig).</li>
+              <li><strong>Neue DB-Tabellen</strong> werden im Voll-Backup bevorzugt aus dem PostgREST-Schema erkannt. Wiki-Teilbackup, Fallback und Restore-Vertrag müssen bei Schemaänderungen ausdrücklich aktualisiert und getestet werden.</li>
               <li><strong>Neue Storage-Buckets</strong> werden via <code>storage.listBuckets()</code> automatisch erkannt und ins Voll-Backup gezogen.</li>
-              <li><strong>Neue Secrets</strong> trägt Lovable Cloud selbst — die Liste im ZIP wird beim nächsten Backup aktualisiert.</li>
+              <li><strong>Neue Secrets</strong> werden nicht automatisch erkannt. Die kuratierte Wiederherstellungscheckliste muss bei jeder neuen Secret-Variable ausdrücklich aktualisiert und getestet werden.</li>
             </ul>
             <p className="mt-2 text-muted-foreground">
               Diese Übersichts-Tabelle hier ist eine <em>kuratierte Zusammenfassung</em>. Die tatsächlich gesicherten Tabellen/Buckets stehen vollständig im <code>BACKUP-MANIFEST.md</code> jedes ZIPs.
