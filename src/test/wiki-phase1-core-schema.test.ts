@@ -70,6 +70,10 @@ const kbTherapeuticTables = [
   "kb_product_variant_revision_details",
   "kb_composition_components",
 ];
+const kbReleaseTables = [
+  "kb_releases",
+  "kb_release_items",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
@@ -80,6 +84,7 @@ const wikiBackupTables = [
   ...kbEntityCandidateContractTables,
   ...kbPromotionTables,
   ...kbTherapeuticTables,
+  ...kbReleaseTables,
   "faqs",
   "practice_pricing",
   "practice_info",
@@ -418,7 +423,7 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("parses every production Wiki inventory as the same exact 50-table set", () => {
+  it("parses every production Wiki inventory as the same exact 52-table set", () => {
     const requiredTables = {
       REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
       REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
@@ -437,6 +442,10 @@ describe("Wiki Phase 1 backup coverage", () => {
         backupExportSource,
         "REQUIRED_KB_THERAPEUTIC_TABLES",
       ),
+      REQUIRED_KB_RELEASE_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_RELEASE_TABLES",
+      ),
     };
     expect(requiredTables).toEqual({
       REQUIRED_KB_TABLES: kbTables,
@@ -444,6 +453,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES: kbEntityCandidateContractTables,
       REQUIRED_KB_PROMOTION_TABLES: kbPromotionTables,
       REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
+      REQUIRED_KB_RELEASE_TABLES: kbReleaseTables,
     });
 
     const snapshotBlock = requiredBlock(
@@ -491,8 +501,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       AREA_MAP: edgeTables,
       FALLBACK_TABLES: fallbackWikiTables,
     })) {
-      expect(tables, `${name} length`).toHaveLength(50);
-      expect(new Set(tables).size, `${name} uniqueness`).toBe(50);
+      expect(tables, `${name} length`).toHaveLength(52);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(52);
     }
 
     const sourcePromotion = "kb_source_candidate_draft_promotions";
@@ -505,6 +515,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       }
       expect(sourcePromotionIndex).toBeLessThan(tables.indexOf(entityPromotion));
       expect(tables.indexOf(entityPromotion)).toBeLessThan(tables.indexOf(assertionMappings));
+      expect(tables.indexOf("kb_releases")).toBeLessThan(tables.indexOf("kb_release_items"));
     }
   });
 
@@ -533,9 +544,7 @@ describe("Wiki Phase 1 backup coverage", () => {
 
     expect(validationTypeBlock).toContain(`${validationKey}: number;`);
     expect(quotedValues(zeroValidationBlock, "double")).toContain(validationKey);
-    expect(backupExportSource).toContain(
-      "validateWikiSnapshotShape(snapshot, WIKI_SNAPSHOT_TABLES, WIKI_ZERO_VALIDATION_KEYS);",
-    );
+    expect(backupExportSource).toContain("await validateWikiSnapshotShape(");
 
     for (const instructions of [edgeRestoreBlock, subsetRestoreBlock]) {
       const entityPromotionIndex = instructions.indexOf("kb_entity_candidate_draft_promotions");
@@ -560,6 +569,7 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(backupExportSource).toContain("...REQUIRED_KB_PROMOTION_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');
   });
 

@@ -21,6 +21,11 @@ describe("therapy workflow UI structure", () => {
       .toBeGreaterThan(source.indexOf("Befund-Auswertung {isAnalyzingDocs"));
     expect(source).toContain('TabsTrigger value="vieva-plus"');
     expect(source).toContain('TabsTrigger value="metatron"');
+    expect(source).not.toContain("<PathogenInput");
+    expect(source).not.toContain("Belastungen / Pathogene");
+    expect(source).not.toContain("const [pathogens, setPathogens]");
+    expect(source).not.toContain("belastungen: belastungenText");
+    expect(source).toContain("mergeLegacyPathogenContext(asText(d.metatronHeel), legacyPathogenTextFromInput(d))");
     expect(count(source, "requireDocumentDate")).toBe(2);
     expect(source).toContain("applyExtractedToInputs({ forPseudonymId: analysisPid");
     expect(source).toContain("if (docAbortRef.current)");

@@ -29,6 +29,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BACKUP_AREAS, type BackupArea } from "@/lib/backupAreas";
+import {
+  validateTherapyInputSubsetPayload,
+  type TherapyInputSnapshotManifestV2,
+  type TherapyInputSnapshotValidationV2,
+} from "@/lib/therapyInputBackup";
+import { validateWikiSubsetPayload } from "@/lib/wikiBackup";
 
 type Stats = {
   generatedAt: string;
@@ -500,11 +506,25 @@ export function BackupCenter() {
       const payload = (await res.json()) as {
         area: string;
         generatedAt: string;
-        tables: Record<string, { rows: Record<string, unknown>[]; error?: string }>;
+        tables: Record<string, {
+          rows?: Record<string, unknown>[];
+          serializedRows?: string;
+          rowCount: number;
+          error?: string;
+        }>;
         storage: Record<string, Array<{ path: string; size: number; signedUrl: string }>>;
         wikiSnapshotManifest?: Record<string, { rows: number; sha256: string }> | null;
         legacyBridgeValidation?: Record<string, number> | null;
+        therapyInputSnapshotVersion?: number | null;
+        therapyInputSnapshotManifest?: Partial<TherapyInputSnapshotManifestV2> | null;
+        therapyInputValidation?: Partial<TherapyInputSnapshotValidationV2> | null;
       };
+
+      if (area.id === "iaa-icd10") {
+        await validateTherapyInputSubsetPayload(payload);
+      } else if (area.id === "wiki") {
+        await validateWikiSubsetPayload(payload, area.tables);
+      }
 
       // 2) Tabellen ablegen
       for (const [name, t] of Object.entries(payload.tables)) {
@@ -512,8 +532,10 @@ export function BackupCenter() {
           zip.file(`db/${name}.ERROR.txt`, t.error);
           warnings++;
           log(`⚠ Tabelle ${name}: ${t.error}`);
+        } else if (typeof t.serializedRows === "string") {
+          zip.file(`db/${name}.json`, t.serializedRows);
         } else {
-          zip.file(`db/${name}.json`, JSON.stringify(t.rows, null, 2));
+          zip.file(`db/${name}.json`, JSON.stringify(t.rows ?? [], null, 2));
         }
       }
       if (payload.legacyBridgeValidation) {
@@ -521,6 +543,24 @@ export function BackupCenter() {
       }
       if (payload.wikiSnapshotManifest) {
         zip.file("db/kb_wiki_snapshot_manifest.json", JSON.stringify(payload.wikiSnapshotManifest, null, 2));
+      }
+      if (payload.therapyInputSnapshotManifest) {
+        zip.file(
+          "db/therapy_input_snapshot_manifest.json",
+          JSON.stringify(payload.therapyInputSnapshotManifest, null, 2),
+        );
+      }
+      if (typeof payload.therapyInputSnapshotVersion === "number") {
+        zip.file(
+          "db/therapy_input_snapshot_version.json",
+          JSON.stringify({ snapshot_version: payload.therapyInputSnapshotVersion }, null, 2),
+        );
+      }
+      if (payload.therapyInputValidation) {
+        zip.file(
+          "db/therapy_input_snapshot_validation.json",
+          JSON.stringify(payload.therapyInputValidation, null, 2),
+        );
       }
       setProgress(25);
 
@@ -590,14 +630,53 @@ export function BackupCenter() {
         "",
         "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren und `SET CONSTRAINTS ALL DEFERRED` setzen.",
         `2. Auf allen ${wikiTableCount} Wiki-Tabellen \`DISABLE TRIGGER USER\` setzen. Fremdschluesseltrigger bleiben aktiv; Review-, Snapshot-, Import-, Promotion- und Capture-Trigger werden fuer den exakten Reimport pausiert.`,
-        "3. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds in umgekehrter Fremdschluesselreihenfolge leeren. Kein `CASCADE` auf nicht zum Wiki gehoerende Tabellen anwenden.",
-        "4. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; alle Kernzeilen, Kandidatenvertraege und Quellen-Promotionen vor `kb_entity_candidate_draft_promotions`; `kb_entity_candidate_draft_promotion_assertions` zuletzt nach ihrer Entitaets-Eltern-Promotion; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
-        "5. Nach dem Import `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren. Nur wenn alle Fremdschluessel gueltig sind, fortfahren.",
-        `6. Auf allen ${wikiTableCount} Tabellen \`ENABLE TRIGGER USER\` setzen, bevor validiert oder committet wird.`,
-        "7. `kb_export_wiki_snapshot()` ausfuehren und nur committen, wenn `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts` und `invalid_entity_candidate_draft_promotions` jeweils 0 sind.",
-        "8. Jede Zeilenzahl und jeden SHA-256-Wert des neuen Manifests exakt mit `kb_wiki_snapshot_manifest.json` aus diesem Backup vergleichen.",
-        "9. Bei jeder Abweichung Transaktion zurueckrollen; niemals Brueckenzeilen automatisch zusammenfuehren oder neu nummerieren.",
+        "3. Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources` auf NULL setzen. Dies loest die absichtlich restriktiven Parent-zu-Revisionszeiger innerhalb derselben Restore-Transaktion.",
+        "4. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds mit `DELETE` in umgekehrter Fremdschluesselreihenfolge leeren, dabei `kb_release_items` vor `kb_releases`. Bestehende `therapy_input_facts` bleiben unangetastet. Ihr `kb_entity_id`-Fremdschluessel ist `NO ACTION DEFERRABLE` und darf erst nach dem Reimport derselben Entitaets-UUIDs geprueft werden. `kb_entities` deshalb weder per `TRUNCATE` noch mit `CASCADE` leeren.",
+        "5. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; alle Kernzeilen, Kandidatenvertraege und Quellen-Promotionen vor `kb_entity_candidate_draft_promotions`; `kb_entity_candidate_draft_promotion_assertions` zuletzt innerhalb des Promotionsblocks nach ihrer Entitaets-Eltern-Promotion; `kb_releases` erst nach den Kernobjekten und `kb_release_items` zuletzt nach allen gebundenen Revisionen und Abhaengigkeiten; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
+        "6. Nach dem Import `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren. Nur wenn alle Fremdschluessel einschliesslich bestehender `therapy_input_facts.kb_entity_id` gueltig sind, fortfahren.",
+        `7. Auf allen ${wikiTableCount} Tabellen \`ENABLE TRIGGER USER\` setzen, bevor validiert oder committet wird.`,
+        "8. `kb_export_wiki_snapshot()` ausfuehren und nur committen, wenn `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts`, `invalid_entity_candidate_draft_promotions` und `invalid_knowledge_releases` jeweils 0 sind.",
+        "9. Jede Zeilenzahl und jeden SHA-256-Wert des neuen Manifests exakt mit `kb_wiki_snapshot_manifest.json` aus diesem Backup vergleichen.",
+        "10. Bei jeder Abweichung Transaktion zurueckrollen; niemals Brueckenzeilen automatisch zusammenfuehren oder neu nummerieren.",
       ] : [];
+      const therapyInputRestoreLines = area.id === "iaa-icd10" ? [
+        "",
+        "## Verbindlicher Restore fuer den Therapie-Eingabe-Snapshot",
+        "",
+        "`therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts` und `therapy_input_fact_sources` bilden Snapshot-Version 2. Die JSON-Dateien wurden verlustfrei innerhalb eines einzigen Datenbank-Snapshots serialisiert.",
+        "",
+        "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren; direkte Schreibrechte fuer `authenticated` oder `service_role` nicht lockern.",
+        "2. Einen kompatiblen Wiki-Snapshot einschliesslich aller durch `kb_entity_id` referenzierten `kb_entities` zuerst wiederherstellen.",
+        "3. `SET CONSTRAINTS ALL DEFERRED` ausfuehren und auf allen vier Tabellen `DISABLE TRIGGER USER` setzen.",
+        "4. Löschreihenfolge: `therapy_input_fact_sources`, `therapy_input_facts`, `therapy_input_sources`, `therapy_input_revisions`. Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen. Die JSON-Zahlen nicht durch JavaScript parsen oder neu serialisieren.",
+        "   Owner-SQL fuer Revisionen: `INSERT INTO public.therapy_input_revisions SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_revisions, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_revisions.json` als Parameter `$1`.",
+        "   Owner-SQL fuer Quellen: `INSERT INTO public.therapy_input_sources SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_sources, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_sources.json` als Parameter `$1`.",
+        "   Owner-SQL fuer Fakten: `INSERT INTO public.therapy_input_facts SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_facts, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_facts.json` als Parameter `$1`.",
+        "   Owner-SQL fuer Faktenquellen: `INSERT INTO public.therapy_input_fact_sources SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_fact_sources, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_fact_sources.json` als Parameter `$1`.",
+        "5. `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren und alle vier Tabellen-Trigger wieder aktivieren.",
+        "6. `therapy_input_export_snapshot_v2()` ausfuehren. Snapshot-Version 2, `invalid_revision_count = 0` und `invalid_fact_count = 0` sind Pflicht; alle vier Zeilenzahlen und SHA-256-Werte muessen exakt `therapy_input_snapshot_manifest.json` entsprechen.",
+        "7. Nur dann committen. Bei jeder Abweichung die gesamte Transaktion zurueckrollen; kein tabellenweiser Autocommit-Restore.",
+      ] : [];
+      const restoreEntryLines = area.id === "iaa-icd10" ? [
+        "## Wiederherstellung nur ueber den Datenbankeigner",
+        "",
+        "Dieses ZIP darf fuer eine Bestandsaufnahme und einen Restore-Plan in den Lovable-Chat geladen werden. Die vier Therapie-Eingabetabellen duerfen jedoch weder durch Lovable, eine Restore-Edge-Function noch anderes JavaScript importiert werden. Der eigentliche Import muss dem unten beschriebenen parameterisierten Owner-SQL-Vertrag folgen.",
+        "",
+      ] : area.id === "wiki" ? [
+        "## Wiederherstellung nur ueber den Datenbankeigner",
+        "",
+        "Dieses ZIP darf fuer eine Bestandsaufnahme und einen Restore-Plan in den Lovable-Chat geladen werden. Die Wiki-Tabellen duerfen jedoch weder durch Lovable noch tabellenweise importiert werden. Der eigentliche Import muss dem unten beschriebenen Owner-Transaktionsvertrag folgen.",
+        "",
+      ] : [
+        "## Wiederherstellen über Lovable-Chat",
+        "",
+        "1. Dieses ZIP in den Lovable-Chat ziehen.",
+        `2. Schreiben: *"Bitte spiele dieses Teilbereich-Backup '${area.label}' wieder ein. ` +
+          `Lies AREA-MANIFEST.json und frage VOR jedem destruktiven Schritt um Bestätigung."*`,
+        "3. Lovable importiert nur die zu diesem Bereich gehörenden Tabellen + Dateien — ",
+        "   der Rest deiner App bleibt unangetastet.",
+        "",
+      ];
       zip.file(
         "AREA-MANIFEST.json",
         JSON.stringify(
@@ -607,7 +686,10 @@ export function BackupCenter() {
             description: area.description,
             generatedAt: payload.generatedAt,
             tables: Object.fromEntries(
-              Object.entries(payload.tables).map(([n, t]) => [n, { rows: t.rows.length, error: t.error ?? null }]),
+              Object.entries(payload.tables).map(([n, t]) => [n, {
+                rows: t.rowCount,
+                error: t.error ?? null,
+              }]),
             ),
             buckets: Object.fromEntries(
               Object.entries(payload.storage).map(([b, files]) => [
@@ -619,6 +701,9 @@ export function BackupCenter() {
             sourcePaths: area.sourcePaths,
             wikiSnapshotManifest: payload.wikiSnapshotManifest ?? null,
             legacyBridgeValidation: payload.legacyBridgeValidation ?? null,
+            therapyInputSnapshotVersion: payload.therapyInputSnapshotVersion ?? null,
+            therapyInputSnapshotManifest: payload.therapyInputSnapshotManifest ?? null,
+            therapyInputValidation: payload.therapyInputValidation ?? null,
           },
           null,
           2,
@@ -637,20 +722,14 @@ export function BackupCenter() {
           `- **public-assets/** — Statische Dateien aus public/ (${area.publicAssets.length} Datei(en))`,
           `- **AREA-MANIFEST.json** — Komplette Liste inkl. zugehöriger Source-Code-Pfade`,
           "",
-          `## Wiederherstellen über Lovable-Chat`,
-          "",
-          "1. Dieses ZIP in den Lovable-Chat ziehen.",
-          `2. Schreiben: *"Bitte spiele dieses Teilbereich-Backup '${area.label}' wieder ein. ` +
-            `Lies AREA-MANIFEST.json und frage VOR jedem destruktiven Schritt um Bestätigung."*`,
-          "3. Lovable importiert nur die zu diesem Bereich gehörenden Tabellen + Dateien — ",
-          "   der Rest deiner App bleibt unangetastet.",
-          "",
+          ...restoreEntryLines,
           `## Zugehörige Source-Code-Pfade`,
           "Falls auch Code dieses Bereichs wiederhergestellt werden muss, im GitHub-Code-ZIP",
           "gezielt diese Pfade extrahieren:",
           "",
           ...area.sourcePaths.map((p) => `- \`${p}\``),
           ...wikiBridgeRestoreLines,
+          ...therapyInputRestoreLines,
           "",
         ].join("\n"),
       );
@@ -864,8 +943,9 @@ export function BackupCenter() {
             <Info className="h-4 w-4" />
             <AlertTitle>Wann brauchst du das?</AlertTitle>
             <AlertDescription className="text-sm">
-              Wenn etwas kaputtgeht, ziehst du die ZIP-Datei einfach in den Lovable-Chat und schreibst
-              „Bitte wiederherstellen". Details und Profi-Optionen findest du in den Abschnitten unten.
+              Wenn etwas kaputtgeht, kannst du die ZIP-Datei im Lovable-Chat prüfen und einen
+              Restore-Plan erstellen lassen. Für Wiki- und Therapie-Eingabe-Snapshots gelten die
+              Owner-Verträge im Manifest; diese Tabellen darf Lovable nicht direkt importieren.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -976,7 +1056,7 @@ export function BackupCenter() {
             zugehörigen <em>DB-Tabellen + Storage-Dateien + Public-Assets + Restore-Anleitung</em>.
             <br />
             <strong>Vorteil:</strong> Wenn nur ein Teilbereich beschädigt ist, brauchst du nur das
-            kleine ZIP für diesen Bereich an Lovable zu schicken — nicht das ganze Mega-ZIP.
+            kleine ZIP für diesen Bereich von Lovable prüfen zu lassen, nicht das ganze Mega-ZIP.
             <br />
             <strong>Empfehlung:</strong> 1× pro Monat alle Bereiche sichern; bei intensiver Arbeit
             an einem Bereich (z. B. Wiki-Pflege) direkt vor & nach der Sitzung das passende ZIP.
@@ -1015,12 +1095,13 @@ export function BackupCenter() {
             <Info className="h-4 w-4" />
             <AlertTitle>Wie spiele ich ein Teilbereich-ZIP zurück?</AlertTitle>
             <AlertDescription className="text-sm">
-              ZIP in den Lovable-Chat ziehen und schreiben:
+              ZIP zur Bestandsaufnahme in den Lovable-Chat ziehen und schreiben:
               <code className="ml-1 rounded bg-muted px-1 py-0.5 text-xs">
-                Bitte spiele dieses Teilbereich-Backup wieder ein
+                Bitte prüfe dieses Teilbereich-Backup und erstelle einen Restore-Plan
               </code>
               . Lovable liest die mitgelieferte <code>RESTORE-ANLEITUNG.md</code> und fragt vor
-              jedem destruktiven Schritt nach.
+              jedem destruktiven Schritt nach. Wiki- und Therapie-Eingabetabellen werden nur nach
+              dem dort beschriebenen Owner-Transaktionsvertrag importiert.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -1135,8 +1216,9 @@ export function BackupCenter() {
             <AlertTitle>So nutzt du das Backup</AlertTitle>
             <AlertDescription className="space-y-1 text-sm">
               <p>
-                Das ZIP enthält jede Tabelle als <code>.csv</code> (Excel) <em>und</em>{" "}
-                <code>.json</code> (zum maschinellen Wieder-Einspielen), eine{" "}
+                Das ZIP enthält normale Tabellen als <code>.csv</code> (Excel) <em>und</em>{" "}
+                <code>.json</code>. Die vier Therapie-Eingabetabellen liegen zum Schutz großer
+                Ganzzahlen ausschließlich als verlustfreie JSON-Dateien vor. Zusätzlich enthält es eine{" "}
                 <code>BACKUP-MANIFEST.md</code> mit Schritt-für-Schritt-Wiederherstellung und eine{" "}
                 <code>SECRETS-CHECKLISTE.txt</code> mit allen Secret-Namen.
               </p>
@@ -1205,12 +1287,12 @@ export function BackupCenter() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Upload className="h-5 w-5 text-primary" />
-            Wiederherstellung — so gibst du mir die Daten zurück
+            Wiederherstellung sicher vorbereiten
           </CardTitle>
           <CardDescription>
-            Wenn etwas verloren geht (von „Tabelle leer" bis „Totalausfall"), führst du mir die
-            gesicherten Dateien einfach per Lovable-Chat wieder zu. Kein extra Upload-Knopf nötig
-            — Lovable kann Dateianhänge im Chat direkt lesen und einspielen.
+            Lovable kann die gesicherten Dateien im Chat lesen, den Inhalt prüfen und einen
+            Restore-Plan erstellen. Unveränderliche Wiki- und Therapie-Eingabe-Snapshots dürfen
+            nicht direkt durch Lovable oder JavaScript eingespielt werden.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -1225,7 +1307,7 @@ export function BackupCenter() {
               </ul>
             </li>
             <li>Schreibe in den Chat den fertigen Prompt unten (oder eigene Formulierung).</li>
-            <li>Ich (Lovable) lese ZIP-Inhalt + Manifest, mache einen Plan und frage dich vor jedem destruktiven Schritt um Bestätigung.</li>
+            <li>Lovable liest ZIP-Inhalt und Manifest, erstellt einen Plan und fragt vor jedem destruktiven Schritt um Bestätigung.</li>
           </ol>
 
           <div className="space-y-2">
@@ -1236,7 +1318,7 @@ export function BackupCenter() {
                 variant="outline"
                 className="gap-1.5"
                 onClick={() => {
-                  const txt = `Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl, Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung (insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen). Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!), 3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`;
+                  const txt = `Bitte prüfe dieses Backup und erstelle zuerst einen Restore-Plan. Lies BACKUP-MANIFEST.md und stats.json im Anhang. Zeige mir eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl, Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung (insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen). Wiki- und Therapie-Eingabe-Snapshots niemals direkt durch Lovable oder JavaScript importieren; dafür ausschließlich die Owner-Transaktionsverträge im Manifest verwenden. Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!), 3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`;
                   navigator.clipboard.writeText(txt).then(
                     () => toast.success("Prompt kopiert."),
                     () => toast.error("Kopieren fehlgeschlagen."),
@@ -1249,10 +1331,13 @@ export function BackupCenter() {
               </Button>
             </div>
             <pre className="overflow-auto rounded border bg-muted/30 p-3 text-xs">
-{`Bitte spiele dieses Backup wieder ein. Lies zuerst BACKUP-MANIFEST.md und stats.json
-im Anhang. Zeige mir dann eine Übersicht (Tabellen + Zeilenzahlen, Auth-User-Anzahl,
+{`Bitte prüfe dieses Backup und erstelle zuerst einen Restore-Plan. Lies
+BACKUP-MANIFEST.md und stats.json im Anhang. Zeige mir eine Übersicht
+(Tabellen + Zeilenzahlen, Auth-User-Anzahl,
 Storage-Dateien) UND frage mich VOR jedem destruktiven Schritt um Bestätigung
 (insbesondere vor TRUNCATE/DELETE auf bestehenden Tabellen).
+Wiki- und Therapie-Eingabe-Snapshots niemals direkt durch Lovable oder JavaScript
+importieren; dafür ausschließlich die Owner-Transaktionsverträge im Manifest verwenden.
 Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
 3) Tabellen in Foreign-Key-Reihenfolge importieren, 4) Storage-Dateien hochladen.`}
             </pre>
@@ -1264,8 +1349,9 @@ Reihenfolge: 1) Schema prüfen, 2) Auth-User wiederherstellen (gleiche IDs!),
             <AlertDescription className="text-sm">
               Im echten Worst Case (Cloud-Datenbank weg) wäre auch ein hochgeladenes ZIP in der
               gleichen Cloud zerstört. Daher liegt der Wiederherstellungs-Pfad <em>außerhalb</em>{" "}
-              der App — über Lovable-Chat. Für Teil-Schäden (z. B. eine Tabelle versehentlich
-              geleert) kann ich gezielt einzelne Dateien aus dem ZIP nachfüttern.
+              der App und beginnt mit einer Prüfung im Lovable-Chat. Normale Einzeltabellen können
+              nach Bestätigung gezielt wiederhergestellt werden; für Wiki- und Therapie-Eingabe-
+              Snapshots gilt immer der Owner-Transaktionsvertrag im Manifest.
             </AlertDescription>
           </Alert>
         </CardContent>

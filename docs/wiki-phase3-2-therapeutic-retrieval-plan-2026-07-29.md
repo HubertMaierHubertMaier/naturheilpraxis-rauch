@@ -1,10 +1,13 @@
 # Wiki Phase 3.2+: Therapeutischer Katalog und erklaerbares Retrieval
 
-Datum: 29.07.2026, aktualisiert am 31.07.2026
+Datum: 29.07.2026, aktualisiert am 01.08.2026
 Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
 `publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
 implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
-Feature-Zweig. Kein Schritt wurde nach Supabase ausgerollt. Schritte 3 bis 7
+Feature-Zweig. Schritte 3A und 3B sind am 31.07.2026 lokal implementiert und
+verifiziert. Schritt 4A ist am 01.08.2026 als medizinisch inaktiver
+Knowledge-Release-Vertrag lokal implementiert. Diese drei Schritte sind noch
+nicht committed, gepusht oder nach Supabase ausgerollt. Schritte 4B bis 7
 bleiben Planung.
 
 ## Ziel
@@ -347,16 +350,72 @@ keine Relationen, Dosierungen, Sicherheitsregeln oder Patientendaten an. Die
 Aenderungen gehoeren ausschliesslich auf den Feature-Zweig und wurden nicht nach
 Supabase ausgerollt.
 
-## Schritt 3: Strukturierte Patientenfakten
+## Schritt 3: Strukturierte Patienteneingaben und Fakten
 
 Dieser Schritt erfolgt in einer eigenen Migration ausserhalb der `kb_*`-Tabellen.
 
-Geplante Tabellen:
+### Schritt 3A: Unveraenderlicher Eingabe- und Quellenumschlag
+
+Lokal implementiert in:
+
+`supabase/migrations/20260731120000_create_therapy_input_envelope.sql`
+
+Tabellen:
 
 - `therapy_input_revisions`
 - `therapy_input_sources`
-- `therapy_input_facts`
-- `therapy_input_fact_sources`
+
+Der Teilschritt friert ausschliesslich den deidentifizierten Eingabestand und
+seine geordneten Quellenartefakte ein. Beide Tabellen sind append-only, besitzen
+eine kanonische SHA-256-Kette und koennen nur gemeinsam in einer Transaktion
+versiegelt werden. Es gibt keine direkte Patienten-, Benutzer-, Session-,
+Anamnese- oder Wissensdatenbank-Fremdschluesselbeziehung.
+
+Der Zugriff ist auf Administrator-Lesen und `service_role`-Lesen beschraenkt.
+Ein Schreib-RPC, Backfill, Faktenextraktion und eine Live-Anbindung an
+`therapy-recommend` sind ausdruecklich nicht enthalten. Freie Patientencodes
+werden an dieser Auditgrenze nicht akzeptiert; zugelassen ist nur das
+Praxispseudonym `P-YYYY-NNNN`.
+
+Der Umschlag ist kein Rohdump des heutigen Autosave-/Anamneseobjekts. Die
+eingefrorene PII-Pruefung `clinical-deidentification-v1` lehnt generische und
+zusammengesetzte Namens-, Kontakt-, Adress-, Versicherungs-, Geburts- und
+Dateipfadfelder fail-closed ab. Ein spaeterer Capture-Writer muss klinische
+Bezeichnungen in eindeutige semantische Schluessel wie `medication_label`
+ueberfuehren, direkte Identifikatoren entfernen, eine Residualpruefung
+durchfuehren und erst danach hashen. Neue PII-Regeln erhalten eine neue Version;
+die v1-Funktionen duerfen wegen historischer Restorefaehigkeit nicht ersetzt
+werden.
+
+Eine Revision ist auf 64 Quellen, 8 MiB je JSON-Objekt und insgesamt 32 MiB fuer
+Umschlag, Quellenpayloads, Locator und neutrale IDs begrenzt.
+
+Das positive v1-Schema akzeptiert im Umschlag exakt `format`, `clinical_text`
+und einen eng typisierten `context`. Quellenpayloads enthalten exakt
+`format: text`, deidentifizierten Fliesstext und `language`. JSON oder
+JSON-artige Rohstrukturen im Text sind unzulaessig; bekannte Redaktionsmarker
+und klinische Referenzbereiche bleiben erlaubt. Fundstellen sind leer oder
+neutral kanonisiert, zum Beispiel `page:2`, `section:laboratory` oder
+`time:00:10-00:30`.
+
+Der historische Backupvertrag `therapy_input_export_snapshot_v1()` bleibt
+definition- und bytegleich erhalten. Er serialisiert die beiden Step-3A-Tabellen
+bereits in PostgreSQL verlustfrei als JSON-Text, damit grosse JSON-Zahlen nicht
+durch JavaScript gerundet werden. Der aktuelle Backup-Pfad verwendet nach
+Schritt 3B ausschliesslich den unten beschriebenen Vier-Tabellen-Snapshot v2.
+Restore ist nur als Datenbankeigner in einer Transaktion zulaessig. Diese
+Patientendaten gehoeren nie in `kb_export_wiki_snapshot()`.
+
+Verifikation am 31.07.2026:
+
+- 17/17 fokussierte PGlite-Vertrags-, PII-, RLS-, Snapshot- und Restoretests
+- 107/107 verwandte Wiki-/Backup-Tests
+- 374/374 Tests im vollstaendigen Projektlauf
+- beide TypeScript-Projekte ohne Fehler
+- gezielter ESLint-Lauf der geaenderten TypeScript-Dateien ohne Fehler
+- Produktionsbuild erfolgreich
+- unabhaengige Abschlusspruefung mit ausdruecklichem Sign-off, keine P1/P2
+- kein Supabase-Deployment, kein Backfill und kein Commit/Push
 
 ### Eingaberevision
 
@@ -379,6 +438,23 @@ Fundstellen fuer:
 - Vieva Plus
 - externe Recherche
 - Bestellung
+
+### Schritt 3B: Atomare Patientenfakten
+
+Lokal implementiert in:
+
+`supabase/migrations/20260731130000_create_therapy_input_facts.sql`
+
+Neue Tabellen:
+
+- `therapy_input_facts`
+- `therapy_input_fact_sources`
+
+Die Migration ist rein additiv. Sie erzeugt keinen Capture-Writer, keinen
+Backfill und keine Anbindung an `therapy-recommend`, Patientenspeicherung oder
+sichtbare Therapieausgabe. Ein Produktionsscan stellt sicher, dass die vier
+`therapy_input_*`-Tabellen und ihre Export-RPCs vorerst nur in den ausdruecklich
+erlaubten Backupflaechen vorkommen.
 
 ### Atomare Fakten
 
@@ -408,11 +484,130 @@ Metatron/NLS bleibt als `complementary_measurement` gekennzeichnet und wird
 nicht still zu einer gesicherten Diagnose. Externe Recherche bleibt Quelle fuer
 eine Pruefung und wird nicht automatisch zum Patientenfakt.
 
+`fact_value` ist keine freie EAV-Ablage, sondern eine begrenzte getaggte Struktur
+fuer `none`, `text`, `boolean`, `coded` oder `quantity`. Codesysteme,
+Komparatoren, Einheiten, Referenzbereiche, Textlaengen, Faktenzahl und
+Gesamtgroesse sind kontrolliert. Demografische Fakten besitzen eine kleine
+Allowlist mit typisierten Wertebereichen beziehungsweise kontrollierten Codes;
+Geburtsdatum, Name, Kontakt-, Versicherungs-, Benutzer-, Session- und
+Dateipfadsemantik bleibt auch bei getrennten oder zusammengesetzten Schluesseln
+und Fundstellen gesperrt. Legitimes klinisches Vokabular wie `pathogen` und
+`mobility` bleibt zulaessig.
+
+Jeder Fakt benoetigt mindestens eine primaere Quelle und fuer jede Bindung eine
+nichtleere kanonische Fundstelle. `external_research` ist in jeder Quellenrolle,
+allein oder gemischt, unzulaessig. `complementary_measurement` und `vieva_plus`
+duerfen nur eng begrenzte Untersuchungsbefunde oder offene Fragen mit
+`review_only` beziehungsweise auditierbar `rejected`, ohne `kb_entity_id`,
+erzeugen.
+
+Fakten und Quellenbindungen sind append-only. Korrekturen bleiben innerhalb
+derselben Eingaberevision, muessen Typ und Schluessel beibehalten, zeitlich nach
+dem Vorgaenger liegen und duerfen den Review-Vertrauensstand nicht absenken.
+Pro Vorgaenger ist hoechstens eine Korrektur erlaubt. Eine Revisionssperre
+serialisiert konkurrierende Einfuegungen, damit Faktenzahl- und
+8-MiB-Gesamtgrenze nicht durch parallele Transaktionen umgangen werden.
+
+Der Zugriff bleibt admin-only lesbar; `service_role` darf nur lesen und den
+Snapshot exportieren. Patienten, `anon`, `kb_importer` und `kb_import_runtime`
+erhalten keinen Zugriff. Es existiert weiterhin kein Schreib-RPC.
+
+Der aktuelle Backupvertrag `therapy_input_export_snapshot_v2()` exportiert
+`therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts` und
+`therapy_input_fact_sources` gemeinsam, verlustfrei und deterministisch. Version,
+exakte Tabellengrenze, Zeilenzahlen, SHA-256-Werte,
+`invalid_revision_count = 0` und `invalid_fact_count = 0` werden sowohl an der
+Edge-Grenze als auch vor dem Browser-ZIP fail-closed geprueft. Der Fakten-Snapshot
+wird vor dem spaeteren Wiki-Snapshot erfasst; durch Append-only und den
+restriktiven `kb_entity_id`-Fremdschluessel muss der spaetere Wiki-Snapshot alle
+referenzierten Entitaeten enthalten. Restore erfolgt ausschliesslich als
+Datenbankeigner, nach dem Wiki-Restore, in einer Transaktion und ohne
+JavaScript-Neuserialisierung.
+
+Verifikation am 31.07.2026:
+
+- 47/47 fokussierte Step-3A-, Step-3B- und Backup-Vertragstests
+- 404/404 Tests im vollstaendigen Projektlauf
+- beide TypeScript-Projekte ohne Fehler
+- gezielter ESLint-Lauf der betroffenen TypeScript-Dateien ohne Fehler
+- Produktionsbuild erfolgreich
+- zwei unabhaengige Abschlusspruefungen mit ausdruecklichem `APPROVE`, keine P1/P2
+- kein Supabase-Deployment, kein Backfill, kein Writer und kein Commit/Push
+
 ## Schritt 4: Freigaben, Regeln und Suchprojektion
 
-Vor dem neuen Retrieval werden additiv umgesetzt:
+### Schritt 4A: Medizinisch inaktiver Knowledge-Release-Vertrag
 
-- `kb_releases` und `kb_release_items`
+Lokal implementiert in:
+
+`supabase/migrations/20260801090000_create_kb_release_contract.sql`
+
+Die beiden additiven Tabellen `kb_releases` und `kb_release_items` bilden einen
+strikten schema-only Vertrag. Es werden keine Releases angelegt, keine
+Wissensdaten zurueckgeschrieben und keine Retrieval-, Therapie- oder
+Patientenpfade angebunden.
+
+Ein Item besitzt vier typisierte Referenzgruppen fuer eine exakte
+Entity-Revision, Artikelrevision, Assertion oder Quellenrevision. Eine
+fail-closed Exactly-one-Regel und zusammengesetzte Fremdschluessel verhindern
+untypisierte EAV-Referenzen und Eigentuemerverwechslungen. Beim Versiegeln sind
+nur Objekte im Status `released` zulaessig.
+
+Das kanonische Item-Manifest v1 friert die exakte Wissensreferenz, den
+Inhalts-Hash und alle fachlichen Abhaengigkeiten ein. Entity-Items enthalten
+zusaetzlich die geordnete damalige Menge aller Namen und Identifikatoren. Diese
+eingefrorenen Werte bleiben Teil des Release-Hashes, auch wenn spaeter lebende
+Aliase oder Identifikatoren gepflegt werden. Auditakteur-, Patienten-, Benutzer-
+oder Sitzungs-IDs werden nicht in die Release-Tabellen oder -Manifeste kopiert.
+
+Der Seal-Validator verlangt:
+
+- alle direkten und dadurch transitiv alle therapeutischen Entity-Revisionen
+- alle Basisassertionen therapeutischer Detail- und Komponentenreihen
+- fuer jede Assertion alle exakten primaeren freigegebenen unterstuetzenden
+  oder qualifizierenden Quellenrevisionen mit Fundstelle
+- fuer Relationsassertionen die konkrete Graphkante und freigegebene exakte
+  Revisionen beider Endpunkte
+- fuer Artikel alle konkret verknuepften Entity-Revisionen
+- gueltige kanonische Item-, Release- und SHA-256-Manifeste
+
+Der Build-zu-Seal-Uebergang ist ausschliesslich direkte Datenbankeigner-DML. Es
+gibt keinen Seal-/Create-/Write-RPC und keinen Schreib-Grant. Build-Zeilen koennen
+unter Owner-Kontrolle zusammengestellt werden; versiegelte Releases und ihre
+Items sind unveraenderlich. Delete und Truncate werden fuer beide Tabellen
+abgelehnt. Item-Writes erzeugen eine Parent-Zeilenversion, damit ein paralleler
+Seal alle Items sieht oder serialisierungsbedingt abbricht. Der Snapshotzaehler
+`invalid_knowledge_releases` erkennt unvollstaendige Abhaengigkeiten,
+Manifestabweichungen und Hashmanipulation fail-closed.
+
+Dosierungs- und Sicherheitsregeln fehlen weiterhin. Deshalb erzwingt v1 auf
+jeder Release-Zeile `retrieval_eligible = false` und `is_active = false`. Der
+Vertrag besitzt weder eine Aktivierungsfunktion noch einen produktiven Leser.
+
+Administratorinnen und Administratoren duerfen ueber RLS nur lesen.
+`service_role` darf nur lesen und den gemeinsamen Snapshot aufrufen. Patienten
+sehen keine Zeilen; `anon`, `kb_importer` und `kb_import_runtime` haben keinen
+Zugriff.
+
+Der Wiki-Snapshot, Browser-/Edge-Vertrag und Owner-Restore umfassen nun exakt 52
+Tabellen. `kb_releases` wird nach den Kernobjekten und `kb_release_items` zuletzt
+nach allen gebundenen Revisionen und Abhaengigkeiten restauriert. Die
+Therapie-Input-Snapshots v1 und v2 wurden nicht veraendert; v2 umfasst weiterhin
+exakt seine vier Tabellen. Der Wiki-RPC liefert den exakten gehashten JSON-Text
+je Tabelle; Edge und Browser pruefen den Inhalts-SHA-256 und sichern diesen Text
+ohne JavaScript-Neuserialisierung. Ein Restore-Test haelt dabei eine reale
+Therapie-Faktreferenz auf `kb_entities` und weist den byteidentischen Snapshot v2
+vor und nach dem Wiki-Restore nach. Teil- und Vollbackup nennen beide das
+notwendige vorherige Nullsetzen der drei `current_revision_id`-Zeiger; der
+storagefreie Wiki-Bereich lehnt unerwartete Storage-Downloads fail-closed ab.
+
+Die ausfuehrliche Implementierungsdokumentation steht in
+`docs/wiki-phase3-5-knowledge-release-contract-implementation-2026-08-01.md`.
+
+### Schritt 4B: Regeln und Suchprojektion
+
+Vor dem neuen Retrieval bleiben additiv umzusetzen:
+
 - konkrete, quellengebundene `kb_dosage_rules`
 - deterministische `kb_safety_rules`
 - `kb_search_documents` nur fuer freigegebene Revisionen
