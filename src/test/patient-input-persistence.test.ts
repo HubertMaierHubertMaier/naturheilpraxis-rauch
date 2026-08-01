@@ -5,6 +5,7 @@ import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
   mergeExtractedSymptoms,
+  mergeLegacyPathogenContext,
   missingPatientProfileFields,
   shouldApplyCloudDraft,
 } from "@/lib/patientInputPersistence";
@@ -61,5 +62,12 @@ describe("patient input persistence", () => {
     expect(second).toHaveLength(12);
     expect(first).not.toBe(second);
     expect(await createNeutralDocumentId("identischer Befund", "Vieva Plus|2026-01-01")).toBe(first);
+  });
+
+  it("moves legacy pathogen context into the visible Metatron field without duplication", () => {
+    const migrated = mergeLegacyPathogenContext("Aktueller Metatron-Befund", "Borrelia | ZNS | 0.35");
+    expect(migrated).toBe("Aktueller Metatron-Befund\n\n=== Legacy Pathogen-/NLS-Eingabe ===\nBorrelia | ZNS | 0.35");
+    expect(mergeLegacyPathogenContext(migrated, "Borrelia | ZNS | 0.35")).toBe(migrated);
+    expect(mergeLegacyPathogenContext("Aktueller Metatron-Befund", "")).toBe("Aktueller Metatron-Befund");
   });
 });

@@ -61,6 +61,14 @@ export const createNeutralDocumentId = async (text: string, identitySalt = ""): 
   return Array.from(new Uint8Array(digest)).slice(0, 6).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
+export const mergeLegacyPathogenContext = (metatronText: string, legacyPathogenText: string): string => {
+  const current = metatronText.trim();
+  const legacy = legacyPathogenText.trim();
+  if (!legacy || current.includes(legacy)) return metatronText;
+  const legacyBlock = `=== Legacy Pathogen-/NLS-Eingabe ===\n${legacy}`;
+  return current ? `${current}\n\n${legacyBlock}` : legacyBlock;
+};
+
 export const mergeExtractedDiagnoses = (existing: string, diagnoses: ExtractedDiagnosis[]): string => appendUniqueFacts(
   existing,
   diagnoses,

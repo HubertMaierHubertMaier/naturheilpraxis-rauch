@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseTherapyMarkdown } from "@/lib/therapyParser";
-import { assessRemedyWithWikiSafety, assessSelectedCombinationSafety, buildInitialRemedySelection, buildRemedySafetyMap, patientOutputRestrictionsForRemedy } from "@/lib/therapySelection";
+import { assessRemedyWithWikiSafety, assessSelectedCombinationSafety, buildInitialRemedySelection, buildRemedySafetyMap, patientOutputRestrictionsForRemedy, selectedHeelCandidateKeys } from "@/lib/therapySelection";
 import { assessRemedySafety, buildSafetyContextWarnings } from "../../supabase/functions/_shared/therapySafety";
 
 describe("therapy safety", () => {
@@ -17,6 +17,9 @@ describe("therapy safety", () => {
     expect(source).not.toContain("ca. 600 % wirksamer");
     expect(source).not.toContain("ABSOLUT VERBOTENE FORMULIERUNGEN");
     expect(source).toContain("bei dokumentiertem Prostatakarzinom oder Androgendeprivation niemals automatisch als Kernkandidat");
+    expect(source).toContain("!manualDiagnosesText && !hasCoreClinicalReportText && !metatronHeelText");
+    expect(source).toContain("[laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht]");
+    expect(source).toContain("METATRON-HOSPITAL-/NLS-ANALYSE");
   });
 
   it("keeps wiki-product links admin-only and reviewed before AI use", () => {
@@ -220,6 +223,61 @@ describe("therapy safety", () => {
     expect(buildRemedySafetyMap(parsed, context, wiki).get("0|0")).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "wiki-evidence-unrated", severity: "review" }),
     ]));
+  });
+
+  it("caps automatic Heel selection and detects an over-limit final selection", () => {
+    const ids = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+      "44444444-4444-4444-8444-444444444444",
+    ];
+    const parsed = parseTherapyMarkdown([
+      "## Homöopathie & Komplexmittel",
+      ...ids.map((id, index) => `- **Komplexmittel ${index + 1}** | 1 | oral | 1 Woche | ${index < 3 ? "Essentiell" : "Empfohlen"} | - | Quelle [WIKI_ID:${id}]`),
+    ].join("\n"));
+    const wiki = ids.map((id, index) => ({
+      id,
+      title: `Komplexmittel ${index + 1}`,
+      category: "Praxiswissen",
+      tags: ["Heel"],
+      entryKind: "remedy",
+      reviewStatus: "reviewed",
+      evidenceLevel: "clinical",
+      dosageStatus: "verified",
+    }));
+    const allKeys = new Set(["0|0", "0|1", "0|2", "0|3"]);
+
+    expect(buildInitialRemedySelection(parsed, { medications: "keine Medikamente" }, wiki).size).toBe(3);
+    expect(selectedHeelCandidateKeys(parsed, allKeys, wiki)).toHaveLength(4);
+  });
+
+  it("blocks automatic selection for invalid source metadata and matching safety notes", () => {
+    const id = "55555555-5555-4555-8555-555555555555";
+    const parsed = parseTherapyMarkdown([
+      "## Spezialpräparate",
+      `- **Testprodukt** | 1 | oral | 1 Woche | Essentiell | - | Quelle [WIKI_ID:${id}]`,
+    ].join("\n"));
+    const wiki = [{
+      id,
+      title: "Testprodukt",
+      category: "VitaPlace",
+      entryKind: "product",
+      reviewStatus: "reviewed",
+      evidenceLevel: "clinical",
+      dosageStatus: "verified",
+      hasValidSource: false,
+      safetyNotes: "Nicht bei Phenylketonurie anwenden.",
+    }];
+    const context = { conditions: "Phenylketonurie diagnostiziert", medications: "keine Medikamente" };
+    const warnings = assessRemedyWithWikiSafety("Testprodukt", context, wiki, `Quelle [WIKI_ID:${id}]`, true);
+
+    expect(warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-source-metadata-missing", severity: "review" }),
+      expect.objectContaining({ id: "wiki-safety-note", severity: "review" }),
+      expect.objectContaining({ id: "wiki-safety-note-match", severity: "avoid" }),
+    ]));
+    expect(buildInitialRemedySelection(parsed, context, wiki).size).toBe(0);
   });
 
   it("does not auto-select diagnostic or reference Wiki entries as remedies", () => {

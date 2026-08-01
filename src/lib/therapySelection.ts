@@ -16,6 +16,8 @@ export type WikiProductSafetyLink = {
 export type WikiSafetyEntry = {
   id?: string;
   title: string;
+  category?: string;
+  tags?: string[];
   entryKind?: string;
   reviewStatus?: string;
   evidenceLevel?: string;
@@ -23,6 +25,8 @@ export type WikiSafetyEntry = {
   contraindications?: string[];
   interactionTags?: string[];
   safetyNotes?: string;
+  hasValidSource?: boolean;
+  hasUnstructuredSafety?: boolean;
   patientFacingAllowed?: boolean;
   commercialClaimsReviewed?: boolean;
   productLinks?: WikiProductSafetyLink[];
@@ -30,6 +34,7 @@ export type WikiSafetyEntry = {
 
 export const MAX_AUTO_SELECTED_ESSENTIAL = 3;
 export const MAX_AUTO_SELECTED_RECOMMENDED = 3;
+export const MAX_AUTO_SELECTED_HEEL = 3;
 
 const normalize = (value: unknown) => String(value ?? "")
   .normalize("NFKD")
@@ -65,6 +70,13 @@ const matchingWikiEntries = (remedyName: unknown, entries: WikiSafetyEntry[], so
 const remedyBelongsToEntry = (remedyName: unknown, entry: WikiSafetyEntry) => (
   sameRemedy(remedyName, entry.title)
   || (entry.productLinks || []).some((link) => link.reviewStatus === "reviewed" && link.relationType === "exact_product" && sameRemedy(remedyName, link.productName))
+);
+
+const isHeelEntry = (entry: WikiSafetyEntry) => /(?:homotox|\bheel\b)/i.test(`${entry.title} ${entry.category || ""} ${(entry.tags || []).join(" ")}`);
+
+const remedyIsHeelCandidate = (remedyName: unknown, sourceText: unknown, wikiEntries: WikiSafetyEntry[]) => (
+  matchingWikiEntries(remedyName, wikiEntries, sourceText).some(isHeelEntry)
+  || /\bheel\b/i.test(String(remedyName || ""))
 );
 
 const contextMatchesTag = (tag: string, context: TherapySafetyContext) => {
@@ -130,6 +142,18 @@ export const assessRemedyWithWikiSafety = (
     if (entry.dosageStatus && !["verified", "not_applicable"].includes(entry.dosageStatus)) {
       add(wikiWarning("wiki-dosage-unverified", "review", "Dosierung im Wiki nicht geprüft", `Dosierungsstatus: ${entry.dosageStatus}.`, "Dosierung nicht ungeprüft übernehmen; konkrete Produktinformation verwenden."));
     }
+    if (entry.hasValidSource === false) {
+      add(wikiWarning("wiki-source-metadata-missing", "review", "Wiki-Quelle fehlt oder ist ungültig", `${entry.title} besitzt keine gültige strukturierte Quellenangabe.`, "Originalquelle fachlich prüfen und im Wiki mit URL oder Quellenbezeichnung hinterlegen."));
+    }
+    if (entry.safetyNotes?.trim()) {
+      add(wikiWarning("wiki-safety-note", "review", "Wiki-Sicherheitshinweis vorhanden", entry.safetyNotes.trim(), "Produktspezifischen Sicherheitshinweis vor Auswahl vollständig prüfen."));
+      if (contextMatchesTag(entry.safetyNotes, context)) {
+        add(wikiWarning("wiki-safety-note-match", "avoid", "Wiki-Sicherheitshinweis trifft auf Patientenkontext zu", entry.safetyNotes.trim(), "Mittel nicht auswählen, bis der Hinweis fachlich und produktspezifisch ausgeräumt ist."));
+      }
+    }
+    if (entry.hasUnstructuredSafety === true) {
+      add(wikiWarning("wiki-unstructured-safety", "review", "Unstrukturierte Sicherheitsangaben im Wiki", `${entry.title} enthält Sicherheits- oder Wechselwirkungsangaben nur im Freitext.`, "Freitext prüfen und die relevanten Kontraindikationen/Interaktionen strukturiert erfassen."));
+    }
     const contraindications = (entry.contraindications || []).filter((tag) => contextMatchesTag(tag, context));
     if (contraindications.length) {
       add(wikiWarning("wiki-contraindication", "avoid", "Wiki-Kontraindikation trifft auf Patientenkontext zu", contraindications.join(", "), "Mittel nicht auswählen, bis die Kontraindikation fachlich ausgeräumt ist."));
@@ -184,21 +208,46 @@ export const buildInitialRemedySelection = (
   wikiEntries: WikiSafetyEntry[] = [],
 ) => {
   const warnings = buildRemedySafetyMap(parsed, context, wikiEntries);
-  const essential: string[] = [];
-  const recommended: string[] = [];
+  const essential: Array<{ key: string; isHeel: boolean }> = [];
+  const recommended: Array<{ key: string; isHeel: boolean }> = [];
   parsed.categories.forEach((group, categoryIndex) => {
     group.remedies.forEach((remedy, remedyIndex) => {
       const key = `${categoryIndex}|${remedyIndex}`;
       if (warnings.has(key)) return;
-      if (remedy.priority === "essential") essential.push(key);
-      if (remedy.priority === "recommended") recommended.push(key);
+      const candidate = { key, isHeel: remedyIsHeelCandidate(remedy.name, remedy.reason, wikiEntries) };
+      if (remedy.priority === "essential") essential.push(candidate);
+      if (remedy.priority === "recommended") recommended.push(candidate);
     });
   });
-  return new Set([
-    ...essential.slice(0, MAX_AUTO_SELECTED_ESSENTIAL),
-    ...recommended.slice(0, MAX_AUTO_SELECTED_RECOMMENDED),
-  ]);
+  const selected: string[] = [];
+  let heelCount = 0;
+  const append = (candidates: Array<{ key: string; isHeel: boolean }>, max: number) => {
+    let count = 0;
+    for (const candidate of candidates) {
+      if (count >= max) break;
+      if (candidate.isHeel && heelCount >= MAX_AUTO_SELECTED_HEEL) continue;
+      selected.push(candidate.key);
+      count += 1;
+      if (candidate.isHeel) heelCount += 1;
+    }
+  };
+  append(essential, MAX_AUTO_SELECTED_ESSENTIAL);
+  append(recommended, MAX_AUTO_SELECTED_RECOMMENDED);
+  return new Set(selected);
 };
+
+export const selectedHeelCandidateKeys = (
+  parsed: ParsedTherapy,
+  selectedKeys: Set<string>,
+  wikiEntries: WikiSafetyEntry[] = [],
+  manualRemedyNames: string[] = [],
+) => [
+  ...parsed.categories.flatMap((group, categoryIndex) => group.remedies.flatMap((remedy, remedyIndex) => {
+    const key = `${categoryIndex}|${remedyIndex}`;
+    return selectedKeys.has(key) && remedyIsHeelCandidate(remedy.name, remedy.reason, wikiEntries) ? [key] : [];
+  })),
+  ...manualRemedyNames.filter((name) => remedyIsHeelCandidate(name, "", wikiEntries)).map((name) => `manual:${name}`),
+];
 
 export const assessSelectedCombinationSafety = (
   parsed: ParsedTherapy,

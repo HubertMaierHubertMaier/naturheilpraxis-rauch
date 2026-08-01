@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
+import {
+  buildProvisionalTherapyHierarchy,
+  formatProvisionalTherapyHierarchy,
+  selectProvisionalHierarchyContext,
+} from "../_shared/provisionalTherapyHierarchy.ts";
 import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
 
 const allowedCorsHostnames = new Set([
@@ -436,7 +441,7 @@ function buildEntryMetadata(entry: WikiEntry): string {
   ].filter(Boolean).join("\n");
 }
 
-function buildContext(entries: WikiEntry[], queryText: string): string {
+function buildContext(entries: WikiEntry[], queryText: string, maxChars = MAX_TOTAL_CHARS): string {
   let context = entries
     .map((e) => {
       const content = buildEntryContent(e, queryText);
@@ -444,16 +449,17 @@ function buildContext(entries: WikiEntry[], queryText: string): string {
     })
     .join("\n\n---\n\n");
 
-  if (context.length > MAX_TOTAL_CHARS) {
-    context = context.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
+  if (context.length > maxChars) {
+    const suffix = "\n\n[... Wissensdatenbank gekürzt ...]";
+    context = context.slice(0, Math.max(0, maxChars - suffix.length)) + suffix;
   }
   if (!context.trim()) context = "(Keine relevanten Wissensdatenbank-Einträge gefunden)";
   return context;
 }
 
-function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
+function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80, allowedHeelIds: Set<string> = new Set()): string {
   const relevant = scored
-    .filter((s) => s.score > 0)
+    .filter((s) => s.score > 0 && (!isHeelWikiEntry(s.entry) || allowedHeelIds.has(s.entry.id)))
     .slice(0, maxItems);
   if (relevant.length === 0) return "";
   return `### PHASE 1 – Gesamt-Wiki-Sichtung (alle Kategorien)\nDie folgenden Kandidaten wurden aus der gesamten Wissensdatenbank bewertet. Phase 2 muss daraus fachlich auswählen; keine Kategorie oder Produktlinie ist exklusiv.\n${relevant.map((s, idx) => `${idx + 1}. [${s.entry.category}] ${s.entry.title} – ${s.reason || `Score ${s.score}`}${s.included ? " → Volltext in Phase 2" : ""}`).join("\n")}`;
@@ -461,6 +467,19 @@ function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
 
 function entryText(e: WikiEntry): string {
   return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${(e.therapeutic_topics || []).join(" ")} ${(e.interaction_tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
+}
+
+function isHeelWikiEntry(entry: WikiEntry): boolean {
+  return /(?:homotox|\bheel\b)/i.test(`${entry.title} ${entry.category} ${(entry.tags || []).join(" ")}`);
+}
+
+function capHeelEntries(entries: WikiEntry[], maxHeel = 3): WikiEntry[] {
+  let heelCount = 0;
+  return entries.filter((entry) => {
+    if (!isHeelWikiEntry(entry)) return true;
+    heelCount += 1;
+    return heelCount <= maxHeel;
+  });
 }
 
 function isVitaplaceProbiotic(e: WikiEntry): boolean {
@@ -484,7 +503,14 @@ function extractProbioticHighlights(e: WikiEntry): string {
   return Array.from(new Set(matches.map((m) => m.trim().replace(/\s+/g, " ")))).slice(0, 14).join(", ");
 }
 
-function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[], symptomTargets: SymptomTarget[] = []): WikiEntry[] {
+function prioritySortEntries(
+  entries: WikiEntry[],
+  queryText: string,
+  preferredLines: string[],
+  manualTitles: string[],
+  symptomTargets: SymptomTarget[] = [],
+  provisionalPriorityById: Map<string, number> = new Map(),
+): WikiEntry[] {
   const query = queryText.toLowerCase();
   const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
   const preferred = preferredLines.map((l) => l.toLowerCase());
@@ -492,7 +518,8 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
   const score = (e: WikiEntry) => {
     const text = entryText(e);
     let s = 0;
-    if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    const isManual = manual.includes((e.title || "").toLowerCase());
+    const provisionalRank = provisionalPriorityById.get(e.id);
     for (const target of symptomTargets) {
       if (target.wikiTitles.some((title) => title.toLowerCase() === (e.title || "").toLowerCase())) s += 80_000;
       if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase()))) s += 60_000;
@@ -505,6 +532,10 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
       if (text.includes(term)) s += 100;
     }
     if ((e.category || "").toLowerCase().includes("stuhldiagnostik")) s += 500;
+    if (provisionalRank !== undefined) {
+      return 2_000_000 - provisionalRank * 10_000 + Math.min(s, 8_000) + (isManual ? 500 : 0);
+    }
+    if (isManual) return 1_000_000 + Math.min(s, 100_000);
     return s;
   };
   return [...entries].sort((a, b) => score(b) - score(a));
@@ -632,6 +663,8 @@ serve(async (req) => {
     const vievaPlusText: string = typeof vievaPlus === "string" ? vievaPlus.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
     const eigeneTherapieText: string = typeof eigeneTherapieVorlage === "string" ? eigeneTherapieVorlage.trim() : "";
+    const hasCoreClinicalReportText = [laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht]
+      .some((value) => typeof value === "string" && value.trim().length > 0);
     const mannayanOrdersText: string = Array.isArray(mannayanOrders)
       ? mannayanOrders.map((order: any) => {
           const items = Array.isArray(order?.items) ? order.items.map((it: any) => `- ${Number(it?.quantity) || 1}× ${String(it?.name || "").trim()}${it?.unit ? ` (${it.unit})` : ""}${it?.sku ? ` · Art.-Nr. ${it.sku}` : ""}`).join("\n") : "";
@@ -646,8 +679,8 @@ serve(async (req) => {
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !vievaPlusText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
-      throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
+    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !hasCoreClinicalReportText && !metatronHeelText && !sonstigeUntersuchungenText && !vievaPlusText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
+      throw new Error("Bitte geben Sie mindestens Symptome, eine Erkrankung oder einen Untersuchungsbefund an.");
     }
 
     // Fetch wiki entries (cached) and select only the relevant ones for this query
@@ -724,6 +757,55 @@ serve(async (req) => {
     const scoringQueryText = expandQueryForScoring(queryText);
     const hasHomotoxContext = activeSymptomTargets.length > 0 || selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
     const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
+    const clinicalQueryText = [
+      belastungen,
+      symptome,
+      erkrankung,
+      manualDiagnosesText,
+      laborErhoeht,
+      laborErniedrigt,
+      laborKomplett,
+      stuhlbefund,
+      arztbericht,
+      vievaPlusText,
+      isNachschlag ? nachschlag : "",
+    ].filter(Boolean).join(" ");
+    const recognizedMedicationGroups = recognizeMedicationGroups(medikamente);
+    const medicationGroups = recognizedMedicationGroups.map((group) => group.label);
+    const parsedAge = typeof alter === "number"
+      ? alter
+      : typeof alter === "string" && alter.trim() ? Number(alter) : Number.NaN;
+    const provisionalHierarchy = buildProvisionalTherapyHierarchy(allEntries, clinicalQueryText, {
+      pregnancyStatus: typeof schwanger === "string" ? schwanger : schwanger ? "ja" : "",
+      safetyContext: [
+        clinicalQueryText,
+        medikamente,
+        recognizedMedicationGroups.map((group) => `${group.id} ${group.label}`).join(" "),
+      ].filter(Boolean).join(" "),
+      age: Number.isFinite(parsedAge) ? parsedAge : undefined,
+      maxTotal: 14,
+    });
+    const hierarchySafetyHolds = provisionalHierarchy.filter((candidate) => candidate.status === "SAFETY_HOLD");
+    const hierarchySafetyHoldIds = new Set(hierarchySafetyHolds.map((candidate) => candidate.entry.id));
+    const activeProvisionalHierarchy = provisionalHierarchy.filter((candidate) => candidate.status !== "SAFETY_HOLD");
+    const hierarchyContextCandidates = selectProvisionalHierarchyContext(activeProvisionalHierarchy, 10);
+    const hierarchyPinnedEntries: WikiEntry[] = hierarchyContextCandidates.map((candidate) => ({
+      ...candidate.entry,
+      content: buildEntryContent(candidate.entry, clinicalQueryText).slice(0, 1400),
+    }));
+    const provisionalPriorityById = new Map(activeProvisionalHierarchy.map((candidate) => [candidate.entry.id, candidate.rank]));
+    const boundedHierarchyContext = (value: string, maxChars: number) => {
+      if (value.length <= maxChars) return value;
+      const suffix = "\n[... Hierarchie-Kontext gekuerzt ...]";
+      return `${value.slice(0, Math.max(0, maxChars - suffix.length))}${suffix}`;
+    };
+    const provisionalHierarchyContext = boundedHierarchyContext(
+      formatProvisionalTherapyHierarchy(activeProvisionalHierarchy),
+      9_000,
+    );
+    const provisionalHierarchySafetyContext = hierarchySafetyHolds.length
+      ? boundedHierarchyContext(`Gesamtzahl Sicherheitsstopps: ${hierarchySafetyHolds.length}\n${formatProvisionalTherapyHierarchy(hierarchySafetyHolds)}`, 4_000)
+      : "Keine deterministischen Sicherheitsstopps aus der vorlaeufigen Hierarchie.";
 
     // ===== AUTO-PINNING: bei Stuhlbefund nur Stuhl-/Mikrobiom-spezifische Einträge mit aufnehmen =====
     // WICHTIG: NICHT die gesamte Kategorie "Labordiagnostik" matchen, sonst werden alle
@@ -734,6 +816,7 @@ serve(async (req) => {
     const hasMicrobiomeSignal = Boolean(stuhlbefund && stuhlbefund.trim().length > 0) || STUHL_REGEX.test(queryText);
     const autoPinnedFromStuhlCandidates: WikiEntry[] = hasMicrobiomeSignal
       ? filteredByCategory.filter((e) => {
+          if (hierarchySafetyHoldIds.has(e.id)) return false;
           const text = entryText(e);
           if (STUHL_REGEX.test(text)) return true;
           // Vitaplace-Probiotika immer mitnehmen, sobald ein Stuhlbefund/Mikrobiom vorliegt:
@@ -741,7 +824,7 @@ serve(async (req) => {
           return isVitaplaceProbiotic(e);
         })
       : [];
-    const autoPinnedFromStuhl = prioritySortEntries(autoPinnedFromStuhlCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets).slice(0, 6);
+    const autoPinnedFromStuhl = prioritySortEntries(autoPinnedFromStuhlCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets, provisionalPriorityById).slice(0, 6);
     if (autoPinnedFromStuhl.length > 0) {
       console.log(`Auto-Pin: ${autoPinnedFromStuhl.length} Stuhl-/Mikrobiom-Einträge wegen Stuhlbefund (inkl. Content-Treffer)`);
     }
@@ -750,6 +833,7 @@ serve(async (req) => {
     const symptomPinnedCandidates: WikiEntry[] = activeSymptomTargets.length === 0
       ? []
       : allEntries.filter((e) => {
+          if (hierarchySafetyHoldIds.has(e.id)) return false;
           const title = (e.title || "").toLowerCase();
           const text = entryText(e);
           return activeSymptomTargets.some((target) =>
@@ -757,7 +841,7 @@ serve(async (req) => {
             (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase())))
           );
         });
-    const symptomPinnedEntries = prioritySortEntries(symptomPinnedCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets).slice(0, 6);
+    const symptomPinnedEntries = prioritySortEntries(symptomPinnedCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets, provisionalPriorityById).slice(0, 6);
     if (symptomPinnedEntries.length > 0) {
       console.log(`Auto-Pin: ${symptomPinnedEntries.length} Symptom-/Homotoxikologie-Einträge wegen Symptomen (${activeSymptomTargets.map((t) => t.label).join(", ")})`);
     }
@@ -766,24 +850,35 @@ serve(async (req) => {
     // WICHTIG: Boost-Ordner sind KEIN Filter und KEINE Exklusiv-Auswahl; sie markieren nur Schwerpunktbereiche.
     // Die eigentliche Phase-1-Sichtung läuft unten immer über die gesamte Wiki.
     const manualPinned = pinnedTitles.length > 0
-      ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
+      ? allEntries.filter((e) =>
+          !hierarchySafetyHoldIds.has(e.id) &&
+          pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase())
+        )
       : [];
-    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
-    const pinnedEntries = [
+    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.id === b.id;
+    const pinnedEntries = capHeelEntries([
       ...manualPinned,
-      ...symptomPinnedEntries.filter((s) => !manualPinned.some((m) => sameEntry(m, s))),
+      ...hierarchyPinnedEntries.filter((h) => !manualPinned.some((m) => sameEntry(m, h))),
+      ...symptomPinnedEntries.filter((s) =>
+        !manualPinned.some((m) => sameEntry(m, s)) &&
+        !hierarchyPinnedEntries.some((h) => sameEntry(h, s))
+      ),
       ...autoPinnedFromStuhl.filter((a) =>
         !manualPinned.some((m) => sameEntry(m, a)) &&
+        !hierarchyPinnedEntries.some((h) => sameEntry(h, a)) &&
         !symptomPinnedEntries.some((s) => sameEntry(s, a))
       ),
-    ];
+    ]);
     const pinnedReserveChars = pinnedEntries.reduce(
       (sum, e) => sum + Math.min((e.content || "").length, MAX_ENTRY_CHARS) + 200,
       0
     );
 
     // Score the rest, but exclude already-pinned entries
-    const restPool = filteredByCategory;
+    const pinnedIds = new Set(pinnedEntries.map((entry) => entry.id));
+    const restPool = filteredByCategory.filter((entry) =>
+      !pinnedIds.has(entry.id) && !hierarchySafetyHoldIds.has(entry.id)
+    );
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
 
     let restRelevant: WikiEntry[];
@@ -865,13 +960,22 @@ serve(async (req) => {
       restScored = r.scored;
     }
 
-    const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets);
+    const relevantEntries = capHeelEntries(
+      prioritySortEntries([...pinnedEntries, ...restRelevant], scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets, provisionalPriorityById),
+    );
+    if (relevantEntries.some((entry) => hierarchySafetyHoldIds.has(entry.id))) {
+      throw new Error("Sicherheitsstopp: Ein gesperrter Hierarchie-Kandidat ist in den normalen Wiki-Kontext gelangt.");
+    }
+    const relevantEntryIds = new Set(relevantEntries.map((entry) => entry.id));
     const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
     const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
       ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
-    const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
-    const phaseOneShortlist = buildPhaseOneShortlist(restScored, 30);
+    const allowedHeelIds = new Set(relevantEntries.filter(isHeelWikiEntry).map((entry) => entry.id));
+    const phaseOneShortlist = boundedHierarchyContext(buildPhaseOneShortlist(restScored, 30, allowedHeelIds), 4_000);
+    const hierarchyContextChars = provisionalHierarchyContext.length + provisionalHierarchySafetyContext.length + phaseOneShortlist.length;
+    const wikiContextBudget = Math.max(8_000, MAX_TOTAL_CHARS - hierarchyContextChars);
+    const wikiContext = `${buildContext(relevantEntries, scoringQueryText, wikiContextBudget)}${vitaplaceContext}`.slice(0, wikiContextBudget);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
       `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
@@ -882,6 +986,8 @@ serve(async (req) => {
     // ========= AUDIT-DATEN für Transparenz im Frontend =========
     const reasonFor = (e: WikiEntry) => {
       if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
+      const hierarchyCandidate = provisionalHierarchy.find((candidate) => sameEntry(candidate.entry, e));
+      if (hierarchyCandidate) return `🧭 Praxis-Hierarchie ${hierarchyCandidate.rank}: ${hierarchyCandidate.laneLabel} (${hierarchyCandidate.status})`;
       if (symptomPinnedEntries.some((s) => sameEntry(s, e))) return "🧭 Auto-Pin (Symptome/Homotoxikologie)";
       if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
       if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
@@ -892,15 +998,18 @@ serve(async (req) => {
         title: e.title, category: e.category, score: 9999,
         reason: reasonFor(e)
       })),
-      ...restScored.filter((s) => s.included).map((s) => ({
+      ...restScored.filter((s) => s.included && relevantEntryIds.has(s.entry.id)).map((s) => ({
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "✅ Relevant"
       })),
     ];
     const skippedEntries = restScored
-      .filter((s) => !s.included)
+      .filter((s) => !s.included || !relevantEntryIds.has(s.entry.id))
       .slice(0, 50)
       .map((s) => ({
-        title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "—"
+        title: s.entry.title,
+        category: s.entry.category,
+        score: s.score,
+        reason: s.included && !relevantEntryIds.has(s.entry.id) ? "Deterministisches Heel-Limit (maximal 3)" : s.reason || "—",
       }));
 
     const auditPayload = {
@@ -918,6 +1027,22 @@ serve(async (req) => {
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
         symptomAxes: activeSymptomTargets.map((t) => t.label),
+        provisionalHierarchySafetyHoldCount: hierarchySafetyHolds.length,
+        provisionalHierarchy: [...activeProvisionalHierarchy, ...hierarchySafetyHolds.slice(0, 40)].map((candidate) => ({
+          rank: candidate.rank,
+          lane: candidate.lane,
+          laneLabel: candidate.laneLabel,
+          wikiId: candidate.entry.id,
+          title: candidate.entry.title,
+          status: candidate.status,
+          relevance: candidate.relevance,
+          matches: candidate.matches,
+          reasons: candidate.reasons,
+          reviewStatus: candidate.entry.review_status || "unreviewed",
+          evidenceLevel: candidate.entry.evidence_level || "unrated",
+          dosageStatus: candidate.entry.dosage_status || "unverified",
+          sources: candidate.sources,
+        })),
         metatronHeelInput: metatronHeelText || null,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
         vievaPlusChars: vievaPlusText.length,
@@ -970,7 +1095,6 @@ REGELN:
 4. Bei Kontraindikation, Wechselwirkung, Schwangerschaft oder unklarer Sicherheit NICHT in die auswählbare Kernliste aufnehmen, sondern unter "Manuelle Sicherheitsprüfung" nennen.`
       : "";
 
-    const medicationGroups = recognizeMedicationGroups(medikamente).map((group) => group.label);
     const systemPrompt = `Du erstellst eine INTERNE naturheilkundliche KANDIDATENLISTE zur fachlichen Prüfung durch den behandelnden Heilpraktiker. Du triffst keine endgültige Therapieentscheidung und gibst nichts direkt an Patienten aus.
 
 🛡️ SICHERHEIT UND ESKALATION:
@@ -981,10 +1105,26 @@ REGELN:
 - Wiki-Eintraege mit Pruefstatus "unreviewed"/"needs_review" oder Evidenz "unrated" nicht als essentielle Kernkandidaten ausgeben.
 - Dosierungen nur verwenden, wenn der Wiki-Metadatensatz "Dosierungsstatus: verified" ausweist; sonst "Dosierung manuell pruefen" schreiben.
 - Eine Mannayan-Zuordnung ist nur Produktkontext und niemals alleiniger Wirksamkeits- oder Indikationsnachweis.
+- Die vorlaeufige Praxis-Hierarchie ist eine Reihenfolge fuer die fachliche Pruefung. REVIEW_ONLY nie in einen freigegebenen Kernkandidaten umdeuten; SAFETY_HOLD ausschliesslich unter Sicherheitspruefung nennen.
+- Ein Diamond-Shield-Treffer erhaelt nur bei explizit gleichem Pathogenbegriff Prioritaet. NLS/Metatron oder eine ChipCard beweisen weder Infektion noch Wirksamkeit.
 - Erkannte Arzneimittelgruppen: ${medicationGroups.length ? medicationGroups.join(", ") : "keine sicher erkannt"}.
 - Disclaimer: "Interne Kandidatenliste – jede Auswahl wird fachlich, produktspezifisch und anhand der aktuellen Medikation geprüft."
 
 Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogenen und Therapieprotokollen.
+
+VORLAEUFIGE PRAXIS-HIERARCHIE (DETERMINISTISCH, NUR INTERNE FACHPRUEFUNG):
+${provisionalHierarchyContext}
+
+DETERMINISTISCHE SICHERHEITSSTOPPS (NICHT IN DIE PRAXIS-HIERARCHIE ODER KERNLISTE AUFNEHMEN):
+${provisionalHierarchySafetyContext}
+
+VERBINDLICHE REIHENFOLGE NACH SICHERHEIT UND PATIENTENBEZUG:
+1. Sicherheitsstopp, Red Flags, Kontraindikationen und Interaktionen haben immer Vorrang.
+2. Klinghardt als oberster Leit-/Quellenkontext sowie exakte Pathogen-Treffer auf Diamond-Shield-ChipCards pruefen.
+3. Passende NutraMedix- und VitaPlace-Kandidaten pruefen.
+4. Hoechstens zwei bis drei passende Heel-/Homotoxikologie-Mittel pruefen.
+5. Ernaehrung, Vitamine, Mineralstoffe und Aminosaeuren als vier getrennte Spuren ableiten.
+6. Fehlende Quellen, unreviewte Aussagen oder unverified Dosierungen niemals durch Modellwissen ergaenzen.
 
 WISSENSDATENBANK:
 ${wikiContext}
@@ -1031,7 +1171,7 @@ Konkrete Schwellen:
   - > 0.700      → sehr gering, nur informativ → NICHT als aktive Belastung behandeln, NICHT priorisieren
 Der Index allein belegt weder Diagnose noch aktive Infektion und darf keine Mittelwahl ohne klinische Plausibilisierung ausloesen.
 
-⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (HÖCHSTE PRIORITÄT):
+⭐ BEVORZUGTE MITTEL & PRODUKTLINIEN DES THERAPEUTEN (NACH SICHERHEIT UND PRAXIS-HIERARCHIE):
 ${preferredLines.length > 0
   ? `- Bevorzugte Produktlinien: ${preferredLines.join(", ")}.\n  → Bei vergleichbarer Wirkung MUSST du Mittel aus diesen Linien priorisieren (vor anderen Marken). Nenne die Linie explizit im Mittelnamen (z.B. "Biotik Balance (Vitaplace)").`
   : "- Keine Linien-Präferenz angegeben."}
@@ -1157,17 +1297,21 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
 - ${budget ? `Das maximale Budget des Patienten beträgt ${budget} Euro.` : "Kein Budget angegeben – trotzdem kostenbewusst empfehlen."}
-- **IMMER günstige Alternativen zuerst empfehlen**: Gewürze und Hausmittel wie Knoblauch (frisch, roh – stark antimikrobiell), Kurkuma, Oregano (frisch/getrocknet), Ingwer, Nelken, Thymian, Zimt, Meerrettich, Schwarzkümmelöl etc.
-- Teure Spezialpräparate (NutraMedix, Biopure etc.) NUR empfehlen wenn:
-  a) keine günstige Alternative existiert
-  b) die günstige Alternative nicht ausreichend wirksam ist
-  c) das Budget es erlaubt
+- Kosten sind ein nachgelagertes Kriterium und duerfen die Sicherheits- und Praxis-Hierarchie nicht ueberschreiben. Eine guenstige Alternative zusaetzlich nennen, aber einen exakten priorisierten Treffer nicht allein wegen des Preises verdraengen.
+- Teure Spezialpräparate (NutraMedix, Biopure etc.) in der vorlaeufigen Hierarchie hoch priorisiert pruefen; als Kernkandidat nur nach Quellen-, Sicherheits-, Interaktions- und Budgetpruefung ausgeben.
+- Guenstige Alternativen transparent daneben nennen, aber keine Ueberlegenheit ohne Wiki-Beleg behaupten.
 - Schätze die ungefähren Gesamtkosten pro Monat für die empfohlenen Mittel
 - Priorisiere Mittel nach Wichtigkeit: Die wichtigsten 2-3 Mittel zuerst, optionale Ergänzungen kennzeichnen
 
 AUSGABEFORMAT:
+## ⚠️ Sicherheitshinweise
+Immer als erste regulaere Sektion ausgeben. Red Flags, Kontraindikationen, Interaktionen, unklare Medikation und SAFETY_HOLD-Kandidaten nennen.
+
 ## 🔍 Analyse der Belastungen
 Kurze Zusammenfassung der identifizierten Probleme.
+
+## 🧭 Vorläufige Praxis-Hierarchie
+Kurze Tabelle mit: Rang | Spur | Kandidat/Maßnahme | Status | konkreter Patiententreffer | Wiki-ID/Quelle. Reihenfolge exakt: Klinghardt; exakte Diamond-Pathogen-Treffer; NutraMedix; VitaPlace; höchstens 2-3 Heel-Mittel; Ernährung; Vitamine; Mineralstoffe; Aminosäuren. REVIEW_ONLY sichtbar kennzeichnen und nicht als Freigabe darstellen. SAFETY_HOLD-Kandidaten gehören ausschließlich in die vorangehenden Sicherheitshinweise und niemals in diese Tabelle.
 
 ## 📊 Bewertung der bisherigen Therapie
 (Nur falls bisherige Mittel angegeben) Detaillierte Bewertung jedes bisherigen Mittels:
@@ -1219,9 +1363,6 @@ BEISPIELE:
 
 Falls KEINE Lücken: Schreibe genau "✅ Für diesen Fall sind alle relevanten Wiki-Einträge vorhanden."
 
-## ⚠️ Sicherheitshinweise
-Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
-
 ## 💊 Interne Mittel-Kandidaten – gegliedert nach Stoffgruppe / Wiki-Kategorie
 
 WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschriften (nur die Gruppen ausgeben, in denen Du tatsächlich etwas empfiehlst). Die Reihenfolge ist verbindlich:
@@ -1249,6 +1390,7 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 
 ### 💧 Homöopathie & Komplexmittel
 (Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; Klassische Homöopathika; spagyrische Mittel)
+Aus dieser Gruppe höchstens 2-3 Heel-/Homotoxikologie-Mittel nennen.
 
 ### 🧫 Probiotika, Präbiotika & Darmaufbau
 (Vitaplace **Biotik Sensitiv Pulver** und **Biotik Balance Kapseln** = Mehrstamm-Probiotika der Praxis-Eigenmarke mit *Bifidobacterium bifidum/infantis/lactis/longum* und *Lactobacillus acidophilus/casei/lactis/paracasei/plantarum* — bei Bifido-/Lacto-Mangel BEVORZUGT empfehlen; Symbioflor 1+2, Mutaflor, RMS-Biofrid, EM-Ferment, Flohsamen, Inulin)
@@ -1324,18 +1466,19 @@ Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 NEUE ZUSATZ-INFORMATION (vom Therapeuten ergänzt):
 ${nachschlag}
 
-BISHERIGE EMPFEHLUNG (gilt weiterhin):
+BISHERIGE EMPFEHLUNG (nur als erneut zu pruefender Entwurf):
 \`\`\`
 ${(previousResult as string).slice(0, 18000)}
 \`\`\`
 
 DEINE AUFGABE JETZT:
-1. **Behalte die bisherige Empfehlung vollständig bei** – wiederhole alle bestehenden Mittel mit identischer Dosierung/Anwendung/Dauer/Begründung.
-2. **Ergänze NUR die Mittel/Maßnahmen, die durch die neue Zusatz-Information zusätzlich nötig werden.**
+1. **Pruefe jedes bisherige Mittel erneut** gegen die Zusatz-Information, aktuelle Wiki-Metadaten, Medikation, Kontraindikationen und die vorlaeufige Hierarchie.
+2. Behalte nur weiterhin passende und sicherheitsgepruefte Kandidaten bei. Neu kontraindizierte, SAFETY_HOLD-, REVIEW_ONLY- oder nicht mehr belegte Mittel nicht unveraendert wiederholen, sondern unter Sicherheit/Wissensluecken verschieben oder ausschliessen.
 3. **Markiere jedes neue oder geänderte Mittel mit dem Präfix 🆕** direkt vor dem Mittelnamen, z.B. \`- 🆕 **Magnesium-Citrat**\`.
-4. Wenn die neue Info ein bestehendes Mittel inhaltlich anpasst (Dosis, Dauer), markiere die geänderte Zeile mit 🔄 und gib in der Begründung an, was sich geändert hat.
-5. Halte das gleiche Ausgabeformat ein (Gruppen, Pipe-Tabellenstruktur).
-6. Ergänze einen kurzen Abschnitt **## 🔄 Nachschlag-Begründung** ganz oben, der erklärt, was die neue Info therapeutisch bedeutet und welche Mittel deshalb dazukommen.
+4. Dosierungen nur beibehalten, wenn der aktuelle Wiki-Eintrag weiterhin den Status "verified" ausweist; andernfalls "Dosierung manuell pruefen".
+5. Wenn die neue Info ein bestehendes Mittel inhaltlich anpasst oder entfernt, markiere die Aenderung mit 🔄 und begruende sie konkret.
+6. Halte das gleiche Ausgabeformat und alle Mengenlimits ein.
+7. Ergänze einen kurzen Abschnitt **## 🔄 Nachschlag-Begründung** ganz oben, der neue, geaenderte und ausgeschlossene Punkte zusammenfasst.
 
 Erfinde keine Mittel – nutze ausschließlich die Wissensdatenbank.`
       : `Patientendaten:
@@ -1350,7 +1493,7 @@ Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
-Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Priorisiere günstige Hausmittel und Gewürze (Knoblauch, Kurkuma, Oregano etc.) vor teuren Spezialpräparaten.${typeof previousResultForCompare === "string" && previousResultForCompare.trim().length > 200 ? `
+Bitte erstelle eine individuelle Therapie-Empfehlung basierend auf der Wissensdatenbank. ${bisherigeMittel ? "Bewerte zusätzlich die bisherigen Mittel und Dosierungen kritisch." : ""} Berücksichtige günstige Hausmittel und Gewürze als Alternativen; sie überschreiben weder Sicherheitsregeln noch die vorläufige Praxis-Hierarchie.${typeof previousResultForCompare === "string" && previousResultForCompare.trim().length > 200 ? `
 
 🔁 VERGLEICHSANKER – VORHERIGE AUSWERTUNG (nur als Referenz, NICHT als Faktenquelle)
 

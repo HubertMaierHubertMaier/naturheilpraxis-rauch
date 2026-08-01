@@ -9,7 +9,14 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
+import { validateTherapyInputSnapshotV2 } from "../_shared/therapyInputSnapshotValidation.ts";
 import { validateWikiSnapshotShape } from "../_shared/wikiSnapshotValidation.ts";
+
+function createAdminClient(url: string, serviceKey: string) {
+  return createClient(url, serviceKey);
+}
+
+type AdminClient = ReturnType<typeof createAdminClient>;
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -108,6 +115,11 @@ const REQUIRED_KB_THERAPEUTIC_TABLES = [
   "kb_composition_components",
 ] as const;
 
+const REQUIRED_KB_RELEASE_TABLES = [
+  "kb_releases",
+  "kb_release_items",
+] as const;
+
 const WIKI_SNAPSHOT_TABLES = [
   "admin_knowledge_base",
   "mannayan_products",
@@ -117,11 +129,20 @@ const WIKI_SNAPSHOT_TABLES = [
   ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
   ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
+  ...REQUIRED_KB_RELEASE_TABLES,
   "faqs",
   "practice_pricing",
   "practice_info",
 ] as const;
 const WIKI_SNAPSHOT_TABLE_SET = new Set<string>(WIKI_SNAPSHOT_TABLES);
+
+const THERAPY_INPUT_SNAPSHOT_TABLES = [
+  "therapy_input_revisions",
+  "therapy_input_sources",
+  "therapy_input_facts",
+  "therapy_input_fact_sources",
+] as const;
+const THERAPY_INPUT_SNAPSHOT_TABLE_SET = new Set<string>(THERAPY_INPUT_SNAPSHOT_TABLES);
 
 // Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
 // Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
@@ -140,6 +161,7 @@ const FALLBACK_TABLES = [...new Set([
   ...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES,
   ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
+  ...REQUIRED_KB_RELEASE_TABLES,
   "knowledge_product_links",
   "mannayan_orders",
   "mannayan_products",
@@ -149,6 +171,10 @@ const FALLBACK_TABLES = [...new Set([
   "practice_info",
   "practice_pricing",
   "profiles",
+  "therapy_input_revisions",
+  "therapy_input_sources",
+  "therapy_input_facts",
+  "therapy_input_fact_sources",
   "therapy_sessions",
   "two_factor_pending_bindings",
   "two_factor_verified_sessions",
@@ -197,6 +223,7 @@ const AREA_MAP: Record<string, AreaDef> = {
       "kb_nutrient_revision_details",
       "kb_product_variant_revision_details",
       "kb_composition_components",
+      ...REQUIRED_KB_RELEASE_TABLES,
       "faqs",
       "practice_pricing",
       "practice_info",
@@ -206,7 +233,7 @@ const AREA_MAP: Record<string, AreaDef> = {
   "infothek":            { tables: ["infothek_gating"], buckets: [] },
   "hypnose":             { tables: [], buckets: [] },
   "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
-  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
+  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "therapy_input_revisions", "therapy_input_sources", "therapy_input_facts", "therapy_input_fact_sources", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
   "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings", "two_factor_pending_bindings", "two_factor_verified_sessions"], buckets: [] },
   "edge-mail":           { tables: [], buckets: [] },
 };
@@ -240,6 +267,7 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
     const tables = [...new Set([
       ...filtered,
       ...WIKI_SNAPSHOT_TABLES,
+      ...THERAPY_INPUT_SNAPSHOT_TABLES,
     ])].sort();
     return { tables, source: "openapi" };
   } catch (err) {
@@ -249,7 +277,7 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
 }
 
 async function discoverBuckets(
-  client: ReturnType<typeof createClient>,
+  client: AdminClient,
 ): Promise<{ buckets: string[]; source: "api" | "fallback" }> {
   try {
     const { data, error } = await client.storage.listBuckets();
@@ -314,14 +342,14 @@ function sanitizeGithubInput(repo: string | null, branch: string | null): { repo
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleanedRepo)) {
     throw new Error("Ungültiges GitHub-Repo. Erwartet: besitzer/repo");
   }
-  if (!/^[A-Za-z0-9._\/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
+  if (!/^[A-Za-z0-9._/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
     throw new Error("Ungültiger GitHub-Branch.");
   }
   return { repo: cleanedRepo, branch: cleanedBranch };
 }
 
 async function fetchTableAll(
-  client: ReturnType<typeof createClient>,
+  client: AdminClient,
   table: string,
 ): Promise<Record<string, unknown>[]> {
   const pageSize = 1000;
@@ -355,12 +383,28 @@ type WikiSnapshotValidation = {
   invalid_therapeutic_catalog_revisions: number;
   invalid_entity_candidate_contracts: number;
   invalid_entity_candidate_draft_promotions: number;
+  invalid_knowledge_releases: number;
 };
 
 type WikiSnapshot = {
   tables: Record<(typeof WIKI_SNAPSHOT_TABLES)[number], Record<string, unknown>[]>;
+  serialized_tables: Record<(typeof WIKI_SNAPSHOT_TABLES)[number], string>;
   manifest: Record<string, { rows: number; sha256: string }>;
   validation: WikiSnapshotValidation;
+};
+
+type TherapyInputSnapshot = {
+  snapshot_version: 2;
+  tables: Record<(typeof THERAPY_INPUT_SNAPSHOT_TABLES)[number], string>;
+  manifest: Record<string, { rows: number; sha256: string }>;
+  validation: { invalid_revision_count: number; invalid_fact_count: number };
+};
+
+type TableExport = {
+  rows?: Record<string, unknown>[];
+  serializedRows?: string;
+  rowCount: number;
+  error?: string;
 };
 
 const WIKI_ZERO_VALIDATION_KEYS = [
@@ -371,19 +415,45 @@ const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_therapeutic_catalog_revisions",
   "invalid_entity_candidate_contracts",
   "invalid_entity_candidate_draft_promotions",
+  "invalid_knowledge_releases",
 ] as const;
 
 async function fetchWikiSnapshot(
-  client: ReturnType<typeof createClient>,
+  client: AdminClient,
 ): Promise<WikiSnapshot> {
   const { data, error } = await client.rpc("kb_export_wiki_snapshot");
   if (error) throw new Error(`Wiki-Snapshot: ${error.message}`);
   const snapshot = data as WikiSnapshot | null;
-  validateWikiSnapshotShape(snapshot, WIKI_SNAPSHOT_TABLES, WIKI_ZERO_VALIDATION_KEYS);
+  await validateWikiSnapshotShape(snapshot ? {
+    tables: snapshot.tables,
+    serializedTables: snapshot.serialized_tables,
+    manifest: snapshot.manifest,
+    validation: snapshot.validation,
+  } : null, WIKI_SNAPSHOT_TABLES, WIKI_ZERO_VALIDATION_KEYS);
+  return snapshot as WikiSnapshot;
+}
+
+async function fetchTherapyInputSnapshot(
+  client: AdminClient,
+): Promise<TherapyInputSnapshot> {
+  const { data, error } = await client.rpc("therapy_input_export_snapshot_v2");
+  if (error) throw new Error(`Therapie-Eingabe-Snapshot: ${error.message}`);
+  if (typeof data !== "string") {
+    throw new Error("Therapie-Eingabe-Snapshot: unerwartetes RPC-Format");
+  }
+
+  let snapshot: TherapyInputSnapshot;
+  try {
+    snapshot = JSON.parse(data) as TherapyInputSnapshot;
+  } catch {
+    throw new Error("Therapie-Eingabe-Snapshot: ungueltiges Manifest");
+  }
+  await validateTherapyInputSnapshotV2(snapshot, THERAPY_INPUT_SNAPSHOT_TABLES);
+
   return snapshot;
 }
 
-async function gatherStats(client: ReturnType<typeof createClient>) {
+async function gatherStats(client: AdminClient) {
   const { tables: tableNames, source: tableSource } = await discoverTables();
   const { buckets: bucketNames, source: bucketSource } = await discoverBuckets(client);
 
@@ -437,7 +507,7 @@ type AuthUserExport = {
 };
 
 async function fetchAllAuthUsers(
-  client: ReturnType<typeof createClient>,
+  client: AdminClient,
 ): Promise<AuthUserExport[]> {
   const all: AuthUserExport[] = [];
   const perPage = 1000;
@@ -476,7 +546,7 @@ async function fetchAllAuthUsers(
 type StorageFileEntry = { path: string; size: number };
 
 async function listAllFiles(
-  client: ReturnType<typeof createClient>,
+  client: AdminClient,
   bucket: string,
   prefix = "",
 ): Promise<StorageFileEntry[]> {
@@ -523,7 +593,8 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("- `package.json`, `bun.lock`, `vite.config.ts`, `tailwind.config.ts`, `index.html`");
   lines.push("");
   lines.push("**2. Dieses Backup-ZIP** (alles, was NICHT in GitHub ist)");
-  lines.push("- `db/*.json` + `db/*.csv` — alle DB-Tabelleninhalte");
+  lines.push("- `db/*.json` und, soweit angegeben, `db/*.csv` — alle DB-Tabelleninhalte");
+  lines.push("- Therapie-Eingaberevisionen sind absichtlich JSON-only, damit grosse JSON-Zahlen verlustfrei bleiben.");
   lines.push("- `auth/users.json` — Liste aller Patienten-Konten (ohne Passwörter)");
   if (mode === "full") {
     for (const b of stats.buckets) {
@@ -545,7 +616,10 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("| Tabelle | Zeilen | Dateien im Backup |");
   lines.push("|---------|-------:|-------------------|");
   for (const t of stats.tables) {
-    lines.push(`| \`${t.name}\` | ${t.rows} | \`db/${t.name}.csv\` + \`db/${t.name}.json\` |`);
+    const files = THERAPY_INPUT_SNAPSHOT_TABLE_SET.has(t.name)
+      ? `\`db/${t.name}.json\` (verlustfrei, kein CSV)`
+      : `\`db/${t.name}.csv\` + \`db/${t.name}.json\``;
+    lines.push(`| \`${t.name}\` | ${t.rows} | ${files} |`);
   }
   lines.push("");
   lines.push(`**Auth-Benutzerkonten:** ${stats.authUserCount >= 0 ? stats.authUserCount : "Fehler"} (siehe \`auth/users.json\`)`);
@@ -591,18 +665,35 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   lines.push("3. **Schema kommt automatisch** aus `supabase/migrations/` (RLS, Tabellen, Buckets, Functions, Trigger).");
   lines.push("4. **Secrets eintragen**: alle Namen aus `SECRETS-CHECKLISTE.txt` in Lovable-Cloud → Settings → Secrets.");
   lines.push("5. **Auth-Benutzer wiederherstellen**: User aus `auth/users.json` via Admin-API anlegen (ID übernehmen!). Passwort-Reset-Mails an alle Patienten verschicken.");
-  lines.push("6. **Tabellen-Daten zurückspielen**: Die JSON-Dateien aus `db/` per Skript einspielen (z. B. via `psql \\copy` oder Restore-Edge-Function). CSVs sind für manuelle Inspektion in Excel/LibreOffice.");
+  lines.push("6. **Tabellen-Daten zurückspielen**: Normale Tabellen aus `db/` in Foreign-Key-Reihenfolge importieren. Für Wiki- und Therapie-Eingabe-Snapshots gelten ausschließlich die nachfolgenden Owner-Transaktionsverträge; keine Restore-Edge-Function verwenden. CSVs sind nur zur manuellen Inspektion.");
   if (stats.tables.some((table) => table.name === "kb_import_batches")) {
     lines.push("");
     lines.push(`**Verbindlicher Wiki-Restore für alle ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen:**`);
     lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten; zuerst `SET CONSTRAINTS ALL DEFERRED`.");
-    lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`; vorhandene Wiki-Daten und Migration-Seeds ohne fachfremdes \`CASCADE\` in umgekehrter FK-Reihenfolge leeren.`);
+    lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`.`);
+    lines.push("- Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources` auf `NULL` setzen, um die restriktiven Parent-Revision-Zeiger innerhalb der Transaktion zu lösen.");
+    lines.push("- Bestehende `therapy_input_facts` bleiben unangetastet. Ihr `kb_entity_id`-Fremdschlüssel ist `NO ACTION DEFERRABLE`; dieselben Entity-UUIDs müssen vor der unmittelbaren Constraint-Prüfung wieder vorhanden sein.");
+    lines.push("- Vorhandene Wiki-Daten und Migration-Seeds ohne `TRUNCATE` oder fachfremdes `CASCADE` in umgekehrter FK-Reihenfolge mit `DELETE` leeren, dabei `kb_release_items` vor `kb_releases`.");
+    lines.push("- Die Wiki-JSON-Dateien unverändert und ohne JavaScript-Neuserialisierung importieren; nur ihr exakter Text entspricht den SHA-256-Werten in `db/kb_wiki_snapshot_manifest.json`.");
     lines.push("- Importreihenfolge: kontrollierte Typen; Kernobjekte vor Revisionen/Abhängigkeiten; Import-Batches vor Kandidaten/Audit; Legacy-Wiki und Produkte vor Produktlinks.");
     lines.push("- Kernzeilen, Kandidatenverträge und `kb_source_candidate_draft_promotions` zuerst laden; danach `kb_entity_candidate_draft_promotions` (Entitäts-Eltern-Promotionen) und zuletzt `kb_entity_candidate_draft_promotion_assertions` (Assertion-Zuordnungen).");
-    lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten zuletzt laden.");
+    lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten danach laden. `kb_releases` erst nach den Kernobjekten und `kb_release_items` zuletzt nach allen gebundenen Revisionen und Abhängigkeiten importieren.");
     lines.push(`- Danach \`SET CONSTRAINTS ALL IMMEDIATE\` und auf allen ${WIKI_SNAPSHOT_TABLES.length} Tabellen \`ENABLE TRIGGER USER\`.`);
-    lines.push("- `kb_export_wiki_snapshot()` ausführen: `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts` und `invalid_entity_candidate_draft_promotions` müssen jeweils 0 sein; das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
+    lines.push("- `kb_export_wiki_snapshot()` ausführen: `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts`, `invalid_entity_candidate_draft_promotions` und `invalid_knowledge_releases` müssen jeweils 0 sein; das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
     lines.push("- Bei jeder Abweichung die gesamte Transaktion zurückrollen.");
+  }
+  if (stats.tables.some((table) => table.name === "therapy_input_revisions")) {
+    lines.push("");
+    lines.push("**Verbindlicher Restore für den Therapie-Eingabe-Snapshot:**");
+    lines.push("- Alle vier Tabellen `therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts` und `therapy_input_fact_sources` stammen gemeinsam aus Snapshot-Version 2; niemals einzeln oder per Autocommit wiederherstellen.");
+    lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten und zuerst `SET CONSTRAINTS ALL DEFERRED` ausführen.");
+    lines.push("- Vor dem Faktenimport muss ein kompatibler Wiki-Snapshot mit allen referenzierten `kb_entities` wiederhergestellt sein.");
+    lines.push("- Auf allen vier Tabellen `DISABLE TRIGGER USER`; Löschreihenfolge: Faktenquellen, Fakten, Eingabequellen, Revisionen.");
+    lines.push("- Die JSON-Dateien niemals mit `JSON.parse`, einer Restore-Edge-Function oder anderem JavaScript einlesen und neu serialisieren; grosse Ganzzahlen wuerden gerundet.");
+    lines.push("- Owner-SQL je Datei: `INSERT INTO public.<tabelle> SELECT * FROM jsonb_populate_recordset(NULL::public.<tabelle>, <exakter_dateitext>::jsonb);` — Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen.");
+    lines.push("- `SET CONSTRAINTS ALL IMMEDIATE`, anschließend alle vier Trigger wieder aktivieren und `therapy_input_export_snapshot_v2()` ausführen.");
+    lines.push("- Nur committen, wenn Snapshot-Version 2, `invalid_revision_count = 0`, `invalid_fact_count = 0` und alle vier Zeilenzahlen sowie SHA-256-Werte exakt dem gesicherten Manifest entsprechen; sonst vollständig zurückrollen.");
+    lines.push("- Direkte Schreibrechte für `authenticated` oder `service_role` dürfen für den Restore nicht gelockert werden.");
   }
   if (mode === "full") {
     lines.push("7. **Storage-Dateien hochladen**: Dateien aus `storage/<bucket>/` in die neu angelegten Buckets hochladen (Cloud → Files oder via Skript).");
@@ -654,7 +745,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const adminClient = createClient(supabaseUrl, serviceKey);
+    const adminClient = createAdminClient(supabaseUrl, serviceKey);
 
     // Admin-Check
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
@@ -696,7 +787,7 @@ Deno.serve(async (req) => {
       // GitHub API endpoint supports private repos with token and returns a redirect to codeload
       const apiUrl = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(branch)}`;
       const codeloadUrl = `https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`;
-      let githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
+      const githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
       if (!githubRes.ok || !githubRes.body) {
         const status = githubRes.status;
         if (status === 404 && !githubToken) {
@@ -767,10 +858,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      const tablesOut: Record<string, { rows: Record<string, unknown>[]; error?: string }> = {};
+      const tablesOut: Record<string, TableExport> = {};
       const tableErrors: Array<{ table: string; message: string }> = [];
       let wikiSnapshot: WikiSnapshot | null = null;
-      if (area.tables.some((table) => WIKI_SNAPSHOT_TABLE_SET.has(table))) {
+      let therapyInputSnapshot: TherapyInputSnapshot | null = null;
+      if (areaId === "wiki") {
         try {
           wikiSnapshot = await fetchWikiSnapshot(adminClient);
         } catch (e) {
@@ -778,15 +870,42 @@ Deno.serve(async (req) => {
           tableErrors.push({ table: "wiki_snapshot", message });
         }
       }
-      for (const t of area.tables) {
+      if (area.tables.some((table) => THERAPY_INPUT_SNAPSHOT_TABLE_SET.has(table))) {
         try {
-          if (WIKI_SNAPSHOT_TABLE_SET.has(t) && !wikiSnapshot) continue;
-          const rows = wikiSnapshot?.tables[t as keyof WikiSnapshot["tables"]]
-            ?? await fetchTableAll(adminClient, t);
-          tablesOut[t] = { rows };
+          therapyInputSnapshot = await fetchTherapyInputSnapshot(adminClient);
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
-          tablesOut[t] = { rows: [], error: message };
+          tableErrors.push({ table: "therapy_input_snapshot", message });
+        }
+      }
+      for (const t of area.tables) {
+        try {
+          if (areaId === "wiki" && WIKI_SNAPSHOT_TABLE_SET.has(t)) {
+            if (!wikiSnapshot) continue;
+            tablesOut[t] = {
+              serializedRows: wikiSnapshot.serialized_tables[
+                t as keyof WikiSnapshot["serialized_tables"]
+              ],
+              rowCount: wikiSnapshot.manifest[t].rows,
+            };
+            continue;
+          }
+          if (THERAPY_INPUT_SNAPSHOT_TABLE_SET.has(t)) {
+            if (!therapyInputSnapshot) continue;
+            tablesOut[t] = {
+              serializedRows: therapyInputSnapshot.tables[
+                t as keyof TherapyInputSnapshot["tables"]
+              ],
+              rowCount: therapyInputSnapshot.manifest[t].rows,
+            };
+            continue;
+          }
+          const rows = wikiSnapshot?.tables[t as keyof WikiSnapshot["tables"]]
+            ?? await fetchTableAll(adminClient, t);
+          tablesOut[t] = { rows, rowCount: rows.length };
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          tablesOut[t] = { rows: [], rowCount: 0, error: message };
           tableErrors.push({ table: t, message });
         }
       }
@@ -834,8 +953,11 @@ Deno.serve(async (req) => {
           generatedAt: new Date().toISOString(),
           tables: tablesOut,
           storage: storageOut,
-          wikiSnapshotManifest: wikiSnapshot?.manifest ?? null,
-          legacyBridgeValidation: wikiSnapshot?.validation ?? null,
+          wikiSnapshotManifest: areaId === "wiki" ? wikiSnapshot?.manifest ?? null : null,
+          legacyBridgeValidation: areaId === "wiki" ? wikiSnapshot?.validation ?? null : null,
+          therapyInputSnapshotVersion: therapyInputSnapshot?.snapshot_version ?? null,
+          therapyInputSnapshotManifest: therapyInputSnapshot?.manifest ?? null,
+          therapyInputValidation: therapyInputSnapshot?.validation ?? null,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -855,11 +977,44 @@ Deno.serve(async (req) => {
     const tableNamesForDb = [...new Set([
       ...stats.tables.map((table) => table.name),
       ...WIKI_SNAPSHOT_TABLES,
+      ...THERAPY_INPUT_SNAPSHOT_TABLES,
     ])].sort();
     const tableErrors: Array<{ table: string; message: string }> = [];
     let wikiSnapshot: WikiSnapshot | null = null;
+    let therapyInputSnapshot: TherapyInputSnapshot | null = null;
+    if (tableNamesForDb.some((table) => THERAPY_INPUT_SNAPSHOT_TABLE_SET.has(table))) {
+      try {
+        therapyInputSnapshot = await fetchTherapyInputSnapshot(adminClient);
+        for (const table of THERAPY_INPUT_SNAPSHOT_TABLES) {
+          const statsEntry = stats.tables.find((entry) => entry.name === table);
+          if (statsEntry) {
+            statsEntry.rows = therapyInputSnapshot.manifest[table].rows;
+          } else {
+            stats.tables.push({ name: table, rows: therapyInputSnapshot.manifest[table].rows });
+          }
+        }
+        stats.tables.sort((left, right) => left.name.localeCompare(right.name));
+        zip.file(
+          "db/therapy_input_snapshot_version.json",
+          JSON.stringify({ snapshot_version: therapyInputSnapshot.snapshot_version }, null, 2),
+        );
+        zip.file(
+          "db/therapy_input_snapshot_manifest.json",
+          JSON.stringify(therapyInputSnapshot.manifest, null, 2),
+        );
+        zip.file(
+          "db/therapy_input_snapshot_validation.json",
+          JSON.stringify(therapyInputSnapshot.validation, null, 2),
+        );
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        tableErrors.push({ table: "therapy_input_snapshot", message });
+      }
+    }
     if (tableNamesForDb.some((table) => WIKI_SNAPSHOT_TABLE_SET.has(table))) {
       try {
+        // Facts are append-only and hold a restrictive FK to kb_entities. Fetching
+        // Wiki second guarantees it contains every entity referenced above.
         wikiSnapshot = await fetchWikiSnapshot(adminClient);
         zip.file("db/kb_wiki_snapshot_manifest.json", JSON.stringify(wikiSnapshot.manifest, null, 2));
         zip.file("db/kb_legacy_bridge_validation.json", JSON.stringify(wikiSnapshot.validation, null, 2));
@@ -871,9 +1026,20 @@ Deno.serve(async (req) => {
     for (const table of tableNamesForDb) {
       try {
         if (WIKI_SNAPSHOT_TABLE_SET.has(table) && !wikiSnapshot) continue;
+        if (THERAPY_INPUT_SNAPSHOT_TABLE_SET.has(table)) {
+          if (!therapyInputSnapshot) continue;
+          zip.file(
+            `db/${table}.json`,
+            therapyInputSnapshot.tables[table as keyof TherapyInputSnapshot["tables"]],
+          );
+          continue;
+        }
         const rows = wikiSnapshot?.tables[table as keyof WikiSnapshot["tables"]]
           ?? await fetchTableAll(adminClient, table);
-        zip.file(`db/${table}.json`, JSON.stringify(rows, null, 2));
+        const serializedRows = wikiSnapshot?.serialized_tables[
+          table as keyof WikiSnapshot["serialized_tables"]
+        ];
+        zip.file(`db/${table}.json`, serializedRows ?? JSON.stringify(rows, null, 2));
         zip.file(`db/${table}.csv`, rowsToCsv(rows));
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -931,7 +1097,7 @@ Deno.serve(async (req) => {
 
     const filename = `Naturheilpraxis-DATEN-Backup-${isoTimestamp()}.zip`;
 
-    return new Response(zipBytes, {
+    return new Response(new Uint8Array(zipBytes).buffer, {
       status: 200,
       headers: {
         ...corsHeaders,
