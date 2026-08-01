@@ -4,11 +4,11 @@ Datum: 29.07.2026, aktualisiert am 01.08.2026
 Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
 `publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
 implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
-Feature-Zweig. Schritte 3A und 3B sind am 31.07.2026 lokal implementiert und
-verifiziert. Schritt 4A ist am 01.08.2026 als medizinisch inaktiver
-Knowledge-Release-Vertrag lokal implementiert. Diese drei Schritte sind noch
-nicht committed, gepusht oder nach Supabase ausgerollt. Schritte 4B bis 7
-bleiben Planung.
+Feature-Zweig. Die Schritte 3A, 3B und 4A sind mit Commit `74ad20d` auf diesem
+Zweig gesichert und gepusht. Schritt 4B-1 ist am 01.08.2026 als schema-only
+Dosierungs- und Sicherheitsregelvertrag lokal implementiert und verifiziert.
+Keiner dieser Schritte ist nach Supabase ausgerollt. Schritte 4B-2 bis 7 bleiben
+Planung.
 
 ## Ziel
 
@@ -606,10 +606,73 @@ Die ausfuehrliche Implementierungsdokumentation steht in
 
 ### Schritt 4B: Regeln und Suchprojektion
 
+#### Schritt 4B-1: Medizinisch inaktiver klinischer Regelvertrag
+
+Lokal implementiert in:
+
+`supabase/migrations/20260801100000_create_kb_clinical_rule_contract.sql`
+
+Der additive Vertrag erzeugt genau drei leere Tabellen:
+
+- `kb_dosage_rules`
+- `kb_safety_rules`
+- `kb_safety_rule_conditions`
+
+Jede Regel bindet genau eine vorhandene Assertion des passenden Typs
+`dosage` beziehungsweise `safety`, eine konkrete therapeutische Subject-Revision
+und die bereits vorhandenen Assertion-Quellen. Dosierungen koennen optional eine
+exakte Indikations- und Populationsrevision binden. Dosis, Einheit, Frequenz,
+Dauer, Timing und Route sind strukturiert und kontrolliert; freie Dosierungs-JSON
+existiert nicht.
+
+Safety-Regeln verwenden ausschliesslich die bereits fuer Safety-Kandidaten
+definierten Regeltypen und Schweregrade. Der Effekt ist deterministisch:
+
+- `information` wird `allow_with_notice`
+- `caution` und `require_review` werden `review_only`
+- `avoid` wird `exclude`
+
+Bedingungen sind ausschliesslich eine geordnete AND-Menge aus `always`,
+`entity_present`, `fact_present`, `fact_missing`, `coded_value_in` und
+`quantity_compare`. Jeder Typ besitzt eine fail-closed Spaltenform; `always` ist
+nur als einzige Bedingung zulaessig. Es gibt keine freie Predicate- oder
+Metadata-JSON und keine Patienten-, Nutzer-, Sitzungs- oder Pseudonymreferenz.
+
+Der transaktionsendgueltige Validator verlangt passende Assertion-Kinds,
+exakte Entity-/Revisionspaare, zulaessige Typen, eine primaere Quelle mit
+nichtleerer Fundstelle, statuskompatible Quellen und Revisionen, vollstaendige
+Safety-Bedingungen sowie den kanonischen vollstaendigen `rule_content_hash`.
+Regel-, Bedingungs-, Quellen- und Revisionswrites sperren die betroffenen
+Abhaengigkeiten und erzeugen echte neue Zeilenversionen der koordinierenden
+Entity-/Quellen-Eltern sowie der Regelassertion. Dadurch muss auch ein aelterer
+`REPEATABLE READ`-Writer bei einer parallelen Freigabe oder einer fuer ihn noch
+unsichtbaren neuen Revisionskante serialisierungsbedingt abbrechen, statt eine
+Write-Skew-Luecke zu hinterlassen. Ab `approved` sind Regelinhalt und
+Quellenbindung dauerhaft unveraenderlich; ein Zuruecksetzen der Regelassertion
+auf `draft` ist dann ausgeschlossen.
+
+Nur der Datenbankeigner kann direkt schreiben. Administratoren und
+`service_role` duerfen wie in 4A nur lesen, wobei RLS Patientenzeilen verbirgt;
+`anon`, `kb_importer` und `kb_import_runtime` haben keinen Zugriff. Writer-RPC,
+Seed, Backfill, Kandidatenpromotion und produktiver Leser existieren nicht.
+Release v1 bleibt unveraendert hart `retrieval_eligible = false` und
+`is_active = false`.
+
+Der gemeinsame Wiki-Snapshot umfasst nun exakt 55 statt 52 Tabellen und liefert
+zusaetzlich `invalid_dosage_rules` und `invalid_safety_rules`. Browser, Edge,
+Fallback und Owner-Restore verwenden dasselbe Inventar und pruefen weiterhin den
+SHA-256 des exakten serialisierten Tabellenbytes. Der Therapie-Input-Snapshot v2
+bleibt byteidentisch und exakt vier Tabellen gross. Die historische 4A-Grenze
+von 50 auf 52 wird in ihren isolierten Migrationstests unveraendert geprueft;
+4B-1 prueft separat die Grenze von 52 auf 55.
+
+Die ausfuehrliche Implementierungsdokumentation steht in
+`docs/wiki-phase4b-1-clinical-rule-contract-implementation-2026-08-01.md`.
+
+#### Verbleibender Schritt 4B-2
+
 Vor dem neuen Retrieval bleiben additiv umzusetzen:
 
-- konkrete, quellengebundene `kb_dosage_rules`
-- deterministische `kb_safety_rules`
 - `kb_search_documents` nur fuer freigegebene Revisionen
 - Laborparameter- und Referenzbereichsdetails, bevor Laborwerte automatisch
   interpretiert werden
