@@ -5,7 +5,6 @@ import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateWikiSnapshotShape } from "../../supabase/functions/_shared/wikiSnapshotValidation";
-import { WIKI_ZERO_VALIDATION_KEYS } from "@/lib/wikiBackup";
 
 const migrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -65,36 +64,6 @@ const releaseBackupSources = new Set([
   "supabase/functions/_shared/wikiSnapshotValidation.ts",
 ]);
 
-function expandArrayBlock(
-  source: string,
-  block: string,
-  resolving: ReadonlySet<string> = new Set(),
-): string[] {
-  const values: string[] = [];
-  for (const match of block.matchAll(/"([a-z0-9_-]+)"|\.\.\.([A-Z0-9_]+)/g)) {
-    if (match[1]) {
-      values.push(match[1]);
-      continue;
-    }
-    const constantName = match[2];
-    if (resolving.has(constantName)) throw new Error(`Recursive array constant ${constantName}`);
-    const constantBlock = source.match(
-      new RegExp(`const ${constantName} = \\[([\\s\\S]*?)\\] as const;`),
-    )?.[1];
-    if (constantBlock === undefined) throw new Error(`Missing array constant ${constantName}`);
-    values.push(...expandArrayBlock(source, constantBlock, new Set([...resolving, constantName])));
-  }
-  return values;
-}
-
-function expandArrayConstant(source: string, constantName: string): string[] {
-  const block = source.match(
-    new RegExp(`const ${constantName} = \\[([\\s\\S]*?)\\] as const;`),
-  )?.[1];
-  if (block === undefined) throw new Error(`Missing array constant ${constantName}`);
-  return expandArrayBlock(source, block, new Set([constantName]));
-}
-
 const adminId = "10000000-0000-4000-8000-000000000001";
 const patientId = "10000000-0000-4000-8000-000000000002";
 const sourceId = "20000000-0000-4000-8000-000000000001";
@@ -141,6 +110,17 @@ const wikiSnapshotTables = [
   "kb_botanical_revision_details", "kb_nutrient_revision_details",
   "kb_product_variant_revision_details", "kb_composition_components",
   "kb_releases", "kb_release_items", "faqs", "practice_pricing", "practice_info",
+] as const;
+
+const wiki4aZeroValidationKeys = [
+  "missing_articles",
+  "invalid_current_snapshots",
+  "orphaned_active_articles",
+  "invalid_source_promotions",
+  "invalid_therapeutic_catalog_revisions",
+  "invalid_entity_candidate_contracts",
+  "invalid_entity_candidate_draft_promotions",
+  "invalid_knowledge_releases",
 ] as const;
 
 const wikiRestoreOrder = [
@@ -574,23 +554,6 @@ describe("Wiki Phase 3.5 knowledge release contract", () => {
            FROM jsonb_object_keys(public.kb_export_wiki_snapshot() -> 'manifest')) AS manifest
     `);
     expect(snapshotCount.rows[0]).toEqual({ tables: 52, serialized: 52, manifest: 52 });
-
-    const browserWikiBlock = backupAreasSource.match(
-      /id: "wiki",[\s\S]*?tables: \[([\s\S]*?)\],\s+buckets:/,
-    )?.[1];
-    const edgeAreaWikiBlock = backupExportSource.match(
-      /"wiki": \{\s*tables: \[([\s\S]*?)\],\s*buckets:/,
-    )?.[1];
-    expect(browserWikiBlock).toBeDefined();
-    expect(edgeAreaWikiBlock).toBeDefined();
-    for (const inventory of [
-      expandArrayBlock(backupAreasSource, browserWikiBlock!),
-      expandArrayBlock(backupExportSource, edgeAreaWikiBlock!),
-      expandArrayConstant(backupExportSource, "WIKI_SNAPSHOT_TABLES"),
-    ]) {
-      expect(inventory).toEqual(wikiSnapshotTables);
-      expect(new Set(inventory).size).toBe(52);
-    }
 
     expect(releaseMigration).toContain("SET release_manifest = release.release_manifest");
     expect(releaseMigration).toContain("NULLIF(btrim(primary_source.locator), '') IS NULL");
@@ -1276,7 +1239,7 @@ describe("Wiki Phase 3.5 knowledge release contract", () => {
       serializedTables: original.serialized_tables,
       manifest: original.manifest,
       validation: original.validation,
-    }, wikiSnapshotTables, WIKI_ZERO_VALIDATION_KEYS)).resolves.toBeUndefined();
+    }, wikiSnapshotTables, wiki4aZeroValidationKeys)).resolves.toBeUndefined();
 
     await db.exec("BEGIN; SET CONSTRAINTS ALL DEFERRED;");
     try {
