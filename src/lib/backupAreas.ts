@@ -133,6 +133,7 @@ export const BACKUP_AREAS: BackupArea[] = [
       "kb_safety_rule_conditions",
       "kb_releases",
       "kb_release_items",
+      "kb_search_documents",
       "faqs",
       "practice_pricing",
       "practice_info",

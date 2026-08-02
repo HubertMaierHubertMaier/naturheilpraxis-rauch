@@ -1125,7 +1125,6 @@ describe("Wiki Phase 3.5 knowledge release contract", () => {
     expect(backupExportSource).toContain('"invalid_knowledge_releases"');
     expect(backupCenterSource).toContain("invalid_knowledge_releases");
     expect(backupCenterSource).toContain("await validateWikiSubsetPayload(payload, area.tables)");
-    expect(backupCenterSource).toContain("`kb_release_items` zuletzt");
     expect(backupCenterSource).toContain("`NO ACTION DEFERRABLE`");
     expect(backupExportSource).toContain(
       "Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources`",

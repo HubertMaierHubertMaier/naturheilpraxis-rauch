@@ -173,4 +173,18 @@ describe("Wiki subset browser validation", () => {
         .rejects.toThrow(/invalid_knowledge_releases/);
     },
   );
+
+  it.each([1, undefined, "0", Number.NaN])(
+    "rejects invalid_search_documents=%s",
+    async (value) => {
+      const payload = await validSubsetPayload();
+      if (value === undefined) {
+        delete payload.legacyBridgeValidation?.invalid_search_documents;
+      } else {
+        payload.legacyBridgeValidation!.invalid_search_documents = value;
+      }
+      await expect(validateWikiSubsetPayload(payload, expectedTables))
+        .rejects.toThrow(/invalid_search_documents/);
+    },
+  );
 });

@@ -79,6 +79,9 @@ const kbClinicalRuleTables = [
   "kb_safety_rules",
   "kb_safety_rule_conditions",
 ];
+const kbSearchTables = [
+  "kb_search_documents",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
@@ -91,6 +94,7 @@ const wikiBackupTables = [
   ...kbTherapeuticTables,
   ...kbClinicalRuleTables,
   ...kbReleaseTables,
+  ...kbSearchTables,
   "faqs",
   "practice_pricing",
   "practice_info",
@@ -429,7 +433,7 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("parses every production Wiki inventory as the same exact 55-table set", () => {
+  it("parses every production Wiki inventory as the same exact 56-table set", () => {
     const requiredTables = {
       REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
       REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
@@ -456,6 +460,10 @@ describe("Wiki Phase 1 backup coverage", () => {
         backupExportSource,
         "REQUIRED_KB_CLINICAL_RULE_TABLES",
       ),
+      REQUIRED_KB_SEARCH_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_SEARCH_TABLES",
+      ),
     };
     expect(requiredTables).toEqual({
       REQUIRED_KB_TABLES: kbTables,
@@ -465,6 +473,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
       REQUIRED_KB_RELEASE_TABLES: kbReleaseTables,
       REQUIRED_KB_CLINICAL_RULE_TABLES: kbClinicalRuleTables,
+      REQUIRED_KB_SEARCH_TABLES: kbSearchTables,
     });
 
     const snapshotBlock = requiredBlock(
@@ -512,8 +521,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       AREA_MAP: edgeTables,
       FALLBACK_TABLES: fallbackWikiTables,
     })) {
-      expect(tables, `${name} length`).toHaveLength(55);
-      expect(new Set(tables).size, `${name} uniqueness`).toBe(55);
+      expect(tables, `${name} length`).toHaveLength(56);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(56);
     }
 
     const sourcePromotion = "kb_source_candidate_draft_promotions";
@@ -535,6 +544,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(tables.indexOf("kb_safety_rule_conditions"))
         .toBeLessThan(tables.indexOf("kb_releases"));
       expect(tables.indexOf("kb_releases")).toBeLessThan(tables.indexOf("kb_release_items"));
+      expect(tables.indexOf("kb_release_items"))
+        .toBeLessThan(tables.indexOf("kb_search_documents"));
     }
   });
 
@@ -570,8 +581,12 @@ describe("Wiki Phase 1 backup coverage", () => {
       const assertionMappingsIndex = instructions.indexOf(
         "kb_entity_candidate_draft_promotion_assertions",
       );
+      const releaseItemsImportIndex = instructions.lastIndexOf("`kb_release_items`");
+      const searchImportIndex = instructions.lastIndexOf("`kb_search_documents`");
       expect(entityPromotionIndex).toBeGreaterThan(-1);
       expect(assertionMappingsIndex).toBeGreaterThan(entityPromotionIndex);
+      expect(releaseItemsImportIndex).toBeGreaterThan(-1);
+      expect(searchImportIndex).toBeGreaterThan(releaseItemsImportIndex);
       expect(instructions).toContain(`\`${validationKey}\``);
     }
     expect(edgeRestoreBlock).toContain("Kernzeilen, Kandidatenverträge");
@@ -589,6 +604,7 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(backupExportSource).toContain("...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_SEARCH_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');
   });
 
