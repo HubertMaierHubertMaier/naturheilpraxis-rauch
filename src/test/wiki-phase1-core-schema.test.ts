@@ -82,6 +82,11 @@ const kbClinicalRuleTables = [
 const kbSearchTables = [
   "kb_search_documents",
 ];
+const kbLaboratoryTables = [
+  "kb_lab_parameter_revision_details",
+  "kb_lab_reference_ranges",
+  "kb_lab_finding_definition_revision_details",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
@@ -92,6 +97,7 @@ const wikiBackupTables = [
   ...kbEntityCandidateContractTables,
   ...kbPromotionTables,
   ...kbTherapeuticTables,
+  ...kbLaboratoryTables,
   ...kbClinicalRuleTables,
   ...kbReleaseTables,
   ...kbSearchTables,
@@ -433,7 +439,7 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("parses every production Wiki inventory as the same exact 56-table set", () => {
+  it("parses every production Wiki inventory as the same exact 59-table set", () => {
     const requiredTables = {
       REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
       REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
@@ -451,6 +457,10 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_THERAPEUTIC_TABLES: requiredTableConstant(
         backupExportSource,
         "REQUIRED_KB_THERAPEUTIC_TABLES",
+      ),
+      REQUIRED_KB_LABORATORY_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_LABORATORY_TABLES",
       ),
       REQUIRED_KB_RELEASE_TABLES: requiredTableConstant(
         backupExportSource,
@@ -471,6 +481,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES: kbEntityCandidateContractTables,
       REQUIRED_KB_PROMOTION_TABLES: kbPromotionTables,
       REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
+      REQUIRED_KB_LABORATORY_TABLES: kbLaboratoryTables,
       REQUIRED_KB_RELEASE_TABLES: kbReleaseTables,
       REQUIRED_KB_CLINICAL_RULE_TABLES: kbClinicalRuleTables,
       REQUIRED_KB_SEARCH_TABLES: kbSearchTables,
@@ -521,8 +532,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       AREA_MAP: edgeTables,
       FALLBACK_TABLES: fallbackWikiTables,
     })) {
-      expect(tables, `${name} length`).toHaveLength(56);
-      expect(new Set(tables).size, `${name} uniqueness`).toBe(56);
+      expect(tables, `${name} length`).toHaveLength(59);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(59);
     }
 
     const sourcePromotion = "kb_source_candidate_draft_promotions";
@@ -536,6 +547,12 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(sourcePromotionIndex).toBeLessThan(tables.indexOf(entityPromotion));
       expect(tables.indexOf(entityPromotion)).toBeLessThan(tables.indexOf(assertionMappings));
       expect(tables.indexOf("kb_composition_components"))
+        .toBeLessThan(tables.indexOf("kb_lab_parameter_revision_details"));
+      expect(tables.indexOf("kb_lab_parameter_revision_details"))
+        .toBeLessThan(tables.indexOf("kb_lab_reference_ranges"));
+      expect(tables.indexOf("kb_lab_reference_ranges"))
+        .toBeLessThan(tables.indexOf("kb_lab_finding_definition_revision_details"));
+      expect(tables.indexOf("kb_lab_finding_definition_revision_details"))
         .toBeLessThan(tables.indexOf("kb_dosage_rules"));
       expect(tables.indexOf("kb_dosage_rules"))
         .toBeLessThan(tables.indexOf("kb_safety_rules"));
@@ -551,6 +568,11 @@ describe("Wiki Phase 1 backup coverage", () => {
 
   it("wires Step 2B validation through Edge and both restore instructions", () => {
     const validationKey = "invalid_entity_candidate_draft_promotions";
+    const laboratoryValidationKeys = [
+      "invalid_lab_parameter_revisions",
+      "invalid_lab_reference_ranges",
+      "invalid_lab_finding_definition_revisions",
+    ];
     const validationTypeBlock = requiredBlock(
       backupExportSource,
       /type WikiSnapshotValidation = \{([\s\S]*?)\};/,
@@ -574,6 +596,10 @@ describe("Wiki Phase 1 backup coverage", () => {
 
     expect(validationTypeBlock).toContain(`${validationKey}: number;`);
     expect(quotedValues(zeroValidationBlock, "double")).toContain(validationKey);
+    for (const key of laboratoryValidationKeys) {
+      expect(validationTypeBlock).toContain(`${key}: number;`);
+      expect(quotedValues(zeroValidationBlock, "double")).toContain(key);
+    }
     expect(backupExportSource).toContain("await validateWikiSnapshotShape(");
 
     for (const instructions of [edgeRestoreBlock, subsetRestoreBlock]) {
@@ -588,6 +614,25 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(releaseItemsImportIndex).toBeGreaterThan(-1);
       expect(searchImportIndex).toBeGreaterThan(releaseItemsImportIndex);
       expect(instructions).toContain(`\`${validationKey}\``);
+      const parameterIndex = instructions.lastIndexOf("`kb_lab_parameter_revision_details`");
+      const rangeIndex = instructions.lastIndexOf("`kb_lab_reference_ranges`");
+      const findingIndex = instructions.lastIndexOf(
+        "`kb_lab_finding_definition_revision_details`",
+      );
+      expect(parameterIndex).toBeGreaterThan(-1);
+      expect(rangeIndex).toBeGreaterThan(parameterIndex);
+      expect(findingIndex).toBeGreaterThan(rangeIndex);
+      const findingDeleteIndex = instructions.indexOf(
+        "`kb_lab_finding_definition_revision_details`",
+      );
+      const rangeDeleteIndex = instructions.indexOf("`kb_lab_reference_ranges`");
+      const parameterDeleteIndex = instructions.indexOf("`kb_lab_parameter_revision_details`");
+      expect(findingDeleteIndex).toBeGreaterThan(-1);
+      expect(rangeDeleteIndex).toBeGreaterThan(findingDeleteIndex);
+      expect(parameterDeleteIndex).toBeGreaterThan(rangeDeleteIndex);
+      for (const key of laboratoryValidationKeys) {
+        expect(instructions).toContain(`\`${key}\``);
+      }
     }
     expect(edgeRestoreBlock).toContain("Kernzeilen, Kandidatenverträge");
     expect(edgeRestoreBlock).toContain("`kb_source_candidate_draft_promotions`");
@@ -603,6 +648,7 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(backupExportSource).toContain("...REQUIRED_KB_PROMOTION_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_LABORATORY_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_SEARCH_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');

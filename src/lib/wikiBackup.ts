@@ -15,6 +15,9 @@ export const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_dosage_rules",
   "invalid_safety_rules",
   "invalid_search_documents",
+  "invalid_lab_parameter_revisions",
+  "invalid_lab_reference_ranges",
+  "invalid_lab_finding_definition_revisions",
 ] as const;
 
 export type WikiSubsetPayload = {
