@@ -1,15 +1,17 @@
 # Wiki Phase 3.2+: Therapeutischer Katalog und erklaerbares Retrieval
 
-Datum: 29.07.2026, aktualisiert am 01.08.2026
+Datum: 29.07.2026, aktualisiert am 02.08.2026
 Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
 `publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
 implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
 Feature-Zweig. Die Schritte 3A, 3B und 4A sind mit Commit `74ad20d` auf diesem
 Zweig gesichert und gepusht. Schritt 4B-1 ist mit Commit `b6133db` als
 schema-only Dosierungs- und Sicherheitsregelvertrag gesichert und gepusht.
-Schritt 4B-2a ist am 02.08.2026 als medizinisch inaktive, releasegebundene
-Suchprojektion lokal implementiert. Keiner dieser Schritte ist nach Supabase
-ausgerollt. Schritt 4B-2b sowie die Schritte 5 bis 7 bleiben Planung.
+Schritt 4B-2a ist mit Commit `c690e4f` als medizinisch inaktive,
+releasegebundene Suchprojektion gesichert und gepusht. Schritt 4B-2b ist am
+02.08.2026 als medizinisch inaktiver Laborparameter-, Referenzbereichs- und
+Befunddefinitionsvertrag implementiert und lokal verifiziert. Keiner dieser
+Schritte ist nach Supabase ausgerollt. Die Schritte 5 bis 7 bleiben Planung.
 
 ## Ziel
 
@@ -696,11 +698,34 @@ Snapshot v2 bleibt byteidentisch und exakt vier Tabellen gross.
 Die ausfuehrliche Implementierungsdokumentation steht in
 `docs/wiki-phase4b-2a-search-document-contract-implementation-2026-08-02.md`.
 
-#### Verbleibender Schritt 4B-2b
+#### Schritt 4B-2b: Medizinisch inaktiver Laborvertrag
 
-Vor dem neuen Retrieval bleiben Laborparameter- und Referenzbereichsdetails
-additiv umzusetzen, bevor der strukturierte v2-Pfad Laborwerte automatisch
-interpretieren darf.
+Lokal implementiert in:
+
+`supabase/migrations/20260802100000_create_kb_laboratory_contract.sql`
+
+Die drei additiven Tabellen `kb_lab_parameter_revision_details`,
+`kb_lab_reference_ranges` und `kb_lab_finding_definition_revision_details`
+binden Material, Werteart, kanonische Einheit, exakte Methode, optionales Labor,
+Population, Alter, Geschlecht, numerischen oder qualitativen Referenzbereich und
+die daraus abgeleitete Bereichsklassifikation an konkrete Revisionen und
+quellengebundene Klassifikationsaussagen.
+
+Jeder Parameter- und Befundrevisionshash sowie jeder Referenzbereichshash friert
+die vollstaendigen fachlichen Revisions-, Kennungs-, Assertion-, Quellenbindungs-
+und Quellenrevisionsfelder ein. Widerspruechliche, aber getrennt belegte Bereiche
+bleiben darstellbar. Leere Intervalle, richtungslose Niedrig-/Hochdefinitionen,
+unpassende Entitaetstypen, fehlende primaere Fundstellen und Statuskonflikte
+werden fail-closed abgelehnt.
+
+Der Block legt keine echten Laborwerte oder Referenzbereiche an, fuehrt keine
+Einheitenumrechnung durch und bindet keinen Patienten- oder Retrievalpfad an.
+Release v1 bleibt unveraendert inaktiv. Der gemeinsame Wiki-Snapshot umfasst nun
+exakt 59 Tabellen und drei neue Pflichtzaehler; der Therapie-Input-Snapshot v2
+bleibt byteidentisch und exakt vier Tabellen gross.
+
+Die ausfuehrliche Implementierungsdokumentation steht in
+`docs/wiki-phase4b-2b-laboratory-contract-implementation-2026-08-02.md`.
 
 Embeddings sind spaeter optional und duerfen Sicherheitsregeln nicht
 ausfiltern.

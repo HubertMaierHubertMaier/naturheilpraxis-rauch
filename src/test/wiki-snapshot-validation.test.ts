@@ -187,4 +187,21 @@ describe("Wiki subset browser validation", () => {
         .rejects.toThrow(/invalid_search_documents/);
     },
   );
+
+  it.each([
+    "invalid_lab_parameter_revisions",
+    "invalid_lab_reference_ranges",
+    "invalid_lab_finding_definition_revisions",
+  ])("rejects malformed %s counters", async (key) => {
+    for (const value of [1, undefined, "0", Number.NaN]) {
+      const payload = await validSubsetPayload();
+      if (value === undefined) {
+        delete payload.legacyBridgeValidation?.[key];
+      } else {
+        payload.legacyBridgeValidation![key] = value;
+      }
+      await expect(validateWikiSubsetPayload(payload, expectedTables))
+        .rejects.toThrow(new RegExp(key));
+    }
+  });
 });

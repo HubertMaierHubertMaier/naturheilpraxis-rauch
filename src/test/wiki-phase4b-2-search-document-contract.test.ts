@@ -5,7 +5,6 @@ import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateWikiSnapshotShape } from "../../supabase/functions/_shared/wikiSnapshotValidation";
-import { WIKI_ZERO_VALIDATION_KEYS } from "@/lib/wikiBackup";
 
 const migrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -61,6 +60,20 @@ const wikiSnapshotTables = [
   "kb_dosage_rules", "kb_safety_rules", "kb_safety_rule_conditions",
   "kb_releases", "kb_release_items", "kb_search_documents",
   "faqs", "practice_pricing", "practice_info",
+] as const;
+
+const historicalZeroValidationKeys = [
+  "missing_articles",
+  "invalid_current_snapshots",
+  "orphaned_active_articles",
+  "invalid_source_promotions",
+  "invalid_therapeutic_catalog_revisions",
+  "invalid_entity_candidate_contracts",
+  "invalid_entity_candidate_draft_promotions",
+  "invalid_knowledge_releases",
+  "invalid_dosage_rules",
+  "invalid_safety_rules",
+  "invalid_search_documents",
 ] as const;
 
 let db: PGlite;
@@ -785,7 +798,7 @@ describe.sequential("Wiki 4B-2a search document contract", () => {
       serializedTables: before.serialized_tables,
       manifest: before.manifest,
       validation: before.validation,
-    }, wikiSnapshotTables, WIKI_ZERO_VALIDATION_KEYS)).resolves.toBeUndefined();
+    }, wikiSnapshotTables, historicalZeroValidationKeys)).resolves.toBeUndefined();
 
     await db.exec("BEGIN; ALTER TABLE public.kb_search_documents DISABLE TRIGGER USER;");
     try {
@@ -824,6 +837,7 @@ describe.sequential("Wiki 4B-2a search document contract", () => {
       "src/lib/wikiBackup.ts",
       "supabase/functions/backup-export/index.ts",
       "supabase/migrations/20260802090000_create_kb_search_document_contract.sql",
+      "supabase/migrations/20260802100000_create_kb_laboratory_contract.sql",
     ]);
     const violations: string[] = [];
     const visit = (directory: string, relativeDirectory: string) => {
