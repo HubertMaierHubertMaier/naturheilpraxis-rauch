@@ -121,6 +121,15 @@ const REQUIRED_KB_LABORATORY_TABLES = [
   "kb_lab_finding_definition_revision_details",
 ] as const;
 
+const REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES = [
+  "kb_homeopathic_repertory_revision_details",
+  "kb_homeopathic_rubrics",
+  "kb_homeopathic_rubric_revisions",
+  "kb_homeopathic_grade_definitions",
+  "kb_homeopathic_repertory_remedies",
+  "kb_homeopathic_rubric_remedy_assignments",
+] as const;
+
 const REQUIRED_KB_RELEASE_TABLES = [
   "kb_releases",
   "kb_release_items",
@@ -146,6 +155,7 @@ const WIKI_SNAPSHOT_TABLES = [
   ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
   ...REQUIRED_KB_LABORATORY_TABLES,
+  ...REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES,
   ...REQUIRED_KB_CLINICAL_RULE_TABLES,
   ...REQUIRED_KB_RELEASE_TABLES,
   ...REQUIRED_KB_SEARCH_TABLES,
@@ -181,6 +191,7 @@ const FALLBACK_TABLES = [...new Set([
   ...REQUIRED_KB_PROMOTION_TABLES,
   ...REQUIRED_KB_THERAPEUTIC_TABLES,
   ...REQUIRED_KB_LABORATORY_TABLES,
+  ...REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES,
   ...REQUIRED_KB_CLINICAL_RULE_TABLES,
   ...REQUIRED_KB_RELEASE_TABLES,
   ...REQUIRED_KB_SEARCH_TABLES,
@@ -246,6 +257,7 @@ const AREA_MAP: Record<string, AreaDef> = {
       "kb_product_variant_revision_details",
       "kb_composition_components",
       ...REQUIRED_KB_LABORATORY_TABLES,
+      ...REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES,
       ...REQUIRED_KB_CLINICAL_RULE_TABLES,
       ...REQUIRED_KB_RELEASE_TABLES,
       ...REQUIRED_KB_SEARCH_TABLES,
@@ -415,6 +427,11 @@ type WikiSnapshotValidation = {
   invalid_lab_parameter_revisions: number;
   invalid_lab_reference_ranges: number;
   invalid_lab_finding_definition_revisions: number;
+  invalid_homeopathic_repertory_revisions: number;
+  invalid_homeopathic_rubrics: number;
+  invalid_homeopathic_grade_definitions: number;
+  invalid_homeopathic_repertory_remedies: number;
+  invalid_homeopathic_rubric_remedy_assignments: number;
 };
 
 type WikiSnapshot = {
@@ -453,6 +470,11 @@ const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_lab_parameter_revisions",
   "invalid_lab_reference_ranges",
   "invalid_lab_finding_definition_revisions",
+  "invalid_homeopathic_repertory_revisions",
+  "invalid_homeopathic_rubrics",
+  "invalid_homeopathic_grade_definitions",
+  "invalid_homeopathic_repertory_remedies",
+  "invalid_homeopathic_rubric_remedy_assignments",
 ] as const;
 
 async function fetchWikiSnapshot(
@@ -710,13 +732,13 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
     lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`.`);
     lines.push("- Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources` auf `NULL` setzen, um die restriktiven Parent-Revision-Zeiger innerhalb der Transaktion zu lösen.");
     lines.push("- Bestehende `therapy_input_facts` bleiben unangetastet. Ihr `kb_entity_id`-Fremdschlüssel ist `NO ACTION DEFERRABLE`; dieselben Entity-UUIDs müssen vor der unmittelbaren Constraint-Prüfung wieder vorhanden sein.");
-    lines.push("- Vorhandene Wiki-Daten und Migration-Seeds ohne `TRUNCATE` oder fachfremdes `CASCADE` in umgekehrter FK-Reihenfolge mit `DELETE` leeren: `kb_search_documents` vor `kb_release_items`, `kb_release_items` vor `kb_releases`, `kb_safety_rule_conditions` vor `kb_safety_rules`, `kb_lab_finding_definition_revision_details` vor `kb_lab_reference_ranges` und diese vor `kb_lab_parameter_revision_details`; klinische Regeln und Labordetails jeweils vor ihren Assertions und Entitaetsrevisionen.");
+    lines.push("- Vorhandene Wiki-Daten und Migration-Seeds ohne `TRUNCATE` oder fachfremdes `CASCADE` in umgekehrter FK-Reihenfolge mit `DELETE` leeren: `kb_search_documents` vor `kb_release_items`, `kb_release_items` vor `kb_releases`, `kb_safety_rule_conditions` vor `kb_safety_rules`; im Repertoriumsblock zuerst `kb_homeopathic_rubric_remedy_assignments`, danach Remedy-Zuordnungen, Graddefinitionen, Rubrikrevisionen, Rubriken und zuletzt `kb_homeopathic_repertory_revision_details`; `kb_lab_finding_definition_revision_details` vor `kb_lab_reference_ranges` und diese vor `kb_lab_parameter_revision_details`; alle Detaildaten vor ihren Quellen- und Entitaetsrevisionen.");
     lines.push("- Die Wiki-JSON-Dateien unverändert und ohne JavaScript-Neuserialisierung importieren; nur ihr exakter Text entspricht den SHA-256-Werten in `db/kb_wiki_snapshot_manifest.json`.");
     lines.push("- Importreihenfolge: kontrollierte Typen; Kernobjekte vor Revisionen/Abhängigkeiten; Import-Batches vor Kandidaten/Audit; Legacy-Wiki und Produkte vor Produktlinks.");
     lines.push("- Kernzeilen, Kandidatenverträge und `kb_source_candidate_draft_promotions` zuerst laden; danach `kb_entity_candidate_draft_promotions` (Entitäts-Eltern-Promotionen) und zuletzt `kb_entity_candidate_draft_promotion_assertions` (Assertion-Zuordnungen).");
-    lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten danach laden. Anschließend `kb_lab_parameter_revision_details`, `kb_lab_reference_ranges` und `kb_lab_finding_definition_revision_details` in dieser Reihenfolge laden, danach `kb_dosage_rules`, `kb_safety_rules` und zuletzt `kb_safety_rule_conditions`. `kb_releases` erst nach den Kernobjekten, `kb_release_items` nach allen gebundenen Revisionen und Abhängigkeiten und `kb_search_documents` zuletzt importieren.");
+    lines.push("- Therapeutische Detailtabellen nach Aussagen und Quellenbelegen wiederherstellen; Zusammensetzungskomponenten danach laden. Anschließend `kb_lab_parameter_revision_details`, `kb_lab_reference_ranges` und `kb_lab_finding_definition_revision_details` laden. Danach den Repertoriumsblock in dieser Reihenfolge importieren: `kb_homeopathic_repertory_revision_details`, `kb_homeopathic_rubrics`, `kb_homeopathic_rubric_revisions`, `kb_homeopathic_grade_definitions`, `kb_homeopathic_repertory_remedies`, `kb_homeopathic_rubric_remedy_assignments`. Danach `kb_dosage_rules`, `kb_safety_rules` und zuletzt `kb_safety_rule_conditions`. `kb_releases` erst nach den Kernobjekten, `kb_release_items` nach allen gebundenen Revisionen und Abhängigkeiten und `kb_search_documents` zuletzt importieren.");
     lines.push(`- Danach \`SET CONSTRAINTS ALL IMMEDIATE\` und auf allen ${WIKI_SNAPSHOT_TABLES.length} Tabellen \`ENABLE TRIGGER USER\`.`);
-    lines.push("- `kb_export_wiki_snapshot()` ausführen: `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts`, `invalid_entity_candidate_draft_promotions`, `invalid_knowledge_releases`, `invalid_dosage_rules`, `invalid_safety_rules`, `invalid_search_documents`, `invalid_lab_parameter_revisions`, `invalid_lab_reference_ranges` und `invalid_lab_finding_definition_revisions` müssen jeweils 0 sein; das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
+    lines.push("- `kb_export_wiki_snapshot()` ausführen: `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions`, `invalid_entity_candidate_contracts`, `invalid_entity_candidate_draft_promotions`, `invalid_knowledge_releases`, `invalid_dosage_rules`, `invalid_safety_rules`, `invalid_search_documents`, `invalid_lab_parameter_revisions`, `invalid_lab_reference_ranges`, `invalid_lab_finding_definition_revisions`, `invalid_homeopathic_repertory_revisions`, `invalid_homeopathic_rubrics`, `invalid_homeopathic_grade_definitions`, `invalid_homeopathic_repertory_remedies` und `invalid_homeopathic_rubric_remedy_assignments` müssen jeweils 0 sein; das neue Manifest muss exakt `db/kb_wiki_snapshot_manifest.json` entsprechen.");
     lines.push("- Bei jeder Abweichung die gesamte Transaktion zurückrollen.");
   }
   if (stats.tables.some((table) => table.name === "therapy_input_revisions")) {

@@ -1707,6 +1707,7 @@ describe.sequential("Wiki 4B-2b laboratory contract", () => {
     const contractMigration = "supabase/migrations/20260802100000_create_kb_laboratory_contract.sql";
     const contractSources = new Set([
       contractMigration,
+      "supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql",
       "src/components/admin/BackupCenter.tsx",
       "src/lib/backupAreas.ts",
       "supabase/functions/backup-export/index.ts",

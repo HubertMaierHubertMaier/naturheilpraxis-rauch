@@ -87,6 +87,14 @@ const kbLaboratoryTables = [
   "kb_lab_reference_ranges",
   "kb_lab_finding_definition_revision_details",
 ];
+const kbHomeopathicRepertoryTables = [
+  "kb_homeopathic_repertory_revision_details",
+  "kb_homeopathic_rubrics",
+  "kb_homeopathic_rubric_revisions",
+  "kb_homeopathic_grade_definitions",
+  "kb_homeopathic_repertory_remedies",
+  "kb_homeopathic_rubric_remedy_assignments",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
@@ -98,6 +106,7 @@ const wikiBackupTables = [
   ...kbPromotionTables,
   ...kbTherapeuticTables,
   ...kbLaboratoryTables,
+  ...kbHomeopathicRepertoryTables,
   ...kbClinicalRuleTables,
   ...kbReleaseTables,
   ...kbSearchTables,
@@ -439,7 +448,7 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("parses every production Wiki inventory as the same exact 59-table set", () => {
+  it("parses every production Wiki inventory as the same exact 65-table set", () => {
     const requiredTables = {
       REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
       REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
@@ -462,6 +471,10 @@ describe("Wiki Phase 1 backup coverage", () => {
         backupExportSource,
         "REQUIRED_KB_LABORATORY_TABLES",
       ),
+      REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES",
+      ),
       REQUIRED_KB_RELEASE_TABLES: requiredTableConstant(
         backupExportSource,
         "REQUIRED_KB_RELEASE_TABLES",
@@ -482,6 +495,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_PROMOTION_TABLES: kbPromotionTables,
       REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
       REQUIRED_KB_LABORATORY_TABLES: kbLaboratoryTables,
+      REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES: kbHomeopathicRepertoryTables,
       REQUIRED_KB_RELEASE_TABLES: kbReleaseTables,
       REQUIRED_KB_CLINICAL_RULE_TABLES: kbClinicalRuleTables,
       REQUIRED_KB_SEARCH_TABLES: kbSearchTables,
@@ -532,8 +546,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       AREA_MAP: edgeTables,
       FALLBACK_TABLES: fallbackWikiTables,
     })) {
-      expect(tables, `${name} length`).toHaveLength(59);
-      expect(new Set(tables).size, `${name} uniqueness`).toBe(59);
+      expect(tables, `${name} length`).toHaveLength(65);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(65);
     }
 
     const sourcePromotion = "kb_source_candidate_draft_promotions";
@@ -553,6 +567,12 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(tables.indexOf("kb_lab_reference_ranges"))
         .toBeLessThan(tables.indexOf("kb_lab_finding_definition_revision_details"));
       expect(tables.indexOf("kb_lab_finding_definition_revision_details"))
+        .toBeLessThan(tables.indexOf("kb_homeopathic_repertory_revision_details"));
+      for (let index = 0; index < kbHomeopathicRepertoryTables.length - 1; index++) {
+        expect(tables.indexOf(kbHomeopathicRepertoryTables[index]))
+          .toBeLessThan(tables.indexOf(kbHomeopathicRepertoryTables[index + 1]));
+      }
+      expect(tables.indexOf("kb_homeopathic_rubric_remedy_assignments"))
         .toBeLessThan(tables.indexOf("kb_dosage_rules"));
       expect(tables.indexOf("kb_dosage_rules"))
         .toBeLessThan(tables.indexOf("kb_safety_rules"));
@@ -572,6 +592,13 @@ describe("Wiki Phase 1 backup coverage", () => {
       "invalid_lab_parameter_revisions",
       "invalid_lab_reference_ranges",
       "invalid_lab_finding_definition_revisions",
+    ];
+    const repertoryValidationKeys = [
+      "invalid_homeopathic_repertory_revisions",
+      "invalid_homeopathic_rubrics",
+      "invalid_homeopathic_grade_definitions",
+      "invalid_homeopathic_repertory_remedies",
+      "invalid_homeopathic_rubric_remedy_assignments",
     ];
     const validationTypeBlock = requiredBlock(
       backupExportSource,
@@ -600,6 +627,10 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(validationTypeBlock).toContain(`${key}: number;`);
       expect(quotedValues(zeroValidationBlock, "double")).toContain(key);
     }
+    for (const key of repertoryValidationKeys) {
+      expect(validationTypeBlock).toContain(`${key}: number;`);
+      expect(quotedValues(zeroValidationBlock, "double")).toContain(key);
+    }
     expect(backupExportSource).toContain("await validateWikiSnapshotShape(");
 
     for (const instructions of [edgeRestoreBlock, subsetRestoreBlock]) {
@@ -622,6 +653,12 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(parameterIndex).toBeGreaterThan(-1);
       expect(rangeIndex).toBeGreaterThan(parameterIndex);
       expect(findingIndex).toBeGreaterThan(rangeIndex);
+      let previousImportIndex = findingIndex;
+      for (const table of kbHomeopathicRepertoryTables) {
+        const importIndex = instructions.lastIndexOf(`\`${table}\``);
+        expect(importIndex).toBeGreaterThan(previousImportIndex);
+        previousImportIndex = importIndex;
+      }
       const findingDeleteIndex = instructions.indexOf(
         "`kb_lab_finding_definition_revision_details`",
       );
@@ -630,7 +667,18 @@ describe("Wiki Phase 1 backup coverage", () => {
       expect(findingDeleteIndex).toBeGreaterThan(-1);
       expect(rangeDeleteIndex).toBeGreaterThan(findingDeleteIndex);
       expect(parameterDeleteIndex).toBeGreaterThan(rangeDeleteIndex);
+      const assignmentDeleteIndex = instructions.indexOf(
+        "`kb_homeopathic_rubric_remedy_assignments`",
+      );
+      const repertoryDeleteIndex = instructions.indexOf(
+        "`kb_homeopathic_repertory_revision_details`",
+      );
+      expect(assignmentDeleteIndex).toBeGreaterThan(-1);
+      expect(repertoryDeleteIndex).toBeGreaterThan(assignmentDeleteIndex);
       for (const key of laboratoryValidationKeys) {
+        expect(instructions).toContain(`\`${key}\``);
+      }
+      for (const key of repertoryValidationKeys) {
         expect(instructions).toContain(`\`${key}\``);
       }
     }
@@ -649,6 +697,7 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(backupExportSource).toContain("...REQUIRED_KB_ENTITY_CANDIDATE_CONTRACT_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_LABORATORY_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_SEARCH_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');
