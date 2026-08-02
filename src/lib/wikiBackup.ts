@@ -18,6 +18,11 @@ export const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_lab_parameter_revisions",
   "invalid_lab_reference_ranges",
   "invalid_lab_finding_definition_revisions",
+  "invalid_homeopathic_repertory_revisions",
+  "invalid_homeopathic_rubrics",
+  "invalid_homeopathic_grade_definitions",
+  "invalid_homeopathic_repertory_remedies",
+  "invalid_homeopathic_rubric_remedy_assignments",
 ] as const;
 
 export type WikiSubsetPayload = {

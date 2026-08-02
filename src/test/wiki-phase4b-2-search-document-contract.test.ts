@@ -838,6 +838,7 @@ describe.sequential("Wiki 4B-2a search document contract", () => {
       "supabase/functions/backup-export/index.ts",
       "supabase/migrations/20260802090000_create_kb_search_document_contract.sql",
       "supabase/migrations/20260802100000_create_kb_laboratory_contract.sql",
+      "supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql",
     ]);
     const violations: string[] = [];
     const visit = (directory: string, relativeDirectory: string) => {

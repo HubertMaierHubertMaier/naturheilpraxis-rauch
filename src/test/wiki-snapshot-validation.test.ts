@@ -192,6 +192,11 @@ describe("Wiki subset browser validation", () => {
     "invalid_lab_parameter_revisions",
     "invalid_lab_reference_ranges",
     "invalid_lab_finding_definition_revisions",
+    "invalid_homeopathic_repertory_revisions",
+    "invalid_homeopathic_rubrics",
+    "invalid_homeopathic_grade_definitions",
+    "invalid_homeopathic_repertory_remedies",
+    "invalid_homeopathic_rubric_remedy_assignments",
   ])("rejects malformed %s counters", async (key) => {
     for (const value of [1, undefined, "0", Number.NaN]) {
       const payload = await validSubsetPayload();

@@ -10,8 +10,11 @@ schema-only Dosierungs- und Sicherheitsregelvertrag gesichert und gepusht.
 Schritt 4B-2a ist mit Commit `c690e4f` als medizinisch inaktive,
 releasegebundene Suchprojektion gesichert und gepusht. Schritt 4B-2b ist am
 02.08.2026 als medizinisch inaktiver Laborparameter-, Referenzbereichs- und
-Befunddefinitionsvertrag implementiert und lokal verifiziert. Keiner dieser
-Schritte ist nach Supabase ausgerollt. Die Schritte 5 bis 7 bleiben Planung.
+Befunddefinitionsvertrag mit Commit `e1f6cbc` gesichert und gepusht. Schritt 5A
+ist am 02.08.2026 als medizinisch inaktiver homoeopathischer
+Repertoriumsvertrag implementiert und lokal verifiziert. Keiner dieser Schritte
+ist nach Supabase ausgerollt. Schritt 5B
+sowie die Schritte 6 und 7 bleiben Planung.
 
 ## Ziel
 
@@ -732,22 +735,66 @@ ausfiltern.
 
 ## Schritt 5: Homoeopathische Repertorisation
 
+### Schritt 5A: Medizinisch inaktiver Repertoriumsvertrag
+
+Lokal implementiert in:
+
+`supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql`
+
+Der additive Vertrag fuegt genau die kontrollierten Entitaetstypen
+`homeopathic_repertory` und `homeopathic_remedy` sowie sechs leere Tabellen
+hinzu:
+
+- `kb_homeopathic_repertory_revision_details`
+- `kb_homeopathic_rubrics`
+- `kb_homeopathic_rubric_revisions`
+- `kb_homeopathic_grade_definitions`
+- `kb_homeopathic_repertory_remedies`
+- `kb_homeopathic_rubric_remedy_assignments`
+
+Jede Repertoriumsrevision bindet ein exaktes Entitaets-/Revisionspaar an ein
+exaktes Quellen-/Quellenrevisionspaar, einen quelleneigenen Repertoriumscode,
+eine Sprache und eine Fundstelle. Die Quellenrevision muss `own_content`,
+`licensed` oder `public_domain` sein; `unknown` und `quoted` werden fail-closed
+abgelehnt. Rubriken besitzen eine stabile, innerhalb des
+Repertoriums eindeutige Quellencode-Identitaet. Ihre revisionslokalen Texte,
+Domaenen, Eltern und Geschwisterpositionen bilden eine lueckenlose azyklische
+Hierarchie. Graddefinitionen, Mittelcodes, Quellennamen und Aliasse bleiben
+ausschliesslich im Namensraum derselben Repertoriumsrevision.
+
+Die Mittelzuordnung verwendet den neuen potenzneutralen Typ
+`homeopathic_remedy`. Sie bindet eine exakte generische Mittelrevision und darf
+keine Zeile aus den potenztragenden `kb_homeopathic_revision_details` verwenden.
+Potenz, Darreichung und Produktvariante bleiben getrennte Katalogobjekte.
+
+Kanonische SHA-256-Payloads frieren die Repertoriumsrevision, vollstaendige
+Quellenrevision, Rubrikstruktur, source-native Grade, source-native
+Mittelbezeichnungen, exakte Fundstellen und jede Rubrik-Mittel-Grad-Zuordnung
+ein. Fuenf Pflichtzaehler erkennen auch nach Triggerumgehung ungueltige
+Repertoriumsrevisionen, Rubriken, Graddefinitionen, Mittelzuordnungen und
+Assignments.
+
+Der Block legt keine Repertoriums-, Rubrik-, Grad- oder Mitteldaten an. Er
+enthaelt weder Importer noch Repertorisierungs-, Ranking-, Reader- oder
+Writer-RPC, keine normalisierte Gradskala, keine Patientenreferenz und keine
+Anbindung an den Therapiepfad. Release v1 bleibt unveraendert
+`retrieval_eligible = false` und `is_active = false`.
+
+Der gemeinsame Wiki-Snapshot umfasst nun exakt 65 Tabellen. Der
+Therapie-Eingabe-Snapshot v2 bleibt byteidentisch und umfasst weiterhin exakt
+vier Tabellen. Die ausfuehrliche Implementierungsdokumentation steht in
+`docs/wiki-step5a-homeopathic-repertory-contract-implementation-2026-08-02.md`.
+
+### Schritt 5B: Lizenzierter Inhalt und deterministische Repertorisation
+
 Materia-medica-Aussagen, Leitsymptome, Modalitaeten und Beziehungen koennen
 zunaechst ueber Entitaeten, Artikel, Aussagen und kontrollierte Relationen
-erfasst werden.
-
-Eine echte deterministische Repertorisation benoetigt spaeter:
-
-- lizenzierte und gepruefte Repertoriumsquelle
-- versioniertes Repertorium
-- hierarchische Rubriken
-- Rubrikdomaenen wie Allgemein, Gemuet, Modalitaet, Lokalisation, Empfindung und
-  Begleitsymptom
-- quelleneigene Wertigkeits-/Gradskala
-- quellengebundene Mittelzuordnung
+erfasst werden. Eine echte deterministische Repertorisation benoetigt weiterhin
+eine lizenzierte, gepruefte und exakt versionierte Repertoriumsquelle sowie
+einen separat abgenommenen Import- und Readervertrag.
 
 Grade verschiedener Repertorien werden niemals still zusammengefuehrt. Ohne
-lizenzierte Daten liefert der neue Pfad
+lizenzierte Daten liefert ein spaeterer neuer Pfad
 `HOMEOPATHIC_LANE_UNAVAILABLE`; eine KI darf keine Rubriken oder Grade erfinden.
 
 ## Schritt 6: Deterministisches Retrieval v2
