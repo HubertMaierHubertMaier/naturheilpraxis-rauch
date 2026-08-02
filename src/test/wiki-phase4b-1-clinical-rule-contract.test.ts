@@ -5,7 +5,6 @@ import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateWikiSnapshotShape } from "../../supabase/functions/_shared/wikiSnapshotValidation";
-import { WIKI_ZERO_VALIDATION_KEYS } from "@/lib/wikiBackup";
 
 const migrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -26,13 +25,8 @@ const migrations = migrationFiles.map((file) =>
 );
 const ruleMigration = migrations.at(-1)!;
 const releaseMigration = migrations.at(-2)!;
-const backupAreasSource = readFileSync(resolve(process.cwd(), "src/lib/backupAreas.ts"), "utf8");
 const backupExportSource = readFileSync(
   resolve(process.cwd(), "supabase/functions/backup-export/index.ts"),
-  "utf8",
-);
-const backupCenterSource = readFileSync(
-  resolve(process.cwd(), "src/components/admin/BackupCenter.tsx"),
   "utf8",
 );
 
@@ -66,6 +60,18 @@ const wikiSnapshotTables = [
   "kb_product_variant_revision_details", "kb_composition_components",
   "kb_dosage_rules", "kb_safety_rules", "kb_safety_rule_conditions",
   "kb_releases", "kb_release_items", "faqs", "practice_pricing", "practice_info",
+] as const;
+const wiki4b1ZeroValidationKeys = [
+  "missing_articles",
+  "invalid_current_snapshots",
+  "orphaned_active_articles",
+  "invalid_source_promotions",
+  "invalid_therapeutic_catalog_revisions",
+  "invalid_entity_candidate_contracts",
+  "invalid_entity_candidate_draft_promotions",
+  "invalid_knowledge_releases",
+  "invalid_dosage_rules",
+  "invalid_safety_rules",
 ] as const;
 const wikiRestoreOrder = [
   "kb_entity_types", "kb_identifier_schemes", "kb_relation_types", "kb_relation_type_domains",
@@ -120,36 +126,6 @@ function requiredBlock(source: string, pattern: RegExp, description: string): st
   const match = source.match(pattern);
   expect(match, `Missing ${description}`).not.toBeNull();
   return match![1];
-}
-
-function expandArrayBlock(
-  source: string,
-  block: string,
-  resolving: ReadonlySet<string> = new Set(),
-): string[] {
-  const values: string[] = [];
-  for (const match of block.matchAll(/"([a-z0-9_-]+)"|\.\.\.([A-Z0-9_]+)/g)) {
-    if (match[1]) {
-      values.push(match[1]);
-      continue;
-    }
-    const constantName = match[2];
-    if (resolving.has(constantName)) throw new Error(`Recursive array constant ${constantName}`);
-    const constantBlock = source.match(
-      new RegExp(`const ${constantName} = \\[([\\s\\S]*?)\\] as const;`),
-    )?.[1];
-    if (constantBlock === undefined) throw new Error(`Missing array constant ${constantName}`);
-    values.push(...expandArrayBlock(source, constantBlock, new Set([...resolving, constantName])));
-  }
-  return values;
-}
-
-function expandArrayConstant(source: string, constantName: string): string[] {
-  const block = source.match(
-    new RegExp(`const ${constantName} = \\[([\\s\\S]*?)\\] as const;`),
-  )?.[1];
-  if (block === undefined) throw new Error(`Missing array constant ${constantName}`);
-  return expandArrayBlock(source, block, new Set([constantName]));
 }
 
 function dosageRuleInsertSql(
@@ -517,46 +493,18 @@ describe.sequential("Wiki 4B-1 clinical rule contract", () => {
     expect(ruleMigration).toContain("population_type <> 'population_group'");
   });
 
-  it("uses exact 55-table browser, Edge, fallback, and snapshot inventories", () => {
-    const browserBlock = requiredBlock(
-      backupAreasSource,
-      /id: "wiki"[\s\S]*?tables: \[([\s\S]*?)\],\s*buckets:/,
-      "browser Wiki inventory",
-    );
-    const edgeBlock = requiredBlock(
-      backupExportSource,
-      /"wiki": \{[\s\S]*?tables: \[([\s\S]*?)\],\s*buckets:/,
-      "Edge Wiki inventory",
-    );
-    const fallbackBlock = requiredBlock(
-      backupExportSource,
-      /const FALLBACK_TABLES = \[\.\.\.new Set\(\[([\s\S]*?)\]\)\]\.sort\(\);/,
-      "fallback inventory",
-    );
-    const snapshotTables = expandArrayConstant(backupExportSource, "WIKI_SNAPSHOT_TABLES");
-    const browserTables = expandArrayBlock(backupAreasSource, browserBlock);
-    const edgeTables = expandArrayBlock(backupExportSource, edgeBlock);
-    const fallbackTables = [...new Set(expandArrayBlock(backupExportSource, fallbackBlock))].sort();
-    const fallbackWikiTables = fallbackTables.filter((table) =>
-      table.startsWith("kb_") || [
-        "admin_knowledge_base", "mannayan_products", "knowledge_product_links",
-        "faqs", "practice_pricing", "practice_info",
-      ].includes(table)
-    );
-
-    for (const inventory of [snapshotTables, browserTables, edgeTables]) {
-      expect(inventory).toEqual(wikiSnapshotTables);
-      expect(inventory).toHaveLength(55);
-      expect(new Set(inventory).size).toBe(55);
-    }
-    expect(fallbackWikiTables).toEqual([...wikiSnapshotTables].sort());
-    expect(expandArrayConstant(backupExportSource, "REQUIRED_KB_CLINICAL_RULE_TABLES"))
-      .toEqual(clinicalRuleTables);
-    expect(backupExportSource).toContain('"invalid_dosage_rules"');
-    expect(backupExportSource).toContain('"invalid_safety_rules"');
-    expect(backupCenterSource).toContain("invalid_dosage_rules");
-    expect(backupCenterSource).toContain("invalid_safety_rules");
-    expect(backupCenterSource).toContain("`kb_safety_rule_conditions` vor `kb_safety_rules`");
+  it("keeps the historical 55-table 4B-1 boundary isolated", () => {
+    expect(wikiSnapshotTables).toHaveLength(55);
+    expect(new Set(wikiSnapshotTables).size).toBe(55);
+    expect(clinicalRuleTables).toEqual([
+      "kb_dosage_rules",
+      "kb_safety_rules",
+      "kb_safety_rule_conditions",
+    ]);
+    expect(ruleMigration).toContain("exact 52-table Wiki boundary");
+    expect(ruleMigration).toContain("RENAME TO kb_export_wiki_snapshot_4a");
+    expect(ruleMigration).toContain("'invalid_dosage_rules'");
+    expect(ruleMigration).toContain("'invalid_safety_rules'");
   });
 
   it("has no productive clinical-rule reader or writer", () => {
@@ -1173,7 +1121,7 @@ describe.sequential("Wiki 4B-1 clinical rule contract", () => {
       serializedTables: original.serialized_tables,
       manifest: original.manifest,
       validation: original.validation,
-    }, wikiSnapshotTables, WIKI_ZERO_VALIDATION_KEYS)).resolves.toBeUndefined();
+    }, wikiSnapshotTables, wiki4b1ZeroValidationKeys)).resolves.toBeUndefined();
 
     await db.exec("BEGIN; SET CONSTRAINTS ALL DEFERRED;");
     try {

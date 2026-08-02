@@ -5,10 +5,11 @@ Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
 `publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
 implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
 Feature-Zweig. Die Schritte 3A, 3B und 4A sind mit Commit `74ad20d` auf diesem
-Zweig gesichert und gepusht. Schritt 4B-1 ist am 01.08.2026 als schema-only
-Dosierungs- und Sicherheitsregelvertrag lokal implementiert und verifiziert.
-Keiner dieser Schritte ist nach Supabase ausgerollt. Schritte 4B-2 bis 7 bleiben
-Planung.
+Zweig gesichert und gepusht. Schritt 4B-1 ist mit Commit `b6133db` als
+schema-only Dosierungs- und Sicherheitsregelvertrag gesichert und gepusht.
+Schritt 4B-2a ist am 02.08.2026 als medizinisch inaktive, releasegebundene
+Suchprojektion lokal implementiert. Keiner dieser Schritte ist nach Supabase
+ausgerollt. Schritt 4B-2b sowie die Schritte 5 bis 7 bleiben Planung.
 
 ## Ziel
 
@@ -669,16 +670,40 @@ von 50 auf 52 wird in ihren isolierten Migrationstests unveraendert geprueft;
 Die ausfuehrliche Implementierungsdokumentation steht in
 `docs/wiki-phase4b-1-clinical-rule-contract-implementation-2026-08-01.md`.
 
-#### Verbleibender Schritt 4B-2
+#### Schritt 4B-2a: Medizinisch inaktive Suchprojektion
 
-Vor dem neuen Retrieval bleiben additiv umzusetzen:
+Lokal implementiert in:
 
-- `kb_search_documents` nur fuer freigegebene Revisionen
-- Laborparameter- und Referenzbereichsdetails, bevor Laborwerte automatisch
-  interpretiert werden
+`supabase/migrations/20260802090000_create_kb_search_document_contract.sql`
 
-Die klassische Volltext- und Alias-Suche wird zuerst umgesetzt. Embeddings sind
-spaeter optional und duerfen Sicherheitsregeln nicht ausfiltern.
+Die additive Tabelle `kb_search_documents` bindet jede Projektion an genau ein
+Item eines gueltigen versiegelten Releases. Entity-, Artikel- und
+Assertion-Suchtexte werden ausschliesslich aus den in 4A eingefrorenen
+Item-Manifesten abgeleitet. Spaetere Alias- oder Kennungsaenderungen schreiben
+historische Releases deshalb nicht um.
+
+Die Projektion enthaelt kontrollierte Titel-, Alias-, Kennungs-, Facetten- und
+Quellentitel-Felder sowie explizite deutsche und sprachneutrale PostgreSQL-
+Volltextvektoren. Insert ist Owner-only; Update, Delete und Truncate sind
+gesperrt. Ein kanonischer SHA-256 und `invalid_search_documents` erkennen
+Manipulationen auch nach triggerumgehendem Restore.
+
+Es gibt keinen Such-RPC, keinen Backfill und keine produktive Anbindung. Release
+v1 bleibt unveraendert `retrieval_eligible = false` und `is_active = false`.
+Der gemeinsame Wiki-Snapshot umfasst nun exakt 56 Tabellen; der Therapie-Input-
+Snapshot v2 bleibt byteidentisch und exakt vier Tabellen gross.
+
+Die ausfuehrliche Implementierungsdokumentation steht in
+`docs/wiki-phase4b-2a-search-document-contract-implementation-2026-08-02.md`.
+
+#### Verbleibender Schritt 4B-2b
+
+Vor dem neuen Retrieval bleiben Laborparameter- und Referenzbereichsdetails
+additiv umzusetzen, bevor der strukturierte v2-Pfad Laborwerte automatisch
+interpretieren darf.
+
+Embeddings sind spaeter optional und duerfen Sicherheitsregeln nicht
+ausfiltern.
 
 ## Schritt 5: Homoeopathische Repertorisation
 
