@@ -311,7 +311,7 @@ describe("Wiki Phase 1 core schema migration", () => {
     );
     expect(rlsTables).toEqual(kbTables);
     expect(migration).toContain("ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY");
-    expect(migration).toContain("FOR ALL\n         TO authenticated");
+    expect(migration).toMatch(/FOR ALL\r?\n {9}TO authenticated/);
     expect(migration).toContain("public.has_role(auth.uid(), ''admin''::public.app_role)");
 
     const authenticatedGrant = requiredBlock(
