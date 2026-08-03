@@ -1034,17 +1034,20 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
     expect(Object.keys(therapySnapshot.tables)).toHaveLength(4);
   }, 30_000);
 
-  it("has no repertory reader, writer, importer, patient link, or therapy integration", () => {
+  it("keeps reviewed repertory contracts isolated from patient and therapy integration", () => {
     const contractMigration =
       "supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql";
     const readerContractMigration =
       "supabase/migrations/20260803100000_create_kb_homeopathic_reader_contract.sql";
     const importPreflightContractMigration =
       "supabase/migrations/20260803110000_create_kb_homeopathic_import_preflight_contract.sql";
+    const smallBundleWriterMigration =
+      "supabase/migrations/20260803120000_create_kb_homeopathic_small_bundle_writer.sql";
     const contractSources = new Set([
       contractMigration,
       readerContractMigration,
       importPreflightContractMigration,
+      smallBundleWriterMigration,
       "src/components/admin/BackupCenter.tsx",
       "src/lib/backupAreas.ts",
       "src/lib/wikiBackup.ts",
@@ -1073,6 +1076,7 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
                 contractMigration,
                 readerContractMigration,
                 importPreflightContractMigration,
+                smallBundleWriterMigration,
               ].includes(relativePath)
                   && hasDirectRuntimeAccess)) {
             violations.push(relativePath);

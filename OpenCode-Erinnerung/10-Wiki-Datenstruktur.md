@@ -736,3 +736,22 @@ Der Vertrag verarbeitet weiterhin weder Quelldateien noch echte medizinische
 Inhalte und schreibt nichts. Quelleninhalt, Metadaten und generische
 Mittelrevision bleiben vorgelagerte, noch mit einer lizenzierten Quelle und
 Gold-Fixtures abzunehmende Eingaben; ein owner-only Writer folgt erst danach.
+
+## Fortschritt bis Schritt 5B-5 am 03.08.2026
+
+Ein kleiner owner-only Referenzwriter kann nun genau ein bereits normalisiertes
+und parserseitig vorgehashtes Repertoriumsbuendel atomar in die sechs
+Step-5A-Tabellen schreiben. Der streng typisierte Umschlag ist auf 4 MiB, 256
+Rubriken, 64 Grade, 256 Mittel und 2.048 Assignments begrenzt. Quelle,
+Repertoriumsrevision und generische Mittelrevisionen werden nicht erzeugt.
+
+Ein absichtlich falscher Zeilenhash rollt alle Writerzeilen und die
+Repertoriumshashaenderung zurueck. Exakt gleiche Wiederholungen schreiben nichts
+erneut und bleiben auch nach Freigabe der Revisionen gueltig; jede abweichende
+Wiederholung scheitert. Der Preflight muss abschliessend Hash- und Zaehlergleichheit
+melden. Anwendung, Service- und Importrollen besitzen kein Ausfuehrungsrecht.
+
+Dieser Schritt verarbeitet weiterhin keine echte Quelle und ist kein Chunk-
+oder Bulk-Importer. Lizenzfreigabe, quellenspezifischer Parser, Gold-Fixtures,
+Batch-/Resume-Semantik, PostgreSQL-Grossmengenprofilierung sowie Restore-, RLS-
+und Fachabnahme bleiben offen.

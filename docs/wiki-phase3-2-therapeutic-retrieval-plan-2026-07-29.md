@@ -20,9 +20,10 @@ Importvorpruefvertrag implementiert und vollstaendig lokal verifiziert. Schritt
 5B-3 ist als medizinisch inaktiver parserseitiger Bundle-Hashvertrag
 implementiert und vollstaendig lokal verifiziert. Schritt 5B-4 ist als
 parserseitiger Vertrag fuer die fuenf normalisierten Step-5A-Zeilenhashes
-implementiert und vollstaendig lokal verifiziert. Echter lizenzierter Inhalt,
-ein Rohdatenparser, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und
-7 bleiben offen.
+implementiert und vollstaendig lokal verifiziert. Schritt 5B-5 ist als
+owner-only atomarer Kleinmengen-Referenzwriter implementiert und vollstaendig
+lokal verifiziert. Echter lizenzierter Inhalt, ein Rohdatenparser, ein
+schreibender Chunk-/Bulk-Importvertrag sowie die Schritte 6 und 7 bleiben offen.
 
 ## Ziel
 
@@ -929,6 +930,46 @@ bewusste Eingaben. Konkrete Lizenzquelle, Rohdatenparser, Gold-Fixtures,
 owner-only Writer sowie Resume-, Rollback- und Grossmengenabnahme sind weiterhin
 offen. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step5b4-homeopathic-row-hash-contract-implementation-2026-08-03.md`.
+
+#### Schritt 5B-5: Owner-only atomarer Kleinmengen-Referenzwriter
+
+Lokal implementiert in:
+
+`supabase/migrations/20260803120000_create_kb_homeopathic_small_bundle_writer.sql`
+
+`kb_homeopathic_write_small_bundle_v1(jsonb)` akzeptiert nur einen exakt
+versionierten, medizinisch inaktiven und maximal 4 MiB grossen Umschlag mit
+bereits parserseitig gebildeten Zeilen- und Bundlehashes. Der Referenzpfad ist
+auf 256 Rubriken, 64 Grade, 256 Mittel und 2.048 Assignments begrenzt. Quelle,
+Repertoriumsrevision und generische Mittelrevisionen werden nicht erzeugt,
+sondern muessen owner-gesteuert als gueltige Abhaengigkeiten vorliegen.
+
+Beim Erstlauf schreibt die Funktion die sechs vorhandenen Step-5A-Tabellen in
+einem Statementkontext. Danach vergleicht sie jede gespeicherte Spalte, prueft
+alle fuenf Hashtypen, die vollstaendige Repertoriumssemantik und zuletzt den
+Step-5B-2-Preflight. Jede Exception rollt alle Aenderungen des Aufrufs zurueck.
+Der synthetische PGlite-Test belegt dies mit einem absichtlich falschen
+Assignmenthash innerhalb eines Savepoints; alle Tabellen und der vorherige
+Repertoriumshash bleiben dabei unveraendert.
+
+Bei vorhandener Repertoriumsbindung schreibt die Funktion nichts erneut. Ein
+exakt identisches Buendel liefert denselben Resultathash, auch nachdem die
+Revisionen spaeter freigegeben und eingefroren wurden. Eine abweichende
+Wiederholung scheitert vor jeder Aenderung. Der Writer ist `SECURITY INVOKER`,
+prueft den Tabellenowner und bleibt fuer Anwendung, Service- und Importrollen
+vollstaendig widerrufen. Wiki- und Therapie-Input-Snapshot bleiben durch die
+Installation byteidentisch.
+
+Der fokussierte Writer-/Preflightlauf bestand mit 10/10 Tests. Die
+zusammenhaengende Repertoriumsregression bestand mit 32/32 Tests, der
+vollstaendige Projektlauf mit 49/49 Dateien und 517/517 Tests. Beide
+TypeScript-Projekte und der Produktionsbuild sind erfolgreich. Die
+ausfuehrliche Dokumentation steht in
+`docs/wiki-step5b5-homeopathic-small-bundle-writer-implementation-2026-08-03.md`.
+
+Der Block ist weiterhin kein Rohdatenparser und kein Chunk-/Bulk-Importer.
+Lizenzquelle, Gold-Fixtures, Batch-/Resume-Semantik und
+PostgreSQL-Grossmengenprofilierung bleiben vor echten Repertoriumsdaten offen.
 
 ## Schritt 6: Deterministisches Retrieval v2
 
