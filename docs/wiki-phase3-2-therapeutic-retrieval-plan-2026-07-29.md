@@ -1,6 +1,6 @@
 # Wiki Phase 3.2+: Therapeutischer Katalog und erklaerbares Retrieval
 
-Datum: 29.07.2026, aktualisiert am 02.08.2026
+Datum: 29.07.2026, aktualisiert am 03.08.2026
 Status: Schritt 1 und Schritt 2A sind mit Commit `5c9488e` auf
 `publish-wiki-blueprint-20260727` committed und gepusht. Schritt 2B ist
 implementiert und verifiziert; sein Abschlussstand gehoert auf denselben
@@ -13,8 +13,10 @@ releasegebundene Suchprojektion gesichert und gepusht. Schritt 4B-2b ist am
 Befunddefinitionsvertrag mit Commit `e1f6cbc` gesichert und gepusht. Schritt 5A
 ist am 02.08.2026 als medizinisch inaktiver homoeopathischer
 Repertoriumsvertrag implementiert und lokal verifiziert. Keiner dieser Schritte
-ist nach Supabase ausgerollt. Schritt 5B
-sowie die Schritte 6 und 7 bleiben Planung.
+ist nach Supabase ausgerollt. Schritt 5B-1 ist als medizinisch inaktiver,
+owner-only Einzelrepertorium-Reader implementiert und vollstaendig lokal
+verifiziert. Echter lizenzierter Inhalt, der Importvertrag sowie die Schritte 6
+und 7 bleiben offen.
 
 ## Ziel
 
@@ -796,6 +798,40 @@ einen separat abgenommenen Import- und Readervertrag.
 Grade verschiedener Repertorien werden niemals still zusammengefuehrt. Ohne
 lizenzierte Daten liefert ein spaeterer neuer Pfad
 `HOMEOPATHIC_LANE_UNAVAILABLE`; eine KI darf keine Rubriken oder Grade erfinden.
+
+#### Schritt 5B-1: Medizinisch inaktiver Einzelrepertorium-Reader
+
+Lokal implementiert in:
+
+`supabase/migrations/20260803100000_create_kb_homeopathic_reader_contract.sql`
+
+Der additive, reine Funktionsvertrag liest ausschliesslich genau eine
+vollstaendig gueltige, mindestens freigegebene Repertoriumsrevision mit
+ausreichendem Quellenrecht. Ohne diesen Bestand liefert er geschlossen
+`HOMEOPATHIC_LANE_UNAVAILABLE`. Eine Anfrage bindet 1 bis 256 eindeutige
+Rubrikrevisionen desselben Repertoriums, ganzzahlige Wichtigkeit 1 bis 5 und die
+Polaritaet `include` oder `exclude`.
+
+Das Ergebnis trennt Rubrik-, Wichtigkeits- und Domaenenabdeckung,
+Ausschlusskonflikte sowie das vollstaendige source-native Gradprofil. Jede
+Fundstelle und jeder Rubrik-, Grad-, Mittel- und Assignmenthash bleibt sichtbar.
+Es gibt keinen undurchsichtigen Gesamtscore, keine Umrechnung zwischen
+Repertorien und keine Wirksamkeits-, Sicherheits- oder Dosierungsaussage.
+Permutierte Eingaben erzeugen dasselbe kanonische Manifest und denselben
+Ergebnishash.
+
+Alle vier Readerfunktionen sind fuer Anwendungs-, Service- und Importrollen
+widerrufen. Es gibt keinen Runtime-Grant, keine Tabelle, keine Patientendaten,
+keinen Seed und keine Release-Aktivierung. Der 65-Tabellen-Wiki-Snapshot und der
+Vier-Tabellen-Therapie-Input-Snapshot bleiben byteidentisch. Der fokussierte
+PGlite-Test verwendet ausschliesslich synthetische, nichtmedizinische Daten und
+bestand mit 5/5 Tests. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step5b1-homeopathic-reader-contract-implementation-2026-08-03.md`.
+Der vollstaendige Projektlauf bestand mit 46/46 Dateien und 501/501 Tests;
+beide TypeScript-Projekte und der Produktionsbuild sind ebenfalls erfolgreich.
+
+Echter Inhalt und ein Bulk-Importvertrag bleiben bis zur konkreten
+Lizenzfreigabe, Quellenabnahme und PostgreSQL-Grossmengenprofilierung blockiert.
 
 ## Schritt 6: Deterministisches Retrieval v2
 
