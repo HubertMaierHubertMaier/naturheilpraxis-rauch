@@ -707,5 +707,20 @@ Integritaetsgleichheit mit einer vorab festgelegten Importerwartung und niemals
 Freigabe, Wirksamkeit oder therapeutische Eignung.
 
 Vor echten Repertoriumsdaten bleiben Lizenz- und Quellenfreigabe,
-parserseitiger Hashvertrag, owner-only Chunk-/Bulk-Writer, Resume/Rollback,
-PostgreSQL-Grossmengenprofilierung sowie Restore-, RLS- und Fachabnahme offen.
+quellenspezifischer Rohdaten- und Zeilenhashvertrag, owner-only
+Chunk-/Bulk-Writer, Resume/Rollback, PostgreSQL-Grossmengenprofilierung sowie
+Restore-, RLS- und Fachabnahme offen.
+
+## Fortschritt bis Schritt 5B-3 am 03.08.2026
+
+Der parserseitige Bundle-Hashvertrag ist als reine TypeScript-Referenz lokal
+implementiert. Er erzeugt aus kanonischen UUIDs, Quellenmetadaten und bereits
+semantisch gebildeten Zeilenhashes bytegleich das kompakte PostgreSQL-Manifest
+und dessen SHA-256. Exakte Felder, UTF-8-Grenzen, Eindeutigkeit und
+Assignment-Verweise werden vor der Hashbildung fail-closed geprueft.
+
+Dieser Vertrag ist kein Rohdatenparser, kein Writer und keine medizinische
+Freigabe. Offen bleiben weiterhin die konkrete lizenzierte Quelle, die
+quellenspezifische Bildung der Zeilenhashes, Gold-Fixtures, owner-only
+Chunk-/Bulk-Schreiben, Resume/Rollback sowie PostgreSQL-Grossmengen-, Restore-,
+RLS- und Fachabnahme.

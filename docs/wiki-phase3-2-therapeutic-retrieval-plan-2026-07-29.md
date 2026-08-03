@@ -17,8 +17,10 @@ ist nach Supabase ausgerollt. Schritt 5B-1 ist als medizinisch inaktiver,
 owner-only Einzelrepertorium-Reader implementiert und vollstaendig lokal
 verifiziert. Schritt 5B-2 ist als medizinisch inaktiver, owner-only
 Importvorpruefvertrag implementiert und vollstaendig lokal verifiziert. Echter
-lizenzierter Inhalt, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und
-7 bleiben offen.
+Schritt 5B-3 ist als medizinisch inaktiver parserseitiger Bundle-Hashvertrag
+implementiert und vollstaendig lokal verifiziert. Echter lizenzierter Inhalt, ein
+Rohdatenparser, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und 7
+bleiben offen.
 
 ## Ziel
 
@@ -866,9 +868,39 @@ Komponentenhash gebunden. Die zusammenhaengende Repertoriumsregression bestand
 mit 22/22 Tests, der vollstaendige Projektlauf mit 47/47 Dateien und 507/507
 Tests. Beide TypeScript-Projekte und der Produktionsbuild sind erfolgreich.
 
-Ein parserseitiger Hashvertrag, ein owner-only Chunk-/Bulk-Writer, Resume- und
-Rollbacksemantik sowie die PostgreSQL-Grossmengenprofilierung bleiben vor jedem
-echten Repertoriumsimport separat abzunehmen.
+Ein quellenspezifischer Rohdaten- und Zeilenhashvertrag, ein owner-only
+Chunk-/Bulk-Writer, Resume- und Rollbacksemantik sowie die
+PostgreSQL-Grossmengenprofilierung bleiben vor jedem echten Repertoriumsimport
+separat abzunehmen.
+
+#### Schritt 5B-3: Parserseitiger Bundle-Hashvertrag
+
+Lokal implementiert in:
+
+`src/lib/homeopathicImportBundle.ts`
+
+Die reine TypeScript-Referenz akzeptiert nur einen streng versionierten,
+medizinisch inaktiven Umschlag aus kanonischen UUIDs, Repertoriums- und
+Quellenmetadaten sowie bereits semantisch gebildeten Zeilenhashes. Sie prueft
+exakte Felder, UTF-8-Grenzen, eindeutige Identitaeten und alle
+Assignment-Verweise, sortiert die vier Komponenten stabil und bildet deren
+SHA-256 ohne Mutation der Parserdaten.
+
+Die PostgreSQL-`jsonb`-Textdarstellung wird bytegenau und unabhaengig von
+JavaScript-Objektreihenfolge oder Gebietsschema nachgebildet. Ein PGlite-
+Kreuztest bestaetigt fuer dasselbe synthetische Bundle ein identisches Manifest
+und einen identischen Bundle-Hash auf Parser- und Datenbankseite, einschliesslich
+Fundstellen mit Anfuehrungszeichen und Zeilenumbruch. Der fokussierte Lauf
+bestand mit 2/2 Dateien und 9/9 Tests. Die zusammenhaengende
+Repertoriumsregression bestand mit 25/25 Tests, der vollstaendige Projektlauf mit
+48/48 Dateien und 510/510 Tests. Beide TypeScript-Projekte und der
+Produktionsbuild sind erfolgreich.
+
+Der Block ist kein Rohdatenparser und bildet keine medizinischen Zeilenhashes.
+Lizenzierte Gold-Fixtures, der quellenspezifische Parser, ein owner-only
+Chunk-/Bulk-Writer sowie Resume-, Rollback- und Grossmengenabnahme bleiben offen.
+Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step5b3-homeopathic-parser-bundle-contract-implementation-2026-08-03.md`.
 
 ## Schritt 6: Deterministisches Retrieval v2
 
