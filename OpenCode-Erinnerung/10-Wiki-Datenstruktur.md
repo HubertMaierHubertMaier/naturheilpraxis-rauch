@@ -688,3 +688,24 @@ Die Rohbackups und extrahierten Daten bleiben ausschliesslich lokal ausserhalb d
 Abgleich mit dem aktuellen Codebackup: `knowledge_product_links` ist in der GitHub-Migration `20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql` und im dortigen Supabase-Typstand korrekt enthalten. Nur der alte, stark zurueckliegende lokale Hauptarbeitsstand kannte diese Dateien noch nicht. Es besteht deshalb keine fehlende Live-Migration fuer diese Tabelle. Die bestehende Migration hat ausserdem bereits Review-, Evidenz-, Dosierungs-, Quellen- und Sicherheitsfelder an `admin_knowledge_base` ergaenzt; Phase 1 muss darauf aufbauen und darf diese Arbeit nicht duplizieren.
 
 Naechster Schritt: additive Phase-1-Migration zunaechst lokal entwerfen und testen; keine Live-Ausrollung ohne erneute Pruefung.
+
+## Fortschritt bis Schritt 5B-2 am 03.08.2026
+
+Auf dem separaten Datenbankzweig sind die additiven, weiterhin nicht live
+ausgerollten Vertraege inzwischen bis zum homoeopathischen Import-Preflight
+fortgeschrieben. Schritt 5B-2 fuegt ausschliesslich vier owner-seitig getestete
+Funktionen hinzu: ein kompaktes Repertoriums-Bundle-Manifest, dessen SHA-256,
+eine strikte Erwartungsvalidierung und einen fail-closed Hash-/Zaehlervergleich.
+Die Mittelkomponente bindet alle Mittelzuordnungen des Repertoriums, auch wenn
+ein Mittel noch keiner Rubrik zugeordnet ist.
+
+Der Block erzeugt keine Tabelle, schreibt keine Daten, enthaelt keine echten
+medizinischen Inhalte und vergibt kein Recht an Anwendung, `service_role` oder
+Importrollen. Die bestehenden 65 Wiki-Tabellen und vier Therapie-Input-Tabellen
+bleiben byteidentisch. `HOMEOPATHIC_IMPORT_BUNDLE_READY` bedeutet nur
+Integritaetsgleichheit mit einer vorab festgelegten Importerwartung und niemals
+Freigabe, Wirksamkeit oder therapeutische Eignung.
+
+Vor echten Repertoriumsdaten bleiben Lizenz- und Quellenfreigabe,
+parserseitiger Hashvertrag, owner-only Chunk-/Bulk-Writer, Resume/Rollback,
+PostgreSQL-Grossmengenprofilierung sowie Restore-, RLS- und Fachabnahme offen.

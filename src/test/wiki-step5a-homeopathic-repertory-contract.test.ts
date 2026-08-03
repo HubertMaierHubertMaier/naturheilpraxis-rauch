@@ -1039,9 +1039,12 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
       "supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql";
     const readerContractMigration =
       "supabase/migrations/20260803100000_create_kb_homeopathic_reader_contract.sql";
+    const importPreflightContractMigration =
+      "supabase/migrations/20260803110000_create_kb_homeopathic_import_preflight_contract.sql";
     const contractSources = new Set([
       contractMigration,
       readerContractMigration,
+      importPreflightContractMigration,
       "src/components/admin/BackupCenter.tsx",
       "src/lib/backupAreas.ts",
       "src/lib/wikiBackup.ts",
@@ -1066,7 +1069,11 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
             ).test(source)
           );
           if (!contractSources.has(relativePath)
-              || (![contractMigration, readerContractMigration].includes(relativePath)
+              || (![
+                contractMigration,
+                readerContractMigration,
+                importPreflightContractMigration,
+              ].includes(relativePath)
                   && hasDirectRuntimeAccess)) {
             violations.push(relativePath);
           }

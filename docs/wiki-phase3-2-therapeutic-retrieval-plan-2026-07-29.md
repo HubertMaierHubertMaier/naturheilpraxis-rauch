@@ -15,8 +15,10 @@ ist am 02.08.2026 als medizinisch inaktiver homoeopathischer
 Repertoriumsvertrag implementiert und lokal verifiziert. Keiner dieser Schritte
 ist nach Supabase ausgerollt. Schritt 5B-1 ist als medizinisch inaktiver,
 owner-only Einzelrepertorium-Reader implementiert und vollstaendig lokal
-verifiziert. Echter lizenzierter Inhalt, der Importvertrag sowie die Schritte 6
-und 7 bleiben offen.
+verifiziert. Schritt 5B-2 ist als medizinisch inaktiver, owner-only
+Importvorpruefvertrag implementiert und vollstaendig lokal verifiziert. Echter
+lizenzierter Inhalt, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und
+7 bleiben offen.
 
 ## Ziel
 
@@ -832,6 +834,41 @@ beide TypeScript-Projekte und der Produktionsbuild sind ebenfalls erfolgreich.
 
 Echter Inhalt und ein Bulk-Importvertrag bleiben bis zur konkreten
 Lizenzfreigabe, Quellenabnahme und PostgreSQL-Grossmengenprofilierung blockiert.
+
+#### Schritt 5B-2: Medizinisch inaktiver Importvorpruefvertrag
+
+Lokal implementiert in:
+
+`supabase/migrations/20260803110000_create_kb_homeopathic_import_preflight_contract.sql`
+
+Der reine Funktionsvertrag bildet fuer genau eine vollstaendig gueltige,
+owner-seitig geladene Repertoriumsrevision ein kompaktes kanonisches Manifest.
+Es enthaelt den exakten Repertoriums- und Quellenstand, getrennte Zeilenzahlen
+fuer Rubriken, source-native Grade, Mittel und Assignments sowie vier stabil
+geordnete Komponentenhashes. Der daraus gebildete Bundle-Hash bleibt bei einem
+reinen Reviewstatuswechsel unveraendert.
+
+Eine Importvorpruefung vergleicht einen vor dem Laden festgelegten erwarteten
+Bundle-Hash und exakt vier positive Zaehler mit dem gespeicherten Stand. Sie
+unterscheidet ungueltige Erwartungen, fehlende oder semantisch ungueltige
+Bundles, Hash-/Zaehlerabweichungen und einen exakten Integritaetstreffer. Der
+Trefferstatus `HOMEOPATHIC_IMPORT_BUNDLE_READY` ist ausdruecklich keine
+Import-, Release-, Wirksamkeits- oder Therapiefreigabe.
+
+Der Block schreibt keine Daten, erzeugt keine Tabelle und vergibt keine Rechte
+an Anwendung, Service- oder Importrollen. Wiki- und Therapie-Input-Snapshot
+bleiben byteidentisch. Der fokussierte PGlite-Test verwendet nur synthetische,
+nichtmedizinische Daten und bestand mit 6/6 Tests. Die ausfuehrliche
+Dokumentation steht in
+`docs/wiki-step5b2-homeopathic-import-preflight-contract-implementation-2026-08-03.md`.
+Auch ein gueltiges, noch keiner Rubrik zugeordnetes Mittel wird durch Zaehler und
+Komponentenhash gebunden. Die zusammenhaengende Repertoriumsregression bestand
+mit 22/22 Tests, der vollstaendige Projektlauf mit 47/47 Dateien und 507/507
+Tests. Beide TypeScript-Projekte und der Produktionsbuild sind erfolgreich.
+
+Ein parserseitiger Hashvertrag, ein owner-only Chunk-/Bulk-Writer, Resume- und
+Rollbacksemantik sowie die PostgreSQL-Grossmengenprofilierung bleiben vor jedem
+echten Repertoriumsimport separat abzunehmen.
 
 ## Schritt 6: Deterministisches Retrieval v2
 
