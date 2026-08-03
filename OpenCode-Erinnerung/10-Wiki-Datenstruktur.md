@@ -724,3 +724,15 @@ Freigabe. Offen bleiben weiterhin die konkrete lizenzierte Quelle, die
 quellenspezifische Bildung der Zeilenhashes, Gold-Fixtures, owner-only
 Chunk-/Bulk-Schreiben, Resume/Rollback sowie PostgreSQL-Grossmengen-, Restore-,
 RLS- und Fachabnahme.
+
+## Fortschritt bis Schritt 5B-4 am 03.08.2026
+
+Die fuenf normalisierten Step-5A-Zeilenpayloads koennen nun parserseitig
+bytegleich zu PostgreSQL gehasht werden. Der Vertrag prueft exakte UUIDs,
+SHA-256-Werte, kontrollierte Rechte und Urspruenge, UTF-8-Grenzen, Elternfelder
+sowie alle verschachtelten Repertoriums-, Rubrik-, Grad- und Mittelhashbindungen.
+
+Der Vertrag verarbeitet weiterhin weder Quelldateien noch echte medizinische
+Inhalte und schreibt nichts. Quelleninhalt, Metadaten und generische
+Mittelrevision bleiben vorgelagerte, noch mit einer lizenzierten Quelle und
+Gold-Fixtures abzunehmende Eingaben; ein owner-only Writer folgt erst danach.
