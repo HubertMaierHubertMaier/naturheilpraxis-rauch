@@ -53,6 +53,13 @@ const writerMigration = readFileSync(
   ),
   "utf8",
 );
+const chunkImportMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260803130000_create_kb_homeopathic_chunk_import_contract.sql",
+  ),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -72,6 +79,11 @@ const gradeId = "52000000-0000-4000-8000-000000000001";
 const repertoryRemedyId = "62000000-0000-4000-8000-000000000001";
 const unassignedRepertoryRemedyId = "62000000-0000-4000-8000-000000000002";
 const assignmentId = "72000000-0000-4000-8000-000000000001";
+const chunkBatchId = "82000000-0000-4000-8000-000000000001";
+const failedChunkBatchId = "82000000-0000-4000-8000-000000000002";
+const overflowChunkBatchId = "82000000-0000-4000-8000-000000000003";
+const overflowRepertoryId = "32000000-0000-4000-8000-000000000099";
+const overflowRepertoryRevisionId = "32100000-0000-4000-8000-000000000099";
 
 const expectedCounts = {
   rubrics: 2,
@@ -92,6 +104,26 @@ type PreflightResult = {
   hash_matches?: boolean;
   counts_match?: boolean;
   bundle_manifest?: BundleManifest;
+  result_hash: string;
+};
+
+type ChunkImportStatus = {
+  status: string;
+  batch_id: string;
+  expected_chunk_count?: number;
+  staged_chunk_count?: number;
+  staged_counts?: typeof expectedCounts;
+  staged_payload_bytes?: number;
+  missing_chunk_indexes?: number[];
+  written_result_hash?: string | null;
+  result_hash: string;
+};
+
+type ChunkImportWriteResult = {
+  status: string;
+  batch_id: string;
+  expected_chunk_count: number;
+  preflight: PreflightResult;
   result_hash: string;
 };
 
@@ -123,9 +155,11 @@ let db: PGlite;
 let snapshotBeforePreflight = "";
 let snapshotAfterPreflight = "";
 let snapshotAfterWriterContract = "";
+let snapshotAfterChunkImportContract = "";
 let therapySnapshotBeforePreflight = "";
 let therapySnapshotAfterPreflight = "";
 let therapySnapshotAfterWriterContract = "";
+let therapySnapshotAfterChunkImportContract = "";
 let draftManifest: BundleManifest;
 let approvedManifest: BundleManifest;
 let draftBundleHash = "";
@@ -141,6 +175,24 @@ let repertoryHashAfterFailure = "";
 let firstWriterResult: PreflightResult;
 let replayWriterResult: PreflightResult;
 let writerCountsAfterReplay: ContentRowCounts;
+let writerChunks: Array<{ payload: Record<string, unknown[]>; hash: string }>;
+let initialChunkStatus: ChunkImportStatus;
+let resumedChunkStatus: ChunkImportStatus;
+let replayedChunkStatus: ChunkImportStatus;
+let readyChunkStatus: ChunkImportStatus;
+let writtenChunkStatus: ChunkImportStatus;
+let failedChunkFinalizeMessage = "";
+let failedChunkFinalizeStatus: ChunkImportStatus;
+let cancelledChunkStatus: ChunkImportStatus;
+let replayedCancelledChunkStatus: ChunkImportStatus;
+let writerCountsAfterFailedChunkFinalize: ContentRowCounts;
+let incompleteChunkFinalizeMessage = "";
+let writerCountsAfterIncompleteChunkFinalize: ContentRowCounts;
+let divergentChunkFailureMessage = "";
+let overflowChunkFailureMessage = "";
+let overflowChunkStatus: ChunkImportStatus;
+let chunkWriteResult: ChunkImportWriteResult;
+let replayedChunkWriteResult: ChunkImportWriteResult;
 
 async function bootstrapDatabase(target: PGlite): Promise<void> {
   await target.exec(`
@@ -295,6 +347,67 @@ async function callSmallBundleWriter(bundle: unknown): Promise<PreflightResult> 
     SELECT public.kb_homeopathic_write_small_bundle_v1($1::jsonb) AS value
   `, [JSON.stringify(bundle)]);
   return result.rows[0].value;
+}
+
+async function readChunkImportStatus(batchId: string): Promise<ChunkImportStatus> {
+  const result = await db.query<{ value: ChunkImportStatus }>(`
+    SELECT public.kb_homeopathic_chunk_import_status_v1($1::uuid) AS value
+  `, [batchId]);
+  return result.rows[0].value;
+}
+
+async function beginChunkImport(batch: unknown): Promise<ChunkImportStatus> {
+  const result = await db.query<{ value: ChunkImportStatus }>(`
+    SELECT public.kb_homeopathic_begin_chunk_import_v1($1::jsonb) AS value
+  `, [JSON.stringify(batch)]);
+  return result.rows[0].value;
+}
+
+async function stageImportChunk(chunk: unknown): Promise<ChunkImportStatus> {
+  const result = await db.query<{ value: ChunkImportStatus }>(`
+    SELECT public.kb_homeopathic_stage_import_chunk_v1($1::jsonb) AS value
+  `, [JSON.stringify(chunk)]);
+  return result.rows[0].value;
+}
+
+async function finalizeChunkImport(batchId: string): Promise<ChunkImportWriteResult> {
+  const result = await db.query<{ value: ChunkImportWriteResult }>(`
+    SELECT public.kb_homeopathic_finalize_chunk_import_v1($1::uuid) AS value
+  `, [batchId]);
+  return result.rows[0].value;
+}
+
+async function cancelChunkImport(batchId: string): Promise<ChunkImportStatus> {
+  const result = await db.query<{ value: ChunkImportStatus }>(`
+    SELECT public.kb_homeopathic_cancel_chunk_import_v1($1::uuid) AS value
+  `, [batchId]);
+  return result.rows[0].value;
+}
+
+function chunkBatchEnvelope(batchId: string, expectedBundleHash: string) {
+  return {
+    contract_version: 1,
+    contract_scope: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_ONLY",
+    data_classification: "general_knowledge",
+    batch_id: batchId,
+    expected_bundle_hash: expectedBundleHash,
+    expected_counts: expectedCounts,
+    expected_chunk_hashes: writerChunks.map((chunk) => chunk.hash),
+    repertory: writerBundle.repertory,
+  };
+}
+
+function chunkEnvelope(batchId: string, chunkIndex: number) {
+  const chunk = writerChunks[chunkIndex];
+  return {
+    contract_version: 1,
+    contract_scope: "HOMEOPATHIC_CHUNK_IMPORT_STAGE_ONLY",
+    data_classification: "general_knowledge",
+    batch_id: batchId,
+    chunk_index: chunkIndex,
+    chunk_hash: chunk.hash,
+    chunk_payload: chunk.payload,
+  };
 }
 
 async function buildWriterBundleFixture() {
@@ -622,7 +735,32 @@ beforeAll(async () => {
   therapySnapshotAfterWriterContract = (await db.query<{ value: string }>(
     "SELECT public.therapy_input_export_snapshot_v2() AS value",
   )).rows[0].value;
+  await db.exec(chunkImportMigration);
+  snapshotAfterChunkImportContract = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterChunkImportContract = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
   writerBundle = await buildWriterBundleFixture();
+  const chunkPayloads: Array<Record<string, unknown[]>> = [
+    {
+      rubrics: [writerBundle.rubrics[0]],
+      grade_definitions: [writerBundle.grade_definitions[0]],
+      remedies: [writerBundle.remedies[0]],
+      assignments: [],
+    },
+    {
+      rubrics: [writerBundle.rubrics[1]],
+      grade_definitions: [],
+      remedies: [writerBundle.remedies[1]],
+      assignments: [writerBundle.assignments[0]],
+    },
+  ];
+  writerChunks = await Promise.all(chunkPayloads.map(async (payload) => ({
+    payload,
+    hash: await hashPostgresCanonicalJsonb(payload),
+  })));
 
   await db.exec("BEGIN;");
   try {
@@ -683,7 +821,132 @@ beforeAll(async () => {
     `)).rows[0].content_hash;
     await db.exec("RELEASE SAVEPOINT failed_writer;");
 
-    firstWriterResult = await callSmallBundleWriter(writerBundle);
+    await beginChunkImport(chunkBatchEnvelope(failedChunkBatchId, "0".repeat(64)));
+    await stageImportChunk(chunkEnvelope(failedChunkBatchId, 0));
+    await stageImportChunk(chunkEnvelope(failedChunkBatchId, 1));
+    await db.exec("SAVEPOINT failed_chunk_finalize_call;");
+    let failedChunkFinalize: unknown;
+    try {
+      await finalizeChunkImport(failedChunkBatchId);
+    } catch (error) {
+      failedChunkFinalize = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT failed_chunk_finalize_call;");
+      await db.exec("RELEASE SAVEPOINT failed_chunk_finalize_call;");
+    }
+    if (!(failedChunkFinalize instanceof Error)) {
+      throw new Error("Hash-mismatched staged homeopathic batch unexpectedly finalized");
+    }
+    failedChunkFinalizeMessage = failedChunkFinalize.message;
+    failedChunkFinalizeStatus = await readChunkImportStatus(failedChunkBatchId);
+    writerCountsAfterFailedChunkFinalize = await readContentRowCounts();
+    cancelledChunkStatus = await cancelChunkImport(failedChunkBatchId);
+    replayedCancelledChunkStatus = await cancelChunkImport(failedChunkBatchId);
+
+    initialChunkStatus = await beginChunkImport(
+      chunkBatchEnvelope(chunkBatchId, writerBundle.expected_bundle_hash),
+    );
+    resumedChunkStatus = await stageImportChunk(chunkEnvelope(chunkBatchId, 1));
+    replayedChunkStatus = await stageImportChunk(chunkEnvelope(chunkBatchId, 1));
+
+    await db.exec("SAVEPOINT divergent_chunk_replay;");
+    const divergentChunk = structuredClone(chunkEnvelope(chunkBatchId, 1));
+    divergentChunk.chunk_payload.rubrics = [writerBundle.rubrics[0]];
+    let divergentChunkFailure: unknown;
+    try {
+      await stageImportChunk(divergentChunk);
+    } catch (error) {
+      divergentChunkFailure = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT divergent_chunk_replay;");
+      await db.exec("RELEASE SAVEPOINT divergent_chunk_replay;");
+    }
+    if (!(divergentChunkFailure instanceof Error)) {
+      throw new Error("Divergent homeopathic chunk replay unexpectedly succeeded");
+    }
+    divergentChunkFailureMessage = divergentChunkFailure.message;
+
+    await db.exec("SAVEPOINT incomplete_chunk_finalize;");
+    let incompleteChunkFinalize: unknown;
+    try {
+      await finalizeChunkImport(chunkBatchId);
+    } catch (error) {
+      incompleteChunkFinalize = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT incomplete_chunk_finalize;");
+      await db.exec("RELEASE SAVEPOINT incomplete_chunk_finalize;");
+    }
+    if (!(incompleteChunkFinalize instanceof Error)) {
+      throw new Error("Incomplete homeopathic chunk batch unexpectedly finalized");
+    }
+    incompleteChunkFinalizeMessage = incompleteChunkFinalize.message;
+    writerCountsAfterIncompleteChunkFinalize = await readContentRowCounts();
+
+    readyChunkStatus = await stageImportChunk(chunkEnvelope(chunkBatchId, 0));
+    chunkWriteResult = await finalizeChunkImport(chunkBatchId);
+    replayedChunkWriteResult = await finalizeChunkImport(chunkBatchId);
+    writtenChunkStatus = await readChunkImportStatus(chunkBatchId);
+
+    const overflowPayloads: Array<Record<string, unknown[]>> = [
+      writerChunks[0].payload,
+      {
+        ...writerChunks[1].payload,
+        remedies: [writerBundle.remedies[1], writerBundle.remedies[0]],
+      },
+    ];
+    const overflowHashes = await Promise.all(
+      overflowPayloads.map((payload) => hashPostgresCanonicalJsonb(payload)),
+    );
+    const overflowRepertory = {
+      ...writerBundle.repertory,
+      entity_id: overflowRepertoryId,
+      revision_id: overflowRepertoryRevisionId,
+    };
+    await beginChunkImport({
+      contract_version: 1,
+      contract_scope: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_ONLY",
+      data_classification: "general_knowledge",
+      batch_id: overflowChunkBatchId,
+      expected_bundle_hash: writerBundle.expected_bundle_hash,
+      expected_counts: expectedCounts,
+      expected_chunk_hashes: overflowHashes,
+      repertory: overflowRepertory,
+    });
+    await stageImportChunk({
+      contract_version: 1,
+      contract_scope: "HOMEOPATHIC_CHUNK_IMPORT_STAGE_ONLY",
+      data_classification: "general_knowledge",
+      batch_id: overflowChunkBatchId,
+      chunk_index: 0,
+      chunk_hash: overflowHashes[0],
+      chunk_payload: overflowPayloads[0],
+    });
+    await db.exec("SAVEPOINT overflow_chunk_stage;");
+    let overflowChunkFailure: unknown;
+    try {
+      await stageImportChunk({
+        contract_version: 1,
+        contract_scope: "HOMEOPATHIC_CHUNK_IMPORT_STAGE_ONLY",
+        data_classification: "general_knowledge",
+        batch_id: overflowChunkBatchId,
+        chunk_index: 1,
+        chunk_hash: overflowHashes[1],
+        chunk_payload: overflowPayloads[1],
+      });
+    } catch (error) {
+      overflowChunkFailure = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT overflow_chunk_stage;");
+      await db.exec("RELEASE SAVEPOINT overflow_chunk_stage;");
+    }
+    if (!(overflowChunkFailure instanceof Error)) {
+      throw new Error("Count-overflowing homeopathic chunk unexpectedly staged");
+    }
+    overflowChunkFailureMessage = overflowChunkFailure.message;
+    overflowChunkStatus = await readChunkImportStatus(overflowChunkBatchId);
+    await cancelChunkImport(overflowChunkBatchId);
+
+    firstWriterResult = chunkWriteResult.preflight;
     replayWriterResult = await callSmallBundleWriter(writerBundle);
     await db.exec("SAVEPOINT divergent_replay;");
     const divergentReplay = structuredClone(writerBundle);
@@ -869,8 +1132,8 @@ afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () => {
-  it("installs function-only contracts and leaves both protected snapshots byte-identical", async () => {
+describe.sequential("Wiki Step 5B-2, 5B-5 and 5B-6 homeopathic import contracts", () => {
+  it("installs closed contracts and extends only the Wiki snapshot by two staging tables", async () => {
     expect(preflightMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(preflightMigration).not.toMatch(/CREATE TABLE|ALTER TABLE|INSERT INTO|GRANT EXECUTE/);
     expect(preflightMigration).not.toMatch(
@@ -887,10 +1150,29 @@ describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () =
     expect(writerMigration).not.toMatch(
       /\b(patient_id|patient_user_id|pseudonym_id|user_id|session_id|therapy_session_id|anamnesis_id)\b/i,
     );
+    expect(chunkImportMigration.match(/CREATE TABLE public\./g)).toHaveLength(2);
+    expect(chunkImportMigration).toContain("HOMEOPATHIC_CHUNK_IMPORT_BATCH_ONLY");
+    expect(chunkImportMigration).toContain("HOMEOPATHIC_CHUNK_IMPORT_STAGE_ONLY");
+    expect(chunkImportMigration).toContain("current_user <> table_owner");
+    expect(chunkImportMigration).toContain("staged_payload_bytes");
+    expect(chunkImportMigration).toContain("> 4000000");
+    expect(chunkImportMigration).not.toMatch(/GRANT (?:SELECT|INSERT|UPDATE|DELETE|ALL)/);
+    expect(chunkImportMigration).not.toMatch(
+      /\b(patient_id|patient_user_id|pseudonym_id|user_id|session_id|therapy_session_id|anamnesis_id)\b/i,
+    );
     expect(snapshotAfterPreflight).toBe(snapshotBeforePreflight);
     expect(therapySnapshotAfterPreflight).toBe(therapySnapshotBeforePreflight);
     expect(snapshotAfterWriterContract).toBe(snapshotAfterPreflight);
     expect(therapySnapshotAfterWriterContract).toBe(therapySnapshotAfterPreflight);
+    const chunkSnapshot = JSON.parse(snapshotAfterChunkImportContract) as {
+      tables: Record<string, unknown[]>;
+      validation: Record<string, number>;
+    };
+    expect(Object.keys(chunkSnapshot.tables)).toHaveLength(67);
+    expect(chunkSnapshot.tables.kb_homeopathic_chunk_import_batches).toEqual([]);
+    expect(chunkSnapshot.tables.kb_homeopathic_chunk_import_chunks).toEqual([]);
+    expect(chunkSnapshot.validation.invalid_homeopathic_chunk_imports).toBe(0);
+    expect(therapySnapshotAfterChunkImportContract).toBe(therapySnapshotAfterWriterContract);
     const activeReleases = await db.query<{ count: number }>(`
       SELECT count(*)::integer AS count FROM public.kb_releases
        WHERE retrieval_eligible OR is_active
@@ -923,6 +1205,154 @@ describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () =
     });
   });
 
+  it("persists out-of-order chunks and exposes one exact resume cursor", () => {
+    expect(initialChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_OPEN",
+      batch_id: chunkBatchId,
+      expected_chunk_count: 2,
+      staged_chunk_count: 0,
+      staged_counts: {
+        rubrics: 0,
+        grade_definitions: 0,
+        remedies: 0,
+        assignments: 0,
+      },
+      missing_chunk_indexes: [0, 1],
+    }));
+    expect(resumedChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_OPEN",
+      staged_chunk_count: 1,
+      staged_counts: {
+        rubrics: 1,
+        grade_definitions: 0,
+        remedies: 1,
+        assignments: 1,
+      },
+      missing_chunk_indexes: [0],
+    }));
+    expect(replayedChunkStatus).toEqual(resumedChunkStatus);
+    expect(divergentChunkFailureMessage).toMatch(/chunk envelope is invalid/i);
+  });
+
+  it("keeps staged chunks but rolls back every final-table write on a bundle mismatch", () => {
+    expect(failedChunkFinalizeMessage)
+      .toMatch(/small-bundle preflight failed.*HOMEOPATHIC_IMPORT_BUNDLE_MISMATCH/i);
+    expect(failedChunkFinalizeStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_READY",
+      batch_id: failedChunkBatchId,
+      staged_chunk_count: 2,
+      missing_chunk_indexes: [],
+    }));
+    expect(cancelledChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_CANCELLED",
+      batch_id: failedChunkBatchId,
+      staged_chunk_count: 2,
+      missing_chunk_indexes: [],
+    }));
+    expect(replayedCancelledChunkStatus).toEqual(cancelledChunkStatus);
+    expect(writerCountsAfterFailedChunkFinalize).toEqual({
+      details: 0,
+      rubrics: 0,
+      rubricRevisions: 0,
+      grades: 0,
+      remedies: 0,
+      assignments: 0,
+    });
+    expect(incompleteChunkFinalizeMessage).toMatch(/incomplete or count-mismatched/i);
+    expect(writerCountsAfterIncompleteChunkFinalize).toEqual(
+      writerCountsAfterFailedChunkFinalize,
+    );
+  });
+
+  it("rejects cumulative component or payload limits before accepting a chunk", () => {
+    expect(overflowChunkFailureMessage)
+      .toMatch(/exceeds the batch counts or 4000000-byte staging limit/i);
+    expect(overflowChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_OPEN",
+      batch_id: overflowChunkBatchId,
+      staged_chunk_count: 1,
+      missing_chunk_indexes: [1],
+    }));
+    expect(overflowChunkStatus.staged_payload_bytes).toBeGreaterThan(0);
+  });
+
+  it("finalizes one complete batch atomically and replays the exact result", async () => {
+    expect(readyChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_READY",
+      staged_chunk_count: 2,
+      staged_counts: expectedCounts,
+      missing_chunk_indexes: [],
+    }));
+    expect(chunkWriteResult).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_WRITTEN",
+      batch_id: chunkBatchId,
+      expected_chunk_count: 2,
+      preflight: expect.objectContaining({
+        status: "HOMEOPATHIC_IMPORT_BUNDLE_READY",
+        actual_bundle_hash: writerBundle.expected_bundle_hash,
+        actual_counts: expectedCounts,
+      }),
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(replayedChunkWriteResult).toEqual(chunkWriteResult);
+    expect(writtenChunkStatus).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_CHUNK_IMPORT_BATCH_WRITTEN",
+      staged_chunk_count: 2,
+      missing_chunk_indexes: [],
+      written_result_hash: chunkWriteResult.result_hash,
+    }));
+    await expect(cancelChunkImport(chunkBatchId))
+      .rejects.toThrow(/written homeopathic chunk import batches cannot be cancelled/i);
+    const invalidImports = await db.query<{ count: number }>(`
+      SELECT public.kb_invalid_homeopathic_chunk_import_count()::integer AS count
+    `);
+    expect(invalidImports.rows[0].count).toBe(0);
+    const populatedSnapshot = (await db.query<{
+      value: { tables: Record<string, unknown[]>; validation: Record<string, number> };
+    }>("SELECT public.kb_export_wiki_snapshot() AS value")).rows[0].value;
+    expect(populatedSnapshot.tables.kb_homeopathic_chunk_import_batches).toHaveLength(3);
+    expect(populatedSnapshot.tables.kb_homeopathic_chunk_import_chunks).toHaveLength(5);
+    expect(populatedSnapshot.validation.invalid_homeopathic_chunk_imports).toBe(0);
+  });
+
+  it("keeps batch and chunk audit rows immutable behind RLS", async () => {
+    await expect(db.exec(`
+      UPDATE public.kb_homeopathic_chunk_import_chunks
+         SET chunk_hash = chunk_hash
+       WHERE batch_id = '${chunkBatchId}'
+    `)).rejects.toThrow(/homeopathic import chunks are immutable/i);
+    await expect(db.exec(`
+      DELETE FROM public.kb_homeopathic_chunk_import_chunks
+       WHERE batch_id = '${chunkBatchId}'
+    `)).rejects.toThrow(/chunk import audit rows are immutable/i);
+    await expect(db.exec(`
+      UPDATE public.kb_homeopathic_chunk_import_batches
+         SET expected_bundle_hash = repeat('0', 64)
+       WHERE id = '${chunkBatchId}'
+    `)).rejects.toThrow(/batch identity is immutable/i);
+    await expect(db.exec(`
+      DELETE FROM public.kb_homeopathic_chunk_import_batches
+       WHERE id = '${failedChunkBatchId}'
+    `)).rejects.toThrow(/chunk import audit rows are immutable/i);
+    await expect(db.exec(
+      "TRUNCATE public.kb_homeopathic_chunk_import_chunks",
+    )).rejects.toThrow(/chunk import audit rows are immutable/i);
+
+    const rls = await db.query<{ relname: string; enabled: boolean }>(`
+      SELECT relname, relrowsecurity AS enabled
+        FROM pg_class
+       WHERE oid IN (
+         'public.kb_homeopathic_chunk_import_batches'::regclass,
+         'public.kb_homeopathic_chunk_import_chunks'::regclass
+       )
+       ORDER BY relname
+    `);
+    expect(rls.rows).toEqual([
+      { relname: "kb_homeopathic_chunk_import_batches", enabled: true },
+      { relname: "kb_homeopathic_chunk_import_chunks", enabled: true },
+    ]);
+  });
+
   it("rejects noncanonical envelope types before touching stored content", async () => {
     const stringVersion = {
       ...writerBundle,
@@ -937,6 +1367,16 @@ describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () =
     malformedAliases.remedies[0].source_remedy_aliases.push(7);
     await expect(callSmallBundleWriter(malformedAliases))
       .rejects.toThrow(/small-bundle writer component shape is invalid/i);
+
+    const impossibleChunkManifest = {
+      ...chunkBatchEnvelope(chunkBatchId, writerBundle.expected_bundle_hash),
+      expected_chunk_hashes: Array.from(
+        { length: 7 },
+        (_, index) => (index + 1).toString(16).padStart(64, "0"),
+      ),
+    };
+    await expect(beginChunkImport(impossibleChunkManifest))
+      .rejects.toThrow(/chunk import batch envelope is invalid/i);
     expect(await readContentRowCounts()).toEqual(writerCountsAfterReplay);
   });
 
@@ -1082,20 +1522,43 @@ describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () =
       "public.kb_homeopathic_import_expectations_are_valid_v1(text,jsonb)",
       "public.kb_homeopathic_repertory_import_preflight_v1(uuid,uuid,text,jsonb)",
       "public.kb_homeopathic_write_small_bundle_v1(jsonb)",
+      "public.kb_homeopathic_sha256_array_is_valid_v1(text[])",
+      "public.kb_homeopathic_small_expected_counts_are_valid_v1(text,jsonb)",
+      "public.kb_homeopathic_writer_repertory_binding_is_valid_v1(jsonb)",
+      "public.kb_homeopathic_chunk_expectations_are_valid_v1(text,jsonb,text[])",
+      "public.kb_homeopathic_chunk_payload_is_valid_v1(jsonb)",
+      "public.kb_homeopathic_chunk_batch_envelope_is_valid_v1(jsonb)",
+      "public.kb_homeopathic_chunk_envelope_is_valid_v1(jsonb)",
+      "public.kb_protect_homeopathic_chunk_import_write()",
+      "public.kb_homeopathic_chunk_import_status_v1(uuid)",
+      "public.kb_homeopathic_begin_chunk_import_v1(jsonb)",
+      "public.kb_homeopathic_stage_import_chunk_v1(jsonb)",
+      "public.kb_homeopathic_cancel_chunk_import_v1(uuid)",
+      "public.kb_homeopathic_chunk_import_bundle_v1(uuid)",
+      "public.kb_homeopathic_chunk_import_write_result_v1(uuid)",
+      "public.kb_homeopathic_finalize_chunk_import_v1(uuid)",
+      "public.kb_homeopathic_chunk_import_batch_is_valid_v1(uuid)",
+      "public.kb_invalid_homeopathic_chunk_import_count()",
     ];
 
     await db.exec(`
       GRANT EXECUTE ON FUNCTION public.kb_homeopathic_write_small_bundle_v1(jsonb)
+      TO service_role;
+      GRANT EXECUTE ON FUNCTION public.kb_homeopathic_finalize_chunk_import_v1(uuid)
       TO service_role;
       SET ROLE service_role;
     `);
     try {
       await expect(callSmallBundleWriter(writerBundle))
         .rejects.toThrow(/writes require the database table owner/i);
+      await expect(finalizeChunkImport(chunkBatchId))
+        .rejects.toThrow(/writes require the database table owner/i);
     } finally {
       await db.exec("RESET ROLE;").catch(() => undefined);
       await db.exec(`
         REVOKE ALL ON FUNCTION public.kb_homeopathic_write_small_bundle_v1(jsonb)
+        FROM service_role;
+        REVOKE ALL ON FUNCTION public.kb_homeopathic_finalize_chunk_import_v1(uuid)
         FROM service_role;
       `);
     }
@@ -1109,5 +1572,32 @@ describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () =
     `, [functions]);
     expect(privileges.rows).toHaveLength(functions.length * 5);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
+
+    const tablePrivileges = await db.query<{ allowed: boolean }>(`
+      SELECT has_table_privilege(role_name, table_name, privilege) AS allowed
+        FROM unnest(ARRAY[
+          'anon', 'authenticated', 'service_role', 'kb_importer', 'kb_import_runtime'
+        ]::text[]) role_name
+        CROSS JOIN unnest(ARRAY[
+          'public.kb_homeopathic_chunk_import_batches',
+          'public.kb_homeopathic_chunk_import_chunks'
+        ]::text[]) table_name
+        CROSS JOIN unnest(ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']::text[]) privilege
+    `);
+    expect(tablePrivileges.rows).toHaveLength(5 * 2 * 4);
+    expect(tablePrivileges.rows.every((row) => row.allowed === false)).toBe(true);
+
+    const snapshotPrivileges = await db.query<{ role_name: string; allowed: boolean }>(`
+      SELECT role_name,
+             has_function_privilege(
+               role_name, 'public.kb_export_wiki_snapshot()', 'EXECUTE'
+             ) AS allowed
+        FROM unnest(ARRAY[
+          'anon', 'authenticated', 'service_role', 'kb_importer', 'kb_import_runtime'
+        ]::text[]) role_name
+       ORDER BY role_name
+    `);
+    expect(snapshotPrivileges.rows.filter((row) => row.allowed).map((row) => row.role_name))
+      .toEqual(["service_role"]);
   });
 });

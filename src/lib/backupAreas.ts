@@ -137,6 +137,8 @@ export const BACKUP_AREAS: BackupArea[] = [
       "kb_homeopathic_grade_definitions",
       "kb_homeopathic_repertory_remedies",
       "kb_homeopathic_rubric_remedy_assignments",
+      "kb_homeopathic_chunk_import_batches",
+      "kb_homeopathic_chunk_import_chunks",
       "kb_dosage_rules",
       "kb_safety_rules",
       "kb_safety_rule_conditions",

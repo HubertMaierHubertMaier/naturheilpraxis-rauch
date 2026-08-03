@@ -23,6 +23,7 @@ export const WIKI_ZERO_VALIDATION_KEYS = [
   "invalid_homeopathic_grade_definitions",
   "invalid_homeopathic_repertory_remedies",
   "invalid_homeopathic_rubric_remedy_assignments",
+  "invalid_homeopathic_chunk_imports",
 ] as const;
 
 export type WikiSubsetPayload = {

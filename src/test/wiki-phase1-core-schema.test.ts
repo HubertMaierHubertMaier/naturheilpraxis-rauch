@@ -95,6 +95,10 @@ const kbHomeopathicRepertoryTables = [
   "kb_homeopathic_repertory_remedies",
   "kb_homeopathic_rubric_remedy_assignments",
 ];
+const kbHomeopathicChunkImportTables = [
+  "kb_homeopathic_chunk_import_batches",
+  "kb_homeopathic_chunk_import_chunks",
+];
 
 const wikiBackupTables = [
   "admin_knowledge_base",
@@ -107,6 +111,7 @@ const wikiBackupTables = [
   ...kbTherapeuticTables,
   ...kbLaboratoryTables,
   ...kbHomeopathicRepertoryTables,
+  ...kbHomeopathicChunkImportTables,
   ...kbClinicalRuleTables,
   ...kbReleaseTables,
   ...kbSearchTables,
@@ -448,7 +453,7 @@ describe("Wiki Phase 1 core schema migration", () => {
 });
 
 describe("Wiki Phase 1 backup coverage", () => {
-  it("parses every production Wiki inventory as the same exact 65-table set", () => {
+  it("parses every production Wiki inventory as the same exact 67-table set", () => {
     const requiredTables = {
       REQUIRED_KB_TABLES: requiredTableConstant(backupExportSource, "REQUIRED_KB_TABLES"),
       REQUIRED_KB_PHASE3_TABLES: requiredTableConstant(
@@ -475,6 +480,10 @@ describe("Wiki Phase 1 backup coverage", () => {
         backupExportSource,
         "REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES",
       ),
+      REQUIRED_KB_HOMEOPATHIC_CHUNK_IMPORT_TABLES: requiredTableConstant(
+        backupExportSource,
+        "REQUIRED_KB_HOMEOPATHIC_CHUNK_IMPORT_TABLES",
+      ),
       REQUIRED_KB_RELEASE_TABLES: requiredTableConstant(
         backupExportSource,
         "REQUIRED_KB_RELEASE_TABLES",
@@ -496,6 +505,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       REQUIRED_KB_THERAPEUTIC_TABLES: kbTherapeuticTables,
       REQUIRED_KB_LABORATORY_TABLES: kbLaboratoryTables,
       REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES: kbHomeopathicRepertoryTables,
+      REQUIRED_KB_HOMEOPATHIC_CHUNK_IMPORT_TABLES: kbHomeopathicChunkImportTables,
       REQUIRED_KB_RELEASE_TABLES: kbReleaseTables,
       REQUIRED_KB_CLINICAL_RULE_TABLES: kbClinicalRuleTables,
       REQUIRED_KB_SEARCH_TABLES: kbSearchTables,
@@ -546,8 +556,8 @@ describe("Wiki Phase 1 backup coverage", () => {
       AREA_MAP: edgeTables,
       FALLBACK_TABLES: fallbackWikiTables,
     })) {
-      expect(tables, `${name} length`).toHaveLength(65);
-      expect(new Set(tables).size, `${name} uniqueness`).toBe(65);
+      expect(tables, `${name} length`).toHaveLength(67);
+      expect(new Set(tables).size, `${name} uniqueness`).toBe(67);
     }
 
     const sourcePromotion = "kb_source_candidate_draft_promotions";
@@ -573,6 +583,10 @@ describe("Wiki Phase 1 backup coverage", () => {
           .toBeLessThan(tables.indexOf(kbHomeopathicRepertoryTables[index + 1]));
       }
       expect(tables.indexOf("kb_homeopathic_rubric_remedy_assignments"))
+        .toBeLessThan(tables.indexOf("kb_homeopathic_chunk_import_batches"));
+      expect(tables.indexOf("kb_homeopathic_chunk_import_batches"))
+        .toBeLessThan(tables.indexOf("kb_homeopathic_chunk_import_chunks"));
+      expect(tables.indexOf("kb_homeopathic_chunk_import_chunks"))
         .toBeLessThan(tables.indexOf("kb_dosage_rules"));
       expect(tables.indexOf("kb_dosage_rules"))
         .toBeLessThan(tables.indexOf("kb_safety_rules"));
@@ -599,6 +613,7 @@ describe("Wiki Phase 1 backup coverage", () => {
       "invalid_homeopathic_grade_definitions",
       "invalid_homeopathic_repertory_remedies",
       "invalid_homeopathic_rubric_remedy_assignments",
+      "invalid_homeopathic_chunk_imports",
     ];
     const validationTypeBlock = requiredBlock(
       backupExportSource,
@@ -659,6 +674,11 @@ describe("Wiki Phase 1 backup coverage", () => {
         expect(importIndex).toBeGreaterThan(previousImportIndex);
         previousImportIndex = importIndex;
       }
+      for (const table of kbHomeopathicChunkImportTables) {
+        const importIndex = instructions.lastIndexOf(`\`${table}\``);
+        expect(importIndex).toBeGreaterThan(previousImportIndex);
+        previousImportIndex = importIndex;
+      }
       const findingDeleteIndex = instructions.indexOf(
         "`kb_lab_finding_definition_revision_details`",
       );
@@ -670,10 +690,19 @@ describe("Wiki Phase 1 backup coverage", () => {
       const assignmentDeleteIndex = instructions.indexOf(
         "`kb_homeopathic_rubric_remedy_assignments`",
       );
+      const chunkDeleteIndex = instructions.indexOf(
+        "`kb_homeopathic_chunk_import_chunks`",
+      );
+      const chunkBatchDeleteIndex = instructions.indexOf(
+        "`kb_homeopathic_chunk_import_batches`",
+      );
       const repertoryDeleteIndex = instructions.indexOf(
         "`kb_homeopathic_repertory_revision_details`",
       );
       expect(assignmentDeleteIndex).toBeGreaterThan(-1);
+      expect(chunkDeleteIndex).toBeGreaterThan(-1);
+      expect(chunkBatchDeleteIndex).toBeGreaterThan(chunkDeleteIndex);
+      expect(assignmentDeleteIndex).toBeGreaterThan(chunkBatchDeleteIndex);
       expect(repertoryDeleteIndex).toBeGreaterThan(assignmentDeleteIndex);
       for (const key of laboratoryValidationKeys) {
         expect(instructions).toContain(`\`${key}\``);
@@ -698,6 +727,7 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(backupExportSource).toContain("...REQUIRED_KB_THERAPEUTIC_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_LABORATORY_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_HOMEOPATHIC_REPERTORY_TABLES");
+    expect(backupExportSource).toContain("...REQUIRED_KB_HOMEOPATHIC_CHUNK_IMPORT_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
     expect(backupExportSource).toContain("...REQUIRED_KB_SEARCH_TABLES");
     expect(backupExportSource).toContain('return { tables, source: "openapi" }');
