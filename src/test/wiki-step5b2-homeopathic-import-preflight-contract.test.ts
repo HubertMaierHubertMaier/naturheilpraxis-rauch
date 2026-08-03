@@ -6,6 +6,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildHomeopathicImportBundleContract,
+  hashPostgresCanonicalJsonb,
   type HomeopathicImportBundleInput,
   type HomeopathicImportBundleManifest,
 } from "@/lib/homeopathicImportBundle";
@@ -42,6 +43,13 @@ const preflightMigration = readFileSync(
   resolve(
     process.cwd(),
     "supabase/migrations/20260803110000_create_kb_homeopathic_import_preflight_contract.sql",
+  ),
+  "utf8",
+);
+const writerMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260803120000_create_kb_homeopathic_small_bundle_writer.sql",
   ),
   "utf8",
 );
@@ -102,11 +110,22 @@ type RowHashParity = {
   storedHash: string;
 };
 
+type ContentRowCounts = {
+  details: number;
+  rubrics: number;
+  rubricRevisions: number;
+  grades: number;
+  remedies: number;
+  assignments: number;
+};
+
 let db: PGlite;
 let snapshotBeforePreflight = "";
 let snapshotAfterPreflight = "";
+let snapshotAfterWriterContract = "";
 let therapySnapshotBeforePreflight = "";
 let therapySnapshotAfterPreflight = "";
+let therapySnapshotAfterWriterContract = "";
 let draftManifest: BundleManifest;
 let approvedManifest: BundleManifest;
 let draftBundleHash = "";
@@ -114,6 +133,14 @@ let approvedBundleHash = "";
 let draftPreflight: PreflightResult;
 let parserBundle: Awaited<ReturnType<typeof buildHomeopathicImportBundleContract>>;
 let rowHashParity: RowHashParity[] = [];
+let writerBundle: Awaited<ReturnType<typeof buildWriterBundleFixture>>;
+let writerFailureMessage = "";
+let divergentWriterFailureMessage = "";
+let writerCountsAfterFailure: ContentRowCounts;
+let repertoryHashAfterFailure = "";
+let firstWriterResult: PreflightResult;
+let replayWriterResult: PreflightResult;
+let writerCountsAfterReplay: ContentRowCounts;
 
 async function bootstrapDatabase(target: PGlite): Promise<void> {
   await target.exec(`
@@ -246,6 +273,329 @@ async function readPreflight(
   return result.rows[0].value;
 }
 
+async function readContentRowCounts(): Promise<ContentRowCounts> {
+  return (await db.query<ContentRowCounts>(`
+    SELECT
+      (SELECT count(*)::int
+         FROM public.kb_homeopathic_repertory_revision_details) AS details,
+      (SELECT count(*)::int FROM public.kb_homeopathic_rubrics) AS rubrics,
+      (SELECT count(*)::int
+         FROM public.kb_homeopathic_rubric_revisions) AS "rubricRevisions",
+      (SELECT count(*)::int
+         FROM public.kb_homeopathic_grade_definitions) AS grades,
+      (SELECT count(*)::int
+         FROM public.kb_homeopathic_repertory_remedies) AS remedies,
+      (SELECT count(*)::int
+         FROM public.kb_homeopathic_rubric_remedy_assignments) AS assignments
+  `)).rows[0];
+}
+
+async function callSmallBundleWriter(bundle: unknown): Promise<PreflightResult> {
+  const result = await db.query<{ value: PreflightResult }>(`
+    SELECT public.kb_homeopathic_write_small_bundle_v1($1::jsonb) AS value
+  `, [JSON.stringify(bundle)]);
+  return result.rows[0].value;
+}
+
+async function buildWriterBundleFixture() {
+  const emptyMetadataHash = await hashPostgresCanonicalJsonb({});
+  const sourcePayload = {
+    source_id: sourceId,
+    source_revision_id: sourceRevisionId,
+    canonical_key: "source:synthetic-import-preflight",
+    revision_no: 1,
+    source_type: "database",
+    title: "Synthetic import preflight source \u00e4",
+    authors: [],
+    publisher: null,
+    edition: null,
+    published_on: null,
+    url: null,
+    doi: null,
+    pmid: null,
+    isbn: null,
+    retrieved_on: null,
+    file_sha256: null,
+    rights_status: "licensed",
+    archive_location: null,
+    content_hash: "1".repeat(64),
+    metadata_hash: emptyMetadataHash,
+  };
+  const repertory = await hashHomeopathicRepertoryRevisionPayload({
+    repertory_schema_version: 1,
+    entity: {
+      entity_id: repertoryId,
+      entity_revision_id: repertoryRevisionId,
+      entity_type_code: "homeopathic_repertory",
+      canonical_key: "homeopathic-repertory:synthetic-preflight",
+    },
+    revision: {
+      revision_no: 1,
+      display_name: "Synthetic preflight repertory",
+      summary: "Synthetic import fixture.",
+      description_markdown: "Non-medical fixture.",
+      origin_type: "human",
+      metadata_hash: emptyMetadataHash,
+    },
+    source: sourcePayload,
+    source_binding: {
+      source_id: sourceId,
+      source_revision_id: sourceRevisionId,
+      source_repertory_code: "SYN-PREFLIGHT-1",
+      source_language_code: "de",
+      source_locator: "catalog:\"synthetic-preflight\"\nsection:a",
+    },
+  });
+  const repertoryLink = {
+    payload: repertory.payload,
+    content_hash: repertory.contentHash,
+  };
+  const rootRubric = await hashHomeopathicRubricRevisionPayload({
+    rubric_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    rubric_id: rootRubricId,
+    native_rubric_code: "ROOT",
+    parent_rubric_id: null,
+    parent_native_rubric_code: null,
+    parent_rubric_content_hash: null,
+    rubric_text: "Synthetic root",
+    rubric_domain: "general",
+    sibling_order: 1,
+    source_locator: "rubric:root",
+  });
+  const childRubric = await hashHomeopathicRubricRevisionPayload({
+    rubric_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    rubric_id: childRubricId,
+    native_rubric_code: "ROOT.CHILD",
+    parent_rubric_id: rootRubricId,
+    parent_native_rubric_code: "ROOT",
+    parent_rubric_content_hash: rootRubric.contentHash,
+    rubric_text: "Synthetic child",
+    rubric_domain: "mind",
+    sibling_order: 1,
+    source_locator: "rubric:root.child",
+  });
+  const grade = await hashHomeopathicGradeDefinitionPayload({
+    grade_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    grade_definition_id: gradeId,
+    source_grade_code: "G-A",
+    source_grade_label: "Synthetic grade A",
+    grade_order: 1,
+    source_locator: "grade:a",
+  });
+  const remedy = await hashHomeopathicRepertoryRemedyPayload({
+    remedy_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    repertory_remedy_id: repertoryRemedyId,
+    source_remedy_code: "R-A",
+    source_remedy_name: "Synthetic remedy A",
+    source_remedy_aliases: ["Alias A", "Synthetic A"],
+    source_locator: "remedy:r-a",
+    remedy_entity_revision: {
+      entity_id: remedyId,
+      entity_revision_id: remedyRevisionId,
+      entity_type_code: "homeopathic_remedy",
+      canonical_key: "homeopathic-remedy:synthetic-preflight",
+      revision_no: 1,
+      display_name: "Synthetic preflight remedy",
+      summary: "",
+      description_markdown: "",
+      origin_type: "human",
+      content_hash: "2".repeat(64),
+      metadata_hash: emptyMetadataHash,
+    },
+  });
+  const unassignedRemedy = await hashHomeopathicRepertoryRemedyPayload({
+    remedy_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    repertory_remedy_id: unassignedRepertoryRemedyId,
+    source_remedy_code: "R-B",
+    source_remedy_name: "Synthetic unassigned remedy B",
+    source_remedy_aliases: [],
+    source_locator: "remedy:r-b",
+    remedy_entity_revision: {
+      entity_id: unassignedRemedyId,
+      entity_revision_id: unassignedRemedyRevisionId,
+      entity_type_code: "homeopathic_remedy",
+      canonical_key: "homeopathic-remedy:synthetic-preflight-unassigned",
+      revision_no: 1,
+      display_name: "Synthetic unassigned preflight remedy",
+      summary: "",
+      description_markdown: "",
+      origin_type: "human",
+      content_hash: "3".repeat(64),
+      metadata_hash: emptyMetadataHash,
+    },
+  });
+  const assignment = await hashHomeopathicAssignmentPayload({
+    assignment_schema_version: 1,
+    repertory_entity_id: repertoryId,
+    repertory_revision_id: repertoryRevisionId,
+    repertory: repertoryLink,
+    assignment_id: assignmentId,
+    rubric: {
+      payload: childRubric.payload,
+      content_hash: childRubric.contentHash,
+    },
+    remedy: {
+      payload: remedy.payload,
+      content_hash: remedy.contentHash,
+    },
+    grade: {
+      payload: grade.payload,
+      content_hash: grade.contentHash,
+    },
+    source_locator: "assignment:root.child:r-a",
+  });
+  const compactBundle = await buildHomeopathicImportBundleContract({
+    contract_version: 1,
+    contract_scope: "HOMEOPATHIC_IMPORT_PREFLIGHT_ONLY",
+    data_classification: "general_knowledge",
+    repertory: {
+      repertory_entity_id: repertoryId,
+      repertory_revision_id: repertoryRevisionId,
+      repertory_content_hash: repertory.contentHash,
+      source_id: sourceId,
+      source_revision_id: sourceRevisionId,
+      source_content_hash: sourcePayload.content_hash,
+      source_rights_status: sourcePayload.rights_status,
+      source_repertory_code: "SYN-PREFLIGHT-1",
+      source_language_code: "de",
+      source_locator: "catalog:\"synthetic-preflight\"\nsection:a",
+    },
+    rubrics: [
+      {
+        rubric_id: rootRubricId,
+        rubric_revision_id: rootRubricRevisionId,
+        rubric_content_hash: rootRubric.contentHash,
+      },
+      {
+        rubric_id: childRubricId,
+        rubric_revision_id: childRubricRevisionId,
+        rubric_content_hash: childRubric.contentHash,
+      },
+    ],
+    grade_definitions: [{
+      grade_definition_id: gradeId,
+      grade_content_hash: grade.contentHash,
+    }],
+    remedies: [
+      {
+        repertory_remedy_id: repertoryRemedyId,
+        remedy_entity_id: remedyId,
+        remedy_revision_id: remedyRevisionId,
+        remedy_content_hash: remedy.contentHash,
+      },
+      {
+        repertory_remedy_id: unassignedRepertoryRemedyId,
+        remedy_entity_id: unassignedRemedyId,
+        remedy_revision_id: unassignedRemedyRevisionId,
+        remedy_content_hash: unassignedRemedy.contentHash,
+      },
+    ],
+    assignments: [{
+      assignment_id: assignmentId,
+      rubric_revision_id: childRubricRevisionId,
+      repertory_remedy_id: repertoryRemedyId,
+      grade_definition_id: gradeId,
+      assignment_content_hash: assignment.contentHash,
+    }],
+  });
+
+  return {
+    contract_version: 1,
+    contract_scope: "HOMEOPATHIC_SMALL_BUNDLE_WRITE_ONLY",
+    data_classification: "general_knowledge",
+    expected_bundle_hash: compactBundle.bundleHash,
+    repertory: {
+      entity_id: repertoryId,
+      revision_id: repertoryRevisionId,
+      content_hash: repertory.contentHash,
+      source_id: sourceId,
+      source_revision_id: sourceRevisionId,
+      source_content_hash: sourcePayload.content_hash,
+      source_rights_status: sourcePayload.rights_status,
+      source_repertory_code: "SYN-PREFLIGHT-1",
+      source_language_code: "de",
+      source_locator: "catalog:\"synthetic-preflight\"\nsection:a",
+    },
+    rubrics: [
+      {
+        rubric_id: rootRubricId,
+        rubric_revision_id: rootRubricRevisionId,
+        native_rubric_code: "ROOT",
+        parent_rubric_id: null,
+        rubric_text: "Synthetic root",
+        rubric_domain: "general",
+        sibling_order: 1,
+        source_locator: "rubric:root",
+        content_hash: rootRubric.contentHash,
+      },
+      {
+        rubric_id: childRubricId,
+        rubric_revision_id: childRubricRevisionId,
+        native_rubric_code: "ROOT.CHILD",
+        parent_rubric_id: rootRubricId,
+        rubric_text: "Synthetic child",
+        rubric_domain: "mind",
+        sibling_order: 1,
+        source_locator: "rubric:root.child",
+        content_hash: childRubric.contentHash,
+      },
+    ],
+    grade_definitions: [{
+      grade_definition_id: gradeId,
+      source_grade_code: "G-A",
+      source_grade_label: "Synthetic grade A",
+      grade_order: 1,
+      source_locator: "grade:a",
+      content_hash: grade.contentHash,
+    }],
+    remedies: [
+      {
+        repertory_remedy_id: repertoryRemedyId,
+        remedy_entity_id: remedyId,
+        remedy_revision_id: remedyRevisionId,
+        source_remedy_code: "R-A",
+        source_remedy_name: "Synthetic remedy A",
+        source_remedy_aliases: ["Alias A", "Synthetic A"],
+        source_locator: "remedy:r-a",
+        content_hash: remedy.contentHash,
+      },
+      {
+        repertory_remedy_id: unassignedRepertoryRemedyId,
+        remedy_entity_id: unassignedRemedyId,
+        remedy_revision_id: unassignedRemedyRevisionId,
+        source_remedy_code: "R-B",
+        source_remedy_name: "Synthetic unassigned remedy B",
+        source_remedy_aliases: [],
+        source_locator: "remedy:r-b",
+        content_hash: unassignedRemedy.contentHash,
+      },
+    ],
+    assignments: [{
+      assignment_id: assignmentId,
+      rubric_revision_id: childRubricRevisionId,
+      repertory_remedy_id: repertoryRemedyId,
+      grade_definition_id: gradeId,
+      source_locator: "assignment:root.child:r-a",
+      content_hash: assignment.contentHash,
+    }],
+  };
+}
+
 beforeAll(async () => {
   db = new PGlite();
   await bootstrapDatabase(db);
@@ -265,9 +615,18 @@ beforeAll(async () => {
   therapySnapshotAfterPreflight = (await db.query<{ value: string }>(
     "SELECT public.therapy_input_export_snapshot_v2() AS value",
   )).rows[0].value;
+  await db.exec(writerMigration);
+  snapshotAfterWriterContract = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterWriterContract = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  writerBundle = await buildWriterBundleFixture();
 
-  await db.exec(`
-    BEGIN;
+  await db.exec("BEGIN;");
+  try {
+    await db.exec(`
     INSERT INTO public.kb_sources (id, canonical_key)
     VALUES ('${sourceId}', 'source:synthetic-import-preflight');
     INSERT INTO public.kb_source_revisions (
@@ -298,83 +657,56 @@ beforeAll(async () => {
     UPDATE public.kb_entities entity SET current_revision_id = revision.id
       FROM public.kb_entity_revisions revision
      WHERE revision.entity_id = entity.id
-        AND entity.id IN ('${repertoryId}', '${remedyId}', '${unassignedRemedyId}');
+         AND entity.id IN ('${repertoryId}', '${remedyId}', '${unassignedRemedyId}');
+    `);
 
-    INSERT INTO public.kb_homeopathic_repertory_revision_details (
-      entity_id, entity_revision_id, source_id, source_revision_id,
-      source_repertory_code, source_language_code, source_locator
-    ) VALUES (
-      '${repertoryId}', '${repertoryRevisionId}', '${sourceId}', '${sourceRevisionId}',
-      'SYN-PREFLIGHT-1', 'de', E'catalog:"synthetic-preflight"\\nsection:a'
-    );
-    UPDATE public.kb_entity_revisions
-       SET content_hash = public.kb_homeopathic_repertory_revision_hash_v1(entity_id, id)
-     WHERE id = '${repertoryRevisionId}';
+    await db.exec("SAVEPOINT failed_writer;");
+    const invalidBundle = structuredClone(writerBundle);
+    invalidBundle.assignments[0].content_hash = invalidBundle.assignments[0].content_hash
+      === "f".repeat(64) ? "e".repeat(64) : "f".repeat(64);
+    let writerFailure: unknown;
+    try {
+      await callSmallBundleWriter(invalidBundle);
+    } catch (error) {
+      writerFailure = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT failed_writer;");
+    }
+    if (!(writerFailure instanceof Error)) {
+      throw new Error("Corrupted homeopathic writer bundle unexpectedly succeeded");
+    }
+    writerFailureMessage = writerFailure.message;
+    writerCountsAfterFailure = await readContentRowCounts();
+    repertoryHashAfterFailure = (await db.query<{ content_hash: string }>(`
+      SELECT content_hash FROM public.kb_entity_revisions
+       WHERE id = '${repertoryRevisionId}'
+    `)).rows[0].content_hash;
+    await db.exec("RELEASE SAVEPOINT failed_writer;");
 
-    INSERT INTO public.kb_homeopathic_rubrics (
-      id, repertory_entity_id, native_rubric_code
-    ) VALUES
-      ('${rootRubricId}', '${repertoryId}', 'ROOT'),
-      ('${childRubricId}', '${repertoryId}', 'ROOT.CHILD');
-    INSERT INTO public.kb_homeopathic_rubric_revisions (
-      id, repertory_entity_id, repertory_revision_id, rubric_id,
-      parent_rubric_id, rubric_text, rubric_domain, sibling_order,
-      source_locator, rubric_content_hash
-    ) VALUES
-      ('${rootRubricRevisionId}', '${repertoryId}', '${repertoryRevisionId}',
-       '${rootRubricId}', NULL, 'Synthetic root', 'general', 1,
-       'rubric:root', repeat('0', 64)),
-      ('${childRubricRevisionId}', '${repertoryId}', '${repertoryRevisionId}',
-       '${childRubricId}', '${rootRubricId}', 'Synthetic child', 'mind', 1,
-       'rubric:root.child', repeat('0', 64));
-    UPDATE public.kb_homeopathic_rubric_revisions
-       SET rubric_content_hash = public.kb_homeopathic_rubric_revision_hash_v1(id)
-     WHERE id = '${rootRubricRevisionId}';
-    UPDATE public.kb_homeopathic_rubric_revisions
-       SET rubric_content_hash = public.kb_homeopathic_rubric_revision_hash_v1(id)
-     WHERE id = '${childRubricRevisionId}';
-
-    INSERT INTO public.kb_homeopathic_grade_definitions (
-      id, repertory_entity_id, repertory_revision_id, source_grade_code,
-      source_grade_label, grade_order, source_locator, grade_content_hash
-    ) VALUES (
-      '${gradeId}', '${repertoryId}', '${repertoryRevisionId}',
-      'G-A', 'Synthetic grade A', 1, 'grade:a', repeat('0', 64)
-    );
-    UPDATE public.kb_homeopathic_grade_definitions
-       SET grade_content_hash = public.kb_homeopathic_grade_definition_hash_v1(id)
-     WHERE id = '${gradeId}';
-
-    INSERT INTO public.kb_homeopathic_repertory_remedies (
-      id, repertory_entity_id, repertory_revision_id, remedy_entity_id,
-      remedy_revision_id, source_remedy_code, source_remedy_name,
-      source_locator, remedy_content_hash
-    ) VALUES
-      ('${repertoryRemedyId}', '${repertoryId}', '${repertoryRevisionId}',
-       '${remedyId}', '${remedyRevisionId}', 'R-A', 'Synthetic remedy A',
-       'remedy:r-a', repeat('0', 64)),
-      ('${unassignedRepertoryRemedyId}', '${repertoryId}', '${repertoryRevisionId}',
-       '${unassignedRemedyId}', '${unassignedRemedyRevisionId}', 'R-B',
-       'Synthetic unassigned remedy B', 'remedy:r-b', repeat('0', 64));
-    UPDATE public.kb_homeopathic_repertory_remedies
-       SET remedy_content_hash = public.kb_homeopathic_repertory_remedy_hash_v1(id)
-     WHERE id IN ('${repertoryRemedyId}', '${unassignedRepertoryRemedyId}');
-
-    INSERT INTO public.kb_homeopathic_rubric_remedy_assignments (
-      id, repertory_entity_id, repertory_revision_id, rubric_revision_id,
-      repertory_remedy_id, grade_definition_id, source_locator,
-      assignment_content_hash
-    ) VALUES (
-      '${assignmentId}', '${repertoryId}', '${repertoryRevisionId}',
-      '${childRubricRevisionId}', '${repertoryRemedyId}', '${gradeId}',
-      'assignment:root.child:r-a', repeat('0', 64)
-    );
-    UPDATE public.kb_homeopathic_rubric_remedy_assignments
-       SET assignment_content_hash = public.kb_homeopathic_assignment_hash_v1(id)
-     WHERE id = '${assignmentId}';
-    SET CONSTRAINTS ALL IMMEDIATE;
-    COMMIT;
-  `);
+    firstWriterResult = await callSmallBundleWriter(writerBundle);
+    replayWriterResult = await callSmallBundleWriter(writerBundle);
+    await db.exec("SAVEPOINT divergent_replay;");
+    const divergentReplay = structuredClone(writerBundle);
+    divergentReplay.rubrics[0].rubric_text = "Divergent synthetic root";
+    let divergentFailure: unknown;
+    try {
+      await callSmallBundleWriter(divergentReplay);
+    } catch (error) {
+      divergentFailure = error;
+    } finally {
+      await db.exec("ROLLBACK TO SAVEPOINT divergent_replay;");
+    }
+    if (!(divergentFailure instanceof Error)) {
+      throw new Error("Divergent homeopathic writer replay unexpectedly succeeded");
+    }
+    divergentWriterFailureMessage = divergentFailure.message;
+    await db.exec("RELEASE SAVEPOINT divergent_replay;");
+    writerCountsAfterReplay = await readContentRowCounts();
+    await db.exec("SET CONSTRAINTS ALL IMMEDIATE; COMMIT;");
+  } catch (error) {
+    await db.exec("ROLLBACK;").catch(() => undefined);
+    throw error;
+  }
 
   draftManifest = await readManifest();
   draftBundleHash = await readBundleHash();
@@ -537,8 +869,8 @@ afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () => {
-  it("is function-only and leaves both protected snapshots byte-identical", async () => {
+describe.sequential("Wiki Step 5B-2 and 5B-5 homeopathic import contracts", () => {
+  it("installs function-only contracts and leaves both protected snapshots byte-identical", async () => {
     expect(preflightMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(preflightMigration).not.toMatch(/CREATE TABLE|ALTER TABLE|INSERT INTO|GRANT EXECUTE/);
     expect(preflightMigration).not.toMatch(
@@ -546,8 +878,19 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
     );
     expect(preflightMigration).toContain("HOMEOPATHIC_IMPORT_PREFLIGHT_ONLY");
     expect(preflightMigration).toContain("IMPORT_PREFLIGHT_ONLY_NOT_RELEASE_OR_MEDICAL_USE");
+    expect(writerMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(1);
+    expect(writerMigration).not.toMatch(/CREATE TABLE|ALTER TABLE|GRANT EXECUTE/);
+    expect(writerMigration).toContain("SECURITY INVOKER");
+    expect(writerMigration).toContain("HOMEOPATHIC_SMALL_BUNDLE_WRITE_ONLY");
+    expect(writerMigration).toContain("octet_length(_bundle::text) > 4194304");
+    expect(writerMigration).toContain("current_user <> table_owner");
+    expect(writerMigration).not.toMatch(
+      /\b(patient_id|patient_user_id|pseudonym_id|user_id|session_id|therapy_session_id|anamnesis_id)\b/i,
+    );
     expect(snapshotAfterPreflight).toBe(snapshotBeforePreflight);
     expect(therapySnapshotAfterPreflight).toBe(therapySnapshotBeforePreflight);
+    expect(snapshotAfterWriterContract).toBe(snapshotAfterPreflight);
+    expect(therapySnapshotAfterWriterContract).toBe(therapySnapshotAfterPreflight);
     const activeReleases = await db.query<{ count: number }>(`
       SELECT count(*)::integer AS count FROM public.kb_releases
        WHERE retrieval_eligible OR is_active
@@ -555,11 +898,74 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
     expect(activeReleases.rows[0].count).toBe(0);
   });
 
+  it("rolls back a bad row hash and replays one exact parser-hashed bundle", () => {
+    expect(writerFailureMessage).toMatch(/small-bundle content is semantically invalid/i);
+    expect(writerCountsAfterFailure).toEqual({
+      details: 0,
+      rubrics: 0,
+      rubricRevisions: 0,
+      grades: 0,
+      remedies: 0,
+      assignments: 0,
+    });
+    expect(repertoryHashAfterFailure).toBe("0".repeat(64));
+    expect(firstWriterResult.status).toBe("HOMEOPATHIC_IMPORT_BUNDLE_READY");
+    expect(firstWriterResult.actual_bundle_hash).toBe(writerBundle.expected_bundle_hash);
+    expect(firstWriterResult.actual_counts).toEqual(expectedCounts);
+    expect(replayWriterResult).toEqual(firstWriterResult);
+    expect(writerCountsAfterReplay).toEqual({
+      details: 1,
+      rubrics: 2,
+      rubricRevisions: 2,
+      grades: 1,
+      remedies: 2,
+      assignments: 1,
+    });
+  });
+
+  it("rejects noncanonical envelope types before touching stored content", async () => {
+    const stringVersion = {
+      ...writerBundle,
+      contract_version: "1",
+    };
+    await expect(callSmallBundleWriter(stringVersion))
+      .rejects.toThrow(/small-bundle writer envelope is invalid/i);
+
+    const malformedAliases = structuredClone(writerBundle) as unknown as {
+      remedies: Array<{ source_remedy_aliases: unknown[] }>;
+    };
+    malformedAliases.remedies[0].source_remedy_aliases.push(7);
+    await expect(callSmallBundleWriter(malformedAliases))
+      .rejects.toThrow(/small-bundle writer component shape is invalid/i);
+    expect(await readContentRowCounts()).toEqual(writerCountsAfterReplay);
+  });
+
+  it("rejects a divergent replay without changing the stored bundle", async () => {
+    expect(divergentWriterFailureMessage)
+      .toMatch(/rubric replay differs from stored content/i);
+    expect(writerCountsAfterReplay).toEqual({
+      details: 1,
+      rubrics: 2,
+      rubricRevisions: 2,
+      grades: 1,
+      remedies: 2,
+      assignments: 1,
+    });
+
+    const wrongRepertoryHash = structuredClone(writerBundle);
+    wrongRepertoryHash.repertory.content_hash = wrongRepertoryHash.repertory.content_hash
+      === "f".repeat(64) ? "e".repeat(64) : "f".repeat(64);
+    await expect(callSmallBundleWriter(wrongRepertoryHash))
+      .rejects.toThrow(/repertory content hash is mismatched or frozen/i);
+    expect(await readContentRowCounts()).toEqual(writerCountsAfterReplay);
+  });
+
   it("builds a compact deterministic bundle manifest that is review-status neutral", () => {
     expect(draftManifest).toEqual(approvedManifest);
     expect(draftBundleHash).toBe(approvedBundleHash);
     expect(parserBundle.manifest).toEqual(draftManifest);
     expect(parserBundle.bundleHash).toBe(draftBundleHash);
+    expect(writerBundle.expected_bundle_hash).toBe(draftBundleHash);
     expect(approvedBundleHash).toMatch(/^[0-9a-f]{64}$/);
     expect(approvedManifest.contract_version).toBe(1);
     expect(approvedManifest.contract_scope).toBe("HOMEOPATHIC_IMPORT_PREFLIGHT_ONLY");
@@ -591,6 +997,10 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
     expect(approved.actual_counts).toEqual(expectedCounts);
     expect(approved.bundle_manifest).toEqual(approvedManifest);
     expect(approved.result_hash).toMatch(/^[0-9a-f]{64}$/);
+
+    const frozenReplay = await callSmallBundleWriter(writerBundle);
+    expect(frozenReplay).toEqual(firstWriterResult);
+    expect(await readContentRowCounts()).toEqual(writerCountsAfterReplay);
   });
 
   it("matches all normalized row hashes across parser and database contracts", () => {
@@ -665,13 +1075,31 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
     expect(await readBundleHash()).toBe(approvedBundleHash);
   });
 
-  it("does not expose preflight functions to application or import roles", async () => {
+  it("does not expose preflight or writer functions to application or import roles", async () => {
     const functions = [
       "public.kb_homeopathic_repertory_bundle_manifest_v1(uuid,uuid)",
       "public.kb_homeopathic_repertory_bundle_hash_v1(uuid,uuid)",
       "public.kb_homeopathic_import_expectations_are_valid_v1(text,jsonb)",
       "public.kb_homeopathic_repertory_import_preflight_v1(uuid,uuid,text,jsonb)",
+      "public.kb_homeopathic_write_small_bundle_v1(jsonb)",
     ];
+
+    await db.exec(`
+      GRANT EXECUTE ON FUNCTION public.kb_homeopathic_write_small_bundle_v1(jsonb)
+      TO service_role;
+      SET ROLE service_role;
+    `);
+    try {
+      await expect(callSmallBundleWriter(writerBundle))
+        .rejects.toThrow(/writes require the database table owner/i);
+    } finally {
+      await db.exec("RESET ROLE;").catch(() => undefined);
+      await db.exec(`
+        REVOKE ALL ON FUNCTION public.kb_homeopathic_write_small_bundle_v1(jsonb)
+        FROM service_role;
+      `);
+    }
+
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
         FROM unnest(ARRAY[
