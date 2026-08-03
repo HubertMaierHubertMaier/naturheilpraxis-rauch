@@ -1033,6 +1033,48 @@ Neuer Schattenpfad statt Umbau des sichtbaren v1:
 9. KI nur zur Formulierung der gespeicherten Ergebnisse einsetzen
 10. KI-Ausgabe serverseitig validieren und Sicherheit erneut pruefen
 
+### Schritt 6A: Medizinisch inaktiver Eingabe-/Release-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804090000_create_therapy_retrieval_v2_preflight.sql`
+
+Der additive Block erzeugt vier geschlossene Lesefunktionen und keine Tabelle.
+Er bindet genau eine gueltige Therapie-Eingaberevision an ein genaues
+Eingabemanifest. Ausgewaehlt werden ausschliesslich terminale Fakten mit
+`verified` oder `review_only`; supersedierte, unreviewte und abgelehnte Fakten
+werden nicht verwendet. Alle Fakten muessen dennoch ihren vollstaendigen
+Integritaetsvalidator bestehen; verwaiste Fakten-Quellenbindungen sperren die
+gesamte Revision. Ein kompletter Faktensethash bindet auch die nicht
+ausgewaehlten Zeilen, waehrend die Manifestliste keine Rohwerte, Labels,
+Quellenpayloads oder Pseudonyme ausgibt.
+
+Der Preflight bindet dieses Eingabemanifest an genau ein versiegeltes, mit
+`kb_release_is_valid(id, true)` validiertes Knowledge-Release und vergleicht
+beide vorab erwarteten SHA-256-Werte getrennt. Bindungs- und Resultathash sind
+kanonisch und deterministisch. Ein `review_only`-Fakt bleibt als ausdrueckliche
+Reviewpflicht sichtbar.
+
+Auch der positive Status heisst bewusst
+`RETRIEVAL_V2_PREFLIGHT_BOUND_INACTIVE`. Jede Antwort traegt
+`medical_use_allowed = false`, `retrieval_execution_allowed = false` und die
+Interpretation `PREFLIGHT_ONLY_NOT_RETRIEVAL_OR_MEDICAL_USE`. Release v1 bleibt
+hart `retrieval_eligible = false` und `is_active = false`; 6A prueft beide Flags
+bei jedem Aufruf nochmals explizit. Es gibt weder Entitaetsaufloesung noch
+Sicherheit, Kandidaten, Ranking, Dosierung, KI, Persistenz oder Anbindung an den
+sichtbaren v1-Pfad.
+
+Wiki- und Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67
+beziehungsweise vier Tabellen. Alle Funktionen sind fuer Anwendungs-, Service-
+und Importrollen gesperrt. Der fokussierte synthetische PGlite-Lauf besteht mit
+6/6 Tests, die zusammenhaengende Eingabe-/Release-Regression mit 61/61 Tests und
+der vollstaendige Projektlauf mit 50/50 Dateien und 529/529 Tests. Beide
+TypeScript-Projekte, der gezielte ESLint-Lauf und der Produktionsbuild sind
+erfolgreich. Die unabhaengige Abschlussreview meldet nach expliziter
+Inaktivitaetshaertung keine verbleibenden P0/P1-Befunde. Die ausfuehrliche
+Dokumentation steht in
+`docs/wiki-step6a-therapy-retrieval-v2-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`
