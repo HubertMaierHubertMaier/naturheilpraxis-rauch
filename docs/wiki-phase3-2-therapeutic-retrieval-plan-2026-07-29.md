@@ -16,11 +16,13 @@ Repertoriumsvertrag implementiert und lokal verifiziert. Keiner dieser Schritte
 ist nach Supabase ausgerollt. Schritt 5B-1 ist als medizinisch inaktiver,
 owner-only Einzelrepertorium-Reader implementiert und vollstaendig lokal
 verifiziert. Schritt 5B-2 ist als medizinisch inaktiver, owner-only
-Importvorpruefvertrag implementiert und vollstaendig lokal verifiziert. Echter
-Schritt 5B-3 ist als medizinisch inaktiver parserseitiger Bundle-Hashvertrag
-implementiert und vollstaendig lokal verifiziert. Echter lizenzierter Inhalt, ein
-Rohdatenparser, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und 7
-bleiben offen.
+Importvorpruefvertrag implementiert und vollstaendig lokal verifiziert. Schritt
+5B-3 ist als medizinisch inaktiver parserseitiger Bundle-Hashvertrag
+implementiert und vollstaendig lokal verifiziert. Schritt 5B-4 ist als
+parserseitiger Vertrag fuer die fuenf normalisierten Step-5A-Zeilenhashes
+implementiert und vollstaendig lokal verifiziert. Echter lizenzierter Inhalt,
+ein Rohdatenparser, ein schreibender Bulk-Importvertrag sowie die Schritte 6 und
+7 bleiben offen.
 
 ## Ziel
 
@@ -901,6 +903,32 @@ Lizenzierte Gold-Fixtures, der quellenspezifische Parser, ein owner-only
 Chunk-/Bulk-Writer sowie Resume-, Rollback- und Grossmengenabnahme bleiben offen.
 Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step5b3-homeopathic-parser-bundle-contract-implementation-2026-08-03.md`.
+
+#### Schritt 5B-4: Parserseitiger Zeilenhashvertrag
+
+Lokal implementiert in:
+
+`src/lib/homeopathicImportRowHashes.ts`
+
+Fuenf geschlossene Payload-Schemata bilden Repertoriums-, Rubrik-, Grad-,
+Repertoriumsmittel- und Assignmenthash bytegleich zu den vorhandenen
+PostgreSQL-Funktionen. Kontrollierte IDs, Hashes, Rechte, Urspruenge,
+UTF-8-Grenzen, Elternfelder und alle verschachtelten Repertoriums- und
+Unterhashbindungen werden vor der Hashbildung fail-closed geprueft.
+
+Der PGlite-Kreuzlauf vergleicht Parser-, Datenbank- und gespeicherten Hash fuer
+alle sieben synthetischen Zeileninstanzen des Testbuendels, einschliesslich
+UTF-8, Nullwerten, Arrays, Anfuehrungszeichen und Zeilenumbruch. Der fokussierte
+Lauf bestand mit 2/2 Dateien und 10/10 Tests.
+Die zusammenhaengende Repertoriumsregression bestand mit 29/29 Tests, der
+vollstaendige Projektlauf mit 49/49 Dateien und 514/514 Tests. Beide
+TypeScript-Projekte und der Produktionsbuild sind erfolgreich.
+
+Quelleninhaltshash, Metadatenhashes und generischer Mittelrevisionshash bleiben
+bewusste Eingaben. Konkrete Lizenzquelle, Rohdatenparser, Gold-Fixtures,
+owner-only Writer sowie Resume-, Rollback- und Grossmengenabnahme sind weiterhin
+offen. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step5b4-homeopathic-row-hash-contract-implementation-2026-08-03.md`.
 
 ## Schritt 6: Deterministisches Retrieval v2
 

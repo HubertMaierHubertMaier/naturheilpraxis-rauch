@@ -132,6 +132,9 @@ function postgresJsonbText(value: unknown): string {
     return String(value);
   }
   if (typeof value === "string") {
+    if (!hasWellFormedUtf16(value)) {
+      throw new Error("HOMEOPATHIC_IMPORT_BUNDLE_INVALID_UTF16");
+    }
     const encoded = JSON.stringify(value);
     if (encoded === undefined) throw new Error("HOMEOPATHIC_IMPORT_BUNDLE_STRING_ENCODING_FAILED");
     return encoded;
@@ -155,6 +158,10 @@ async function sha256Utf8(value: string): Promise<string> {
   }
   const digest = await globalThis.crypto.subtle.digest("SHA-256", textEncoder.encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function hashPostgresCanonicalJsonb(value: unknown): Promise<string> {
+  return sha256Utf8(postgresJsonbText(value));
 }
 
 function assertUnique<T>(values: T[], keyOf: (value: T) => string, errorCode: string): void {
@@ -281,6 +288,6 @@ export async function buildHomeopathicImportBundleContract(
 
   return {
     manifest,
-    bundleHash: await sha256Utf8(postgresJsonbText(manifest)),
+    bundleHash: await hashPostgresCanonicalJsonb(manifest),
   };
 }

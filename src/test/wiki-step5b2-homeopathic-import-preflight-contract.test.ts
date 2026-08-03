@@ -9,6 +9,13 @@ import {
   type HomeopathicImportBundleInput,
   type HomeopathicImportBundleManifest,
 } from "@/lib/homeopathicImportBundle";
+import {
+  hashHomeopathicAssignmentPayload,
+  hashHomeopathicGradeDefinitionPayload,
+  hashHomeopathicRepertoryRemedyPayload,
+  hashHomeopathicRepertoryRevisionPayload,
+  hashHomeopathicRubricRevisionPayload,
+} from "@/lib/homeopathicImportRowHashes";
 
 const baseMigrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -80,6 +87,21 @@ type PreflightResult = {
   result_hash: string;
 };
 
+type DatabasePayloadRow = {
+  id: string;
+  payload: unknown;
+  database_hash: string;
+  stored_hash: string;
+};
+
+type RowHashParity = {
+  kind: string;
+  id: string;
+  parserHash: string;
+  databaseHash: string;
+  storedHash: string;
+};
+
 let db: PGlite;
 let snapshotBeforePreflight = "";
 let snapshotAfterPreflight = "";
@@ -91,6 +113,7 @@ let draftBundleHash = "";
 let approvedBundleHash = "";
 let draftPreflight: PreflightResult;
 let parserBundle: Awaited<ReturnType<typeof buildHomeopathicImportBundleContract>>;
+let rowHashParity: RowHashParity[] = [];
 
 async function bootstrapDatabase(target: PGlite): Promise<void> {
   await target.exec(`
@@ -251,7 +274,7 @@ beforeAll(async () => {
       id, source_id, revision_no, source_type, title, rights_status, content_hash
     ) VALUES (
       '${sourceRevisionId}', '${sourceId}', 1, 'database',
-      'Synthetic import preflight source', 'licensed', repeat('1', 64)
+      'Synthetic import preflight source ' || chr(228), 'licensed', repeat('1', 64)
     );
     UPDATE public.kb_sources SET current_revision_id = '${sourceRevisionId}'
      WHERE id = '${sourceId}';
@@ -399,6 +422,108 @@ beforeAll(async () => {
     remedies: remedyRows.rows,
     assignments: assignmentRows.rows,
   });
+  const repertoryPayload = await db.query<DatabasePayloadRow>(`
+    SELECT '${repertoryRevisionId}'::text AS id,
+           public.kb_homeopathic_repertory_revision_payload_v1(
+             '${repertoryId}', '${repertoryRevisionId}'
+           ) AS payload,
+           public.kb_homeopathic_repertory_revision_hash_v1(
+             '${repertoryId}', '${repertoryRevisionId}'
+           ) AS database_hash,
+           content_hash AS stored_hash
+      FROM public.kb_entity_revisions
+     WHERE id = '${repertoryRevisionId}'
+  `);
+  const rubricPayloads = await db.query<DatabasePayloadRow>(`
+    SELECT id::text,
+           public.kb_homeopathic_rubric_revision_payload_v1(id) AS payload,
+           public.kb_homeopathic_rubric_revision_hash_v1(id) AS database_hash,
+           rubric_content_hash AS stored_hash
+      FROM public.kb_homeopathic_rubric_revisions
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+     ORDER BY id
+  `);
+  const gradePayloads = await db.query<DatabasePayloadRow>(`
+    SELECT id::text,
+           public.kb_homeopathic_grade_definition_payload_v1(id) AS payload,
+           public.kb_homeopathic_grade_definition_hash_v1(id) AS database_hash,
+           grade_content_hash AS stored_hash
+      FROM public.kb_homeopathic_grade_definitions
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+     ORDER BY id
+  `);
+  const remedyPayloads = await db.query<DatabasePayloadRow>(`
+    SELECT id::text,
+           public.kb_homeopathic_repertory_remedy_payload_v1(id) AS payload,
+           public.kb_homeopathic_repertory_remedy_hash_v1(id) AS database_hash,
+           remedy_content_hash AS stored_hash
+      FROM public.kb_homeopathic_repertory_remedies
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+     ORDER BY id
+  `);
+  const assignmentPayloads = await db.query<DatabasePayloadRow>(`
+    SELECT id::text,
+           public.kb_homeopathic_assignment_payload_v1(id) AS payload,
+           public.kb_homeopathic_assignment_hash_v1(id) AS database_hash,
+           assignment_content_hash AS stored_hash
+      FROM public.kb_homeopathic_rubric_remedy_assignments
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+     ORDER BY id
+  `);
+  const repertoryParserHash = await hashHomeopathicRepertoryRevisionPayload(
+    repertoryPayload.rows[0].payload,
+  );
+  rowHashParity = [{
+    kind: "repertory",
+    id: repertoryPayload.rows[0].id,
+    parserHash: repertoryParserHash.contentHash,
+    databaseHash: repertoryPayload.rows[0].database_hash,
+    storedHash: repertoryPayload.rows[0].stored_hash,
+  }];
+  for (const row of rubricPayloads.rows) {
+    const parser = await hashHomeopathicRubricRevisionPayload(row.payload);
+    rowHashParity.push({
+      kind: "rubric",
+      id: row.id,
+      parserHash: parser.contentHash,
+      databaseHash: row.database_hash,
+      storedHash: row.stored_hash,
+    });
+  }
+  for (const row of gradePayloads.rows) {
+    const parser = await hashHomeopathicGradeDefinitionPayload(row.payload);
+    rowHashParity.push({
+      kind: "grade",
+      id: row.id,
+      parserHash: parser.contentHash,
+      databaseHash: row.database_hash,
+      storedHash: row.stored_hash,
+    });
+  }
+  for (const row of remedyPayloads.rows) {
+    const parser = await hashHomeopathicRepertoryRemedyPayload(row.payload);
+    rowHashParity.push({
+      kind: "remedy",
+      id: row.id,
+      parserHash: parser.contentHash,
+      databaseHash: row.database_hash,
+      storedHash: row.stored_hash,
+    });
+  }
+  for (const row of assignmentPayloads.rows) {
+    const parser = await hashHomeopathicAssignmentPayload(row.payload);
+    rowHashParity.push({
+      kind: "assignment",
+      id: row.id,
+      parserHash: parser.contentHash,
+      databaseHash: row.database_hash,
+      storedHash: row.stored_hash,
+    });
+  }
 
   await approveRevision("kb_source_revisions", sourceRevisionId, false);
   await approveRevision("kb_entity_revisions", remedyRevisionId, true);
@@ -466,6 +591,21 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
     expect(approved.actual_counts).toEqual(expectedCounts);
     expect(approved.bundle_manifest).toEqual(approvedManifest);
     expect(approved.result_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("matches all normalized row hashes across parser and database contracts", () => {
+    expect(rowHashParity).toHaveLength(7);
+    expect(rowHashParity.map((row) => row.kind)).toEqual([
+      "repertory",
+      "rubric",
+      "rubric",
+      "grade",
+      "remedy",
+      "remedy",
+      "assignment",
+    ]);
+    expect(rowHashParity.every((row) =>
+      row.parserHash === row.databaseHash && row.databaseHash === row.storedHash)).toBe(true);
   });
 
   it("distinguishes invalid expectations, mismatches, and unavailable bundles", async () => {
