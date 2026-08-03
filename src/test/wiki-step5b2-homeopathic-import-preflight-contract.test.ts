@@ -4,6 +4,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  buildHomeopathicImportBundleContract,
+  type HomeopathicImportBundleInput,
+  type HomeopathicImportBundleManifest,
+} from "@/lib/homeopathicImportBundle";
 
 const baseMigrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -60,18 +65,7 @@ const expectedCounts = {
   assignments: 1,
 };
 
-type BundleManifest = {
-  contract_version: number;
-  contract_scope: string;
-  component_counts: typeof expectedCounts;
-  component_hashes: Record<keyof typeof expectedCounts, string>;
-  repertory: {
-    repertory_entity_id: string;
-    repertory_revision_id: string;
-    repertory_content_hash: string;
-    source_content_hash: string;
-  };
-};
+type BundleManifest = HomeopathicImportBundleManifest;
 
 type PreflightResult = {
   status: string;
@@ -96,6 +90,7 @@ let approvedManifest: BundleManifest;
 let draftBundleHash = "";
 let approvedBundleHash = "";
 let draftPreflight: PreflightResult;
+let parserBundle: Awaited<ReturnType<typeof buildHomeopathicImportBundleContract>>;
 
 async function bootstrapDatabase(target: PGlite): Promise<void> {
   await target.exec(`
@@ -287,7 +282,7 @@ beforeAll(async () => {
       source_repertory_code, source_language_code, source_locator
     ) VALUES (
       '${repertoryId}', '${repertoryRevisionId}', '${sourceId}', '${sourceRevisionId}',
-      'SYN-PREFLIGHT-1', 'de', 'catalog:synthetic-preflight:edition-1'
+      'SYN-PREFLIGHT-1', 'de', E'catalog:"synthetic-preflight"\\nsection:a'
     );
     UPDATE public.kb_entity_revisions
        SET content_hash = public.kb_homeopathic_repertory_revision_hash_v1(entity_id, id)
@@ -361,6 +356,49 @@ beforeAll(async () => {
   draftManifest = await readManifest();
   draftBundleHash = await readBundleHash();
   draftPreflight = await readPreflight(draftBundleHash, expectedCounts);
+  const rubricRows = await db.query<HomeopathicImportBundleInput["rubrics"][number]>(`
+    SELECT rubric_id::text,
+           id::text AS rubric_revision_id,
+           rubric_content_hash
+      FROM public.kb_homeopathic_rubric_revisions
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+  `);
+  const gradeRows = await db.query<HomeopathicImportBundleInput["grade_definitions"][number]>(`
+    SELECT id::text AS grade_definition_id, grade_content_hash
+      FROM public.kb_homeopathic_grade_definitions
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+  `);
+  const remedyRows = await db.query<HomeopathicImportBundleInput["remedies"][number]>(`
+    SELECT id::text AS repertory_remedy_id,
+           remedy_entity_id::text,
+           remedy_revision_id::text,
+           remedy_content_hash
+      FROM public.kb_homeopathic_repertory_remedies
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+  `);
+  const assignmentRows = await db.query<HomeopathicImportBundleInput["assignments"][number]>(`
+    SELECT id::text AS assignment_id,
+           rubric_revision_id::text,
+           repertory_remedy_id::text,
+           grade_definition_id::text,
+           assignment_content_hash
+      FROM public.kb_homeopathic_rubric_remedy_assignments
+     WHERE repertory_entity_id = '${repertoryId}'
+       AND repertory_revision_id = '${repertoryRevisionId}'
+  `);
+  parserBundle = await buildHomeopathicImportBundleContract({
+    contract_version: 1,
+    contract_scope: "HOMEOPATHIC_IMPORT_PREFLIGHT_ONLY",
+    data_classification: "general_knowledge",
+    repertory: draftManifest.repertory,
+    rubrics: rubricRows.rows,
+    grade_definitions: gradeRows.rows,
+    remedies: remedyRows.rows,
+    assignments: assignmentRows.rows,
+  });
 
   await approveRevision("kb_source_revisions", sourceRevisionId, false);
   await approveRevision("kb_entity_revisions", remedyRevisionId, true);
@@ -395,6 +433,8 @@ describe.sequential("Wiki Step 5B-2 homeopathic import preflight contract", () =
   it("builds a compact deterministic bundle manifest that is review-status neutral", () => {
     expect(draftManifest).toEqual(approvedManifest);
     expect(draftBundleHash).toBe(approvedBundleHash);
+    expect(parserBundle.manifest).toEqual(draftManifest);
+    expect(parserBundle.bundleHash).toBe(draftBundleHash);
     expect(approvedBundleHash).toMatch(/^[0-9a-f]{64}$/);
     expect(approvedManifest.contract_version).toBe(1);
     expect(approvedManifest.contract_scope).toBe("HOMEOPATHIC_IMPORT_PREFLIGHT_ONLY");
