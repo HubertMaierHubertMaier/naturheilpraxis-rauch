@@ -755,3 +755,27 @@ Dieser Schritt verarbeitet weiterhin keine echte Quelle und ist kein Chunk-
 oder Bulk-Importer. Lizenzfreigabe, quellenspezifischer Parser, Gold-Fixtures,
 Batch-/Resume-Semantik, PostgreSQL-Grossmengenprofilierung sowie Restore-, RLS-
 und Fachabnahme bleiben offen.
+
+## Fortschritt bis Schritt 5B-6 am 03.08.2026
+
+Zwei owner-only Stagingtabellen binden nun eine exakte Batch-ID, den erwarteten
+Gesamt- und 1 bis 64 Chunkhashes sowie die vier Gesamtzaehler. Chunks duerfen in
+beliebiger Reihenfolge eintreffen, sind nach dem Insert unveraenderlich und
+koennen nach einer Unterbrechung anhand der exakt gemeldeten fehlenden Indizes
+fortgesetzt werden. Kumulative Payloadbytes und Komponentenzaehler werden schon
+beim Staging gegen die Kleinmengengrenze geprueft. Identische Wiederholungen
+schreiben nichts erneut.
+
+Ein vollstaendiger Batch wird ausschliesslich ueber den atomaren Step-5B-5-
+Writer finalisiert. Ein falscher Gesamt-Hash schreibt keine finale Zeile; die
+Stagingchunks bleiben fuer Diagnose oder einen owner-seitigen terminalen
+Abbruch erhalten. Danach darf eine neue Batch-ID dasselbe Ziel uebernehmen. Der
+Wiki-Snapshot umfasst nun 67 Tabellen und prueft zusaetzlich
+`invalid_homeopathic_chunk_imports = 0`; der Therapie-Eingabe-Snapshot bleibt
+unveraendert. Die Repertoriumsregression besteht mit 37/37 Tests, der
+vollstaendige Projektlauf mit 49/49 Dateien und 523/523 Tests.
+
+Der Vertrag verarbeitet weiterhin keine echte Quelle und erbt die 4-MiB-
+Kleinmengengrenze aus Schritt 5B-5. Lizenzfreigabe, quellenspezifischer Parser,
+Gold-Fixtures, produktiver Bulk-Writer, PostgreSQL-Grossmengenprofilierung sowie
+Restore-, RLS- und Fachabnahme bleiben offen.

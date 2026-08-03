@@ -22,8 +22,10 @@ implementiert und vollstaendig lokal verifiziert. Schritt 5B-4 ist als
 parserseitiger Vertrag fuer die fuenf normalisierten Step-5A-Zeilenhashes
 implementiert und vollstaendig lokal verifiziert. Schritt 5B-5 ist als
 owner-only atomarer Kleinmengen-Referenzwriter implementiert und vollstaendig
-lokal verifiziert. Echter lizenzierter Inhalt, ein Rohdatenparser, ein
-schreibender Chunk-/Bulk-Importvertrag sowie die Schritte 6 und 7 bleiben offen.
+lokal verifiziert. Schritt 5B-6 ist als owner-only persistenter Chunk-Staging-,
+Resume-, Abbruch- und atomarer Finalisierungsvertrag implementiert und
+vollstaendig lokal verifiziert. Echter lizenzierter Inhalt, ein Rohdatenparser,
+ein produktiver Bulk-Importvertrag sowie die Schritte 6 und 7 bleiben offen.
 
 ## Ziel
 
@@ -970,6 +972,48 @@ ausfuehrliche Dokumentation steht in
 Der Block ist weiterhin kein Rohdatenparser und kein Chunk-/Bulk-Importer.
 Lizenzquelle, Gold-Fixtures, Batch-/Resume-Semantik und
 PostgreSQL-Grossmengenprofilierung bleiben vor echten Repertoriumsdaten offen.
+
+#### Schritt 5B-6: Owner-only persistentes Chunk-Staging und Resume
+
+Lokal implementiert in:
+
+`supabase/migrations/20260803130000_create_kb_homeopathic_chunk_import_contract.sql`
+
+Ein Batch bindet eine explizite UUID, das exakte Repertoriums-/Revisionspaar,
+den erwarteten Bundlehash, vier Gesamtzaehler und 1 bis 64 geordnete,
+eindeutige Chunkhashes. Die Chunks sind auf je 1 MiB begrenzt, werden
+vollstaendig gegen die Step-5B-5-Zeilenformen geprueft und nach dem Insert
+unveraenderlich. Kumulative Payloadbytes sind konservativ auf 4.000.000 und
+jeder Komponentenzaehler auf seine Batcherwartung begrenzt. Die Chunks duerfen
+in beliebiger Reihenfolge eintreffen; der
+deterministische Status nennt die fehlenden Indizes und aktuellen Zaehler.
+Identische Wiederholungen schreiben nichts erneut, abweichende scheitern.
+
+Nur ein offener oder geschriebener Batch darf ein Repertoriums-Revisionspaar
+binden. Ein falscher offener Versuch kann owner-seitig terminal abgebrochen
+werden, waehrend seine Chunks als Audit erhalten bleiben und eine neue Batch-ID
+das Ziel uebernehmen darf. Erst ein vollstaendiger Batch wird ueber den atomaren
+Step-5B-5-Writer finalisiert. Ein absichtlich falscher Gesamt-Hash laesst alle
+sechs Zieltabellen und den Repertoriumshash unveraendert; nach Erfolg liefert eine
+exakte Wiederholung denselben Resultathash.
+
+Die zwei neuen, RLS-geschuetzten Tabellen und alle Vertragsfunktionen bleiben
+fuer Anwendung, Service- und Importrollen vollstaendig gesperrt. Der Wiki-
+Snapshot und die Restore-Reihenfolge umfassen nun exakt 67 Tabellen; der neue
+Integritaetszaehler `invalid_homeopathic_chunk_imports` bleibt 0. Der Therapie-
+Eingabe-Snapshot v2 bleibt byteidentisch. Der fokussierte Writer-/Chunk-/
+Preflightlauf bestand mit 15/15 Tests, zusammen mit den Sicherungsvertraegen
+3/3 Dateien und 67/67 Tests. Die zusammenhaengende Repertoriumsregression
+bestand mit 37/37 Tests, der vollstaendige Projektlauf mit 49/49 Dateien und
+523/523 Tests. Beide TypeScript-Projekte, der gezielte ESLint-Lauf und der
+Produktionsbuild sind erfolgreich. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step5b6-homeopathic-chunk-import-contract-implementation-2026-08-03.md`.
+
+Der Block erbt bewusst die Step-5B-5-Gesamtgrenze von 4 MiB, 256 Rubriken, 64
+Graden, 256 Mitteln und 2.048 Assignments. Er ist deshalb ein persistenter
+Resume- und Rollbackbeweis, aber noch kein produktiver Bulk-Importer. Konkrete
+Lizenzquelle, Rohdatenparser, Gold-Fixtures, echte PostgreSQL-
+Grossmengenprofilierung sowie Restore-, RLS- und Fachabnahme bleiben offen.
 
 ## Schritt 6: Deterministisches Retrieval v2
 
