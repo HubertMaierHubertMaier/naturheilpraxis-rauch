@@ -4777,18 +4777,22 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7C contracts", ()
 
     const policy = await db.query<{
       policyname: string;
-      roles: string[];
+      authenticated_only: boolean;
       cmd: string;
       qual: string;
     }>(`
-      SELECT policyname, roles, cmd, qual
+      SELECT
+        policyname,
+        roles = ARRAY['authenticated']::name[] AS authenticated_only,
+        cmd,
+        qual
       FROM pg_policies
       WHERE schemaname = 'public'
         AND tablename = 'therapy_retrieval_audit_runs'
     `);
     expect(policy.rows).toEqual([expect.objectContaining({
       policyname: "therapy_retrieval_audit_runs_admin_read",
-      roles: ["authenticated"],
+      authenticated_only: true,
       cmd: "SELECT",
       qual: expect.stringContaining("has_role"),
     })]);
