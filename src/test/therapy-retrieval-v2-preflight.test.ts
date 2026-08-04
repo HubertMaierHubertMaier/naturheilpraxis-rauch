@@ -63,6 +63,12 @@ const dosageRuleMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", dosageRuleMigrationFile),
   "utf8",
 );
+const auditEnvelopeMigrationFile =
+  "20260804150000_create_therapy_retrieval_audit_envelope_preflight.sql";
+const auditEnvelopeMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", auditEnvelopeMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -560,6 +566,123 @@ type DosageRulePreflightResult = {
   result_hash: string;
 };
 
+type AuditEnvelopeResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  productive_candidate_use_allowed: boolean;
+  dosage_evaluation_allowed: boolean;
+  dosage_display_allowed: boolean;
+  audit_persistence_allowed: boolean;
+  replay_execution_allowed: boolean;
+  shadow_execution_allowed: boolean;
+  ai_use_allowed: boolean;
+  plan_selection_allowed: boolean;
+  activation_allowed: boolean;
+  inactive_audit_envelope_ready?: boolean;
+  global_candidate_status?: string;
+  dosage_rule_result_status?: string;
+  dosage_rule_result_hash?: string;
+  dosage_rule_result_hash_matches?: boolean;
+  audit_envelope_hash?: string;
+  audit_envelope: {
+    audit_envelope_version: number;
+    data_classification: string;
+    stage_hashes: Record<string, string>;
+    fact_provenance: {
+      selected_fact_count: number;
+      fact_source_binding_count: number;
+      raw_fact_values_present: boolean;
+      raw_source_locators_present: boolean;
+      facts: Array<{
+        therapy_input_fact_id: string;
+        fact_content_sha256: string;
+        sources: Array<{
+          therapy_input_source_id: string;
+          source_content_sha256: string;
+          source_locator_hash: string;
+          fact_locator_hash: string;
+        }>;
+      }>;
+      fact_provenance_hash: string;
+    };
+    comparator_manifest: {
+      general_comparator_version: string;
+      general_ordering_dimensions: string[];
+      homeopathic_comparator_version: string;
+      homeopathic_ordering_dimensions: string[];
+      opaque_composite_score_used: boolean;
+      comparator_manifest_hash: string;
+    };
+    candidate_decisions: {
+      general: Array<{
+        candidate_status: string;
+        entity_id: string;
+        entity_revision_id: string;
+        candidate_payload_hash: string;
+      }>;
+      homeopathic: Array<{
+        candidate_status: string;
+        remedy_entity_id: string;
+        candidate_payload_hash: string;
+      }>;
+      candidate_decisions_hash: string;
+    };
+    safety_decisions: {
+      subjects: Array<{
+        subject_entity_id: string;
+        safety_effect: string;
+        rules: Array<{
+          safety_rule_id: string;
+          assertion_id: string;
+          assessment_status: string;
+          rule_payload_hash: string;
+        }>;
+      }>;
+      safety_decisions_hash: string;
+    };
+    dosage_decisions: {
+      dosage_rule_result_status: string;
+      concrete_dosage_output_present: boolean;
+      rules: Array<{
+        dosage_rule_id: string;
+        dosage_rule_content_hash: string;
+        assertion_id: string;
+      }>;
+      candidate_assessments: Array<{
+        assessment_status: string;
+      }>;
+      dosage_decisions_hash: string;
+    };
+    knowledge_source_binding_count: number;
+    knowledge_source_provenance: Array<{
+      usage: string;
+      rule_id: string | null;
+      assertion_id: string;
+      source_id: string;
+      source_revision_id: string;
+      source_content_hash: string;
+      locator_hash: string;
+    }>;
+    raw_source_locators_present: boolean;
+    concrete_dosage_output_present: boolean;
+    ai_provenance: {
+      execution_present: boolean;
+      model: string | null;
+      prompt_hash: string | null;
+      raw_output_hash: string | null;
+      validated_output_hash: string | null;
+    };
+    plan_selection_provenance: {
+      selection_present: boolean;
+      selected_position_count: number;
+      selected_positions: number[];
+    };
+    audit_envelope_hash: string;
+  } | null;
+  result_hash: string;
+};
+
 const homeopathicRubricLinks = [
   {
     therapy_input_fact_id: successorFactId,
@@ -621,6 +744,9 @@ let successfulCandidateStatus: CandidateStatusResult;
 let wikiSnapshotAfterDosageRule = "";
 let therapySnapshotAfterDosageRule = "";
 let successfulDosageRulePreflight: DosageRulePreflightResult;
+let wikiSnapshotAfterAuditEnvelope = "";
+let therapySnapshotAfterAuditEnvelope = "";
+let successfulAuditEnvelope: AuditEnvelopeResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -2073,6 +2199,37 @@ async function readDosageRulePreflight(
   ])).rows[0].value;
 }
 
+async function readAuditEnvelope(
+  expectedInput: string | null = safetyInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  expectedRequest: string | null = safetyHomeopathicRequestHash,
+  expectedSplit: string | null = safetySplitTrackHash,
+  expectedSafety: string | null = successfulSafetyGate?.result_hash ?? null,
+  expectedCandidate: string | null = successfulCandidateStatus?.result_hash ?? null,
+  expectedDosage: string | null = successfulDosageRulePreflight?.result_hash ?? null,
+): Promise<AuditEnvelopeResult> {
+  return (await db.query<{ value: AuditEnvelopeResult }>(`
+    SELECT public.therapy_retrieval_v2_audit_envelope_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, $9::text, $10::text, $11::text, $12::text,
+      8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    expectedRequest,
+    expectedSplit,
+    expectedSafety,
+    expectedCandidate,
+    expectedDosage,
+  ])).rows[0].value;
+}
+
 async function readCurrentDosageRulePriority(): Promise<DosageRulePreflightResult> {
   const currentInputHash = (await db.query<{ value: string }>(`
     SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
@@ -2101,6 +2258,38 @@ async function readCurrentDosageRulePriority(): Promise<DosageRulePreflightResul
     currentSplit.result_hash,
     successfulSafetyGate.result_hash,
     successfulCandidateStatus.result_hash,
+  );
+}
+
+async function readCurrentAuditPriority(): Promise<AuditEnvelopeResult> {
+  const currentInputHash = (await db.query<{ value: string }>(`
+    SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+  `, [safetyInputRevisionId])).rows[0].value;
+  const currentRequestManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
+    SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+      $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+  ])).rows[0].value;
+  const currentRequestHash = await hashJson(currentRequestManifest);
+  const currentSplit = await readSafetySplitTrack(
+    currentInputHash,
+    expectedReleaseManifestHash,
+    currentRequestHash,
+  );
+  expect(currentSplit.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+  return readAuditEnvelope(
+    currentInputHash,
+    expectedReleaseManifestHash,
+    currentRequestHash,
+    currentSplit.result_hash,
+    successfulSafetyGate.result_hash,
+    successfulCandidateStatus.result_hash,
+    successfulDosageRulePreflight.result_hash,
   );
 }
 
@@ -2228,13 +2417,22 @@ beforeAll(async () => {
     "SELECT public.therapy_input_export_snapshot_v2() AS value",
   )).rows[0].value;
   successfulDosageRulePreflight = await readDosageRulePreflight();
+
+  await db.exec(auditEnvelopeMigration);
+  wikiSnapshotAfterAuditEnvelope = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterAuditEnvelope = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  successfulAuditEnvelope = await readAuditEnvelope();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through 6F preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through Step 7A preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -3822,7 +4020,316 @@ describe.sequential("therapy retrieval v2 Step 6A through 6F preflights", () => 
     }
   }, 15_000);
 
-  it("exposes no preflight function to application or import roles", async () => {
+  it("adds only one closed audit-envelope function and changes no snapshot", () => {
+    expect(auditEnvelopeMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(1);
+    expect(auditEnvelopeMigration).toMatch(/^BEGIN;/);
+    expect(auditEnvelopeMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(auditEnvelopeMigration).not.toMatch(
+      /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+    );
+    expect(auditEnvelopeMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(auditEnvelopeMigration).not.toMatch(/\bGRANT\b/i);
+    expect(auditEnvelopeMigration).not.toMatch(
+      /\b(patient_id|patient_user_id|pseudonym_id|session_id|anamnesis_id)\b/i,
+    );
+    const executableAuditMigration = auditEnvelopeMigration.slice(
+      0,
+      auditEnvelopeMigration.indexOf("COMMENT ON FUNCTION"),
+    );
+    expect(executableAuditMigration).not.toMatch(
+      /\b(fact_value|source_payload|input_envelope|clinical_text|notice_text)\b/,
+    );
+    expect(executableAuditMigration).not.toMatch(
+      /\b(dose_min|dose_max|frequency_min|frequency_max|frequency_period|duration_min|duration_max|duration_unit|timing|administration_route)\b/,
+    );
+    expect(auditEnvelopeMigration).toContain("LIMIT 16385");
+    expect(auditEnvelopeMigration).toContain("knowledge_source_binding_count > 32768");
+    expect(auditEnvelopeMigration).toContain("octet_length(result_payload::text) > 8388608");
+    for (const field of [
+      "medical_use_allowed",
+      "productive_candidate_use_allowed",
+      "dosage_evaluation_allowed",
+      "dosage_display_allowed",
+      "audit_persistence_allowed",
+      "replay_execution_allowed",
+      "shadow_execution_allowed",
+      "ai_use_allowed",
+      "plan_selection_allowed",
+      "activation_allowed",
+    ]) {
+      expect(auditEnvelopeMigration.match(
+        new RegExp(`'${field}', false`, "g"),
+      )).toHaveLength(11);
+    }
+    expect(wikiSnapshotAfterAuditEnvelope).toBe(wikiSnapshotAfterDosageRule);
+    expect(therapySnapshotAfterAuditEnvelope).toBe(therapySnapshotAfterDosageRule);
+  });
+
+  it("materializes a deterministic inactive audit envelope without enabling use", () => {
+    expect(successfulAuditEnvelope).toEqual(expect.objectContaining({
+      status: "RETRIEVAL_AUDIT_ENVELOPE_READY_INACTIVE",
+      interpretation: "AUDIT_PREFLIGHT_ONLY_NO_PERSISTENCE_SHADOW_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      productive_candidate_use_allowed: false,
+      dosage_evaluation_allowed: false,
+      dosage_display_allowed: false,
+      audit_persistence_allowed: false,
+      replay_execution_allowed: false,
+      shadow_execution_allowed: false,
+      ai_use_allowed: false,
+      plan_selection_allowed: false,
+      activation_allowed: false,
+      inactive_audit_envelope_ready: true,
+      dosage_rule_result_status: "DOSAGE_RULE_BINDINGS_READY_INACTIVE",
+      dosage_rule_result_hash: successfulDosageRulePreflight.result_hash,
+      dosage_rule_result_hash_matches: true,
+      audit_envelope_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    const envelope = successfulAuditEnvelope.audit_envelope!;
+    expect(envelope).toEqual(expect.objectContaining({
+      audit_envelope_version: 1,
+      data_classification: "pseudonymized_health_data",
+      raw_source_locators_present: false,
+      concrete_dosage_output_present: false,
+      audit_envelope_hash: successfulAuditEnvelope.audit_envelope_hash,
+    }));
+    expect(envelope.stage_hashes).toEqual(expect.objectContaining({
+      therapy_input_manifest_hash: safetyInputHash,
+      release_manifest_hash: expectedReleaseManifestHash,
+      homeopathic_request_hash: safetyHomeopathicRequestHash,
+      split_track_result_hash: safetySplitTrackHash,
+      safety_gate_result_hash: successfulSafetyGate.result_hash,
+      candidate_status_result_hash: successfulCandidateStatus.result_hash,
+      dosage_rule_result_hash: successfulDosageRulePreflight.result_hash,
+    }));
+  });
+
+  it("binds fact, comparator, candidate, rule, and hashed source audit provenance", () => {
+    const envelope = successfulAuditEnvelope.audit_envelope!;
+    expect(envelope.fact_provenance).toEqual(expect.objectContaining({
+      selected_fact_count: safetyInputManifest.selected_fact_count,
+      fact_source_binding_count: safetyInputManifest.selected_fact_count,
+      raw_fact_values_present: false,
+      raw_source_locators_present: false,
+      fact_provenance_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(envelope.fact_provenance.facts).toHaveLength(
+      safetyInputManifest.selected_fact_count,
+    );
+    expect(envelope.fact_provenance.facts.every(
+      (fact) => fact.fact_content_sha256.match(/^[0-9a-f]{64}$/)
+        && fact.sources.length === 1
+        && fact.sources[0].therapy_input_source_id === safetyInputSourceId
+        && /^[0-9a-f]{64}$/.test(fact.sources[0].source_locator_hash)
+        && /^[0-9a-f]{64}$/.test(fact.sources[0].fact_locator_hash),
+    )).toBe(true);
+
+    expect(envelope.comparator_manifest).toEqual(expect.objectContaining({
+      general_comparator_version: "GENERAL_CANDIDATE_ORDER_V1",
+      general_ordering_dimensions: [
+        "candidate_status_allow_review_exclude",
+        "verified_fact_coverage_desc",
+        "strong_support_assertions_desc",
+        "product_variant_before_preparation",
+        "direct_reference_count_desc",
+        "canonical_key_asc",
+        "entity_revision_id_asc",
+      ],
+      homeopathic_comparator_version: "HOMEOPATHIC_SOURCE_NATIVE_ORDER_V1",
+      homeopathic_ordering_dimensions: [
+        "source_native_repertory_position_asc",
+        "no_cross_track_or_efficacy_score",
+      ],
+      opaque_composite_score_used: false,
+      comparator_manifest_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(envelope.candidate_decisions.general).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        candidate_status: "ALLOW",
+        entity_id: allowPreparationId,
+        entity_revision_id: allowPreparationRevisionId,
+        candidate_payload_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      }),
+      expect.objectContaining({
+        candidate_status: "EXCLUDE",
+        entity_id: safetyPreparationId,
+      }),
+    ]));
+    expect(envelope.candidate_decisions.homeopathic.every(
+      (candidate) => candidate.candidate_status === "REVIEW_ONLY"
+        && /^[0-9a-f]{64}$/.test(candidate.candidate_payload_hash),
+    )).toBe(true);
+
+    const safetyRules = envelope.safety_decisions.subjects.flatMap(
+      (subject) => subject.rules,
+    );
+    expect(safetyRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        safety_rule_id: allowSafetyRuleId,
+        assertion_id: allowSafetyAssertionId,
+        rule_payload_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      }),
+      expect.objectContaining({ safety_rule_id: interactionRuleId }),
+      expect.objectContaining({ safety_rule_id: contraindicationRuleId }),
+    ]));
+    expect(envelope.dosage_decisions).toEqual(expect.objectContaining({
+      dosage_rule_result_status: "DOSAGE_RULE_BINDINGS_READY_INACTIVE",
+      concrete_dosage_output_present: false,
+      rules: [expect.objectContaining({
+        dosage_rule_id: allowDosageRuleId,
+        assertion_id: allowDosageAssertionId,
+      })],
+      candidate_assessments: [expect.objectContaining({
+        assessment_status: "EXACT_DOSAGE_RULE_BINDING_READY_INACTIVE",
+      })],
+      dosage_decisions_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+
+    expect(new Set(
+      envelope.knowledge_source_provenance.map((source) => source.usage),
+    )).toEqual(new Set(["candidate_evidence", "safety_rule", "dosage_rule"]));
+    expect(envelope.knowledge_source_binding_count).toBe(
+      envelope.knowledge_source_provenance.length,
+    );
+    expect(envelope.knowledge_source_provenance.every(
+      (source) => source.source_id === knowledgeSourceId
+        && source.source_revision_id === knowledgeSourceRevisionId
+        && /^[0-9a-f]{64}$/.test(source.source_content_hash)
+        && /^[0-9a-f]{64}$/.test(source.locator_hash),
+    )).toBe(true);
+
+    expect(envelope.ai_provenance).toEqual({
+      execution_present: false,
+      model: null,
+      prompt_hash: null,
+      raw_output_hash: null,
+      validated_output_hash: null,
+    });
+    expect(envelope.plan_selection_provenance).toEqual({
+      selection_present: false,
+      selected_position_count: 0,
+      selected_positions: [],
+    });
+    const serialized = JSON.stringify(successfulAuditEnvelope);
+    expect(serialized).not.toContain(safetySourceLocator);
+    expect(serialized).not.toContain("section:dosage-rule-preflight");
+    expect(serialized).not.toMatch(/"(?:fact_value|source_payload|notice_text)"\s*:/);
+    expect(serialized).not.toMatch(
+      /"(?:dose_min|dose_max|frequency_min|frequency_max|frequency_period|duration_min|duration_max|duration_unit|timing|administration_route)"\s*:/,
+    );
+  });
+
+  it("binds the exact dosage result and every audit hash deterministically", async () => {
+    expect((await readAuditEnvelope(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      successfulSafetyGate.result_hash,
+      successfulCandidateStatus.result_hash,
+      "0".repeat(64),
+    )).status).toBe("RETRIEVAL_AUDIT_DOSAGE_RESULT_MISMATCH");
+    expect((await readAuditEnvelope(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      successfulSafetyGate.result_hash,
+      successfulCandidateStatus.result_hash,
+      null,
+    )).status).toBe("RETRIEVAL_AUDIT_EXPECTATION_INVALID");
+
+    const envelope = successfulAuditEnvelope.audit_envelope!;
+    const {
+      fact_provenance_hash: factHash,
+      ...factPayload
+    } = envelope.fact_provenance;
+    expect(await hashJson(factPayload)).toBe(factHash);
+    const {
+      comparator_manifest_hash: comparatorHash,
+      ...comparatorPayload
+    } = envelope.comparator_manifest;
+    expect(await hashJson(comparatorPayload)).toBe(comparatorHash);
+    const {
+      candidate_decisions_hash: candidateHash,
+      ...candidatePayload
+    } = envelope.candidate_decisions;
+    expect(await hashJson(candidatePayload)).toBe(candidateHash);
+    const {
+      safety_decisions_hash: safetyHash,
+      ...safetyPayload
+    } = envelope.safety_decisions;
+    expect(await hashJson(safetyPayload)).toBe(safetyHash);
+    const {
+      dosage_decisions_hash: dosageHash,
+      ...dosagePayload
+    } = envelope.dosage_decisions;
+    expect(await hashJson(dosagePayload)).toBe(dosageHash);
+    const { audit_envelope_hash: envelopeHash, ...envelopePayload } = envelope;
+    expect(await hashJson(envelopePayload)).toBe(envelopeHash);
+    const { result_hash: resultHash, ...resultPayload } = successfulAuditEnvelope;
+    expect(await hashJson(resultPayload)).toBe(resultHash);
+    expect(await readAuditEnvelope()).toEqual(successfulAuditEnvelope);
+  }, 20_000);
+
+  it("preserves red-flag escalation ahead of a stale audit expectation", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET is_negated = false WHERE id = $1
+      `, [redFlagFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [redFlagFactId]);
+      expect(await readCurrentAuditPriority()).toEqual(expect.objectContaining({
+        status: "RETRIEVAL_AUDIT_ESCALATE_ONLY_INACTIVE",
+        global_candidate_status: "ESCALATE_ONLY",
+        dosage_rule_result_hash_matches: false,
+        medical_use_allowed: false,
+        audit_persistence_allowed: false,
+        shadow_execution_allowed: false,
+        ai_use_allowed: false,
+        activation_allowed: false,
+        audit_envelope: null,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 20_000);
+
+  it("preserves medication review ahead of a stale audit expectation", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET certainty = 'uncertain' WHERE id = $1
+      `, [medicationStatusFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      expect(await readCurrentAuditPriority()).toEqual(expect.objectContaining({
+        status: "RETRIEVAL_AUDIT_REVIEW_ONLY_INACTIVE",
+        global_candidate_status: "REVIEW_ONLY",
+        dosage_rule_result_hash_matches: false,
+        medical_use_allowed: false,
+        audit_persistence_allowed: false,
+        shadow_execution_allowed: false,
+        ai_use_allowed: false,
+        activation_allowed: false,
+        audit_envelope: null,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 20_000);
+
+  it("exposes no retrieval or audit preflight function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
         FROM unnest(ARRAY[
@@ -3847,10 +4354,11 @@ describe.sequential("therapy retrieval v2 Step 6A through 6F preflights", () => 
           'public.therapy_retrieval_v2_candidate_status_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,integer,integer,integer)',
           'public.therapy_retrieval_v2_dosage_rule_scope_v1(uuid,jsonb)',
           'public.therapy_retrieval_v2_dosage_rule_assessments_v1(uuid,uuid,jsonb,jsonb)',
-          'public.therapy_retrieval_v2_dosage_rule_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,integer,integer,integer)'
+          'public.therapy_retrieval_v2_dosage_rule_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,integer,integer,integer)',
+          'public.therapy_retrieval_v2_audit_envelope_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(95);
+    expect(privileges.rows).toHaveLength(100);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });
