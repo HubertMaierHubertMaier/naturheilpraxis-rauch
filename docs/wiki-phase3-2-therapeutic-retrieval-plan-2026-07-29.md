@@ -1581,6 +1581,10 @@ Aufbewahrung oder Loeschung noch Deployment, Replay, Schattenlauf, KI,
 Planwahl, Dosierungsanzeige, medizinische oder produktive Nutzung oder
 Aktivierung. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step7e-postgresql-dump-restore-rehearsal-implementation-2026-08-04.md`.
+Der finale PostgreSQL-17.10-Lauf fuer Commit `fe7dd95` bestand alle sechs
+Vertragsgruppen und die zusaetzliche Dump-/Restore-Probe mit exakten
+Quell-/Zielhashes:
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30904172952>.
 
 ## Historischer erster Implementierungsblock
 

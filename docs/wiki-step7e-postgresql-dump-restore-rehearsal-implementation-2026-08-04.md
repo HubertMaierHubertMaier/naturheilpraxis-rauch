@@ -2,10 +2,10 @@
 
 Stand: 2026-08-04
 
-Status: lokal implementiert und statisch verifiziert. Der isolierte
-PostgreSQL-17-Lauf wird auf dem zugehoerigen GitHub-Branch ausgefuehrt. Es gibt
-kein Supabase-Deployment, keine echten medizinischen Daten und keine Verbindung
-zum sichtbaren Therapiepfad.
+Status: implementiert und lokal sowie gegen PostgreSQL 17 verifiziert. Der
+isolierte GitHub-Lauf hat alle sechs Vertragsgruppen und die zusaetzliche
+Dump-/Restore-Probe bestanden. Es gibt kein Supabase-Deployment, keine echten
+medizinischen Daten und keine Verbindung zum sichtbaren Therapiepfad.
 
 ## Ziel und harte Grenze
 
@@ -111,6 +111,27 @@ der konfigurationsfreie Standard.
 - Abwesenheit von Artifact-Upload und `DROP DATABASE`
 
 Der statische Konformitaetsvertrag besteht lokal mit 4/4 Tests.
+
+## PostgreSQL-17-Ergebnis
+
+Der finale Workflow lief fuer Commit
+`fe7dd95f40edf2ee96364b884fcac9d6388c20c4` erfolgreich:
+
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30904172952>
+
+Alle sechs PostgreSQL-17.10-Gruppen meldeten `success`. In Gruppe 5 bestanden
+zuerst alle sieben Auditpersistenztests und danach der eigene Schritt
+`Rehearse an ephemeral synthetic dump and restore`. Damit sind nachgewiesen:
+
+- erfolgreicher begrenzter Custom-Dump der synthetischen Quelle
+- erfolgreicher fail-closed Ein-Transaktions-Restore in `retrieval_restore`
+- identische Quell-/Zielhashes fuer Wiki-, Therapie-v2- und
+  Therapie-v3-Snapshot
+- identischer 7C-Integritaets-/Rechtevertrag und technischer Bereitschaftsstatus
+- erfolgreiche automatische Entsorgung des PostgreSQL-Servicecontainers
+
+Der Lauf erzeugte und behielt kein Backup-Artefakt ausserhalb des verworfenen
+Containers.
 
 ## Bewusste Restrisiken und naechste Gates
 
