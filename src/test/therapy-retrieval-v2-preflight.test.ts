@@ -33,6 +33,12 @@ const migration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", migrationFile),
   "utf8",
 );
+const entityResolutionMigrationFile =
+  "20260804100000_create_therapy_entity_resolution_preflight.sql";
+const entityResolutionMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", entityResolutionMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -46,6 +52,13 @@ const unreviewedFactId = "93000000-0000-4000-8000-000000000004";
 const rejectedFactId = "93000000-0000-4000-8000-000000000005";
 const knowledgeSourceId = "21000000-0000-4000-8000-000000000001";
 const knowledgeSourceRevisionId = "22000000-0000-4000-8000-000000000001";
+const diseaseEntityId = "31000000-0000-4000-8000-000000000001";
+const diseaseEntityRevisionId = "32000000-0000-4000-8000-000000000001";
+const plantEntityId = "31000000-0000-4000-8000-000000000002";
+const plantEntityRevisionId = "32000000-0000-4000-8000-000000000002";
+const outsideEntityId = "31000000-0000-4000-8000-000000000003";
+const outsideEntityRevisionId = "32000000-0000-4000-8000-000000000003";
+const relationAssertionId = "41000000-0000-4000-8000-000000000001";
 const knowledgeReleaseId = "61000000-0000-4000-8000-000000000001";
 const unknownInputRevisionId = "91000000-0000-4000-8000-000000000099";
 const unknownReleaseId = "61000000-0000-4000-8000-000000000099";
@@ -73,6 +86,7 @@ type FactFixture = {
   label: string;
   value: Record<string, unknown>;
   reviewStatus: "unreviewed" | "review_only" | "verified" | "rejected";
+  kbEntityId: string | null;
   supersedesFactId: string | null;
   reviewedAt: string | null;
   reviewedBy: string | null;
@@ -111,6 +125,10 @@ type PreflightResult = {
   interpretation: string;
   medical_use_allowed: boolean;
   retrieval_execution_allowed: boolean;
+  therapy_input_revision_id?: string;
+  therapy_input_manifest_hash?: string;
+  knowledge_release_id?: string;
+  release_manifest_hash?: string;
   therapy_input_hash_matches?: boolean;
   release_manifest_hash_matches?: boolean;
   selected_fact_count?: number;
@@ -121,6 +139,66 @@ type PreflightResult = {
   binding_hash?: string;
   result_hash: string;
   input_manifest?: InputManifest;
+};
+
+type EntityQueryManifest = {
+  contract_version: number;
+  contract_scope: string;
+  selected_fact_count: number;
+  input_manifest_hash: string;
+  facts: Array<{
+    fact_id: string;
+    fact_order: number;
+    kb_entity_id: string | null;
+    query_terms: string[];
+    identifier_terms: string[];
+    query_hash: string;
+  }>;
+};
+
+type DirectEntityCandidate = {
+  position: number;
+  candidate_status: string;
+  entity_id: string;
+  entity_revision_id: string;
+  best_match_channel: string;
+  matched_channels: string[];
+};
+
+type GraphEntityCandidate = {
+  position: number;
+  candidate_status: string;
+  source_entity_id: string;
+  relation_type_code: string;
+  graph_direction: string;
+  entity_id: string;
+  entity_revision_id: string;
+};
+
+type EntityResolutionFact = {
+  fact_id: string;
+  direct_candidate_count_before_limit: number;
+  returned_direct_candidate_count: number;
+  direct_candidates: DirectEntityCandidate[];
+  graph_candidate_count_before_limit: number;
+  returned_graph_candidate_count: number;
+  graph_candidates: GraphEntityCandidate[];
+};
+
+type EntityResolutionResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  retrieval_execution_allowed: boolean;
+  binding_hash?: string;
+  query_manifest_hash?: string;
+  selected_fact_count?: number;
+  direct_candidate_count_before_limit?: number;
+  returned_direct_candidate_count?: number;
+  graph_candidate_count_before_limit?: number;
+  returned_graph_candidate_count?: number;
+  facts?: EntityResolutionFact[];
+  result_hash: string;
 };
 
 let db: PGlite;
@@ -134,6 +212,10 @@ let wikiSnapshotBefore = "";
 let wikiSnapshotAfter = "";
 let therapySnapshotBefore = "";
 let therapySnapshotAfter = "";
+let wikiSnapshotAfterEntityResolution = "";
+let therapySnapshotAfterEntityResolution = "";
+let entityQueryManifest: EntityQueryManifest;
+let successfulEntityResolution: EntityResolutionResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -309,7 +391,7 @@ async function insertFact(fact: FactFixture): Promise<void> {
     effective_start_date: null,
     effective_end_date: null,
     effective_date_precision: "unknown",
-    kb_entity_id: null,
+    kb_entity_id: fact.kbEntityId,
     source_count: 1,
     supersedes_fact_id: fact.supersedesFactId,
     extracted_at: extractedAt,
@@ -336,12 +418,12 @@ async function insertFact(fact: FactFixture): Promise<void> {
         id, therapy_input_revision_id, fact_order, fact_type, fact_key,
         fact_label, fact_value, is_negated, clinical_status, certainty,
         extraction_confidence, extraction_method, review_status, evidence_scope,
-        effective_date_precision, source_count, supersedes_fact_id, extracted_at,
-        extracted_by, reviewed_at, reviewed_by, content_sha256
+        effective_date_precision, kb_entity_id, source_count, supersedes_fact_id,
+        extracted_at, extracted_by, reviewed_at, reviewed_by, content_sha256
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7::jsonb, false, 'current', 'confirmed',
-        'high', 'manual', $8, 'patient_report', 'unknown', 1, $9,
-        $10, $11, $12, $13, $14
+        'high', 'manual', $8, 'patient_report', 'unknown', $9, 1, $10,
+        $11, $12, $13, $14, $15
       )
     `, [
       fact.id,
@@ -352,6 +434,7 @@ async function insertFact(fact: FactFixture): Promise<void> {
       fact.label,
       JSON.stringify(fact.value),
       fact.reviewStatus,
+      fact.kbEntityId,
       fact.supersedesFactId,
       extractedAt,
       adminId,
@@ -381,6 +464,7 @@ async function insertInputFacts(): Promise<void> {
     label: "Synthetic contract condition",
     value: { type: "boolean", value: true },
     reviewStatus: "verified",
+    kbEntityId: diseaseEntityId,
     supersedesFactId: null,
     reviewedAt,
     reviewedBy: reviewerId,
@@ -391,8 +475,14 @@ async function insertInputFacts(): Promise<void> {
     type: "condition",
     key: "condition.synthetic_contract",
     label: "Synthetic contract condition",
-    value: { type: "boolean", value: false },
+    value: {
+      type: "coded",
+      system: "icd_10_gm",
+      code: "R53",
+      display: "Synthetic coded disease",
+    },
     reviewStatus: "verified",
+    kbEntityId: null,
     supersedesFactId: predecessorFactId,
     reviewedAt,
     reviewedBy: reviewerId,
@@ -405,6 +495,7 @@ async function insertInputFacts(): Promise<void> {
     label: "Synthetic review question",
     value: { type: "none" },
     reviewStatus: "review_only",
+    kbEntityId: plantEntityId,
     supersedesFactId: null,
     reviewedAt: null,
     reviewedBy: null,
@@ -417,6 +508,7 @@ async function insertInputFacts(): Promise<void> {
     label: "Synthetic unreviewed symptom",
     value: { type: "text", value: "Synthetic unreviewed value" },
     reviewStatus: "unreviewed",
+    kbEntityId: null,
     supersedesFactId: null,
     reviewedAt: null,
     reviewedBy: null,
@@ -429,10 +521,71 @@ async function insertInputFacts(): Promise<void> {
     label: "Synthetic rejected symptom",
     value: { type: "text", value: "Synthetic rejected value" },
     reviewStatus: "rejected",
+    kbEntityId: null,
     supersedesFactId: null,
     reviewedAt,
     reviewedBy: reviewerId,
   });
+}
+
+async function releaseKnowledgeRevision(
+  table: "kb_source_revisions" | "kb_entity_revisions" | "kb_assertions",
+  id: string,
+  safetyReview: boolean,
+): Promise<void> {
+  await db.query(`UPDATE public.${table} SET review_status = 'domain_review' WHERE id = $1`, [id]);
+  if (safetyReview) {
+    await db.query(`UPDATE public.${table} SET review_status = 'safety_review' WHERE id = $1`, [id]);
+  }
+  await db.query(`
+    UPDATE public.${table}
+       SET review_status = 'approved', reviewed_at = '2026-08-04T08:30:00Z',
+           reviewed_by = $2
+     WHERE id = $1
+  `, [id, reviewerId]);
+  await db.query(`
+    UPDATE public.${table}
+       SET review_status = 'released', released_at = '2026-08-04T08:40:00Z'
+     WHERE id = $1
+  `, [id]);
+}
+
+type ReleaseItemReference = {
+  kind: "entity_revision" | "assertion" | "source_revision";
+  entityId?: string;
+  entityRevisionId?: string;
+  assertionId?: string;
+  sourceId?: string;
+  sourceRevisionId?: string;
+};
+
+async function addReleaseItem(
+  itemOrder: number,
+  reference: ReleaseItemReference,
+): Promise<void> {
+  await db.query(`
+    WITH manifest AS (
+      SELECT public.kb_release_item_manifest_v1(
+        $4::uuid, $5::uuid, NULL, NULL, $6::uuid, $7::uuid, $8::uuid
+      ) AS value
+    )
+    INSERT INTO public.kb_release_items (
+      release_id, item_order, item_kind, entity_id, entity_revision_id,
+      assertion_id, source_id, source_revision_id, item_manifest, item_manifest_hash
+    )
+    SELECT $1, $2, $3, $4, $5, $6, $7, $8,
+           value, public.kb_release_manifest_hash_v1(value)
+      FROM manifest
+  `, [
+    knowledgeReleaseId,
+    itemOrder,
+    reference.kind,
+    reference.entityId ?? null,
+    reference.entityRevisionId ?? null,
+    reference.assertionId ?? null,
+    reference.sourceId ?? null,
+    reference.sourceRevisionId ?? null,
+  ]);
 }
 
 async function insertSealedKnowledgeRelease(): Promise<void> {
@@ -448,23 +601,74 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     );
     UPDATE public.kb_sources SET current_revision_id = '${knowledgeSourceRevisionId}'
      WHERE id = '${knowledgeSourceId}';
+
+    INSERT INTO public.kb_entities (id, entity_type_code, canonical_key) VALUES
+      ('${diseaseEntityId}', 'disease', 'disease:retrieval-v2-synthetic'),
+      ('${plantEntityId}', 'plant', 'plant:retrieval-v2-synthetic'),
+      ('${outsideEntityId}', 'symptom', 'symptom:outside-release-synthetic');
+    INSERT INTO public.kb_entity_revisions (
+      id, entity_id, revision_no, display_name, summary,
+      description_markdown, content_hash
+    ) VALUES
+      ('${diseaseEntityRevisionId}', '${diseaseEntityId}', 1,
+       'Synthetic coded disease', 'Synthetic contract condition summary',
+       'Full text marker for the synthetic contract condition.', repeat('2', 64)),
+      ('${plantEntityRevisionId}', '${plantEntityId}', 1,
+       'Synthetic support plant', 'Synthetic review question summary',
+       'Full text marker for the synthetic review question.', repeat('3', 64)),
+      ('${outsideEntityRevisionId}', '${outsideEntityId}', 1,
+       'Synthetic outside-release symptom', 'Not part of the bound release.',
+       'Explicit-link fail-closed fixture.', repeat('5', 64));
+    UPDATE public.kb_entities entity
+       SET current_revision_id = revision.id
+      FROM public.kb_entity_revisions revision
+     WHERE revision.entity_id = entity.id
+       AND entity.id IN ('${diseaseEntityId}', '${plantEntityId}', '${outsideEntityId}');
+    INSERT INTO public.kb_entity_names (
+      entity_id, name, normalized_name, name_kind, language_code, is_preferred
+    ) VALUES
+      ('${diseaseEntityId}', 'Synthetic coded disease',
+       'synthetic coded disease', 'preferred', 'en', true),
+      ('${diseaseEntityId}', 'Synthetic contract condition',
+       'synthetic contract condition', 'spelling_variant', 'en', false),
+      ('${plantEntityId}', 'Synthetic support plant',
+       'synthetic support plant', 'preferred', 'en', true),
+      ('${plantEntityId}', 'Synthetic review question',
+       'synthetic review question', 'spelling_variant', 'en', false),
+      ('${outsideEntityId}', 'Synthetic outside-release symptom',
+       'synthetic outside-release symptom', 'preferred', 'en', true);
+    INSERT INTO public.kb_entity_identifiers (
+      entity_id, scheme_code, value, normalized_value, is_primary
+    ) VALUES ('${diseaseEntityId}', 'icd_10_gm', 'R53', 'R53', true);
+
+    INSERT INTO public.kb_assertions (
+      id, canonical_key, version_no, assertion_kind, claim_text, content_hash
+    ) VALUES (
+      '${relationAssertionId}', 'assertion:retrieval-v2-synthetic-relation', 1,
+      'entity_relation', 'Synthetic plant relation for contract testing.',
+      repeat('4', 64)
+    );
+    INSERT INTO public.kb_assertion_sources (
+      assertion_id, source_revision_id, source_role, locator, is_primary
+    ) VALUES (
+      '${relationAssertionId}', '${knowledgeSourceRevisionId}',
+      'supports', 'section:synthetic', true
+    );
+    INSERT INTO public.kb_entity_relations (
+      assertion_id, subject_entity_id, relation_type_code, object_entity_id,
+      assignment_strength, rank, context_text
+    ) VALUES (
+      '${relationAssertionId}', '${plantEntityId}', 'may_support',
+      '${diseaseEntityId}', 'possible', 40, 'Synthetic graph edge only.'
+    );
+    SET CONSTRAINTS ALL IMMEDIATE;
     COMMIT;
   `);
-  await db.query(
-    "UPDATE public.kb_source_revisions SET review_status = 'domain_review' WHERE id = $1",
-    [knowledgeSourceRevisionId],
-  );
-  await db.query(`
-    UPDATE public.kb_source_revisions
-       SET review_status = 'approved', reviewed_at = '2026-08-04T08:30:00Z',
-           reviewed_by = $2
-     WHERE id = $1
-  `, [knowledgeSourceRevisionId, reviewerId]);
-  await db.query(`
-    UPDATE public.kb_source_revisions
-       SET review_status = 'released', released_at = '2026-08-04T08:40:00Z'
-     WHERE id = $1
-  `, [knowledgeSourceRevisionId]);
+  await releaseKnowledgeRevision("kb_source_revisions", knowledgeSourceRevisionId, false);
+  await releaseKnowledgeRevision("kb_entity_revisions", diseaseEntityRevisionId, true);
+  await releaseKnowledgeRevision("kb_entity_revisions", plantEntityRevisionId, true);
+  await releaseKnowledgeRevision("kb_entity_revisions", outsideEntityRevisionId, true);
+  await releaseKnowledgeRevision("kb_assertions", relationAssertionId, true);
 
   await db.exec("BEGIN;");
   try {
@@ -482,20 +686,25 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       SELECT id, release_key, value, public.kb_release_manifest_hash_v1(value)
         FROM manifest
     `, [knowledgeReleaseId]);
-    await db.query(`
-      WITH manifest AS (
-        SELECT public.kb_release_item_manifest_v1(
-          NULL, NULL, NULL, NULL, NULL, $2::uuid, $3::uuid
-        ) AS value
-      )
-      INSERT INTO public.kb_release_items (
-        release_id, item_order, item_kind, source_id, source_revision_id,
-        item_manifest, item_manifest_hash
-      )
-      SELECT $1, 1, 'source_revision', $2, $3,
-             value, public.kb_release_manifest_hash_v1(value)
-        FROM manifest
-    `, [knowledgeReleaseId, knowledgeSourceId, knowledgeSourceRevisionId]);
+    await addReleaseItem(1, {
+      kind: "source_revision",
+      sourceId: knowledgeSourceId,
+      sourceRevisionId: knowledgeSourceRevisionId,
+    });
+    await addReleaseItem(2, {
+      kind: "entity_revision",
+      entityId: diseaseEntityId,
+      entityRevisionId: diseaseEntityRevisionId,
+    });
+    await addReleaseItem(3, {
+      kind: "entity_revision",
+      entityId: plantEntityId,
+      entityRevisionId: plantEntityRevisionId,
+    });
+    await addReleaseItem(4, {
+      kind: "assertion",
+      assertionId: relationAssertionId,
+    });
     await db.query(`
       UPDATE public.kb_releases release
          SET release_manifest = public.kb_release_manifest_v1(release.id, release.release_key),
@@ -511,6 +720,14 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     await db.exec("ROLLBACK;").catch(() => undefined);
     throw error;
   }
+  await db.query(`
+    INSERT INTO public.kb_search_documents (release_id, release_item_id)
+    SELECT item.release_id, item.id
+      FROM public.kb_release_items item
+     WHERE item.release_id = $1
+       AND item.item_kind = 'entity_revision'
+     ORDER BY item.item_order
+  `, [knowledgeReleaseId]);
   expectedReleaseManifestHash = (await db.query<{ hash: string }>(`
     SELECT release_manifest_hash AS hash FROM public.kb_releases WHERE id = $1
   `, [knowledgeReleaseId])).rows[0].hash;
@@ -529,15 +746,35 @@ async function readPreflight(
   `, [revisionId, expectedInput, releaseId, expectedRelease])).rows[0].value;
 }
 
+async function readEntityResolution(
+  expectedInput: string | null = expectedInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  directLimit: number | null = 8,
+  graphLimit: number | null = 16,
+): Promise<EntityResolutionResult> {
+  return (await db.query<{ value: EntityResolutionResult }>(`
+    SELECT public.therapy_retrieval_v2_entity_resolution_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::integer, $6::integer
+    ) AS value
+  `, [
+    inputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    directLimit,
+    graphLimit,
+  ])).rows[0].value;
+}
+
 beforeAll(async () => {
   db = new PGlite();
   await bootstrapDatabase();
   for (const prerequisiteMigration of prerequisiteMigrations) {
     await db.exec(prerequisiteMigration);
   }
+  await insertSealedKnowledgeRelease();
   await insertInputRevision();
   await insertInputFacts();
-  await insertSealedKnowledgeRelease();
 
   wikiSnapshotBefore = (await db.query<{ value: string }>(
     "SELECT public.kb_export_wiki_snapshot()::text AS value",
@@ -561,13 +798,25 @@ beforeAll(async () => {
     SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
   `, [inputRevisionId])).rows[0].value;
   successfulPreflight = await readPreflight();
+
+  await db.exec(entityResolutionMigration);
+  wikiSnapshotAfterEntityResolution = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterEntityResolution = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  entityQueryManifest = (await db.query<{ value: EntityQueryManifest }>(`
+    SELECT public.therapy_retrieval_v2_entity_query_manifest_v1($1) AS value
+  `, [inputRevisionId])).rows[0].value;
+  successfulEntityResolution = await readEntityResolution();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A preflight", () => {
+describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -765,6 +1014,300 @@ describe.sequential("therapy retrieval v2 Step 6A preflight", () => {
     expect(await readPreflight()).toEqual(successfulPreflight);
   });
 
+  it("adds only three closed entity-resolution functions and changes no snapshot", async () => {
+    expect(entityResolutionMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
+    expect(entityResolutionMigration).toMatch(/^BEGIN;/);
+    expect(entityResolutionMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(entityResolutionMigration)
+      .not.toMatch(
+        /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+      );
+    expect(entityResolutionMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(entityResolutionMigration).not.toMatch(/\bGRANT\b/i);
+    expect(entityResolutionMigration).not.toMatch(
+      /\b(pseudonym_id|patient_id|patient_user_id|session_id|anamnesis_id)\b/i,
+    );
+    expect(entityResolutionMigration)
+      .toContain("ENTITY_MATCH_ONLY_NOT_SAFETY_EFFICACY_OR_MEDICAL_USE");
+    expect(entityResolutionMigration).toContain("LIMIT 4097");
+    expect(entityResolutionMigration).toContain("LIMIT 1025");
+    expect(entityResolutionMigration).toContain("LIMIT 2049");
+    const projectionFunction = entityResolutionMigration.slice(
+      entityResolutionMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_entity_projection_is_complete_v1",
+      ),
+      entityResolutionMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_entity_resolution_preflight_v1",
+      ),
+    );
+    expect(projectionFunction.indexOf(
+      "IF release_item_count NOT BETWEEN 1 AND 4096",
+    )).toBeLessThan(projectionFunction.indexOf("INTO entity_item_count"));
+    expect(projectionFunction.indexOf(
+      "IF entity_item_count NOT BETWEEN 1 AND 1024",
+    )).toBeLessThan(projectionFunction.indexOf("INTO relation_item_count"));
+    const resolutionFunction = entityResolutionMigration.slice(
+      entityResolutionMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_entity_resolution_preflight_v1",
+      ),
+    );
+    expect(resolutionFunction.indexOf("LIMIT 4097")).toBeLessThan(
+      resolutionFunction.indexOf("binding_result :="),
+    );
+    expect(wikiSnapshotAfterEntityResolution).toBe(wikiSnapshotAfter);
+    expect(therapySnapshotAfterEntityResolution).toBe(therapySnapshotAfter);
+
+    const projection = await db.query<{ complete: boolean; active: number }>(`
+      SELECT public.therapy_retrieval_v2_entity_projection_is_complete_v1($1)
+               AS complete,
+             (SELECT count(*)::integer FROM public.kb_releases
+               WHERE retrieval_eligible OR is_active) AS active
+    `, [knowledgeReleaseId]);
+    expect(projection.rows[0]).toEqual({ complete: true, active: 0 });
+  });
+
+  it("derives a bounded deterministic query manifest only from selected facts", async () => {
+    expect(entityQueryManifest).toEqual(expect.objectContaining({
+      contract_version: 1,
+      contract_scope: "THERAPY_RETRIEVAL_V2_ENTITY_QUERY_PREFLIGHT_ONLY",
+      selected_fact_count: 2,
+      input_manifest_hash: expectedInputHash,
+    }));
+    expect(entityQueryManifest.facts.map((fact) => fact.fact_id)).toEqual([
+      successorFactId,
+      reviewOnlyFactId,
+    ]);
+    expect(entityQueryManifest.facts[0]).toEqual(expect.objectContaining({
+      fact_id: successorFactId,
+      kb_entity_id: null,
+      query_terms: ["r53", "synthetic coded disease", "synthetic contract condition"],
+      identifier_terms: [
+        'identifier:["icd_10_gm", null, "R53"]',
+        'identifier_value:"R53"',
+      ],
+      query_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(entityQueryManifest.facts[1]).toEqual(expect.objectContaining({
+      fact_id: reviewOnlyFactId,
+      kb_entity_id: plantEntityId,
+      query_terms: ["synthetic review question"],
+      identifier_terms: [],
+      query_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(JSON.stringify(entityQueryManifest)).not.toContain("P-2026-6001");
+
+    const replay = (await db.query<{ value: EntityQueryManifest }>(`
+      SELECT public.therapy_retrieval_v2_entity_query_manifest_v1($1) AS value
+    `, [inputRevisionId])).rows[0].value;
+    expect(replay).toEqual(entityQueryManifest);
+  });
+
+  it("resolves exact channels and one-hop graph provenance without a recommendation", async () => {
+    expect(successfulEntityResolution).toEqual(expect.objectContaining({
+      status: "ENTITY_RESOLUTION_PREFLIGHT_COMPLETE_INACTIVE",
+      interpretation: "ENTITY_MATCH_ONLY_NOT_SAFETY_EFFICACY_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      retrieval_execution_allowed: false,
+      therapy_input_revision_id: inputRevisionId,
+      therapy_input_manifest_hash: expectedInputHash,
+      knowledge_release_id: knowledgeReleaseId,
+      release_manifest_hash: expectedReleaseManifestHash,
+      binding_hash: successfulPreflight.binding_hash,
+      query_manifest_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      selected_fact_count: 2,
+      direct_candidate_count_before_limit: 2,
+      returned_direct_candidate_count: 2,
+      graph_candidate_count_before_limit: 2,
+      returned_graph_candidate_count: 2,
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulEntityResolution.facts).toHaveLength(2);
+
+    const diseaseFact = successfulEntityResolution.facts?.[0];
+    expect(diseaseFact).toEqual(expect.objectContaining({
+      fact_id: successorFactId,
+      direct_candidate_count_before_limit: 1,
+      returned_direct_candidate_count: 1,
+      graph_candidate_count_before_limit: 1,
+      returned_graph_candidate_count: 1,
+    }));
+    expect(diseaseFact?.direct_candidates[0]).toEqual(expect.objectContaining({
+      candidate_status: "ENTITY_REFERENCE_MATCH_ONLY",
+      entity_id: diseaseEntityId,
+      entity_revision_id: diseaseEntityRevisionId,
+      best_match_channel: "exact_qualified_identifier",
+      matched_channels: expect.arrayContaining([
+        "exact_qualified_identifier",
+        "exact_unqualified_identifier",
+        "exact_normalized_title",
+        "exact_normalized_alias",
+        "german_full_text",
+        "simple_full_text",
+      ]),
+    }));
+    expect(diseaseFact?.graph_candidates[0]).toEqual(expect.objectContaining({
+      candidate_status: "GRAPH_EDGE_MATCH_ONLY_NOT_RECOMMENDATION",
+      source_entity_id: diseaseEntityId,
+      relation_type_code: "may_support",
+      graph_direction: "inbound",
+      entity_id: plantEntityId,
+      entity_revision_id: plantEntityRevisionId,
+    }));
+
+    const plantFact = successfulEntityResolution.facts?.[1];
+    expect(plantFact?.direct_candidates[0]).toEqual(expect.objectContaining({
+      candidate_status: "ENTITY_REFERENCE_MATCH_ONLY",
+      entity_id: plantEntityId,
+      entity_revision_id: plantEntityRevisionId,
+      best_match_channel: "exact_kb_entity_link",
+      matched_channels: expect.arrayContaining([
+        "exact_kb_entity_link",
+        "exact_normalized_alias",
+        "german_full_text",
+        "simple_full_text",
+      ]),
+    }));
+    expect(plantFact?.graph_candidates[0]).toEqual(expect.objectContaining({
+      candidate_status: "GRAPH_EDGE_MATCH_ONLY_NOT_RECOMMENDATION",
+      source_entity_id: plantEntityId,
+      relation_type_code: "may_support",
+      graph_direction: "outbound",
+      entity_id: diseaseEntityId,
+      entity_revision_id: diseaseEntityRevisionId,
+    }));
+    expect(JSON.stringify(successfulEntityResolution)).not.toMatch(
+      /"candidate_status":"(?:ALLOW|REVIEW_ONLY|EXCLUDE|ESCALATE_ONLY)"/,
+    );
+    expect(await readEntityResolution()).toEqual(successfulEntityResolution);
+
+    const { result_hash: resultHash, ...payload } = successfulEntityResolution;
+    const calculated = (await db.query<{ hash: string }>(`
+      SELECT public.kb_release_manifest_hash_v1($1::jsonb) AS hash
+    `, [JSON.stringify(payload)])).rows[0].hash;
+    expect(calculated).toBe(resultHash);
+  });
+
+  it("fails closed for invalid limits, binding drift, and incomplete projections", async () => {
+    expect((await readEntityResolution(
+      expectedInputHash,
+      expectedReleaseManifestHash,
+      0,
+      16,
+    )).status).toBe("ENTITY_RESOLUTION_LIMIT_INVALID");
+    expect((await readEntityResolution(
+      "0".repeat(64),
+      expectedReleaseManifestHash,
+    )).status).toBe("ENTITY_RESOLUTION_BINDING_UNAVAILABLE");
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET fact_value = jsonb_build_object(
+             'type', 'text', 'value', repeat('x', 1025)
+           )
+         WHERE id = $1
+      `, [reviewOnlyFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [reviewOnlyFactId]);
+      const changedInputHash = (await db.query<{ hash: string }>(`
+        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS hash
+      `, [inputRevisionId])).rows[0].hash;
+      expect((await readPreflight(
+        changedInputHash,
+        expectedReleaseManifestHash,
+      )).status).toBe("RETRIEVAL_V2_PREFLIGHT_BOUND_INACTIVE");
+      expect((await readEntityResolution(
+        changedInputHash,
+        expectedReleaseManifestHash,
+      )).status).toBe("ENTITY_RESOLUTION_QUERY_UNAVAILABLE");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET kb_entity_id = $2 WHERE id = $1
+      `, [successorFactId, outsideEntityId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [successorFactId]);
+      const changedInputHash = (await db.query<{ hash: string }>(`
+        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS hash
+      `, [inputRevisionId])).rows[0].hash;
+      expect((await readPreflight(
+        changedInputHash,
+        expectedReleaseManifestHash,
+      )).status).toBe("RETRIEVAL_V2_PREFLIGHT_BOUND_INACTIVE");
+      expect((await readEntityResolution(
+        changedInputHash,
+        expectedReleaseManifestHash,
+      )).status).toBe("ENTITY_RESOLUTION_EXPLICIT_LINK_UNAVAILABLE");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.kb_search_documents DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        DELETE FROM public.kb_search_documents document
+         USING public.kb_release_items item
+         WHERE document.release_item_id = item.id
+           AND item.release_id = $1
+           AND item.entity_id = $2
+      `, [knowledgeReleaseId, plantEntityId]);
+      const projection = (await db.query<{ complete: boolean }>(`
+        SELECT public.therapy_retrieval_v2_entity_projection_is_complete_v1($1)
+                 AS complete
+      `, [knowledgeReleaseId])).rows[0].complete;
+      expect(projection).toBe(false);
+      expect((await readEntityResolution()).status)
+        .toBe("ENTITY_RESOLUTION_PROJECTION_UNAVAILABLE");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+    expect(await readEntityResolution()).toEqual(successfulEntityResolution);
+  });
+
+  it("rejects an oversized release before the binding validator", async () => {
+    await db.exec(`
+      BEGIN;
+      ALTER TABLE public.kb_release_items DISABLE TRIGGER USER;
+      DROP INDEX public.kb_release_items_source_revision_idx;
+      INSERT INTO public.kb_release_items (
+        release_id, item_order, item_kind, source_id, source_revision_id,
+        item_manifest, item_manifest_hash
+      )
+      SELECT item.release_id, generated.item_order, item.item_kind,
+             item.source_id, item.source_revision_id,
+             item.item_manifest, item.item_manifest_hash
+        FROM public.kb_release_items item
+        CROSS JOIN generate_series(5, 4097) generated(item_order)
+       WHERE item.release_id = '${knowledgeReleaseId}'
+         AND item.item_kind = 'source_revision';
+    `);
+    try {
+      const projection = (await db.query<{ complete: boolean }>(`
+        SELECT public.therapy_retrieval_v2_entity_projection_is_complete_v1($1)
+                 AS complete
+      `, [knowledgeReleaseId])).rows[0].complete;
+      expect(projection).toBe(false);
+      expect((await readEntityResolution()).status)
+        .toBe("ENTITY_RESOLUTION_PROJECTION_UNAVAILABLE");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+    expect(await readEntityResolution()).toEqual(successfulEntityResolution);
+  });
+
   it("exposes no preflight function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
@@ -775,10 +1318,13 @@ describe.sequential("therapy retrieval v2 Step 6A preflight", () => {
           'public.therapy_retrieval_v2_input_manifest_v1(uuid)',
           'public.therapy_retrieval_v2_input_hash_v1(uuid)',
           'public.therapy_retrieval_v2_expectations_are_valid_v1(text,text)',
-          'public.therapy_retrieval_v2_preflight_v1(uuid,text,uuid,text)'
+          'public.therapy_retrieval_v2_preflight_v1(uuid,text,uuid,text)',
+          'public.therapy_retrieval_v2_entity_query_manifest_v1(uuid)',
+          'public.therapy_retrieval_v2_entity_projection_is_complete_v1(uuid)',
+          'public.therapy_retrieval_v2_entity_resolution_preflight_v1(uuid,text,uuid,text,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(20);
+    expect(privileges.rows).toHaveLength(35);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });
