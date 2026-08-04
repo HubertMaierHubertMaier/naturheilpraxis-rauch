@@ -1586,6 +1586,33 @@ Vertragsgruppen und die zusaetzliche Dump-/Restore-Probe mit exakten
 Quell-/Zielhashes:
 <https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30904172952>.
 
+### Schritt 7F: Begrenzter PostgreSQL-Owner-Nebenlaeufigkeitsnachweis
+
+7F erweitert ausschliesslich die isolierte synthetische Gruppe 5. Neben dem
+vollstaendigen 7E-Restore entsteht eine zweite frische PostgreSQL-17-
+Zieldatenbank aus einem auf 64 MiB begrenzten Custom-Dump, der nur die Daten der
+Audit-Tabelle auslaesst. Schema, Trigger, Funktionen, Rollenvertrag sowie alle
+synthetischen Eingabe- und Wissensfixtures bleiben erhalten. Dadurch beginnt
+der konkurrierende Test mit null Auditzeilen, ohne `DELETE`, `TRUNCATE` oder
+eine Triggerumgehung zu verwenden.
+
+Vier Owner-Testaufrufer muessen nachweislich gemeinsam an einer Advisory-
+Startbarriere warten. Erst wenn `pg_locks` alle vier Warteanforderungen zeigt,
+gibt ein Inspektor die kompatiblen Shared-Sperren frei. Danach muss der
+idempotente Writer genau einen neuen inaktiven Auditlauf erzeugen; ein Aufruf
+meldet `PERSISTED`, drei melden `ALREADY_PERSISTED`, und alle sehen dieselbe ID
+und dieselben gespeicherten Hashes. Fuenf Zielsitzungen, feste Statement-, Lock-
+und Idle-Zeitgrenzen sowie die bestehende 15-Minuten-Jobgrenze begrenzen den
+Ressourcenverbrauch.
+
+Der anschliessende 7C-Preflight muss weiterhin vollstaendig positiv und inaktiv
+sein; ungewahrte Sperren und ungueltige Auditzeilen muessen null bleiben.
+Aufbewahrung, Loeschung, Deployment, Replay, Schattenlauf, KI, Planwahl,
+Dosierungsanzeige, medizinische oder produktive Nutzung und Aktivierung werden
+nicht freigegeben. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step7f-postgresql-owner-concurrency-implementation-2026-08-04.md`.
+Der isolierte PostgreSQL-17-Lauf steht noch aus.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
