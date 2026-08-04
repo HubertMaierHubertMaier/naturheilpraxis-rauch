@@ -4810,7 +4810,7 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7C contracts", ()
       FROM unnest(ARRAY[
         'anon', 'authenticated', 'service_role', 'kb_importer', 'kb_import_runtime'
       ]::text[]) role_name
-      ORDER BY role_name
+      ORDER BY role_name COLLATE "C"
     `);
     expect(snapshotPrivileges.rows).toEqual([
       { role_name: "anon", can_execute: false },
