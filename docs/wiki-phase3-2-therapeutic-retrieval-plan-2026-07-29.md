@@ -1492,6 +1492,45 @@ Wiki-Restore-Abhaengigkeit `APPROVE`. Die
 ausfuehrliche Dokumentation steht in
 `docs/wiki-step7b-retrieval-audit-persistence-implementation-2026-08-04.md`.
 
+### Schritt 7C: Audit-Aufbewahrungs- und Restore-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804170000_create_therapy_retrieval_audit_retention_restore_preflight.sql`
+
+Der rein additive Block erzeugt genau eine geschlossene Owner-Lesefunktion und
+keine Tabelle oder Schreibschnittstelle. Sie prueft innerhalb der vom Owner
+vorgegebenen Zeilen- und Bytegrenzen den vollstaendigen 7B-Auditbestand, die
+vier aktivierten
+append-only Trigger, die drei deferrable `NO ACTION`-Restore-Fremdschluessel,
+RLS, Adminpolicy, minimale Tabellenrechte und den weiterhin geschlossenen
+Persistenzwriter.
+
+Der geschuetzte Snapshot v3 wird intern erneut gelesen. Alle fuenf
+Tabellenstrings, Zeilenzahlen und SHA-256-Werte sowie die drei Nullzaehler
+muessen reproduzierbar sein. Ausgegeben werden nur Auditzeilenzahl,
+Snapshotgrenze, ein Hash des gesamten Snapshotmanifests, der Audit-
+Inventarhash und technische Boolesche Nachweise; keine Auditzeile und kein
+medizinischer Inhalt werden offengelegt.
+
+7C genehmigt keine Aufbewahrungs- oder Loeschregel. Fristbeginn und
+Aufbewahrungsjahre bleiben `null`, Rechtsfreigabe und Loeschung bleiben `false`.
+Ebenso bleiben der operative Restore-Drill und die Real-PostgreSQL-Pruefung
+sichtbar offen. Der positive Status bezeichnet nur einen technisch
+vollstaendigen, weiterhin inaktiven Preflight. Replay, Schattenlauf, KI,
+Planwahl, Dosierungsanzeige, medizinische und produktive Nutzung sowie
+Aktivierung bleiben in jedem Status `false`.
+
+Wiki-, Therapie-v2- und Therapie-v3-Snapshot bleiben byteidentisch. Die
+sechs disjunkten Schritt-6A-bis-7C-Gruppen bestehen mit 56/56 Tests, die
+zusammenhaengende Regression mit 7/7 Dateien und 143/143 Tests und der
+gruppierte Gesamtstand mit 50/50 Dateien und 579/579 Tests. Beide
+TypeScript-Projekte, gezieltes ESLint, Secret-Policy und Produktionsbuild sind
+erfolgreich. Die strukturierte P0/P1-Gegenpruefung meldet nach der
+Ressourcen- und Rechtehaertung `APPROVE`. Die
+ausfuehrliche Dokumentation steht in
+`docs/wiki-step7c-audit-retention-restore-preflight-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:

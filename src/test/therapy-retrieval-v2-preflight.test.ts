@@ -75,6 +75,12 @@ const auditPersistenceMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", auditPersistenceMigrationFile),
   "utf8",
 );
+const auditRetentionRestoreMigrationFile =
+  "20260804170000_create_therapy_retrieval_audit_retention_restore_preflight.sql";
+const auditRetentionRestoreMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", auditRetentionRestoreMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -720,6 +726,44 @@ type TherapyInputSnapshotV3 = {
   };
 };
 
+type AuditRetentionRestorePreflightResult = {
+  status: string;
+  interpretation: string;
+  data_classification: string;
+  audit_run_count: number;
+  max_audit_runs: number | null;
+  audit_payload_bytes: number | null;
+  max_audit_bytes: number | null;
+  invalid_audit_run_count: number | null;
+  snapshot_version: number | null;
+  snapshot_table_count: number | null;
+  snapshot_manifest_hash: string | null;
+  audit_inventory_hash: string | null;
+  snapshot_contract_valid: boolean;
+  append_only_contract_valid: boolean;
+  restore_fk_contract_valid: boolean;
+  access_contract_valid: boolean;
+  retention_policy_status: string;
+  retention_start_basis: null;
+  retention_period_years: null;
+  retention_policy_approved: boolean;
+  retention_deletion_allowed: boolean;
+  technical_readiness_complete: boolean;
+  operational_restore_drill_completed: boolean;
+  real_postgres_validation_completed: boolean;
+  medical_use_allowed: boolean;
+  productive_candidate_use_allowed: boolean;
+  dosage_evaluation_allowed: boolean;
+  dosage_display_allowed: boolean;
+  audit_persistence_allowed: boolean;
+  replay_execution_allowed: boolean;
+  shadow_execution_allowed: boolean;
+  ai_use_allowed: boolean;
+  plan_selection_allowed: boolean;
+  activation_allowed: boolean;
+  result_hash: string;
+};
+
 const homeopathicRubricLinks = [
   {
     therapy_input_fact_id: successorFactId,
@@ -789,6 +833,11 @@ let therapySnapshotV2AfterAuditPersistence = "";
 let therapySnapshotV3BeforeAuditPersistence: TherapyInputSnapshotV3;
 let therapySnapshotV3AfterAuditPersistence: TherapyInputSnapshotV3;
 let successfulAuditPersistence: AuditPersistenceResult;
+let therapySnapshotV3BeforeRetentionRestore = "";
+let wikiSnapshotAfterRetentionRestore = "";
+let therapySnapshotV2AfterRetentionRestore = "";
+let therapySnapshotV3AfterRetentionRestore = "";
+let successfulAuditRetentionRestore: AuditRetentionRestorePreflightResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -2300,6 +2349,17 @@ async function persistAuditEnvelope(
   ])).rows[0].value;
 }
 
+async function readAuditRetentionRestorePreflight(
+  maxAuditRuns: number | null = 10_000,
+  maxAuditBytes: number | null = 67_108_864,
+): Promise<AuditRetentionRestorePreflightResult> {
+  return (await db.query<{ value: AuditRetentionRestorePreflightResult }>(`
+    SELECT public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(
+      $1::integer, $2::bigint
+    ) AS value
+  `, [maxAuditRuns, maxAuditBytes])).rows[0].value;
+}
+
 async function readCurrentDosageRulePriority(): Promise<DosageRulePreflightResult> {
   const currentInputHash = (await db.query<{ value: string }>(`
     SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
@@ -2515,13 +2575,29 @@ beforeAll(async () => {
       "SELECT public.therapy_input_export_snapshot_v3() AS value",
     )).rows[0].value,
   ) as TherapyInputSnapshotV3;
+  therapySnapshotV3BeforeRetentionRestore = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v3() AS value",
+  )).rows[0].value;
+
+  await db.exec(auditRetentionRestoreMigration);
+  wikiSnapshotAfterRetentionRestore = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotV2AfterRetentionRestore = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  therapySnapshotV3AfterRetentionRestore = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v3() AS value",
+  )).rows[0].value;
+  successfulAuditRetentionRestore =
+    await readAuditRetentionRestorePreflight();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through Step 7B contracts", () => {
+describe.sequential("therapy retrieval v2 Step 6A through Step 7C contracts", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -4605,6 +4681,16 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7B contracts", ()
         SELECT public.therapy_input_export_snapshot_v3() AS value
       `)).rows[0].value) as TherapyInputSnapshotV3;
       expect(corrupted.validation.invalid_audit_run_count).toBe(1);
+      expect(await readAuditRetentionRestorePreflight()).toEqual(
+        expect.objectContaining({
+          status: "AUDIT_RETENTION_RESTORE_INTEGRITY_BLOCKED",
+          invalid_audit_run_count: 1,
+          technical_readiness_complete: false,
+          retention_policy_approved: false,
+          retention_deletion_allowed: false,
+          operational_restore_drill_completed: false,
+        }),
+      );
 
       await db.query(`
         UPDATE public.therapy_retrieval_audit_runs SET row_hash = $1
@@ -4687,7 +4773,173 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7B contracts", ()
     ]);
   });
 
-  it("exposes no owner-only retrieval, audit, or persistence function to application or import roles", async () => {
+  it("adds only one closed retention-restore preflight and changes no snapshot", () => {
+    expect(auditRetentionRestoreMigration.match(/CREATE FUNCTION public\./g))
+      .toHaveLength(1);
+    expect(auditRetentionRestoreMigration).toMatch(/^BEGIN;/);
+    expect(auditRetentionRestoreMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(auditRetentionRestoreMigration).not.toMatch(/CREATE OR REPLACE/);
+    expect(auditRetentionRestoreMigration).not.toMatch(
+      /CREATE TABLE|ALTER TABLE|CREATE POLICY|CREATE TRIGGER|INSERT INTO|GRANT /,
+    );
+    expect(auditRetentionRestoreMigration).not.toMatch(
+      /^\s*(?:DELETE|UPDATE|TRUNCATE|DROP)\s/gm,
+    );
+    expect(auditRetentionRestoreMigration).toContain(
+      "UNAPPROVED_REQUIRES_OWNER_LEGAL_DECISION",
+    );
+    expect(wikiSnapshotAfterRetentionRestore).toBe(
+      wikiSnapshotAfterAuditPersistence,
+    );
+    expect(therapySnapshotV2AfterRetentionRestore).toBe(
+      therapySnapshotV2AfterAuditPersistence,
+    );
+    expect(therapySnapshotV3AfterRetentionRestore).toBe(
+      therapySnapshotV3BeforeRetentionRestore,
+    );
+  });
+
+  it("binds technical retention and restore readiness without approving policy or use", async () => {
+    const snapshot = JSON.parse(
+      therapySnapshotV3AfterRetentionRestore,
+    ) as TherapyInputSnapshotV3;
+    expect(successfulAuditRetentionRestore).toEqual(expect.objectContaining({
+      status: "AUDIT_RETENTION_RESTORE_TECHNICAL_PREFLIGHT_READY_INACTIVE",
+      interpretation:
+        "TECHNICAL_GOVERNANCE_PREFLIGHT_ONLY_NO_RETENTION_APPROVAL_DELETE_REPLAY_SHADOW_OR_MEDICAL_USE",
+      data_classification: "pseudonymized_health_data",
+      audit_run_count: 1,
+      max_audit_runs: 10_000,
+      audit_payload_bytes: expect.any(Number),
+      max_audit_bytes: 67_108_864,
+      invalid_audit_run_count: 0,
+      snapshot_version: 3,
+      snapshot_table_count: 5,
+      snapshot_manifest_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      audit_inventory_hash:
+        snapshot.manifest.therapy_retrieval_audit_runs.sha256,
+      snapshot_contract_valid: true,
+      append_only_contract_valid: true,
+      restore_fk_contract_valid: true,
+      access_contract_valid: true,
+      retention_policy_status:
+        "UNAPPROVED_REQUIRES_OWNER_LEGAL_DECISION",
+      retention_start_basis: null,
+      retention_period_years: null,
+      retention_policy_approved: false,
+      retention_deletion_allowed: false,
+      technical_readiness_complete: true,
+      operational_restore_drill_completed: false,
+      real_postgres_validation_completed: false,
+      medical_use_allowed: false,
+      productive_candidate_use_allowed: false,
+      dosage_evaluation_allowed: false,
+      dosage_display_allowed: false,
+      audit_persistence_allowed: false,
+      replay_execution_allowed: false,
+      shadow_execution_allowed: false,
+      ai_use_allowed: false,
+      plan_selection_allowed: false,
+      activation_allowed: false,
+    }));
+    expect(successfulAuditRetentionRestore.snapshot_manifest_hash)
+      .toBe(await hashJson(snapshot.manifest));
+    expect(successfulAuditRetentionRestore.audit_payload_bytes)
+      .toBeGreaterThan(0);
+    const { result_hash: resultHash, ...resultPayload } =
+      successfulAuditRetentionRestore;
+    expect(await hashJson(resultPayload)).toBe(resultHash);
+  });
+
+  it("fails closed when an import role receives direct audit DML", async () => {
+    await db.exec("BEGIN; GRANT DELETE ON public.therapy_retrieval_audit_runs TO kb_importer;");
+    try {
+      expect(await readAuditRetentionRestorePreflight()).toEqual(
+        expect.objectContaining({
+          status: "AUDIT_RETENTION_RESTORE_TECHNICAL_CONTRACT_BLOCKED",
+          access_contract_valid: false,
+          append_only_contract_valid: true,
+          restore_fk_contract_valid: true,
+          technical_readiness_complete: false,
+          retention_policy_approved: false,
+          retention_deletion_allowed: false,
+        }),
+      );
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec(`
+      BEGIN;
+      GRANT EXECUTE ON FUNCTION
+        public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(
+          integer, bigint
+        ) TO service_role;
+    `);
+    try {
+      expect(await readAuditRetentionRestorePreflight()).toEqual(
+        expect.objectContaining({
+          status: "AUDIT_RETENTION_RESTORE_TECHNICAL_CONTRACT_BLOCKED",
+          access_contract_valid: false,
+          technical_readiness_complete: false,
+          retention_deletion_allowed: false,
+        }),
+      );
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  });
+
+  it("fails closed for invalid or exceeded audit inventory limits", async () => {
+    for (const limit of [null, -1, 100_001]) {
+      const result = await readAuditRetentionRestorePreflight(limit);
+      expect(result).toEqual(expect.objectContaining({
+        status: "AUDIT_RETENTION_RESTORE_EXPECTATION_INVALID",
+        audit_run_count: 1,
+        invalid_audit_run_count: null,
+        technical_readiness_complete: false,
+        retention_policy_approved: false,
+        retention_deletion_allowed: false,
+      }));
+      const { result_hash: resultHash, ...resultPayload } = result;
+      expect(await hashJson(resultPayload)).toBe(resultHash);
+    }
+
+    for (const byteLimit of [null, -1, 1_073_741_825]) {
+      expect(await readAuditRetentionRestorePreflight(10_000, byteLimit))
+        .toEqual(expect.objectContaining({
+          status: "AUDIT_RETENTION_RESTORE_EXPECTATION_INVALID",
+          audit_run_count: 1,
+          technical_readiness_complete: false,
+          retention_deletion_allowed: false,
+        }));
+    }
+
+    expect(await readAuditRetentionRestorePreflight(0)).toEqual(
+      expect.objectContaining({
+        status: "AUDIT_RETENTION_RESTORE_LIMIT_EXCEEDED",
+        audit_run_count: 1,
+        max_audit_runs: 0,
+        audit_payload_bytes: null,
+        invalid_audit_run_count: null,
+        technical_readiness_complete: false,
+        retention_deletion_allowed: false,
+      }),
+    );
+    expect(await readAuditRetentionRestorePreflight(10_000, 0)).toEqual(
+      expect.objectContaining({
+        status: "AUDIT_RETENTION_RESTORE_BYTE_LIMIT_EXCEEDED",
+        audit_run_count: 1,
+        audit_payload_bytes: expect.any(Number),
+        max_audit_bytes: 0,
+        invalid_audit_run_count: null,
+        technical_readiness_complete: false,
+        retention_deletion_allowed: false,
+      }),
+    );
+  });
+
+  it("exposes no owner-only retrieval, audit, persistence, or governance function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
         FROM unnest(ARRAY[
@@ -4720,10 +4972,11 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7B contracts", ()
           'public.therapy_retrieval_v2_protect_audit_run_append_only_v1()',
           'public.therapy_retrieval_v2_gate_audit_run_insert_v1()',
           'public.therapy_retrieval_v2_validate_audit_run_insert_v1()',
-          'public.therapy_retrieval_v2_persist_audit_envelope_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,text,uuid,integer,integer,integer)'
+          'public.therapy_retrieval_v2_persist_audit_envelope_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,text,uuid,integer,integer,integer)',
+          'public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(integer,bigint)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(135);
+    expect(privileges.rows).toHaveLength(140);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });
