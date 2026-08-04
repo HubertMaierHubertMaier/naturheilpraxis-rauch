@@ -1531,6 +1531,32 @@ Ressourcen- und Rechtehaertung `APPROVE`. Die
 ausfuehrliche Dokumentation steht in
 `docs/wiki-step7c-audit-retention-restore-preflight-implementation-2026-08-04.md`.
 
+### Schritt 7D: PostgreSQL-17-Konformitaetslauf
+
+7D aendert weder Datenbankschema noch Anwendung. Der bestehende synthetische
+Schritt-6A-bis-7C-Test verwendet lokal weiterhin PGlite und nur bei expliziter
+`THERAPY_RETRIEVAL_TEST_DATABASE_URL` denselben kleinen Adapter fuer einen
+echten PostgreSQL-Treiber. Migrationen, Fixtures und alle 56 fachlichen,
+Integritaets-, Rechte-, Restore- und Governance-Nachweise bleiben identisch.
+
+Da lokal weder Docker, Podman noch `psql` vorhanden sind, startet der isolierte
+Workflow `.github/workflows/therapy-retrieval-postgres-conformance.yml` sechs
+disjunkte Gruppen gegen jeweils einen frischen offiziellen PostgreSQL-17-
+Service. Er besitzt nur Leserechte auf den Repositoryinhalt, verwendet
+synthetische Service-Zugangsdaten und enthaelt weder Secrets noch Deployment-
+oder Produktionsbefehle.
+
+PGlite bleibt der konfigurationsfreie lokale Standard. `pg` und `@types/pg`
+sind reine Entwicklungsabhaengigkeiten. Ein bestandener PostgreSQL-Lauf ist nur
+ein technischer Portabilitaetsnachweis und genehmigt weder Aufbewahrung oder
+Loeschung noch Replay, Schattenlauf, KI, Planwahl, Dosierungsanzeige,
+medizinische oder produktive Nutzung oder Aktivierung. Die lokale Matrix
+bestand mit 56/56 Retrievaltests; die uebrigen 50 Testdateien
+bestanden mit 526/526 Tests. Beide TypeScript-Projekte, gezieltes ESLint und der
+Produktionsbuild auf Node 20.20.2/npm 10.9.9 sind erfolgreich. Die ausfuehrliche
+Dokumentation steht in
+`docs/wiki-step7d-postgresql-conformance-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:

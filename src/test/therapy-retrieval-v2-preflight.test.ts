@@ -5,6 +5,50 @@ import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+type TestDatabase = {
+  exec: (sql: string) => Promise<void>;
+  query: <T>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }>;
+  close: () => Promise<void>;
+};
+
+async function createTestDatabase(): Promise<TestDatabase> {
+  const connectionString = process.env.THERAPY_RETRIEVAL_TEST_DATABASE_URL;
+  if (connectionString) {
+    const { Client } = await import("pg");
+    const client = new Client({ connectionString });
+    await client.connect();
+    return {
+      exec: async (sql) => {
+        await client.query(sql);
+      },
+      query: async <T>(sql: string, params: unknown[] = []) => {
+        const result = await client.query(sql, params);
+        if (Array.isArray(result)) {
+          throw new Error("PostgreSQL conformance queries must use one statement");
+        }
+        return { rows: result.rows as T[] };
+      },
+      close: async () => {
+        await client.end();
+      },
+    };
+  }
+
+  const client = new PGlite();
+  return {
+    exec: async (sql) => {
+      await client.exec(sql);
+    },
+    query: async <T>(sql: string, params: unknown[] = []) => {
+      const result = await client.query(sql, params);
+      return { rows: result.rows as T[] };
+    },
+    close: async () => {
+      await client.close();
+    },
+  };
+}
+
 const prerequisiteMigrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
   "20260728130000_create_kb_phase2_legacy_bridge.sql",
@@ -791,7 +835,7 @@ const safetyRubricLinks = [{
   polarity: "include",
 }] as const;
 
-let db: PGlite;
+let db: TestDatabase;
 let sourceHash = "";
 let inputRevisionHash = "";
 let expectedInputHash = "";
@@ -2424,7 +2468,7 @@ async function readCurrentAuditPriority(): Promise<AuditEnvelopeResult> {
 }
 
 beforeAll(async () => {
-  db = new PGlite();
+  db = await createTestDatabase();
   await bootstrapDatabase();
   for (const prerequisiteMigration of prerequisiteMigrations) {
     await db.exec(prerequisiteMigration);
@@ -3653,7 +3697,7 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7C contracts", ()
       await db.exec("ROLLBACK;");
     }
     expect(await readSafetyGate()).toEqual(successfulSafetyGate);
-  });
+  }, 15_000);
 
   it("adds only three closed candidate-status functions and changes no snapshot", () => {
     expect(candidateStatusMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
