@@ -15,6 +15,13 @@ const workflowSource = readFileSync(
   ),
   "utf8",
 );
+const concurrencyProbeSource = readFileSync(
+  resolve(
+    process.cwd(),
+    "scripts/verify-therapy-retrieval-postgres-concurrency.mjs",
+  ),
+  "utf8",
+);
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as { devDependencies?: Record<string, string> };
@@ -87,5 +94,44 @@ describe("therapy retrieval PostgreSQL conformance harness", () => {
       'test "$target_contract" = "$source_contract"',
     );
     expect(workflowSource).not.toMatch(/upload-artifact|DROP DATABASE/i);
+  });
+
+  it("bounds synthetic concurrent owner persistence without granting use", () => {
+    expect(workflowSource).toContain('- "db-step7f-*"');
+    expect(workflowSource.match(
+      /scripts\/verify-therapy-retrieval-postgres-concurrency\.mjs/g,
+    )).toHaveLength(3);
+    expect(workflowSource).toContain(
+      'run: node scripts/verify-therapy-retrieval-postgres-concurrency.mjs',
+    );
+    expect(concurrencyProbeSource).toContain("const callerCount = 4");
+    expect(workflowSource).toContain(
+      "--exclude-table-data=public.therapy_retrieval_audit_runs",
+    );
+    expect(workflowSource).toContain("--dbname retrieval_concurrency");
+    expect(concurrencyProbeSource).toContain(
+      'targetUrl.pathname = "/retrieval_concurrency"',
+    );
+    expect(concurrencyProbeSource).toContain("SET statement_timeout = '30s'");
+    expect(concurrencyProbeSource).toContain("SET lock_timeout = '10s'");
+    expect(concurrencyProbeSource).toContain("pg_advisory_xact_lock_shared");
+    expect(concurrencyProbeSource).toContain("waitForBlockedCallers(inspector)");
+    expect(concurrencyProbeSource).toContain("Promise.all(calls)");
+    expect(concurrencyProbeSource).toContain("RETRIEVAL_AUDIT_PERSISTED_INACTIVE");
+    expect(concurrencyProbeSource).toContain(
+      "RETRIEVAL_AUDIT_ALREADY_PERSISTED_INACTIVE",
+    );
+    expect(concurrencyProbeSource).toContain("count(DISTINCT audit_result_hash)");
+    expect(concurrencyProbeSource).toContain("callerCount + 1");
+    expect(concurrencyProbeSource).toContain("NOT lock_row.granted");
+    expect(concurrencyProbeSource).toContain("append_only_contract_valid, true");
+    expect(concurrencyProbeSource).toContain("retention_deletion_allowed, false");
+    expect(concurrencyProbeSource).toContain('"activation_allowed",');
+    expect(concurrencyProbeSource).toContain(
+      "assert.equal(preflight[field], false",
+    );
+    expect(concurrencyProbeSource).not.toMatch(
+      /supabase\.(?:com|co)|service_role_key|ANON_KEY|production|DELETE\s+FROM|DISABLE\s+TRIGGER/i,
+    );
   });
 });
