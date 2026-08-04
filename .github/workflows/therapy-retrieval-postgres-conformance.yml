@@ -6,12 +6,14 @@ on:
       - "db-step7d-*"
       - "db-step7e-*"
       - "db-step7f-*"
+      - "db-step7g-*"
     paths:
       - ".github/workflows/therapy-retrieval-postgres-conformance.yml"
       - "package.json"
       - "package-lock.json"
       - "src/test/therapy-retrieval-v2-preflight.test.ts"
       - "scripts/verify-therapy-retrieval-postgres-concurrency.mjs"
+      - "scripts/verify-therapy-retrieval-postgres-failure-isolation.mjs"
       - "supabase/migrations/**"
   pull_request:
     paths:
@@ -20,6 +22,7 @@ on:
       - "package-lock.json"
       - "src/test/therapy-retrieval-v2-preflight.test.ts"
       - "scripts/verify-therapy-retrieval-postgres-concurrency.mjs"
+      - "scripts/verify-therapy-retrieval-postgres-failure-isolation.mjs"
       - "supabase/migrations/**"
   workflow_dispatch:
 
@@ -142,6 +145,13 @@ jobs:
           docker exec "$container_id" pg_restore --exit-on-error --single-transaction --username postgres --dbname retrieval_concurrency /tmp/retrieval-concurrency.dump
           empty_audit_inventory="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_concurrency --command "SELECT concat_ws(':', count(*)::text, public.therapy_retrieval_v2_invalid_audit_run_count_v1()::text) FROM public.therapy_retrieval_audit_runs;")"
           test "$empty_audit_inventory" = "0:0"
+          docker exec "$container_id" createdb --template template0 --username postgres retrieval_failure_isolation
+          docker exec "$container_id" pg_restore --exit-on-error --single-transaction --username postgres --dbname retrieval_failure_isolation /tmp/retrieval-concurrency.dump
+          empty_failure_inventory="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_failure_isolation --command "SELECT concat_ws(':', count(*)::text, public.therapy_retrieval_v2_invalid_audit_run_count_v1()::text) FROM public.therapy_retrieval_audit_runs;")"
+          test "$empty_failure_inventory" = "0:0"
       - name: Verify bounded synthetic owner concurrency
         if: matrix.name == 'group-5-audit-persistence'
         run: node scripts/verify-therapy-retrieval-postgres-concurrency.mjs
+      - name: Verify bounded synthetic owner failure isolation
+        if: matrix.name == 'group-5-audit-persistence'
+        run: node scripts/verify-therapy-retrieval-postgres-failure-isolation.mjs

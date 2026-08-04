@@ -22,6 +22,13 @@ const concurrencyProbeSource = readFileSync(
   ),
   "utf8",
 );
+const failureIsolationProbeSource = readFileSync(
+  resolve(
+    process.cwd(),
+    "scripts/verify-therapy-retrieval-postgres-failure-isolation.mjs",
+  ),
+  "utf8",
+);
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as { devDependencies?: Record<string, string> };
@@ -132,6 +139,42 @@ describe("therapy retrieval PostgreSQL conformance harness", () => {
     );
     expect(concurrencyProbeSource).not.toMatch(
       /supabase\.(?:com|co)|service_role_key|ANON_KEY|production|DELETE\s+FROM|DISABLE\s+TRIGGER/i,
+    );
+  });
+
+  it("proves bounded owner rollback and stale-call isolation without granting use", () => {
+    expect(workflowSource).toContain('- "db-step7g-*"');
+    expect(workflowSource.match(
+      /scripts\/verify-therapy-retrieval-postgres-failure-isolation\.mjs/g,
+    )).toHaveLength(3);
+    expect(workflowSource).toContain(
+      "createdb --template template0 --username postgres retrieval_failure_isolation",
+    );
+    expect(workflowSource).toContain(
+      "--dbname retrieval_failure_isolation /tmp/retrieval-concurrency.dump",
+    );
+    expect(workflowSource).toContain(
+      "Verify bounded synthetic owner failure isolation",
+    );
+    expect(failureIsolationProbeSource).toContain(
+      'targetUrl.pathname = "/retrieval_failure_isolation"',
+    );
+    expect(failureIsolationProbeSource).toContain("const callerCount = 4");
+    expect(failureIsolationProbeSource).toContain("const staleCallerCount = 3");
+    expect(failureIsolationProbeSource).toContain('rollbackCaller.query("BEGIN")');
+    expect(failureIsolationProbeSource).toContain('rollbackCaller.query("ROLLBACK")');
+    expect(failureIsolationProbeSource).toContain("rows[0], { count: 0, invalid: 0 }");
+    expect(failureIsolationProbeSource).toContain("pg_advisory_xact_lock_shared");
+    expect(failureIsolationProbeSource).toContain("waitForBlockedCallers(inspector)");
+    expect(failureIsolationProbeSource).toContain("Promise.allSettled(calls)");
+    expect(failureIsolationProbeSource).toContain("rejected.length, staleCallerCount");
+    expect(failureIsolationProbeSource).toMatch(/exact ready Step 7A result/);
+    expect(failureIsolationProbeSource).toContain("append_only_contract_valid, true");
+    expect(failureIsolationProbeSource).toContain("retention_deletion_allowed, false");
+    expect(failureIsolationProbeSource).toContain('"shadow_execution_allowed",');
+    expect(failureIsolationProbeSource).toContain('"activation_allowed",');
+    expect(failureIsolationProbeSource).not.toMatch(
+      /supabase\.(?:com|co)|service_role_key|ANON_KEY|production|DELETE\s+FROM|TRUNCATE|DISABLE\s+TRIGGER/i,
     );
   });
 });

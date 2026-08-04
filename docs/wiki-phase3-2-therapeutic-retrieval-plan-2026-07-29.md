@@ -1617,6 +1617,28 @@ drei idempotente Ergebnisse, eine gueltige Auditzeile, null ungueltige Zeilen
 und null verbleibende Wartesperren:
 <https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30907725812>.
 
+### Schritt 7G: Begrenzter PostgreSQL-Owner-Abbruch- und Fehlerisolationsnachweis
+
+7G erweitert ausschliesslich den isolierten synthetischen PostgreSQL-17-
+Nachweis. Derselbe Auditdaten ausschliessende 7F-Dump wird transaktional in eine
+weitere frische `template0`-Datenbank restauriert. Ein gueltiger Owner-Write muss
+innerhalb einer expliziten Transaktion sichtbar sein und nach `ROLLBACK` wieder
+einen exakten Auditbestand von `0:0` hinterlassen.
+
+Danach warten vier Aufrufer gemeinsam an einer harten Advisory-Startbarriere.
+Genau einer verwendet den exakten positiven 7A-Hash; drei verwenden
+verschiedene syntaktisch gueltige, aber veraltete Hashes. Nur der gueltige
+Aufruf darf persistieren. Die drei anderen muessen fail-closed abbrechen, ohne
+eine zweite oder ungueltige Auditzeile und ohne verbleibende Wartesperre.
+
+Fuenf gleichzeitige Zielsitzungen, feste Statement-, Lock-, Idle- und
+Barrieregrenzen sowie die bestehende 15-Minuten-Jobgrenze begrenzen den Test.
+Der anschliessende 7C-Preflight muss weiterhin technisch bereit und inaktiv
+sein. Aufbewahrung, Loeschung, Deployment, Replay, Schattenlauf, KI, Planwahl,
+Dosierungsanzeige, medizinische oder produktive Nutzung und Aktivierung werden
+nicht freigegeben. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step7g-postgresql-owner-failure-isolation-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
