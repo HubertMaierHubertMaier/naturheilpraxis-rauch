@@ -1445,6 +1445,53 @@ Gegenpruefung meldet `APPROVE` ohne P0/P1-Befund. Die ausfuehrliche
 Dokumentation steht in
 `docs/wiki-step7a-retrieval-audit-envelope-preflight-implementation-2026-08-04.md`.
 
+### Schritt 7B: Inaktive append-only Retrieval-Audit-Persistenz
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804160000_create_therapy_retrieval_audit_persistence.sql`
+
+Der additive Block persistiert ausschliesslich ein serverseitig erneut
+berechnetes, exakt erwartetes positives 7A-Resultat. Ein frei geliefertes
+Audit-JSON wird nicht akzeptiert. Die geschlossene Owner-Funktion schreibt
+idempotent in `therapy_retrieval_audit_runs`; der 7A-Resultathash ist eindeutig,
+und ein zweiter identischer Aufruf gibt dieselbe gueltige Auditzeile zurueck.
+
+Insert-Gate, Update-/Delete-/Truncate-Sperren und ein aufgeschobener
+Integritaetstrigger machen die Tabelle append-only. Ein separater kanonischer
+Zeilenhash bindet Auditinhalt, Stufenidentitaeten, Persistenzzeitpunkt und
+Akteur-ID. Die Validierung reproduziert 7A-, Envelope-, Dosierungsregel- und
+Zeilenhash, prueft Eingabe und Release erneut und verlangt weiterhin alle
+inaktiven Sperrfelder. Eine manipulierte Zeile erhoeht den fail-closed
+Integritaetszaehler.
+
+RLS erlaubt `authenticated` nur als bestaetigtem Admin zu lesen;
+`service_role` besitzt nur den fuer Backups erforderlichen Lesezugriff. Keine
+Anwendungs-, Service- oder Importrolle darf schreiben oder die Owner-
+Persistenzfunktion ausfuehren. Auch die Persistenzantwort setzt medizinische und
+produktive Nutzung, Dosierungsauswertung und -anzeige, weitere Persistenz,
+Replay, Schattenlauf, KI, Planwahl und Aktivierung explizit auf `false`.
+
+Der bestehende Therapie-Snapshot v2 bleibt byteidentisch. Snapshot v3 nimmt die
+Auditzeilen als fuenfte geschuetzte Tabelle mit exaktem JSON-Text, Zeilenzahl,
+SHA-256 und `invalid_audit_run_count` auf. Voll- und IAA-/ICD10-Teilbackup,
+Frontendvalidator, Edge-Validator und Owner-Restore-Anleitung verwenden den
+neuen Fuenf-Tabellen-Vertrag. Ein Restore ist nur in einer einzigen Owner-
+Transaktion mit deaktivierten User-Triggern, unveraenderten JSON-Texten,
+anschliessender Constraint-/Triggerreaktivierung und exaktem Manifestvergleich
+zulaessig.
+
+Es gibt weiterhin kein Deployment, keinen Runtime-RPC, keinen Replay- oder
+Schattenlauf, keine KI- oder Planwahl und keine sichtbare Therapieausgabe. Die
+fuenf disjunkten Schritt-6A-bis-7B-Gruppen bestehen mit 52/52 Tests, die
+zusammenhaengende Regression mit 7/7 Dateien und 139/139 Tests und der
+gruppierte Gesamtstand mit 50/50 Dateien und 575/575 Tests. Beide
+TypeScript-Projekte, gezieltes ESLint, Secret-Policy und Produktionsbuild sind
+erfolgreich. Die strukturierte P0/P1-Gegenpruefung meldet nach Schliessen der
+Wiki-Restore-Abhaengigkeit `APPROVE`. Die
+ausfuehrliche Dokumentation steht in
+`docs/wiki-step7b-retrieval-audit-persistence-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:

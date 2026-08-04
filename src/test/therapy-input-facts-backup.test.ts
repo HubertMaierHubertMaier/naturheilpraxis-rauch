@@ -8,7 +8,7 @@ import {
   THERAPY_INPUT_BACKUP_TABLES,
   validateTherapyInputSubsetPayload,
 } from "@/lib/therapyInputBackup";
-import { validateTherapyInputSnapshotV2 } from "../../supabase/functions/_shared/therapyInputSnapshotValidation";
+import { validateTherapyInputSnapshotV3 } from "../../supabase/functions/_shared/therapyInputSnapshotValidation";
 
 type Payload = Parameters<typeof validateTherapyInputSubsetPayload>[0];
 
@@ -39,6 +39,7 @@ async function createValidPayload(): Promise<Payload> {
     therapy_input_sources: "[]",
     therapy_input_facts: '[{"fact_value":{"type":"quantity","value":9007199254740993}}]',
     therapy_input_fact_sources: "[]",
+    therapy_retrieval_audit_runs: '[{"audit_result_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]',
   } as const;
   const manifest = Object.fromEntries(await Promise.all(
     THERAPY_INPUT_BACKUP_TABLES.map(async (table) => [table, {
@@ -47,11 +48,12 @@ async function createValidPayload(): Promise<Payload> {
     }]),
   ));
   return {
-    therapyInputSnapshotVersion: 2,
+    therapyInputSnapshotVersion: 3,
     therapyInputSnapshotManifest: manifest,
     therapyInputValidation: {
       invalid_revision_count: 0,
       invalid_fact_count: 0,
+      invalid_audit_run_count: 0,
     },
     tables: {
       iaa_submissions: { rows: [], rowCount: 0 },
@@ -80,8 +82,8 @@ async function createValidRawSnapshot(): Promise<Record<string, unknown>> {
   };
 }
 
-describe("therapy input facts snapshot v2 backup", () => {
-  it("accepts the exact four-table lossless payload without reserializing large integers", async () => {
+describe("protected therapy snapshot v3 backup", () => {
+  it("accepts the exact five-table lossless payload without reserializing large integers", async () => {
     const payload = await createValidPayload();
     await expect(validateTherapyInputSubsetPayload(payload)).resolves.toBeUndefined();
     expect(payload.tables?.therapy_input_revisions.serializedRows)
@@ -101,32 +103,32 @@ describe("therapy input facts snapshot v2 backup", () => {
 
   it("runs the edge snapshot validator against versions, boundaries, counters, and bytes", async () => {
     const valid = await createValidRawSnapshot();
-    await expect(validateTherapyInputSnapshotV2(valid, THERAPY_INPUT_BACKUP_TABLES))
+    await expect(validateTherapyInputSnapshotV3(valid, THERAPY_INPUT_BACKUP_TABLES))
       .resolves.toBeUndefined();
 
     const historical = structuredClone(valid);
     historical.snapshot_version = 1;
-    await expect(validateTherapyInputSnapshotV2(historical, THERAPY_INPUT_BACKUP_TABLES))
+    await expect(validateTherapyInputSnapshotV3(historical, THERAPY_INPUT_BACKUP_TABLES))
       .rejects.toThrow(/Snapshot-Version/);
 
     const invalidCounter = structuredClone(valid);
     (invalidCounter.validation as Record<string, unknown>).invalid_fact_count = 1;
-    await expect(validateTherapyInputSnapshotV2(invalidCounter, THERAPY_INPUT_BACKUP_TABLES))
+    await expect(validateTherapyInputSnapshotV3(invalidCounter, THERAPY_INPUT_BACKUP_TABLES))
       .rejects.toThrow(/Integritaetspruefung/);
 
     const missingTable = structuredClone(valid);
     delete (missingTable.tables as Record<string, unknown>).therapy_input_facts;
-    await expect(validateTherapyInputSnapshotV2(missingTable, THERAPY_INPUT_BACKUP_TABLES))
+    await expect(validateTherapyInputSnapshotV3(missingTable, THERAPY_INPUT_BACKUP_TABLES))
       .rejects.toThrow(/Tabellengrenze/);
 
     const tampered = structuredClone(valid);
     (tampered.tables as Record<string, unknown>).therapy_input_facts = "[] ";
-    await expect(validateTherapyInputSnapshotV2(tampered, THERAPY_INPUT_BACKUP_TABLES))
+    await expect(validateTherapyInputSnapshotV3(tampered, THERAPY_INPUT_BACKUP_TABLES))
       .rejects.toThrow(/Manifestfehler/);
   });
 
   it("rejects absent, historical, string, and future snapshot versions", async () => {
-    for (const version of [undefined, null, 1, "2", 3]) {
+    for (const version of [undefined, null, 1, 2, "3", 4]) {
       const payload = await createValidPayload();
       payload.therapyInputSnapshotVersion = version as number | null | undefined;
       await expect(validateTherapyInputSubsetPayload(payload))
@@ -134,13 +136,19 @@ describe("therapy input facts snapshot v2 backup", () => {
     }
   });
 
-  it("requires the exact two zero validation counters", async () => {
+  it("requires the exact three zero validation counters", async () => {
     for (const validation of [
       null,
       { invalid_revision_count: 1, invalid_fact_count: 0 },
       { invalid_revision_count: 0, invalid_fact_count: 1 },
-      { invalid_revision_count: 0 },
-      { invalid_revision_count: 0, invalid_fact_count: 0, unexpected: 0 },
+      { invalid_revision_count: 0, invalid_fact_count: 0 },
+      { invalid_revision_count: 0, invalid_fact_count: 0, invalid_audit_run_count: 1 },
+      {
+        invalid_revision_count: 0,
+        invalid_fact_count: 0,
+        invalid_audit_run_count: 0,
+        unexpected: 0,
+      },
     ]) {
       const payload = await createValidPayload();
       payload.therapyInputValidation = validation as Payload["therapyInputValidation"];
@@ -201,7 +209,7 @@ describe("therapy input facts snapshot v2 backup", () => {
     }
   });
 
-  it("wires all four tables and only snapshot v2 through every current backup surface", () => {
+  it("wires all five tables and only snapshot v3 through every current backup surface", () => {
     const frontendArea = backupAreasSource.match(
       /id: "iaa-icd10"[\s\S]*?buckets:/,
     )?.[0] ?? "";
@@ -225,15 +233,22 @@ describe("therapy input facts snapshot v2 backup", () => {
       expect(snapshotBoundary).toContain(`"${table}"`);
       expect(wikiSnapshot).not.toContain(`"${table}"`);
     }
-    expect(backupExportSource).toContain('client.rpc("therapy_input_export_snapshot_v2")');
-    expect(backupExportSource).not.toContain('client.rpc("therapy_input_export_snapshot_v1")');
-    expect(backupExportSource).toContain("validateTherapyInputSnapshotV2(");
+    expect(backupExportSource).toContain('client.rpc("therapy_input_export_snapshot_v3")');
+    expect(backupExportSource).not.toContain('client.rpc("therapy_input_export_snapshot_v2")');
+    expect(backupExportSource).toContain("validateTherapyInputSnapshotV3(");
     expect(backupExportSource).toContain("therapyInputSnapshotVersion");
     expect(backupExportSource).toContain("therapy_input_snapshot_version.json");
     expect(backupCenterSource).toContain("therapy_input_snapshot_version.json");
-    expect(backupCenterSource).toContain("therapy_input_export_snapshot_v2()");
+    expect(backupCenterSource).toContain("therapy_input_export_snapshot_v3()");
     expect(backupCenterSource).toContain("invalid_fact_count = 0");
+    expect(backupCenterSource).toContain("invalid_audit_run_count = 0");
     expect(backupCenterSource).toContain("kein tabellenweiser Autocommit-Restore");
+    expect(backupCenterSource).toContain(
+      "`therapy_input_facts` und `therapy_retrieval_audit_runs` bleiben unangetastet",
+    );
+    expect(backupExportSource).toContain(
+      "`therapy_input_facts` und `therapy_retrieval_audit_runs` bleiben unangetastet",
+    );
     expect(backupCenterSource).toContain("zip.file(`db/${name}.json`, t.serializedRows)");
     expect(backupCenterSource).toContain("Die Wiki-Tabellen duerfen jedoch weder durch Lovable");
     expect(backupCenterSource).toContain("ausschließlich als verlustfreie JSON-Dateien");

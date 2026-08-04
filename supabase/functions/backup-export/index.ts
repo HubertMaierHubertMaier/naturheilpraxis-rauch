@@ -9,7 +9,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
-import { validateTherapyInputSnapshotV2 } from "../_shared/therapyInputSnapshotValidation.ts";
+import { validateTherapyInputSnapshotV3 } from "../_shared/therapyInputSnapshotValidation.ts";
 import { validateWikiSnapshotShape } from "../_shared/wikiSnapshotValidation.ts";
 
 function createAdminClient(url: string, serviceKey: string) {
@@ -176,6 +176,7 @@ const THERAPY_INPUT_SNAPSHOT_TABLES = [
   "therapy_input_sources",
   "therapy_input_facts",
   "therapy_input_fact_sources",
+  "therapy_retrieval_audit_runs",
 ] as const;
 const THERAPY_INPUT_SNAPSHOT_TABLE_SET = new Set<string>(THERAPY_INPUT_SNAPSHOT_TABLES);
 
@@ -215,6 +216,7 @@ const FALLBACK_TABLES = [...new Set([
   "therapy_input_sources",
   "therapy_input_facts",
   "therapy_input_fact_sources",
+  "therapy_retrieval_audit_runs",
   "therapy_sessions",
   "two_factor_pending_bindings",
   "two_factor_verified_sessions",
@@ -278,7 +280,7 @@ const AREA_MAP: Record<string, AreaDef> = {
   "infothek":            { tables: ["infothek_gating"], buckets: [] },
   "hypnose":             { tables: [], buckets: [] },
   "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
-  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "therapy_input_revisions", "therapy_input_sources", "therapy_input_facts", "therapy_input_fact_sources", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
+  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "therapy_input_revisions", "therapy_input_sources", "therapy_input_facts", "therapy_input_fact_sources", "therapy_retrieval_audit_runs", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
   "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings", "two_factor_pending_bindings", "two_factor_verified_sessions"], buckets: [] },
   "edge-mail":           { tables: [], buckets: [] },
 };
@@ -451,10 +453,14 @@ type WikiSnapshot = {
 };
 
 type TherapyInputSnapshot = {
-  snapshot_version: 2;
+  snapshot_version: 3;
   tables: Record<(typeof THERAPY_INPUT_SNAPSHOT_TABLES)[number], string>;
   manifest: Record<string, { rows: number; sha256: string }>;
-  validation: { invalid_revision_count: number; invalid_fact_count: number };
+  validation: {
+    invalid_revision_count: number;
+    invalid_fact_count: number;
+    invalid_audit_run_count: number;
+  };
 };
 
 type TableExport = {
@@ -505,7 +511,7 @@ async function fetchWikiSnapshot(
 async function fetchTherapyInputSnapshot(
   client: AdminClient,
 ): Promise<TherapyInputSnapshot> {
-  const { data, error } = await client.rpc("therapy_input_export_snapshot_v2");
+  const { data, error } = await client.rpc("therapy_input_export_snapshot_v3");
   if (error) throw new Error(`Therapie-Eingabe-Snapshot: ${error.message}`);
   if (typeof data !== "string") {
     throw new Error("Therapie-Eingabe-Snapshot: unerwartetes RPC-Format");
@@ -517,7 +523,7 @@ async function fetchTherapyInputSnapshot(
   } catch {
     throw new Error("Therapie-Eingabe-Snapshot: ungueltiges Manifest");
   }
-  await validateTherapyInputSnapshotV2(snapshot, THERAPY_INPUT_SNAPSHOT_TABLES);
+  await validateTherapyInputSnapshotV3(snapshot, THERAPY_INPUT_SNAPSHOT_TABLES);
 
   return snapshot;
 }
@@ -741,7 +747,7 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
     lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten; zuerst `SET CONSTRAINTS ALL DEFERRED`.");
     lines.push(`- Auf allen ${WIKI_SNAPSHOT_TABLES.length} Wiki-Tabellen \`DISABLE TRIGGER USER\`.`);
     lines.push("- Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources` auf `NULL` setzen, um die restriktiven Parent-Revision-Zeiger innerhalb der Transaktion zu lösen.");
-    lines.push("- Bestehende `therapy_input_facts` bleiben unangetastet. Ihr `kb_entity_id`-Fremdschlüssel ist `NO ACTION DEFERRABLE`; dieselben Entity-UUIDs müssen vor der unmittelbaren Constraint-Prüfung wieder vorhanden sein.");
+    lines.push("- Bestehende `therapy_input_facts` und `therapy_retrieval_audit_runs` bleiben unangetastet. Ihre `NO ACTION DEFERRABLE`-Fremdschlüssel verlangen vor der unmittelbaren Constraint-Prüfung dieselben Entity-, Entity-Revisions-, Release- und Repertoriums-UUIDs; ein dazu inkompatibler Wiki-Snapshot muss vollständig zurückgerollt werden.");
     lines.push("- Vorhandene Wiki-Daten und Migration-Seeds ohne `TRUNCATE` oder fachfremdes `CASCADE` in umgekehrter FK-Reihenfolge mit `DELETE` leeren: `kb_search_documents` vor `kb_release_items`, `kb_release_items` vor `kb_releases`, `kb_safety_rule_conditions` vor `kb_safety_rules`; im Repertoriumsblock zuerst `kb_homeopathic_chunk_import_chunks`, dann `kb_homeopathic_chunk_import_batches`, danach `kb_homeopathic_rubric_remedy_assignments`, Remedy-Zuordnungen, Graddefinitionen, Rubrikrevisionen, Rubriken und zuletzt `kb_homeopathic_repertory_revision_details`; `kb_lab_finding_definition_revision_details` vor `kb_lab_reference_ranges` und diese vor `kb_lab_parameter_revision_details`; alle Detaildaten vor ihren Quellen- und Entitaetsrevisionen.");
     lines.push("- Die Wiki-JSON-Dateien unverändert und ohne JavaScript-Neuserialisierung importieren; nur ihr exakter Text entspricht den SHA-256-Werten in `db/kb_wiki_snapshot_manifest.json`.");
     lines.push("- Importreihenfolge: kontrollierte Typen; Kernobjekte vor Revisionen/Abhängigkeiten; Import-Batches vor Kandidaten/Audit; Legacy-Wiki und Produkte vor Produktlinks.");
@@ -754,14 +760,14 @@ function buildManifest(stats: Awaited<ReturnType<typeof gatherStats>>, mode: "db
   if (stats.tables.some((table) => table.name === "therapy_input_revisions")) {
     lines.push("");
     lines.push("**Verbindlicher Restore für den Therapie-Eingabe-Snapshot:**");
-    lines.push("- Alle vier Tabellen `therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts` und `therapy_input_fact_sources` stammen gemeinsam aus Snapshot-Version 2; niemals einzeln oder per Autocommit wiederherstellen.");
-    lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten und zuerst `SET CONSTRAINTS ALL DEFERRED` ausführen.");
+    lines.push("- Alle fünf Tabellen `therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts`, `therapy_input_fact_sources` und `therapy_retrieval_audit_runs` stammen gemeinsam aus Snapshot-Version 3; niemals einzeln oder per Autocommit wiederherstellen.");
+    lines.push("- Ausschließlich als Datenbankeigner in einer Transaktion arbeiten; zuerst `SET CONSTRAINTS ALL IMMEDIATE`, dann auf allen fünf Tabellen `DISABLE TRIGGER USER` und erst danach `SET CONSTRAINTS ALL DEFERRED` ausführen.");
     lines.push("- Vor dem Faktenimport muss ein kompatibler Wiki-Snapshot mit allen referenzierten `kb_entities` wiederhergestellt sein.");
-    lines.push("- Auf allen vier Tabellen `DISABLE TRIGGER USER`; Löschreihenfolge: Faktenquellen, Fakten, Eingabequellen, Revisionen.");
+    lines.push("- Löschreihenfolge: Auditläufe, Faktenquellen, Fakten, Eingabequellen, Revisionen.");
     lines.push("- Die JSON-Dateien niemals mit `JSON.parse`, einer Restore-Edge-Function oder anderem JavaScript einlesen und neu serialisieren; grosse Ganzzahlen wuerden gerundet.");
-    lines.push("- Owner-SQL je Datei: `INSERT INTO public.<tabelle> SELECT * FROM jsonb_populate_recordset(NULL::public.<tabelle>, <exakter_dateitext>::jsonb);` — Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen.");
-    lines.push("- `SET CONSTRAINTS ALL IMMEDIATE`, anschließend alle vier Trigger wieder aktivieren und `therapy_input_export_snapshot_v2()` ausführen.");
-    lines.push("- Nur committen, wenn Snapshot-Version 2, `invalid_revision_count = 0`, `invalid_fact_count = 0` und alle vier Zeilenzahlen sowie SHA-256-Werte exakt dem gesicherten Manifest entsprechen; sonst vollständig zurückrollen.");
+    lines.push("- Owner-SQL je Datei: `INSERT INTO public.<tabelle> SELECT * FROM jsonb_populate_recordset(NULL::public.<tabelle>, <exakter_dateitext>::jsonb);` — Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen, Auditläufe.");
+    lines.push("- `SET CONSTRAINTS ALL IMMEDIATE`, anschließend alle fünf Trigger wieder aktivieren und `therapy_input_export_snapshot_v3()` ausführen.");
+    lines.push("- Nur committen, wenn Snapshot-Version 3, `invalid_revision_count = 0`, `invalid_fact_count = 0`, `invalid_audit_run_count = 0` und alle fünf Zeilenzahlen sowie SHA-256-Werte exakt dem gesicherten Manifest entsprechen; sonst vollständig zurückrollen.");
     lines.push("- Direkte Schreibrechte für `authenticated` oder `service_role` dürfen für den Restore nicht gelockert werden.");
   }
   if (mode === "full") {

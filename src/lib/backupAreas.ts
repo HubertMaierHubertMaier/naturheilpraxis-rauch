@@ -250,6 +250,7 @@ export const BACKUP_AREAS: BackupArea[] = [
       "therapy_input_sources",
       "therapy_input_facts",
       "therapy_input_fact_sources",
+      "therapy_retrieval_audit_runs",
       "mannayan_orders",
       "mannayan_products",
     ],

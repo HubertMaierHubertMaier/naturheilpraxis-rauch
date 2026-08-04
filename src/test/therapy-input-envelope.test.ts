@@ -1125,10 +1125,10 @@ describe("therapy input envelope Step 3A", () => {
       expect(wikiSnapshot).not.toContain(`"${table}"`);
     }
     expect(migration).not.toContain("kb_export_wiki_snapshot");
-    expect(backupExportSource).toContain('client.rpc("therapy_input_export_snapshot_v2")');
+    expect(backupExportSource).toContain('client.rpc("therapy_input_export_snapshot_v3")');
     expect(backupExportSource).toContain("serializedRows: therapyInputSnapshot.tables");
     expect(backupExportSource).toContain("therapy_input_snapshot_manifest.json");
-    expect(backupExportSource).toContain("validateTherapyInputSnapshotV2(snapshot");
+    expect(backupExportSource).toContain("validateTherapyInputSnapshotV3(snapshot");
     expect(backupCenterSource).toContain('typeof t.serializedRows === "string"');
     expect(backupCenterSource).toContain("kein tabellenweiser Autocommit-Restore");
     expect(backupCenterSource).toContain("Die JSON-Zahlen nicht durch JavaScript parsen");

@@ -3,18 +3,20 @@ export const THERAPY_INPUT_BACKUP_TABLES = [
   "therapy_input_sources",
   "therapy_input_facts",
   "therapy_input_fact_sources",
+  "therapy_retrieval_audit_runs",
 ] as const;
 
 export type TherapyInputBackupTable = (typeof THERAPY_INPUT_BACKUP_TABLES)[number];
 
-export type TherapyInputSnapshotManifestV2 = Record<
+export type TherapyInputSnapshotManifestV3 = Record<
   TherapyInputBackupTable,
   { rows: number; sha256: string }
 >;
 
-export type TherapyInputSnapshotValidationV2 = {
+export type TherapyInputSnapshotValidationV3 = {
   invalid_revision_count: number;
   invalid_fact_count: number;
+  invalid_audit_run_count: number;
 };
 
 type TherapyInputTableExport = {
@@ -27,8 +29,8 @@ type TherapyInputTableExport = {
 export type TherapyInputSubsetPayload = {
   tables?: Record<string, TherapyInputTableExport>;
   therapyInputSnapshotVersion?: number | null;
-  therapyInputSnapshotManifest?: Partial<TherapyInputSnapshotManifestV2> | null;
-  therapyInputValidation?: Partial<TherapyInputSnapshotValidationV2> | null;
+  therapyInputSnapshotManifest?: Partial<TherapyInputSnapshotManifestV3> | null;
+  therapyInputValidation?: Partial<TherapyInputSnapshotValidationV3> | null;
 };
 
 async function sha256TextHex(value: string): Promise<string> {
@@ -39,17 +41,19 @@ async function sha256TextHex(value: string): Promise<string> {
 export async function validateTherapyInputSubsetPayload(
   payload: TherapyInputSubsetPayload,
 ): Promise<void> {
-  if (payload.therapyInputSnapshotVersion !== 2) {
+  if (payload.therapyInputSnapshotVersion !== 3) {
     throw new Error("Therapie-Eingabe-Backup: unerwartete Snapshot-Version");
   }
 
   const validation = payload.therapyInputValidation;
   if (JSON.stringify(Object.keys(validation ?? {}).sort()) !== JSON.stringify([
+    "invalid_audit_run_count",
     "invalid_fact_count",
     "invalid_revision_count",
   ])
     || validation?.invalid_revision_count !== 0
-    || validation?.invalid_fact_count !== 0) {
+    || validation?.invalid_fact_count !== 0
+    || validation?.invalid_audit_run_count !== 0) {
     throw new Error("Therapie-Eingabe-Backup: Integritaetspruefung fehlt oder ist fehlgeschlagen");
   }
 
@@ -61,7 +65,10 @@ export async function validateTherapyInputSubsetPayload(
   }
 
   const unexpectedTherapyTables = Object.keys(payload.tables ?? {})
-    .filter((table) => table.startsWith("therapy_input_")
+    .filter((table) => (
+      table.startsWith("therapy_input_")
+      || table.startsWith("therapy_retrieval_audit_")
+    )
       && !THERAPY_INPUT_BACKUP_TABLES.includes(table as TherapyInputBackupTable));
   if (unexpectedTherapyTables.length > 0) {
     throw new Error("Therapie-Eingabe-Backup: unbekannte Therapie-Eingabetabelle");
