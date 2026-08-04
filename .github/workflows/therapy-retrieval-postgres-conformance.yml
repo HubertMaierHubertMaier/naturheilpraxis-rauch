@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "db-step7d-*"
+      - "db-step7e-*"
     paths:
       - ".github/workflows/therapy-retrieval-postgres-conformance.yml"
       - "package.json"
@@ -78,3 +79,42 @@ jobs:
         run: >-
           npx vitest run src/test/therapy-retrieval-v2-preflight.test.ts
           -t "${{ matrix.pattern }}"
+      - name: Rehearse an ephemeral synthetic dump and restore
+        if: matrix.name == 'group-5-audit-persistence'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t postgres_containers < <(
+            docker ps --filter "ancestor=postgres:17" --format "{{.ID}}"
+          )
+          test "${#postgres_containers[@]}" -eq 1
+          container_id="${postgres_containers[0]}"
+
+          contract_sql="SELECT jsonb_build_object(
+            'wiki_snapshot_sha256', encode(sha256(convert_to(public.kb_export_wiki_snapshot()::text, 'UTF8')), 'hex'),
+            'therapy_snapshot_v2_sha256', encode(sha256(convert_to(public.therapy_input_export_snapshot_v2(), 'UTF8')), 'hex'),
+            'therapy_snapshot_v3_sha256', encode(sha256(convert_to(public.therapy_input_export_snapshot_v3(), 'UTF8')), 'hex'),
+            'retention_restore_preflight_sha256', encode(sha256(convert_to(public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(10000, 67108864)::text, 'UTF8')), 'hex')
+          )::text;"
+          readiness_sql="SELECT concat_ws(':',
+            public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(10000, 67108864) ->> 'status',
+            public.therapy_retrieval_v2_audit_retention_restore_preflight_v1(10000, 67108864) ->> 'technical_readiness_complete'
+          );"
+
+          source_contract="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_contract --command "$contract_sql")"
+          source_readiness="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_contract --command "$readiness_sql")"
+          test "$source_readiness" = "AUDIT_RETENTION_RESTORE_TECHNICAL_PREFLIGHT_READY_INACTIVE:true"
+
+          docker exec "$container_id" pg_dump --format custom --file /tmp/retrieval-contract.dump --username postgres --dbname retrieval_contract
+          dump_bytes="$(docker exec "$container_id" stat --format %s /tmp/retrieval-contract.dump)"
+          test "$dump_bytes" -gt 0
+          test "$dump_bytes" -le 67108864
+
+          docker exec "$container_id" createdb --template template0 --username postgres retrieval_restore
+          docker exec "$container_id" pg_restore --exit-on-error --single-transaction --username postgres --dbname retrieval_restore /tmp/retrieval-contract.dump
+
+          target_contract="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_restore --command "$contract_sql")"
+          target_readiness="$(docker exec "$container_id" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --username postgres --dbname retrieval_restore --command "$readiness_sql")"
+          test "$target_readiness" = "$source_readiness"
+          test "$target_contract" = "$source_contract"
