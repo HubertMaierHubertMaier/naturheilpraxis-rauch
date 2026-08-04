@@ -1226,6 +1226,60 @@ verbleibenden P0/P1-Befund.
 Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step6d-safety-gate-preflight-implementation-2026-08-04.md`.
 
+### Schritt 6E: Medizinisch inaktiver Kandidatenstatus-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804130000_create_therapy_candidate_status_preflight.sql`
+
+Der additive Block erzeugt drei weitere geschlossene Owner-Lesefunktionen und
+keine Tabelle. Er verlangt den exakten 6D-Resultathash, berechnet Safety-Gate und
+6C-Split-Track erneut und bildet erst danach zwei weiterhin getrennte,
+medizinisch inaktive Kandidatenspuren. Red-Flag-`ESCALATE_ONLY` und
+Medikamenten-`REVIEW_ONLY` werden vor einer veralteten Safety-Hasherwartung
+ausgegeben, damit Aufruferdrift keine neu erkannte Sperre verbergen kann.
+
+Die allgemeine beziehungsweise naturheilkundliche Spur uebernimmt nur exakte
+`preparation`-/`product_variant`-Revisionen. `EXCLUDE` stammt unveraendert aus
+6D und ist nicht aufhebbar. Ein inaktives `ALLOW` benoetigt mindestens einen
+aktuellen, nicht negierten, bestaetigten und verifizierten Fakt sowie eine
+freigegebene, releasegebundene `indicated_for`-/`may_support`-Assertion mit
+direkter oder indirekter Zuordnung und bewerteter Grundlage und Qualitaet.
+Unsichere, historische, negierte oder nur pruefpflichtige Faktentreffer,
+fehlender starker Support, `not_recommended` oder ein reviewpflichtiger
+Safety-Effekt erzeugen `REVIEW_ONLY`. Nur die bekannten nicht blockierenden
+Effekte `NOTICE_ONLY` und `NO_MATCHING_RULE_INACTIVE` koennen bei vollstaendigen
+uebrigen Bedingungen `ALLOW` erreichen; unbekannte Effekte scheitern
+geschlossen als `REVIEW_ONLY`.
+
+Die homoeopathische Spur behaelt Rubrikabdeckung, source-natives Gradprofil,
+Domaenenabdeckung, negative Konflikte und stabile Repertoriumsposition getrennt.
+Da die generische Mittelrevision noch keine exakte Zubereitungs-, Potenz- und
+Subject-Safety-Bindung besitzt, bleibt jeder Treffer zwingend `REVIEW_ONLY`.
+Materia-medica-Uebereinstimmung und Praxiserfahrung werden sichtbar als noch
+nicht bewertet markiert und nicht erfunden.
+
+Allgemeine Faktenabdeckung, Referenzpraezision, Relationssupport,
+Evidenzgrundlagen, Evidenzqualitaet, Praxiserfahrung,
+Quellenaktualitaet/-spezifitaet sowie Praeferenz/Budget bleiben getrennte
+Dimensionen. Es gibt keinen undurchsichtigen Gesamtscore und keine Vermischung
+beider Spuren. Praeferenz und Budget sind nur nachgelagerter Kontext und aendern
+keinen Status.
+
+Alle drei Resultate besitzen getrennte kanonische Hashes; das Gesamtergebnis ist
+auf 8 MiB begrenzt. Wiki- und Therapie-Eingabe-Snapshot bleiben byteidentisch
+bei 67 beziehungsweise vier Tabellen. Alle Funktionen sind fuer Anwendungs-,
+Service- und Importrollen gesperrt; Release v1 bleibt inaktiv. Der fokussierte
+Schritt-6A-bis-6E-Vertrag besteht mit 29/29 Tests, die zusammenhaengende
+Eingabe-, Release-, Regel-, Such- und Repertoriumsregression mit 7/7 Dateien und
+116/116 Tests und der vollstaendige Projektlauf mit 50/50 Dateien und 552/552
+Tests. Beide TypeScript-Projekte, gezieltes ESLint und Produktionsbuild sind
+erfolgreich. Nach der Fail-Closed-Haertung unbekannter Safety-Effekte und der
+vollstaendigen Tie-Break-Reihenfolge der Referenzprovenienz meldet die
+unabhaengige Gegenpruefung `APPROVE` ohne verbleibenden P0/P1-Befund. Die
+ausfuehrliche Dokumentation steht in
+`docs/wiki-step6e-candidate-status-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`
