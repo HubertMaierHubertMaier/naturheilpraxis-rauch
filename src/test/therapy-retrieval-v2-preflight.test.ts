@@ -57,6 +57,12 @@ const candidateStatusMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", candidateStatusMigrationFile),
   "utf8",
 );
+const dosageRuleMigrationFile =
+  "20260804140000_create_therapy_dosage_rule_preflight.sql";
+const dosageRuleMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", dosageRuleMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -138,10 +144,12 @@ const precautionAssertionId = "41000000-0000-4000-8000-000000000023";
 const allowBasisAssertionId = "41000000-0000-4000-8000-000000000024";
 const allowSafetyAssertionId = "41000000-0000-4000-8000-000000000025";
 const allowSupportAssertionId = "41000000-0000-4000-8000-000000000026";
+const allowDosageAssertionId = "41000000-0000-4000-8000-000000000027";
 const interactionRuleId = "51000000-0000-4000-8000-000000000020";
 const contraindicationRuleId = "51000000-0000-4000-8000-000000000021";
 const precautionRuleId = "51000000-0000-4000-8000-000000000022";
 const allowSafetyRuleId = "51000000-0000-4000-8000-000000000023";
+const allowDosageRuleId = "50000000-0000-4000-8000-000000000020";
 const unknownInputRevisionId = "91000000-0000-4000-8000-000000000099";
 const unknownReleaseId = "61000000-0000-4000-8000-000000000099";
 const extractedAt = "2026-08-04T08:10:00.000000Z";
@@ -417,6 +425,8 @@ type CandidateStatusResult = {
   ai_use_allowed: boolean;
   global_candidate_status?: string;
   safety_gate_result_hash_matches?: boolean;
+  therapy_input_manifest_hash?: string;
+  release_manifest_hash?: string;
   split_track_result_hash?: string;
   safety_gate_result_hash?: string;
   candidate_count?: number;
@@ -474,6 +484,78 @@ type CandidateStatusResult = {
       };
     }>;
     track_result_hash: string;
+  } | null;
+  result_hash: string;
+};
+
+type DosageRulePreflightResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  productive_candidate_use_allowed: boolean;
+  dosage_evaluation_allowed: boolean;
+  dosage_display_allowed: boolean;
+  concrete_dosage_output_present?: boolean;
+  ai_use_allowed: boolean;
+  inactive_dosage_rule_bindings_ready?: boolean;
+  global_candidate_status?: string;
+  candidate_status_result_hash_matches?: boolean;
+  allow_candidate_count?: number;
+  binding_ready_candidate_count?: number;
+  blocked_candidate_count?: number;
+  excluded_general_candidate_count?: number;
+  review_only_general_candidate_count?: number;
+  homeopathic_candidate_count_excluded_from_dosage?: number;
+  homeopathic_dosage_evaluation_allowed?: boolean;
+  dosage_rule_scope?: {
+    status: string;
+    allow_candidate_count: number;
+    released_dosage_rule_count: number;
+    rules: Array<{
+      dosage_rule_id: string;
+      dosage_rule_content_hash: string;
+      assertion_id: string;
+      subject_entity_id: string;
+      subject_entity_revision_id: string;
+      indication_entity_id: string | null;
+      indication_entity_revision_id: string | null;
+      sources: Array<{
+        source_revision_id: string;
+        locator_hash: string;
+      }>;
+    }>;
+    scope_hash: string;
+  } | null;
+  dosage_rule_assessments?: {
+    dosage_display_allowed: boolean;
+    allow_candidate_count: number;
+    binding_ready_candidate_count: number;
+    blocked_candidate_count: number;
+    candidate_assessments: Array<{
+      subject_entity_id: string;
+      subject_entity_revision_id: string;
+      assessment_status: string;
+      inactive_rule_binding_ready: boolean;
+      dosage_display_allowed: boolean;
+      released_rule_count: number;
+      applicable_rule_count: number;
+      applicable_rule_identity: {
+        dosage_rule_id: string;
+        dosage_rule_content_hash: string;
+        assertion_id: string;
+      } | null;
+      rule_assessments: Array<{
+        dosage_rule_id: string;
+        indication_matches: boolean;
+        indication_fact_matches: Array<{
+          therapy_input_fact_id: string;
+          fact_content_sha256: string;
+        }>;
+        population_matches: boolean;
+        applicability_status: string;
+      }>;
+    }>;
+    assessments_hash: string;
   } | null;
   result_hash: string;
 };
@@ -536,6 +618,9 @@ let successfulSafetySplitTrack: SplitTrackResult;
 let wikiSnapshotAfterCandidateStatus = "";
 let therapySnapshotAfterCandidateStatus = "";
 let successfulCandidateStatus: CandidateStatusResult;
+let wikiSnapshotAfterDosageRule = "";
+let therapySnapshotAfterDosageRule = "";
+let successfulDosageRulePreflight: DosageRulePreflightResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -1477,7 +1562,10 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
        'practice_rule', 'moderate', repeat('2', 64)),
       ('${allowSupportAssertionId}', 'assertion:candidate-status-allow-support', 1,
        'entity_relation', 'Synthetic released support evidence.',
-       'clinical_study', 'high', repeat('3', 64));
+       'clinical_study', 'high', repeat('3', 64)),
+      ('${allowDosageAssertionId}', 'assertion:dosage-rule-preflight-allow', 1,
+       'dosage', 'Synthetic inactive dosage-rule identity.',
+       'practice_rule', 'moderate', repeat('4', 64));
     INSERT INTO public.kb_assertion_sources (
       assertion_id, source_revision_id, source_role, locator, is_primary
     ) VALUES
@@ -1496,7 +1584,9 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       ('${allowSafetyAssertionId}', '${knowledgeSourceRevisionId}',
        'qualifies', 'section:candidate-allow-safety', true),
       ('${allowSupportAssertionId}', '${knowledgeSourceRevisionId}',
-       'supports', 'section:candidate-allow-support', true);
+       'supports', 'section:candidate-allow-support', true),
+      ('${allowDosageAssertionId}', '${knowledgeSourceRevisionId}',
+       'supports', 'section:dosage-rule-preflight', true);
     INSERT INTO public.kb_entity_relations (
       assertion_id, subject_entity_id, relation_type_code, object_entity_id,
       assignment_strength, rank, context_text
@@ -1602,6 +1692,22 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     INSERT INTO public.kb_safety_rule_conditions (
       safety_rule_id, condition_order, condition_kind
     ) VALUES ('${allowSafetyRuleId}', 1, 'always');
+    INSERT INTO public.kb_dosage_rules (
+      id, assertion_id, subject_entity_id, subject_entity_revision_id,
+      indication_entity_id, indication_entity_revision_id,
+      administration_route, dose_min, dose_max, dose_unit_system, dose_unit_code,
+      frequency_min, frequency_max, frequency_period,
+      duration_min, duration_max, duration_unit, timing, rule_content_hash
+    ) VALUES (
+      '${allowDosageRuleId}', '${allowDosageAssertionId}',
+      '${allowPreparationId}', '${allowPreparationRevisionId}',
+      '${candidateContextEntityId}', '${candidateContextRevisionId}',
+      'oral', 1, 2, 'local_v1', 'drop', 1, 2, 'day',
+      1, 2, 'day', 'unspecified', repeat('0', 64)
+    );
+    UPDATE public.kb_dosage_rules
+       SET rule_content_hash = public.kb_dosage_rule_hash_v1(id)
+     WHERE id = '${allowDosageRuleId}';
     UPDATE public.kb_safety_rules
        SET rule_content_hash = public.kb_safety_rule_hash_v1(id)
      WHERE id IN (
@@ -1639,6 +1745,7 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
   await releaseKnowledgeRevision("kb_assertions", precautionAssertionId, true);
   await releaseKnowledgeRevision("kb_assertions", allowSafetyAssertionId, true);
   await releaseKnowledgeRevision("kb_assertions", allowSupportAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", allowDosageAssertionId, true);
   await insertHomeopathicFixture();
 
   await db.exec("BEGIN;");
@@ -1744,6 +1851,10 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     await addReleaseItem(21, {
       kind: "assertion",
       assertionId: allowSupportAssertionId,
+    });
+    await addReleaseItem(22, {
+      kind: "assertion",
+      assertionId: allowDosageAssertionId,
     });
     await db.query(`
       UPDATE public.kb_releases release
@@ -1934,7 +2045,35 @@ async function readCandidateStatus(
   ])).rows[0].value;
 }
 
-async function readCurrentCandidateStatus(): Promise<CandidateStatusResult> {
+async function readDosageRulePreflight(
+  expectedInput: string | null = safetyInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  expectedRequest: string | null = safetyHomeopathicRequestHash,
+  expectedSplit: string | null = safetySplitTrackHash,
+  expectedSafety: string | null = successfulSafetyGate?.result_hash ?? null,
+  expectedCandidate: string | null = successfulCandidateStatus?.result_hash ?? null,
+): Promise<DosageRulePreflightResult> {
+  return (await db.query<{ value: DosageRulePreflightResult }>(`
+    SELECT public.therapy_retrieval_v2_dosage_rule_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, $9::text, $10::text, $11::text, 8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    expectedRequest,
+    expectedSplit,
+    expectedSafety,
+    expectedCandidate,
+  ])).rows[0].value;
+}
+
+async function readCurrentDosageRulePriority(): Promise<DosageRulePreflightResult> {
   const currentInputHash = (await db.query<{ value: string }>(`
     SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
   `, [safetyInputRevisionId])).rows[0].value;
@@ -1955,12 +2094,13 @@ async function readCurrentCandidateStatus(): Promise<CandidateStatusResult> {
     currentRequestHash,
   );
   expect(currentSplit.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
-  return readCandidateStatus(
+  return readDosageRulePreflight(
     currentInputHash,
     expectedReleaseManifestHash,
     currentRequestHash,
     currentSplit.result_hash,
     successfulSafetyGate.result_hash,
+    successfulCandidateStatus.result_hash,
   );
 }
 
@@ -2079,13 +2219,22 @@ beforeAll(async () => {
     "SELECT public.therapy_input_export_snapshot_v2() AS value",
   )).rows[0].value;
   successfulCandidateStatus = await readCandidateStatus();
+
+  await db.exec(dosageRuleMigration);
+  wikiSnapshotAfterDosageRule = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterDosageRule = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  successfulDosageRulePreflight = await readDosageRulePreflight();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through 6F preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -2578,7 +2727,7 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
                item.source_id, item.source_revision_id,
                item.item_manifest, item.item_manifest_hash
           FROM public.kb_release_items item
-          CROSS JOIN generate_series(22, 4097) generated(item_order)
+          CROSS JOIN generate_series(23, 4097) generated(item_order)
          WHERE item.release_id = '${knowledgeReleaseId}'
            AND item.item_kind = 'source_revision'
            AND item.source_id = '${knowledgeSourceId}';
@@ -2989,7 +3138,7 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     }
   }, 15_000);
 
-  it("requires review for unclear, missing, or release-external medication", async () => {
+  it("requires review for an unclear medication status", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3013,7 +3162,9 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     } finally {
       await db.exec("ROLLBACK;");
     }
+  }, 15_000);
 
+  it("requires review for an uncertain medication status", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3031,7 +3182,9 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     } finally {
       await db.exec("ROLLBACK;");
     }
+  }, 15_000);
 
+  it("requires review when the medication status is missing", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3049,7 +3202,9 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     } finally {
       await db.exec("ROLLBACK;");
     }
+  }, 15_000);
 
+  it("requires review for unresolved active medication", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3069,7 +3224,9 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     } finally {
       await db.exec("ROLLBACK;");
     }
+  }, 15_000);
 
+  it("rejects release-external active medication", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3311,39 +3468,19 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
            SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
          WHERE id = $1
       `, [safetyContextFactId]);
-      const currentInputHash = (await db.query<{ value: string }>(`
-        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
-      `, [safetyInputRevisionId])).rows[0].value;
-      const currentRequestManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
-        SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
-          $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+      const generalTrack = (await db.query<{
+        value: CandidateStatusResult["general_track"];
+      }>(`
+        SELECT public.therapy_retrieval_v2_general_candidate_track_v1(
+          $1::uuid, $2::uuid, $3::jsonb, $4::jsonb
         ) AS value
       `, [
         safetyInputRevisionId,
-        repertoryEntityId,
-        repertoryRevisionId,
-        JSON.stringify(safetyRubricLinks),
+        knowledgeReleaseId,
+        JSON.stringify(successfulSafetySplitTrack),
+        JSON.stringify(successfulSafetyGate),
       ])).rows[0].value;
-      const currentRequestHash = await hashJson(currentRequestManifest);
-      const currentSplit = await readSafetySplitTrack(
-        currentInputHash,
-        expectedReleaseManifestHash,
-        currentRequestHash,
-      );
-      const currentSafety = await readSafetyGate(
-        currentInputHash,
-        expectedReleaseManifestHash,
-        currentRequestHash,
-        currentSplit.result_hash,
-      );
-      const result = await readCandidateStatus(
-        currentInputHash,
-        expectedReleaseManifestHash,
-        currentRequestHash,
-        currentSplit.result_hash,
-        currentSafety.result_hash,
-      );
-      const candidate = result.general_track?.candidates.find(
+      const candidate = generalTrack?.candidates.find(
         (item) => item.entity_id === allowPreparationId,
       );
       expect(candidate).toEqual(expect.objectContaining({
@@ -3373,14 +3510,6 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
       safetySplitTrackHash,
       "0".repeat(64),
     )).status).toBe("CANDIDATE_STATUS_SAFETY_GATE_MISMATCH");
-    expect((await readCandidateStatus(
-      safetyInputHash,
-      expectedReleaseManifestHash,
-      safetyHomeopathicRequestHash,
-      safetySplitTrackHash,
-      null,
-    )).status).toBe("CANDIDATE_STATUS_EXPECTATION_INVALID");
-    expect(await readCandidateStatus()).toEqual(successfulCandidateStatus);
 
     const {
       track_result_hash: generalTrackHash,
@@ -3396,6 +3525,16 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
     expect(await hashJson(payload)).toBe(resultHash);
   }, 15_000);
 
+  it("rejects a malformed expected safety-gate hash", async () => {
+    expect((await readCandidateStatus(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      null,
+    )).status).toBe("CANDIDATE_STATUS_EXPECTATION_INVALID");
+  }, 15_000);
+
   it("preserves red-flag escalation ahead of stale safety expectations", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
@@ -3407,25 +3546,23 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
            SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
          WHERE id = $1
       `, [redFlagFactId]);
-      const escalated = await readCurrentCandidateStatus();
-      expect(escalated).toEqual(expect.objectContaining({
-        status: "CANDIDATE_STATUS_ESCALATE_ONLY_INACTIVE",
+      expect(await readCurrentDosageRulePriority()).toEqual(expect.objectContaining({
+        status: "DOSAGE_RULE_ESCALATE_ONLY_INACTIVE",
         global_candidate_status: "ESCALATE_ONLY",
-        safety_gate_result_hash_matches: false,
-        productive_candidate_use_allowed: false,
-        candidate_status_assignment_allowed: false,
+        candidate_status_result_hash_matches: false,
+        medical_use_allowed: false,
         dosage_evaluation_allowed: false,
+        dosage_display_allowed: false,
         ai_use_allowed: false,
-        candidate_count: 0,
-        general_track: null,
-        homeopathic_track: null,
+        dosage_rule_scope: null,
+        dosage_rule_assessments: null,
       }));
     } finally {
       await db.exec("ROLLBACK;");
     }
   }, 15_000);
 
-  it("preserves mandatory medication review ahead of candidate formation", async () => {
+  it("preserves mandatory medication review ahead of dosage-rule binding", async () => {
     await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
     try {
       await db.query(`
@@ -3436,14 +3573,249 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
            SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
          WHERE id = $1
       `, [medicationStatusFactId]);
-      const review = await readCurrentCandidateStatus();
-      expect(review).toEqual(expect.objectContaining({
-        status: "CANDIDATE_STATUS_REVIEW_ONLY_INACTIVE",
+      expect(await readCurrentDosageRulePriority()).toEqual(expect.objectContaining({
+        status: "DOSAGE_RULE_REVIEW_ONLY_INACTIVE",
         global_candidate_status: "REVIEW_ONLY",
-        safety_gate_result_hash_matches: false,
-        candidate_count: 0,
-        general_track: null,
-        homeopathic_track: null,
+        candidate_status_result_hash_matches: false,
+        medical_use_allowed: false,
+        dosage_evaluation_allowed: false,
+        dosage_display_allowed: false,
+        ai_use_allowed: false,
+        dosage_rule_scope: null,
+        dosage_rule_assessments: null,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
+  it("adds only three closed dosage-rule functions and changes no snapshot", () => {
+    expect(dosageRuleMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
+    expect(dosageRuleMigration).toMatch(/^BEGIN;/);
+    expect(dosageRuleMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(dosageRuleMigration).not.toMatch(
+      /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+    );
+    expect(dosageRuleMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(dosageRuleMigration).not.toMatch(/\bGRANT\b/i);
+    expect(dosageRuleMigration).not.toMatch(
+      /\b(pseudonym_id|patient_id|patient_user_id|session_id|anamnesis_id)\b/i,
+    );
+    const executableDosageRuleMigration = dosageRuleMigration.slice(
+      0,
+      dosageRuleMigration.indexOf("COMMENT ON FUNCTION"),
+    );
+    expect(executableDosageRuleMigration).not.toMatch(
+      /\b(dose_min|dose_max|frequency_min|frequency_max|frequency_period|duration_min|duration_max|duration_unit|timing|administration_route)\b/,
+    );
+    expect(dosageRuleMigration).toContain("LIMIT 4097");
+    expect(dosageRuleMigration).toContain("LIMIT 16385");
+    expect(dosageRuleMigration).toContain("LIMIT 8193");
+    expect(dosageRuleMigration).toContain("candidate_rule_count > 2048");
+    expect(wikiSnapshotAfterDosageRule).toBe(wikiSnapshotAfterCandidateStatus);
+    expect(therapySnapshotAfterDosageRule).toBe(therapySnapshotAfterCandidateStatus);
+  });
+
+  it("binds exactly one released rule to the eligible general candidate without dosage output", async () => {
+    expect(successfulDosageRulePreflight).toEqual(expect.objectContaining({
+      status: "DOSAGE_RULE_BINDINGS_READY_INACTIVE",
+      interpretation: "RULE_BINDING_PREFLIGHT_ONLY_NO_DOSAGE_OUTPUT_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      productive_candidate_use_allowed: false,
+      dosage_evaluation_allowed: false,
+      dosage_display_allowed: false,
+      concrete_dosage_output_present: false,
+      ai_use_allowed: false,
+      inactive_dosage_rule_bindings_ready: true,
+      candidate_status_result_hash_matches: true,
+      allow_candidate_count: 1,
+      binding_ready_candidate_count: 1,
+      blocked_candidate_count: 0,
+      excluded_general_candidate_count: 1,
+      review_only_general_candidate_count: 0,
+      homeopathic_candidate_count_excluded_from_dosage: 2,
+      homeopathic_dosage_evaluation_allowed: false,
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulDosageRulePreflight.dosage_rule_scope).toEqual(
+      expect.objectContaining({
+        status: "DOSAGE_RULE_SCOPE_READY_INACTIVE",
+        allow_candidate_count: 1,
+        released_dosage_rule_count: 1,
+        scope_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      }),
+    );
+    expect(successfulDosageRulePreflight.dosage_rule_scope?.rules).toEqual([
+      expect.objectContaining({
+        dosage_rule_id: allowDosageRuleId,
+        assertion_id: allowDosageAssertionId,
+        subject_entity_id: allowPreparationId,
+        subject_entity_revision_id: allowPreparationRevisionId,
+        indication_entity_id: candidateContextEntityId,
+        indication_entity_revision_id: candidateContextRevisionId,
+        sources: [expect.objectContaining({
+          source_revision_id: knowledgeSourceRevisionId,
+          locator_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+        })],
+      }),
+    ]);
+    const assessment = successfulDosageRulePreflight
+      .dosage_rule_assessments?.candidate_assessments[0];
+    expect(assessment).toEqual(expect.objectContaining({
+      subject_entity_id: allowPreparationId,
+      subject_entity_revision_id: allowPreparationRevisionId,
+      assessment_status: "EXACT_DOSAGE_RULE_BINDING_READY_INACTIVE",
+      inactive_rule_binding_ready: true,
+      dosage_display_allowed: false,
+      released_rule_count: 1,
+      applicable_rule_count: 1,
+      applicable_rule_identity: expect.objectContaining({
+        dosage_rule_id: allowDosageRuleId,
+        assertion_id: allowDosageAssertionId,
+      }),
+    }));
+    expect(assessment?.rule_assessments[0]).toEqual(expect.objectContaining({
+      indication_matches: true,
+      indication_fact_matches: [expect.objectContaining({
+        therapy_input_fact_id: safetyContextFactId,
+      })],
+      population_matches: true,
+      applicability_status: "APPLICABLE_EXACT_FACT_BINDING",
+    }));
+    expect(JSON.stringify(successfulDosageRulePreflight)).not.toMatch(
+      /"(?:dose|dose_min|dose_max|frequency|duration|timing|administration_route)"\s*:/,
+    );
+    expect(JSON.stringify(successfulDosageRulePreflight)).not.toContain(
+      "section:dosage-rule-preflight",
+    );
+
+    const invalidTypeCandidate = structuredClone(successfulCandidateStatus);
+    const invalidGeneralTrack = invalidTypeCandidate.general_track!;
+    invalidGeneralTrack.candidates[0].entity_type_code = "symptom";
+    invalidGeneralTrack.track_result_hash = await hashJson(Object.fromEntries(
+      Object.entries(invalidGeneralTrack).filter(
+        ([key]) => key !== "track_result_hash",
+      ),
+    ));
+    invalidTypeCandidate.result_hash = await hashJson(Object.fromEntries(
+      Object.entries(invalidTypeCandidate).filter(([key]) => key !== "result_hash"),
+    ));
+    const invalidScope = (await db.query<{ value: unknown }>(`
+      SELECT public.therapy_retrieval_v2_dosage_rule_scope_v1(
+        $1::uuid, $2::jsonb
+      ) AS value
+    `, [knowledgeReleaseId, JSON.stringify(invalidTypeCandidate)])).rows[0].value;
+    expect(invalidScope).toBeNull();
+  });
+
+  it("binds the exact candidate hash and keeps scope, assessment, and result hashes deterministic", async () => {
+    expect((await readDosageRulePreflight(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      successfulSafetyGate.result_hash,
+      "0".repeat(64),
+    )).status).toBe("DOSAGE_RULE_CANDIDATE_STATUS_MISMATCH");
+
+    const { scope_hash: scopeHash, ...scopePayload } =
+      successfulDosageRulePreflight.dosage_rule_scope!;
+    expect(await hashJson(scopePayload)).toBe(scopeHash);
+    const { assessments_hash: assessmentsHash, ...assessmentsPayload } =
+      successfulDosageRulePreflight.dosage_rule_assessments!;
+    expect(await hashJson(assessmentsPayload)).toBe(assessmentsHash);
+    const { result_hash: resultHash, ...resultPayload } = successfulDosageRulePreflight;
+    expect(await hashJson(resultPayload)).toBe(resultHash);
+  }, 15_000);
+
+  it("rejects a malformed expected candidate-status hash", async () => {
+    expect((await readDosageRulePreflight(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      successfulSafetyGate.result_hash,
+      null,
+    )).status).toBe("DOSAGE_RULE_EXPECTATION_INVALID");
+  }, 15_000);
+
+  it("blocks rule assessment when the exact indication fact is unavailable", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET kb_entity_id = NULL WHERE id = $1
+      `, [safetyContextFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [safetyContextFactId]);
+      const currentInputHash = (await db.query<{ value: string }>(`
+        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+      `, [safetyInputRevisionId])).rows[0].value;
+      const currentCandidate = structuredClone(successfulCandidateStatus);
+      currentCandidate.therapy_input_manifest_hash = currentInputHash;
+      currentCandidate.result_hash = await hashJson(Object.fromEntries(
+        Object.entries(currentCandidate).filter(([key]) => key !== "result_hash"),
+      ));
+      const currentScope = (await db.query<{
+        value: NonNullable<DosageRulePreflightResult["dosage_rule_scope"]>;
+      }>(`
+        SELECT public.therapy_retrieval_v2_dosage_rule_scope_v1(
+          $1::uuid, $2::jsonb
+        ) AS value
+      `, [knowledgeReleaseId, JSON.stringify(currentCandidate)])).rows[0].value;
+      const currentAssessments = (await db.query<{
+        value: NonNullable<DosageRulePreflightResult["dosage_rule_assessments"]>;
+      }>(`
+        SELECT public.therapy_retrieval_v2_dosage_rule_assessments_v1(
+          $1::uuid, $2::uuid, $3::jsonb, $4::jsonb
+        ) AS value
+      `, [
+        safetyInputRevisionId,
+        knowledgeReleaseId,
+        JSON.stringify(currentCandidate),
+        JSON.stringify(currentScope),
+      ])).rows[0].value;
+      expect(currentAssessments).toEqual(expect.objectContaining({
+        allow_candidate_count: 1,
+        binding_ready_candidate_count: 0,
+        blocked_candidate_count: 1,
+        dosage_display_allowed: false,
+      }));
+      expect(currentAssessments.candidate_assessments[0])
+        .toEqual(expect.objectContaining({
+          assessment_status: "DOSAGE_RULE_NOT_APPLICABLE_INACTIVE",
+          inactive_rule_binding_ready: false,
+          applicable_rule_count: 0,
+          rule_assessments: [expect.objectContaining({
+            indication_matches: false,
+            indication_fact_matches: [],
+            applicability_status: "INDICATION_FACT_MISSING",
+          })],
+        }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
+  it("fails closed when a released dosage rule is missing", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.kb_dosage_rules DISABLE TRIGGER USER;");
+    try {
+      await db.query("DELETE FROM public.kb_dosage_rules WHERE id = $1", [
+        allowDosageRuleId,
+      ]);
+      const result = await readDosageRulePreflight();
+      expect(result).toEqual(expect.objectContaining({
+        status: "DOSAGE_RULE_SCOPE_UNAVAILABLE",
+        medical_use_allowed: false,
+        dosage_evaluation_allowed: false,
+        dosage_display_allowed: false,
+        ai_use_allowed: false,
+        dosage_rule_scope: null,
+        dosage_rule_assessments: null,
       }));
     } finally {
       await db.exec("ROLLBACK;");
@@ -3472,10 +3844,13 @@ describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => 
           'public.therapy_retrieval_v2_safety_gate_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,integer,integer,integer)',
           'public.therapy_retrieval_v2_general_candidate_track_v1(uuid,uuid,jsonb,jsonb)',
           'public.therapy_retrieval_v2_homeopathic_candidate_track_v1(jsonb,jsonb)',
-          'public.therapy_retrieval_v2_candidate_status_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,integer,integer,integer)'
+          'public.therapy_retrieval_v2_candidate_status_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,integer,integer,integer)',
+          'public.therapy_retrieval_v2_dosage_rule_scope_v1(uuid,jsonb)',
+          'public.therapy_retrieval_v2_dosage_rule_assessments_v1(uuid,uuid,jsonb,jsonb)',
+          'public.therapy_retrieval_v2_dosage_rule_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(80);
+    expect(privileges.rows).toHaveLength(95);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });

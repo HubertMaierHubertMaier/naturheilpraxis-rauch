@@ -1280,6 +1280,55 @@ unabhaengige Gegenpruefung `APPROVE` ohne verbleibenden P0/P1-Befund. Die
 ausfuehrliche Dokumentation steht in
 `docs/wiki-step6e-candidate-status-preflight-implementation-2026-08-04.md`.
 
+### Schritt 6F: Medizinisch inaktiver Dosierungsregel-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804140000_create_therapy_dosage_rule_preflight.sql`
+
+Der additive Block erzeugt drei weitere geschlossene Owner-Lesefunktionen und
+keine Tabelle. Er verlangt den exakten 6E-Resultathash und uebernimmt
+ausschliesslich allgemeine `ALLOW`-Kandidaten mit exakter `preparation`- oder
+`product_variant`-Revision. `EXCLUDE`, `REVIEW_ONLY`, `ESCALATE_ONLY`, fremde
+oder fehlende Entitaetstypen und saemtliche homoeopathischen Kandidaten bleiben
+technisch ausgeschlossen.
+
+Fuer jedes zulaessige Subject muessen alle global freigegebenen
+Dosierungsregeln gemeinsam im gebundenen Release liegen. Regel, Assertion,
+Subject, optionale Indikation und Population sowie jede Quellenrevision werden
+exakt und hashgebunden geprueft. Fehlende, triggerumgehend entfernte,
+releasefremde oder semantisch ungueltige Regeln machen den Scope unverfuegbar.
+
+Optionale Indikations- und Populationsbindungen gelten nur bei einem
+ausgewaehlten, aktuellen, nicht negierten, bestaetigten und verifizierten Fakt
+mit exakter `kb_entity_id` als erfuellt. Null passende Regeln blockieren; mehr
+als eine passende Regel erzwingt Review. Nur genau eine passende Regel erzeugt
+den weiterhin inaktiven Status `EXACT_DOSAGE_RULE_BINDING_READY_INACTIVE`.
+
+6F gibt ausschliesslich Regelidentitaeten, Inhalts-Hashes und exakte
+Anwendbarkeitsprovenienz aus. Dosis, Einheit, Frequenz, Dauer, Timing und Route
+werden nicht projiziert. Freie Quellenfundstellen erscheinen nur als kanonische
+Hashes. Medizinische Nutzung, produktive Kandidatennutzung, Dosierungsauswertung,
+Dosierungsanzeige und KI bleiben in jedem Status `false`.
+
+Vorgezogene Scans begrenzen den Vertrag auf 4.096 Dosierungsassertions, 4.096
+Dosierungsregeln, 16.384 zugehoerige Quellenbindungen, 2.048 Kandidatenregeln
+und 8.192 Quellenbindungen dieser Kandidatenregeln. Das Gesamtergebnis bleibt
+auf 8 MiB begrenzt. Scope, Bewertungen und Resultat besitzen getrennte
+kanonische Hashes.
+
+Wiki- und Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67 beziehungsweise
+vier Tabellen. Alle Funktionen sind fuer Anwendungs-, Service- und Importrollen
+gesperrt; Release v1 bleibt inaktiv. Der fokussierte Schritt-6A-bis-6F-Vertrag
+besteht mit 40/40 Tests, die zusammenhaengende Eingabe-, Release-, Regel-, Such-
+und Repertoriumsregression mit 7/7 Dateien und 127/127 Tests und der
+vollstaendige Projektlauf mit 50/50 Dateien und 563/563 Tests. Beide
+TypeScript-Projekte, gezieltes ESLint, Secret-Policy und Produktionsbuild sind
+erfolgreich. Nach der fail-closed Typpruefung und dem Ersatz freier Fundstellen
+durch kanonische Hashes meldet die unabhaengige Gegenpruefung `APPROVE` ohne
+verbleibenden P0/P1-Befund. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step6f-dosage-rule-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`
