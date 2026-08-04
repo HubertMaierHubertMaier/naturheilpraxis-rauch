@@ -45,6 +45,12 @@ const splitTrackMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", splitTrackMigrationFile),
   "utf8",
 );
+const safetyGateMigrationFile =
+  "20260804120000_create_therapy_safety_gate_preflight.sql";
+const safetyGateMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", safetyGateMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -102,6 +108,25 @@ const repertoryRemedyIds = [
   "62000000-0000-4000-8000-000000000012",
 ] as const;
 const knowledgeReleaseId = "61000000-0000-4000-8000-000000000001";
+const safetyInputRevisionId = "91000000-0000-4000-8000-000000000010";
+const safetyInputSourceId = "92000000-0000-4000-8000-000000000010";
+const safetyContextFactId = "93000000-0000-4000-8000-000000000010";
+const medicationStatusFactId = "93000000-0000-4000-8000-000000000011";
+const activeMedicationFactId = "93000000-0000-4000-8000-000000000012";
+const contraindicationFactId = "93000000-0000-4000-8000-000000000013";
+const redFlagFactId = "93000000-0000-4000-8000-000000000014";
+const quantitySafetyFactId = "93000000-0000-4000-8000-000000000015";
+const safetyPreparationId = "31000000-0000-4000-8000-000000000020";
+const safetyPreparationRevisionId = "32000000-0000-4000-8000-000000000020";
+const medicationEntityId = "31000000-0000-4000-8000-000000000021";
+const medicationEntityRevisionId = "32000000-0000-4000-8000-000000000021";
+const safetyBasisAssertionId = "41000000-0000-4000-8000-000000000020";
+const interactionAssertionId = "41000000-0000-4000-8000-000000000021";
+const contraindicationAssertionId = "41000000-0000-4000-8000-000000000022";
+const precautionAssertionId = "41000000-0000-4000-8000-000000000023";
+const interactionRuleId = "51000000-0000-4000-8000-000000000020";
+const contraindicationRuleId = "51000000-0000-4000-8000-000000000021";
+const precautionRuleId = "51000000-0000-4000-8000-000000000022";
 const unknownInputRevisionId = "91000000-0000-4000-8000-000000000099";
 const unknownReleaseId = "61000000-0000-4000-8000-000000000099";
 const extractedAt = "2026-08-04T08:10:00.000000Z";
@@ -119,6 +144,8 @@ const inputEnvelope = {
 };
 const neutralSourceId = "manual_input:artifact:abcdef123456";
 const sourceLocator = "section:input";
+const safetyNeutralSourceId = "manual_input:artifact:abcdef654321";
+const safetySourceLocator = "section:safety_input";
 
 type FactFixture = {
   id: string;
@@ -298,6 +325,71 @@ type SplitTrackResult = {
   result_hash: string;
 };
 
+type SafetyInputManifest = {
+  contract_version: number;
+  contract_scope: string;
+  therapy_input_manifest_hash: string;
+  selected_fact_count: number;
+  review_only_fact_count: number;
+  requires_input_review: boolean;
+  active_red_flag_count: number;
+  red_flag_disposition: string;
+  red_flags: Array<{
+    fact_id: string;
+    fact_content_sha256: string;
+  }>;
+  medication_status: string;
+  medication_review_required: boolean;
+  medication_status_fact_count: number;
+  active_medication_count: number;
+  unresolved_active_medication_count: number;
+};
+
+type SafetyRuleAssessment = {
+  subject_entity_id: string;
+  subject_entity_revision_id: string;
+  safety_effect: string;
+  rules: Array<{
+    safety_rule_id: string;
+    assertion_id: string;
+    rule_type: string;
+    effect: string;
+    assessment_status: string;
+    interaction_related_entity_present: boolean | null;
+    conditions: Array<{
+      condition_kind: string;
+      condition_status: string;
+    }>;
+  }>;
+};
+
+type SafetyGateResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  retrieval_execution_allowed: boolean;
+  candidate_formation_allowed: boolean;
+  candidate_status_assignment_allowed: boolean;
+  inactive_candidate_preflight_ready?: boolean;
+  safety_preconditions_complete?: boolean;
+  safety_disposition?: string;
+  rules_evaluated?: boolean;
+  split_track_result_hash?: string;
+  actual_split_track_result_hash?: string;
+  safety_input_manifest_hash?: string;
+  safety_input_manifest?: SafetyInputManifest;
+  safety_rule_assessments_hash?: string;
+  safety_rule_assessments?: {
+    subject_count: number;
+    safety_rule_count: number;
+    condition_count: number;
+    matched_hard_contraindication_or_interaction_count: number;
+    subject_assessments: SafetyRuleAssessment[];
+  };
+  unresolved_release_medication_count?: number;
+  result_hash: string;
+};
+
 const homeopathicRubricLinks = [
   {
     therapy_input_fact_id: successorFactId,
@@ -318,6 +410,12 @@ const homeopathicRubricLinks = [
     polarity: "exclude",
   },
 ] as const;
+const safetyRubricLinks = [{
+  therapy_input_fact_id: safetyContextFactId,
+  rubric_revision_id: homeopathicRubricRevisionIds[1],
+  importance: 1,
+  polarity: "include",
+}] as const;
 
 let db: PGlite;
 let sourceHash = "";
@@ -339,6 +437,13 @@ let therapySnapshotAfterSplitTrack = "";
 let homeopathicRequestManifest: HomeopathicRequestManifest;
 let expectedHomeopathicRequestHash = "";
 let successfulSplitTrack: SplitTrackResult;
+let wikiSnapshotAfterSafetyGate = "";
+let therapySnapshotAfterSafetyGate = "";
+let safetyInputHash = "";
+let safetyHomeopathicRequestHash = "";
+let safetySplitTrackHash = "";
+let safetyInputManifest: SafetyInputManifest;
+let successfulSafetyGate: SafetyGateResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -651,6 +756,238 @@ async function insertInputFacts(): Promise<void> {
   });
 }
 
+type SafetyFactFixture = {
+  id: string;
+  order: number;
+  type: string;
+  key: string;
+  label: string;
+  value: Record<string, unknown>;
+  kbEntityId: string | null;
+  isNegated?: boolean;
+};
+
+async function insertSafetyInput(): Promise<void> {
+  const safetySourcePayload = {
+    format: "text",
+    text: "Synthetic deidentified safety input source",
+    language: "en",
+  };
+  const safetyEnvelope = {
+    format: "therapy_input_envelope_v1",
+    clinical_text: "Synthetic deidentified safety gate input",
+    context: {},
+  };
+  const safetySourceHash = await hashJson({
+    hash_schema_version: 1,
+    source_order: 1,
+    neutral_source_id: safetyNeutralSourceId,
+    source_type: "manual_input",
+    document_date: "2026-08-04",
+    source_locator: safetySourceLocator,
+    source_payload: safetySourcePayload,
+  });
+  const safetyRevisionHash = await hashJson({
+    envelope_schema_version: 1,
+    hash_schema_version: 1,
+    deidentification_version: "clinical-deidentification-v1",
+    data_classification: "pseudonymized_health_data",
+    pseudonym_id: "P-2026-6002",
+    input_envelope: safetyEnvelope,
+    source_count: 1,
+    sources: [{
+      source_order: 1,
+      neutral_source_id: safetyNeutralSourceId,
+      source_type: "manual_input",
+      document_date: "2026-08-04",
+      source_locator: safetySourceLocator,
+      content_sha256: safetySourceHash,
+    }],
+  });
+
+  await db.exec("BEGIN;");
+  try {
+    await db.query(`
+      INSERT INTO public.therapy_input_revisions (
+        id, pseudonym_id, input_envelope, source_count, content_sha256,
+        captured_at, captured_by
+      ) VALUES (
+        $1, 'P-2026-6002', $2::jsonb, 1, $3,
+        '2026-08-04T09:00:00Z', $4
+      )
+    `, [safetyInputRevisionId, JSON.stringify(safetyEnvelope), safetyRevisionHash, adminId]);
+    await db.query(`
+      INSERT INTO public.therapy_input_sources (
+        id, therapy_input_revision_id, source_order, neutral_source_id,
+        source_type, document_date, source_locator, source_payload, content_sha256
+      ) VALUES ($1, $2, 1, $3, 'manual_input', '2026-08-04', $4, $5::jsonb, $6)
+    `, [
+      safetyInputSourceId,
+      safetyInputRevisionId,
+      safetyNeutralSourceId,
+      safetySourceLocator,
+      JSON.stringify(safetySourcePayload),
+      safetySourceHash,
+    ]);
+    await db.exec("SET CONSTRAINTS ALL IMMEDIATE; COMMIT;");
+  } catch (error) {
+    await db.exec("ROLLBACK;").catch(() => undefined);
+    throw error;
+  }
+
+  const insertSafetyFact = async (fact: SafetyFactFixture): Promise<void> => {
+    const factLocator = `field:safety_fact_${fact.order}`;
+    const isNegated = fact.isNegated ?? false;
+    const factContentHash = await hashJson({
+      therapy_input_revision_id: safetyInputRevisionId,
+      therapy_input_revision_sha256: safetyRevisionHash,
+      envelope_schema_version: 1,
+      revision_hash_schema_version: 1,
+      deidentification_version: "clinical-deidentification-v1",
+      fact_schema_version: 1,
+      hash_schema_version: 1,
+      fact_id: fact.id,
+      fact_order: fact.order,
+      fact_type: fact.type,
+      fact_key: fact.key,
+      fact_label: fact.label,
+      fact_value: fact.value,
+      is_negated: isNegated,
+      clinical_status: "current",
+      certainty: "confirmed",
+      extraction_confidence: "high",
+      extraction_method: "manual",
+      review_status: "verified",
+      evidence_scope: "patient_report",
+      effective_start_date: null,
+      effective_end_date: null,
+      effective_date_precision: "unknown",
+      kb_entity_id: fact.kbEntityId,
+      source_count: 1,
+      supersedes_fact_id: null,
+      extracted_at: extractedAt,
+      extracted_by: adminId,
+      reviewed_at: reviewedAt,
+      reviewed_by: reviewerId,
+      sources: [{
+        link_order: 1,
+        source_order: 1,
+        neutral_source_id: safetyNeutralSourceId,
+        source_type: "manual_input",
+        document_date: "2026-08-04",
+        source_locator: safetySourceLocator,
+        fact_locator: factLocator,
+        content_sha256: safetySourceHash,
+        source_role: "primary",
+      }],
+    });
+
+    await db.exec("BEGIN;");
+    try {
+      await db.query(`
+        INSERT INTO public.therapy_input_facts (
+          id, therapy_input_revision_id, fact_order, fact_type, fact_key,
+          fact_label, fact_value, is_negated, clinical_status, certainty,
+          extraction_confidence, extraction_method, review_status, evidence_scope,
+          effective_date_precision, kb_entity_id, source_count, extracted_at,
+          extracted_by, reviewed_at, reviewed_by, content_sha256
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7::jsonb, $8, 'current', 'confirmed',
+          'high', 'manual', 'verified', 'patient_report', 'unknown', $9, 1,
+          $10, $11, $12, $13, $14
+        )
+      `, [
+        fact.id,
+        safetyInputRevisionId,
+        fact.order,
+        fact.type,
+        fact.key,
+        fact.label,
+        JSON.stringify(fact.value),
+        isNegated,
+        fact.kbEntityId,
+        extractedAt,
+        adminId,
+        reviewedAt,
+        reviewerId,
+        factContentHash,
+      ]);
+      await db.query(`
+        INSERT INTO public.therapy_input_fact_sources (
+          therapy_input_revision_id, therapy_input_fact_id, link_order,
+          source_order, fact_locator, source_role
+        ) VALUES ($1, $2, 1, 1, $3, 'primary')
+      `, [safetyInputRevisionId, fact.id, factLocator]);
+      await db.exec("SET CONSTRAINTS ALL IMMEDIATE; COMMIT;");
+    } catch (error) {
+      await db.exec("ROLLBACK;").catch(() => undefined);
+      throw error;
+    }
+  };
+
+  await insertSafetyFact({
+    id: safetyContextFactId,
+    order: 1,
+    type: "symptom",
+    key: "symptom.synthetic_safety_context",
+    label: "Synthetic safety context",
+    value: { type: "boolean", value: true },
+    kbEntityId: null,
+  });
+  await insertSafetyFact({
+    id: medicationStatusFactId,
+    order: 2,
+    type: "medication",
+    key: "medication.status",
+    label: "Synthetic medication status",
+    value: { type: "coded", system: "local_v1", code: "complete" },
+    kbEntityId: null,
+  });
+  await insertSafetyFact({
+    id: activeMedicationFactId,
+    order: 3,
+    type: "medication",
+    key: "medication.synthetic_active",
+    label: "Synthetic active medication",
+    value: { type: "coded", system: "atc", code: "A01AA01" },
+    kbEntityId: medicationEntityId,
+  });
+  await insertSafetyFact({
+    id: contraindicationFactId,
+    order: 4,
+    type: "allergy",
+    key: "allergy.synthetic_substance",
+    label: "Synthetic contraindication marker",
+    value: { type: "coded", system: "local_v1", code: "present" },
+    kbEntityId: null,
+  });
+  await insertSafetyFact({
+    id: redFlagFactId,
+    order: 5,
+    type: "safety_flag",
+    key: "safety_flag.synthetic_escalation",
+    label: "Synthetic negated escalation marker",
+    value: { type: "boolean", value: true },
+    kbEntityId: null,
+    isNegated: true,
+  });
+  await insertSafetyFact({
+    id: quantitySafetyFactId,
+    order: 6,
+    type: "demographic",
+    key: "demographic.age_years",
+    label: "Synthetic age quantity",
+    value: {
+      type: "quantity",
+      value: 40,
+      comparator: "eq",
+      unit_system: "ucum",
+      unit_code: "a",
+    },
+    kbEntityId: null,
+  });
+}
+
 async function releaseKnowledgeRevision(
   table: "kb_source_revisions" | "kb_entity_revisions" | "kb_assertions",
   id: string,
@@ -945,7 +1282,9 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     INSERT INTO public.kb_entities (id, entity_type_code, canonical_key) VALUES
       ('${diseaseEntityId}', 'disease', 'disease:retrieval-v2-synthetic'),
       ('${plantEntityId}', 'plant', 'plant:retrieval-v2-synthetic'),
-      ('${outsideEntityId}', 'symptom', 'symptom:outside-release-synthetic');
+      ('${outsideEntityId}', 'symptom', 'symptom:outside-release-synthetic'),
+      ('${safetyPreparationId}', 'preparation', 'preparation:safety-gate-synthetic'),
+      ('${medicationEntityId}', 'substance', 'substance:safety-gate-medication');
     INSERT INTO public.kb_entity_revisions (
       id, entity_id, revision_no, display_name, summary,
       description_markdown, content_hash
@@ -958,12 +1297,21 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
        'Full text marker for the synthetic review question.', repeat('3', 64)),
       ('${outsideEntityRevisionId}', '${outsideEntityId}', 1,
        'Synthetic outside-release symptom', 'Not part of the bound release.',
-       'Explicit-link fail-closed fixture.', repeat('5', 64));
+       'Explicit-link fail-closed fixture.', repeat('5', 64)),
+      ('${safetyPreparationRevisionId}', '${safetyPreparationId}', 1,
+       'Synthetic isolated safety preparation', 'Safety-gate fixture only.',
+       'Not a medical product or recommendation.', repeat('b', 64)),
+      ('${medicationEntityRevisionId}', '${medicationEntityId}', 1,
+       'Synthetic isolated medication substance', 'Interaction fixture only.',
+       'Not a real medication or recommendation.', repeat('c', 64));
     UPDATE public.kb_entities entity
        SET current_revision_id = revision.id
       FROM public.kb_entity_revisions revision
      WHERE revision.entity_id = entity.id
-       AND entity.id IN ('${diseaseEntityId}', '${plantEntityId}', '${outsideEntityId}');
+       AND entity.id IN (
+         '${diseaseEntityId}', '${plantEntityId}', '${outsideEntityId}',
+         '${safetyPreparationId}', '${medicationEntityId}'
+       );
     INSERT INTO public.kb_entity_names (
       entity_id, name, normalized_name, name_kind, language_code, is_preferred
     ) VALUES
@@ -976,24 +1324,42 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       ('${plantEntityId}', 'Synthetic review question',
        'synthetic review question', 'spelling_variant', 'en', false),
       ('${outsideEntityId}', 'Synthetic outside-release symptom',
-       'synthetic outside-release symptom', 'preferred', 'en', true);
+       'synthetic outside-release symptom', 'preferred', 'en', true),
+      ('${safetyPreparationId}', 'Synthetic isolated safety preparation',
+       'synthetic isolated safety preparation', 'preferred', 'en', true),
+      ('${medicationEntityId}', 'Synthetic isolated medication substance',
+       'synthetic isolated medication substance', 'preferred', 'en', true);
     INSERT INTO public.kb_entity_identifiers (
       entity_id, scheme_code, value, normalized_value, is_primary
     ) VALUES ('${diseaseEntityId}', 'icd_10_gm', 'R53', 'R53', true);
 
     INSERT INTO public.kb_assertions (
       id, canonical_key, version_no, assertion_kind, claim_text, content_hash
-    ) VALUES (
-      '${relationAssertionId}', 'assertion:retrieval-v2-synthetic-relation', 1,
-      'entity_relation', 'Synthetic plant relation for contract testing.',
-      repeat('4', 64)
-    );
+    ) VALUES
+      ('${relationAssertionId}', 'assertion:retrieval-v2-synthetic-relation', 1,
+       'entity_relation', 'Synthetic plant relation for contract testing.',
+       repeat('4', 64)),
+      ('${safetyBasisAssertionId}', 'assertion:safety-gate-preparation-basis', 1,
+       'classification', 'Synthetic safety preparation basis.', repeat('d', 64)),
+      ('${interactionAssertionId}', 'assertion:safety-gate-interaction', 1,
+       'safety', 'Synthetic interaction rule for contract testing.', repeat('e', 64)),
+      ('${contraindicationAssertionId}', 'assertion:safety-gate-contraindication', 1,
+       'safety', 'Synthetic contraindication rule for contract testing.', repeat('f', 64)),
+      ('${precautionAssertionId}', 'assertion:safety-gate-precaution', 1,
+       'safety', 'Synthetic AND-condition rule for contract testing.', repeat('0', 64));
     INSERT INTO public.kb_assertion_sources (
       assertion_id, source_revision_id, source_role, locator, is_primary
-    ) VALUES (
-      '${relationAssertionId}', '${knowledgeSourceRevisionId}',
-      'supports', 'section:synthetic', true
-    );
+    ) VALUES
+      ('${relationAssertionId}', '${knowledgeSourceRevisionId}',
+       'supports', 'section:synthetic', true),
+      ('${safetyBasisAssertionId}', '${knowledgeSourceRevisionId}',
+       'supports', 'section:safety-basis', true),
+      ('${interactionAssertionId}', '${knowledgeSourceRevisionId}',
+       'qualifies', 'section:safety-interaction', true),
+      ('${contraindicationAssertionId}', '${knowledgeSourceRevisionId}',
+       'qualifies', 'section:safety-contraindication', true),
+      ('${precautionAssertionId}', '${knowledgeSourceRevisionId}',
+       'qualifies', 'section:safety-precaution', true);
     INSERT INTO public.kb_entity_relations (
       assertion_id, subject_entity_id, relation_type_code, object_entity_id,
       assignment_strength, rank, context_text
@@ -1001,6 +1367,85 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       '${relationAssertionId}', '${plantEntityId}', 'may_support',
       '${diseaseEntityId}', 'possible', 40, 'Synthetic graph edge only.'
     );
+
+    INSERT INTO public.kb_preparation_revision_details (
+      entity_id, entity_revision_id, preparation_kind, dosage_form,
+      administration_routes, basis_assertion_id
+    ) VALUES (
+      '${safetyPreparationId}', '${safetyPreparationRevisionId}', 'other',
+      'other', ARRAY['oral'], '${safetyBasisAssertionId}'
+    );
+    UPDATE public.kb_entity_revisions
+       SET content_hash = public.kb_therapeutic_revision_hash(entity_id, id)
+     WHERE id = '${safetyPreparationRevisionId}';
+
+    INSERT INTO public.kb_safety_rules (
+      id, assertion_id, subject_entity_id, subject_entity_revision_id,
+      related_entity_id, related_entity_revision_id, rule_type, severity,
+      effect, notice_text, rule_content_hash
+    ) VALUES (
+      '${interactionRuleId}', '${interactionAssertionId}',
+      '${safetyPreparationId}', '${safetyPreparationRevisionId}',
+      '${medicationEntityId}', '${medicationEntityRevisionId}',
+      'interaction', 'avoid', 'exclude',
+      'Synthetic interaction exclusion.', repeat('0', 64)
+    );
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind
+    ) VALUES ('${interactionRuleId}', 1, 'always');
+
+    INSERT INTO public.kb_safety_rules (
+      id, assertion_id, subject_entity_id, subject_entity_revision_id,
+      rule_type, severity, effect, notice_text, rule_content_hash
+    ) VALUES (
+      '${contraindicationRuleId}', '${contraindicationAssertionId}',
+      '${safetyPreparationId}', '${safetyPreparationRevisionId}',
+      'contraindication', 'avoid', 'exclude',
+      'Synthetic contraindication exclusion.', repeat('0', 64)
+    );
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind,
+      fact_type, fact_key, coded_system, coded_values
+    ) VALUES (
+      '${contraindicationRuleId}', 1, 'coded_value_in',
+      'allergy', 'allergy.synthetic_substance', 'local_v1', ARRAY['present']
+    );
+
+    INSERT INTO public.kb_safety_rules (
+      id, assertion_id, subject_entity_id, subject_entity_revision_id,
+      rule_type, severity, effect, notice_text, rule_content_hash
+    ) VALUES (
+      '${precautionRuleId}', '${precautionAssertionId}',
+      '${safetyPreparationId}', '${safetyPreparationRevisionId}',
+      'precaution', 'caution', 'review_only',
+      'Synthetic complete AND-condition review.', repeat('0', 64)
+    );
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind,
+      condition_entity_id, condition_entity_revision_id
+    ) VALUES (
+      '${precautionRuleId}', 1, 'entity_present',
+      '${medicationEntityId}', '${medicationEntityRevisionId}'
+    );
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind, fact_type, fact_key
+    ) VALUES
+      ('${precautionRuleId}', 2, 'fact_present',
+       'symptom', 'symptom.synthetic_safety_context'),
+      ('${precautionRuleId}', 3, 'fact_missing',
+       'open_question', 'open_question.synthetic_absent');
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind, fact_type, fact_key,
+      quantity_comparator, quantity_value, quantity_unit_system, quantity_unit_code
+    ) VALUES (
+      '${precautionRuleId}', 4, 'quantity_compare',
+      'demographic', 'demographic.age_years', 'ge', 18, 'ucum', 'a'
+    );
+    UPDATE public.kb_safety_rules
+       SET rule_content_hash = public.kb_safety_rule_hash_v1(id)
+     WHERE id IN (
+       '${interactionRuleId}', '${contraindicationRuleId}', '${precautionRuleId}'
+     );
     SET CONSTRAINTS ALL IMMEDIATE;
     COMMIT;
   `);
@@ -1008,7 +1453,21 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
   await releaseKnowledgeRevision("kb_entity_revisions", diseaseEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_entity_revisions", plantEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_entity_revisions", outsideEntityRevisionId, true);
+  await releaseKnowledgeRevision("kb_assertions", safetyBasisAssertionId, true);
+  await releaseKnowledgeRevision(
+    "kb_entity_revisions",
+    safetyPreparationRevisionId,
+    true,
+  );
+  await releaseKnowledgeRevision(
+    "kb_entity_revisions",
+    medicationEntityRevisionId,
+    true,
+  );
   await releaseKnowledgeRevision("kb_assertions", relationAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", interactionAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", contraindicationAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", precautionAssertionId, true);
   await insertHomeopathicFixture();
 
   await db.exec("BEGIN;");
@@ -1066,6 +1525,32 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     await addReleaseItem(10, {
       kind: "assertion",
       assertionId: homeopathicRelationAssertionId,
+    });
+    await addReleaseItem(11, {
+      kind: "entity_revision",
+      entityId: safetyPreparationId,
+      entityRevisionId: safetyPreparationRevisionId,
+    });
+    await addReleaseItem(12, {
+      kind: "entity_revision",
+      entityId: medicationEntityId,
+      entityRevisionId: medicationEntityRevisionId,
+    });
+    await addReleaseItem(13, {
+      kind: "assertion",
+      assertionId: safetyBasisAssertionId,
+    });
+    await addReleaseItem(14, {
+      kind: "assertion",
+      assertionId: interactionAssertionId,
+    });
+    await addReleaseItem(15, {
+      kind: "assertion",
+      assertionId: contraindicationAssertionId,
+    });
+    await addReleaseItem(16, {
+      kind: "assertion",
+      assertionId: precautionAssertionId,
     });
     await db.query(`
       UPDATE public.kb_releases release
@@ -1153,6 +1638,83 @@ async function readSplitTrack(
   ])).rows[0].value;
 }
 
+async function readSafetySplitTrack(
+  expectedInput: string,
+  expectedRelease: string,
+  expectedRequest: string,
+): Promise<SplitTrackResult> {
+  return (await db.query<{ value: SplitTrackResult }>(`
+    SELECT public.therapy_retrieval_v2_split_track_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, 8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    expectedRequest,
+  ])).rows[0].value;
+}
+
+async function readSafetyGate(
+  expectedInput: string | null = safetyInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  expectedRequest: string | null = safetyHomeopathicRequestHash,
+  expectedSplit: string | null = safetySplitTrackHash,
+): Promise<SafetyGateResult> {
+  return (await db.query<{ value: SafetyGateResult }>(`
+    SELECT public.therapy_retrieval_v2_safety_gate_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, $9::text, 8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    expectedRequest,
+    expectedSplit,
+  ])).rows[0].value;
+}
+
+async function readCurrentSafetyGate(
+  expectedRelease = expectedReleaseManifestHash,
+): Promise<SafetyGateResult> {
+  const currentInputHash = (await db.query<{ value: string }>(`
+    SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+  `, [safetyInputRevisionId])).rows[0].value;
+  const currentRequestManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
+    SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+      $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+  ])).rows[0].value;
+  const currentRequestHash = await hashJson(currentRequestManifest);
+  const currentSplit = await readSafetySplitTrack(
+    currentInputHash,
+    expectedRelease,
+    currentRequestHash,
+  );
+  expect(currentSplit.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+  return readSafetyGate(
+    currentInputHash,
+    expectedRelease,
+    currentRequestHash,
+    currentSplit.result_hash,
+  );
+}
+
 beforeAll(async () => {
   db = new PGlite();
   await bootstrapDatabase();
@@ -1162,6 +1724,7 @@ beforeAll(async () => {
   await insertSealedKnowledgeRelease();
   await insertInputRevision();
   await insertInputFacts();
+  await insertSafetyInput();
 
   wikiSnapshotBefore = (await db.query<{ value: string }>(
     "SELECT public.kb_export_wiki_snapshot()::text AS value",
@@ -1221,13 +1784,49 @@ beforeAll(async () => {
     SELECT public.kb_release_manifest_hash_v1($1::jsonb) AS value
   `, [JSON.stringify(homeopathicRequestManifest)])).rows[0].value;
   successfulSplitTrack = await readSplitTrack();
+
+  safetyInputHash = (await db.query<{ value: string }>(`
+    SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+  `, [safetyInputRevisionId])).rows[0].value;
+  const safetyRequestManifest = (await db.query<{
+    value: HomeopathicRequestManifest;
+  }>(`
+    SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+      $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+  ])).rows[0].value;
+  safetyHomeopathicRequestHash = await hashJson(safetyRequestManifest);
+  const safetySplitTrack = await readSafetySplitTrack(
+    safetyInputHash,
+    expectedReleaseManifestHash,
+    safetyHomeopathicRequestHash,
+  );
+  expect(safetySplitTrack.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+  safetySplitTrackHash = safetySplitTrack.result_hash;
+
+  await db.exec(safetyGateMigration);
+  wikiSnapshotAfterSafetyGate = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterSafetyGate = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  safetyInputManifest = (await db.query<{ value: SafetyInputManifest }>(`
+    SELECT public.therapy_retrieval_v2_safety_input_manifest_v1($1) AS value
+  `, [safetyInputRevisionId])).rows[0].value;
+  successfulSafetyGate = await readSafetyGate();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through 6C preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -1720,7 +2319,7 @@ describe.sequential("therapy retrieval v2 Step 6A through 6C preflights", () => 
                item.source_id, item.source_revision_id,
                item.item_manifest, item.item_manifest_hash
           FROM public.kb_release_items item
-          CROSS JOIN generate_series(11, 4097) generated(item_order)
+          CROSS JOIN generate_series(17, 4097) generated(item_order)
          WHERE item.release_id = '${knowledgeReleaseId}'
            AND item.item_kind = 'source_revision'
            AND item.source_id = '${knowledgeSourceId}';
@@ -1975,6 +2574,308 @@ describe.sequential("therapy retrieval v2 Step 6A through 6C preflights", () => 
     expect(await readSplitTrack()).toEqual(successfulSplitTrack);
   });
 
+  it("adds only three closed safety-gate functions and changes no snapshot", async () => {
+    expect(safetyGateMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
+    expect(safetyGateMigration).toMatch(/^BEGIN;/);
+    expect(safetyGateMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(safetyGateMigration).not.toMatch(
+      /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+    );
+    expect(safetyGateMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(safetyGateMigration).not.toMatch(/\bGRANT\b/i);
+    expect(safetyGateMigration).not.toMatch(
+      /\b(pseudonym_id|patient_id|patient_user_id|session_id|anamnesis_id)\b/i,
+    );
+    expect(safetyGateMigration).toContain("LIMIT 513");
+    expect(safetyGateMigration).toContain("LIMIT 2049");
+    expect(safetyGateMigration).toContain("LIMIT 8193");
+    expect(safetyGateMigration).toContain("only_disposition', 'ESCALATE_ONLY'");
+    const assessmentFunction = safetyGateMigration.slice(
+      safetyGateMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_safety_rule_assessments_v1",
+      ),
+      safetyGateMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_safety_gate_preflight_v1",
+      ),
+    );
+    expect(assessmentFunction.indexOf("LIMIT 8193")).toBeLessThan(
+      assessmentFunction.indexOf("public.kb_safety_rule_is_valid"),
+    );
+    expect(wikiSnapshotAfterSafetyGate).toBe(wikiSnapshotAfterSplitTrack);
+    expect(therapySnapshotAfterSafetyGate).toBe(therapySnapshotAfterSplitTrack);
+  });
+
+  it("binds red flags and medication completeness without returning raw fact values", async () => {
+    expect(safetyInputManifest).toEqual(expect.objectContaining({
+      contract_version: 1,
+      contract_scope: "THERAPY_RETRIEVAL_V2_SAFETY_INPUT_PREFLIGHT_ONLY",
+      therapy_input_manifest_hash: safetyInputHash,
+      selected_fact_count: 6,
+      review_only_fact_count: 0,
+      requires_input_review: false,
+      active_red_flag_count: 0,
+      red_flag_disposition: "NONE",
+      red_flags: [],
+      medication_status: "CLEAR_COMPLETE",
+      medication_review_required: false,
+      medication_status_fact_count: 1,
+      active_medication_count: 1,
+      unresolved_active_medication_count: 0,
+    }));
+    expect(JSON.stringify(safetyInputManifest)).not.toMatch(
+      /Synthetic (?:medication|contraindication|safety context)|P-2026-6002|A01AA01/,
+    );
+    const replay = (await db.query<{ value: SafetyInputManifest }>(`
+      SELECT public.therapy_retrieval_v2_safety_input_manifest_v1($1) AS value
+    `, [safetyInputRevisionId])).rows[0].value;
+    expect(replay).toEqual(safetyInputManifest);
+  });
+
+  it("evaluates release-closed interactions and contraindications before candidates", async () => {
+    expect(successfulSafetyGate).toEqual(expect.objectContaining({
+      status: "SAFETY_GATE_PREFLIGHT_COMPLETE_INACTIVE",
+      interpretation: "SAFETY_PREFLIGHT_ONLY_NOT_CANDIDATE_FORMATION_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      retrieval_execution_allowed: false,
+      candidate_formation_allowed: false,
+      candidate_status_assignment_allowed: false,
+      inactive_candidate_preflight_ready: true,
+      safety_preconditions_complete: true,
+      safety_disposition: "RULE_EFFECTS_EVALUATED_INACTIVE",
+      rules_evaluated: true,
+      split_track_result_hash: safetySplitTrackHash,
+      safety_input_manifest_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      safety_rule_assessments_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      unresolved_release_medication_count: 0,
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulSafetyGate.safety_rule_assessments).toEqual(
+      expect.objectContaining({
+        subject_count: 1,
+        safety_rule_count: 3,
+        condition_count: 6,
+        matched_hard_contraindication_or_interaction_count: 2,
+      }),
+    );
+    const subject = successfulSafetyGate.safety_rule_assessments
+      ?.subject_assessments[0];
+    expect(subject).toEqual(expect.objectContaining({
+      subject_entity_id: safetyPreparationId,
+      subject_entity_revision_id: safetyPreparationRevisionId,
+      safety_effect: "EXCLUDE",
+    }));
+    expect(subject?.rules.map((rule) => ({
+      id: rule.safety_rule_id,
+      type: rule.rule_type,
+      status: rule.assessment_status,
+    }))).toEqual([
+      { id: interactionRuleId, type: "interaction", status: "MATCHED" },
+      { id: contraindicationRuleId, type: "contraindication", status: "MATCHED" },
+      { id: precautionRuleId, type: "precaution", status: "MATCHED" },
+    ]);
+    expect(subject?.rules[0].interaction_related_entity_present).toBe(true);
+    expect(subject?.rules.every((rule) =>
+      rule.conditions.every((condition) =>
+        condition.condition_status === "MATCHED"))).toBe(true);
+    expect(subject?.rules[2].conditions.map((condition) =>
+      condition.condition_kind)).toEqual([
+      "entity_present",
+      "fact_present",
+      "fact_missing",
+      "quantity_compare",
+    ]);
+    expect(JSON.stringify(successfulSafetyGate)).not.toMatch(
+      /"(?:candidate_status|safety_effect)":"ALLOW"/,
+    );
+    expect(await readSafetyGate()).toEqual(successfulSafetyGate);
+
+    const { result_hash: resultHash, ...payload } = successfulSafetyGate;
+    expect(await hashJson(payload)).toBe(resultHash);
+    expect((await readSafetyGate(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      "0".repeat(64),
+    )).status).toBe("SAFETY_GATE_SPLIT_TRACK_MISMATCH");
+  });
+
+  it("turns every active red flag into escalation without evaluating candidates", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET is_negated = false WHERE id = $1
+      `, [redFlagFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [redFlagFactId]);
+      const result = await readCurrentSafetyGate();
+      expect(result).toEqual(expect.objectContaining({
+        status: "SAFETY_GATE_ESCALATE_ONLY_INACTIVE",
+        safety_disposition: "ESCALATE_ONLY",
+        candidate_formation_allowed: false,
+        inactive_candidate_preflight_ready: false,
+        safety_preconditions_complete: false,
+        rules_evaluated: false,
+      }));
+      expect(result.safety_input_manifest?.red_flags).toEqual([
+        expect.objectContaining({ fact_id: redFlagFactId }),
+      ]);
+      expect(result.safety_rule_assessments).toBeUndefined();
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
+  it("requires review for unclear, missing, or release-external medication", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET fact_value = '{"type":"coded","system":"local_v1","code":"unknown"}'::jsonb
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      const unclear = await readCurrentSafetyGate();
+      expect(unclear).toEqual(expect.objectContaining({
+        status: "SAFETY_GATE_REVIEW_REQUIRED_INACTIVE",
+        safety_disposition: "REVIEW_ONLY",
+        rules_evaluated: false,
+        candidate_formation_allowed: false,
+      }));
+      expect(unclear.safety_input_manifest?.medication_status).toBe("UNCLEAR");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET certainty = 'uncertain' WHERE id = $1
+      `, [medicationStatusFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      const uncertain = await readCurrentSafetyGate();
+      expect(uncertain.status).toBe("SAFETY_GATE_REVIEW_REQUIRED_INACTIVE");
+      expect(uncertain.safety_input_manifest?.medication_status).toBe("UNCLEAR");
+      expect(uncertain.rules_evaluated).toBe(false);
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET review_status = 'rejected' WHERE id = $1
+      `, [medicationStatusFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      const missing = await readCurrentSafetyGate();
+      expect(missing.status).toBe("SAFETY_GATE_REVIEW_REQUIRED_INACTIVE");
+      expect(missing.safety_input_manifest?.medication_status).toBe("MISSING");
+      expect(missing.rules_evaluated).toBe(false);
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET kb_entity_id = NULL WHERE id = $1
+      `, [activeMedicationFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [activeMedicationFactId]);
+      const unresolved = await readCurrentSafetyGate();
+      expect(unresolved.status).toBe("SAFETY_GATE_REVIEW_REQUIRED_INACTIVE");
+      expect(unresolved.safety_input_manifest?.medication_status)
+        .toBe("UNRESOLVED_ENTITY");
+      expect(unresolved.unresolved_release_medication_count).toBe(1);
+      expect(unresolved.rules_evaluated).toBe(false);
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET kb_entity_id = $2 WHERE id = $1
+      `, [activeMedicationFactId, outsideEntityId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [activeMedicationFactId]);
+      const changedInputHash = (await db.query<{ value: string }>(`
+        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+      `, [safetyInputRevisionId])).rows[0].value;
+      const releaseExternal = await readSafetyGate(
+        changedInputHash,
+        expectedReleaseManifestHash,
+        safetyHomeopathicRequestHash,
+        safetySplitTrackHash,
+      );
+      expect(releaseExternal.status).toBe("SAFETY_GATE_SPLIT_TRACK_UNAVAILABLE");
+      expect(releaseExternal.candidate_formation_allowed).toBe(false);
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
+  it("rejects cherry-picked release safety rules even when the base release remains valid", async () => {
+    await db.exec(`
+      BEGIN;
+      ALTER TABLE public.kb_release_items DISABLE TRIGGER USER;
+      ALTER TABLE public.kb_releases DISABLE TRIGGER USER;
+      DELETE FROM public.kb_release_items
+       WHERE release_id = '${knowledgeReleaseId}'
+         AND assertion_id = '${interactionAssertionId}';
+      UPDATE public.kb_releases release
+         SET release_manifest = public.kb_release_manifest_v1(release.id, release.release_key),
+             release_manifest_hash = public.kb_release_manifest_hash_v1(
+               public.kb_release_manifest_v1(release.id, release.release_key)
+             )
+       WHERE release.id = '${knowledgeReleaseId}';
+    `);
+    try {
+      const changedReleaseHash = (await db.query<{ value: string }>(`
+        SELECT release_manifest_hash AS value
+          FROM public.kb_releases WHERE id = $1
+      `, [knowledgeReleaseId])).rows[0].value;
+      const baseRelease = (await db.query<{ value: boolean }>(`
+        SELECT public.kb_release_is_valid($1, true) AS value
+      `, [knowledgeReleaseId])).rows[0].value;
+      expect(baseRelease).toBe(true);
+      const result = await readCurrentSafetyGate(changedReleaseHash);
+      expect(result).toEqual(expect.objectContaining({
+        status: "SAFETY_GATE_RULE_SCOPE_UNAVAILABLE",
+        safety_disposition: "REVIEW_ONLY",
+        candidate_formation_allowed: false,
+        inactive_candidate_preflight_ready: false,
+        safety_preconditions_complete: false,
+        rules_evaluated: false,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+    expect(await readSafetyGate()).toEqual(successfulSafetyGate);
+  });
+
   it("exposes no preflight function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
@@ -1991,10 +2892,13 @@ describe.sequential("therapy retrieval v2 Step 6A through 6C preflights", () => 
           'public.therapy_retrieval_v2_entity_resolution_preflight_v1(uuid,text,uuid,text,integer,integer)',
           'public.therapy_retrieval_v2_reference_track_v1(uuid,uuid,uuid)',
           'public.therapy_retrieval_v2_homeopathic_request_manifest_v1(uuid,uuid,uuid,jsonb)',
-          'public.therapy_retrieval_v2_split_track_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,integer,integer,integer)'
+          'public.therapy_retrieval_v2_split_track_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,integer,integer,integer)',
+          'public.therapy_retrieval_v2_safety_input_manifest_v1(uuid)',
+          'public.therapy_retrieval_v2_safety_rule_assessments_v1(uuid,uuid)',
+          'public.therapy_retrieval_v2_safety_gate_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(50);
+    expect(privileges.rows).toHaveLength(65);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });

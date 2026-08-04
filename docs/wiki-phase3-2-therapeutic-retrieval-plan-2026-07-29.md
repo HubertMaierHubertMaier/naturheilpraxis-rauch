@@ -1170,6 +1170,62 @@ Repertoriums-Isolationsausnahme meldet die unabhaengige Gegenpruefung keine
 verbleibenden P0/P1-Befunde. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step6c-split-track-preflight-implementation-2026-08-04.md`.
 
+### Schritt 6D: Medizinisch inaktiver Safety-Gate-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804120000_create_therapy_safety_gate_preflight.sql`
+
+Der additive Block erzeugt drei weitere geschlossene Owner-Lesefunktionen und
+keine Tabelle. Er bindet den vollstaendigen 6C-Resultathash an ein separates
+Safety-Eingabemanifest und eine release-geschlossene Auswertung aller
+freigegebenen Safety-Regeln fuer jede exakte `preparation`- oder
+`product_variant`-Revision des Releases.
+
+Aktive, nicht negierte Red-Flag-Fakten mit Status `current` oder `unknown`
+erzeugen ausschliesslich `ESCALATE_ONLY`; nachgeordnete Regeln koennen diese
+Sperre nicht abschwaechen. Der Medikamentenstatus muss als einzelner,
+verifizierter, bestaetigter aktueller `medication.status`-Fakt mit kontrolliertem
+`local_v1`-Code `complete` oder `none_reported` vorliegen. Fehlende,
+widerspruechliche, unklare oder unaufgeloeste Medikation sowie jeder andere
+`review_only`-Fakt erzwingen Review. Eine explizit releasefremde Entity wird
+bereits durch die vorgelagerte 6B-/6C-Bindung vollstaendig gesperrt.
+
+Vorgezogene Scans begrenzen den Vertrag auf 512 exakte therapeutische Subjects,
+2.048 Safety-Regeln und 8.192 Bedingungen. Jedes Subject benoetigt mindestens
+eine Safety-Regel. Saemtliche global freigegebenen Safety-Regeln eines
+Release-Subjects muessen gemeinsam enthalten sein; Cherry-Picking bleibt auch
+dann gesperrt, wenn das darunterliegende Release-v1-Manifest noch formal
+gueltig waere. Subject, Related- und Condition-Entity-Revisionen sowie alle
+Assertion-Quellen muessen als exakte Items desselben Releases vorliegen.
+
+Die sechs 4B-1-Bedingungsarten werden als geordnete AND-Menge ausgewertet.
+Interaktionen verlangen zusaetzlich implizit die Related-Entity in einem aktiven
+ausgewaehlten Fakt. Coded- und Quantity-Mehrdeutigkeiten werden nicht
+priorisiert, sondern reviewpflichtig. Quantity-Vergleiche erlauben nur einen
+exakten Gleichheitsmesswert mit identischer Einheit und fuehren keine
+Einheitenumrechnung durch.
+
+Je Subject koennen Safety-Effekte `EXCLUDE`, `REVIEW_ONLY`, `NOTICE_ONLY` oder
+`NO_MATCHING_RULE_INACTIVE` entstehen. Es gibt bewusst kein `ALLOW`.
+Selbst `SAFETY_GATE_PREFLIGHT_COMPLETE_INACTIVE` setzt
+`medical_use_allowed`, `retrieval_execution_allowed`,
+`candidate_formation_allowed` und `candidate_status_assignment_allowed` auf
+`false`. Wiki- und Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67
+beziehungsweise vier Tabellen; alle Funktionen bleiben fuer Anwendungs-,
+Service- und Importrollen gesperrt.
+
+Der fokussierte Schritt-6A-bis-6D-Vertrag besteht in zwei laufzeitbegrenzten
+Gruppen mit zusammen 22/22 Tests. Die zusammenhaengende Eingabe-, Release-,
+Regel-, Such- und Repertoriumsregression besteht mit 7/7 Dateien und 109/109
+Tests, der vollstaendige Projektlauf mit 50/50 Dateien und 545/545 Tests. Beide
+TypeScript-Projekte, gezieltes ESLint und Produktionsbuild sind erfolgreich.
+Nach der fail-closed Haertung von unsicherem Medikamentenstatus und
+SQL-`NULL`-Semantik meldet die unabhaengige Gegenpruefung `APPROVE` ohne
+verbleibenden P0/P1-Befund.
+Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step6d-safety-gate-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`
