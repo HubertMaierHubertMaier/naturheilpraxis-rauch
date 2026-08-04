@@ -1075,6 +1075,57 @@ Inaktivitaetshaertung keine verbleibenden P0/P1-Befunde. Die ausfuehrliche
 Dokumentation steht in
 `docs/wiki-step6a-therapy-retrieval-v2-preflight-implementation-2026-08-04.md`.
 
+### Schritt 6B: Releasegebundener Entity-Resolution-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804100000_create_therapy_entity_resolution_preflight.sql`
+
+Der additive Block erzeugt drei weitere geschlossene Owner-Lesefunktionen und
+keine Tabelle. Aus den in 6A gebundenen terminalen Fakten entsteht ein
+kanonisches Suchmanifest mit begrenzten normalisierten Labels, Textwerten,
+Codeanzeigen und Codes. Strukturierte globale Kennungen werden qualifiziert und
+unqualifiziert, lokale `program_code`-Werte mangels Namespace ausschliesslich
+unqualifiziert gesucht. Uebergrosse Werte werden nicht abgeschnitten.
+
+Vor jeder Aufloesung muss fuer jedes Entity-Item des exakt gebundenen Releases
+eine vollstaendig gueltige `kb_search_documents`-Projektion existieren. Ein
+expliziter `kb_entity_id` im Patientenfakt muss selbst im Release liegen und
+kann nicht durch einen Texttreffer ersetzt werden.
+
+Ein vor dem 6A-Bindungsvalidator liegender begrenzter Scan erlaubt in diesem
+Referenzvertrag hoechstens 4.096 Release-Items. Die Projektionspruefung bricht
+danach stufenweise bei mehr als 1.024 Entity-Items oder 2.048
+Relationsassertions ab. Dadurch bleiben auch breite Treffer und Graphkanten vor
+der Ergebnisbegrenzung ressourcenseitig endlich; groessere Releases scheitern
+geschlossen statt teilweise zu laufen.
+
+Direkte Treffer verwenden die feste Reihenfolge exakter KB-Link, qualifizierte
+Kennung, unqualifizierte Kennung, normalisierter Titel, Alias, kanonischer
+Schluessel, deutscher Volltext und sprachneutraler Volltext. Die Abfragen sind
+kanalweise auf die bestehenden B-Tree-/GIN-Indizes ausgerichtet; Rohtext wird
+nur ueber `plainto_tsquery` verarbeitet. Es gibt keinen Relevanz- oder
+Gesamtscore.
+
+Von limitierten direkten Treffern wird hoechstens eine im Release versiegelte
+Graphkante in beide Richtungen verfolgt. Relation, Richtung, Assertion und
+exakte Nachbarrevision bleiben sichtbar. Der Status
+`GRAPH_EDGE_MATCH_ONLY_NOT_RECOMMENDATION` verhindert eine Umdeutung der Kante
+in Eignung oder Empfehlung.
+
+Jede Antwort bleibt medizinisch und operativ inaktiv. Wiki- und
+Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67 beziehungsweise vier
+Tabellen; alle Funktionen sind fuer Anwendungs-, Service- und Importrollen
+gesperrt. Der fokussierte gemeinsame Schritt-6A-/6B-Lauf besteht mit 11/11
+Tests, die zusammenhaengende Eingabe-, Release- und Suchregression mit 75/75
+Tests und der vollstaendige Projektlauf mit 50/50 Dateien und 534/534 Tests.
+Beide TypeScript-Projekte, der gezielte ESLint-Lauf und der Produktionsbuild
+sind erfolgreich. Nach Ressourcenhaertung fuer vorgezogene und sofort
+abbrechende Mengengrenzen sowie einer auf reine Lesezugriffe verengten
+Suchvertragsausnahme meldet die unabhaengige Abschlussreview keine verbleibenden
+P0/P1-Befunde. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step6b-entity-resolution-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`

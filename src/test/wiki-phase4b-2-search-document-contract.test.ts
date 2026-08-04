@@ -839,6 +839,12 @@ describe.sequential("Wiki 4B-2a search document contract", () => {
       "supabase/migrations/20260802090000_create_kb_search_document_contract.sql",
       "supabase/migrations/20260802100000_create_kb_laboratory_contract.sql",
       "supabase/migrations/20260802110000_create_kb_homeopathic_repertory_contract.sql",
+      "supabase/migrations/20260804100000_create_therapy_entity_resolution_preflight.sql",
+    ]);
+    const searchContractMigration =
+      "supabase/migrations/20260802090000_create_kb_search_document_contract.sql";
+    const readOnlyContractMigrations = new Set([
+      "supabase/migrations/20260804100000_create_therapy_entity_resolution_preflight.sql",
     ]);
     const violations: string[] = [];
     const visit = (directory: string, relativeDirectory: string) => {
@@ -851,13 +857,25 @@ describe.sequential("Wiki 4B-2a search document contract", () => {
           const source = readFileSync(absolutePath, "utf8");
           if (!/\bkb_search_documents\b/.test(source)) continue;
 
-          const isContractMigration = relativePath ===
-            "supabase/migrations/20260802090000_create_kb_search_document_contract.sql";
-          const hasDirectRuntimeAccess =
+          const hasDirectReadAccess =
             /\.from\(\s*["'`]kb_search_documents["'`]\s*\)/.test(source)
-            || /\b(?:SELECT[\s\S]{0,120}\bFROM|INSERT[\s\S]{0,120}\bINTO|UPDATE|DELETE[\s\S]{0,120}\bFROM)\s+(?:public\.)?kb_search_documents\b/i.test(source);
+            || /\bSELECT[\s\S]{0,120}\bFROM\s+(?:public\.)?kb_search_documents\b/i.test(source);
+          const hasDirectWriteAccess =
+            /\b(?:INSERT\s+INTO|UPDATE(?:\s+ONLY)?|DELETE\s+FROM(?:\s+ONLY)?|MERGE\s+INTO|TRUNCATE(?:\s+TABLE)?(?:\s+ONLY)?|COPY)\s+(?:public\.)?kb_search_documents\b/i.test(source);
+          const hasDirectTableGrant =
+            /\bGRANT\b[\s\S]{0,200}\bON\s+(?:TABLE\s+)?(?:public\.)?kb_search_documents\b/i.test(source);
+          const hasDirectRuntimeAccess = hasDirectReadAccess
+            || hasDirectWriteAccess
+            || hasDirectTableGrant;
+          const isReadOnlyContractMigration = readOnlyContractMigrations.has(relativePath);
+          const hasUnapprovedDirectAccess = relativePath !== searchContractMigration
+            && !isReadOnlyContractMigration
+            && hasDirectRuntimeAccess;
+          const violatesReadOnlyContract = isReadOnlyContractMigration
+            && (hasDirectWriteAccess || hasDirectTableGrant);
           if (!contractSources.has(relativePath)
-              || (!isContractMigration && hasDirectRuntimeAccess)) {
+              || hasUnapprovedDirectAccess
+              || violatesReadOnlyContract) {
             violations.push(relativePath);
           }
         }
