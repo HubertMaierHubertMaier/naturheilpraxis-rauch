@@ -1556,6 +1556,9 @@ bestanden mit 526/526 Tests. Beide TypeScript-Projekte, gezieltes ESLint und der
 Produktionsbuild auf Node 20.20.2/npm 10.9.9 sind erfolgreich. Die ausfuehrliche
 Dokumentation steht in
 `docs/wiki-step7d-postgresql-conformance-implementation-2026-08-04.md`.
+Der finale PostgreSQL-17.10-Lauf fuer Commit `d9f71af` bestand alle sechs Jobs
+und 56/56 Tests:
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30903049293>.
 
 ## Historischer erster Implementierungsblock
 

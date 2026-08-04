@@ -2,10 +2,10 @@
 
 Stand: 2026-08-04
 
-Status: lokal implementiert. Der lokale PGlite-Vertrag und die statischen
-CI-Nachweise sind verifiziert; der isolierte PostgreSQL-17-Lauf wird auf dem
-zugehoerigen GitHub-Branch ausgefuehrt. Es gibt kein Supabase-Deployment, keine
-echten medizinischen Daten und keine Verbindung zum sichtbaren Therapiepfad.
+Status: implementiert und lokal sowie gegen PostgreSQL 17 verifiziert. Der
+isolierte GitHub-Lauf hat alle sechs Vertragsgruppen bestanden. Es gibt kein
+Supabase-Deployment, keine echten medizinischen Daten und keine Verbindung zum
+sichtbaren Therapiepfad.
 
 ## Ziel und harte Grenze
 
@@ -128,6 +128,28 @@ Erwartungen und Datenbankoperationen wurden dabei nicht geaendert.
 Der Build meldet ausschliesslich die bereits sichtbaren Hinweise zu veralteten
 Browserslist-Daten, `eval` in der Drittbibliothek Bluebird und grossen Chunks.
 7D fuegt keinen Anwendungsbundle-Import und keinen neuen Produktionschunk hinzu.
+
+## PostgreSQL-17-Ergebnis
+
+Der finale Workflow lief fuer Commit
+`d9f71af41e3e1612a33fc818f26e092fa5a6829e` erfolgreich:
+
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30903049293>
+
+Alle sechs Jobs meldeten `success`; damit sind dieselben 56 Tests auch gegen
+PostgreSQL 17.10 bestaetigt. Die ersten beiden Diagnoseablaeufe fanden
+ausschliesslich Unterschiede im Testvertrag:
+
+- der Treiber liefert den internen Katalogtyp `name[]` als PostgreSQL-Text statt
+  als JavaScript-Array; die exakte Rollenmenge wird nun SQL-seitig boolesch
+  verglichen
+- die Standardkollation `en_US.utf8` sortiert Unterstriche anders als PGlite;
+  die Rollenliste verwendet nun ausdruecklich die bereits projektweit genutzte
+  Kollation `C`
+
+Beide Korrekturen betreffen nur Assertions im synthetischen Test. Keine
+Migration, Datenbankfunktion, Rolle, Policy, Anwendung oder Produktlogik wurde
+veraendert.
 
 ## Unveraenderte Produktgrenzen
 
