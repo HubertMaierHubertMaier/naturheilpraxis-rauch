@@ -63,4 +63,29 @@ describe("therapy retrieval PostgreSQL conformance harness", () => {
     );
     expect(workflowSource).not.toContain("secrets.");
   });
+
+  it("rehearses a bounded synthetic dump and restore without retaining an artifact", () => {
+    expect(workflowSource).toContain('- "db-step7e-*"');
+    expect(workflowSource).toContain(
+      "if: matrix.name == 'group-5-audit-persistence'",
+    );
+    expect(workflowSource).toContain("pg_dump --format custom");
+    expect(workflowSource).toContain(
+      "pg_restore --exit-on-error --single-transaction",
+    );
+    expect(workflowSource).toContain(
+      "createdb --template template0 --username postgres retrieval_restore",
+    );
+    expect(workflowSource).toContain("test \"$dump_bytes\" -le 67108864");
+    expect(workflowSource).toContain("public.kb_export_wiki_snapshot()::text");
+    expect(workflowSource).toContain("public.therapy_input_export_snapshot_v2()");
+    expect(workflowSource).toContain("public.therapy_input_export_snapshot_v3()");
+    expect(workflowSource).toContain(
+      "public.therapy_retrieval_v2_audit_retention_restore_preflight_v1",
+    );
+    expect(workflowSource).toContain(
+      'test "$target_contract" = "$source_contract"',
+    );
+    expect(workflowSource).not.toMatch(/upload-artifact|DROP DATABASE/i);
+  });
 });

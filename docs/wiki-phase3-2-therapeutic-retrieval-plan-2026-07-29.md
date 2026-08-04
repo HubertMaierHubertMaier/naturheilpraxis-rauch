@@ -1560,6 +1560,28 @@ Der finale PostgreSQL-17.10-Lauf fuer Commit `d9f71af` bestand alle sechs Jobs
 und 56/56 Tests:
 <https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30903049293>.
 
+### Schritt 7E: Ephemere PostgreSQL-Dump-/Restore-Probe
+
+7E erweitert ausschliesslich den synthetischen PostgreSQL-17-CI-Nachweis. Nach
+der Auditpersistenz-Gruppe wird die ephemere Quelldatenbank mit dem
+versionsgleichen `pg_dump` im Custom-Format gesichert, innerhalb einer harten
+64-MiB-Grenze in eine frische `template0`-Datenbank transaktional restauriert
+und danach vollstaendig mit dem Servicecontainer verworfen.
+
+Quelle und Ziel muessen exakte SHA-256-Werte fuer Wiki-, Therapie-v2- und
+Therapie-v3-Snapshot sowie fuer das vollstaendige 7C-Preflightresultat liefern.
+Damit bleiben Integritaetszaehler, Trigger, Restore-Fremdschluessel, RLS,
+Policy, Rechte und geschlossener Writer im Vergleich enthalten. Der technische
+Preflight muss vor und nach dem Restore weiterhin denselben inaktiven Status
+liefern.
+
+Der Dump wird nicht hochgeladen und ist nicht verschluesselt. Die Probe ist
+deshalb ausdruecklich kein operativer Restore-Drill und genehmigt weder
+Aufbewahrung oder Loeschung noch Deployment, Replay, Schattenlauf, KI,
+Planwahl, Dosierungsanzeige, medizinische oder produktive Nutzung oder
+Aktivierung. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step7e-postgresql-dump-restore-rehearsal-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
