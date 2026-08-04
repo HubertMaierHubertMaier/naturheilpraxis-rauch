@@ -31,8 +31,8 @@ import { toast } from "sonner";
 import { BACKUP_AREAS, type BackupArea } from "@/lib/backupAreas";
 import {
   validateTherapyInputSubsetPayload,
-  type TherapyInputSnapshotManifestV2,
-  type TherapyInputSnapshotValidationV2,
+  type TherapyInputSnapshotManifestV3,
+  type TherapyInputSnapshotValidationV3,
 } from "@/lib/therapyInputBackup";
 import { validateWikiSubsetPayload } from "@/lib/wikiBackup";
 
@@ -516,8 +516,8 @@ export function BackupCenter() {
         wikiSnapshotManifest?: Record<string, { rows: number; sha256: string }> | null;
         legacyBridgeValidation?: Record<string, number> | null;
         therapyInputSnapshotVersion?: number | null;
-        therapyInputSnapshotManifest?: Partial<TherapyInputSnapshotManifestV2> | null;
-        therapyInputValidation?: Partial<TherapyInputSnapshotValidationV2> | null;
+        therapyInputSnapshotManifest?: Partial<TherapyInputSnapshotManifestV3> | null;
+        therapyInputValidation?: Partial<TherapyInputSnapshotValidationV3> | null;
       };
 
       if (area.id === "iaa-icd10") {
@@ -631,7 +631,7 @@ export function BackupCenter() {
         "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren und `SET CONSTRAINTS ALL DEFERRED` setzen.",
         `2. Auf allen ${wikiTableCount} Wiki-Tabellen \`DISABLE TRIGGER USER\` setzen. Fremdschluesseltrigger bleiben aktiv; Review-, Snapshot-, Import-, Promotion- und Capture-Trigger werden fuer den exakten Reimport pausiert.`,
         "3. Vor dem Leeren `current_revision_id` in `kb_articles`, `kb_entities` und `kb_sources` auf NULL setzen. Dies loest die absichtlich restriktiven Parent-zu-Revisionszeiger innerhalb derselben Restore-Transaktion.",
-        "4. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds mit `DELETE` in umgekehrter Fremdschluesselreihenfolge leeren: `kb_search_documents` vor `kb_release_items`, `kb_release_items` vor `kb_releases`, `kb_safety_rule_conditions` vor `kb_safety_rules`; im Repertoriumsblock zuerst `kb_homeopathic_chunk_import_chunks`, dann `kb_homeopathic_chunk_import_batches`, danach `kb_homeopathic_rubric_remedy_assignments`, Remedy-Zuordnungen, Graddefinitionen, Rubrikrevisionen, Rubriken und zuletzt `kb_homeopathic_repertory_revision_details`; `kb_lab_finding_definition_revision_details` vor `kb_lab_reference_ranges` und diese vor `kb_lab_parameter_revision_details`; alle Detaildaten vor ihren Quellen- und Entitaetsrevisionen. Bestehende `therapy_input_facts` bleiben unangetastet. Ihr `kb_entity_id`-Fremdschluessel ist `NO ACTION DEFERRABLE` und darf erst nach dem Reimport derselben Entitaets-UUIDs geprueft werden. `kb_entities` deshalb weder per `TRUNCATE` noch mit `CASCADE` leeren.",
+        "4. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds mit `DELETE` in umgekehrter Fremdschluesselreihenfolge leeren: `kb_search_documents` vor `kb_release_items`, `kb_release_items` vor `kb_releases`, `kb_safety_rule_conditions` vor `kb_safety_rules`; im Repertoriumsblock zuerst `kb_homeopathic_chunk_import_chunks`, dann `kb_homeopathic_chunk_import_batches`, danach `kb_homeopathic_rubric_remedy_assignments`, Remedy-Zuordnungen, Graddefinitionen, Rubrikrevisionen, Rubriken und zuletzt `kb_homeopathic_repertory_revision_details`; `kb_lab_finding_definition_revision_details` vor `kb_lab_reference_ranges` und diese vor `kb_lab_parameter_revision_details`; alle Detaildaten vor ihren Quellen- und Entitaetsrevisionen. Bestehende `therapy_input_facts` und `therapy_retrieval_audit_runs` bleiben unangetastet. Ihre `NO ACTION DEFERRABLE`-Fremdschluessel duerfen erst nach dem Reimport derselben Entity-, Entity-Revisions-, Release- und Repertoriums-UUIDs geprueft werden; ein inkompatibler Wiki-Snapshot ist vollstaendig zurueckzurollen. `kb_entities` deshalb weder per `TRUNCATE` noch mit `CASCADE` leeren.",
         "5. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; danach `kb_lab_parameter_revision_details`, `kb_lab_reference_ranges` und `kb_lab_finding_definition_revision_details`; anschließend `kb_homeopathic_repertory_revision_details`, `kb_homeopathic_rubrics`, `kb_homeopathic_rubric_revisions`, `kb_homeopathic_grade_definitions`, `kb_homeopathic_repertory_remedies`, `kb_homeopathic_rubric_remedy_assignments`, `kb_homeopathic_chunk_import_batches` und `kb_homeopathic_chunk_import_chunks` in dieser Reihenfolge; danach `kb_dosage_rules`, `kb_safety_rules` und zuletzt `kb_safety_rule_conditions`; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; alle Kernzeilen, Kandidatenvertraege und Quellen-Promotionen vor `kb_entity_candidate_draft_promotions`; `kb_entity_candidate_draft_promotion_assertions` zuletzt innerhalb des Promotionsblocks nach ihrer Entitaets-Eltern-Promotion; `kb_releases` erst nach den Kernobjekten, `kb_release_items` nach allen gebundenen Revisionen und Abhaengigkeiten und `kb_search_documents` zuletzt; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
         "6. Nach dem Import `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren. Nur wenn alle Fremdschluessel einschliesslich bestehender `therapy_input_facts.kb_entity_id` gueltig sind, fortfahren.",
         `7. Auf allen ${wikiTableCount} Tabellen \`ENABLE TRIGGER USER\` setzen, bevor validiert oder committet wird.`,
@@ -643,24 +643,25 @@ export function BackupCenter() {
         "",
         "## Verbindlicher Restore fuer den Therapie-Eingabe-Snapshot",
         "",
-        "`therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts` und `therapy_input_fact_sources` bilden Snapshot-Version 2. Die JSON-Dateien wurden verlustfrei innerhalb eines einzigen Datenbank-Snapshots serialisiert.",
+        "`therapy_input_revisions`, `therapy_input_sources`, `therapy_input_facts`, `therapy_input_fact_sources` und `therapy_retrieval_audit_runs` bilden Snapshot-Version 3. Die JSON-Dateien wurden verlustfrei innerhalb eines einzigen Datenbank-Snapshots serialisiert.",
         "",
         "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren; direkte Schreibrechte fuer `authenticated` oder `service_role` nicht lockern.",
         "2. Einen kompatiblen Wiki-Snapshot einschliesslich aller durch `kb_entity_id` referenzierten `kb_entities` zuerst wiederherstellen.",
-        "3. `SET CONSTRAINTS ALL DEFERRED` ausfuehren und auf allen vier Tabellen `DISABLE TRIGGER USER` setzen.",
-        "4. Löschreihenfolge: `therapy_input_fact_sources`, `therapy_input_facts`, `therapy_input_sources`, `therapy_input_revisions`. Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen. Die JSON-Zahlen nicht durch JavaScript parsen oder neu serialisieren.",
+        "3. `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren, auf allen fünf Tabellen `DISABLE TRIGGER USER` setzen und erst danach `SET CONSTRAINTS ALL DEFERRED` ausfuehren.",
+        "4. Löschreihenfolge: `therapy_retrieval_audit_runs`, `therapy_input_fact_sources`, `therapy_input_facts`, `therapy_input_sources`, `therapy_input_revisions`. Importreihenfolge: Revisionen, Eingabequellen, Fakten, Faktenquellen, Auditläufe. Die JSON-Zahlen nicht durch JavaScript parsen oder neu serialisieren.",
         "   Owner-SQL fuer Revisionen: `INSERT INTO public.therapy_input_revisions SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_revisions, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_revisions.json` als Parameter `$1`.",
         "   Owner-SQL fuer Quellen: `INSERT INTO public.therapy_input_sources SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_sources, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_sources.json` als Parameter `$1`.",
         "   Owner-SQL fuer Fakten: `INSERT INTO public.therapy_input_facts SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_facts, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_facts.json` als Parameter `$1`.",
         "   Owner-SQL fuer Faktenquellen: `INSERT INTO public.therapy_input_fact_sources SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_input_fact_sources, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_input_fact_sources.json` als Parameter `$1`.",
-        "5. `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren und alle vier Tabellen-Trigger wieder aktivieren.",
-        "6. `therapy_input_export_snapshot_v2()` ausfuehren. Snapshot-Version 2, `invalid_revision_count = 0` und `invalid_fact_count = 0` sind Pflicht; alle vier Zeilenzahlen und SHA-256-Werte muessen exakt `therapy_input_snapshot_manifest.json` entsprechen.",
+        "   Owner-SQL fuer Auditläufe: `INSERT INTO public.therapy_retrieval_audit_runs SELECT * FROM jsonb_populate_recordset(NULL::public.therapy_retrieval_audit_runs, $1::jsonb);` mit dem unveraenderten Text aus `db/therapy_retrieval_audit_runs.json` als Parameter `$1`.",
+        "5. `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren und alle fünf Tabellen-Trigger wieder aktivieren.",
+        "6. `therapy_input_export_snapshot_v3()` ausfuehren. Snapshot-Version 3, `invalid_revision_count = 0`, `invalid_fact_count = 0` und `invalid_audit_run_count = 0` sind Pflicht; alle fünf Zeilenzahlen und SHA-256-Werte muessen exakt `therapy_input_snapshot_manifest.json` entsprechen.",
         "7. Nur dann committen. Bei jeder Abweichung die gesamte Transaktion zurueckrollen; kein tabellenweiser Autocommit-Restore.",
       ] : [];
       const restoreEntryLines = area.id === "iaa-icd10" ? [
         "## Wiederherstellung nur ueber den Datenbankeigner",
         "",
-        "Dieses ZIP darf fuer eine Bestandsaufnahme und einen Restore-Plan in den Lovable-Chat geladen werden. Die vier Therapie-Eingabetabellen duerfen jedoch weder durch Lovable, eine Restore-Edge-Function noch anderes JavaScript importiert werden. Der eigentliche Import muss dem unten beschriebenen parameterisierten Owner-SQL-Vertrag folgen.",
+        "Dieses ZIP darf fuer eine Bestandsaufnahme und einen Restore-Plan in den Lovable-Chat geladen werden. Die fünf geschützten Therapie- und Audit-Tabellen duerfen jedoch weder durch Lovable, eine Restore-Edge-Function noch anderes JavaScript importiert werden. Der eigentliche Import muss dem unten beschriebenen parameterisierten Owner-SQL-Vertrag folgen.",
         "",
       ] : area.id === "wiki" ? [
         "## Wiederherstellung nur ueber den Datenbankeigner",
@@ -1217,7 +1218,7 @@ export function BackupCenter() {
             <AlertDescription className="space-y-1 text-sm">
               <p>
                 Das ZIP enthält normale Tabellen als <code>.csv</code> (Excel) <em>und</em>{" "}
-                <code>.json</code>. Die vier Therapie-Eingabetabellen liegen zum Schutz großer
+                <code>.json</code>. Die fünf geschützten Therapie- und Audit-Tabellen liegen zum Schutz großer
                 Ganzzahlen ausschließlich als verlustfreie JSON-Dateien vor. Zusätzlich enthält es eine{" "}
                 <code>BACKUP-MANIFEST.md</code> mit Schritt-für-Schritt-Wiederherstellung und eine{" "}
                 <code>SECRETS-CHECKLISTE.txt</code> mit allen Secret-Namen.

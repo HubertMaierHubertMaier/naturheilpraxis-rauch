@@ -22,25 +22,24 @@ async function sha256TextHex(value: string): Promise<string> {
   ).join("");
 }
 
-export async function validateTherapyInputSnapshotV2(
+async function validateTherapyInputSnapshot(
   value: unknown,
   expectedTables: readonly string[],
+  expectedVersion: number,
+  validationKeys: readonly string[],
 ): Promise<void> {
   if (!isRecord(value)) {
     throw new Error("Therapie-Eingabe-Snapshot: ungueltiges Manifest");
   }
   const snapshot = value as TherapyInputSnapshotCandidate;
-  if (snapshot.snapshot_version !== 2) {
+  if (snapshot.snapshot_version !== expectedVersion) {
     throw new Error("Therapie-Eingabe-Snapshot: unerwartete Snapshot-Version");
   }
 
   if (!isRecord(snapshot.validation)
-    || JSON.stringify(Object.keys(snapshot.validation).sort()) !== JSON.stringify([
-      "invalid_fact_count",
-      "invalid_revision_count",
-    ])
-    || snapshot.validation.invalid_revision_count !== 0
-    || snapshot.validation.invalid_fact_count !== 0) {
+    || JSON.stringify(Object.keys(snapshot.validation).sort())
+      !== JSON.stringify([...validationKeys].sort())
+    || validationKeys.some((key) => snapshot.validation?.[key] !== 0)) {
     throw new Error("Therapie-Eingabe-Snapshot: Integritaetspruefung fehlgeschlagen");
   }
 
@@ -75,4 +74,25 @@ export async function validateTherapyInputSnapshotV2(
       throw new Error(`Therapie-Eingabe-Snapshot: Manifestfehler in ${table}`);
     }
   }
+}
+
+export async function validateTherapyInputSnapshotV2(
+  value: unknown,
+  expectedTables: readonly string[],
+): Promise<void> {
+  return validateTherapyInputSnapshot(value, expectedTables, 2, [
+    "invalid_fact_count",
+    "invalid_revision_count",
+  ]);
+}
+
+export async function validateTherapyInputSnapshotV3(
+  value: unknown,
+  expectedTables: readonly string[],
+): Promise<void> {
+  return validateTherapyInputSnapshot(value, expectedTables, 3, [
+    "invalid_audit_run_count",
+    "invalid_fact_count",
+    "invalid_revision_count",
+  ]);
 }

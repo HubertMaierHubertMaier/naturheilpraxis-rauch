@@ -1116,7 +1116,7 @@ describe("Wiki Phase 3.5 knowledge release contract", () => {
       /const THERAPY_INPUT_SNAPSHOT_TABLES = \[([\s\S]*?)\] as const;/,
     )?.[1] ?? "";
     expect(Array.from(therapyBoundary.matchAll(/"([a-z0-9_]+)"/g), (match) => match[1]))
-      .toEqual(therapyInputTables);
+      .toEqual([...therapyInputTables, "therapy_retrieval_audit_runs"]);
     expect(backupExportSource).toContain("...REQUIRED_KB_RELEASE_TABLES");
     for (const table of releaseTables) {
       expect(backupAreasSource).toContain(`"${table}"`);

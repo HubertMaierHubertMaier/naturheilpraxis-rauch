@@ -69,6 +69,12 @@ const auditEnvelopeMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", auditEnvelopeMigrationFile),
   "utf8",
 );
+const auditPersistenceMigrationFile =
+  "20260804160000_create_therapy_retrieval_audit_persistence.sql";
+const auditPersistenceMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", auditPersistenceMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -683,6 +689,37 @@ type AuditEnvelopeResult = {
   result_hash: string;
 };
 
+type AuditPersistenceResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  productive_candidate_use_allowed: boolean;
+  dosage_evaluation_allowed: boolean;
+  dosage_display_allowed: boolean;
+  audit_persistence_allowed: boolean;
+  replay_execution_allowed: boolean;
+  shadow_execution_allowed: boolean;
+  ai_use_allowed: boolean;
+  plan_selection_allowed: boolean;
+  activation_allowed: boolean;
+  audit_persistence_complete: boolean;
+  audit_run_id: string;
+  audit_result_hash: string;
+  audit_run_row_hash: string;
+  result_hash: string;
+};
+
+type TherapyInputSnapshotV3 = {
+  snapshot_version: number;
+  tables: Record<string, string>;
+  manifest: Record<string, { rows: number; sha256: string }>;
+  validation: {
+    invalid_revision_count: number;
+    invalid_fact_count: number;
+    invalid_audit_run_count: number;
+  };
+};
+
 const homeopathicRubricLinks = [
   {
     therapy_input_fact_id: successorFactId,
@@ -747,6 +784,11 @@ let successfulDosageRulePreflight: DosageRulePreflightResult;
 let wikiSnapshotAfterAuditEnvelope = "";
 let therapySnapshotAfterAuditEnvelope = "";
 let successfulAuditEnvelope: AuditEnvelopeResult;
+let wikiSnapshotAfterAuditPersistence = "";
+let therapySnapshotV2AfterAuditPersistence = "";
+let therapySnapshotV3BeforeAuditPersistence: TherapyInputSnapshotV3;
+let therapySnapshotV3AfterAuditPersistence: TherapyInputSnapshotV3;
+let successfulAuditPersistence: AuditPersistenceResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -2230,6 +2272,34 @@ async function readAuditEnvelope(
   ])).rows[0].value;
 }
 
+async function persistAuditEnvelope(
+  expectedAudit: string | null = successfulAuditEnvelope?.result_hash ?? null,
+  persistedBy: string | null = adminId,
+): Promise<AuditPersistenceResult> {
+  return (await db.query<{ value: AuditPersistenceResult }>(`
+    SELECT public.therapy_retrieval_v2_persist_audit_envelope_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, $9::text, $10::text, $11::text, $12::text,
+      $13::text, $14::uuid, 8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    safetyInputHash,
+    knowledgeReleaseId,
+    expectedReleaseManifestHash,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    safetyHomeopathicRequestHash,
+    safetySplitTrackHash,
+    successfulSafetyGate.result_hash,
+    successfulCandidateStatus.result_hash,
+    successfulDosageRulePreflight.result_hash,
+    expectedAudit,
+    persistedBy,
+  ])).rows[0].value;
+}
+
 async function readCurrentDosageRulePriority(): Promise<DosageRulePreflightResult> {
   const currentInputHash = (await db.query<{ value: string }>(`
     SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
@@ -2426,13 +2496,32 @@ beforeAll(async () => {
     "SELECT public.therapy_input_export_snapshot_v2() AS value",
   )).rows[0].value;
   successfulAuditEnvelope = await readAuditEnvelope();
+
+  await db.exec(auditPersistenceMigration);
+  wikiSnapshotAfterAuditPersistence = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotV2AfterAuditPersistence = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  therapySnapshotV3BeforeAuditPersistence = JSON.parse(
+    (await db.query<{ value: string }>(
+      "SELECT public.therapy_input_export_snapshot_v3() AS value",
+    )).rows[0].value,
+  ) as TherapyInputSnapshotV3;
+  successfulAuditPersistence = await persistAuditEnvelope();
+  therapySnapshotV3AfterAuditPersistence = JSON.parse(
+    (await db.query<{ value: string }>(
+      "SELECT public.therapy_input_export_snapshot_v3() AS value",
+    )).rows[0].value,
+  ) as TherapyInputSnapshotV3;
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through Step 7A preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through Step 7B contracts", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -4329,7 +4418,276 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7A preflights", (
     }
   }, 20_000);
 
-  it("exposes no retrieval or audit preflight function to application or import roles", async () => {
+  it("adds one append-only audit table and protected snapshot v3 without changing prior snapshots", () => {
+    expect(auditPersistenceMigration.match(/CREATE TABLE public\./g)).toHaveLength(1);
+    expect(auditPersistenceMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(8);
+    expect(auditPersistenceMigration.match(/CREATE TRIGGER /g)).toHaveLength(3);
+    expect(auditPersistenceMigration.match(/CREATE CONSTRAINT TRIGGER /g))
+      .toHaveLength(1);
+    expect(auditPersistenceMigration.match(/CREATE POLICY /g)).toHaveLength(1);
+    expect(auditPersistenceMigration).toMatch(/^BEGIN;/);
+    expect(auditPersistenceMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(auditPersistenceMigration).not.toMatch(/CREATE OR REPLACE/);
+    expect(auditPersistenceMigration).not.toMatch(
+      /\b(?:therapy_sessions|patient_snapshot|audit_log)\b/,
+    );
+    expect(wikiSnapshotAfterAuditPersistence).toBe(wikiSnapshotAfterAuditEnvelope);
+    expect(therapySnapshotV2AfterAuditPersistence).toBe(
+      therapySnapshotAfterAuditEnvelope,
+    );
+
+    const expectedTables = [
+      "therapy_input_revisions",
+      "therapy_input_sources",
+      "therapy_input_facts",
+      "therapy_input_fact_sources",
+      "therapy_retrieval_audit_runs",
+    ].sort();
+    expect(therapySnapshotV3BeforeAuditPersistence.snapshot_version).toBe(3);
+    expect(Object.keys(therapySnapshotV3BeforeAuditPersistence.tables).sort())
+      .toEqual(expectedTables);
+    expect(Object.keys(therapySnapshotV3BeforeAuditPersistence.manifest).sort())
+      .toEqual(expectedTables);
+    expect(therapySnapshotV3BeforeAuditPersistence.validation).toEqual({
+      invalid_revision_count: 0,
+      invalid_fact_count: 0,
+      invalid_audit_run_count: 0,
+    });
+    expect(therapySnapshotV3BeforeAuditPersistence.manifest
+      .therapy_retrieval_audit_runs).toEqual({
+      rows: 0,
+      sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
+    });
+    expect(therapySnapshotV3AfterAuditPersistence.manifest
+      .therapy_retrieval_audit_runs).toEqual({
+      rows: 1,
+      sha256: expect.stringMatching(/^[0-9a-f]{64}$/),
+    });
+  });
+
+  it("persists only the exact expected audit result and remains idempotent", async () => {
+    expect(successfulAuditPersistence).toEqual(expect.objectContaining({
+      status: "RETRIEVAL_AUDIT_PERSISTED_INACTIVE",
+      interpretation: "AUDIT_PERSISTENCE_ONLY_NO_REPLAY_SHADOW_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      productive_candidate_use_allowed: false,
+      dosage_evaluation_allowed: false,
+      dosage_display_allowed: false,
+      audit_persistence_allowed: false,
+      replay_execution_allowed: false,
+      shadow_execution_allowed: false,
+      ai_use_allowed: false,
+      plan_selection_allowed: false,
+      activation_allowed: false,
+      audit_persistence_complete: true,
+      audit_result_hash: successfulAuditEnvelope.result_hash,
+      audit_run_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      audit_run_row_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+
+    const stored = await db.query<{
+      id: string;
+      audit_result: AuditEnvelopeResult;
+      audit_result_hash: string;
+      audit_envelope_hash: string;
+      dosage_rule_result_hash: string;
+      persisted_by: string;
+      row_hash: string;
+      valid: boolean;
+    }>(`
+      SELECT
+        run.id,
+        run.audit_result,
+        run.audit_result_hash,
+        run.audit_envelope_hash,
+        run.dosage_rule_result_hash,
+        run.persisted_by,
+        run.row_hash,
+        public.therapy_retrieval_v2_audit_run_is_valid_v1(run.id) AS valid
+      FROM public.therapy_retrieval_audit_runs run
+    `);
+    expect(stored.rows).toEqual([expect.objectContaining({
+      id: successfulAuditPersistence.audit_run_id,
+      audit_result: successfulAuditEnvelope,
+      audit_result_hash: successfulAuditEnvelope.result_hash,
+      audit_envelope_hash: successfulAuditEnvelope.audit_envelope_hash,
+      dosage_rule_result_hash: successfulDosageRulePreflight.result_hash,
+      persisted_by: adminId,
+      row_hash: successfulAuditPersistence.audit_run_row_hash,
+      valid: true,
+    })]);
+    expect((await db.query<{ value: number }>(`
+      SELECT public.therapy_retrieval_v2_invalid_audit_run_count_v1()::integer
+        AS value
+    `)).rows[0].value).toBe(0);
+
+    const replay = await persistAuditEnvelope();
+    expect(replay).toEqual(expect.objectContaining({
+      status: "RETRIEVAL_AUDIT_ALREADY_PERSISTED_INACTIVE",
+      audit_persistence_allowed: false,
+      audit_persistence_complete: true,
+      audit_run_id: successfulAuditPersistence.audit_run_id,
+      audit_result_hash: successfulAuditEnvelope.result_hash,
+      audit_run_row_hash: successfulAuditPersistence.audit_run_row_hash,
+    }));
+    expect((await db.query<{ value: number }>(`
+      SELECT count(*)::integer AS value
+      FROM public.therapy_retrieval_audit_runs
+    `)).rows[0].value).toBe(1);
+
+    const { result_hash: resultHash, ...resultPayload } = replay;
+    expect(await hashJson(resultPayload)).toBe(resultHash);
+  }, 30_000);
+
+  it("rejects stale audit expectations and incomplete persistence identity without writing", async () => {
+    await expect(persistAuditEnvelope("0".repeat(64)))
+      .rejects.toThrow(/exact ready Step 7A result/);
+    await expect(persistAuditEnvelope(successfulAuditEnvelope.result_hash, null))
+      .rejects.toThrow(/complete identifiers/);
+    expect((await db.query<{ value: number }>(`
+      SELECT count(*)::integer AS value
+      FROM public.therapy_retrieval_audit_runs
+    `)).rows[0].value).toBe(1);
+  }, 20_000);
+
+  it("blocks direct audit-run mutation", async () => {
+    await expect(db.query(`
+      INSERT INTO public.therapy_retrieval_audit_runs
+      SELECT gen_random_uuid(), run.contract_version, run.data_classification,
+             run.persistence_status, run.therapy_input_revision_id,
+             run.knowledge_release_id, run.repertory_entity_id,
+             run.repertory_revision_id, run.audit_result,
+             run.audit_result_hash, run.audit_envelope_hash,
+             run.dosage_rule_result_hash, run.persisted_at,
+             run.persisted_by, run.row_hash
+        FROM public.therapy_retrieval_audit_runs run
+       LIMIT 1
+    `)).rejects.toThrow(/require the owner writer/);
+    await expect(db.query(`
+      UPDATE public.therapy_retrieval_audit_runs SET persisted_at = now()
+    `)).rejects.toThrow(/append-only/);
+    await expect(db.query(`
+      DELETE FROM public.therapy_retrieval_audit_runs
+    `)).rejects.toThrow(/append-only/);
+    await expect(db.query(`
+      TRUNCATE public.therapy_retrieval_audit_runs
+    `)).rejects.toThrow(/append-only/);
+
+  }, 20_000);
+
+  it("detects bypassed corruption and round-trips the exact audit row through snapshot v3", async () => {
+    const originalText = (await db.query<{ value: string }>(`
+      SELECT public.therapy_input_export_snapshot_v3() AS value
+    `)).rows[0].value;
+    const original = JSON.parse(originalText) as TherapyInputSnapshotV3;
+    const auditRowsText = original.tables.therapy_retrieval_audit_runs;
+
+    await db.exec("BEGIN; SET CONSTRAINTS ALL IMMEDIATE; ALTER TABLE public.therapy_retrieval_audit_runs DISABLE TRIGGER USER; SET CONSTRAINTS ALL DEFERRED;");
+    try {
+      await db.exec("DELETE FROM public.therapy_retrieval_audit_runs;");
+      await db.query(`
+        INSERT INTO public.therapy_retrieval_audit_runs
+        SELECT * FROM jsonb_populate_recordset(
+          NULL::public.therapy_retrieval_audit_runs,
+          $1::jsonb
+        )
+      `, [auditRowsText]);
+
+      await db.query(`
+        UPDATE public.therapy_retrieval_audit_runs SET row_hash = $1
+      `, ["0".repeat(64)]);
+      expect((await db.query<{ value: number }>(`
+        SELECT public.therapy_retrieval_v2_invalid_audit_run_count_v1()::integer
+          AS value
+      `)).rows[0].value).toBe(1);
+      const corrupted = JSON.parse((await db.query<{ value: string }>(`
+        SELECT public.therapy_input_export_snapshot_v3() AS value
+      `)).rows[0].value) as TherapyInputSnapshotV3;
+      expect(corrupted.validation.invalid_audit_run_count).toBe(1);
+
+      await db.query(`
+        UPDATE public.therapy_retrieval_audit_runs SET row_hash = $1
+      `, [successfulAuditPersistence.audit_run_row_hash]);
+      await db.exec("SET CONSTRAINTS ALL IMMEDIATE; ALTER TABLE public.therapy_retrieval_audit_runs ENABLE TRIGGER USER;");
+      const restoredText = (await db.query<{ value: string }>(`
+        SELECT public.therapy_input_export_snapshot_v3() AS value
+      `)).rows[0].value;
+      expect(restoredText).toBe(originalText);
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 20_000);
+
+  it("keeps audit persistence owner-only while exposing only protected reads and snapshot v3", async () => {
+    const tablePrivileges = await db.query<{
+      role_name: string;
+      privilege: string;
+      allowed: boolean;
+    }>(`
+      SELECT
+        role_name,
+        privilege,
+        has_table_privilege(
+          role_name,
+          'public.therapy_retrieval_audit_runs',
+          privilege
+        ) AS allowed
+      FROM unnest(ARRAY[
+        'anon', 'authenticated', 'service_role', 'kb_importer', 'kb_import_runtime'
+      ]::text[]) role_name
+      CROSS JOIN unnest(ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']::text[])
+        privilege
+      ORDER BY role_name, privilege
+    `);
+    expect(tablePrivileges.rows.filter((row) => row.allowed)).toEqual([
+      { role_name: "authenticated", privilege: "SELECT", allowed: true },
+      { role_name: "service_role", privilege: "SELECT", allowed: true },
+    ]);
+
+    const policy = await db.query<{
+      policyname: string;
+      roles: string[];
+      cmd: string;
+      qual: string;
+    }>(`
+      SELECT policyname, roles, cmd, qual
+      FROM pg_policies
+      WHERE schemaname = 'public'
+        AND tablename = 'therapy_retrieval_audit_runs'
+    `);
+    expect(policy.rows).toEqual([expect.objectContaining({
+      policyname: "therapy_retrieval_audit_runs_admin_read",
+      roles: ["authenticated"],
+      cmd: "SELECT",
+      qual: expect.stringContaining("has_role"),
+    })]);
+
+    const snapshotPrivileges = await db.query<{
+      role_name: string;
+      can_execute: boolean;
+    }>(`
+      SELECT role_name,
+             has_function_privilege(
+               role_name,
+               'public.therapy_input_export_snapshot_v3()',
+               'EXECUTE'
+             ) AS can_execute
+      FROM unnest(ARRAY[
+        'anon', 'authenticated', 'service_role', 'kb_importer', 'kb_import_runtime'
+      ]::text[]) role_name
+      ORDER BY role_name
+    `);
+    expect(snapshotPrivileges.rows).toEqual([
+      { role_name: "anon", can_execute: false },
+      { role_name: "authenticated", can_execute: false },
+      { role_name: "kb_import_runtime", can_execute: false },
+      { role_name: "kb_importer", can_execute: false },
+      { role_name: "service_role", can_execute: true },
+    ]);
+  });
+
+  it("exposes no owner-only retrieval, audit, or persistence function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
         FROM unnest(ARRAY[
@@ -4355,10 +4713,17 @@ describe.sequential("therapy retrieval v2 Step 6A through Step 7A preflights", (
           'public.therapy_retrieval_v2_dosage_rule_scope_v1(uuid,jsonb)',
           'public.therapy_retrieval_v2_dosage_rule_assessments_v1(uuid,uuid,jsonb,jsonb)',
           'public.therapy_retrieval_v2_dosage_rule_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,integer,integer,integer)',
-          'public.therapy_retrieval_v2_audit_envelope_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,integer,integer,integer)'
+          'public.therapy_retrieval_v2_audit_envelope_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,integer,integer,integer)',
+          'public.therapy_retrieval_v2_audit_run_row_hash_v1(uuid,uuid,uuid,uuid,uuid,jsonb,text,text,text,timestamptz,uuid)',
+          'public.therapy_retrieval_v2_audit_run_is_valid_v1(uuid)',
+          'public.therapy_retrieval_v2_invalid_audit_run_count_v1()',
+          'public.therapy_retrieval_v2_protect_audit_run_append_only_v1()',
+          'public.therapy_retrieval_v2_gate_audit_run_insert_v1()',
+          'public.therapy_retrieval_v2_validate_audit_run_insert_v1()',
+          'public.therapy_retrieval_v2_persist_audit_envelope_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,text,text,text,uuid,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(100);
+    expect(privileges.rows).toHaveLength(135);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });

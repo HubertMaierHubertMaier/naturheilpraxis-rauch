@@ -1025,7 +1025,7 @@ describe.sequential("Wiki 4B-1 clinical rule contract", () => {
       "therapy snapshot boundary",
     );
     expect(Array.from(therapyBoundary.matchAll(/"([a-z0-9_]+)"/g), (match) => match[1]))
-      .toEqual(therapyInputTables);
+      .toEqual([...therapyInputTables, "therapy_retrieval_audit_runs"]);
 
     const therapyRevisionId = "70000000-0000-4000-8000-000000000001";
     const therapySourceId = "71000000-0000-4000-8000-000000000001";
