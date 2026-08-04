@@ -1398,6 +1398,53 @@ fehlende Daten, deterministische Replay-Hashes, Laufzeit und Validatorfehler.
 Die sichtbare Empfehlung bleibt bis zur fachlichen, technischen,
 datenschutzrechtlichen und Restore-Abnahme im bisherigen Pfad.
 
+### Schritt 7A: Medizinisch inaktiver Retrieval-Audit-Envelope-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804150000_create_therapy_retrieval_audit_envelope_preflight.sql`
+
+Der additive Block erzeugt genau eine geschlossene Owner-Lesefunktion und keine
+Tabelle. Er berechnet Schritt 6F erneut, verlangt dessen exakten Resultathash und
+bindet danach ein deterministisches Audit-Envelope fuer Eingabe-, Release-,
+Regel-, Comparator-, Fakten-, Quellen- und Kandidatenentscheidungsprovenienz.
+
+Red-Flag-`ESCALATE_ONLY` und Medikamenten-`REVIEW_ONLY` besitzen Vorrang vor
+einer veralteten 6F-Erwartung und erzeugen kein Envelope. Ein vollstaendiges
+Envelope kann sowohl einen 6F-Erfolg als auch einen fachlich blockierten 6F-
+Ausgang auditieren; es macht keinen dieser Ausgaenge medizinisch zulaessig.
+
+Ausgewaehlte Fakten und ihre Eingabequellen werden nur mit Identitaeten,
+kontrollierten Schluesseln und Inhalts-Hashes gebunden. Freie Eingabe-, Fakten-
+und Wissensquellenfundstellen werden ausschliesslich als kanonische Hashes
+ausgegeben. Faktwerte, klinischer Freitext, Quellenpayload, Safety-Notice und
+konkrete Dosierungswerte fehlen. Allgemeine und homoeopathische
+Comparator-Dimensionen bleiben versioniert und getrennt; es gibt keinen
+Gesamtscore.
+
+Safety- und Dosierungsregelentscheidungen enthalten exakte Regel-, Assertion-,
+Entity-, Revisions-, Fakten- und Quellenidentitaeten samt getrennten Hashes.
+KI-Modell, Prompt, Roh-/validierte KI-Ausgabe und Planpositionen werden nicht
+erfunden, sondern explizit als abwesend gebunden.
+
+Eigene Grenzen erlauben hoechstens 2.048 ausgewaehlte Fakten, jeweils 16.384
+Faktenquellen- und Safety-Quellenbindungen, 512 allgemeine und 200
+homoeopathische Kandidaten, 32.768 normalisierte Wissensquellenverwendungen und
+8 MiB Ergebnis. Persistenz, Replayausfuehrung, Schattenlauf, Dosierungsanzeige,
+KI, Planwahl, medizinische und produktive Nutzung sowie Aktivierung bleiben in
+jedem Status `false`.
+
+Wiki- und Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67 beziehungsweise
+vier Tabellen. Die Funktion ist fuer Anwendungs-, Service- und Importrollen
+gesperrt; Release v1 bleibt inaktiv. Der fokussierte Schritt-6A-bis-7A-Vertrag
+besteht in vier sauberen Gruppen mit 46/46 Tests, die zusammenhaengende
+Regression mit 7/7 Dateien und 133/133 Tests und der gruppierte Gesamtstand mit
+50/50 Dateien und 569/569 Tests. Beide TypeScript-Projekte, gezieltes ESLint,
+Secret-Policy und Produktionsbuild sind erfolgreich. Die unabhaengige
+Gegenpruefung meldet `APPROVE` ohne P0/P1-Befund. Die ausfuehrliche
+Dokumentation steht in
+`docs/wiki-step7a-retrieval-audit-envelope-preflight-implementation-2026-08-04.md`.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
