@@ -51,6 +51,12 @@ const safetyGateMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", safetyGateMigrationFile),
   "utf8",
 );
+const candidateStatusMigrationFile =
+  "20260804130000_create_therapy_candidate_status_preflight.sql";
+const candidateStatusMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", candidateStatusMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -116,17 +122,26 @@ const activeMedicationFactId = "93000000-0000-4000-8000-000000000012";
 const contraindicationFactId = "93000000-0000-4000-8000-000000000013";
 const redFlagFactId = "93000000-0000-4000-8000-000000000014";
 const quantitySafetyFactId = "93000000-0000-4000-8000-000000000015";
+const excludedCandidateFactId = "93000000-0000-4000-8000-000000000016";
 const safetyPreparationId = "31000000-0000-4000-8000-000000000020";
 const safetyPreparationRevisionId = "32000000-0000-4000-8000-000000000020";
 const medicationEntityId = "31000000-0000-4000-8000-000000000021";
 const medicationEntityRevisionId = "32000000-0000-4000-8000-000000000021";
+const candidateContextEntityId = "31000000-0000-4000-8000-000000000022";
+const candidateContextRevisionId = "32000000-0000-4000-8000-000000000022";
+const allowPreparationId = "31000000-0000-4000-8000-000000000023";
+const allowPreparationRevisionId = "32000000-0000-4000-8000-000000000023";
 const safetyBasisAssertionId = "41000000-0000-4000-8000-000000000020";
 const interactionAssertionId = "41000000-0000-4000-8000-000000000021";
 const contraindicationAssertionId = "41000000-0000-4000-8000-000000000022";
 const precautionAssertionId = "41000000-0000-4000-8000-000000000023";
+const allowBasisAssertionId = "41000000-0000-4000-8000-000000000024";
+const allowSafetyAssertionId = "41000000-0000-4000-8000-000000000025";
+const allowSupportAssertionId = "41000000-0000-4000-8000-000000000026";
 const interactionRuleId = "51000000-0000-4000-8000-000000000020";
 const contraindicationRuleId = "51000000-0000-4000-8000-000000000021";
 const precautionRuleId = "51000000-0000-4000-8000-000000000022";
+const allowSafetyRuleId = "51000000-0000-4000-8000-000000000023";
 const unknownInputRevisionId = "91000000-0000-4000-8000-000000000099";
 const unknownReleaseId = "61000000-0000-4000-8000-000000000099";
 const extractedAt = "2026-08-04T08:10:00.000000Z";
@@ -390,6 +405,79 @@ type SafetyGateResult = {
   result_hash: string;
 };
 
+type CandidateStatusResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  retrieval_execution_allowed: boolean;
+  productive_candidate_use_allowed: boolean;
+  candidate_status_assignment_allowed: boolean;
+  inactive_candidate_statuses_materialized?: boolean;
+  dosage_evaluation_allowed: boolean;
+  ai_use_allowed: boolean;
+  global_candidate_status?: string;
+  safety_gate_result_hash_matches?: boolean;
+  split_track_result_hash?: string;
+  safety_gate_result_hash?: string;
+  candidate_count?: number;
+  general_track?: {
+    track: string;
+    status: string;
+    candidate_count: number;
+    status_counts: Record<string, number>;
+    opaque_composite_score_used: boolean;
+    candidates: Array<{
+      position: number;
+      candidate_status: string;
+      status_lock: string;
+      status_reasons: string[];
+      entity_id: string;
+      entity_revision_id: string;
+      entity_type_code: string;
+      safety: {
+        safety_effect: string;
+        safety_rule_count: number;
+      };
+      dimensions: {
+        clinical_fact_coverage: Record<string, number>;
+        exact_reference_precision: Record<string, number | string>;
+        clinical_relation_support: Record<string, number>;
+        evidence_foundations: Record<string, number>;
+        evidence_quality: Record<string, number>;
+        preference_and_budget: Record<string, boolean>;
+      };
+      evidence_details: Array<{
+        assertion_id: string;
+        evidence_basis: string;
+        evidence_quality: string;
+      }>;
+    }>;
+    track_result_hash: string;
+  } | null;
+  homeopathic_track?: {
+    track: string;
+    status: string;
+    candidate_count: number;
+    status_counts: Record<string, number>;
+    opaque_composite_score_used: boolean;
+    candidates: Array<{
+      position: number;
+      candidate_status: string;
+      status_reasons: string[];
+      remedy_entity_id: string;
+      dimensions: {
+        rubric_coverage: Record<string, number>;
+        domain_coverage: Record<string, number>;
+        negative_rubric_conflicts: number;
+        materia_medica_alignment: string;
+        practice_experience: string;
+      };
+    }>;
+    track_result_hash: string;
+  } | null;
+  result_hash: string;
+};
+
 const homeopathicRubricLinks = [
   {
     therapy_input_fact_id: successorFactId,
@@ -444,6 +532,10 @@ let safetyHomeopathicRequestHash = "";
 let safetySplitTrackHash = "";
 let safetyInputManifest: SafetyInputManifest;
 let successfulSafetyGate: SafetyGateResult;
+let successfulSafetySplitTrack: SplitTrackResult;
+let wikiSnapshotAfterCandidateStatus = "";
+let therapySnapshotAfterCandidateStatus = "";
+let successfulCandidateStatus: CandidateStatusResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -776,7 +868,10 @@ async function insertSafetyInput(): Promise<void> {
   const safetyEnvelope = {
     format: "therapy_input_envelope_v1",
     clinical_text: "Synthetic deidentified safety gate input",
-    context: {},
+    context: {
+      budget_eur: 100,
+      preferred_lanes: ["general", "homeopathic"],
+    },
   };
   const safetySourceHash = await hashJson({
     hash_schema_version: 1,
@@ -932,7 +1027,7 @@ async function insertSafetyInput(): Promise<void> {
     key: "symptom.synthetic_safety_context",
     label: "Synthetic safety context",
     value: { type: "boolean", value: true },
-    kbEntityId: null,
+    kbEntityId: candidateContextEntityId,
   });
   await insertSafetyFact({
     id: medicationStatusFactId,
@@ -985,6 +1080,15 @@ async function insertSafetyInput(): Promise<void> {
       unit_code: "a",
     },
     kbEntityId: null,
+  });
+  await insertSafetyFact({
+    id: excludedCandidateFactId,
+    order: 7,
+    type: "therapy_goal",
+    key: "therapy_goal.synthetic_excluded_candidate",
+    label: "Synthetic excluded candidate request",
+    value: { type: "boolean", value: true },
+    kbEntityId: safetyPreparationId,
   });
 }
 
@@ -1284,7 +1388,9 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       ('${plantEntityId}', 'plant', 'plant:retrieval-v2-synthetic'),
       ('${outsideEntityId}', 'symptom', 'symptom:outside-release-synthetic'),
       ('${safetyPreparationId}', 'preparation', 'preparation:safety-gate-synthetic'),
-      ('${medicationEntityId}', 'substance', 'substance:safety-gate-medication');
+      ('${medicationEntityId}', 'substance', 'substance:safety-gate-medication'),
+      ('${candidateContextEntityId}', 'symptom', 'symptom:candidate-status-context'),
+      ('${allowPreparationId}', 'preparation', 'preparation:candidate-status-allow');
     INSERT INTO public.kb_entity_revisions (
       id, entity_id, revision_no, display_name, summary,
       description_markdown, content_hash
@@ -1303,14 +1409,21 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
        'Not a medical product or recommendation.', repeat('b', 64)),
       ('${medicationEntityRevisionId}', '${medicationEntityId}', 1,
        'Synthetic isolated medication substance', 'Interaction fixture only.',
-       'Not a real medication or recommendation.', repeat('c', 64));
+       'Not a real medication or recommendation.', repeat('c', 64)),
+      ('${candidateContextRevisionId}', '${candidateContextEntityId}', 1,
+       'Synthetic safety context', 'Candidate-status context only.',
+       'Not a clinical symptom or diagnosis.', repeat('d', 64)),
+      ('${allowPreparationRevisionId}', '${allowPreparationId}', 1,
+       'Synthetic inactive allow preparation', 'Candidate-status fixture only.',
+       'Not a medical product or recommendation.', repeat('e', 64));
     UPDATE public.kb_entities entity
        SET current_revision_id = revision.id
       FROM public.kb_entity_revisions revision
      WHERE revision.entity_id = entity.id
        AND entity.id IN (
          '${diseaseEntityId}', '${plantEntityId}', '${outsideEntityId}',
-         '${safetyPreparationId}', '${medicationEntityId}'
+         '${safetyPreparationId}', '${medicationEntityId}',
+         '${candidateContextEntityId}', '${allowPreparationId}'
        );
     INSERT INTO public.kb_entity_names (
       entity_id, name, normalized_name, name_kind, language_code, is_preferred
@@ -1328,25 +1441,43 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       ('${safetyPreparationId}', 'Synthetic isolated safety preparation',
        'synthetic isolated safety preparation', 'preferred', 'en', true),
       ('${medicationEntityId}', 'Synthetic isolated medication substance',
-       'synthetic isolated medication substance', 'preferred', 'en', true);
+       'synthetic isolated medication substance', 'preferred', 'en', true),
+      ('${candidateContextEntityId}', 'Synthetic safety context',
+       'synthetic safety context', 'preferred', 'en', true),
+      ('${allowPreparationId}', 'Synthetic inactive allow preparation',
+       'synthetic inactive allow preparation', 'preferred', 'en', true);
     INSERT INTO public.kb_entity_identifiers (
       entity_id, scheme_code, value, normalized_value, is_primary
     ) VALUES ('${diseaseEntityId}', 'icd_10_gm', 'R53', 'R53', true);
 
     INSERT INTO public.kb_assertions (
-      id, canonical_key, version_no, assertion_kind, claim_text, content_hash
+      id, canonical_key, version_no, assertion_kind, claim_text,
+      evidence_basis, evidence_quality, content_hash
     ) VALUES
       ('${relationAssertionId}', 'assertion:retrieval-v2-synthetic-relation', 1,
        'entity_relation', 'Synthetic plant relation for contract testing.',
-       repeat('4', 64)),
+       'unrated', 'unrated', repeat('4', 64)),
       ('${safetyBasisAssertionId}', 'assertion:safety-gate-preparation-basis', 1,
-       'classification', 'Synthetic safety preparation basis.', repeat('d', 64)),
+       'classification', 'Synthetic safety preparation basis.',
+       'unrated', 'unrated', repeat('d', 64)),
       ('${interactionAssertionId}', 'assertion:safety-gate-interaction', 1,
-       'safety', 'Synthetic interaction rule for contract testing.', repeat('e', 64)),
+       'safety', 'Synthetic interaction rule for contract testing.',
+       'practice_rule', 'moderate', repeat('e', 64)),
       ('${contraindicationAssertionId}', 'assertion:safety-gate-contraindication', 1,
-       'safety', 'Synthetic contraindication rule for contract testing.', repeat('f', 64)),
+       'safety', 'Synthetic contraindication rule for contract testing.',
+       'practice_rule', 'moderate', repeat('f', 64)),
       ('${precautionAssertionId}', 'assertion:safety-gate-precaution', 1,
-       'safety', 'Synthetic AND-condition rule for contract testing.', repeat('0', 64));
+       'safety', 'Synthetic AND-condition rule for contract testing.',
+       'practice_rule', 'moderate', repeat('0', 64)),
+      ('${allowBasisAssertionId}', 'assertion:candidate-status-allow-basis', 1,
+       'classification', 'Synthetic inactive allow preparation basis.',
+       'unrated', 'unrated', repeat('1', 64)),
+      ('${allowSafetyAssertionId}', 'assertion:candidate-status-allow-safety', 1,
+       'safety', 'Synthetic informational safety rule.',
+       'practice_rule', 'moderate', repeat('2', 64)),
+      ('${allowSupportAssertionId}', 'assertion:candidate-status-allow-support', 1,
+       'entity_relation', 'Synthetic released support evidence.',
+       'clinical_study', 'high', repeat('3', 64));
     INSERT INTO public.kb_assertion_sources (
       assertion_id, source_revision_id, source_role, locator, is_primary
     ) VALUES
@@ -1359,13 +1490,27 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       ('${contraindicationAssertionId}', '${knowledgeSourceRevisionId}',
        'qualifies', 'section:safety-contraindication', true),
       ('${precautionAssertionId}', '${knowledgeSourceRevisionId}',
-       'qualifies', 'section:safety-precaution', true);
+       'qualifies', 'section:safety-precaution', true),
+      ('${allowBasisAssertionId}', '${knowledgeSourceRevisionId}',
+       'supports', 'section:candidate-allow-basis', true),
+      ('${allowSafetyAssertionId}', '${knowledgeSourceRevisionId}',
+       'qualifies', 'section:candidate-allow-safety', true),
+      ('${allowSupportAssertionId}', '${knowledgeSourceRevisionId}',
+       'supports', 'section:candidate-allow-support', true);
     INSERT INTO public.kb_entity_relations (
       assertion_id, subject_entity_id, relation_type_code, object_entity_id,
       assignment_strength, rank, context_text
     ) VALUES (
       '${relationAssertionId}', '${plantEntityId}', 'may_support',
       '${diseaseEntityId}', 'possible', 40, 'Synthetic graph edge only.'
+    );
+    INSERT INTO public.kb_entity_relations (
+      assertion_id, subject_entity_id, relation_type_code, object_entity_id,
+      assignment_strength, rank, context_text
+    ) VALUES (
+      '${allowSupportAssertionId}', '${allowPreparationId}', 'may_support',
+      '${candidateContextEntityId}', 'direct', 90,
+      'Synthetic candidate-status support edge only.'
     );
 
     INSERT INTO public.kb_preparation_revision_details (
@@ -1374,10 +1519,13 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     ) VALUES (
       '${safetyPreparationId}', '${safetyPreparationRevisionId}', 'other',
       'other', ARRAY['oral'], '${safetyBasisAssertionId}'
+    ), (
+      '${allowPreparationId}', '${allowPreparationRevisionId}', 'other',
+      'other', ARRAY['oral'], '${allowBasisAssertionId}'
     );
     UPDATE public.kb_entity_revisions
        SET content_hash = public.kb_therapeutic_revision_hash(entity_id, id)
-     WHERE id = '${safetyPreparationRevisionId}';
+     WHERE id IN ('${safetyPreparationRevisionId}', '${allowPreparationRevisionId}');
 
     INSERT INTO public.kb_safety_rules (
       id, assertion_id, subject_entity_id, subject_entity_revision_id,
@@ -1441,10 +1589,24 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
       '${precautionRuleId}', 4, 'quantity_compare',
       'demographic', 'demographic.age_years', 'ge', 18, 'ucum', 'a'
     );
+
+    INSERT INTO public.kb_safety_rules (
+      id, assertion_id, subject_entity_id, subject_entity_revision_id,
+      rule_type, severity, effect, notice_text, rule_content_hash
+    ) VALUES (
+      '${allowSafetyRuleId}', '${allowSafetyAssertionId}',
+      '${allowPreparationId}', '${allowPreparationRevisionId}',
+      'monitoring', 'information', 'allow_with_notice',
+      'Synthetic informational notice.', repeat('0', 64)
+    );
+    INSERT INTO public.kb_safety_rule_conditions (
+      safety_rule_id, condition_order, condition_kind
+    ) VALUES ('${allowSafetyRuleId}', 1, 'always');
     UPDATE public.kb_safety_rules
        SET rule_content_hash = public.kb_safety_rule_hash_v1(id)
      WHERE id IN (
-       '${interactionRuleId}', '${contraindicationRuleId}', '${precautionRuleId}'
+       '${interactionRuleId}', '${contraindicationRuleId}', '${precautionRuleId}',
+       '${allowSafetyRuleId}'
      );
     SET CONSTRAINTS ALL IMMEDIATE;
     COMMIT;
@@ -1453,6 +1615,7 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
   await releaseKnowledgeRevision("kb_entity_revisions", diseaseEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_entity_revisions", plantEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_entity_revisions", outsideEntityRevisionId, true);
+  await releaseKnowledgeRevision("kb_entity_revisions", candidateContextRevisionId, true);
   await releaseKnowledgeRevision("kb_assertions", safetyBasisAssertionId, true);
   await releaseKnowledgeRevision(
     "kb_entity_revisions",
@@ -1464,10 +1627,18 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     medicationEntityRevisionId,
     true,
   );
+  await releaseKnowledgeRevision("kb_assertions", allowBasisAssertionId, true);
+  await releaseKnowledgeRevision(
+    "kb_entity_revisions",
+    allowPreparationRevisionId,
+    true,
+  );
   await releaseKnowledgeRevision("kb_assertions", relationAssertionId, true);
   await releaseKnowledgeRevision("kb_assertions", interactionAssertionId, true);
   await releaseKnowledgeRevision("kb_assertions", contraindicationAssertionId, true);
   await releaseKnowledgeRevision("kb_assertions", precautionAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", allowSafetyAssertionId, true);
+  await releaseKnowledgeRevision("kb_assertions", allowSupportAssertionId, true);
   await insertHomeopathicFixture();
 
   await db.exec("BEGIN;");
@@ -1551,6 +1722,28 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     await addReleaseItem(16, {
       kind: "assertion",
       assertionId: precautionAssertionId,
+    });
+    await addReleaseItem(17, {
+      kind: "entity_revision",
+      entityId: candidateContextEntityId,
+      entityRevisionId: candidateContextRevisionId,
+    });
+    await addReleaseItem(18, {
+      kind: "entity_revision",
+      entityId: allowPreparationId,
+      entityRevisionId: allowPreparationRevisionId,
+    });
+    await addReleaseItem(19, {
+      kind: "assertion",
+      assertionId: allowBasisAssertionId,
+    });
+    await addReleaseItem(20, {
+      kind: "assertion",
+      assertionId: allowSafetyAssertionId,
+    });
+    await addReleaseItem(21, {
+      kind: "assertion",
+      assertionId: allowSupportAssertionId,
     });
     await db.query(`
       UPDATE public.kb_releases release
@@ -1715,6 +1908,62 @@ async function readCurrentSafetyGate(
   );
 }
 
+async function readCandidateStatus(
+  expectedInput: string | null = safetyInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  expectedRequest: string | null = safetyHomeopathicRequestHash,
+  expectedSplit: string | null = safetySplitTrackHash,
+  expectedSafety: string | null = successfulSafetyGate?.result_hash ?? null,
+): Promise<CandidateStatusResult> {
+  return (await db.query<{ value: CandidateStatusResult }>(`
+    SELECT public.therapy_retrieval_v2_candidate_status_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, $9::text, $10::text, 8, 16, 50
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+    expectedRequest,
+    expectedSplit,
+    expectedSafety,
+  ])).rows[0].value;
+}
+
+async function readCurrentCandidateStatus(): Promise<CandidateStatusResult> {
+  const currentInputHash = (await db.query<{ value: string }>(`
+    SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+  `, [safetyInputRevisionId])).rows[0].value;
+  const currentRequestManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
+    SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+      $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+    ) AS value
+  `, [
+    safetyInputRevisionId,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(safetyRubricLinks),
+  ])).rows[0].value;
+  const currentRequestHash = await hashJson(currentRequestManifest);
+  const currentSplit = await readSafetySplitTrack(
+    currentInputHash,
+    expectedReleaseManifestHash,
+    currentRequestHash,
+  );
+  expect(currentSplit.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+  return readCandidateStatus(
+    currentInputHash,
+    expectedReleaseManifestHash,
+    currentRequestHash,
+    currentSplit.result_hash,
+    successfulSafetyGate.result_hash,
+  );
+}
+
 beforeAll(async () => {
   db = new PGlite();
   await bootstrapDatabase();
@@ -1801,13 +2050,14 @@ beforeAll(async () => {
     JSON.stringify(safetyRubricLinks),
   ])).rows[0].value;
   safetyHomeopathicRequestHash = await hashJson(safetyRequestManifest);
-  const safetySplitTrack = await readSafetySplitTrack(
+  successfulSafetySplitTrack = await readSafetySplitTrack(
     safetyInputHash,
     expectedReleaseManifestHash,
     safetyHomeopathicRequestHash,
   );
-  expect(safetySplitTrack.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
-  safetySplitTrackHash = safetySplitTrack.result_hash;
+  expect(successfulSafetySplitTrack.status)
+    .toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+  safetySplitTrackHash = successfulSafetySplitTrack.result_hash;
 
   await db.exec(safetyGateMigration);
   wikiSnapshotAfterSafetyGate = (await db.query<{ value: string }>(
@@ -1820,13 +2070,22 @@ beforeAll(async () => {
     SELECT public.therapy_retrieval_v2_safety_input_manifest_v1($1) AS value
   `, [safetyInputRevisionId])).rows[0].value;
   successfulSafetyGate = await readSafetyGate();
+
+  await db.exec(candidateStatusMigration);
+  wikiSnapshotAfterCandidateStatus = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterCandidateStatus = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  successfulCandidateStatus = await readCandidateStatus();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through 6E preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -2319,7 +2578,7 @@ describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => 
                item.source_id, item.source_revision_id,
                item.item_manifest, item.item_manifest_hash
           FROM public.kb_release_items item
-          CROSS JOIN generate_series(17, 4097) generated(item_order)
+          CROSS JOIN generate_series(22, 4097) generated(item_order)
          WHERE item.release_id = '${knowledgeReleaseId}'
            AND item.item_kind = 'source_revision'
            AND item.source_id = '${knowledgeSourceId}';
@@ -2612,7 +2871,7 @@ describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => 
       contract_version: 1,
       contract_scope: "THERAPY_RETRIEVAL_V2_SAFETY_INPUT_PREFLIGHT_ONLY",
       therapy_input_manifest_hash: safetyInputHash,
-      selected_fact_count: 6,
+      selected_fact_count: 7,
       review_only_fact_count: 0,
       requires_input_review: false,
       active_red_flag_count: 0,
@@ -2653,9 +2912,9 @@ describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => 
     }));
     expect(successfulSafetyGate.safety_rule_assessments).toEqual(
       expect.objectContaining({
-        subject_count: 1,
-        safety_rule_count: 3,
-        condition_count: 6,
+        subject_count: 2,
+        safety_rule_count: 4,
+        condition_count: 7,
         matched_hard_contraindication_or_interaction_count: 2,
       }),
     );
@@ -2876,6 +3135,321 @@ describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => 
     expect(await readSafetyGate()).toEqual(successfulSafetyGate);
   });
 
+  it("adds only three closed candidate-status functions and changes no snapshot", () => {
+    expect(candidateStatusMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
+    expect(candidateStatusMigration).toMatch(/^BEGIN;/);
+    expect(candidateStatusMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(candidateStatusMigration).not.toMatch(
+      /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+    );
+    expect(candidateStatusMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(candidateStatusMigration).not.toMatch(/\bGRANT\b/i);
+    expect(candidateStatusMigration).not.toMatch(
+      /\b(pseudonym_id|patient_id|patient_user_id|session_id|anamnesis_id)\b/i,
+    );
+    expect(candidateStatusMigration).toContain(
+      "'ESCALATE_ONLY', 'EXCLUDE', 'REVIEW_ONLY', 'ALLOW'",
+    );
+    expect(candidateStatusMigration).toContain(
+      "'exclude_and_escalate_overridable', false",
+    );
+    expect(candidateStatusMigration).toContain("'opaque_composite_score_used', false");
+    expect(candidateStatusMigration).toContain(
+      'reference.value::text COLLATE "C"',
+    );
+    expect(wikiSnapshotAfterCandidateStatus).toBe(wikiSnapshotAfterSafetyGate);
+    expect(therapySnapshotAfterCandidateStatus).toBe(therapySnapshotAfterSafetyGate);
+  });
+
+  it("assigns general ALLOW and immutable EXCLUDE from separate visible dimensions", async () => {
+    expect(successfulCandidateStatus).toEqual(expect.objectContaining({
+      status: "CANDIDATE_STATUS_PREFLIGHT_COMPLETE_INACTIVE",
+      interpretation: "INACTIVE_CANDIDATE_STATUS_NOT_RECOMMENDATION_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      retrieval_execution_allowed: false,
+      productive_candidate_use_allowed: false,
+      candidate_status_assignment_allowed: false,
+      inactive_candidate_statuses_materialized: true,
+      dosage_evaluation_allowed: false,
+      ai_use_allowed: false,
+      split_track_result_hash: safetySplitTrackHash,
+      safety_gate_result_hash: successfulSafetyGate.result_hash,
+      candidate_count: 4,
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulCandidateStatus.general_track).toEqual(expect.objectContaining({
+      track: "GENERAL_OR_NATUROPATHIC_CANDIDATE_TRACK",
+      status: "GENERAL_CANDIDATE_STATUSES_READY_INACTIVE",
+      candidate_count: 2,
+      status_counts: {
+        ALLOW: 1,
+        REVIEW_ONLY: 0,
+        EXCLUDE: 1,
+        ESCALATE_ONLY: 0,
+      },
+      opaque_composite_score_used: false,
+      track_result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+
+    const [allowed, excluded] = successfulCandidateStatus.general_track!.candidates;
+    expect(allowed).toEqual(expect.objectContaining({
+      candidate_status: "ALLOW",
+      entity_id: allowPreparationId,
+      entity_revision_id: allowPreparationRevisionId,
+      entity_type_code: "preparation",
+      status_lock: "INACTIVE_ONLY_NOT_MEDICAL_USE",
+      status_reasons: ["INACTIVE_ELIGIBILITY_CRITERIA_MET"],
+      safety: expect.objectContaining({ safety_effect: "NOTICE_ONLY" }),
+    }));
+    expect(allowed.dimensions.clinical_relation_support).toEqual(
+      expect.objectContaining({ strong_support_assertion_count: 1 }),
+    );
+    expect(allowed.dimensions.evidence_foundations).toEqual(
+      expect.objectContaining({ scientific: 1 }),
+    );
+    expect(allowed.dimensions.evidence_quality).toEqual(
+      expect.objectContaining({ high: 1 }),
+    );
+    expect(allowed.evidence_details).toEqual([
+      expect.objectContaining({
+        assertion_id: allowSupportAssertionId,
+        evidence_basis: "clinical_study",
+        evidence_quality: "high",
+      }),
+    ]);
+
+    expect(excluded).toEqual(expect.objectContaining({
+      candidate_status: "EXCLUDE",
+      entity_id: safetyPreparationId,
+      entity_revision_id: safetyPreparationRevisionId,
+      status_lock: "UNOVERRIDABLE_BY_AI_CLIENT_PREFERENCE_OR_PIN",
+      status_reasons: expect.arrayContaining([
+        "SAFETY_RULE_EXCLUDE_UNOVERRIDABLE",
+      ]),
+      safety: expect.objectContaining({ safety_effect: "EXCLUDE" }),
+    }));
+    expect(excluded.dimensions.preference_and_budget).toEqual(
+      expect.objectContaining({
+        preference_context_present: true,
+        budget_context_present: true,
+        used_for_candidate_status: false,
+        eligible_only_after_safety_and_fit: true,
+      }),
+    );
+
+    const unknownSafety = structuredClone(successfulSafetyGate);
+    const unknownAssessment = unknownSafety.safety_rule_assessments
+      ?.subject_assessments.find(
+        (assessment) => assessment.subject_entity_id === allowPreparationId,
+      );
+    expect(unknownAssessment).toBeDefined();
+    unknownAssessment!.safety_effect = "UNRECOGNIZED_SYNTHETIC_EFFECT";
+    unknownSafety.result_hash = await hashJson(Object.fromEntries(
+      Object.entries(unknownSafety).filter(([key]) => key !== "result_hash"),
+    ));
+    const failClosed = (await db.query<{ value: CandidateStatusResult["general_track"] }>(`
+      SELECT public.therapy_retrieval_v2_general_candidate_track_v1(
+        $1::uuid, $2::uuid, $3::jsonb, $4::jsonb
+      ) AS value
+    `, [
+      safetyInputRevisionId,
+      knowledgeReleaseId,
+      JSON.stringify(successfulSafetySplitTrack),
+      JSON.stringify(unknownSafety),
+    ])).rows[0].value;
+    expect(failClosed?.candidates.find(
+      (candidate) => candidate.entity_id === allowPreparationId,
+    )).toEqual(expect.objectContaining({
+      candidate_status: "REVIEW_ONLY",
+      status_reasons: expect.arrayContaining([
+        "UNRECOGNIZED_SAFETY_EFFECT_REQUIRES_REVIEW",
+      ]),
+    }));
+  });
+
+  it("keeps every source-native homeopathic candidate separate and review-only", () => {
+    expect(successfulCandidateStatus.homeopathic_track).toEqual(
+      expect.objectContaining({
+        track: "HOMEOPATHIC_SOURCE_NATIVE_CANDIDATE_TRACK",
+        status: "HOMEOPATHIC_CANDIDATES_REVIEW_ONLY_INACTIVE",
+        candidate_count: 2,
+        status_counts: {
+          ALLOW: 0,
+          REVIEW_ONLY: 2,
+          EXCLUDE: 0,
+          ESCALATE_ONLY: 0,
+        },
+        opaque_composite_score_used: false,
+        track_result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      }),
+    );
+    expect(successfulCandidateStatus.homeopathic_track?.candidates.every(
+      (candidate) => candidate.candidate_status === "REVIEW_ONLY",
+    )).toBe(true);
+    expect(successfulCandidateStatus.homeopathic_track?.candidates[0].status_reasons)
+      .toContain("EXACT_HOMEOPATHIC_PREPARATION_UNRESOLVED");
+    expect(successfulCandidateStatus.homeopathic_track?.candidates[0].dimensions)
+      .toEqual(expect.objectContaining({
+        materia_medica_alignment: "NOT_ASSESSED",
+        practice_experience: "NOT_ASSESSED",
+      }));
+    expect(JSON.stringify(successfulCandidateStatus)).not.toContain(
+      '"opaque_composite_score_used":true',
+    );
+  });
+
+  it("keeps uncertain clinical fact matches review-only", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET certainty = 'uncertain' WHERE id = $1
+      `, [safetyContextFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [safetyContextFactId]);
+      const currentInputHash = (await db.query<{ value: string }>(`
+        SELECT public.therapy_retrieval_v2_input_hash_v1($1) AS value
+      `, [safetyInputRevisionId])).rows[0].value;
+      const currentRequestManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
+        SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+          $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+        ) AS value
+      `, [
+        safetyInputRevisionId,
+        repertoryEntityId,
+        repertoryRevisionId,
+        JSON.stringify(safetyRubricLinks),
+      ])).rows[0].value;
+      const currentRequestHash = await hashJson(currentRequestManifest);
+      const currentSplit = await readSafetySplitTrack(
+        currentInputHash,
+        expectedReleaseManifestHash,
+        currentRequestHash,
+      );
+      const currentSafety = await readSafetyGate(
+        currentInputHash,
+        expectedReleaseManifestHash,
+        currentRequestHash,
+        currentSplit.result_hash,
+      );
+      const result = await readCandidateStatus(
+        currentInputHash,
+        expectedReleaseManifestHash,
+        currentRequestHash,
+        currentSplit.result_hash,
+        currentSafety.result_hash,
+      );
+      const candidate = result.general_track?.candidates.find(
+        (item) => item.entity_id === allowPreparationId,
+      );
+      expect(candidate).toEqual(expect.objectContaining({
+        candidate_status: "REVIEW_ONLY",
+        status_reasons: expect.arrayContaining([
+          "NO_ALLOW_ELIGIBLE_FACT_MATCH",
+          "NEGATED_INACTIVE_UNCONFIRMED_OR_UNVERIFIED_FACT_MATCH",
+          "NO_RELEASED_STRONG_SUPPORT_ASSERTION",
+        ]),
+      }));
+      expect(candidate?.dimensions.clinical_fact_coverage).toEqual(
+        expect.objectContaining({
+          allow_eligible_fact_count: 0,
+          review_required_fact_count: 1,
+        }),
+      );
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 20_000);
+
+  it("binds the exact safety hash and keeps deterministic track and result hashes", async () => {
+    expect((await readCandidateStatus(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      "0".repeat(64),
+    )).status).toBe("CANDIDATE_STATUS_SAFETY_GATE_MISMATCH");
+    expect((await readCandidateStatus(
+      safetyInputHash,
+      expectedReleaseManifestHash,
+      safetyHomeopathicRequestHash,
+      safetySplitTrackHash,
+      null,
+    )).status).toBe("CANDIDATE_STATUS_EXPECTATION_INVALID");
+    expect(await readCandidateStatus()).toEqual(successfulCandidateStatus);
+
+    const {
+      track_result_hash: generalTrackHash,
+      ...generalTrackPayload
+    } = successfulCandidateStatus.general_track!;
+    expect(await hashJson(generalTrackPayload)).toBe(generalTrackHash);
+    const {
+      track_result_hash: homeopathicTrackHash,
+      ...homeopathicTrackPayload
+    } = successfulCandidateStatus.homeopathic_track!;
+    expect(await hashJson(homeopathicTrackPayload)).toBe(homeopathicTrackHash);
+    const { result_hash: resultHash, ...payload } = successfulCandidateStatus;
+    expect(await hashJson(payload)).toBe(resultHash);
+  }, 15_000);
+
+  it("preserves red-flag escalation ahead of stale safety expectations", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET is_negated = false WHERE id = $1
+      `, [redFlagFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [redFlagFactId]);
+      const escalated = await readCurrentCandidateStatus();
+      expect(escalated).toEqual(expect.objectContaining({
+        status: "CANDIDATE_STATUS_ESCALATE_ONLY_INACTIVE",
+        global_candidate_status: "ESCALATE_ONLY",
+        safety_gate_result_hash_matches: false,
+        productive_candidate_use_allowed: false,
+        candidate_status_assignment_allowed: false,
+        dosage_evaluation_allowed: false,
+        ai_use_allowed: false,
+        candidate_count: 0,
+        general_track: null,
+        homeopathic_track: null,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
+  it("preserves mandatory medication review ahead of candidate formation", async () => {
+    await db.exec("BEGIN; ALTER TABLE public.therapy_input_facts DISABLE TRIGGER USER;");
+    try {
+      await db.query(`
+        UPDATE public.therapy_input_facts SET certainty = 'uncertain' WHERE id = $1
+      `, [medicationStatusFactId]);
+      await db.query(`
+        UPDATE public.therapy_input_facts
+           SET content_sha256 = public.therapy_input_fact_sha256_v1(id)
+         WHERE id = $1
+      `, [medicationStatusFactId]);
+      const review = await readCurrentCandidateStatus();
+      expect(review).toEqual(expect.objectContaining({
+        status: "CANDIDATE_STATUS_REVIEW_ONLY_INACTIVE",
+        global_candidate_status: "REVIEW_ONLY",
+        safety_gate_result_hash_matches: false,
+        candidate_count: 0,
+        general_track: null,
+        homeopathic_track: null,
+      }));
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+  }, 15_000);
+
   it("exposes no preflight function to application or import roles", async () => {
     const privileges = await db.query<{ can_execute: boolean }>(`
       SELECT has_function_privilege(role_name, function_name, 'EXECUTE') AS can_execute
@@ -2895,10 +3469,13 @@ describe.sequential("therapy retrieval v2 Step 6A through 6D preflights", () => 
           'public.therapy_retrieval_v2_split_track_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,integer,integer,integer)',
           'public.therapy_retrieval_v2_safety_input_manifest_v1(uuid)',
           'public.therapy_retrieval_v2_safety_rule_assessments_v1(uuid,uuid)',
-          'public.therapy_retrieval_v2_safety_gate_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,integer,integer,integer)'
+          'public.therapy_retrieval_v2_safety_gate_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,integer,integer,integer)',
+          'public.therapy_retrieval_v2_general_candidate_track_v1(uuid,uuid,jsonb,jsonb)',
+          'public.therapy_retrieval_v2_homeopathic_candidate_track_v1(jsonb,jsonb)',
+          'public.therapy_retrieval_v2_candidate_status_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,text,text,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(65);
+    expect(privileges.rows).toHaveLength(80);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });
