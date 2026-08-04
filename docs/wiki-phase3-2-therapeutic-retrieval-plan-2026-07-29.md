@@ -1126,6 +1126,50 @@ Suchvertragsausnahme meldet die unabhaengige Abschlussreview keine verbleibenden
 P0/P1-Befunde. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step6b-entity-resolution-preflight-implementation-2026-08-04.md`.
 
+### Schritt 6C: Medizinisch inaktiver Split-Track-Preflight
+
+Lokal implementiert in:
+
+`supabase/migrations/20260804110000_create_therapy_split_track_preflight.sql`
+
+Der additive Block erzeugt drei weitere geschlossene Owner-Lesefunktionen und
+keine Tabelle. Allgemeine beziehungsweise naturheilkundliche 6B-Referenzen und
+source-native homoeopathische Step-5B-1-Repertoriumstreffer bleiben in getrennten
+Teilresultaten mit getrennten Hashes. Beide Spuren sind reine Matchprovenienz;
+Kandidateneignung, Sicherheit, Wirksamkeit, Dosierung und Empfehlung bleiben
+ausdruecklich unbewertet.
+
+Jede homoeopathische Rubrik wird kanonisch an genau einen in 6A ausgewaehlten
+`verified`- oder `review_only`-Fakt samt Fakteninhaltshash und 6B-Queryhash
+gebunden. Repertorium, Quellenrevision und alle Repertoriumsmittel muessen als
+exakte Revisionen im selben, weiterhin inaktiven Knowledge-Release liegen.
+
+Vorgezogene und stufenweise abbrechende Scans begrenzen den Referenzvertrag auf
+256 Rubrikrevisionen, 64 Graddefinitionen, 256 Mittel und 2.048 Zuordnungen,
+bevor der vollstaendige Repertoriumsvalidator oder Reader laeuft. Groessere oder
+unvollstaendige Bereiche scheitern geschlossen ohne Teilergebnis.
+
+Die allgemeine Spur erfordert bei Graphreferenzen sowohl eine allgemeine Quelle
+als auch ein allgemeines Ziel. Eine homoeopathische Quelle mit allgemein
+aussehendem Nachbarziel bleibt damit ebenso vollstaendig ausgeschlossen wie ein
+homoeopathisches Ziel. Produktfamilien ohne exakte Variante bleiben
+unaufgeloest. Die homoeopathische Spur stammt ausschliesslich aus genau einem
+source-nativen Repertorium; null Treffer bleiben sichtbar und werden nicht durch
+allgemeine Ergebnisse ersetzt.
+
+Jede Antwort bleibt medizinisch und operativ inaktiv. Wiki- und
+Therapie-Eingabe-Snapshot bleiben byteidentisch bei 67 beziehungsweise vier
+Tabellen; alle Funktionen sind fuer Anwendungs-, Service- und Importrollen
+gesperrt. Der fokussierte gemeinsame Schritt-6A-bis-6C-Lauf besteht mit 16/16
+Tests, die zusammenhaengende Eingabe-, Release-, Such- und
+Repertoriumsregression mit 96/96 Tests und der vollstaendige Projektlauf mit
+50/50 Dateien und 539/539 Tests. Beide TypeScript-Projekte, der gezielte
+ESLint-Lauf und der Produktionsbuild sind erfolgreich. Nach der beidseitigen
+Graphklassifikation und einer auf reine Lesezugriffe begrenzten
+Repertoriums-Isolationsausnahme meldet die unabhaengige Gegenpruefung keine
+verbleibenden P0/P1-Befunde. Die ausfuehrliche Dokumentation steht in
+`docs/wiki-step6c-split-track-preflight-implementation-2026-08-04.md`.
+
 ### Kandidatenstatus
 
 - `ALLOW`

@@ -39,6 +39,12 @@ const entityResolutionMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations", entityResolutionMigrationFile),
   "utf8",
 );
+const splitTrackMigrationFile =
+  "20260804110000_create_therapy_split_track_preflight.sql";
+const splitTrackMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations", splitTrackMigrationFile),
+  "utf8",
+);
 
 const adminId = "11000000-0000-4000-8000-000000000001";
 const patientId = "11000000-0000-4000-8000-000000000002";
@@ -59,6 +65,42 @@ const plantEntityRevisionId = "32000000-0000-4000-8000-000000000002";
 const outsideEntityId = "31000000-0000-4000-8000-000000000003";
 const outsideEntityRevisionId = "32000000-0000-4000-8000-000000000003";
 const relationAssertionId = "41000000-0000-4000-8000-000000000001";
+const homeopathicRelationAssertionId = "41000000-0000-4000-8000-000000000002";
+const homeopathicSourceId = "21000000-0000-4000-8000-000000000002";
+const homeopathicSourceRevisionId = "22000000-0000-4000-8000-000000000002";
+const repertoryEntityId = "31000000-0000-4000-8000-000000000010";
+const repertoryRevisionId = "32000000-0000-4000-8000-000000000010";
+const homeopathicRemedyIds = [
+  "31000000-0000-4000-8000-000000000011",
+  "31000000-0000-4000-8000-000000000012",
+  "31000000-0000-4000-8000-000000000013",
+] as const;
+const homeopathicRemedyRevisionIds = [
+  "32000000-0000-4000-8000-000000000011",
+  "32000000-0000-4000-8000-000000000012",
+  "32000000-0000-4000-8000-000000000013",
+] as const;
+const homeopathicRubricIds = [
+  "42000000-0000-4000-8000-000000000010",
+  "42000000-0000-4000-8000-000000000011",
+  "42000000-0000-4000-8000-000000000012",
+  "42000000-0000-4000-8000-000000000013",
+] as const;
+const homeopathicRubricRevisionIds = [
+  "42100000-0000-4000-8000-000000000010",
+  "42100000-0000-4000-8000-000000000011",
+  "42100000-0000-4000-8000-000000000012",
+  "42100000-0000-4000-8000-000000000013",
+] as const;
+const homeopathicGradeIds = [
+  "52000000-0000-4000-8000-000000000010",
+  "52000000-0000-4000-8000-000000000011",
+] as const;
+const repertoryRemedyIds = [
+  "62000000-0000-4000-8000-000000000010",
+  "62000000-0000-4000-8000-000000000011",
+  "62000000-0000-4000-8000-000000000012",
+] as const;
 const knowledgeReleaseId = "61000000-0000-4000-8000-000000000001";
 const unknownInputRevisionId = "91000000-0000-4000-8000-000000000099";
 const unknownReleaseId = "61000000-0000-4000-8000-000000000099";
@@ -201,6 +243,82 @@ type EntityResolutionResult = {
   result_hash: string;
 };
 
+type HomeopathicRequestManifest = {
+  contract_version: number;
+  contract_scope: string;
+  input_manifest_hash: string;
+  fact_rubric_links: Array<{
+    therapy_input_fact_id: string;
+    rubric_revision_id: string;
+    fact_content_sha256: string;
+    fact_query_hash: string;
+    importance: number;
+    polarity: string;
+  }>;
+  repertory_request_hash: string;
+};
+
+type SplitTrackResult = {
+  status: string;
+  interpretation: string;
+  medical_use_allowed: boolean;
+  retrieval_execution_allowed: boolean;
+  candidate_status_assignment_allowed?: boolean;
+  homeopathic_request_hash?: string;
+  actual_homeopathic_request_hash?: string;
+  general_track?: {
+    track: string;
+    status: string;
+    direct_reference_count: number;
+    graph_reference_count: number;
+    excluded_homeopathic_reference_count: number;
+    unresolved_reference_count: number;
+    facts: Array<{
+      fact_id: string;
+      direct_references: DirectEntityCandidate[];
+      graph_references: GraphEntityCandidate[];
+      excluded_homeopathic_reference_count: number;
+    }>;
+    track_result_hash: string;
+  };
+  homeopathic_track?: {
+    track: string;
+    status: string;
+    reader_status: string;
+    candidate_count_before_limit: number;
+    returned_candidate_count: number;
+    candidates: Array<{
+      candidate_status: string;
+      remedy_entity_id: string;
+      remedy_revision_id: string;
+      source_remedy_code: string;
+    }>;
+    track_result_hash: string;
+  };
+  result_hash: string;
+};
+
+const homeopathicRubricLinks = [
+  {
+    therapy_input_fact_id: successorFactId,
+    rubric_revision_id: homeopathicRubricRevisionIds[1],
+    importance: 5,
+    polarity: "include",
+  },
+  {
+    therapy_input_fact_id: reviewOnlyFactId,
+    rubric_revision_id: homeopathicRubricRevisionIds[2],
+    importance: 3,
+    polarity: "include",
+  },
+  {
+    therapy_input_fact_id: successorFactId,
+    rubric_revision_id: homeopathicRubricRevisionIds[3],
+    importance: 4,
+    polarity: "exclude",
+  },
+] as const;
+
 let db: PGlite;
 let sourceHash = "";
 let inputRevisionHash = "";
@@ -216,6 +334,11 @@ let wikiSnapshotAfterEntityResolution = "";
 let therapySnapshotAfterEntityResolution = "";
 let entityQueryManifest: EntityQueryManifest;
 let successfulEntityResolution: EntityResolutionResult;
+let wikiSnapshotAfterSplitTrack = "";
+let therapySnapshotAfterSplitTrack = "";
+let homeopathicRequestManifest: HomeopathicRequestManifest;
+let expectedHomeopathicRequestHash = "";
+let successfulSplitTrack: SplitTrackResult;
 
 async function bootstrapDatabase(): Promise<void> {
   await db.exec(`
@@ -588,6 +711,223 @@ async function addReleaseItem(
   ]);
 }
 
+async function insertHomeopathicFixture(): Promise<void> {
+  await db.exec(`
+    BEGIN;
+    INSERT INTO public.kb_sources (id, canonical_key)
+    VALUES ('${homeopathicSourceId}', 'source:split-track-repertory');
+    INSERT INTO public.kb_source_revisions (
+      id, source_id, revision_no, source_type, title, rights_status, content_hash
+    ) VALUES (
+      '${homeopathicSourceRevisionId}', '${homeopathicSourceId}', 1, 'database',
+      'Synthetic split-track repertory source', 'licensed', repeat('6', 64)
+    );
+    UPDATE public.kb_sources SET current_revision_id = '${homeopathicSourceRevisionId}'
+     WHERE id = '${homeopathicSourceId}';
+
+    INSERT INTO public.kb_entities (id, entity_type_code, canonical_key) VALUES
+      ('${repertoryEntityId}', 'homeopathic_repertory',
+       'homeopathic-repertory:split-track-synthetic'),
+      ('${homeopathicRemedyIds[0]}', 'homeopathic_remedy',
+       'homeopathic-remedy:split-track-alpha'),
+      ('${homeopathicRemedyIds[1]}', 'homeopathic_remedy',
+       'homeopathic-remedy:split-track-beta'),
+      ('${homeopathicRemedyIds[2]}', 'homeopathic_remedy',
+       'homeopathic-remedy:split-track-gamma');
+    INSERT INTO public.kb_entity_revisions (
+      id, entity_id, revision_no, display_name, summary,
+      description_markdown, content_hash
+    ) VALUES
+      ('${repertoryRevisionId}', '${repertoryEntityId}', 1,
+       'Synthetic split-track repertory', 'Synthetic source-native fixture.',
+       'Non-medical split-track fixture.', repeat('0', 64)),
+      ('${homeopathicRemedyRevisionIds[0]}', '${homeopathicRemedyIds[0]}', 1,
+       'Synthetic homeopathic alpha', '', '', repeat('7', 64)),
+      ('${homeopathicRemedyRevisionIds[1]}', '${homeopathicRemedyIds[1]}', 1,
+       'Synthetic homeopathic beta', '', '', repeat('8', 64)),
+      ('${homeopathicRemedyRevisionIds[2]}', '${homeopathicRemedyIds[2]}', 1,
+       'Synthetic homeopathic gamma', '', '', repeat('9', 64));
+    UPDATE public.kb_entities entity SET current_revision_id = revision.id
+      FROM public.kb_entity_revisions revision
+     WHERE revision.entity_id = entity.id
+       AND entity.id IN (
+         '${repertoryEntityId}', '${homeopathicRemedyIds[0]}',
+         '${homeopathicRemedyIds[1]}', '${homeopathicRemedyIds[2]}'
+       );
+    INSERT INTO public.kb_entity_names (
+      entity_id, name, normalized_name, name_kind, language_code, is_preferred
+    ) VALUES
+      ('${repertoryEntityId}', 'Synthetic split-track repertory',
+       'synthetic split-track repertory', 'preferred', 'en', true),
+      ('${homeopathicRemedyIds[0]}', 'Synthetic homeopathic alpha',
+       'synthetic homeopathic alpha', 'preferred', 'en', true),
+      ('${homeopathicRemedyIds[0]}', 'Synthetic review question',
+       'synthetic review question', 'spelling_variant', 'en', false),
+      ('${homeopathicRemedyIds[1]}', 'Synthetic homeopathic beta',
+       'synthetic homeopathic beta', 'preferred', 'en', true),
+      ('${homeopathicRemedyIds[2]}', 'Synthetic homeopathic gamma',
+       'synthetic homeopathic gamma', 'preferred', 'en', true);
+
+    INSERT INTO public.kb_relation_type_domains (
+      relation_type_code, subject_entity_type_code,
+      object_entity_type_code, review_status
+    ) VALUES ('may_support', 'homeopathic_remedy', 'disease', 'draft');
+    UPDATE public.kb_relation_type_domains
+       SET review_status = 'approved'
+     WHERE relation_type_code = 'may_support'
+       AND subject_entity_type_code = 'homeopathic_remedy'
+       AND object_entity_type_code = 'disease';
+    INSERT INTO public.kb_assertions (
+      id, canonical_key, version_no, assertion_kind, claim_text, content_hash
+    ) VALUES (
+      '${homeopathicRelationAssertionId}',
+      'assertion:split-track-homeopathic-origin', 1, 'entity_relation',
+      'Synthetic homeopathic-origin edge for track separation testing.',
+      repeat('a', 64)
+    );
+    INSERT INTO public.kb_assertion_sources (
+      assertion_id, source_revision_id, source_role, locator, is_primary
+    ) VALUES (
+      '${homeopathicRelationAssertionId}', '${homeopathicSourceRevisionId}',
+      'supports', 'section:split-track-edge', true
+    );
+    INSERT INTO public.kb_entity_relations (
+      assertion_id, subject_entity_id, relation_type_code, object_entity_id,
+      assignment_strength, rank, context_text
+    ) VALUES (
+      '${homeopathicRelationAssertionId}', '${homeopathicRemedyIds[0]}',
+      'may_support', '${diseaseEntityId}', 'possible', 50,
+      'Synthetic cross-track exclusion edge only.'
+    );
+
+    INSERT INTO public.kb_homeopathic_repertory_revision_details (
+      entity_id, entity_revision_id, source_id, source_revision_id,
+      source_repertory_code, source_language_code, source_locator
+    ) VALUES (
+      '${repertoryEntityId}', '${repertoryRevisionId}',
+      '${homeopathicSourceId}', '${homeopathicSourceRevisionId}',
+      'SYN-SPLIT-1', 'de', 'catalog:split-track:edition-1'
+    );
+    UPDATE public.kb_entity_revisions
+       SET content_hash = public.kb_homeopathic_repertory_revision_hash_v1(entity_id, id)
+     WHERE id = '${repertoryRevisionId}';
+
+    INSERT INTO public.kb_homeopathic_rubrics (
+      id, repertory_entity_id, native_rubric_code
+    ) VALUES
+      ('${homeopathicRubricIds[0]}', '${repertoryEntityId}', 'ROOT'),
+      ('${homeopathicRubricIds[1]}', '${repertoryEntityId}', 'ROOT.MIND'),
+      ('${homeopathicRubricIds[2]}', '${repertoryEntityId}', 'ROOT.MODALITY'),
+      ('${homeopathicRubricIds[3]}', '${repertoryEntityId}', 'ROOT.EXCLUDE');
+    INSERT INTO public.kb_homeopathic_rubric_revisions (
+      id, repertory_entity_id, repertory_revision_id, rubric_id,
+      parent_rubric_id, rubric_text, rubric_domain, sibling_order,
+      source_locator, rubric_content_hash
+    ) VALUES
+      ('${homeopathicRubricRevisionIds[0]}', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricIds[0]}', NULL,
+       'Synthetic root', 'general', 1, 'rubric:root', repeat('0', 64)),
+      ('${homeopathicRubricRevisionIds[1]}', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricIds[1]}',
+       '${homeopathicRubricIds[0]}', 'Synthetic mind rubric', 'mind', 1,
+       'rubric:root.mind', repeat('0', 64)),
+      ('${homeopathicRubricRevisionIds[2]}', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricIds[2]}',
+       '${homeopathicRubricIds[0]}', 'Synthetic modality rubric', 'modality', 2,
+       'rubric:root.modality', repeat('0', 64)),
+      ('${homeopathicRubricRevisionIds[3]}', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricIds[3]}',
+       '${homeopathicRubricIds[0]}', 'Synthetic exclusion rubric', 'general', 3,
+       'rubric:root.exclude', repeat('0', 64));
+    UPDATE public.kb_homeopathic_rubric_revisions
+       SET rubric_content_hash = public.kb_homeopathic_rubric_revision_hash_v1(id)
+     WHERE id = '${homeopathicRubricRevisionIds[0]}';
+    UPDATE public.kb_homeopathic_rubric_revisions
+       SET rubric_content_hash = public.kb_homeopathic_rubric_revision_hash_v1(id)
+     WHERE id IN (
+       '${homeopathicRubricRevisionIds[1]}',
+       '${homeopathicRubricRevisionIds[2]}',
+       '${homeopathicRubricRevisionIds[3]}'
+     );
+
+    INSERT INTO public.kb_homeopathic_grade_definitions (
+      id, repertory_entity_id, repertory_revision_id, source_grade_code,
+      source_grade_label, grade_order, source_locator, grade_content_hash
+    ) VALUES
+      ('${homeopathicGradeIds[0]}', '${repertoryEntityId}', '${repertoryRevisionId}',
+       'G-A', 'Source grade A', 1, 'grade:a', repeat('0', 64)),
+      ('${homeopathicGradeIds[1]}', '${repertoryEntityId}', '${repertoryRevisionId}',
+       'G-B', 'Source grade B', 2, 'grade:b', repeat('0', 64));
+    UPDATE public.kb_homeopathic_grade_definitions
+       SET grade_content_hash = public.kb_homeopathic_grade_definition_hash_v1(id)
+     WHERE repertory_revision_id = '${repertoryRevisionId}';
+
+    INSERT INTO public.kb_homeopathic_repertory_remedies (
+      id, repertory_entity_id, repertory_revision_id, remedy_entity_id,
+      remedy_revision_id, source_remedy_code, source_remedy_name,
+      source_locator, remedy_content_hash
+    ) VALUES
+      ('${repertoryRemedyIds[0]}', '${repertoryEntityId}', '${repertoryRevisionId}',
+       '${homeopathicRemedyIds[0]}', '${homeopathicRemedyRevisionIds[0]}',
+       'R-A', 'Synthetic alpha', 'remedy:r-a', repeat('0', 64)),
+      ('${repertoryRemedyIds[1]}', '${repertoryEntityId}', '${repertoryRevisionId}',
+       '${homeopathicRemedyIds[1]}', '${homeopathicRemedyRevisionIds[1]}',
+       'r-B', 'Synthetic beta', 'remedy:r-b', repeat('0', 64)),
+      ('${repertoryRemedyIds[2]}', '${repertoryEntityId}', '${repertoryRevisionId}',
+       '${homeopathicRemedyIds[2]}', '${homeopathicRemedyRevisionIds[2]}',
+       'R-C', 'Synthetic gamma', 'remedy:r-c', repeat('0', 64));
+    UPDATE public.kb_homeopathic_repertory_remedies
+       SET remedy_content_hash = public.kb_homeopathic_repertory_remedy_hash_v1(id)
+     WHERE repertory_revision_id = '${repertoryRevisionId}';
+
+    INSERT INTO public.kb_homeopathic_rubric_remedy_assignments (
+      id, repertory_entity_id, repertory_revision_id, rubric_revision_id,
+      repertory_remedy_id, grade_definition_id, source_locator,
+      assignment_content_hash
+    ) VALUES
+      ('72000000-0000-4000-8000-000000000010', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricRevisionIds[1]}',
+       '${repertoryRemedyIds[0]}', '${homeopathicGradeIds[1]}',
+       'assignment:mind:r-a', repeat('0', 64)),
+      ('72000000-0000-4000-8000-000000000011', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricRevisionIds[2]}',
+       '${repertoryRemedyIds[0]}', '${homeopathicGradeIds[0]}',
+       'assignment:modality:r-a', repeat('0', 64)),
+      ('72000000-0000-4000-8000-000000000012', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricRevisionIds[1]}',
+       '${repertoryRemedyIds[1]}', '${homeopathicGradeIds[0]}',
+       'assignment:mind:r-b', repeat('0', 64)),
+      ('72000000-0000-4000-8000-000000000013', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricRevisionIds[2]}',
+       '${repertoryRemedyIds[2]}', '${homeopathicGradeIds[1]}',
+       'assignment:modality:r-c', repeat('0', 64)),
+      ('72000000-0000-4000-8000-000000000014', '${repertoryEntityId}',
+       '${repertoryRevisionId}', '${homeopathicRubricRevisionIds[3]}',
+       '${repertoryRemedyIds[2]}', '${homeopathicGradeIds[1]}',
+       'assignment:exclude:r-c', repeat('0', 64));
+    UPDATE public.kb_homeopathic_rubric_remedy_assignments
+       SET assignment_content_hash = public.kb_homeopathic_assignment_hash_v1(id)
+     WHERE repertory_revision_id = '${repertoryRevisionId}';
+    SET CONSTRAINTS ALL IMMEDIATE;
+    COMMIT;
+  `);
+
+  await releaseKnowledgeRevision(
+    "kb_source_revisions",
+    homeopathicSourceRevisionId,
+    false,
+  );
+  for (const revisionId of homeopathicRemedyRevisionIds) {
+    await releaseKnowledgeRevision("kb_entity_revisions", revisionId, true);
+  }
+  await releaseKnowledgeRevision("kb_entity_revisions", repertoryRevisionId, true);
+  await releaseKnowledgeRevision(
+    "kb_assertions",
+    homeopathicRelationAssertionId,
+    true,
+  );
+}
+
 async function insertSealedKnowledgeRelease(): Promise<void> {
   await db.exec(`
     BEGIN;
@@ -669,6 +1009,7 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
   await releaseKnowledgeRevision("kb_entity_revisions", plantEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_entity_revisions", outsideEntityRevisionId, true);
   await releaseKnowledgeRevision("kb_assertions", relationAssertionId, true);
+  await insertHomeopathicFixture();
 
   await db.exec("BEGIN;");
   try {
@@ -704,6 +1045,27 @@ async function insertSealedKnowledgeRelease(): Promise<void> {
     await addReleaseItem(4, {
       kind: "assertion",
       assertionId: relationAssertionId,
+    });
+    await addReleaseItem(5, {
+      kind: "source_revision",
+      sourceId: homeopathicSourceId,
+      sourceRevisionId: homeopathicSourceRevisionId,
+    });
+    await addReleaseItem(6, {
+      kind: "entity_revision",
+      entityId: repertoryEntityId,
+      entityRevisionId: repertoryRevisionId,
+    });
+    for (const [index, entityId] of homeopathicRemedyIds.entries()) {
+      await addReleaseItem(7 + index, {
+        kind: "entity_revision",
+        entityId,
+        entityRevisionId: homeopathicRemedyRevisionIds[index],
+      });
+    }
+    await addReleaseItem(10, {
+      kind: "assertion",
+      assertionId: homeopathicRelationAssertionId,
     });
     await db.query(`
       UPDATE public.kb_releases release
@@ -766,6 +1128,31 @@ async function readEntityResolution(
   ])).rows[0].value;
 }
 
+async function readSplitTrack(
+  expectedInput: string | null = expectedInputHash,
+  expectedRelease: string | null = expectedReleaseManifestHash,
+  rubricLinks: unknown = homeopathicRubricLinks,
+  expectedRequest: string | null = expectedHomeopathicRequestHash,
+  homeopathicLimit: number | null = 50,
+): Promise<SplitTrackResult> {
+  return (await db.query<{ value: SplitTrackResult }>(`
+    SELECT public.therapy_retrieval_v2_split_track_preflight_v1(
+      $1::uuid, $2::text, $3::uuid, $4::text, $5::uuid, $6::uuid,
+      $7::jsonb, $8::text, 8, 16, $9::integer
+    ) AS value
+  `, [
+    inputRevisionId,
+    expectedInput,
+    knowledgeReleaseId,
+    expectedRelease,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(rubricLinks),
+    expectedRequest,
+    homeopathicLimit,
+  ])).rows[0].value;
+}
+
 beforeAll(async () => {
   db = new PGlite();
   await bootstrapDatabase();
@@ -810,13 +1197,37 @@ beforeAll(async () => {
     SELECT public.therapy_retrieval_v2_entity_query_manifest_v1($1) AS value
   `, [inputRevisionId])).rows[0].value;
   successfulEntityResolution = await readEntityResolution();
+
+  await db.exec(splitTrackMigration);
+  wikiSnapshotAfterSplitTrack = (await db.query<{ value: string }>(
+    "SELECT public.kb_export_wiki_snapshot()::text AS value",
+  )).rows[0].value;
+  therapySnapshotAfterSplitTrack = (await db.query<{ value: string }>(
+    "SELECT public.therapy_input_export_snapshot_v2() AS value",
+  )).rows[0].value;
+  homeopathicRequestManifest = (await db.query<{
+    value: HomeopathicRequestManifest;
+  }>(`
+    SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+      $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+    ) AS value
+  `, [
+    inputRevisionId,
+    repertoryEntityId,
+    repertoryRevisionId,
+    JSON.stringify(homeopathicRubricLinks),
+  ])).rows[0].value;
+  expectedHomeopathicRequestHash = (await db.query<{ value: string }>(`
+    SELECT public.kb_release_manifest_hash_v1($1::jsonb) AS value
+  `, [JSON.stringify(homeopathicRequestManifest)])).rows[0].value;
+  successfulSplitTrack = await readSplitTrack();
 }, 120_000);
 
 afterAll(async () => {
   await db?.close();
 });
 
-describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
+describe.sequential("therapy retrieval v2 Step 6A through 6C preflights", () => {
   it("adds only four closed read functions and changes no snapshot", async () => {
     expect(migration.match(/CREATE FUNCTION public\./g)).toHaveLength(4);
     expect(migration).toMatch(/^BEGIN;/);
@@ -1117,10 +1528,10 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
       binding_hash: successfulPreflight.binding_hash,
       query_manifest_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
       selected_fact_count: 2,
-      direct_candidate_count_before_limit: 2,
-      returned_direct_candidate_count: 2,
-      graph_candidate_count_before_limit: 2,
-      returned_graph_candidate_count: 2,
+      direct_candidate_count_before_limit: 3,
+      returned_direct_candidate_count: 3,
+      graph_candidate_count_before_limit: 4,
+      returned_graph_candidate_count: 4,
       result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
     }));
     expect(successfulEntityResolution.facts).toHaveLength(2);
@@ -1130,8 +1541,8 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
       fact_id: successorFactId,
       direct_candidate_count_before_limit: 1,
       returned_direct_candidate_count: 1,
-      graph_candidate_count_before_limit: 1,
-      returned_graph_candidate_count: 1,
+      graph_candidate_count_before_limit: 2,
+      returned_graph_candidate_count: 2,
     }));
     expect(diseaseFact?.direct_candidates[0]).toEqual(expect.objectContaining({
       candidate_status: "ENTITY_REFERENCE_MATCH_ONLY",
@@ -1157,6 +1568,12 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
     }));
 
     const plantFact = successfulEntityResolution.facts?.[1];
+    expect(plantFact).toEqual(expect.objectContaining({
+      direct_candidate_count_before_limit: 2,
+      returned_direct_candidate_count: 2,
+      graph_candidate_count_before_limit: 2,
+      returned_graph_candidate_count: 2,
+    }));
     expect(plantFact?.direct_candidates[0]).toEqual(expect.objectContaining({
       candidate_status: "ENTITY_REFERENCE_MATCH_ONLY",
       entity_id: plantEntityId,
@@ -1169,11 +1586,23 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
         "simple_full_text",
       ]),
     }));
+    expect(plantFact?.direct_candidates[1]).toEqual(expect.objectContaining({
+      entity_id: homeopathicRemedyIds[0],
+      entity_revision_id: homeopathicRemedyRevisionIds[0],
+      best_match_channel: "exact_normalized_alias",
+    }));
     expect(plantFact?.graph_candidates[0]).toEqual(expect.objectContaining({
       candidate_status: "GRAPH_EDGE_MATCH_ONLY_NOT_RECOMMENDATION",
       source_entity_id: plantEntityId,
       relation_type_code: "may_support",
       graph_direction: "outbound",
+      entity_id: diseaseEntityId,
+      entity_revision_id: diseaseEntityRevisionId,
+    }));
+    expect(plantFact?.graph_candidates[1]).toEqual(expect.objectContaining({
+      candidate_status: "GRAPH_EDGE_MATCH_ONLY_NOT_RECOMMENDATION",
+      source_entity_id: homeopathicRemedyIds[0],
+      source_entity_revision_id: homeopathicRemedyRevisionIds[0],
       entity_id: diseaseEntityId,
       entity_revision_id: diseaseEntityRevisionId,
     }));
@@ -1278,23 +1707,24 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
   });
 
   it("rejects an oversized release before the binding validator", async () => {
-    await db.exec(`
-      BEGIN;
-      ALTER TABLE public.kb_release_items DISABLE TRIGGER USER;
-      DROP INDEX public.kb_release_items_source_revision_idx;
-      INSERT INTO public.kb_release_items (
-        release_id, item_order, item_kind, source_id, source_revision_id,
-        item_manifest, item_manifest_hash
-      )
-      SELECT item.release_id, generated.item_order, item.item_kind,
-             item.source_id, item.source_revision_id,
-             item.item_manifest, item.item_manifest_hash
-        FROM public.kb_release_items item
-        CROSS JOIN generate_series(5, 4097) generated(item_order)
-       WHERE item.release_id = '${knowledgeReleaseId}'
-         AND item.item_kind = 'source_revision';
-    `);
+    await db.exec("BEGIN;");
     try {
+      await db.exec(`
+        ALTER TABLE public.kb_release_items DISABLE TRIGGER USER;
+        DROP INDEX public.kb_release_items_source_revision_idx;
+        INSERT INTO public.kb_release_items (
+          release_id, item_order, item_kind, source_id, source_revision_id,
+          item_manifest, item_manifest_hash
+        )
+        SELECT item.release_id, generated.item_order, item.item_kind,
+               item.source_id, item.source_revision_id,
+               item.item_manifest, item.item_manifest_hash
+          FROM public.kb_release_items item
+          CROSS JOIN generate_series(11, 4097) generated(item_order)
+         WHERE item.release_id = '${knowledgeReleaseId}'
+           AND item.item_kind = 'source_revision'
+           AND item.source_id = '${knowledgeSourceId}';
+      `);
       const projection = (await db.query<{ complete: boolean }>(`
         SELECT public.therapy_retrieval_v2_entity_projection_is_complete_v1($1)
                  AS complete
@@ -1306,6 +1736,243 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
       await db.exec("ROLLBACK;");
     }
     expect(await readEntityResolution()).toEqual(successfulEntityResolution);
+  });
+
+  it("adds only three closed split-track functions and classifies exact release references", async () => {
+    expect(splitTrackMigration.match(/CREATE FUNCTION public\./g)).toHaveLength(3);
+    expect(splitTrackMigration).toMatch(/^BEGIN;/);
+    expect(splitTrackMigration.trimEnd()).toMatch(/COMMIT;$/);
+    expect(splitTrackMigration).not.toMatch(
+      /\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|INDEX|TRIGGER|POLICY|TYPE|SEQUENCE|SCHEMA)\b|\bTRUNCATE\b/i,
+    );
+    expect(splitTrackMigration).not.toMatch(
+      /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|COPY)\b/i,
+    );
+    expect(splitTrackMigration).not.toMatch(/\bGRANT\b/i);
+    expect(splitTrackMigration).not.toMatch(
+      /\b(pseudonym_id|patient_id|patient_user_id|session_id|anamnesis_id)\b/i,
+    );
+    expect(splitTrackMigration).toContain("LIMIT 257");
+    expect(splitTrackMigration).toContain("LIMIT 65");
+    expect(splitTrackMigration).toContain("LIMIT 2049");
+    const splitPreflight = splitTrackMigration.slice(
+      splitTrackMigration.indexOf(
+        "CREATE FUNCTION public.therapy_retrieval_v2_split_track_preflight_v1",
+      ),
+    );
+    expect(splitPreflight.indexOf("LIMIT 257")).toBeLessThan(
+      splitPreflight.indexOf("request_manifest :="),
+    );
+    expect(wikiSnapshotAfterSplitTrack).toBe(wikiSnapshotAfterEntityResolution);
+    expect(therapySnapshotAfterSplitTrack).toBe(therapySnapshotAfterEntityResolution);
+
+    const tracks = (await db.query<{
+      disease: string;
+      remedy: string;
+      repertory: string;
+      unknown: string;
+      active: number;
+    }>(`
+      SELECT
+        public.therapy_retrieval_v2_reference_track_v1($1, $2, $3) AS disease,
+        public.therapy_retrieval_v2_reference_track_v1($1, $4, $5) AS remedy,
+        public.therapy_retrieval_v2_reference_track_v1($1, $6, $7) AS repertory,
+        public.therapy_retrieval_v2_reference_track_v1(
+          $1, '31000000-0000-4000-8000-000000000099',
+          '32000000-0000-4000-8000-000000000099'
+        ) AS unknown,
+        (SELECT count(*)::integer FROM public.kb_releases
+          WHERE retrieval_eligible OR is_active) AS active
+    `, [
+      knowledgeReleaseId,
+      diseaseEntityId,
+      diseaseEntityRevisionId,
+      homeopathicRemedyIds[0],
+      homeopathicRemedyRevisionIds[0],
+      repertoryEntityId,
+      repertoryRevisionId,
+    ])).rows[0];
+    expect(tracks).toEqual({
+      disease: "GENERAL_OR_NATUROPATHIC_REFERENCE",
+      remedy: "HOMEOPATHIC_REFERENCE",
+      repertory: "HOMEOPATHIC_REFERENCE",
+      unknown: "UNRESOLVED_REFERENCE",
+      active: 0,
+    });
+  });
+
+  it("binds each source-native rubric to an exact selected fact deterministically", async () => {
+    expect(homeopathicRequestManifest).toEqual(expect.objectContaining({
+      contract_version: 1,
+      contract_scope: "THERAPY_RETRIEVAL_V2_HOMEOPATHIC_REQUEST_PREFLIGHT_ONLY",
+      input_manifest_hash: expectedInputHash,
+      repertory_request_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(homeopathicRequestManifest.fact_rubric_links).toHaveLength(3);
+    expect(homeopathicRequestManifest.fact_rubric_links.map((link) =>
+      link.therapy_input_fact_id)).toEqual([
+      successorFactId,
+      reviewOnlyFactId,
+      successorFactId,
+    ]);
+    expect(homeopathicRequestManifest.fact_rubric_links.every((link) =>
+      /^[0-9a-f]{64}$/.test(link.fact_content_sha256)
+      && /^[0-9a-f]{64}$/.test(link.fact_query_hash))).toBe(true);
+    expect(expectedHomeopathicRequestHash).toMatch(/^[0-9a-f]{64}$/);
+
+    const reversed = (await db.query<{ value: HomeopathicRequestManifest }>(`
+      SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+        $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+      ) AS value
+    `, [
+      inputRevisionId,
+      repertoryEntityId,
+      repertoryRevisionId,
+      JSON.stringify([...homeopathicRubricLinks].reverse()),
+    ])).rows[0].value;
+    expect(reversed).toEqual(homeopathicRequestManifest);
+  });
+
+  it("keeps general references and repertory matches in separate inactive tracks", async () => {
+    expect(successfulSplitTrack).toEqual(expect.objectContaining({
+      status: "SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE",
+      interpretation: "SEPARATE_MATCH_TRACKS_NOT_ELIGIBILITY_EFFICACY_OR_MEDICAL_USE",
+      medical_use_allowed: false,
+      retrieval_execution_allowed: false,
+      candidate_status_assignment_allowed: false,
+      homeopathic_request_hash: expectedHomeopathicRequestHash,
+      result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulSplitTrack.general_track).toEqual(expect.objectContaining({
+      track: "GENERAL_OR_NATUROPATHIC_REFERENCE_TRACK",
+      status: "GENERAL_REFERENCE_MATCHES_READY_INACTIVE",
+      direct_reference_count: 2,
+      graph_reference_count: 2,
+      excluded_homeopathic_reference_count: 3,
+      unresolved_reference_count: 0,
+      track_result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulSplitTrack.general_track?.facts[1]).toEqual(
+      expect.objectContaining({
+        fact_id: reviewOnlyFactId,
+        excluded_homeopathic_reference_count: 2,
+      }),
+    );
+    expect(successfulSplitTrack.general_track?.facts[1].direct_references)
+      .toHaveLength(1);
+    expect(successfulSplitTrack.general_track?.facts[1].direct_references[0])
+      .toEqual(expect.objectContaining({ entity_id: plantEntityId }));
+    expect(successfulSplitTrack.general_track?.facts[1].graph_references)
+      .toHaveLength(1);
+    expect(successfulSplitTrack.general_track?.facts[1].graph_references[0])
+      .toEqual(expect.objectContaining({ source_entity_id: plantEntityId }));
+
+    expect(successfulSplitTrack.homeopathic_track).toEqual(expect.objectContaining({
+      track: "HOMEOPATHIC_SOURCE_NATIVE_REPERTORY_TRACK",
+      status: "HOMEOPATHIC_REPERTORY_MATCHES_READY_INACTIVE",
+      reader_status: "HOMEOPATHIC_REPERTORY_MATCHES_READY",
+      candidate_count_before_limit: 3,
+      returned_candidate_count: 3,
+      track_result_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+    }));
+    expect(successfulSplitTrack.homeopathic_track?.candidates.map((candidate) =>
+      candidate.source_remedy_code)).toEqual(["R-A", "r-B", "R-C"]);
+    expect(successfulSplitTrack.homeopathic_track?.candidates.every((candidate) =>
+      candidate.candidate_status === "REPERTORY_MATCH_ONLY")).toBe(true);
+
+    const generalJson = JSON.stringify(successfulSplitTrack.general_track);
+    for (const entityId of homeopathicRemedyIds) {
+      expect(generalJson).not.toContain(entityId);
+    }
+    for (const revisionId of homeopathicRemedyRevisionIds) {
+      expect(generalJson).not.toContain(revisionId);
+    }
+    expect(JSON.stringify(successfulSplitTrack)).not.toMatch(
+      /"candidate_status":"(?:ALLOW|REVIEW_ONLY|EXCLUDE|ESCALATE_ONLY)"/,
+    );
+    expect(await readSplitTrack()).toEqual(successfulSplitTrack);
+
+    const { result_hash: resultHash, ...payload } = successfulSplitTrack;
+    const calculated = (await db.query<{ hash: string }>(`
+      SELECT public.kb_release_manifest_hash_v1($1::jsonb) AS hash
+    `, [JSON.stringify(payload)])).rows[0].hash;
+    expect(calculated).toBe(resultHash);
+  });
+
+  it("preserves an empty homeopathic track without inventing matches", async () => {
+    const noMatchLinks = [{
+      therapy_input_fact_id: successorFactId,
+      rubric_revision_id: homeopathicRubricRevisionIds[0],
+      importance: 1,
+      polarity: "include",
+    }];
+    const noMatchManifest = (await db.query<{ value: HomeopathicRequestManifest }>(`
+      SELECT public.therapy_retrieval_v2_homeopathic_request_manifest_v1(
+        $1::uuid, $2::uuid, $3::uuid, $4::jsonb
+      ) AS value
+    `, [
+      inputRevisionId,
+      repertoryEntityId,
+      repertoryRevisionId,
+      JSON.stringify(noMatchLinks),
+    ])).rows[0].value;
+    const noMatchHash = (await db.query<{ value: string }>(`
+      SELECT public.kb_release_manifest_hash_v1($1::jsonb) AS value
+    `, [JSON.stringify(noMatchManifest)])).rows[0].value;
+    const result = await readSplitTrack(
+      expectedInputHash,
+      expectedReleaseManifestHash,
+      noMatchLinks,
+      noMatchHash,
+    );
+    expect(result.status).toBe("SPLIT_TRACK_PREFLIGHT_COMPLETE_INACTIVE");
+    expect(result.homeopathic_track).toEqual(expect.objectContaining({
+      status: "HOMEOPATHIC_NO_REPERTORY_MATCHES_INACTIVE",
+      reader_status: "HOMEOPATHIC_NO_REPERTORY_MATCHES",
+      candidate_count_before_limit: 0,
+      returned_candidate_count: 0,
+      candidates: [],
+    }));
+  });
+
+  it("fails closed for request drift, unselected facts, and release-external remedies", async () => {
+    expect((await readSplitTrack(
+      expectedInputHash,
+      expectedReleaseManifestHash,
+      homeopathicRubricLinks,
+      "0".repeat(64),
+    )).status).toBe("SPLIT_TRACK_HOMEOPATHIC_REQUEST_MISMATCH");
+    expect((await readSplitTrack(
+      expectedInputHash,
+      expectedReleaseManifestHash,
+      homeopathicRubricLinks,
+      expectedHomeopathicRequestHash,
+      0,
+    )).status).toBe("SPLIT_TRACK_EXPECTATION_INVALID");
+
+    const unselectedFactLinks = homeopathicRubricLinks.map((link, index) =>
+      index === 0 ? { ...link, therapy_input_fact_id: unreviewedFactId } : link);
+    expect((await readSplitTrack(
+      expectedInputHash,
+      expectedReleaseManifestHash,
+      unselectedFactLinks,
+    )).status).toBe("SPLIT_TRACK_HOMEOPATHIC_REQUEST_UNAVAILABLE");
+
+    await db.exec(`
+      BEGIN;
+      ALTER TABLE public.kb_homeopathic_repertory_remedies DISABLE TRIGGER USER;
+      UPDATE public.kb_homeopathic_repertory_remedies
+         SET remedy_entity_id = '${outsideEntityId}',
+             remedy_revision_id = '${outsideEntityRevisionId}'
+       WHERE id = '${repertoryRemedyIds[0]}';
+    `);
+    try {
+      expect((await readSplitTrack()).status)
+        .toBe("SPLIT_TRACK_HOMEOPATHIC_SCOPE_UNAVAILABLE");
+    } finally {
+      await db.exec("ROLLBACK;");
+    }
+    expect(await readSplitTrack()).toEqual(successfulSplitTrack);
   });
 
   it("exposes no preflight function to application or import roles", async () => {
@@ -1321,10 +1988,13 @@ describe.sequential("therapy retrieval v2 Step 6A and 6B preflights", () => {
           'public.therapy_retrieval_v2_preflight_v1(uuid,text,uuid,text)',
           'public.therapy_retrieval_v2_entity_query_manifest_v1(uuid)',
           'public.therapy_retrieval_v2_entity_projection_is_complete_v1(uuid)',
-          'public.therapy_retrieval_v2_entity_resolution_preflight_v1(uuid,text,uuid,text,integer,integer)'
+          'public.therapy_retrieval_v2_entity_resolution_preflight_v1(uuid,text,uuid,text,integer,integer)',
+          'public.therapy_retrieval_v2_reference_track_v1(uuid,uuid,uuid)',
+          'public.therapy_retrieval_v2_homeopathic_request_manifest_v1(uuid,uuid,uuid,jsonb)',
+          'public.therapy_retrieval_v2_split_track_preflight_v1(uuid,text,uuid,text,uuid,uuid,jsonb,text,integer,integer,integer)'
         ]::text[]) function_name
     `);
-    expect(privileges.rows).toHaveLength(35);
+    expect(privileges.rows).toHaveLength(50);
     expect(privileges.rows.every((row) => row.can_execute === false)).toBe(true);
   });
 });

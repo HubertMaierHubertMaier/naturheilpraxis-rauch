@@ -1043,11 +1043,14 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
       "supabase/migrations/20260803110000_create_kb_homeopathic_import_preflight_contract.sql";
     const smallBundleWriterMigration =
       "supabase/migrations/20260803120000_create_kb_homeopathic_small_bundle_writer.sql";
+    const splitTrackPreflightMigration =
+      "supabase/migrations/20260804110000_create_therapy_split_track_preflight.sql";
     const contractSources = new Set([
       contractMigration,
       readerContractMigration,
       importPreflightContractMigration,
       smallBundleWriterMigration,
+      splitTrackPreflightMigration,
       "src/components/admin/BackupCenter.tsx",
       "src/lib/backupAreas.ts",
       "src/lib/wikiBackup.ts",
@@ -1064,21 +1067,41 @@ describe.sequential("Wiki Step 5A homeopathic repertory contract", () => {
         } else if (/\.(?:[cm]?[jt]sx?|sql)$/.test(entry.name)) {
           const source = readFileSync(absolutePath, "utf8");
           if (!tablePattern.test(source)) continue;
-          const hasDirectRuntimeAccess = repertoryTables.some((table) =>
+          const hasDirectReadAccess = repertoryTables.some((table) =>
             new RegExp(`\\.from\\(\\s*["'\\\`]${table}["'\\\`]\\s*\\)`).test(source)
             || new RegExp(
-              `\\b(?:SELECT[\\s\\S]{0,120}\\bFROM|INSERT[\\s\\S]{0,120}\\bINTO|UPDATE|DELETE[\\s\\S]{0,120}\\bFROM)\\s+(?:public\\.)?${table}\\b`,
+              `\\bSELECT[\\s\\S]{0,120}\\bFROM\\s+(?:public\\.)?${table}\\b`,
               "i",
             ).test(source)
           );
+          const hasDirectWriteAccess = repertoryTables.some((table) =>
+            new RegExp(
+              `\\b(?:INSERT\\s+INTO|UPDATE(?:\\s+ONLY)?|DELETE\\s+FROM(?:\\s+ONLY)?|MERGE\\s+INTO|TRUNCATE(?:\\s+TABLE)?(?:\\s+ONLY)?|COPY)\\s+(?:public\\.)?${table}\\b`,
+              "i",
+            ).test(source)
+          );
+          const hasDirectTableGrant = repertoryTables.some((table) =>
+            new RegExp(
+              `\\bGRANT\\b[\\s\\S]{0,200}\\bON\\s+(?:TABLE\\s+)?(?:public\\.)?${table}\\b`,
+              "i",
+            ).test(source)
+          );
+          const hasDirectRuntimeAccess = hasDirectReadAccess
+            || hasDirectWriteAccess
+            || hasDirectTableGrant;
+          const isCoreContractMigration = [
+            contractMigration,
+            readerContractMigration,
+            importPreflightContractMigration,
+            smallBundleWriterMigration,
+          ].includes(relativePath);
+          const isReadOnlySplitTrack = relativePath === splitTrackPreflightMigration;
           if (!contractSources.has(relativePath)
-              || (![
-                contractMigration,
-                readerContractMigration,
-                importPreflightContractMigration,
-                smallBundleWriterMigration,
-              ].includes(relativePath)
-                  && hasDirectRuntimeAccess)) {
+              || (!isCoreContractMigration
+                  && !isReadOnlySplitTrack
+                  && hasDirectRuntimeAccess)
+              || (isReadOnlySplitTrack
+                  && (hasDirectWriteAccess || hasDirectTableGrant))) {
             violations.push(relativePath);
           }
         }
