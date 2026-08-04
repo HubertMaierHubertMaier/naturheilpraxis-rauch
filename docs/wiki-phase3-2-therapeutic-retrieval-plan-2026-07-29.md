@@ -1639,6 +1639,15 @@ Dosierungsanzeige, medizinische oder produktive Nutzung und Aktivierung werden
 nicht freigegeben. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step7g-postgresql-owner-failure-isolation-implementation-2026-08-04.md`.
 
+Der finale PostgreSQL-17-Lauf fuer Commit `baf7ca0` bestand alle sechs
+Vertragsgruppen. Gruppe 5 bestaetigte einen innerhalb der Transaktion sichtbaren
+Insert und danach null Zeilen nach Rollback, exakt vier gemischte
+Barriere-Warter, einen gueltigen Insert, drei fail-closed abgewiesene veraltete
+Ergebnisse, eine gueltige Auditzeile, null ungueltige Zeilen und null
+verbleibende Wartesperren. Eine operative oder medizinische Freigabe blieb
+ausgeschlossen:
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30921506249>.
+
 ## Historischer erster Implementierungsblock
 
 Der erste abgeschlossene Codeblock umfasste ausschliesslich Schritt 1:
