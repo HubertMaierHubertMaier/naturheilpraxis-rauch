@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  buildNutrientImportBundleContract,
+  type NutrientImportBundleManifest,
+} from "@/lib/nutrientImportBundle";
 
 const baseMigrationFiles = [
   "20260728090000_create_kb_phase1_core.sql",
@@ -60,33 +64,7 @@ const expectedCounts = {
 
 type ControlFlags = Record<string, boolean>;
 
-type NutrientManifest = {
-  contract_version: number;
-  contract_scope: string;
-  data_classification: string;
-  source_policy: {
-    contract_is_source_neutral: boolean;
-    primary_assertion_provenance_required: boolean;
-    source_rights_review_required: boolean;
-    real_source_data_loaded: boolean;
-  };
-  preparation: {
-    preparation_entity_id: string;
-    preparation_revision_id: string;
-    preparation_content_hash: string;
-    preparation_kind: string;
-    formulation_kind: string;
-    delivery_system: string;
-  };
-  component_count: number;
-  component_set_hash: string;
-  provenance: {
-    assertion_count: number;
-    source_binding_count: number;
-    source_binding_set_hash: string;
-  };
-  control_flags: ControlFlags;
-};
+type NutrientManifest = NutrientImportBundleManifest;
 
 type NutrientPreflightResult = {
   status: string;
@@ -110,6 +88,7 @@ let therapySnapshotAfter = "";
 let manifest: NutrientManifest;
 let manifestHash = "";
 let readyResult: NutrientPreflightResult;
+let parserContract: Awaited<ReturnType<typeof buildNutrientImportBundleContract>>;
 
 async function bootstrapDatabase(target: PGlite): Promise<void> {
   await target.exec(`
@@ -333,6 +312,7 @@ beforeAll(async () => {
 
   manifest = await readManifest();
   manifestHash = await readManifestHash();
+  parserContract = await buildNutrientImportBundleContract(manifest);
   readyResult = await readPreflight(manifestHash, expectedCounts);
 }, 120_000);
 
@@ -392,6 +372,12 @@ describe.sequential("Wiki Step 8A source-neutral nutrient import preflight", () 
     expect(manifestHash).toMatch(/^[0-9a-f]{64}$/);
     expect(manifest).not.toHaveProperty("components");
     expect(manifest).not.toHaveProperty("sources");
+  });
+
+  it("matches the parser-side Step 8B manifest, counts, and PostgreSQL hash", () => {
+    expect(parserContract.manifest).toEqual(manifest);
+    expect(parserContract.expectedCounts).toEqual(expectedCounts);
+    expect(parserContract.bundleHash).toBe(manifestHash);
   });
 
   it("returns one deterministic inactive-ready result with every authority flag false", async () => {
