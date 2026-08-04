@@ -2,8 +2,8 @@
 
 Stand: 2026-08-04
 
-Status: implementiert und lokal verifiziert. Der isolierte PostgreSQL-17-Lauf
-steht bis zum Push des geprueften Commits noch aus. Es gibt keine Migration, kein
+Status: implementiert, lokal verifiziert und isoliert unter PostgreSQL 17
+bestaetigt. Es gibt keine Migration, kein
 Supabase-Deployment, keine echten medizinischen Daten und keine Verbindung zum
 sichtbaren Therapiepfad.
 
@@ -122,8 +122,40 @@ Vor dem PostgreSQL-Lauf bestehen:
 - `git diff --check` ohne Whitespacefehler; nur die bekannten
   LF-zu-CRLF-Arbeitskopiehinweise
 
-Der Workflow legt die Node-20-Basis fest. Der isolierte PostgreSQL-17-Lauf wird
-nach dem Push des geprueften Commits als eigener Abschlussnachweis nachgetragen.
+Der Workflow legt die Node-20-Basis fest.
+
+## PostgreSQL-17-Ergebnis
+
+Der finale Workflow lief fuer Commit
+`baf7ca008bb75815128b94c79eb34a7ab53de72c` erfolgreich:
+
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30921506249>
+
+Alle sechs PostgreSQL-17-Gruppen meldeten `success`. Gruppe 5 bestand zusaetzlich
+zum unveraenderten Auditpersistenzvertrag:
+
+- den vollstaendigen ephemeren Dump-/Restore- und Hashvergleich
+- die bestehende 7F-Nebenlaeufigkeitsprobe
+- den eigenen Schritt `Verify bounded synthetic owner failure isolation`
+
+Die maschinenlesbare 7G-Zusammenfassung bestaetigt:
+
+- `rollback_insert_results = 1`
+- `rows_after_rollback = 0`
+- `mixed_callers = 4`
+- `barrier_waiters = 4`
+- `bounded_sessions = 5`
+- `inserted_results = 1`
+- `rejected_stale_results = 3`
+- `audit_rows = 1`
+- `invalid_audit_rows = 0`
+- `waiting_locks = 0`
+- `max_duration_ms = 10936`
+- `operational_or_medical_approval = false`
+
+Der anschliessende 7C-Preflight blieb technisch bereit und inaktiv. Der
+Servicecontainer samt Dumps und allen ephemeren synthetischen Datenbanken wurde
+danach verworfen.
 
 ## Unveraenderte Produktgrenzen und Restrisiken
 
