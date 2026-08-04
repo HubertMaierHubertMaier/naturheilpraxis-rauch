@@ -74,6 +74,11 @@ Manifest und Ergebnis halten alle folgenden Schalter explizit auf `false`:
 Der Quellenvertrag verlangt weiterhin eine gesonderte Rechtepruefung. Er laedt
 keine echten Quellinhalte und erteilt keine Quellenfreigabe.
 
+Die vorgelagerte oeffentliche Quelleninventur und die Pruefung dieses Vertrags
+gegen deren Rechts- und Inhaltsgrenzen sind separat dokumentiert in
+`wiki-step8a-strunz-public-source-inventory-2026-08-04.md`. Sie stellt keine
+offene Inhaltslizenz fest und gibt daher weiterhin keine echten Quellen frei.
+
 ## Synthetischer Nachweis
 
 Der fokussierte PGlite-Vertragstest verwendet ausschliesslich erfundene IDs,
