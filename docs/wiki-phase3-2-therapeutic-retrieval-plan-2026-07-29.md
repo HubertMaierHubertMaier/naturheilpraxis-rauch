@@ -1611,7 +1611,11 @@ Aufbewahrung, Loeschung, Deployment, Replay, Schattenlauf, KI, Planwahl,
 Dosierungsanzeige, medizinische oder produktive Nutzung und Aktivierung werden
 nicht freigegeben. Die ausfuehrliche Dokumentation steht in
 `docs/wiki-step7f-postgresql-owner-concurrency-implementation-2026-08-04.md`.
-Der isolierte PostgreSQL-17-Lauf steht noch aus.
+Der finale PostgreSQL-17.10-Lauf fuer Commit `2259d28` bestand alle sechs
+Vertragsgruppen. Gruppe 5 bestaetigte exakt vier Barriere-Warter, einen Insert,
+drei idempotente Ergebnisse, eine gueltige Auditzeile, null ungueltige Zeilen
+und null verbleibende Wartesperren:
+<https://github.com/HubertMaierHubertMaier/naturheilpraxis-rauch/actions/runs/30907725812>.
 
 ## Historischer erster Implementierungsblock
 
