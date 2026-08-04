@@ -1,0 +1,80 @@
+name: Therapy Retrieval PostgreSQL Conformance
+
+on:
+  push:
+    branches:
+      - "db-step7d-*"
+    paths:
+      - ".github/workflows/therapy-retrieval-postgres-conformance.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "src/test/therapy-retrieval-v2-preflight.test.ts"
+      - "supabase/migrations/**"
+  pull_request:
+    paths:
+      - ".github/workflows/therapy-retrieval-postgres-conformance.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "src/test/therapy-retrieval-v2-preflight.test.ts"
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: therapy-retrieval-postgres-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-17:
+    name: PostgreSQL 17 / ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - name: group-1-input-resolution
+            pattern: "adds only four|binds only terminal|returns one deterministic|distinguishes malformed|fails closed after trigger-bypassed input|adds only three closed entity|derives a bounded|resolves exact channels|fails closed for invalid limits|rejects an oversized"
+          - name: group-2-split-safety
+            pattern: "adds only three closed split-track|binds each source-native|keeps general references|preserves an empty homeopathic|fails closed for request drift|adds only three closed safety|binds red flags|evaluates release-closed|turns every active|requires review for an unclear|requires review for an uncertain|requires review when the medication|requires review for unresolved|rejects release-external|rejects cherry-picked"
+          - name: group-3-candidate-dosage
+            pattern: "adds only three closed candidate-status|assigns general ALLOW|keeps every source-native homeopathic|keeps uncertain clinical|binds the exact safety hash|rejects a malformed expected safety-gate|preserves red-flag escalation ahead of stale safety|preserves mandatory medication review ahead of dosage-rule|adds only three closed dosage-rule|binds exactly one released rule|binds the exact candidate hash|rejects a malformed expected candidate-status|blocks rule assessment|fails closed when a released dosage"
+          - name: group-4-audit-envelope
+            pattern: "adds only one closed audit-envelope|materializes a deterministic inactive audit|binds fact, comparator|binds the exact dosage result|preserves red-flag escalation ahead of a stale audit|preserves medication review ahead of a stale audit"
+          - name: group-5-audit-persistence
+            pattern: "append-only.*audit.*table|persists.*exact|stale.*audit.*expectations|direct.*audit-run|exact.*audit.*row|audit.*persistence.*owner-only|owner-only.*retrieval"
+          - name: group-6-governance
+            pattern: "retention-restore preflight|technical retention and restore|invalid or exceeded audit inventory|import role receives direct audit DML"
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: retrieval_contract
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d retrieval_contract"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      THERAPY_RETRIEVAL_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/retrieval_contract
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run the synthetic retrieval contract
+        run: >-
+          npx vitest run src/test/therapy-retrieval-v2-preflight.test.ts
+          -t "${{ matrix.pattern }}"
