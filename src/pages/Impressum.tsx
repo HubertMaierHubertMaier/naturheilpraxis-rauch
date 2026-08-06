@@ -15,7 +15,7 @@ const Impressum = () => {
               {t("Impressum", "Legal Notice")}
             </h1>
             <p className="text-lg text-muted-foreground">
-              {t("Angaben gemäß § 5 TMG", "Information according to § 5 TMG (German Telemedia Act)")}
+              {t("Angaben gemäß § 5 DDG", "Information according to § 5 DDG (German Digital Services Act)")}
             </p>
           </div>
         </div>
@@ -84,13 +84,13 @@ const Impressum = () => {
                   <Globe className="mt-1 h-5 w-5 shrink-0 text-primary" />
                   <div>
                     <p className="font-medium text-foreground">Website</p>
-                    <a 
-                      href="https://www.rauch-heilpraktiker.de" 
-                      target="_blank" 
+                    <a
+                      href="https://naturheilpraxis-rauch.lovable.app"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-muted-foreground hover:text-primary"
                     >
-                      www.rauch-heilpraktiker.de
+                      naturheilpraxis-rauch.lovable.app
                     </a>
                   </div>
                 </div>
@@ -111,7 +111,8 @@ const Impressum = () => {
                   </h2>
                   <div className="space-y-3 text-muted-foreground">
                     <p>
-                      <strong className="text-foreground">{t("Berufsbezeichnung:", "Professional Title:")}</strong> {t("Heilpraktiker", "Naturopath (Heilpraktiker)")}
+                      <strong className="text-foreground">{t("Berufsbezeichnung:", "Professional Title:")}</strong>{" "}
+                      {t("Heilpraktiker, verliehen in der Bundesrepublik Deutschland", "Heilpraktiker, awarded in the Federal Republic of Germany")}
                     </p>
                     <p>
                       <strong className="text-foreground">{t("Zuständige Aufsichtsbehörde:", "Supervisory Authority:")}</strong><br />
@@ -122,10 +123,28 @@ const Impressum = () => {
                     </p>
                     <p>
                       <strong className="text-foreground">{t("Berufsrechtliche Regelungen:", "Professional Regulations:")}</strong><br />
-                      {t(
-                        "Gesetz über die berufsmäßige Ausübung der Heilkunde ohne Bestallung (Heilpraktikergesetz) vom 17.02.1939",
-                        "German Naturopathy Act (Heilpraktikergesetz) of 17.02.1939 - Law on the Professional Practice of Medicine Without a License"
-                      )}
+                      <a
+                        href="https://www.gesetze-im-internet.de/heilprg/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary hover:underline"
+                      >
+                        {t(
+                          "Gesetz über die berufsmäßige Ausübung der Heilkunde ohne Bestallung (Heilpraktikergesetz)",
+                          "German Heilpraktikergesetz (Act on the Professional Practice of Medicine Without Appointment)"
+                        )}
+                      </a><br />
+                      <a
+                        href="https://www.gesetze-im-internet.de/heilprgdv_1/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary hover:underline"
+                      >
+                        {t(
+                          "Erste Durchführungsverordnung zum Heilpraktikergesetz",
+                          "First Implementing Ordinance to the German Heilpraktikergesetz"
+                        )}
+                      </a>
                     </p>
                     <p>
                       <strong className="text-foreground">{t("Erlaubnis erteilt durch:", "License issued by:")}</strong><br />
@@ -150,8 +169,8 @@ const Impressum = () => {
                   </h2>
                   <p className="text-muted-foreground">
                     {t(
-                      "Mitglied im Bund Deutscher Heilpraktiker e.V. (BDH)",
-                      "Member of the German Association of Naturopaths (Bund Deutscher Heilpraktiker e.V. - BDH)"
+                      "Mitglied im Berufsverband Deutscher Heilpraktiker und Naturheilkundiger e.V. (BDHN e.V.)",
+                      "Member of the Professional Association of German Heilpraktiker and Naturopaths (BDHN e.V.)"
                     )}
                   </p>
                 </div>
@@ -169,8 +188,8 @@ const Impressum = () => {
                 <div>
                   <h2 className="mb-4 font-serif text-2xl font-semibold text-foreground">
                     {t(
-                      "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV",
-                      "Responsible for Content according to § 55 Para. 2 RStV"
+                      "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV",
+                      "Responsible for Content according to § 18 Para. 2 MStV"
                     )}
                   </h2>
                   <div className="space-y-2 text-muted-foreground">
@@ -197,8 +216,8 @@ const Impressum = () => {
                   </h3>
                   <p>
                     {t(
-                      "Die Inhalte dieser Website wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden. Als Diensteanbieter bin ich gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.",
-                      "The contents of this website were created with the utmost care. However, no guarantee can be given for the accuracy, completeness and timeliness of the content. As a service provider, I am responsible for my own content on these pages in accordance with § 7 para. 1 TMG under general law."
+                      "Die Inhalte dieser Website wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden. Als Diensteanbieter bin ich gemäß § 7 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.",
+                      "The contents of this website were created with the utmost care. However, no guarantee can be given for the accuracy, completeness and timeliness of the content. As a service provider, I am responsible for my own content on these pages in accordance with § 7 DDG under general law."
                     )}
                   </p>
                 </div>
