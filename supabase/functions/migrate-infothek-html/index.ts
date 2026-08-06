@@ -11,6 +11,7 @@ const INFOTHEK_ROUTES = [
   "/dankbarkeit-alltag.html",
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
+  "/ersttermin-naturheilpraxis.html",
   "/krankheit-ist-messbar.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/logi-ernaehrung-mitochondrien.html",

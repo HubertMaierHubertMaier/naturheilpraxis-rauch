@@ -38,8 +38,8 @@ describe("Infothek indexing policy", () => {
     expect(existsSync(resolve(root, "public/content-protection.js"))).toBe(false);
   });
 
-  it("keeps all 18 website source pages outside public hosting", () => {
-    expect(sourceHtmlFiles).toHaveLength(18);
+  it("keeps all 19 website source pages outside public hosting", () => {
+    expect(sourceHtmlFiles).toHaveLength(19);
     expect(existsSync(internalSource)).toBe(true);
   });
 

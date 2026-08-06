@@ -15,6 +15,7 @@ export const staticInfothekRoutes: StaticInfothekRoute[] = [
   { path: "/dankbarkeit-alltag.html", title: "Dankbarkeit im Alltag", defaultGated: true },
   { path: "/datenschutz-fahrplan.html", title: "Interner Datenschutz-Fahrplan", internal: true },
   { path: "/diabetes-handout.html", title: "Diabetes Typ 1 und Typ 2" },
+  { path: "/ersttermin-naturheilpraxis.html", title: "Ihr erster Termin" },
   { path: "/krankheit-ist-messbar.html", title: "Frequenztherapie" },
   { path: "/kraeuter-schmerz-entzuendung.html", title: "Kräuter und Gewürze gegen Schmerz", defaultGated: true },
   { path: "/logi-ernaehrung-mitochondrien.html", title: "LOGI-Kost und Mitochondrien" },

@@ -55,6 +55,15 @@
       "indexable": false
     },
     {
+      "file": "ersttermin-naturheilpraxis.html",
+      "visibility": "public",
+      "targetPath": "/praxis/ersttermin",
+      "risk": "low",
+      "reviewTrack": "scope-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
       "file": "krankheit-ist-messbar.html",
       "visibility": "public",
       "targetPath": "/ratgeber/frequenztherapie",

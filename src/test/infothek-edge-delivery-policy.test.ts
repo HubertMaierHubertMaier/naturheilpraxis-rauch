@@ -30,6 +30,7 @@ const expectedRoutes = [
   "/dankbarkeit-alltag.html",
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
+  "/ersttermin-naturheilpraxis.html",
   "/krankheit-ist-messbar.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/logi-ernaehrung-mitochondrien.html",
@@ -76,7 +77,7 @@ function verifyJwt(functionName: string): boolean | undefined {
 }
 
 describe("secure Infothek Edge delivery policy", () => {
-  it("keeps both endpoints pinned to the exact 19-file allowlist", () => {
+  it("keeps both endpoints pinned to the exact 20-file allowlist", () => {
     expect(stringArray(getSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(stringArray(migrateSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(getSource).toContain("!ALLOWED_ROUTE_SET.has(route)");

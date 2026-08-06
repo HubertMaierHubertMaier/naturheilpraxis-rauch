@@ -188,6 +188,12 @@ export const infothekGroups: InfothekGroup[] = [
         description: { de: "Akute & latente Belastungen, Erregerpersistenz", en: "Acute & latent infections, pathogen persistence" },
       },
       {
+        label: { de: "Ihr erster Termin", en: "Your First Appointment" },
+        href: "/ersttermin-naturheilpraxis.html",
+        icon: ClipboardList,
+        description: { de: "Ablauf, Vorbereitung, Sicherheit und transparente Entscheidungen", en: "Process, preparation, safety and transparent decisions" },
+      },
+      {
         label: { de: "Umwelt, Alltag & Gesundheit", en: "Environment, Daily Life & Health" },
         href: "/umwelt-alltag-gesundheit.html",
         icon: Sprout,
