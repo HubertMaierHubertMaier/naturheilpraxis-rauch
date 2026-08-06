@@ -101,6 +101,7 @@ export const BACKUP_AREAS: BackupArea[] = [
       "allergiebehandlung.html",
       "ass-salicylat-histamin.html",
       "candida-diaet.html",
+      "dankbarkeit-alltag.html",
       "diabetes-handout.html",
       "kraeuter-schmerz-entzuendung.html",
       "krankheit-ist-messbar.html",
