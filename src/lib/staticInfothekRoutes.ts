@@ -12,6 +12,7 @@ export const staticInfothekRoutes: StaticInfothekRoute[] = [
   { path: "/allergiebehandlung.html", title: "Allergiebehandlung", defaultGated: true },
   { path: "/ass-salicylat-histamin.html", title: "ASS, Salicylat und Histamin" },
   { path: "/candida-diaet.html", title: "Candida-Diät", defaultGated: true },
+  { path: "/dankbarkeit-alltag.html", title: "Dankbarkeit im Alltag", defaultGated: true },
   { path: "/datenschutz-fahrplan.html", title: "Interner Datenschutz-Fahrplan", internal: true },
   { path: "/diabetes-handout.html", title: "Diabetes Typ 1 und Typ 2" },
   { path: "/krankheit-ist-messbar.html", title: "Frequenztherapie" },

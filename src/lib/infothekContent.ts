@@ -211,7 +211,6 @@ export const infothekGroups: InfothekGroup[] = [
         href: "/dankbarkeit-alltag.html",
         icon: HeartPulse,
         description: { de: "Was die Forschung nahelegt und eine alltagstaugliche Drei-Minuten-Praxis", en: "What research suggests and a practical three-minute exercise" },
-        external: true,
         gated: true,
       },
       {

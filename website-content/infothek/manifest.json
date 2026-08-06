@@ -37,6 +37,15 @@
       "indexable": false
     },
     {
+      "file": "dankbarkeit-alltag.html",
+      "visibility": "patient",
+      "targetPath": null,
+      "risk": "medium",
+      "reviewTrack": "psychological-and-evidence",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
       "file": "diabetes-handout.html",
       "visibility": "public",
       "targetPath": "/ratgeber/diabetes-handout",

@@ -4,6 +4,7 @@ const INFOTHEK_ROUTES = [
   "/allergiebehandlung.html",
   "/ass-salicylat-histamin.html",
   "/candida-diaet.html",
+  "/dankbarkeit-alltag.html",
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/krankheit-ist-messbar.html",
@@ -25,6 +26,7 @@ const ALLOWED_ROUTE_SET = new Set<string>(INFOTHEK_ROUTES);
 const PATIENT_ONLY_ROUTES = new Set<string>([
   "/allergiebehandlung.html",
   "/candida-diaet.html",
+  "/dankbarkeit-alltag.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/patienteninfo-hochohmiges-wasser.html",
   "/sibo-duenndarmfehlbesiedlung.html",

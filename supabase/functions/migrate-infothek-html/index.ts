@@ -8,6 +8,7 @@ const INFOTHEK_ROUTES = [
   "/allergiebehandlung.html",
   "/ass-salicylat-histamin.html",
   "/candida-diaet.html",
+  "/dankbarkeit-alltag.html",
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/krankheit-ist-messbar.html",

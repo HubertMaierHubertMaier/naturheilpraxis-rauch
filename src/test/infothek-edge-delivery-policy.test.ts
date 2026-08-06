@@ -18,11 +18,16 @@ const policySource = readFileSync(
 );
 const authPageSource = readFileSync(resolve(root, "src/pages/Auth.tsx"), "utf8");
 const authContextSource = readFileSync(resolve(root, "src/contexts/AuthContext.tsx"), "utf8");
+const gatingManagerSource = readFileSync(
+  resolve(root, "src/components/admin/InfothekGatingManager.tsx"),
+  "utf8",
+);
 
 const expectedRoutes = [
   "/allergiebehandlung.html",
   "/ass-salicylat-histamin.html",
   "/candida-diaet.html",
+  "/dankbarkeit-alltag.html",
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/krankheit-ist-messbar.html",
@@ -43,6 +48,7 @@ const expectedRoutes = [
 const expectedPatientRoutes = [
   "/allergiebehandlung.html",
   "/candida-diaet.html",
+  "/dankbarkeit-alltag.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/patienteninfo-hochohmiges-wasser.html",
   "/sibo-duenndarmfehlbesiedlung.html",
@@ -70,7 +76,7 @@ function verifyJwt(functionName: string): boolean | undefined {
 }
 
 describe("secure Infothek Edge delivery policy", () => {
-  it("keeps both endpoints pinned to the exact 18-file allowlist", () => {
+  it("keeps both endpoints pinned to the exact 19-file allowlist", () => {
     expect(stringArray(getSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(stringArray(migrateSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(getSource).toContain("!ALLOWED_ROUTE_SET.has(route)");
@@ -175,5 +181,14 @@ describe("secure Infothek Edge delivery policy", () => {
     expect(policySource.match(/TO authenticated/g)?.length).toBeGreaterThanOrEqual(3);
     expect(policySource.match(/is_current_session_two_factor_completed\(\)/g)).toHaveLength(2);
     expect(policySource).not.toMatch(/DROP POLICY IF EXISTS "Admins manage/);
+  });
+
+  it("limits admin HTML uploads to known, reviewed private Infothek paths", () => {
+    expect(gatingManagerSource).toContain("const ALLOWED_HTML_FILES = new Set(");
+    expect(gatingManagerSource).toContain("const MAX_HTML_BYTES = 5 * 1024 * 1024");
+    expect(gatingManagerSource).toContain('.from("patient-library")');
+    expect(gatingManagerSource).toContain('.upload(`infothek/${file.name}`');
+    expect(gatingManagerSource).toContain("upsert: true");
+    expect(gatingManagerSource).toContain("forbiddenAssets.test(html)");
   });
 });

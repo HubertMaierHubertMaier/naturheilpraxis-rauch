@@ -16,7 +16,9 @@ import {
   LayoutList,
   Eye,
   ChevronDown,
+  Upload,
 } from "lucide-react";
+import { staticInfothekRoutes } from "@/lib/staticInfothekRoutes";
 
 /**
  * Admin-UI: pro Infothek-Beitrag eine von drei Sichtbarkeiten setzen:
@@ -54,12 +56,19 @@ const VIS_META: Record<
 };
 
 const ALL_VIS: InfothekVisibility[] = ["public", "new_patient", "patient"];
+const ALLOWED_HTML_FILES = new Set(
+  staticInfothekRoutes
+    .filter((route) => !route.internal)
+    .map((route) => route.path.slice(1)),
+);
+const MAX_HTML_BYTES = 5 * 1024 * 1024;
 
 export function InfothekGatingManager() {
   const { overrides, loading, refresh } = useInfothekGating();
   const { toast } = useToast();
   const [draft, setDraft] = useState<Record<string, InfothekVisibility>>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingHtml, setUploadingHtml] = useState(false);
   const [viewMode, setViewMode] = useState<"group" | "visibility">("group");
 
   useEffect(() => {
@@ -126,6 +135,50 @@ export function InfothekGatingManager() {
     }
     toast({ title: "Sichtbarkeit gespeichert" });
     refresh();
+  };
+
+  const uploadProtectedHtml = async (file: File | undefined) => {
+    if (!file) return;
+    if (!ALLOWED_HTML_FILES.has(file.name) || file.size <= 0 || file.size > MAX_HTML_BYTES) {
+      toast({
+        title: "HTML-Datei abgelehnt",
+        description: "Nur bekannte Infothek-Dateien bis 5 MB dürfen hochgeladen werden.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingHtml(true);
+    try {
+      const html = await file.text();
+      const forbiddenAssets =
+        /(?:infothek-gate|content-protection)\.js|fonts\.(?:googleapis|gstatic)\.com|cdn\.tailwindcss\.com|(?:cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com)[^"'\s>]*reveal\.js/i;
+      if (
+        !/<html\b/i.test(html)
+        || !/<head\b[^>]*>/i.test(html)
+        || !/<meta\b[^>]*name=["']robots["'][^>]*content=["']noindex, nofollow["']/i.test(html)
+        || forbiddenAssets.test(html)
+      ) {
+        throw new Error("Die Datei erfüllt die Sicherheitsregeln für geschützte Infothek-Inhalte nicht.");
+      }
+
+      const { error } = await supabase.storage
+        .from("patient-library")
+        .upload(`infothek/${file.name}`, new Blob([html], { type: "text/html;charset=utf-8" }), {
+          contentType: "text/html; charset=utf-8",
+          upsert: true,
+        });
+      if (error) throw error;
+      toast({ title: "Geschützte HTML-Datei gespeichert", description: file.name });
+    } catch (error) {
+      toast({
+        title: "HTML-Upload fehlgeschlagen",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingHtml(false);
+    }
   };
 
   const setAllInGroup = (groupIdx: number, v: InfothekVisibility) => {
@@ -277,6 +330,29 @@ export function InfothekGatingManager() {
           Tipp: Im Tab „Zugänge" kannst du einzelne <em>patient</em>-Beiträge zusätzlich
           pro E-Mail freischalten.
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
+        <div>
+          <p className="font-medium text-foreground">Geschützte Infothek-HTML speichern</p>
+          <p className="text-xs text-muted-foreground">
+            Legt eine geprüfte, bekannte HTML-Datei im privaten Infothek-Speicher ab.
+          </p>
+        </div>
+        <label className="inline-flex cursor-pointer items-center rounded-md border bg-background px-3 py-2 text-sm font-medium transition hover:bg-muted">
+          {uploadingHtml ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+          HTML auswählen
+          <input
+            type="file"
+            accept=".html,text/html"
+            className="sr-only"
+            disabled={uploadingHtml}
+            onChange={(event) => {
+              const input = event.currentTarget;
+              void uploadProtectedHtml(input.files?.[0]).finally(() => { input.value = ""; });
+            }}
+          />
+        </label>
       </div>
 
       {viewMode === "visibility" ? (
