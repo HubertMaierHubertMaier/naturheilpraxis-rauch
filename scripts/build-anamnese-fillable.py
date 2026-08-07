@@ -19,7 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from pypdf import PdfReader
 
-OUT = Path("public/anamnesebogen-blanko.pdf")
+OUT = Path("assets/protected-pdfs/anamnesebogen-blanko.pdf")
 IAA_SOURCE = Path("src/lib/iaaQuestions.ts")
 W, H = A4
 M = 36
@@ -35,16 +35,18 @@ BORDER = HexColor("#8a8a8a")
 PALE = HexColor("#faf8f4")
 
 FONT_DIR = Path("/nix/store/0hdgmcjy7q8zn7h3amz8nf96l9qh7wv0-liberation-fonts-2.1.5/share/fonts/truetype")
+FONT = "Helvetica"
+BOLD = "Helvetica-Bold"
+ITALIC = "Helvetica-Oblique"
 try:
     pdfmetrics.registerFont(TTFont("PraxisSans", str(FONT_DIR / "LiberationSans-Regular.ttf")))
     pdfmetrics.registerFont(TTFont("PraxisSans-Bold", str(FONT_DIR / "LiberationSans-Bold.ttf")))
     pdfmetrics.registerFont(TTFont("PraxisSans-Italic", str(FONT_DIR / "LiberationSans-Italic.ttf")))
+    FONT = "PraxisSans"
+    BOLD = "PraxisSans-Bold"
+    ITALIC = "PraxisSans-Italic"
 except Exception:
     pass
-
-FONT = "PraxisSans"
-BOLD = "PraxisSans-Bold"
-ITALIC = "PraxisSans-Italic"
 
 
 def sanitize_name(value: str) -> str:
@@ -598,13 +600,15 @@ surgery_rows = [
 
 # Radiologische / nuklearmedizinische / onkologische Verfahren – eigene Tabelle mit Abstand zum Termin
 radio_procedures = [
-    ("chemotherapie", "Chemotherapie"),
-    ("strahlentherapie", "Strahlentherapie (Radiotherapie)"),
-    ("szintigraphie", "Szintigraphie (nuklearmedizinische Bildgebung)"),
-    ("petCt", "PET-CT (Positronen-Emissions-Tomographie)"),
-    ("radioiodtherapie", "Radioiodtherapie (RIT, Schilddrüse)"),
-    ("rontgen", "Röntgen / CT (Computertomographie) gehäuft"),
-    ("mrt", "MRT (Magnetresonanztomographie) mit Kontrastmittel"),
+    ("chemotherapie", "Chemotherapie", False),
+    ("strahlentherapie", "Strahlentherapie (Radiotherapie)", False),
+    ("rontgenCt", "Röntgen / CT (Computertomographie) gehäuft", False),
+    ("ctKontrastmittel", "CT mit jodhaltigem Kontrastmittel (Jod nicht radioaktiv)", False),
+    ("mrt", "MRT (Magnetresonanztomographie) mit Kontrastmittel", False),
+    ("szintigraphie", "Szintigraphie (nuklearmedizinische Bildgebung)", True),
+    ("petCt", "PET-CT (Positronen-Emissions-Tomographie)", True),
+    ("radioioddiagnostik", "Radiojoddiagnostik / Ganzkörperszintigrafie, ggf. SPECT/CT", True),
+    ("radioiodtherapie", "Radioiodtherapie (RIT, Schilddrüse)", True),
 ]
 
 cancer_rows = [
@@ -823,13 +827,17 @@ pdf.h1("XII. Unfälle & OPs")
 pdf.condition_table("unfaelleOps", surgery_rows)
 pdf.mini_table("operationen", "Operationen im Detail", [("Jahr", 70), ("Grund / Art der Operation", 360)], 6)
 pdf.h2("Radiologische / nuklearmedizinische / onkologische Verfahren")
-pdf.note("Bitte für jedes Verfahren Datum, Grund und ggf. Dosis angeben. Hinweis: Zwischen bestimmten Untersuchungen (z.B. Szintigraphie, Radioiodtherapie, PET-CT) und einem Termin bei uns ist ein zeitlicher Abstand erforderlich – bitte vorab telefonisch klären.")
-for key, label in radio_procedures:
-    pdf.ensure(34)
+pdf.note("Bitte jede Untersuchung beziehungsweise Behandlung mit Datum, Grund und bei radioaktiven Stoffen möglichst auch Radiopharmakon/Aktivität einzeln eintragen. Ein normales CT kann nicht-radioaktives jodhaltiges Kontrastmittel verwenden. Bei einer Radiojoddiagnostik wird radioaktives Jod meist als Kapsel eingenommen; ergänzend kann eine SPECT/CT erfolgen.")
+pdf.note("Praxisinterner Planungshinweis: Nach Untersuchungen mit radioaktiven Stoffen sind Untersuchungen und Therapien in der Naturheilpraxis Peter Rauch für mindestens etwa 6 Wochen nicht vorgesehen; nach einer Radiojodtherapie derzeit 12 Wochen. Das ist keine pauschale Sperre für medizinisch notwendige Maßnahmen. Den konkreten Termin bitte vorab mit der Praxis abstimmen.")
+for key, label, radioactive in radio_procedures:
+    pdf.ensure(102)
     pdf.c.setFillColor(SAGE_DARK); pdf.c.setFont(BOLD, 8)
     pdf.c.drawString(M, pdf.y - 9, label)
     pdf.y -= 13
-    pdf.text_row(f"radio_{key}", [("Datum", "datum", 100), ("Grund / Art", "grund", 230), ("Dosis", "dosis", 110)])
+    for entry_index in range(1, 5):
+        fields = [(f"Datum {entry_index}", "datum", 92), ("Grund / Art", "grund", 245)]
+        fields.append(("Radiopharmakon / MBq" if radioactive else "Bemerkung", "dosis", 130))
+        pdf.text_row(f"radio_{key}_{entry_index}", fields)
 pdf.long_text("radio", "Sonstige radiologische / nuklearmedizinische Untersuchungen oder Hinweise:", "sonstige", 5)
 
 pdf.h1("XIII. Krebs")

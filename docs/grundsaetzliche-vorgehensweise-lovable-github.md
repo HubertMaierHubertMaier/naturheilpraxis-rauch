@@ -21,6 +21,18 @@ Diese Domain ist aktuell ein separates, unabhaengiges System und darf nicht mit 
 
 Wir arbeiten immer in kleinen, klar abgegrenzten Bloecken.
 
+Das uebergeordnete Ziel dabei ist immer:
+
+1. Code
+2. Speicherung / relevante Datenstaende
+3. GitHub `main`
+4. Lovable-Projektstand
+5. oeffentlicher Lovable-Stand
+
+muessen am Ende eines abgeschlossenen Blocks **synchron, nachvollziehbar und moeglichst fehlerfrei** zusammenpassen.
+
+Es reicht fuer dieses Projekt ausdruecklich nicht, wenn nur eine einzelne Ebene richtig aussieht, waehrend andere Ebenen noch auf einem alten oder abweichenden Stand laufen.
+
 Jeder Block folgt dieser Reihenfolge:
 
 1. Verstehen und Spiegeln des aktuellen Stands
@@ -30,6 +42,17 @@ Jeder Block folgt dieser Reihenfolge:
 5. kontrollierter GitHub-Push nach `main`
 6. Lovable-/Live-Verifikation
 7. erst danach der naechste Block oder die naechste Phase
+
+## Leitprioritaet fuer Klaus und kuenftige Sessions
+
+Wenn es einen Zielkonflikt gibt zwischen schneller Weiterarbeit und sauberer Synchronitaet, hat die saubere Synchronitaet Vorrang.
+
+Konkret bedeutet das:
+
+1. keine weitere Inhalts- oder Feature-Arbeit auf unsicherem Sync-Stand
+2. keine Annahme `GitHub stimmt also stimmt Lovable auch`
+3. keine Annahme `Lovable Preview stimmt also der Publish-Stand stimmt auch`
+4. bei Abweichungen zuerst den Stand angleichen, dann erst weiterentwickeln
 
 ## Rolle von GitHub
 

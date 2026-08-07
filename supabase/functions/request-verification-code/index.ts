@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { sendEmail } from "../_shared/smtp.ts";
+import { hashVerificationCode } from "../_shared/verificationCode.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -332,6 +333,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const code = generateCode();
+    const codeHash = await hashVerificationCode(code);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await supabase
@@ -345,7 +347,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from("verification_codes")
       .insert({
         user_id: userId,
-        code,
+        code: codeHash,
         type,
         expires_at: expiresAt.toISOString(),
       });

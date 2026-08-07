@@ -221,6 +221,7 @@ async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: 
 
 // Tokenisiert eine Query (Belastungen + Symptome + Erkrankung) für das Relevanz-Scoring.
 function tokenizeQuery(text: string): string[] {
+  const SHORT_PATHOGEN_TOKENS = new Set(["ebv", "cmv", "hiv", "hpv", "hbv", "hcv"]);
   const STOPWORDS = new Set([
     "und", "oder", "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "eines",
     "mit", "ohne", "von", "vom", "zur", "zum", "für", "auf", "bei", "auch", "ist", "sind",
@@ -232,7 +233,7 @@ function tokenizeQuery(text: string): string[] {
       .toLowerCase()
       .replace(/[^\wäöüß\s]/g, " ")
       .split(/\s+/)
-      .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
+      .filter((t) => (t.length >= 4 || SHORT_PATHOGEN_TOKENS.has(t)) && !STOPWORDS.has(t))
   ));
 }
 
@@ -381,6 +382,7 @@ function selectRelevantEntriesScored(
 
 function buildEntryContent(entry: WikiEntry, queryText: string): string {
   const content = entry.content || "";
+  if (content.length <= MAX_ENTRY_CHARS) return content;
   const tokens = tokenizeQuery(queryText);
   const lines = content.split("\n");
   const picked = new Set<number>();
@@ -568,9 +570,9 @@ function buildForcedWikiRemedies(entries: WikiEntry[], queryText: string): strin
       items.push({ group: oncGroup, line: "- **Mannavan Curcu forte+ / Oligo+ (2. Stufe)** | nach Praxisstandard | oral | Steigerungsphase | 🟢 Optional | laut Bezug | Wiki Cancer-Stufe 2: Curcumin antiviral/antitumoral, Oligo+ als 50× Vit C / 20× Vit E Verstärker." });
     }
     if (hasWikiTitle(entries, "Diamond Shield – Begleitprotokoll bei Cancer")) {
-      items.push({ group: oncGroup, line: "- **Diamond Shield Grundprogramm + Impuls-Entladung** | 2–7×/Woche | bioenergetisch | Daueranwendung | 🟡 Empfohlen | laut Bezug | Wiki Diamond-Shield-Cancer-Protokoll plus tägliches Erden ≥ 50 min." });
-      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards (BR täglich, TUM jeden 2. Tag, CLST 3–7×/Woche, FvE lokal 7 min auf Tumor/Metastasen)** | wie Wiki | bioenergetisch | begleitend | 🟡 Empfohlen | laut Bezug | Wiki: ⚠️ FvE-ChipCard NICHT am Tag vor schulmedizinischer Therapie." });
-      items.push({ group: oncGroup, line: "- **Milchsauer vergorene Gemüsesäfte (Sauerkraut-/Rote-Bete-Saft) nach FvE-Anwendung** | täglich 1 Glas | oral | begleitend | 🟢 Optional | laut Bezug | Wiki Diamond-Shield-Protokoll: Darmmilieu/Ausleitung." });
+      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards Tum + BR** | laut Wiki jeweils täglich | bioenergetisch | begleitend | 🟡 Empfohlen | Hersteller-/Therapeutenangabe | Wiki-Quellenstand 2025: Tum anschließend mindestens 20 Minuten erden; BR enthält laut Quelle mehrere pathogenbezogene Frequenzen." });
+      items.push({ group: oncGroup, line: "- **Diamond Shield ChipCards CLST + FvE** | CLST täglich 20 Min.; FvE täglich ab 7 Min. langsam bis 20 Min. steigern | bioenergetisch | begleitend | 🟡 Empfohlen | Hersteller-/Therapeutenangabe | Wiki-Quellenstand 2025." });
+      items.push({ group: oncGroup, line: "- **Begleitmittel laut Diamond-Shield-Wiki (Vit. C, Selen, Vit. D3+, Glutathion, Juglandis, Papain, Samento, Silberwasser, Bitterstern, Derma-Clean L/N)** | Dosierung individuell festlegen | oral bzw. nach Präparat | begleitend | 🟢 Zu prüfen | Hersteller-/Therapeutenangabe | Kontraindikationen und Wechselwirkungen vor Auswahl prüfen." });
     }
   }
 
@@ -1037,7 +1039,7 @@ ZWINGENDE BALANCE-REGEL:
 - Auch bei "Z.n." (Zustand nach) Brustkrebs/Endometriumkarzinom mit Knochenmetastasen oder unter laufender CDK4/6-/Aromatase-/Bisphosphonat-Therapie (Abemaciclib, Letrozol, Zometa) MUSS diese Begleittherapie erscheinen – als naturheilkundliche Begleitung, nicht als Ersatz.
 - Wechselwirkungen explizit kennzeichnen: hochdosiertes Vit C / Glutathion / Antioxidantien können mit laufender zytostatischer/zielgerichteter Therapie interagieren → Hinweis "Zeitliche Abstimmung mit onkologischer Therapie in der Praxis besprechen". KEIN pauschales "bitte ärztlich abklären".
 - Wermut/Schwarzwalnuss in der Papainkur: Kontraindikation Schwangerschaft/Stillzeit prüfen.
-- FvE-ChipCard: Hinweis "nicht am Tag vor schulmedizinischer Therapie" mitgeben.
+- Diamond-Shield-Dosierungen aus dem aktuellen Wiki-Quellenstand übernehmen; keine nicht belegten Zusatzwarnungen oder alten Anwendungsschemata ergänzen.
 - Diese Onkologie-Sektion darf NICHT durch eine Darm-/Symptomstrategie verdrängt werden.
 
 🔬 METATRON/NLS INDEX-INTERPRETATION (ZWINGEND – HÄUFIGE FEHLERQUELLE!):

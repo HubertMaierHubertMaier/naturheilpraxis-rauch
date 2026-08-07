@@ -78,6 +78,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/dashboard", component: "PatientDashboard", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions"], edgeFunctions: [], riskNote: "Patient dashboard requires an authenticated and 2FA-bound session; RLS must constrain submissions to the signed-in patient." },
   { path: "/patienten-bibliothek", component: "PatientenBibliothek", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["patient_resources", "profiles"], edgeFunctions: [], riskNote: "Authenticated patient library route." },
   { path: "/app-uebersicht", component: "AppUebersicht", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public app overview / informational route." },
+  { path: "/bni-gesundheitsrunde", component: "BNIGesundheitsrunde", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public planning workspace for BNI group profiles; keep it free of patient data and confidential participant details." },
   { path: "*", component: "NotFound", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Catch-all 404 route." },
 ];
 
@@ -289,6 +290,28 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     frontendConsumers: ["TherapyRecommendation", "PseudonymHistory", "TherapyPatientOverview"],
     policySummary: "Admin/service-role therapy workflow table with RLS enabled and authenticated edge-function access.",
     riskNote: "Therapy history is highly sensitive; keep route, edge function, and RLS controls aligned.",
+  },
+  {
+    name: "two_factor_pending_bindings",
+    audience: "service-role",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: [],
+    policySummary: "No direct client reads; security-definer binding functions consume short-lived pending 2FA state server-side.",
+    riskNote: "Contains binding tokens for pre-session 2FA completion; never expose to clients or logs.",
+  },
+  {
+    name: "two_factor_verified_sessions",
+    audience: "service-role",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: [],
+    policySummary: "Session-bound 2FA verification state is managed through security-definer functions and RLS-backed server checks only.",
+    riskNote: "Contains authenticated session-to-user bindings for sensitive routes; keep it server-side and aggressively scoped by session age.",
   },
   {
     name: "user_roles",

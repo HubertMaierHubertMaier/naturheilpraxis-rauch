@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Apple, Droplets, Leaf, Sun, Moon, Heart, AlertTriangle, CheckCircle } from "lucide-react";
+import { Apple, Droplets, Leaf, Sun, Moon, Heart, AlertTriangle, CheckCircle, ChefHat } from "lucide-react";
 import { useContentProtection } from "@/hooks/useContentProtection";
 
 const tipps = [
@@ -114,6 +114,113 @@ const Ernaehrung = () => {
                     <span className="text-sm text-foreground">{item.item}</span>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Alltagstaugliches Rezept */}
+          <Card className="overflow-hidden border-sage-200 shadow-card">
+            <CardHeader className="bg-sage-50">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
+                  <ChefHat className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                    Alltagstaugliches Rezept
+                  </p>
+                  <CardTitle className="font-serif">
+                    Tiefgefrorener Lachs mit knusprigen Pommes
+                  </CardTitle>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Im Ninja CRISPi ohne Temperatureingabe zeitversetzt in einem großen
+                    Glasbehälter zubereitet. Alternativ ist das Rezept auch im Backofen
+                    oder in der Pfanne möglich.
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-8 p-6">
+              <div className="grid gap-8 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-3 font-serif text-lg font-medium text-foreground">
+                    Zutaten für eine Mahlzeit
+                  </h3>
+                  <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                    {[
+                      "1 tiefgefrorenes Lachsfilet, etwa 150–200 g",
+                      "200–250 g tiefgefrorene Pommes",
+                      "höchstens 1 Teelöffel raffiniertes Rapsöl",
+                      "Pfeffer, mildes Paprikapulver und Knoblauchgranulat",
+                      "Dill und Zitronensaft nach dem Garen",
+                      "Salz nur sparsam; bei bereits gesalzenen Pommes weglassen",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 font-serif text-lg font-medium text-foreground">
+                    Ninja CRISPi mit Glasbehälter
+                  </h3>
+                  <ol className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+                    {[
+                      "Pommes locker auf der Crisper-Platte verteilen und höchstens 1 Teelöffel Rapsöl untermischen.",
+                      "MAX CRISP für 8 Minuten wählen, danach die Pommes gut schütteln.",
+                      "Gefrorenen Lachs auf der freien Seite mit der Haut nach unten einsetzen. Mit wenig Rapsöl, Pfeffer, Paprika und Knoblauch würzen.",
+                      "Auf AIR FRY wechseln und 12–16 Minuten weitergaren; die Pommes nach etwa 7 Minuten nochmals wenden.",
+                      "Dill und Zitronensaft erst nach dem Garen dazugeben.",
+                    ].map((step, index) => (
+                      <li key={step} className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                          {index + 1}
+                        </span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-sage-200 bg-sage-50 p-5">
+                <h3 className="mb-2 font-serif text-lg font-medium text-foreground">
+                  Ein PowerPod, ein großer Behälter
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Der einzelne PowerPod kann nicht zwei Glasbehälter gleichzeitig erhitzen.
+                  Deshalb kommen Pommes und Lachs zeitversetzt in den großen Glasbehälter.
+                  Bei diesem CRISPi-Grundmodell wird keine Temperatur eingestellt.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-border p-5">
+                  <h3 className="mb-2 font-serif text-lg font-medium text-foreground">
+                    Backofen oder Pfanne
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Natürlich lässt sich das Rezept auch im Backofen auf einem Blech oder
+                    in einer ofenfesten Form sowie getrennt in der Pfanne zubereiten. Die
+                    CRISPi-Programme und Garzeiten gelten dort nicht 1:1: nach Bräunung und
+                    Garzustand gehen und den Lachs sicher durchgaren.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-terracotta/30 bg-terracotta/10 p-5">
+                  <h3 className="mb-2 flex items-center gap-2 font-serif text-lg font-medium text-foreground">
+                    <AlertTriangle className="h-5 w-5 shrink-0 text-accent" />
+                    Lachs sicher prüfen
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    An der dicksten Stelle muss der Lachs vollständig heiß sein und
+                    mindestens 63 °C Kerntemperatur erreichen. Ohne Thermometer muss er
+                    innen undurchsichtig sein und leicht blättern; im Zweifel 2–3 Minuten
+                    länger garen.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

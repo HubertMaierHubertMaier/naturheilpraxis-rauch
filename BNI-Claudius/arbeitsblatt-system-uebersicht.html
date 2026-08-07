@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BNI Gesundheitsrunde - Arbeitsblatt-System</title>
+  <meta name="description" content="Arbeitsblatt-System fuer die BNI-Gesundheitsrunde: Teilnehmer-Steckbrief, Auswertung und gemeinsamer Workflow." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f9f7f2;
+      --bg-card: #f2ede4;
+      --bg-dark: #1f2924;
+      --text: #1f2924;
+      --text-muted: #5a6b5f;
+      --primary: #46715b;
+      --primary-dark: #365a47;
+      --accent: #b35a42;
+      --secondary: #d9ccb9;
+      --border: #d0c8b8;
+      --white: #ffffff;
+      --warning-bg: #fff3cd;
+      --warning-text: #856404;
+      --success-bg: #d4edda;
+      --success-text: #155724;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.6;
+    }
+
+    body {
+      padding: 0;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 50%, var(--primary-dark) 100%);
+      color: var(--white);
+      padding: 4.5rem 1.5rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(70,113,91,0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(179,90,66,0.18) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-inner,
+    .container {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.82);
+      font-size: 0.84rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-heading);
+      margin: 0 0 0.5rem;
+      line-height: 1.15;
+      color: var(--primary-dark);
+    }
+
+    h1 {
+      color: var(--white);
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      margin-bottom: 0.8rem;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 2.2vw, 2.3rem);
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 0.7rem;
+    }
+
+    p {
+      margin: 0 0 1rem;
+      font-size: 1.02rem;
+    }
+
+    .lead {
+      font-size: 1.15rem;
+      max-width: 860px;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .section {
+      padding: 2.4rem 0;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card,
+    .info-box,
+    .warning-box,
+    .success-box,
+    .quote-box {
+      border-radius: 16px;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid rgba(70,113,91,0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    .card {
+      background: var(--bg-card);
+    }
+
+    .info-box {
+      background: rgba(70,113,91,0.08);
+      border-left: 4px solid var(--primary);
+    }
+
+    .warning-box {
+      background: var(--warning-bg);
+      border-left: 4px solid #ffc107;
+      color: var(--warning-text);
+    }
+
+    .warning-box p,
+    .warning-box li,
+    .warning-box strong { color: var(--warning-text); }
+
+    .success-box {
+      background: var(--success-bg);
+      border-left: 4px solid #28a745;
+      color: var(--success-text);
+    }
+
+    .success-box p,
+    .success-box li,
+    .success-box strong { color: var(--success-text); }
+
+    .quote-box {
+      background: #fff;
+      border-left: 4px solid var(--accent);
+    }
+
+    ul,
+    ol {
+      margin: 0.4rem 0 0;
+      padding-left: 1.2rem;
+    }
+
+    li {
+      margin-bottom: 0.42rem;
+    }
+
+    .file-list {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .file-item {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(70,113,91,0.1);
+      padding: 1rem 1.1rem;
+    }
+
+    .file-path {
+      display: inline-block;
+      margin-top: 0.45rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 8px;
+      background: rgba(70,113,91,0.08);
+      color: var(--primary-dark);
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.8rem;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    th,
+    td {
+      padding: 0.8rem 0.9rem;
+      border-bottom: 1px solid rgba(70,113,91,0.08);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.97rem;
+    }
+
+    th {
+      background: var(--primary);
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.7rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(70,113,91,0.09);
+      border: 1px solid rgba(70,113,91,0.12);
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .footer-note {
+      color: var(--text-muted);
+      font-size: 0.94rem;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      table,
+      thead,
+      tbody,
+      tr,
+      td,
+      th {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 0.8rem;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      td {
+        border-bottom: 1px solid rgba(70,113,91,0.08);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="badge">BNI Claudius - Gesundheitsrunde</div>
+      <h1>Arbeitsblatt-System</h1>
+      <p class="lead">
+        Eine einfache, praxisnahe Struktur fuer die Gruppe: erst einheitlich erfassen,
+        dann sauber auswerten und daraus Flyer, Landingpage, Vortraege und Kooperationen ableiten.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <h2>Die beste einfache Loesung fuer eure Gruppe</h2>
+        <div class="grid-3">
+          <div class="card">
+            <h3>1. Teilnehmer-Steckbrief</h3>
+            <p>Jeder fuellt dieselben Kernfragen aus. So entstehen vergleichbare Daten statt unstrukturierter WhatsApp-Antworten.</p>
+          </div>
+          <div class="card">
+            <h3>2. Master-Auswertung</h3>
+            <p>Alle Antworten laufen in eine zentrale Tabelle. Dadurch werden Ueberschneidungen und Prioritaeten sichtbar.</p>
+          </div>
+          <div class="card">
+            <h3>3. Konzept / Praesentation</h3>
+            <p>Aus der Auswertung entstehen Positionierung, Multiplikatorenliste, Vortragsthemen und gemeinsame Aktionen.</p>
+          </div>
+        </div>
+        <div class="success-box" style="margin-top: 1rem;">
+          <p><strong>Wichtig:</strong> Fuer die Teilnehmer ist ein kurzer Textbogen am Handy am einfachsten. Fuer dich als Auswerter ist eine strukturierte CSV-Datei am praktischsten.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Die wichtigsten Dateien in diesem System</h2>
+        <div class="file-list">
+          <div class="file-item">
+            <h3>Teilnehmer-Vorlage kurz</h3>
+            <p>Die einfache Basisvorlage fuer strukturierte Antworten.</p>
+            <span class="file-path">BNI-Claudius\teilnehmer-steckbrief-vorlage.txt</span>
+          </div>
+          <div class="file-item">
+            <h3>Teilnehmer-Vorlage freundlich mit Beispielen</h3>
+            <p>Die bessere Datei fuer die Gruppe: weniger karg, mit Erklaerungen und Beispielantworten.</p>
+            <span class="file-path">BNI-Claudius\teilnehmer-steckbrief-mit-beispielen.txt</span>
+          </div>
+          <div class="file-item">
+            <h3>Master-Auswertung</h3>
+            <p>Zentrale Tabelle mit allen Teilnehmern als Zeilen und den wichtigsten Arbeitsfeldern als Spalten.</p>
+            <span class="file-path">BNI-Claudius\gesundheitsrunde-master-auswertung-aktualisiert.csv</span>
+          </div>
+          <div class="file-item">
+            <h3>WhatsApp-Einfuehrungstext freundlich</h3>
+            <p>Warm formulierte Gruppenansprache, die die Hemmschwelle senkt und erklaert, warum die Antworten wichtig sind.</p>
+            <span class="file-path">BNI-Claudius\whatsapp-einfuehrungstext-freundlich.txt</span>
+          </div>
+          <div class="file-item">
+            <h3>KI-Erklaerung fuer die Teilnehmer</h3>
+            <p>Zeigt in einfacher Sprache, was mit den Antworten passiert und wie Auswertung und KI helfen koennen.</p>
+            <span class="file-path">BNI-Claudius\ki-auswertung-und-zusammenarbeit.html</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>So wuerde ich es praktisch einsetzen</h2>
+        <div class="grid-2">
+          <div class="info-box">
+            <h3>Schritt 1</h3>
+            <p>Den freundlichen WhatsApp-Einfuehrungstext an die Gruppe senden.</p>
+          </div>
+          <div class="info-box">
+            <h3>Schritt 2</h3>
+            <p>Die freundliche Teilnehmer-Vorlage mit Beispielen direkt darunter posten oder als Datei weitergeben.</p>
+          </div>
+          <div class="info-box">
+            <h3>Schritt 3</h3>
+            <p>Die Antworten nach und nach in die Master-Auswertung uebertragen.</p>
+          </div>
+          <div class="info-box">
+            <h3>Schritt 4</h3>
+            <p>Mit der KI-Auswertung Ueberschneidungen, Themen und Kooperationschancen sichtbar machen.</p>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 1rem;">
+          <p><strong>Ergebnis:</strong> Ihr habt danach nicht nur ein loses Expertenteam, sondern eine auswertbare Arbeitsgrundlage fuer Flyer, Landingpage, Vortraege und Einladungswuensche an das BNI-Fuehrungsteam.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Welche Daten jeder Teilnehmer liefern sollte</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Bereich</th>
+              <th>Warum das wichtig ist</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Name, Kategorie, Unternehmen, Website</td>
+              <td>Grundlage fuer Uebersicht, Landingpage und Flyer</td>
+            </tr>
+            <tr>
+              <td>3 wichtigste Leistungen</td>
+              <td>Schafft Klarheit, wofuer die Person in der Gruppe stehen soll</td>
+            </tr>
+            <tr>
+              <td>Wofuer moechte ich bekannt sein?</td>
+              <td>Wichtig fuer BNI-Positionierung und Empfehlungen</td>
+            </tr>
+            <tr>
+              <td>Wann soll man an mich denken?</td>
+              <td>Hilft den anderen, klare Empfehlungs-Trigger zu lernen</td>
+            </tr>
+            <tr>
+              <td>3 typische Saetze von Kunden / Patienten</td>
+              <td>Sehr stark fuer BNI, weil das echte Trigger-Sprache liefert</td>
+            </tr>
+            <tr>
+              <td>Top 3 bis 5 Multiplikatoren</td>
+              <td>Zeigt, welche Besucher und Branchen ihr als Team suchen solltet</td>
+            </tr>
+            <tr>
+              <td>Kooperationspartner in der Gruppe</td>
+              <td>Erleichtert gemeinsame Aktionen und gegenseitige Empfehlungen</td>
+            </tr>
+            <tr>
+              <td>Vortragsthemen, Beitrag, Wunsch an die Gruppe</td>
+              <td>Daraus entstehen Formate, Agenda und gemeinsame Angebote</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Warum dieses Format besser ist als freie WhatsApp-Antworten</h2>
+        <div class="grid-2">
+          <div class="warning-box">
+            <h3>Nicht ideal</h3>
+            <ul>
+              <li>freie Antworten in der Gruppe</li>
+              <li>lange Sprachnachrichten</li>
+              <li>jeder antwortet in eigener Struktur</li>
+              <li>spaeter schwer auswertbar</li>
+            </ul>
+          </div>
+          <div class="success-box">
+            <h3>Besser</h3>
+            <ul>
+              <li>kurze einheitliche Textvorlage</li>
+              <li>jeder liefert die gleichen Datenfelder</li>
+              <li>du kannst direkt vergleichen und markieren</li>
+              <li>geeignet fuer Handy und Desktop</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Was du aus der Master-Datei danach ableiten kannst</h2>
+        <div class="pill-row">
+          <span class="pill">haeufigste Multiplikatoren</span>
+          <span class="pill">beste Kooperationspaare</span>
+          <span class="pill">Vortragsthemen</span>
+          <span class="pill">Painpoints</span>
+          <span class="pill">Landingpage-Struktur</span>
+          <span class="pill">Flyer-Texte</span>
+          <span class="pill">Praesentation 16.10.</span>
+        </div>
+        <div class="info-box" style="margin-top: 1rem;">
+          <p><strong>Mein Vorschlag:</strong> Erst alle Steckbriefe einsammeln, dann die Antworten mit Hilfe der Auswertung und KI strukturieren und daraus die gemeinsame Gruppenpositionierung finalisieren.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Wenn ihr spaeter digitaler arbeiten wollt</h2>
+        <div class="card">
+          <p>Dieses System ist absichtlich lokal und einfach aufgebaut. Spaeter laesst es sich sehr leicht in ein Online-System ueberfuehren:</p>
+          <ul>
+            <li>`teilnehmer-steckbrief-mit-beispielen.txt` -> Google Form oder Microsoft Form</li>
+            <li>`gesundheitsrunde-master-auswertung-aktualisiert.csv` -> Google Sheet oder Excel Online</li>
+            <li>`ki-auswertung-und-zusammenarbeit.html` -> Teilnehmer-Info als PDF oder Landingpage</li>
+          </ul>
+          <p class="footer-note">So bleibt ihr erst einmal unkompliziert und habt spaeter trotzdem einen klaren Ausbaupfad.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

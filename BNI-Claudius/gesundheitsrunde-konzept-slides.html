@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BNI Claudius - Gesundheitsrunde Konzept</title>
+  <meta name="description" content="Slide-Uebersicht zum BNI-Claudius-Gesundheitsrunden-Konzept fuer Peter Rauch." />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f9f7f2;
+      --bg-card: #f2ede4;
+      --bg-dark: #1f2924;
+      --text: #1f2924;
+      --text-muted: #5a6b5f;
+      --primary: #46715b;
+      --primary-dark: #365a47;
+      --accent: #b35a42;
+      --secondary: #d9ccb9;
+      --border: #d0c8b8;
+      --white: #ffffff;
+      --warning-bg: #fff3cd;
+      --warning-text: #856404;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .reveal {
+      font-family: var(--font-body);
+      color: var(--text);
+      font-size: 28px;
+    }
+
+    .reveal * { box-sizing: border-box; }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--primary-dark);
+      margin-bottom: 0.5em;
+      text-transform: none;
+    }
+
+    .reveal h1 { font-size: 1.8em; }
+    .reveal h2 { font-size: 1.18em; }
+    .reveal h3 {
+      font-size: 0.82em;
+      color: var(--accent);
+      margin-bottom: 0.4em;
+    }
+
+    .reveal p,
+    .reveal li,
+    .reveal td,
+    .reveal th {
+      font-size: 0.62em;
+      line-height: 1.58;
+      color: var(--text);
+    }
+
+    .reveal strong { color: var(--primary-dark); }
+    .reveal em { color: var(--accent); }
+
+    .reveal section {
+      text-align: left;
+      padding: 1.4em 1.8em 2em;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .reveal .slides section {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      max-height: 100% !important;
+      height: 100% !important;
+      scrollbar-gutter: stable;
+    }
+
+    .reveal .slides section::-webkit-scrollbar { width: 6px; }
+    .reveal .slides section::-webkit-scrollbar-track { background: rgba(70, 113, 91, 0.08); }
+    .reveal .slides section::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 999px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 50%, var(--primary-dark) 100%) !important;
+      color: var(--white);
+      text-align: center !important;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(70, 113, 91, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(179, 90, 66, 0.18) 0%, transparent 50%);
+      pointer-events: none;
+      border-radius: 1rem;
+    }
+
+    .hero * { position: relative; z-index: 1; }
+    .hero h1, .hero h2, .hero h3, .hero p, .hero li, .hero strong { color: var(--white); }
+    .hero .accent { color: #e4b29b; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.38em 1em;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.42em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.2em;
+    }
+
+    .muted {
+      color: var(--text-muted) !important;
+    }
+
+    .lead {
+      font-size: 0.75em !important;
+      line-height: 1.6 !important;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2em;
+      align-items: start;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9em;
+      align-items: start;
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8em;
+      margin-top: 0.6em;
+    }
+
+    .card,
+    .quote-box,
+    .info-box,
+    .warning-box,
+    .success-box {
+      border-radius: 0.7rem;
+      padding: 0.85em 1em;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+    }
+
+    .card h3 { margin-top: 0; }
+
+    .quote-box {
+      background: var(--bg);
+      border-left: 4px solid var(--primary);
+    }
+
+    .info-box {
+      background: rgba(70, 113, 91, 0.08);
+      border-left: 4px solid var(--primary);
+    }
+
+    .warning-box {
+      background: var(--warning-bg);
+      border-left: 4px solid #ffc107;
+      color: var(--warning-text);
+    }
+
+    .warning-box p,
+    .warning-box li,
+    .warning-box strong { color: var(--warning-text); }
+
+    .success-box {
+      background: rgba(40, 167, 69, 0.12);
+      border-left: 4px solid #28a745;
+    }
+
+    .pill-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45em;
+      margin-top: 0.6em;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45em 0.8em;
+      border-radius: 999px;
+      background: rgba(70, 113, 91, 0.09);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+      font-size: 0.48em;
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+
+    .numbered {
+      counter-reset: item;
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .numbered li {
+      position: relative;
+      padding-left: 2.1em;
+      margin-bottom: 0.6em;
+    }
+
+    .numbered li::before {
+      counter-increment: item;
+      content: counter(item);
+      position: absolute;
+      left: 0;
+      top: 0.08em;
+      width: 1.45em;
+      height: 1.45em;
+      border-radius: 999px;
+      background: var(--primary);
+      color: var(--white);
+      font-size: 0.82em;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .arrow-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .arrow-list li {
+      position: relative;
+      padding-left: 1.2em;
+      margin-bottom: 0.45em;
+    }
+
+    .arrow-list li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .statement {
+      font-size: 0.78em !important;
+      line-height: 1.55 !important;
+      background: rgba(255, 255, 255, 0.72);
+      border-left: 4px solid var(--accent);
+      padding: 0.9em 1em;
+      border-radius: 0.6rem;
+    }
+
+    .small {
+      font-size: 0.52em !important;
+    }
+
+    .table-like {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 0.7em;
+      margin-top: 0.8em;
+    }
+
+    .table-like .cell {
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(70, 113, 91, 0.1);
+      border-radius: 0.6rem;
+      padding: 0.75em 0.9em;
+    }
+
+    .marker {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .reveal .controls { opacity: 1 !important; }
+
+    @media (max-width: 900px) {
+      .reveal { font-size: 22px; }
+      .two-col, .three-col, .grid-cards, .table-like {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section class="hero">
+        <div class="badge">BNI Claudius • Gesundheitsrunde</div>
+        <h1>Gesundheitsrunde <span class="accent">Konzept</span></h1>
+        <h3>Aufbereitung des Dokuments als Slide-Uebersicht</h3>
+        <p class="lead" style="max-width: 820px; margin: 1.2em auto 0; color: rgba(255,255,255,0.84);">
+          Uebersicht fuer Peter Rauch zu Gruppenstruktur, Positionierung, Kooperationslogik,
+          Empfehlungs-Triggern und 60-Sekunden-Vorstellung.
+        </p>
+        <p class="small" style="margin-top: 2em; color: rgba(255,255,255,0.6);">
+          Stand: 2026-07-06 • Navigation links / rechts wie in den anderen Lovable-Slides
+        </p>
+      </section>
+
+      <section>
+        <h2>Quelle und Abgrenzung</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Basis der Einordnung</h3>
+            <ul class="arrow-list">
+              <li>BNI-Claudius-Chapterseite</li>
+              <li>oeffentlich erreichbare Webseiten der Mitglieder</li>
+              <li>lokale Lovable-Dokumente und bereits erarbeitete Projektinhalte</li>
+            </ul>
+          </div>
+          <div class="warning-box">
+            <p><strong>Hinweis:</strong> Einzelne Seiten wie `karinschreiber.de` oder der SuperPatch-Link waren teilweise geblockt.</p>
+            <p class="small" style="margin-top: 0.6em;">Dort bleibt die Einordnung bewusst vorsichtig und quellengebunden.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.8em;">
+          <p><strong>Ziel dieser HTML:</strong> Das `.md` nicht zu ersetzen, sondern optisch klarer und schneller navigierbar zu machen.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Aktuell bestaetigte WhatsApp-Gruppe</h2>
+        <p class="muted">Nach dem geteilten Screenshot aktuell bestaetigt:</p>
+        <div class="pill-grid">
+          <span class="pill">Peter Rauch</span>
+          <span class="pill">Horst Heinrich (Koordinator)</span>
+          <span class="pill">Andreas Veh</span>
+          <span class="pill">Chong Liu</span>
+          <span class="pill">Christian Lippert</span>
+          <span class="pill">Christina Herrmann</span>
+          <span class="pill">Dilek</span>
+          <span class="pill">Heidi Rohrlack</span>
+          <span class="pill">Karin Schreiber</span>
+          <span class="pill">Martina Bolvary</span>
+          <span class="pill">Michael Jaufmann</span>
+          <span class="pill">Nadine Spiel</span>
+          <span class="pill">Werner Thron</span>
+          <span class="pill">Wolfgang Spreng</span>
+        </div>
+        <div class="quote-box" style="margin-top: 1em;">
+          <p><strong>Kernaussage:</strong> Die Gruppe ist keine reine Heilberufe-Runde, aber auch nicht nur ein einzelner Therapeut plus fachfremde Personen. Es ist ein Gesundheitswirtschafts-Cluster mit mehreren Ebenen.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Gruppenstruktur auf einen Blick</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>1. Heilberufe / Versorgung</h3>
+            <ul class="arrow-list">
+              <li>Peter Rauch</li>
+              <li>Michael Jaufmann</li>
+              <li>Christina Herrmann</li>
+              <li>Chong Liu</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>2. Praevention / Training</h3>
+            <ul class="arrow-list">
+              <li>Andreas Veh</li>
+              <li>Christian Lippert</li>
+              <li>Nadine Spiel</li>
+              <li>Werner Thron</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>3. Wellness / Coaching</h3>
+            <ul class="arrow-list">
+              <li>Dilek</li>
+              <li>Karin Schreiber</li>
+              <li>Heidi Rohrlack</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>4. Ergaenzende Partner</h3>
+            <ul class="arrow-list">
+              <li>Horst Heinrich (Koordinator)</li>
+              <li>Martina Bolvary</li>
+              <li>Wolfgang Spreng</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Deine Rolle in dieser Runde</h2>
+        <p class="statement">
+          Der ganzheitlich-heilkundliche Ansprechpartner fuer <strong>Gesunderhaltung</strong>,
+          <strong>fruehe Dysbalancen</strong> und <strong>komplexe, chronische oder schwer einzuordnende Faelle</strong>.
+        </p>
+        <div class="two-col" style="margin-top: 0.9em;">
+          <div class="card">
+            <h3>Nicht die Position</h3>
+            <p class="small"><span class="marker">Nicht:</span> "Ich mache auch Gesundheit."</p>
+          </div>
+          <div class="card">
+            <h3>Die starke Position</h3>
+            <p class="small"><span class="marker">Sondern:</span> "Ich bin interessant fuer Menschen, die ihre Gesundheit aktiv erhalten wollen, fruehzeitig genauer hinschauen moechten oder bei Beschwerden trotz vieler Versuche nicht richtig weiterkommen."</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Saubere Abgrenzung zu Michael Jaufmann</h2>
+        <div class="table-like">
+          <div class="cell">
+            <h3>Michael Jaufmann</h3>
+            <ul class="arrow-list">
+              <li>Bewegungsapparat</li>
+              <li>Osteopathie</li>
+              <li>manueller Bereich</li>
+              <li>Mobilitaet, Blockaden, Ruecken, Haltung</li>
+            </ul>
+          </div>
+          <div class="cell">
+            <h3>Peter Rauch</h3>
+            <ul class="arrow-list">
+              <li>Heilpraktik</li>
+              <li>ganzheitliche Diagnostik</li>
+              <li>Naturheilkunde</li>
+              <li>Naehrstoff- und Regulationsmedizin</li>
+              <li>Praevention, Gesunderhaltung, Einordnung</li>
+            </ul>
+          </div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.8em;">
+          <p><strong>Wichtig fuer BNI:</strong> Nach aussen solltest du den manuellen Bereich bewusst <strong>nicht</strong> benennen, da dieser in der Gruppe bereits klar durch Michael Jaufmann beansprucht wird.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Womit du bei BNI nach aussen auftrittst</h2>
+        <div class="pill-grid">
+          <span class="pill">Heilpraktik</span>
+          <span class="pill">ganzheitliche Diagnostik</span>
+          <span class="pill">Naturheilkunde</span>
+          <span class="pill">Naehrstoffmedizin</span>
+          <span class="pill">Regulationsmedizin</span>
+          <span class="pill">Praevention</span>
+          <span class="pill">Gesunderhaltung</span>
+          <span class="pill">Befund- und Therapieeinordnung</span>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Breite Kompetenz ja, aber ohne Ueberschneidung:</strong> Dein medizinisches und physiotherapeutisches Hintergrundwissen kann in die Arbeit einfliessen, ohne dass du dich im BNI als manueller Anbieter positionierst.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Zusatznutzen: Lotsenfunktion im Gesundheitssystem</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Du kannst</h3>
+            <ul class="arrow-list">
+              <li>Arztbriefe, Laborwerte und Befunde verstaendlich erklaeren</li>
+              <li>einordnen, welche Facharztgruppe sinnvoll sein koennte</li>
+              <li>naechste diagnostische Schritte mitdenken</li>
+              <li>Fragen fuer das naechste Arztgespraech strukturieren</li>
+              <li>Medikation im Gesamtbild verstaendlicher machen</li>
+            </ul>
+          </div>
+          <div class="quote-box">
+            <p><strong>Kurzform:</strong> "Ich behandle nicht nur, ich helfe Menschen auch dabei, ihre Befunde, Arztbriefe und Therapieempfehlungen zu verstehen und den naechsten sinnvollen Schritt im Gesundheitssystem klarer zu sehen."</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Empfehlungs-Trigger fuer andere Mitglieder</h2>
+        <ol class="numbered">
+          <li>Ich will etwas fuer meine Gesundheit tun, bevor ich richtig krank werde.</li>
+          <li>Ich fuehle mich nicht richtig krank, aber auch nicht wirklich gesund oder leistungsfaehig.</li>
+          <li>Ich moechte mal wissen, wo ich gesundheitlich wirklich stehe.</li>
+          <li>Ich habe mehrere Themen gleichzeitig und weiss nicht, was zusammenhaengt.</li>
+          <li>Ich habe schon einiges probiert, aber es kommt immer wieder.</li>
+          <li>Ich suche einen ganzheitlichen Blick und nicht nur Symptomverwaltung.</li>
+          <li>Ich moechte begleitend zu einer bestehenden medizinischen Behandlung etwas fuer mich tun.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Empfehlungs-Trigger fuer die Lotsenrolle</h2>
+        <div class="grid-cards">
+          <div class="card"><p><strong>1.</strong> Ich verstehe meinen Arztbrief oder Befund nicht richtig.</p></div>
+          <div class="card"><p><strong>2.</strong> Ich weiss nicht, zu welchem Facharzt ich als Naechstes gehen soll.</p></div>
+          <div class="card"><p><strong>3.</strong> Ich habe viele Meinungen gehoert und brauche eine verstaendliche Einordnung.</p></div>
+          <div class="card"><p><strong>4.</strong> Ich nehme Medikamente und moechte das Gesamtbild besser verstehen.</p></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Starke Kooperationspartner in der Gruppe</h2>
+        <div class="three-col">
+          <div class="card">
+            <h3>Therapie / Psyche</h3>
+            <ul class="arrow-list">
+              <li>Christina Herrmann</li>
+              <li>Heidi Rohrlack</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Ernaehrung / Praevention</h3>
+            <ul class="arrow-list">
+              <li>Nadine Spiel</li>
+              <li>Werner Thron</li>
+              <li>Christian Lippert</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Versorgung / Netzwerk</h3>
+            <ul class="arrow-list">
+              <li>Chong Liu</li>
+              <li>Horst Heinrich (Koordinator)</li>
+              <li>Wolfgang Spreng</li>
+            </ul>
+          </div>
+        </div>
+        <div class="success-box" style="margin-top: 0.9em;">
+          <p><strong>Prinzip:</strong> Du bist in der Gruppe die integrierende heilkundliche Vertiefung - nicht die Konkurrenz zu den fokussierten Einzelangeboten.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Wie du der Gruppe wirtschaftlich helfen kannst</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>1. Direkte Empfehlungen</h3>
+            <p class="small">Bei Check-up-Wunsch, fruehen Warnzeichen, komplexen Beschwerden, Erschoepfung, unklaren Verlaeufen.</p>
+          </div>
+          <div class="card">
+            <h3>2. Firmenangebote</h3>
+            <p class="small">Gesundheitsvorsorge, Stress, Energie, Schlaf, Konzentration, ganzheitliche Gesundheitsbildung.</p>
+          </div>
+          <div class="card">
+            <h3>3. Funnel</h3>
+            <p class="small">Flyer mit QR-Code, Landingpage, Themenwahl, Weiterleitung an den passenden Experten.</p>
+          </div>
+          <div class="card">
+            <h3>4. Vortragsformate</h3>
+            <p class="small">Unternehmerfruehstueck, Gesundheitsabend, Mini-Serien, Praeventions-Workshops.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Vorschlag fuer die beiden Online-Termine</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>07.07. - Klarheit und Positionierung</h3>
+            <ul class="arrow-list">
+              <li>Wer ist fuer was da?</li>
+              <li>Wo gibt es Ueberschneidungen?</li>
+              <li>Wo entstehen Empfehlungen?</li>
+              <li>Jede Person: 60 Sekunden</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>14.07. - Angebot und Umsetzung</h3>
+            <ul class="arrow-list">
+              <li>Name / Claim finalisieren</li>
+              <li>Flyer und Landingpage festlegen</li>
+              <li>Vortragsformate definieren</li>
+              <li>Verantwortlichkeiten verteilen</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>6-Minuten-Hauptpraesentation am 16.10.</h2>
+        <ol class="numbered">
+          <li><strong>Problem:</strong> Menschen haben oft mehrere Baustellen gleichzeitig.</li>
+          <li><strong>Warum Einzelloesungen nicht reichen:</strong> Gesundheit wirkt besser vernetzt.</li>
+          <li><strong>Unsere Loesung:</strong> Team aus Praevention, Therapie, Versorgung und Begleitung.</li>
+          <li><strong>Konkrete Fallwege:</strong> Check-up / Stress / Seniorenbelastung / wiederkehrende Beschwerden.</li>
+          <li><strong>Call to action:</strong> Besucher, Multiplikatoren und Unternehmen gesucht.</li>
+        </ol>
+        <div class="quote-box" style="margin-top: 0.8em;">
+          <p><strong>Leitidee:</strong> "Gesundheit funktioniert dann am besten, wenn verschiedene Experten sinnvoll ineinandergreifen."</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Multiplikatoren fuer dich</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Medizinisch breit sinnvoll</h3>
+            <ol class="numbered">
+              <li>Hausaerzte / Internisten</li>
+              <li>Orthopaeden / Schmerztherapeuten</li>
+              <li>Zahnaerzte / CMD-nahe Praxen</li>
+              <li>Psychotherapeuten</li>
+              <li>Kardiologen</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3>Alternativ aus dem aelteren Konzept</h3>
+            <ol class="numbered">
+              <li>Physiotherapeuten</li>
+              <li>Orthopaeden</li>
+              <li>Psychotherapeuten</li>
+              <li>Apotheken</li>
+              <li>Pflegedienste / Seniorenberater</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sofort nutzbare WhatsApp-Nachricht</h2>
+        <div class="statement">
+          Hallo zusammen, hier kommen meine Top 5 Multiplikatoren bzw. Wunschbranchen: Hausaerzte/Internisten, Orthopaeden bzw. Schmerztherapeuten, Zahnaerzte bzw. CMD-nahe Praxen, Psychotherapeuten sowie Kardiologen. Grundsaetzlich sind fuer meine Arbeit viele medizinische Schnittstellen spannend, weil ich als Heilpraktiker sehr breit arbeite - von Praevention und Gesunderhaltung ueber ganzheitliche Diagnostik bis hin zur begleitenden naturheilkundlichen Betreuung bei komplexeren oder wiederkehrenden Beschwerden. Besonders interessant sind fuer mich Anknuepfungspunkte dort, wo Menschen nicht nur ein isoliertes Symptom haben, sondern funktionelle, stressbezogene oder laenger bestehende Themen zusammenkommen und eine verstaendliche Einordnung brauchen.
+        </div>
+      </section>
+
+      <section>
+        <h2>Sofort nutzbare Selbstbeschreibung fuer BNI</h2>
+        <div class="statement">
+          Ich bin Heilpraktiker und arbeite in meiner Praxis mit einem integrativen Ansatz aus ganzheitlicher Diagnostik, Naturheilkunde, Naehrstoff- und Regulationsmedizin. Dabei bringe ich auch mein breites medizinisches und physiotherapeutisches Hintergrundwissen mit ein, ohne damit nach aussen als eigener manueller Anbieter aufzutreten. Ich begleite Menschen bei funktionellen, inneren, stressbezogenen und komplexeren gesundheitlichen Themen und versuche, Zusammenhaenge zwischen Regulation, Ernaehrung, Belastungen und Lebenssituation zu erkennen. Ein weiterer Schwerpunkt ist fuer mich, medizinische Befunde, Arztbriefe, Laborwerte und Therapieempfehlungen fuer Patienten verstaendlich einzuordnen und gemeinsam zu klaeren, welcher naechste Schritt sinnvoll ist - sei es naturheilkundlich oder schulmedizinisch. So kann ich sowohl im Bereich Praevention und Gesunderhaltung als auch bei wiederkehrenden oder schwer einzuordnenden Beschwerden sinnvoll unterstuetzen.
+        </div>
+      </section>
+
+      <section>
+        <h2>60-Sekunden-Version fuer Dienstag</h2>
+        <div class="quote-box">
+          <p class="lead" style="font-size: 0.7em !important;">
+            Ich bin Peter Rauch, Heilpraktiker in Augsburg. Ich arbeite integrativ mit ganzheitlicher Diagnostik, Naturheilkunde sowie Naehrstoff- und Regulationsmedizin. An mich sollte man denken, wenn jemand seine Gesundheit fruehzeitig stabilisieren moechte, wenn Beschwerden wiederkehren oder wenn Befunde, Arztbriefe und der naechste sinnvolle Schritt nicht wirklich klar sind. Drei Saetze, die ich haeufig hoere, sind: Ich habe schon vieles probiert, aber es kommt immer wieder. Ich verstehe meine Befunde nicht richtig und weiss nicht, welcher Schritt jetzt sinnvoll ist. Und: Ich fuehle mich nicht richtig krank, aber auch nicht wirklich gesund. Genau in solchen Situationen kann ich oft gut begleiten, einordnen und Orientierung geben.
+          </p>
+        </div>
+        <div class="grid-cards" style="margin-top: 1em;">
+          <div class="card"><p><strong>Wofuer bin ich bekannt?</strong><br><span class="small">Integrativer Heilpraktiker mit breitem Blick auf Regulation, Diagnostik und Naturheilkunde.</span></p></div>
+          <div class="card"><p><strong>Wann an mich denken?</strong><br><span class="small">Bei Praevention, wiederkehrenden Beschwerden, unklaren Zusammenhaengen und Orientierungsbedarf bei Befunden.</span></p></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Wichtiger Hinweis fuer die Zusammenarbeit</h2>
+        <div class="warning-box">
+          <p><strong>Gesundheitsumfeld bei BNI:</strong> Empfehlungen und Vernetzung sind sinnvoll.</p>
+          <ul class="arrow-list" style="margin-top: 0.6em;">
+            <li>Keine Provisionsabreden fuer konkrete Patientenzuweisungen</li>
+            <li>Keine unklaren Heilversprechen</li>
+            <li>Keine fachliche Vermischung ohne saubere Rollenklarheit</li>
+          </ul>
+        </div>
+        <div class="success-box" style="margin-top: 0.9em;">
+          <p>Die Zusammenarbeit sollte auf Vertrauen, sauberer Abgrenzung und fachlich korrekter Empfehlung beruhen.</p>
+        </div>
+      </section>
+
+      <section class="hero">
+        <div class="badge">Abschluss</div>
+        <h2>Deine klare BNI-Linie</h2>
+        <p class="lead" style="max-width: 860px; margin: 1em auto 0; color: rgba(255,255,255,0.88);">
+          Heilpraktik, ganzheitliche Diagnostik, Naturheilkunde, Naehrstoff- und Regulationsmedizin,
+          Praevention und Lotsenfunktion - <strong>ohne</strong> den manuellen Bereich in der Gruppe nach aussen zu besetzen.
+        </p>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: true,
+      controls: true,
+      progress: true,
+      center: false,
+      transition: 'slide',
+      width: '100%',
+      height: '100%',
+      margin: 0.04
+    });
+  </script>
+</body>
+</html>

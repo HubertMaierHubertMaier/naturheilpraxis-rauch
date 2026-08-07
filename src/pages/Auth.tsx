@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { Mail, ArrowLeft, Loader2, Shield, UserPlus, LogIn, Lock, Eye, EyeOff, KeyRound, HelpCircle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 import { SpamFolderHint } from '@/components/auth/SpamFolderHint';
+import { resolveAuthRedirectTarget, type RedirectLocationLike } from '@/lib/authRedirect';
 
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
@@ -50,17 +51,33 @@ async function finalizeTwoFactorSession(bindingToken: string) {
 type AuthStep = 'credentials' | 'verification' | 'reset_password';
 type AuthMode = 'login' | 'registration' | 'password_reset';
 type PatientType = 'new_patient' | 'existing_patient' | null;
+type AuthRouteState = {
+  from?: RedirectLocationLike | null;
+  reason?: 'two_factor_required';
+};
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { language } = useLanguage();
   const { user, isAdmin, twoFactorVerified, twoFactorChecked } = useAuth();
 
   // Preview/Dev bypass: skip auth page entirely in non-production environments
   const isNonProduction = import.meta.env.DEV || window.location.hostname.includes('preview') || window.location.hostname.includes('lovableproject.com') || window.location.hostname.includes('localhost');
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(location.search);
   const devBypass = isNonProduction && searchParams.get('dev') === 'true';
+  const authRouteState = location.state as AuthRouteState | null;
+  const redirectParam = searchParams.get('redirect');
+  const resolvePostAuthPath = React.useCallback(
+    (fallbackPath: string) =>
+      resolveAuthRedirectTarget({
+        stateFrom: authRouteState?.from,
+        redirectParam,
+        fallbackPath,
+      }),
+    [authRouteState?.from, redirectParam],
+  );
   
   // Patient type from landing page selection
   const patientType: PatientType = (searchParams.get('type') as PatientType) || null;
@@ -73,7 +90,7 @@ const Auth: React.FC = () => {
     if (hasCheckedInitialAuth.current) return;
     if (devBypass) {
       hasCheckedInitialAuth.current = true;
-      navigate('/');
+      navigate(resolvePostAuthPath('/'), { replace: true });
       return;
     }
 
@@ -88,9 +105,9 @@ const Auth: React.FC = () => {
 
     hasCheckedInitialAuth.current = true;
     if (isAdmin || twoFactorVerified) {
-      navigate('/');
+      navigate(resolvePostAuthPath('/'), { replace: true });
     }
-  }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked]);
+  }, [user, navigate, devBypass, isAdmin, twoFactorVerified, twoFactorChecked, resolvePostAuthPath]);
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [step, setStep] = useState<AuthStep>('credentials');
@@ -156,7 +173,7 @@ const Auth: React.FC = () => {
           title: language === 'de' ? 'Willkommen!' : 'Welcome!',
           description: language === 'de' ? 'Admin-Anmeldung erfolgreich.' : 'Admin login successful.',
         });
-        navigate('/');
+        navigate(resolvePostAuthPath('/'), { replace: true });
         return;
       }
 
@@ -433,7 +450,7 @@ const Auth: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      navigate(existingSub ? '/dashboard' : '/erstanmeldung');
+      navigate(resolvePostAuthPath(existingSub ? '/dashboard' : '/erstanmeldung'), { replace: true });
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',
@@ -514,7 +531,7 @@ const Auth: React.FC = () => {
         }
       }
 
-      navigate('/erstanmeldung');
+      navigate(resolvePostAuthPath('/erstanmeldung'), { replace: true });
     } catch (error: any) {
       toast({
         title: language === 'de' ? 'Fehler' : 'Error',

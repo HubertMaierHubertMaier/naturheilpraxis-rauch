@@ -1,0 +1,31 @@
+{
+  "inventory": "B1 Mannayan CLEAN+",
+  "capturedAt": "2026-08-07",
+  "status": "blocked_read_only",
+  "restrictions": { "liveDatabaseWrites": 0, "wikiWrites": 0, "imports": 0, "sourceAssignments": 0, "medicalEvaluations": 0, "safetyClearances": 0, "dosageClearances": 0 },
+  "product": { "manufacturer": "Mannayan GmbH & Co. KG", "title": "Mannayan CLEAN + (60 Kapseln)", "productNumber": "010044", "packaging": "60 Kapseln, 47 g", "priceEur": 22.9, "manufacturerSource": "https://mannayan.com/Mannayan-CLEAN-60-Kapseln/010044" },
+  "atomicStatements": [
+    { "id": "product-title", "value": "Mannayan CLEAN+", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "product-number", "value": "010044", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "packaging", "value": "60 Kapseln, 47 g", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "price-eur", "value": 22.9, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "psyllium-husk-per-capsule-mg", "value": 250, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "glucomannan-per-capsule-mg", "value": 135, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "declared-botanicals", "value": "Alfalfa, Cayenne, Apfelpektin, Gewuerznelken, Lapachorinde, Fenchelsamen, Knoblauch, Rhabarberwurzel-Extrakt, Himbeerblaetter-Extrakt, Klettenwurzel-Extrakt, Berberitzenrinde-Extrakt", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "caprylic-acid-per-capsule-mg", "value": 6, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "l-acidophilus-per-capsule-cfu", "value": 8000000000, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "capsule-shell", "value": "Hydroxypropylmethylcellulose", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "recommended-intake", "value": "1 bis 3 Kapseln taeglich vor den Mahlzeiten mit reichlich Fluessigkeit", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "fluid-warning", "value": "pro Kapsel mindestens ein grosses Glas Wasser, etwa 200 ml", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "manufacturer-risk-group-warning", "value": "nicht geeignet fuer Schwangere, Stillende, Kinder sowie Personen mit Schluckbeschwerden oder Speiseroehrenverengung", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "manufacturer-choking-warning", "value": "bei ungenuegender Fluessigkeitsaufnahme Erstickungsgefahr", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "manufacturer-bedtime-warning", "value": "nicht unmittelbar vor dem Schlafengehen", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-daily-amount", "value": "Nicht ueberschreiten", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-no-diet-replacement", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-child-safety", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "storage", "value": "lichtgeschuetzt, kuehl und trocken", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "seal-warning", "value": "Nicht verwenden, wenn Verschlussband fehlt", "source": "manufacturer", "status": "blocked_read_only" }
+  ],
+  "sourceGaps": ["Unabhaengige Sicherheits- und Interaktionsquellen fuer alle botanischen Bestandteile", "Quellengebundener Abgleich zu Glucomannan und Schluckrisiken", "Quellengebundener Abgleich zu Berberin, Rhabarberwurzel, Cayenne, Knoblauch und Lactobacillus acidophilus", "Getrennte Wirksamkeitsbewertung"],
+  "conclusion": "Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

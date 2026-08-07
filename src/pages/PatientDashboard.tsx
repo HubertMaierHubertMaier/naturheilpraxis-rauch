@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Layout } from "@/components/layout/Layout";
@@ -32,15 +32,22 @@ const PatientDashboard = () => {
   const { language, t } = useLanguage();
   const { canDownloadAnamnese, loading: patientAccessLoading } = usePatientAccess();
   const navigate = useNavigate();
+  const location = useLocation();
   const [submissions, setSubmissions] = useState<AnamnesisSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<AnamnesisSubmission | null>(null);
 
   useEffect(() => {
     if (!authLoading && twoFactorChecked && (!user || !twoFactorVerified)) {
-      navigate("/auth");
+      navigate("/auth", {
+        replace: true,
+        state: {
+          from: location,
+          ...(user ? { reason: "two_factor_required" } : {}),
+        },
+      });
     }
-  }, [user, authLoading, twoFactorChecked, twoFactorVerified, navigate]);
+  }, [user, authLoading, twoFactorChecked, twoFactorVerified, navigate, location]);
 
   useEffect(() => {
     if (user) {

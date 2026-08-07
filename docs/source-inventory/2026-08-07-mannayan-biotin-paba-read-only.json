@@ -1,0 +1,56 @@
+{
+  "inventory": "B1 Mannayan BIOTIN & PABA+",
+  "capturedAt": "2026-08-07",
+  "status": "blocked_read_only",
+  "restrictions": {
+    "liveDatabaseWrites": 0,
+    "wikiWrites": 0,
+    "imports": 0,
+    "sourceAssignments": 0,
+    "medicalEvaluations": 0,
+    "safetyClearances": 0,
+    "dosageClearances": 0
+  },
+  "product": {
+    "manufacturer": "Mannayan GmbH & Co. KG",
+    "title": "Mannayan Biotin & PABA+ (60 Kapseln)",
+    "productNumber": "011123",
+    "packaging": "60 Kapseln",
+    "weightGrams": 28,
+    "priceEur": 20.9,
+    "manufacturerSource": "https://mannayan.com/Mannayan-Biotin-PABA-60-Kapseln/011123"
+  },
+  "atomicStatements": [
+    { "id": "product-title", "value": "Mannayan BIOTIN&PABA+", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "product-number", "value": "011123", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "packaging", "value": "60 Kapseln", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "weight-grams", "value": 28, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "price-eur", "value": 20.9, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "production-country", "value": "Oesterreich", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "ingredient-1", "value": "Paraaminobenzoesaeure (PABA)", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "ingredient-2", "value": "Biotin", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "excipient-1", "value": "mikrokristalline Cellulose", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "capsule-shell", "value": "Hydroxypropylmethylcellulose", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "paba-mg-per-capsule", "value": 250, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "biotin-microgram-per-capsule", "value": 2000, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "biotin-mg-per-capsule", "value": 2, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "biotin-nrv-percent", "value": 4000, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "recommended-intake", "value": "1 Kapsel taeglich mit ausreichend Fluessigkeit", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "laboratory-warning", "value": "Biotin kann Laboruntersuchungen beeinflussen", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "laboratory-pause", "value": "3 Tage vor geplanter Blutentnahme pausieren", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "laboratory-disclosure", "value": "Arzt oder Therapeut ueber Einnahme informieren", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-daily-amount", "value": "Nicht ueberschreiten", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-no-diet-replacement", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-child-safety", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "storage", "value": "lichtgeschuetzt, kuehl und trocken", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "seal-warning", "value": "Nicht verwenden, wenn Verschlussband fehlt", "source": "manufacturer", "status": "blocked_read_only" }
+  ],
+  "sourceGaps": [
+    "Unabhaengige Quelle zur Biotin-Interferenz bei Laboruntersuchungen",
+    "Quellengebundener Abgleich betroffener Laborverfahren und Zeitraeume",
+    "Unabhaengige Sicherheitsquelle zu PABA",
+    "Quellengebundener Kontraindikations- und Interaktionsabgleich",
+    "Getrennte Wirksamkeitsbewertung"
+  ],
+  "conclusion": "Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

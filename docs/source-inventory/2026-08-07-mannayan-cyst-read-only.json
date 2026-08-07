@@ -1,0 +1,10 @@
+{
+  "inventory":"B1 Mannayan CYST+","capturedAt":"2026-08-07","status":"blocked_read_only",
+  "restrictions":{"liveDatabaseWrites":0,"wikiWrites":0,"imports":0,"sourceAssignments":0,"medicalEvaluations":0,"safetyClearances":0,"dosageClearances":0},
+  "product":{"manufacturer":"Mannayan GmbH & Co. KG","title":"Mannayan CYST + (60 Kapseln)","productNumber":"010050","packaging":"60 Kapseln, 30 g","priceEur":26.9,"manufacturerSource":"https://mannayan.com/Mannayan-CYST-60-Kapseln/010050"},
+  "atomicStatements":[
+    {"id":"product-title","value":"Mannayan CYST+","source":"manufacturer","status":"blocked_read_only"},{"id":"product-number","value":"010050","source":"manufacturer","status":"blocked_read_only"},{"id":"brennnessel-extract-mg","value":100,"source":"manufacturer","status":"blocked_read_only"},{"id":"pumpkin-extract-mg","value":50,"source":"manufacturer","status":"blocked_read_only"},{"id":"phytosterols-mg","value":70,"source":"manufacturer","status":"blocked_read_only"},{"id":"lycopene-mg","value":5,"source":"manufacturer","status":"blocked_read_only"},{"id":"zinc-mg","value":10,"source":"manufacturer","status":"blocked_read_only"},{"id":"selenium-micrograms","value":100,"source":"manufacturer","status":"blocked_read_only"},{"id":"boron-mg","value":3,"source":"manufacturer","status":"blocked_read_only"},{"id":"ingredients","value":"Brennnessel- und Kuerbiskernextrakt 4:1, Phytosterole, Tomatenextrakt, Zinkgluconat, L-Selenomethionin, Borsaeure, HPMC","source":"manufacturer","status":"blocked_read_only"},{"id":"recommended-intake","value":"1 bis 2 Kapseln taeglich","source":"manufacturer","status":"blocked_read_only"},{"id":"mandatory-warnings","value":"Tagesmenge nicht ueberschreiten; kein Ernaehrungsersatz; kindersicher aufbewahren; kuehl, trocken, lichtgeschuetzt; Siegel pruefen","source":"manufacturer","status":"blocked_read_only"}
+  ],
+  "sourceGaps":["Unabhaengige Sicherheits- und Interaktionsquellen zu Rezeptur und Mineralstoffkombination","Getrennte Wirksamkeitsbewertung"],
+  "conclusion":"Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

@@ -42,3 +42,4 @@ Relevante Commitfolge in dieser Session:
 1. `01-phase-fixes.md`
 2. `02-live-verifikation.md`
 3. `03-wortlaut-und-sicherheitsvertrag.md`
+4. `04-next-session-prompt.md`

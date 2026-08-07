@@ -15,7 +15,14 @@ Verbindliche lokale Arbeitsregeln:
 - Keine echten Patientendaten oder Anamnese-Daten in Logs, Tests, Commits, Screenshots oder unsicheren digitalen Flows verwenden.
 - Automatischer Versand oder interaktive Übertragung von Anamnesedaten bleibt bis zur rechtlichen Prüfung deaktiviert.
 
-Die neue Analyse- und Stabilisierungdokumentation liegt bewusst unter `doc/`.
+Aktuelle Analyse- und Planungs-Source-of-Truth:
+
+- `docs/analysis-2026-07-04/`
+
+Historische bzw. kontextgebende Dokumentation:
+
+- `doc/` fuer aeltere Stabilisierungs- und Phasenarbeit
+- `docs/FULL-PROJECT-RESTORE-*` und `docs/SNAPSHOT-*` nur als Historie, nicht als aktuelle Code-Wahrheit
 
 ## Lokales Setup
 

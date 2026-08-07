@@ -1,7 +1,8 @@
 """
-Erzeugt zwei ausfüllbare AcroForm-PDFs (DSGVO-Offline-Variante):
-  - public/patientenvertrag-blanko.pdf
-  - public/datenschutz-einwilligung-blanko.pdf
+Erzeugt die geschuetzten ausfuellbaren AcroForm-PDFs (DSGVO-Offline-Variante):
+  - assets/protected-pdfs/patientenvertrag-blanko.pdf
+  - assets/protected-pdfs/datenschutz-einwilligung-blanko.pdf
+  - assets/protected-pdfs/patientenpaket-blanko.pdf
 
 Inhalte sind 1:1 aus den Online-Seiten /patientenaufklaerung und /datenschutz
 übernommen, damit Online- und Papierweg rechtlich identisch sind.
@@ -26,7 +27,7 @@ BORDER = HexColor("#9aa89a")
 PALE = HexColor("#f3f5f1")
 FONT, BOLD, ITALIC = "Helvetica", "Helvetica-Bold", "Helvetica-Oblique"
 
-OUT_DIR = Path("public")
+OUT_DIR = Path("assets/protected-pdfs")
 OUT_DIR.mkdir(exist_ok=True)
 
 
@@ -221,13 +222,11 @@ pdf = Form(
     subtitle="Behandlungsvereinbarung · ausfüllbares PDF",
 )
 
-pdf.h1("I. Persönliche Angaben")
-pdf.row([("Vorname *", "vorname", 230), ("Nachname *", "nachname", 230)])
-pdf.row([("Geburtsdatum *", "geburtsdatum", 130), ("Geburtsort", "geburtsort", 180), ("Beruf", "beruf", 160)])
-pdf.label_field("Straße und Hausnummer *", "strasse", W - 2 * M)
-pdf.row([("PLZ *", "plz", 80), ("Ort *", "ort", 220), ("Land", "land", 180)])
-pdf.row([("Telefon mobil *", "telMobil", 200), ("Telefon Festnetz", "telFest", 200), ("E-Mail *", "email", 110)])
-pdf.note("Felder mit * sind Pflichtangaben (Behandlungsvertrag, § 630a BGB).")
+pdf.h1("I. Zuordnung zum Patienten")
+pdf.para(
+    "Die persönlichen Angaben im Abschnitt I. Patientendaten auf Seite 2 dieses Patientenpakets "
+    "sind Bestandteil dieses Patientenvertrags. Sie müssen hier nicht erneut eingetragen werden."
+)
 
 pdf.h1("II. Wichtiger Hinweis zur Kostenerstattung")
 pdf.para(
@@ -270,7 +269,27 @@ pdf.para(
     "Patientenvertrag\"."
 )
 
-pdf.h1("III. Zahlungspflicht")
+pdf.h1("III. Aktuelle Preise")
+pdf.para(
+    "Die folgenden Preise entsprechen der aktuell veröffentlichten Preisübersicht der "
+    "Naturheilpraxis Peter Rauch (Stand: Juli 2026). Maßgeblich ist die vor Behandlungsbeginn "
+    "vereinbarte Vergütung."
+)
+prices = [
+    ("Haupttherapien / Analyseverfahren", "90–110 € pro Stunde", ""),
+    ("Vieva Pro Analyse", "200 €", ""),
+    ("Omega-3 Test", "60 €", ""),
+    ("Versand der Analysen", "15 € pro Analyse", "wenn gewünscht"),
+    ("150MHz Befeldung (Erstaufnahme)", "110 €", "inkl. Anamnese, Dauer ca. 1,5 Stunden"),
+    ("150MHz Befeldung (Folgetermine)", "55 € pro Stunde", ""),
+    ("Ausfallentschädigung", "80–110 € pro Stunde", "bei Absage unter 48 Stunden"),
+]
+for label, price, note in prices:
+    details = f"{price}{f' · {note}' if note else ''}"
+    pdf.h2(label)
+    pdf.para(details, size=9, leading=11)
+
+pdf.h1("IV. Zahlungspflicht")
 pdf.para(
     "Unabhängig von einer abweichenden Beurteilung der medizinischen Notwendigkeit, einer "
     "medizinisch-wissenschaftlichen Anerkennung der durchgeführten Therapien und Diagnostik, oder "
@@ -278,7 +297,7 @@ pdf.para(
     "zahlen."
 )
 
-pdf.h1("IV. Terminvereinbarung & Absageregelung")
+pdf.h1("V. Terminvereinbarung & Absageregelung")
 pdf.para(
     "Vereinbarte Termine sind ausschließlich für den jeweiligen Patienten reserviert. Da es seitens "
     "des Therapeuten einer gründlichen Vorbereitung bedarf und es sich um eine reine Bestellpraxis "
@@ -291,7 +310,7 @@ pdf.bullet_list([
     "Der Therapeut behält sich das Recht vor, eine Sitzung abzubrechen, sofern die Mitwirkung des Patienten nicht gegeben ist. In diesem Fall ist das gesamte Honorar fällig.",
 ])
 
-pdf.h1("V. Verhinderung des Therapeuten")
+pdf.h1("VI. Verhinderung des Therapeuten")
 pdf.para(
     "Sollte der Therapeut verhindert sein, die Leistungen zum vereinbarten Termin zu erbringen, kann "
     "er für evtl. entstandene Kosten nicht haftbar gemacht werden, es sei denn, die Verhinderung "
@@ -299,7 +318,7 @@ pdf.para(
     "vereinbart werden. Der Therapeut kann naturgemäß keine Garantien für Behandlungserfolge gewähren."
 )
 
-pdf.h1("VI. Bestätigungen & Einwilligungen")
+pdf.h1("VII. Bestätigungen & Einwilligungen")
 pdf.consent_box(
     "Ich habe die Patientenaufklärung zu Leistungserstattung, Preisen und Terminregelung gelesen und "
     "verstanden und bin mit den Inhalten einverstanden.",
@@ -321,7 +340,7 @@ pdf.consent_box(
     "best_datenschutz_verweis",
 )
 
-pdf.h1("VII. Unterschrift")
+pdf.h1("VIII. Unterschrift")
 pdf.row([("Ort", "unt_ort", 200), ("Datum", "unt_datum", 130), ("Name in Druckbuchstaben", "unt_name", 200)])
 pdf.row([
     ("Bei Minderjährigen: Name Sorgeberechtigte/r", "sorgeberechtigter", 280),
@@ -502,7 +521,7 @@ pdf.save()
 # PDF 3: KOMBI-PAKET  (Anamnese + Vertrag + Datenschutz in einer Datei)
 # ---------------------------------------------------------------------------
 try:
-    from pypdf import PdfWriter
+    from pypdf import PdfReader, PdfWriter
 
     parts = [
         OUT_DIR / "anamnesebogen-blanko.pdf",
@@ -515,8 +534,17 @@ try:
     else:
         writer = PdfWriter()
         for p in parts:
-            # append() übernimmt Seiten inkl. AcroForm-Feldern
-            writer.append(str(p))
+            # Das einzelne Anamnese-PDF besitzt bereits eine eigene zusaetzliche
+            # Bestaetigungsseite. Im Gesamtpaket ersetzt sie die gemeinsame
+            # Bestaetigungsseite, die im naechsten Build-Schritt angehaengt wird.
+            reader = PdfReader(str(p))
+            end = len(reader.pages)
+            if p.name == "anamnesebogen-blanko.pdf":
+                last_text = reader.pages[-1].extract_text() or ""
+                if "Bestätigung & Unterschrift" in last_text:
+                    end -= 1
+            # append() uebernimmt die ausgewaehlten Seiten inklusive AcroForm-Feldern.
+            writer.append(str(p), pages=(0, end))
         combo_path = OUT_DIR / "patientenpaket-blanko.pdf"
         with open(combo_path, "wb") as f:
             writer.write(f)

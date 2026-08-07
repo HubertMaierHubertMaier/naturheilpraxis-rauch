@@ -74,14 +74,16 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json().catch(() => ({}))) as RequestBody;
-    if (body.document && body.document !== "anamnesebogen") {
+    if (body.document && !["anamnesebogen", "patientenpaket"].includes(body.document)) {
       return json({ error: "Unbekanntes Dokument." }, 400);
     }
 
+    // Older deployed clients still request "anamnesebogen". Both request names
+    // intentionally return the complete registration package.
     const { data: signed, error: signedError } = await adminClient.storage
       .from("anamnesis-pdfs")
-      .createSignedUrl("blanko/anamnesebogen-blanko.pdf", 300, {
-        download: "anamnesebogen-blanko.pdf",
+      .createSignedUrl("blanko/patientenpaket-blanko.pdf", 300, {
+        download: "patientenpaket-blanko.pdf",
       });
 
     if (signedError || !signed?.signedUrl) {

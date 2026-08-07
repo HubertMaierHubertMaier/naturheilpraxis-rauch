@@ -8,6 +8,21 @@
 - Analysierter Commit: `0563dc980898377f48a219310aa1561b50035590`
 - Analysemodus: codebasiert, lokaler Checkout, Read/Write-Session ohne verifizierten Remote-Zugriff
 
+## Verbindlicher Dokumentationsstatus
+
+Fuer die aktuelle Sanierung gilt diese Prioritaet:
+
+1. Aktueller Code unter `src/`, `supabase/`, `public/`
+2. Diese Analyse unter `docs/analysis-2026-07-04/`
+3. Aktuelle Session-Historien unter `session_historie/`
+4. Historische Dokumente unter `doc/`, `docs/FULL-PROJECT-RESTORE-*` und `docs/SNAPSHOT-*` nur als Kontext
+
+Explizit nicht als aktuelle Wahrheit behandeln:
+
+1. `docs/database-backup-2026-03-01.md`
+2. `docs/PROJECT-DOCUMENTATION.md`
+3. einzelne historische Restore- und Snapshot-Dokumente ohne Abgleich gegen den aktuellen Code
+
 ## Methodik
 
 Diese Analyse basiert auf:

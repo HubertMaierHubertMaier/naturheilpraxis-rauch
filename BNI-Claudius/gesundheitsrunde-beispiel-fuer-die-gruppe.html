@@ -1,0 +1,3090 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BNI Gesundheitsrunde - Gruppenprofil und Visualisierung</title>
+  <meta name="description" content="Gruppenprofil, BNI-Kernthemen und grafische Ideen fuer die BNI-Gesundheitsrunde." />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f9f7f2;
+      --bg-card: #f2ede4;
+      --bg-dark: #1f2924;
+      --text: #1f2924;
+      --text-muted: #5a6b5f;
+      --primary: #46715b;
+      --primary-dark: #365a47;
+      --accent: #b35a42;
+      --white: #ffffff;
+      --warning-bg: #fff3cd;
+      --warning-text: #856404;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .reveal {
+      font-family: var(--font-body);
+      color: var(--text);
+      font-size: 28px;
+    }
+
+    .reveal * { box-sizing: border-box; }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--primary-dark);
+      margin-bottom: 0.5em;
+      text-transform: none;
+    }
+
+    .reveal h1 { font-size: 1.8em; }
+    .reveal h2 { font-size: 1.16em; }
+    .reveal h3 {
+      font-size: 0.82em;
+      color: var(--accent);
+      margin-bottom: 0.35em;
+    }
+
+    .reveal p,
+    .reveal li {
+      font-size: 0.62em;
+      line-height: 1.58;
+      color: var(--text);
+    }
+
+    .reveal section {
+      text-align: left;
+      padding: 1.4em 1.8em 2em;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .reveal .slides section {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      max-height: 100% !important;
+      height: 100% !important;
+      scrollbar-gutter: stable;
+    }
+
+    .reveal .slides section::-webkit-scrollbar { width: 6px; }
+    .reveal .slides section::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 999px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 50%, var(--primary-dark) 100%) !important;
+      color: var(--white);
+      text-align: center !important;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute !important;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(70, 113, 91, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(179, 90, 66, 0.18) 0%, transparent 50%);
+      pointer-events: none;
+      border-radius: 1rem;
+    }
+
+    .hero * { position: relative; z-index: 1; }
+    .hero h1, .hero h2, .hero h3, .hero p, .hero li, .hero strong { color: var(--white); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.38em 1em;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.42em;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.2em;
+    }
+
+    .lead {
+      font-size: 0.74em !important;
+      line-height: 1.6 !important;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.1em;
+      align-items: start;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.9em;
+      align-items: start;
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8em;
+      margin-top: 0.6em;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65em;
+      margin-top: 0.8em;
+    }
+
+    .toc-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65em;
+      min-height: 3.8em;
+      padding: 0.75em 0.8em;
+      border-radius: 0.8rem;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(70, 113, 91, 0.14);
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .toc-card:hover,
+    .toc-card:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(70, 113, 91, 0.42);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.07);
+    }
+
+    .toc-number {
+      width: 1.8em;
+      height: 1.8em;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: var(--primary);
+      color: var(--white);
+      font-size: 0.48em;
+      font-weight: 800;
+    }
+
+    .toc-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2em;
+    }
+
+    .toc-content strong {
+      font-size: 0.5em;
+      line-height: 1.25;
+      color: var(--primary-dark);
+    }
+
+    .toc-content small {
+      font-size: 0.38em;
+      line-height: 1.35;
+      color: var(--text-muted);
+    }
+
+    .toc-home {
+      position: absolute;
+      top: 0.7em;
+      right: 0.8em;
+      z-index: 20;
+      padding: 0.35em 0.7em;
+      border-radius: 999px;
+      background: rgba(70, 113, 91, 0.1);
+      border: 1px solid rgba(70, 113, 91, 0.2);
+      color: var(--primary-dark) !important;
+      font-size: 0.38em;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .reveal .slides section > .toc-home {
+      position: absolute !important;
+      top: 0.7em !important;
+      right: 0.8em !important;
+    }
+
+    .toc-home:hover,
+    .toc-home:focus-visible {
+      background: var(--primary);
+      color: var(--white) !important;
+    }
+
+    .data-status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45em;
+      margin-top: 0.65em;
+    }
+
+    .data-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.38em 0.68em;
+      border-radius: 999px;
+      font-size: 0.42em;
+      font-weight: 700;
+      border: 1px solid rgba(31, 41, 36, 0.1);
+    }
+
+    .data-status.confirmed { background: rgba(70, 113, 91, 0.14); color: var(--primary-dark); }
+    .data-status.draft { background: rgba(255, 193, 7, 0.16); color: #755500; }
+    .data-status.open { background: rgba(179, 90, 66, 0.13); color: #7f3527; }
+
+    .card,
+    .info-box,
+    .warning-box,
+    .quote-box,
+    .statement {
+      border-radius: 0.7rem;
+      padding: 0.85em 1em;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+    }
+
+    .info-box {
+      background: rgba(70, 113, 91, 0.08);
+      border-left: 4px solid var(--primary);
+    }
+
+    .warning-box {
+      background: var(--warning-bg);
+      border-left: 4px solid #ffc107;
+      color: var(--warning-text);
+    }
+
+    .warning-box p,
+    .warning-box li,
+    .warning-box strong { color: var(--warning-text); }
+
+    .chapter-priority {
+      margin: 0.7em 0 0 !important;
+      padding: 0.65em 0.8em;
+      border: 2px solid var(--accent);
+      border-radius: 0.65rem;
+      background: rgba(179, 90, 66, 0.13);
+      color: #7f3527 !important;
+      font-weight: 800;
+      line-height: 1.42 !important;
+    }
+
+    .chapter-priority strong {
+      color: #7f3527;
+      font-weight: 800;
+    }
+
+    .access-map-slide {
+      padding: 1em 1.4em 1.2em !important;
+    }
+
+    .access-map-slide .grid-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6em;
+      margin-top: 0.5em;
+    }
+
+    .access-map-slide .card {
+      padding: 0.65em 0.75em;
+    }
+
+    .access-map-slide .card h3 {
+      margin-bottom: 0.25em;
+    }
+
+    .access-map-slide .card p {
+      font-size: 0.5em;
+      line-height: 1.42;
+    }
+
+    .access-map-slide .structure-card {
+      grid-column: span 2;
+    }
+
+    .access-map-slide .info-box,
+    .access-map-slide .warning-box {
+      margin-top: 0.55em !important;
+      padding: 0.55em 0.8em;
+    }
+
+    .quote-box {
+      background: var(--bg);
+      border-left: 4px solid var(--accent);
+    }
+
+    .statement {
+      background: rgba(255, 255, 255, 0.72);
+      border-left: 4px solid var(--primary);
+      font-size: 0.74em !important;
+      line-height: 1.55 !important;
+    }
+
+    .arrow-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .arrow-list li {
+      position: relative;
+      padding-left: 1.2em;
+      margin-bottom: 0.45em;
+    }
+
+    .arrow-list li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .numbered {
+      counter-reset: item;
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .numbered li {
+      position: relative;
+      padding-left: 2.1em;
+      margin-bottom: 0.6em;
+    }
+
+    .numbered li::before {
+      counter-increment: item;
+      content: counter(item);
+      position: absolute;
+      left: 0;
+      top: 0.08em;
+      width: 1.45em;
+      height: 1.45em;
+      border-radius: 999px;
+      background: var(--primary);
+      color: var(--white);
+      font-size: 0.82em;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pill-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45em;
+      margin-top: 0.6em;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45em 0.8em;
+      border-radius: 999px;
+      background: rgba(70, 113, 91, 0.09);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+      font-size: 0.48em;
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+
+    .venn-wrap {
+      position: relative;
+      height: 13.5em;
+      max-width: 21em;
+      margin: 0.8em auto 0;
+    }
+
+    .venn-circle {
+      position: absolute;
+      width: 8.4em;
+      height: 8.4em;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1em;
+      font-size: 0.48em;
+      line-height: 1.35;
+      font-weight: 700;
+      color: var(--primary-dark);
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+    }
+
+    .venn-circle span {
+      display: block;
+    }
+
+    .venn-1 { left: 2.2em; top: 0; background: rgba(70, 113, 91, 0.18); }
+    .venn-2 { right: 2.2em; top: 0; background: rgba(179, 90, 66, 0.18); }
+    .venn-3 { left: 0.4em; bottom: 0; background: rgba(120, 136, 164, 0.16); }
+    .venn-4 { right: 0.4em; bottom: 0; background: rgba(217, 204, 185, 0.38); }
+
+    .venn-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 5.8em;
+      height: 5.8em;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.94);
+      border: 2px solid rgba(70, 113, 91, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.7em;
+      font-size: 0.46em;
+      line-height: 1.3;
+      font-weight: 700;
+      color: var(--primary-dark);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+
+    .bubble-map {
+      position: relative;
+      height: 14.2em;
+      max-width: 24em;
+      margin: 0.8em auto 0;
+    }
+
+    .bubble,
+    .bubble-core {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.9em;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      color: var(--primary-dark);
+      font-weight: 700;
+      line-height: 1.32;
+    }
+
+    .bubble {
+      width: 6.5em;
+      height: 6.5em;
+      font-size: 0.44em;
+      background: rgba(255,255,255,0.82);
+    }
+
+    .bubble-core {
+      width: 7.6em;
+      height: 7.6em;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.48em;
+      background: rgba(70, 113, 91, 0.16);
+      border: 2px solid rgba(70, 113, 91, 0.24);
+    }
+
+    .bubble-a { left: 0.6em; top: 0.8em; background: rgba(179, 90, 66, 0.16); }
+    .bubble-b { right: 0.8em; top: 0.7em; background: rgba(70, 113, 91, 0.16); }
+    .bubble-c { left: 1.2em; bottom: 0.4em; background: rgba(217, 204, 185, 0.55); }
+    .bubble-d { right: 0.8em; bottom: 0.6em; background: rgba(120, 136, 164, 0.14); }
+
+    .overlap-rings {
+      position: relative;
+      height: 13.6em;
+      max-width: 23em;
+      margin: 0.9em auto 0;
+    }
+
+    .ring {
+      position: absolute;
+      width: 7.9em;
+      height: 7.9em;
+      border-radius: 50%;
+      border: 3px solid rgba(70, 113, 91, 0.38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.9em;
+      font-size: 0.44em;
+      line-height: 1.32;
+      font-weight: 700;
+      color: var(--primary-dark);
+      background: rgba(255,255,255,0.62);
+    }
+
+    .ring-1 { left: 2.3em; top: 0.1em; }
+    .ring-2 { right: 2.3em; top: 0.1em; border-color: rgba(179, 90, 66, 0.38); }
+    .ring-3 { left: 0.4em; bottom: 0.2em; border-color: rgba(120, 136, 164, 0.42); }
+    .ring-4 { right: 0.4em; bottom: 0.2em; border-color: rgba(181, 157, 122, 0.42); }
+
+    .ring-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 6.1em;
+      height: 6.1em;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      border: 2px solid rgba(70, 113, 91, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.8em;
+      font-size: 0.45em;
+      line-height: 1.28;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+
+    .cluster-map {
+      position: relative;
+      height: 18em;
+      max-width: 29em;
+      margin: 0.9em auto 0;
+    }
+
+    .cluster-circle {
+      position: absolute;
+      width: 11.3em;
+      height: 11.3em;
+      border-radius: 50%;
+      padding: 0.9em 0.9em 1.1em;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.05);
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+    }
+
+    .cluster-circle h3 {
+      font-size: 0.52em;
+      margin-bottom: 0.5em;
+      color: var(--primary-dark);
+    }
+
+    .cluster-health {
+      left: 3.5em;
+      top: 0.1em;
+      background: rgba(70, 113, 91, 0.16);
+    }
+
+    .cluster-prevention {
+      right: 3.5em;
+      top: 0.1em;
+      background: rgba(179, 90, 66, 0.16);
+    }
+
+    .cluster-wellness {
+      left: 0.3em;
+      bottom: 0.15em;
+      background: rgba(120, 136, 164, 0.14);
+    }
+
+    .cluster-network {
+      right: 0.3em;
+      bottom: 0.15em;
+      background: rgba(217, 204, 185, 0.5);
+    }
+
+    .circle-cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.95em;
+      margin-top: 1em;
+      align-items: stretch;
+    }
+
+    .circle-cluster {
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      padding: 0.9em 0.75em 1em;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.05);
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      background: rgba(255,255,255,0.74);
+    }
+
+    .circle-cluster h3 {
+      font-size: 0.5em;
+      margin: 0.15em 0 0.45em;
+      color: var(--primary-dark);
+    }
+
+    .circle-cluster .cluster-members {
+      gap: 0.22em;
+    }
+
+    .circle-cluster .member-chip {
+      padding: 0.16em 0.32em 0.16em 0.16em;
+      gap: 0.24em;
+      background: rgba(255,255,255,0.9);
+    }
+
+    .circle-cluster .member-avatar {
+      width: 1.4em;
+      height: 1.4em;
+      font-size: 0.42em;
+    }
+
+    .circle-cluster .member-name {
+      font-size: 0.29em;
+    }
+
+    .circle-heil { background: rgba(70, 113, 91, 0.16); }
+    .circle-versorgung { background: rgba(217, 204, 185, 0.56); }
+    .circle-apotheke { background: rgba(91, 124, 111, 0.12); }
+    .circle-praevention { background: rgba(179, 90, 66, 0.16); }
+    .circle-wellness { background: rgba(120, 136, 164, 0.14); }
+    .circle-koordination { background: rgba(234, 227, 214, 0.86); }
+
+    .overview-slide {
+      padding: 1em 1.4em 1.2em !important;
+    }
+
+    .overview-slide h2 {
+      margin-bottom: 0.2em;
+    }
+
+    .overview-slide > .small {
+      margin: 0;
+    }
+
+    .overview-slide .circle-cluster-grid {
+      gap: 0.55em;
+      margin-top: 0.55em;
+    }
+
+    .overview-slide .circle-cluster {
+      aspect-ratio: auto;
+      min-height: 5.2em;
+      border-radius: 1rem;
+      padding: 0.55em 0.5em 0.65em;
+      justify-content: flex-start;
+    }
+
+    .overview-slide .circle-cluster h3 {
+      font-size: 0.48em;
+      margin: 0 0 0.35em;
+    }
+
+    .overview-slide .circle-cluster .cluster-members {
+      align-content: flex-start;
+      gap: 0.3em;
+    }
+
+    .overview-slide .circle-cluster .member-chip {
+      padding: 0.2em 0.4em 0.2em 0.2em;
+    }
+
+    .overview-slide .circle-cluster .member-avatar {
+      width: 1.5em;
+      height: 1.5em;
+    }
+
+    .overview-slide .circle-cluster .member-name {
+      font-size: 0.34em;
+    }
+
+    .overview-slide .info-box {
+      margin-top: 0.55em !important;
+      padding: 0.55em 0.8em;
+    }
+
+    .overview-slide .info-box p {
+      margin: 0;
+      font-size: 0.48em;
+    }
+
+    .cluster-members {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.28em;
+      width: 100%;
+    }
+
+    .member-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      padding: 0.24em 0.44em 0.24em 0.24em;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      max-width: 100%;
+    }
+
+    .member-avatar {
+      width: 1.65em;
+      height: 1.65em;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.48em;
+      line-height: 1;
+      font-weight: 800;
+      color: var(--white);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      flex-shrink: 0;
+    }
+
+    .member-avatar.alt {
+      background: linear-gradient(135deg, var(--accent) 0%, #cc7863 100%);
+    }
+
+    .member-avatar.photo {
+      background: transparent;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid rgba(31, 41, 36, 0.08);
+    }
+
+    .member-avatar.photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 50%;
+    }
+
+    .member-name {
+      font-size: 0.36em;
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--primary-dark);
+      white-space: nowrap;
+    }
+
+    .member-note-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.7em;
+      margin-top: 0.9em;
+    }
+
+    .member-note {
+      background: rgba(255,255,255,0.74);
+      border: 1px solid rgba(70, 113, 91, 0.1);
+      border-radius: 0.7rem;
+      padding: 0.75em 0.9em;
+    }
+
+    .member-note p {
+      font-size: 0.52em;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .profile-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.9em;
+      align-items: start;
+    }
+
+    .profile-card {
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+      border-radius: 0.85rem;
+      padding: 0.9em 1em;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+    }
+
+    .profile-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+      margin-bottom: 0.65em;
+      flex-wrap: wrap;
+    }
+
+    .profile-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1em;
+    }
+
+    .profile-title strong {
+      font-size: 0.58em;
+      line-height: 1.2;
+      color: var(--primary-dark);
+    }
+
+    .profile-meta {
+      font-size: 0.42em;
+      line-height: 1.2;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .profile-text {
+      font-size: 0.52em !important;
+      line-height: 1.46 !important;
+      margin-bottom: 0.55em;
+    }
+
+    .profile-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35em;
+      margin-top: 0.45em;
+    }
+
+    .profile-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.28em 0.58em;
+      border-radius: 999px;
+      background: rgba(70, 113, 91, 0.08);
+      border: 1px solid rgba(70, 113, 91, 0.1);
+      font-size: 0.38em;
+      line-height: 1.2;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .bridge-orbit {
+      position: relative;
+      height: 14.8em;
+      max-width: 24em;
+      margin: 0.9em auto 0;
+    }
+
+    .bridge-center,
+    .bridge-node {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .bridge-center {
+      width: 7.4em;
+      height: 7.4em;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(70, 113, 91, 0.16);
+      border: 2px solid rgba(70, 113, 91, 0.24);
+      padding: 0.9em;
+      font-size: 0.48em;
+      line-height: 1.28;
+    }
+
+    .bridge-node {
+      width: 5.9em;
+      height: 5.9em;
+      padding: 0.65em;
+      font-size: 0.42em;
+      line-height: 1.26;
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      background: rgba(255,255,255,0.84);
+    }
+
+    .bridge-node.one { left: 1.2em; top: 0.9em; background: rgba(179, 90, 66, 0.16); }
+    .bridge-node.two { right: 1.1em; top: 1.0em; background: rgba(120, 136, 164, 0.14); }
+    .bridge-node.three { left: 1.8em; bottom: 0.8em; background: rgba(217, 204, 185, 0.54); }
+    .bridge-node.four { right: 1.2em; bottom: 0.7em; background: rgba(70, 113, 91, 0.16); }
+
+    .pair-map {
+      display: grid;
+      grid-template-columns: 0.95fr 1.2fr 0.95fr;
+      gap: 0.8em;
+      align-items: stretch;
+      margin: 0.9em 0 0;
+    }
+
+    .pair-person,
+    .pair-step {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(31, 41, 36, 0.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+    }
+
+    .pair-person {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      padding: 1em 0.9em;
+      background: rgba(255,255,255,0.82);
+    }
+
+    .pair-person.side-a {
+      background: rgba(70, 113, 91, 0.14);
+    }
+
+    .pair-person.side-b {
+      background: rgba(179, 90, 66, 0.14);
+    }
+
+    .pair-person strong {
+      display: block;
+      font-size: 0.62em;
+      line-height: 1.2;
+      color: var(--primary-dark);
+      margin-bottom: 0.25em;
+    }
+
+    .pair-person span {
+      font-size: 0.46em;
+      line-height: 1.35;
+      color: var(--text-muted);
+    }
+
+    .pair-paths {
+      display: grid;
+      gap: 0.6em;
+      align-content: center;
+    }
+
+    .pair-step {
+      position: relative;
+      background: rgba(255,255,255,0.92);
+      padding: 0.75em 0.9em;
+    }
+
+    .pair-step::before,
+    .pair-step::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 0.7em;
+      height: 2px;
+      background: rgba(70, 113, 91, 0.35);
+      transform: translateY(-50%);
+    }
+
+    .pair-step::before {
+      left: -0.7em;
+    }
+
+    .pair-step::after {
+      right: -0.7em;
+    }
+
+    .pair-step strong {
+      display: block;
+      font-size: 0.44em;
+      line-height: 1.3;
+      color: var(--primary-dark);
+      margin-bottom: 0.18em;
+    }
+
+    .pair-step p {
+      font-size: 0.4em !important;
+      line-height: 1.35 !important;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .pass-flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75em;
+      margin-top: 0.9em;
+      align-items: stretch;
+    }
+
+    .pass-stage {
+      position: relative;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(70, 113, 91, 0.12);
+      border-radius: 0.9rem;
+      padding: 0.85em 0.8em 0.95em;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+    }
+
+    .pass-stage:nth-child(1) { background: rgba(217, 204, 185, 0.42); }
+    .pass-stage:nth-child(2) { background: rgba(70, 113, 91, 0.14); }
+    .pass-stage:nth-child(3) { background: rgba(179, 90, 66, 0.14); }
+    .pass-stage:nth-child(4) { background: rgba(120, 136, 164, 0.12); }
+
+    .pass-stage:not(:last-child)::after {
+      content: ">";
+      position: absolute;
+      right: -0.42em;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.3em;
+      height: 1.3em;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1px solid rgba(70, 113, 91, 0.18);
+      color: var(--primary-dark);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.44em;
+      font-weight: 800;
+      z-index: 2;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+    }
+
+    .pass-ball {
+      width: 2em;
+      height: 2em;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+      color: var(--white);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.42em;
+      font-weight: 800;
+      margin-bottom: 0.45em;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+
+    .pass-stage h3 {
+      font-size: 0.54em;
+      margin-bottom: 0.35em;
+      color: var(--primary-dark);
+    }
+
+    .pass-copy {
+      font-size: 0.42em !important;
+      line-height: 1.38 !important;
+      margin-bottom: 0.55em;
+      color: var(--text-muted);
+    }
+
+    .frequency-chart {
+      display: grid;
+      gap: 0.45em;
+      margin-top: 0.75em;
+    }
+
+    .frequency-row {
+      display: grid;
+      grid-template-columns: 7.6em 1fr 2em;
+      gap: 0.55em;
+      align-items: center;
+    }
+
+    .frequency-label,
+    .frequency-value {
+      font-size: 0.4em;
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .frequency-value {
+      text-align: right;
+    }
+
+    .frequency-track {
+      position: relative;
+      height: 0.62em;
+      border-radius: 999px;
+      background: rgba(70, 113, 91, 0.12);
+      overflow: hidden;
+    }
+
+    .frequency-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    }
+
+    .meta-note {
+      font-size: 0.4em !important;
+      line-height: 1.42 !important;
+      color: var(--text-muted);
+    }
+
+    .small { font-size: 0.52em !important; }
+
+    @media (max-width: 900px) {
+      .reveal { font-size: 22px; }
+      .two-col, .three-col, .grid-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .toc-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .access-map-slide .grid-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .access-map-slide .structure-card {
+        grid-column: auto;
+      }
+
+      .circle-cluster-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .venn-wrap,
+      .bubble-map,
+      .overlap-rings,
+      .cluster-map,
+      .bridge-orbit {
+        transform: scale(0.92);
+        transform-origin: center top;
+      }
+
+      .pair-map {
+        grid-template-columns: 1fr;
+      }
+
+      .pass-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .pass-stage:not(:last-child)::after {
+        right: 50%;
+        top: auto;
+        bottom: -0.85em;
+        transform: translateX(50%);
+      }
+
+      .pair-step::before,
+      .pair-step::after {
+        display: none;
+      }
+
+      .member-note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-card-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section class="hero">
+        <div class="badge">BNI Claudius • Gesundheitsrunde • Stand 14.07.2026</div>
+        <h1>Gesundheitsrunde als Gruppenprofil</h1>
+        <h3>Gruppenueberblick, Datenkarten, Empfehlungen und gemeinsame Projekte</h3>
+        <p class="lead" style="max-width: 860px; margin: 1.1em auto 0; color: rgba(255,255,255,0.86);">
+          Diese HTML ist gemeinsame Uebersicht und Datensammlung: mit gleichrangigen Personenprofilen,
+          Arbeitszugaengen, Multiplikatoren, Suchauftraegen, Kooperationen und Workshop-Ideen.
+        </p>
+      </section>
+
+      <section id="inhalt">
+        <h2>Inhaltsverzeichnis</h2>
+        <p class="small">Neun klar getrennte Bereiche fuehren vom Gruppenueberblick ueber die Datensammlung bis zu Kooperation und Workshop.</p>
+        <div class="toc-grid">
+          <a class="toc-card" href="#/gruppenueberblick">
+            <span class="toc-number">1</span>
+            <span class="toc-content"><strong>Gruppenueberblick</strong><small>Alle Mitglieder und Arbeitsfelder auf einen Blick</small></span>
+          </a>
+          <a class="toc-card" href="#/datenregeln">
+            <span class="toc-number">2</span>
+            <span class="toc-content"><strong>Datenregeln &amp; Pflege</strong><small>Fairness, einheitliche Felder und Freigaben</small></span>
+          </a>
+          <a class="toc-card" href="#/arbeitsstand">
+            <span class="toc-number">3</span>
+            <span class="toc-content"><strong>Arbeitsstand &amp; Suchauftraege</strong><small>Multiplikatoren, Kontakte und offene Aufgaben</small></span>
+          </a>
+          <a class="toc-card" href="#/arbeitszugaenge">
+            <span class="toc-number">4</span>
+            <span class="toc-content"><strong>Arbeitsfelder &amp; Zugaenge</strong><small>Gleichrangige Landkarte ohne Hierarchie</small></span>
+          </a>
+          <a class="toc-card" href="#/gruppenprofile">
+            <span class="toc-number">5</span>
+            <span class="toc-content"><strong>Kurzprofile</strong><small>Schnelle Orientierung nach Themenfeldern</small></span>
+          </a>
+          <a class="toc-card" href="#/profilkarten">
+            <span class="toc-number">6</span>
+            <span class="toc-content"><strong>Datenkarten</strong><small>Leistungen, Zugaenge, Multiplikatoren und Luecken</small></span>
+          </a>
+          <a class="toc-card" href="#/kooperationen">
+            <span class="toc-number">7</span>
+            <span class="toc-content"><strong>Kooperation &amp; Ballprinzip</strong><small>Nutzenwege, Tandems und Weiterempfehlungen</small></span>
+          </a>
+          <a class="toc-card" href="#/workshop">
+            <span class="toc-number">8</span>
+            <span class="toc-content"><strong>Workshop &amp; Flyer</strong><small>Format, Zielgruppe und Herbst-/Winter-Idee</small></span>
+          </a>
+          <a class="toc-card" href="#/planung">
+            <span class="toc-number">9</span>
+            <span class="toc-content"><strong>Planung &amp; Praesentation</strong><small>Naechste Schritte, Meeting und 6-Minuten-Ablauf</small></span>
+          </a>
+        </div>
+      </section>
+
+      <section id="gruppenueberblick" class="overview-slide">
+        <h2>Die Runde auf einen Blick</h2>
+        <p class="small">Alle aktuell erfassten Personen gleichzeitig, gleichrangig und klar nach Arbeitsfeldern geordnet.</p>
+        <div class="circle-cluster-grid">
+          <div class="circle-cluster circle-heil">
+            <h3>Heilberufe</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/christina-herrmann.jpg" alt="Christina Herrmann"></span><span class="member-name">Christina Herrmann</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/michael-jaufmann.jpg" alt="Michael Jaufmann"></span><span class="member-name">Michael Jaufmann</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/peter-rauch.jpg" alt="Peter Rauch"></span><span class="member-name">Peter Rauch</span></div>
+            </div>
+          </div>
+          <div class="circle-cluster circle-versorgung">
+            <h3>Versorgung / Alltag</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/andreas-veh.jpg" alt="Andreas Veh"></span><span class="member-name">Andreas Veh</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/wolfgang-spreng.jpg" alt="Wolfgang Spreng"></span><span class="member-name">Wolfgang Spreng</span></div>
+            </div>
+          </div>
+          <div class="circle-cluster circle-apotheke">
+            <h3>Apotheke</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/chong-liu.jpg" alt="Chong Liu"></span><span class="member-name">Chong Liu</span></div>
+            </div>
+          </div>
+          <div class="circle-cluster circle-praevention">
+            <h3>Praevention / Training</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/christian-lippert.jpg" alt="Christian Lippert"></span><span class="member-name">Christian Lippert</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/nadine-spiel.jpg" alt="Nadine Spiel"></span><span class="member-name">Nadine Spiel</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/werner-thron.jpg" alt="Werner Thron"></span><span class="member-name">Werner Thron</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/martina-bolvary.jpg" alt="Martina Bolv&aacute;ry"></span><span class="member-name">Martina Bolv&aacute;ry</span></div>
+            </div>
+          </div>
+          <div class="circle-cluster circle-wellness">
+            <h3>Coaching / Wellness / Begleitung</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar">DI</span><span class="member-name">Dilek</span></div>
+              <div class="member-chip"><span class="member-avatar alt">HR</span><span class="member-name">Heidi Rohrlack</span></div>
+              <div class="member-chip"><span class="member-avatar">KS</span><span class="member-name">Karin Schreiber</span></div>
+            </div>
+          </div>
+          <div class="circle-cluster circle-koordination">
+            <h3>Koordination / Datenpflege</h3>
+            <div class="cluster-members">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/horst-heinrich.jpg" alt="Horst Heinrich"></span><span class="member-name">Horst Heinrich</span></div>
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/susanna-hofer.jpg" alt="Susanna Hofer"></span><span class="member-name">Susanna Hofer</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="info-box">
+          <p><strong>Alle auf einer Folie:</strong> Fachliche Profile und organisatorische Rollen sind getrennt. Jede Person erscheint im Gruppenueberblick nur einmal; Mehrfachzugaenge werden spaeter in der Landkarte gezeigt.</p>
+        </div>
+      </section>
+
+      <section id="datenregeln">
+        <h2>Fairness- und Datenregeln fuer die ganze Gruppe</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Gleiches Schema fuer alle</h3>
+            <p>Jedes Mitglied erhaelt dieselben Datenfelder, denselben Platz und dieselbe Moeglichkeit zur Korrektur.</p>
+          </div>
+          <div class="card">
+            <h3>Keine Rangfolge</h3>
+            <p>Arbeitsfelder und Zugaenge zeigen Anknuepfungspunkte, keine Wertung, Exklusivitaet oder fachliche Rangordnung.</p>
+          </div>
+          <div class="card">
+            <h3>Keine stillen Annahmen</h3>
+            <p>Unvollstaendige oder noch nicht bestaetigte Angaben bleiben sichtbar offen und werden nicht von anderen ergaenzt.</p>
+          </div>
+          <div class="card">
+            <h3>Fachprofil und Projektrolle trennen</h3>
+            <p>Gesundheitliche Leistungen stehen in den Kernprofilen. Organisation, Datenpflege und HTML sind eigene Projektrollen.</p>
+          </div>
+        </div>
+        <div class="data-status-row">
+          <span class="data-status confirmed">bestaetigt</span>
+          <span class="data-status draft">Arbeitsstand / zu pruefen</span>
+          <span class="data-status open">Angabe offen</span>
+        </div>
+        <div class="info-box" style="margin-top: 0.8em;">
+          <p><strong>Freigabeprinzip:</strong> Jedes Mitglied prueft und bestaetigt das eigene Profil. Aenderungen an der Einordnung werden nachvollziehbar als gemeinsamer Arbeitsstand behandelt.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Einheitliches Datenblatt pro Mitglied</h2>
+        <div class="grid-cards">
+          <div class="card"><h3>1. Basis</h3><p>Name, BNI-Kategorie, Unternehmen, Website und Kontaktweg.</p></div>
+          <div class="card"><h3>2. Kernprofil</h3><p>Wofuer stehe ich, welche Leistungen biete ich und wann soll man an mich denken?</p></div>
+          <div class="card"><h3>3. Arbeitszugaenge</h3><p>Welche fachlichen oder alltagsnahen Zugaenge passen zu meinem Angebot? Mehrfachnennungen sind moeglich.</p></div>
+          <div class="card"><h3>4. Multiplikatoren</h3><p>Drei bis fuenf selbst benannte Wunschbranchen, Kontakte oder Besucherprofile.</p></div>
+          <div class="card"><h3>5. Kooperation</h3><p>Moegliche Empfehlungslinien, Vortraege, Workshops und konkrete Beitraege fuer die Gruppe.</p></div>
+          <div class="card"><h3>6. Datenstand</h3><p>Quelle, letzte Aktualisierung, offene Angaben und persoenliche Freigabe.</p></div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.8em;">
+          <p><strong>Pflegeprozess:</strong> Susanna Hofer buendelt Rueckmeldungen, Peter Rauch pflegt die HTML technisch, und jedes Mitglied verantwortet die fachliche Richtigkeit des eigenen Profils. Digitale Werkzeuge unterstuetzen nur bei Struktur und Darstellung.</p>
+        </div>
+      </section>
+
+      <section id="arbeitsstand">
+        <h2>Arbeitsstand aus dem Online-Meeting vom 07.07.2026</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Die HTML als gemeinsame Uebersicht</h3>
+            <p>Im Meeting wurde die HTML als gemeinsame Uebersicht fuer die Gesundheitsgruppe vorgestellt. Jedes Mitglied kann dort nach demselben Schema mit Profil, Leistungen, Multiplikatoren, Zielgruppen und moeglichen Kooperationen erfasst werden.</p>
+          </div>
+          <div class="card">
+            <h3>Wofuer sie direkt genutzt werden soll</h3>
+            <ul class="arrow-list">
+              <li>Vorstellung der Gesundheitsgruppe</li>
+              <li>Vorbereitung der Hauptpraesentation</li>
+              <li>Planung gemeinsamer Workshops und Aktionen</li>
+              <li>zentrale Uebersicht aller Teilnehmer</li>
+            </ul>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Wichtig fuer den weiteren Ausbau:</strong> Die Plattform ist nicht nur Schaufenster, sondern zugleich Arbeitsgrundlage fuer Themen, Besucher, Kooperationen und gemeinsame Aussenwirkung.</p>
+          <p>Wer moechte, kann sich sehr gern an der HTML-Plattform beteiligen. Am einfachsten ist es, wenn Inhalte, Hinweise und Rueckmeldungen gebuendelt ueber Susanna Hofer zusammenlaufen.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Multiplikatoren und Einladungslogik vor der Hauptpraesentation</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Was in der Auswertung besonders haeufig war</h3>
+            <p>In der ersten bereinigten Sammlung tauchten vor allem <strong>Friseure (7)</strong>, <strong>Physiotherapeuten (5)</strong> und <strong>Aerzte (5)</strong> immer wieder auf. Danach folgen <strong>Heilpraktiker (4)</strong>, <strong>Fitnessstudios (3)</strong> und <strong>Osteopathen (3)</strong>.</p>
+            <div class="pill-grid">
+              <span class="pill">Friseure 7</span>
+              <span class="pill">Physiotherapeuten 5</span>
+              <span class="pill">Aerzte 5</span>
+              <span class="pill">Heilpraktiker 4</span>
+              <span class="pill">Fitnessstudios 3</span>
+              <span class="pill">Osteopathen 3</span>
+            </div>
+            <p class="meta-note" style="margin-top: 0.75em;">Zweifach genannt wurden ausserdem Apotheken, Pflegedienste, Ernaehrungsmediziner, Coaches und Life Coaches. Offensichtliche Tippfehler wurden dabei mit zusammengefasst.</p>
+          </div>
+          <div class="card">
+            <h3>Wie Horst die Einladung vorbereitet</h3>
+            <ul class="arrow-list">
+              <li>rund vier Wochen vor einer Hauptpraesentation werden Multiplikatoren und potenzielle neue Mitglieder gezielt eingeladen</li>
+              <li>die gewuenschten Branchen und Unternehmen werden im ganzen Chapter kommuniziert</li>
+              <li>zusaetzlich wird geprueft, ob bereits persoenliche Kontakte im Chapter bestehen</li>
+              <li>so kann bei der Ansprache auf ein bekanntes BNI-Mitglied Bezug genommen werden</li>
+            </ul>
+          </div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.9em;">
+          <p><strong>Besonders spannend:</strong> Friseure mit mehreren Filialen oder frisch gegruendete Salons sind nicht nur gute Multiplikatoren, sondern koennen auch als potenzielle neue Chapter-Mitglieder interessant sein.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Konkrete Suchauftraege fuer das Chapter</h2>
+        <p class="small">Vielleicht kennt bereits jemand aus dem Chapter eine dieser Personen oder Einrichtungen und kann einen persoenlichen Kontakt herstellen.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Friseur: Alena Hackenberg Hairstylistin</h3>
+            <p><strong>Ort:</strong> Gersthofen</p>
+            <p>Besonders spannend, weil sie Friseur, Mode und ein Fruehstueckskonzept verbindet. Dadurch koennte sie fuer mehrere Branchen im Chapter interessant sein.</p>
+            <p class="meta-note">Ein erster Kontakt ueber WhatsApp wegen BNI bestand bereits vor laengerer Zeit. Damals fehlte ihr die Zeit; eine erneute, persoenliche Ansprache koennte sich lohnen.</p>
+          </div>
+          <div class="card">
+            <h3>Friseur: Salon Kraffczyk</h3>
+            <p><strong>Ort:</strong> Gersthofen</p>
+            <p>Gesucht wird ein vorhandener persoenlicher Kontakt oder eine gute Empfehlungslinie fuer eine direkte Ansprache.</p>
+          </div>
+          <div class="card">
+            <h3>Physiotherapie in Gersthofen</h3>
+            <ul class="arrow-list">
+              <li>Physiofit Therapiezentrum</li>
+              <li>Proaktiv Gesundheits- und Therapiezentrum</li>
+            </ul>
+            <p class="meta-note" style="margin-top: 0.65em;">Beide Einrichtungen passen zu den haeufig genannten Multiplikatoren der Gesundheitsrunde.</p>
+          </div>
+          <div class="card">
+            <h3>Hoerakustik: Hoerzentrum Boehler</h3>
+            <p><strong>Region:</strong> Augsburg, inzwischen mit vier Filialen</p>
+            <p>Ein spannender Multiplikator mit mehreren Standorten und einem direkten Bezug zu Versorgung, Alltag und Gesundheit.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Aufgabe an die Runde:</strong> Wer kennt dort bereits jemanden, hat einen persoenlichen Kontakt oder kann eine passende Verbindung herstellen? Bestehende Beziehungen sollten vor einer kalten Ansprache zuerst genutzt werden.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Weitere Friseur-Suchauftraege</h2>
+        <p class="small">Ergaenzende Kontakte fuer Naturhaar, nachhaltige Haarpflege und moegliche Empfehlungen im Stadtgebiet Augsburg.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Flitz&ouml;r Naturfriseur / Bianca Schuster</h3>
+            <p><strong>Angebot:</strong> mobiler Naturfriseur in Augsburg</p>
+            <p><strong>Adresse:</strong> Neudeker Str. 2, 86199 Augsburg</p>
+            <p><strong>Telefon:</strong> <a href="tel:+49821993624">0821 993624</a><br><strong>E-Mail:</strong> <a href="mailto:flitzoer@gmy.de">flitzoer@gmy.de</a></p>
+          </div>
+          <div class="card">
+            <h3>Naturfris&ouml;r Augsburg</h3>
+            <p>Relevanter Suchtreffer fuer einen klassischen Naturfriseur im Stadtgebiet Augsburg.</p>
+            <p class="meta-note">Konkrete Ansprechperson und Kontaktdaten vor der Ansprache noch bestaetigen.</p>
+          </div>
+          <div class="card">
+            <h3>H&ouml;fele Friseur</h3>
+            <p>Weiterer relevanter Suchtreffer fuer Naturhaar und nachhaltige Haarpflege in Augsburg.</p>
+            <p class="meta-note">Passenden persoenlichen Kontakt und Naturfriseur-Angebot vor der Ansprache bestaetigen.</p>
+          </div>
+          <div class="card">
+            <h3>Karin Nagler</h3>
+            <p>Weitere moegliche Ansprechpartnerin fuer einen klassischen Naturfriseur im Stadtgebiet Augsburg.</p>
+            <p class="meta-note">Praxis- beziehungsweise Salonname und Kontaktdaten noch eindeutig zuordnen.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Naechster Schritt:</strong> Bestehende persoenliche Verbindungen im Chapter pruefen und die noch offenen Kontaktdaten vor einer Ansprache verifizieren.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Suchauftrag Zahnmedizin: Dr. Johannes Neubert</h2>
+        <p class="small">Eindeutiger aktueller Treffer im Landkreis Augsburg, direkt noerdlich des Stadtgebiets.</p>
+        <div class="two-col">
+          <div class="card">
+            <h3>Dentalmedizin Langweid am Lech</h3>
+            <p><strong>Zahnarzt und Inhaber:</strong> Dr. med. dent. Johannes Neubert</p>
+            <p><strong>Adresse:</strong> Schulstr. 23, 86462 Langweid am Lech</p>
+            <p><strong>Website:</strong> <a href="https://www.dentalmedizin-langweid.de/" target="_blank" rel="noopener noreferrer">dentalmedizin-langweid.de</a></p>
+            <p><strong>Telefon:</strong> <a href="tel:+4982302859000">08230 2859000</a><br><strong>E-Mail:</strong> <a href="mailto:info@dentalmedizin-langweid.de">info@dentalmedizin-langweid.de</a></p>
+          </div>
+          <div class="card">
+            <h3>Fachliche Anknuepfungspunkte</h3>
+            <p>Ganzheitliche und biologische Zahnmedizin, Keramikimplantate, Umweltzahnmedizin, biologische Prophylaxe, metallfreie Versorgung und 3D-Diagnostik.</p>
+            <p class="meta-note">Die Praxis- und Kontaktdaten wurden ueber die aktuelle offizielle Praxiswebsite abgeglichen. Aeltere Verzeichniseintraege in Augsburg beziehen sich auf eine fruehere Taetigkeit.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Suchauftrag:</strong> Wer Dr. Johannes Neubert oder sein Praxisteam bereits kennt, meldet bitte den vorhandenen Kontakt fuer eine persoenliche Vorstellung.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Persoenliche Suchauftraege aus der Runde</h2>
+        <p class="small">Diese drei konkreten Suchauftraege wurden von Wolfgang Spreng, Dilek und Peter Rauch eingebracht. Gesucht werden bestehende Kontakte oder eine persoenliche Vorstellung.</p>
+        <div class="three-col">
+          <div class="card">
+            <h3>Suchauftrag von Wolfgang Spreng</h3>
+            <p><strong>Gesuchte Person:</strong> Frau Dr. Breitweg</p>
+            <p><strong>Vermutete Region:</strong> Naehe Inning am Ammersee</p>
+            <p><strong>Hinweis:</strong> Sie arbeitet mit Kindern.</p>
+          </div>
+          <div class="card">
+            <h3>Suchauftrag von Dilek</h3>
+            <p><strong>Gesuchter Kontakt:</strong> Arthroklinik Pfersee, Dr. Ostenda</p>
+            <p>Gesucht wird eine bestehende Verbindung oder eine persoenliche Empfehlung fuer die Kontaktaufnahme.</p>
+          </div>
+          <div class="card">
+            <h3>Suchauftrag von Peter Rauch</h3>
+            <p><strong>Gesuchter Kontakt:</strong> Physio-Team Hochzoll</p>
+            <p>Hochzoller Str. 7a, Augsburg<br><strong>Telefon:</strong> <a href="tel:+4982165635">0821 65635</a></p>
+            <p>Gesucht wird ein bestehender persoenlicher Kontakt oder eine Empfehlung fuer die Ansprache.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Rueckmeldung an die Runde:</strong> Wer eine der genannten Personen oder Einrichtungen kennt, meldet bitte den vorhandenen Kontakt, bevor eine neue direkte Ansprache erfolgt.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Weitere Suchauftraege in Augsburg-Hochzoll</h2>
+        <p class="small">Zwei weitere moegliche Kontakte fuer die Gesundheitsrunde. Vor einer Ansprache werden bestehende Beziehungen und die fachliche Chapter-Passung geklaert.</p>
+        <div class="two-col">
+          <div class="card">
+            <h3>Melanie M&uuml;ller?</h3>
+            <p><strong>Praxis:</strong> Physiotherapie &amp; Atlasbehandlung in Augsburg-Hochzoll</p>
+            <p><strong>Inhaberin:</strong> Melanie M&uuml;ller</p>
+            <p><strong>Website:</strong> <a href="https://www.physiotherapie-hochzoll.de/" target="_blank" rel="noopener noreferrer">physiotherapie-hochzoll.de</a></p>
+            <p><strong>Telefon:</strong> <a href="tel:+49821661741">0821 66 17 41</a><br><strong>E-Mail:</strong> <a href="mailto:info@physiotherapie-hochzoll.de">info@physiotherapie-hochzoll.de</a></p>
+            <p class="meta-note"><strong>Offene Frage:</strong> In Teilbereichen koennte eine Ueberschneidung mit Michael Jaufmann bestehen. Fachliche Abgrenzung und Chapter-Passung deshalb vor einer Ansprache gemeinsam klaeren.</p>
+          </div>
+          <div class="card">
+            <h3>Tanja Holzmann</h3>
+            <p><strong>Praxis:</strong> Hebammenpraxis Hochzoll</p>
+            <p><strong>Taetigkeitsgebiet:</strong> Augsburg, Friedberg, Mering und Hochzoll</p>
+            <p><strong>Praxisraum:</strong> in den Raeumen der gyn&auml;kologischen Praxis Becker, Friedberger Str. 140, Augsburg-Hochzoll</p>
+            <p><strong>Leistungen:</strong> Schwangerenvorsorge, Hilfe bei Schwangerschaftsbeschwerden, Behandlungen in der Praxis und weitere Kurse.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Rueckmeldung an die Runde:</strong> Wer Melanie M&uuml;ller oder Tanja Holzmann bereits kennt, meldet bitte den vorhandenen Kontakt fuer eine persoenliche Vorstellung.</p>
+        </div>
+      </section>
+
+      <section id="arbeitszugaenge">
+        <h2>Die Gruppe als Arbeitsfelder-Modell</h2>
+        <p class="small">Fuer die feinere Einordnung ist eine Aufteilung in Arbeitsfelder klarer als ein grobes Kreismodell.</p>
+        <div class="grid-cards">
+          <div class="card"><h3>Heilberufe</h3><p>Tiefergehende therapeutische, psychotherapeutische und diagnostische Arbeit.</p></div>
+          <div class="card"><h3>Versorgung / Alltag</h3><p>Alltagsnahe Versorgung, praktische Gesundheitsunterstuetzung und leicht verstaendliche Anknuepfungspunkte.</p></div>
+          <div class="card"><h3>Apotheke</h3><p>Arznei, Stoffwechsel, Beratung, TCM, Pflanzenheilkunde und lokale Gesundheitsdrehscheibe.</p></div>
+          <div class="card"><h3>Praevention / Training</h3><p>Bewegung, Routinen, Ausdauer, Rehasport, Leistungsfaehigkeit und Umsetzung im Alltag.</p></div>
+          <div class="card"><h3>Coaching / Wellness / Begleitung</h3><p>Biografie- und Krisenbegleitung, Team- und Elternberatung, Lifestyle, Neurotech, Community und emotionale Entlastung.</p></div>
+          <div class="card"><h3>Koordination / Datenpflege</h3><p>BNI-Struktur, Rueckmeldungen, Datensammlung, technische Pflege und gemeinsame Aussenwirkung.</p></div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Nutzen:</strong> Die Gruppe wird nicht nur als Liste von Berufen sichtbar, sondern als System mit klaren Feldern, Uebergaengen und Empfehlungswegen.</p>
+        </div>
+      </section>
+
+      <section class="access-map-slide">
+        <h2>Landkarte 1: Koerper, Funktion und Versorgung</h2>
+        <p class="small">Diese Felder zeigen koerperliche, trainierende und alltagsnahe Zugaenge. Mehrfachzuordnungen sind gewollt und stellen keine Rangfolge dar.</p>
+        <div class="grid-cards">
+          <div class="card structure-card">
+            <h3>Struktur</h3>
+            <p>Direktes manuelles Arbeiten an Faszien und Organen durch Michael. Biophysikalische Informationstherapie an Organen und Nerven durch Peter.</p>
+            <p class="chapter-priority"><strong>Wichtige Chapter-Abgrenzung:</strong> Michael ist fuer strukturelle Themen der vorrangige Ansprechpartner. Peter arbeitet in diesem Bereich ausschliesslich biophysikalisch und nicht manuell.</p>
+            <div class="pill-grid">
+              <span class="pill">Michael</span>
+              <span class="pill">Peter</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Funktion / Training</h3>
+            <p>Funktionelles Arbeiten ueber Bewegung, Muskelaufbau, Praevention, Rehasport und Training.</p>
+            <div class="pill-grid">
+              <span class="pill">Christian</span>
+              <span class="pill">Werner</span>
+              <span class="pill">Martina</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Muskelaufbau / Rehabilitation</h3>
+            <p>Aufbau koerperlicher Leistungsfaehigkeit, Wiederaufbau nach Belastungen und begleitendes Training fuer eine sichere Rueckkehr in Bewegung und Alltag.</p>
+            <div class="pill-grid">
+              <span class="pill">Werner</span>
+              <span class="pill">Christian</span>
+              <span class="pill">Martina</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Sensorik / Wahrnehmung / Ausdruck</h3>
+            <p><strong>Andreas:</strong> Augenfunktion, Wahrnehmung und Sehen mit einem klar augenoptischen und alltagsnahen Zugang.</p>
+            <p><strong>Heidi:</strong> Koerperwahrnehmung und nonverbale Kommunikation sowie kreativer Ausdruck durch kunsttherapeutische Prozesse.</p>
+            <div class="pill-grid">
+              <span class="pill">Andreas</span>
+              <span class="pill">Heidi</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Ausdauer / Kreislauf</h3>
+            <p>Arbeit ueber Schwimmtraining, Ausdauer, Herz-Lunge-Kreislauf, Leistungsfaehigkeit und Routinen.</p>
+            <div class="pill-grid">
+              <span class="pill">Martina</span>
+              <span class="pill">Werner</span>
+              <span class="pill">Christian</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Versorgung / Alltag</h3>
+            <p>Alltagsnahe Versorgung, Wasser, Sehen, praktische Loesungen und leicht verstaendliche Gesundheitsansaetze.</p>
+            <div class="pill-grid">
+              <span class="pill">Andreas</span>
+              <span class="pill">Wolfgang</span>
+              <span class="pill">Chong</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Apotheke / Chemie / Stoffwechsel</h3>
+            <p>Arznei, Mikronaehrstoffe, Stoffwechsel, TCM, Ernaehrung und koerpernahe Beratung.</p>
+            <div class="pill-grid">
+              <span class="pill">Chong</span>
+              <span class="pill">Nadine</span>
+              <span class="pill">Karin</span>
+              <span class="pill">Peter</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="access-map-slide">
+        <h2>Landkarte 2: Mentale, regulatorische und energetische Zugaenge</h2>
+        <p class="small">Diese Felder ergaenzen die koerperliche Landkarte um psychische, pathophysiologische, regulatorische und energetische Sichtweisen.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Mental / emotionale Prozesse</h3>
+            <p>Mentale Prozesse wie Erinnerung, Denkvorgaenge, emotionale Muster, innere Abspeicherungen und psychische Dynamiken.</p>
+            <div class="pill-grid">
+              <span class="pill">Heidi</span>
+              <span class="pill">Christina</span>
+              <span class="pill">Peter</span>
+              <span class="pill">Michael</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Biografie / Krise / Team / Familie</h3>
+            <p>Begleitung bei persoenlichen und beruflichen Veraenderungsprozessen, Neuorientierung, Team- und Karrierefragen sowie familiaeren Herausforderungen.</p>
+            <div class="pill-grid">
+              <span class="pill">Heidi</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Unterbewusstsein / Hypnose</h3>
+            <p>Arbeit mit inneren Bildern, tieferen Mustern, Trance, Suggestion und unbewussten Prozessen.</p>
+            <div class="pill-grid">
+              <span class="pill">Christina</span>
+              <span class="pill">Peter</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Pathophysiologie</h3>
+            <p>Beschwerdebilder und Ursachenebenen mit Blick auf konkrete Muster und Belastungsgruppen.</p>
+            <div class="pill-grid">
+              <span class="pill">Peter</span>
+              <span class="pill">Chong</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Regulation</h3>
+            <p>Steuerung, Anpassung, Erschoepfung, Schlaf, Leistungskurven und funktionelle Gesamtzusammenhaenge.</p>
+            <div class="pill-grid">
+              <span class="pill">Peter</span>
+              <span class="pill">Susanna</span>
+              <span class="pill">Werner</span>
+              <span class="pill">Christian</span>
+              <span class="pill">Dilek</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>TCM / Meridiane</h3>
+            <p>Energetische Einordnung ueber TCM, Meridianlogik und verwandte Leitbahnkonzepte.</p>
+            <div class="pill-grid">
+              <span class="pill">Chong</span>
+              <span class="pill">Peter</span>
+              <span class="pill">Michael</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Energetik / Heilarbeit mit den Haenden</h3>
+            <p>Energetische Zugaenge, die ueber direkte Behandlung oder Impulsgebung mit den Haenden verstanden werden.</p>
+            <div class="pill-grid">
+              <span class="pill">derzeit noch nicht personenscharf markiert</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Neuro-Sensorik</h3>
+            <p>Nicht-invasive neuro-sensorische Reizsetzung fuer Balance, Fokus, Energie, Wohlbefinden und funktionelle Rueckmeldung.</p>
+            <div class="pill-grid">
+              <span class="pill">Dilek</span>
+              <span class="pill">Peter</span>
+            </div>
+          </div>
+        </div>
+        <p class="meta-note" style="margin-top: 0.7em;"><strong>Leseregel:</strong> Die Landkarte zeigt Beruehrungspunkte, keine Rangfolge. BNI-Struktur, Datenbuendelung und technische Pflege werden separat als Projektrollen dargestellt.</p>
+      </section>
+
+      <section>
+        <h2>Multiplikatoren: aktueller Datenstand</h2>
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <h3>Aktuelle Multiplikatoren im Ueberblick</h3>
+              <div class="frequency-chart">
+                <div class="frequency-row"><div class="frequency-label">Friseure</div><div class="frequency-track"><div class="frequency-fill" style="width: 100%;"></div></div><div class="frequency-value">7</div></div>
+                <div class="frequency-row"><div class="frequency-label">Physiotherapeuten</div><div class="frequency-track"><div class="frequency-fill" style="width: 71%;"></div></div><div class="frequency-value">5</div></div>
+                <div class="frequency-row"><div class="frequency-label">Aerzte</div><div class="frequency-track"><div class="frequency-fill" style="width: 71%;"></div></div><div class="frequency-value">5</div></div>
+                <div class="frequency-row"><div class="frequency-label">Heilpraktiker</div><div class="frequency-track"><div class="frequency-fill" style="width: 57%;"></div></div><div class="frequency-value">4</div></div>
+                <div class="frequency-row"><div class="frequency-label">Fitnessstudios</div><div class="frequency-track"><div class="frequency-fill" style="width: 43%;"></div></div><div class="frequency-value">3</div></div>
+                <div class="frequency-row"><div class="frequency-label">Osteopathen</div><div class="frequency-track"><div class="frequency-fill" style="width: 43%;"></div></div><div class="frequency-value">3</div></div>
+                <div class="frequency-row"><div class="frequency-label">Apotheken</div><div class="frequency-track"><div class="frequency-fill" style="width: 29%;"></div></div><div class="frequency-value">2</div></div>
+                <div class="frequency-row"><div class="frequency-label">Pflegedienste</div><div class="frequency-track"><div class="frequency-fill" style="width: 29%;"></div></div><div class="frequency-value">2</div></div>
+                <div class="frequency-row"><div class="frequency-label">Ernaehrungsmediziner</div><div class="frequency-track"><div class="frequency-fill" style="width: 29%;"></div></div><div class="frequency-value">2</div></div>
+                <div class="frequency-row"><div class="frequency-label">Coaches</div><div class="frequency-track"><div class="frequency-fill" style="width: 29%;"></div></div><div class="frequency-value">2</div></div>
+                <div class="frequency-row"><div class="frequency-label">Life Coaches</div><div class="frequency-track"><div class="frequency-fill" style="width: 29%;"></div></div><div class="frequency-value">2</div></div>
+              </div>
+              <p class="meta-note" style="margin-top: 0.8em;">Die Zaehlung ist bereinigt, das heisst offensichtliche Schreibvarianten wie <em>Fiseure/Friseure</em>, <em>Coachs/Coaches</em> oder <em>Life-Coaches/Life Coaches</em> wurden zusammengefuehrt.</p>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <h3>Was bereits vorliegt</h3>
+              <ul class="arrow-list">
+                <li>Cluster mit allen Mitgliedern</li>
+                <li>erste Profilkarten und Rollenbilder</li>
+                <li>haeufige Multiplikatoren mit Anzahl</li>
+                <li>Ballprinzip der Gruppe: wie ein Kontakt durch mehrere passende Bereiche weitergegeben werden kann</li>
+              </ul>
+            </div>
+            <div class="card" style="margin-top: 0.8em;">
+              <h3>Weitere bisher genannte Multiplikatoren</h3>
+              <p class="meta-note"><strong>Je 2 Nennungen:</strong> Apotheken, Pflegedienste, Ernaehrungsmediziner, Coaches und Life Coaches.</p>
+              <p class="meta-note"><strong>Je 1 Nennung:</strong> Gesundheits- und Pflegeberufe, Modehaeuser, Sportfachhandel, Fahrradgeschaefte, TCM, Personalentscheider, Betriebsraete, Betriebsaerzte, Handwerker, Anlageberater, Therapeuten, Hebammen, Nachhilfelehrer, Businesscoachs, Gynaekologen, Urologen, Kinderaerzte, Nagelstudios, Fusspflege, Beauty, Sanitaetshaeuser, Gesundheitsberufe, Ernaehrungsberater, Pflegebereich, Psychotherapeuten, Orthopaeden, Kosmetiker, Personaltrainer und weitere Einzelbegriffe.</p>
+              <p class="meta-note"><strong>Zusaetzlich:</strong> Zweimal wurde auch der Sammelbegriff <em>alle bisher genannten</em> notiert.</p>
+            </div>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 0.9em;">
+          <p>Mit Susanna Hofer in der Datensammlung koennen diese Angaben spaeter sauber verdichtet und in Grafiken, Matrixen und BNI-Uebersichten ueberfuehrt werden.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Aktueller Datenstand und offene Angaben</h2>
+        <div class="three-col">
+          <div class="card">
+            <h3>Bereits vorhanden</h3>
+            <ul class="arrow-list">
+              <li>Namen und erste Kategorien</li>
+              <li>Kurzprofile und Leistungen</li>
+              <li>Arbeitszugaenge und erste Kooperationen</li>
+              <li>viele Multiplikatoren und Suchauftraege</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Konkret noch offen</h3>
+            <ul class="arrow-list">
+              <li>vollstaendiger Name und Profilfoto von Dilek</li>
+              <li>Profilfoto von Karin Schreiber</li>
+              <li>Multiplikatoren von Christina, Wolfgang, Peter und Martina</li>
+              <li>einheitliche Kontakt- und Freigabeangaben</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Naechste Pflegerunde</h3>
+            <ul class="arrow-list">
+              <li>jedes Mitglied prueft die eigene Datenkarte</li>
+              <li>Korrekturen werden ueber Susanna gebuendelt</li>
+              <li>Peter uebernimmt den abgestimmten Stand</li>
+              <li>Datum und Freigabestatus werden nachgetragen</li>
+            </ul>
+          </div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.8em;">
+          <p><strong>Fairnessregel:</strong> Fehlende Angaben bleiben als offen sichtbar. Niemand wird wegen eines unvollstaendigen Profils kleiner dargestellt oder durch Vermutungen ergaenzt.</p>
+        </div>
+      </section>
+
+      <section id="gruppenprofile" class="hero">
+        <div class="badge">Kapitel: Gruppenprofile</div>
+        <h2>Kurzprofile und Datenkarten</h2>
+        <p class="lead" style="max-width: 860px; margin: 1em auto 0; color: rgba(255,255,255,0.86);">
+          Die Kurzprofile geben zuerst Orientierung. Danach folgen ausfuehrliche Datenkarten mit Leistungen,
+          Arbeitszugaengen, Multiplikatoren und sichtbar offenen Angaben.
+        </p>
+      </section>
+
+      <section>
+        <h2>Kurzprofile: Heilberufe</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Christina Herrmann</h3>
+            <p><strong>Heilpraktik fuer Psychotherapie</strong><br>Hypnose, psychotherapeutische Begleitung, Astropsychologie, systemische Beratung und Unternehmensbezug.</p>
+          </div>
+          <div class="card">
+            <h3>Michael Jaufmann</h3>
+            <p><strong>Heilpraktiker / Osteopathie</strong><br>Bewegungsapparat, Osteopathie, Mobilitaet, Ruecken und Haltung sowie Infusionen, Schaedelakupunktur und Kinesiologie nach Klinghardt.</p>
+          </div>
+          <div class="card">
+            <h3>Peter Rauch</h3>
+            <p><strong>Heilpraktiker</strong><br>Praevention und naturheilkundliche Einordnung bei chronischen und komplexen Themen mit Mikronaehrstoffen, biophysikalischer Informationstherapie, Pathophysiologie und Regulationsmedizin sowie mentalen und emotionalen Prozessen, Hypnose, TCM / Meridianen und Energetik.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Hinweis:</strong> Die Reihenfolge ist rein thematisch und nicht wertend. Alle Kernprofile werden gleichrangig dargestellt und mit neuen Rueckmeldungen weiter vervollstaendigt.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kurzprofile: Versorgung und Alltag</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Andreas Veh</h3>
+            <p><strong>Augenoptik</strong><br>Sehtests, Brillen, Kontaktlinsen und gesundheitsnahe Versorgung mit starkem Alltagsbezug.</p>
+          </div>
+          <div class="card">
+            <h3>Wolfgang Spreng</h3>
+            <p><strong>Wasseraufbereitung</strong><br>Trinkwasserqualitaet, Wassertests, Filter- und Osmoseloesungen fuer Haushalte, Praxen, Studios und Unternehmen.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Wichtig fuer die Gruppenlogik:</strong> Versorgung ist kein Heilberuf im engeren Sinn, aber ein sehr starker Anknuepfungspunkt fuer alltagsnahe Empfehlungen, Erstgespraeche und Weiterleitungen.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kurzprofil: Apotheke</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Chong Liu</h3>
+            <p><strong>Apotheke</strong><br>Versorgt Menschen im Alltag und bei akuten Bedarfen mit Arzneimitteln, Gesundheitsprodukten, schneller Verfuegbarkeit, E-Rezept, Lieferservice, TCM, Pflanzenheilkunde, Homoeopathie, Diabetes-Beratung und sichtbarem Notdienstbezug.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kurzprofile: Praevention, Training und Alltag</h2>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Nadine Spiel</h3>
+            <p>Ernaehrungs- und Gesundheitsberatung, Rueckenkurse, Personaltraining, BGF, Vortraege und alltagstaugliche Begleitung mit Blick auf Stress, Schlaf und Routinen.</p>
+          </div>
+          <div class="card">
+            <h3>Werner Thron</h3>
+            <p><strong>Angebot ausschliesslich fuer Frauen.</strong><br>Frauenfitness, med. Fitnesstraining, 30-Minuten-Zirkeltraining, Sporternaehrung, Koerperscanner, Beckenboden sowie Magnetstuhl-Anwendungen zur Unterstuetzung bei Beckenboden- und Blasenthemen.</p>
+          </div>
+          <div class="card">
+            <h3>Christian Lippert</h3>
+            <p>Fitnessstudio mit gesundheitsorientiertem Muskeltraining, Rueckentraining, Rehasport, Abnehmen, Gruppenfitness und Praevention.</p>
+          </div>
+          <div class="card">
+            <h3>Martina Bolv&aacute;ry</h3>
+            <p>Endurance Sports mit Ausdaueraufbau, Trainingsplaenen, Gesundheitscoaching und alltagstauglichen Routinen rund um Bewegung und Leistungsfaehigkeit.</p>
+          </div>
+          <div class="card">
+            <h3>Susanna Hofer</h3>
+            <p>Mobiles Gesundheitstraining mit EMS sowie Anknuepfungspunkte zu Bewegung, Regulation, Entspannung und Gesundheitsalltag.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kurzprofile: Coaching, Wellness und Begleitung</h2>
+        <div class="three-col">
+          <div class="card">
+            <h3>Dilek</h3>
+            <p>SuperPatch als nicht-invasiver, medikamenten- und chemiefreier Neurotech-Wearable-Ansatz mit Themen wie Schlaf, Stress, Fokus, Balance, Mobilitaet und Energie.</p>
+          </div>
+          <div class="card">
+            <h3>Karin Schreiber</h3>
+            <p>Gesundheit und Wellness Spezialist mit EQOLOGY, Omega-3-/Lifestyle-Kontext, Health Events und communitynahen Formaten.</p>
+          </div>
+          <div class="card">
+            <h3>Heidi Rohrlack</h3>
+            <p><strong>Your Personal Life Coach</strong><br>Biografie- und Krisenbegleitung, Kunsttherapie, TMS-Teamtraining, Karriere-, Staerken- und Arbeitsmotivation, Elternberatung sowie nonverbale Kommunikation. Slogan: <strong>Trust Your Power!</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="profilkarten">
+        <h2>Datenkarten: Versorgung und Alltag</h2>
+        <p class="small">Alle Datenkarten sind ein Arbeitsstand und werden von den jeweiligen Mitgliedern geprueft und freigegeben.</p>
+        <div class="data-status-row">
+          <span class="data-status draft">Arbeitsstand / zu pruefen</span>
+          <span class="data-status open">fehlende Angaben bleiben offen</span>
+        </div>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/andreas-veh.jpg" alt="Andreas Veh"></span><span class="member-name">Andreas</span></div>
+              <div class="profile-title"><strong>Andreas Veh</strong><span class="profile-meta">Dipl.-Ing. (FH) Augenoptik / Optik Seufert</span></div>
+            </div>
+            <p class="profile-text">Augenoptik und Optometrie mit Brillen, individuell angepassten Kontaktlinsen, Sehtests, Lupen, Passfotos sowie eigener Werkstatt fuer Anpassungen und Reparaturen.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Augenoptik / Optometrie</span>
+              <span class="profile-tag">Brillen / Kontaktlinsen</span>
+              <span class="profile-tag">Sehtests</span>
+              <span class="profile-tag">Werkstatt / Reparaturen</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Eigenstaendiger Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Sensorik / Sehen</span>
+              <span class="profile-tag">augenoptisch</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Sensorik / Sehen</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Versorgung / Alltag</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Gesundheits- und Pflegeberufe</span>
+              <span class="profile-tag">Modehaeuser</span>
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Sportfachhandel</span>
+              <span class="profile-tag">Fahrradgeschaefte</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://seufert-optik.de/" target="_blank" rel="noreferrer">seufert-optik.de</a>
+              <a class="profile-tag" href="mailto:aveh@seufert-optik.de">aveh@seufert-optik.de</a>
+              <a class="profile-tag" href="tel:+49821527830">0821 527830</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/wolfgang-spreng.jpg" alt="Wolfgang Spreng"></span><span class="member-name">Wolfgang</span></div>
+              <div class="profile-title"><strong>Wolfgang Spreng</strong><span class="profile-meta">Spreng Wasser / Bela Aqua Vertriebspartner</span></div>
+            </div>
+            <p class="profile-text">Selbststaendiger Vertriebspartner der Bela Aqua GmbH. Das Bela-Aqua-Portfolio umfasst Beratung, Wassertests, Osmoseanlagen, Wasserspender und Service fuer Haushalte und Unternehmen; Wolfgangs genauer persoenlicher Leistungsumfang wird noch bestaetigt.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Trinkwasser</span>
+              <span class="profile-tag">Alltag</span>
+              <span class="profile-tag">Praeventionseinstieg</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Versorgung / Alltag</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Chemie / Routinen</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Spannend fuer die Runde</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Haushalte</span>
+              <span class="profile-tag">Unternehmen</span>
+              <span class="profile-tag">Praxis- und Studioumfeld</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="data-status-row"><span class="data-status open">Angabe offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://spreng-wasser.de/" target="_blank" rel="noreferrer">spreng-wasser.de</a>
+              <a class="profile-tag" href="mailto:kontakt@spreng-wasser.de">kontakt@spreng-wasser.de</a>
+              <a class="profile-tag" href="tel:+4916097053685">0160 97053685</a>
+            </div>
+            <div class="data-status-row">
+              <span class="data-status confirmed">Kontakt und Partnerstatus verifiziert</span>
+              <span class="data-status draft">persoenlicher Produktumfang zu bestaetigen</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Datenkarte: Apotheke / Arznei / Beratung</h2>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/chong-liu.jpg" alt="Chong Liu"></span><span class="member-name">Chong</span></div>
+              <div class="profile-title"><strong>Chong Liu</strong><span class="profile-meta">Inhaberin / Apothekerin, Radegundis Apotheke</span></div>
+            </div>
+            <p class="profile-text">Versorgt Menschen im Alltag und bei akuten Bedarfen mit Arzneimitteln, Gesundheitsprodukten, schneller Verfuegbarkeit, E-Rezept, Lieferservice, TCM, Pflanzenheilkunde, Homoeopathie, Diabetes-Beratung und sichtbarem Notdienstbezug.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Apotheke</span>
+              <span class="profile-tag">Grundversorgung</span>
+              <span class="profile-tag">Notdienstbezug</span>
+              <span class="profile-tag">TCM</span>
+              <span class="profile-tag">Pflanzenheilkunde</span>
+              <span class="profile-tag">E-Rezept / Vorbestellung</span>
+              <span class="profile-tag">Lieferservice</span>
+              <span class="profile-tag">Diabetes-Beratung</span>
+              <span class="profile-tag">Kosmetik-Beratung</span>
+              <span class="profile-tag">Beratung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Apotheke / Chemie / Stoffwechsel</span>
+              <span class="profile-tag">Versorgung / Alltag</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Beratung / Regulation / TCM</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Heilpraktiker</span>
+              <span class="profile-tag">Pflegedienste</span>
+              <span class="profile-tag">TCM</span>
+              <span class="profile-tag">Ernaehrungsmediziner</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.radegundis-apotheke.de/" target="_blank" rel="noreferrer">radegundis-apotheke.de</a>
+              <a class="profile-tag" href="mailto:info@radegundis-apotheke.de">info@radegundis-apotheke.de</a>
+              <a class="profile-tag" href="tel:+49821433234">0821 433234</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Datenkarten: Heilberufe</h2>
+        <p class="small">Der heilberufliche Kern mit tieferer therapeutischer, diagnostischer oder psychotherapeutischer Arbeit.</p>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/christina-herrmann.jpg" alt="Christina Herrmann"></span><span class="member-name">Christina</span></div>
+              <div class="profile-title"><strong>Christina Herrmann</strong><span class="profile-meta">Heilpraktik fuer Psychotherapie</span></div>
+            </div>
+            <p class="profile-text">Heilpraktikerin fuer Psychotherapie mit Hypnose und psychotherapeutischer Begleitung fuer Einzelpersonen, Paare und Kinder sowie Astropsychologie, systemischer Beratung, Mentalcoaching im Profisport und Unternehmensangeboten.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Heilpraktikerin fuer Psychotherapie</span>
+              <span class="profile-tag">Hypnose</span>
+              <span class="profile-tag">Astropsychologie</span>
+              <span class="profile-tag">systemische Beratung / Coaching</span>
+              <span class="profile-tag">Mentalcoaching im Profisport</span>
+              <span class="profile-tag">Unternehmensentwicklung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Unterbewusstsein / Hypnose</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Mental / emotional / Psyche</span>
+              <span class="profile-tag">Astropsychologie / Beratung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktueller Stand</strong></p>
+            <p class="small" style="margin: 0;">Multiplikatoren wurden fuer Christina in der bisherigen Liste noch nicht konkret eingetragen.</p>
+            <div class="data-status-row"><span class="data-status open">Multiplikatoren offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.christina-herrmann.com/" target="_blank" rel="noreferrer">christina-herrmann.com</a>
+              <a class="profile-tag" href="mailto:mail@christina-herrmann.com">mail@christina-herrmann.com</a>
+              <a class="profile-tag" href="tel:+4915142016511">0151 42016511</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/michael-jaufmann.jpg" alt="Michael Jaufmann"></span><span class="member-name">Michael</span></div>
+              <div class="profile-title"><strong>Michael Jaufmann</strong><span class="profile-meta">Heilpraktiker / Osteopathie</span></div>
+            </div>
+            <p class="profile-text">Heilpraktiker und Osteopath mit Schwerpunkt auf Bewegungsapparat, Ruecken, Haltung und Mobilitaet. Die offizielle Webseite nennt ausserdem Dorn-Therapie, Breuss-Massage, Kinesio-Taping, Baunscheidt-Therapie, Schroepfen und Yamamoto-Schaedelakupunktur.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Osteopathie</span>
+              <span class="profile-tag">Ruecken</span>
+              <span class="profile-tag">Mobilitaet</span>
+              <span class="profile-tag">Dorn-Therapie</span>
+              <span class="profile-tag">Breuss-Massage</span>
+              <span class="profile-tag">Kinesio-Taping</span>
+              <span class="profile-tag">Schroepfen / Baunscheidt</span>
+              <span class="profile-tag">Yamamoto-Schaedelakupunktur</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Direkte Gruppenangaben</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Infusionen</span>
+              <span class="profile-tag">Kinesiologie nach Klinghardt</span>
+            </div>
+            <div class="data-status-row"><span class="data-status draft">auf offizieller Webseite nicht gefunden - Bestaetigung offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Struktureller Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">heilberuflich-therapeutisch</span>
+              <span class="profile-tag">osteopathisch-manuell</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Struktur</span>
+              <span class="profile-tag">Mental / emotionale Prozesse</span>
+              <span class="profile-tag">TCM / Meridiane</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Regulation / Belastungsmuster</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Aerzte</span>
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Physiotherapeuten</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://naturheilpraxis.life/" target="_blank" rel="noreferrer">naturheilpraxis.life</a>
+              <a class="profile-tag" href="mailto:jaufmann@naturheilpraxis.life">jaufmann@naturheilpraxis.life</a>
+              <a class="profile-tag" href="tel:+491728401519">0172 8401519</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/peter-rauch.jpg" alt="Peter Rauch"></span><span class="member-name">Peter</span></div>
+              <div class="profile-title"><strong>Peter Rauch</strong><span class="profile-meta">Heilpraktiker</span></div>
+            </div>
+            <p class="profile-text">Heilpraktiker und Physiotherapeut mit Naturheilkunde, Labor- und Stuhldiagnostik, biophysikalischer Informationstherapie, Bioresonanz, NLS/EAV, Orthomolekularmedizin, Mikronaehrstoffen, Schmerztherapie sowie Psychotherapie und Hypnose.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Heilpraktik</span>
+              <span class="profile-tag">Physiotherapie</span>
+              <span class="profile-tag">Hypnotherapie</span>
+              <span class="profile-tag">Praevention</span>
+              <span class="profile-tag">Mikronaehrstoffe</span>
+              <span class="profile-tag">Biophysikalische Informationstherapie</span>
+              <span class="profile-tag">Labor- / Stuhldiagnostik</span>
+              <span class="profile-tag">Bioresonanz / NLS / EAV</span>
+              <span class="profile-tag">Chronische Themen</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Struktureller Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">heilberuflich-therapeutisch</span>
+              <span class="profile-tag">strukturell nur ueber biophysikalische Informationstherapie</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Struktur</span>
+              <span class="profile-tag">Mental / emotionale Prozesse</span>
+              <span class="profile-tag">Unterbewusstsein / Hypnose teils</span>
+              <span class="profile-tag">Pathophysiologie</span>
+              <span class="profile-tag">Regulation</span>
+              <span class="profile-tag">TCM / Meridiane</span>
+              <span class="profile-tag">Energetik</span>
+              <span class="profile-tag">Neuro-Sensorik</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="data-status-row"><span class="data-status open">Angabe offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Chapter-Abgrenzung und Praxisumfang</strong></p>
+            <p class="small" style="margin: 0;">Die offizielle Praxiswebseite nennt auch manuelle und osteopathische Techniken. Innerhalb des Chapters bleibt die abgestimmte strukturelle Positionierung dennoch ausschliesslich biophysikalisch; Michael ist dort der vorrangige Ansprechpartner fuer manuelle Strukturthemen.</p>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://rauch-heilpraktiker.de/" target="_blank" rel="noreferrer">rauch-heilpraktiker.de</a>
+              <a class="profile-tag" href="mailto:praxis_rauch@icloud.com">praxis_rauch@icloud.com</a>
+              <a class="profile-tag" href="tel:+498212621462">0821 2621462</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Datenkarten: Praevention, Training und Alltag</h2>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/nadine-spiel.jpg" alt="Nadine Spiel"></span><span class="member-name">Nadine</span></div>
+              <div class="profile-title"><strong>Nadine Spiel</strong><span class="profile-meta">Ganzheitliche Gesundheits- und Ernaehrungsberatung</span></div>
+            </div>
+            <p class="profile-text">Studierte Fitnessoekonomin und ganzheitliche Gesundheits- und Ernaehrungsberaterin mit individueller Begleitung zu Ernaehrung, Bewegung, Schlaf, Stress und Hormonen sowie Personal- und Rueckentraining und betrieblicher Gesundheitsfoerderung.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Ernaehrung</span>
+              <span class="profile-tag">BGF</span>
+              <span class="profile-tag">Alltag</span>
+              <span class="profile-tag">Fitnessoekonomie</span>
+              <span class="profile-tag">ZPP-zertifizierter Rueckenkurs</span>
+              <span class="profile-tag">Hormon- / Darmgesundheit</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Chemie / Stoffwechsel / Alltag</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Mental / Stress / Schlaf</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Aerzte</span>
+              <span class="profile-tag">Physiotherapeuten</span>
+              <span class="profile-tag">Osteopathen</span>
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Personaltrainer</span>
+              <span class="profile-tag">Fitnessstudios</span>
+              <span class="profile-tag">Apotheken</span>
+              <span class="profile-tag">Life-Coaches</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://nadinespiel-coaching.de/" target="_blank" rel="noreferrer">nadinespiel-coaching.de</a>
+              <a class="profile-tag" href="mailto:kontakt@nadinespiel-coaching.de">kontakt@nadinespiel-coaching.de</a>
+              <a class="profile-tag" href="tel:+4917656523488">0176 56523488</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/werner-thron.jpg" alt="Werner Thron"></span><span class="member-name">Werner</span></div>
+              <div class="profile-title"><strong>Werner Thron</strong><span class="profile-meta">Frauenfitness / Personal Training</span></div>
+            </div>
+            <p class="profile-text"><strong>Angebot ausschliesslich fuer Frauen.</strong> Zertifizierter Fitnesstrainer mit individuellem Training, 30-Minuten-Zirkel, Ernaehrungsberatung, Koerperscan und EMP-Beckenbodenstuhl als nicht-invasivem Beckenbodentraining.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Nur fuer Frauen</span>
+              <span class="profile-tag">Frauenfitness</span>
+              <span class="profile-tag">Praevention</span>
+              <span class="profile-tag">Beckenboden</span>
+              <span class="profile-tag">EMP-Beckenbodenstuhl</span>
+              <span class="profile-tag">Blasenthemen</span>
+              <span class="profile-tag">Medizinisches Fitnesstraining</span>
+              <span class="profile-tag">Ernaehrungsberatung</span>
+              <span class="profile-tag">NiSV-Fachkunde</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Funktioneller Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">funktional-trainierend</span>
+              <span class="profile-tag">Muskelaufbau / Praevention</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Funktion / Training</span>
+              <span class="profile-tag">Muskelaufbau / Rehabilitation</span>
+              <span class="profile-tag">Ausdauer / Kreislauf</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Regulation / Leistungsfaehigkeit</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Gynaekologen</span>
+              <span class="profile-tag">Urologen</span>
+              <span class="profile-tag">Kinderaerzte</span>
+              <span class="profile-tag">Aerzte</span>
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Nagelstudios</span>
+              <span class="profile-tag">Fusspflege</span>
+              <span class="profile-tag">Beauty</span>
+              <span class="profile-tag">Physiotherapeuten</span>
+              <span class="profile-tag">Sanitaetshaeuser</span>
+              <span class="profile-tag">Gesundheitsberufe</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://femisport.de/" target="_blank" rel="noreferrer">femisport.de</a>
+              <a class="profile-tag" href="mailto:info@femisport.de">info@femisport.de</a>
+              <a class="profile-tag" href="tel:+4982145046060">0821 45046060</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/christian-lippert.jpg" alt="Christian Lippert"></span><span class="member-name">Christian</span></div>
+              <div class="profile-title"><strong>Christian Lippert</strong><span class="profile-meta">Geschaeftsfuehrer / INJOY Augsburg</span></div>
+            </div>
+            <p class="profile-text">Geschaeftsfuehrer von INJOY Augsburg. Das Studio bietet Kraft-, Ausdauer- und Mobilitaetstraining, Muskeltraining, Rehasport, Ernaehrungsberatung, Gruppenfitness, Personal Training, Physiotherapie, Massage und Sauna.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Rehasport</span>
+              <span class="profile-tag">Training</span>
+              <span class="profile-tag">Muskeltraining</span>
+              <span class="profile-tag">Mobilitaet / Ausdauer</span>
+              <span class="profile-tag">Ernaehrungsberatung</span>
+              <span class="profile-tag">Gruppenfitness</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Funktioneller Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">funktional-trainierend</span>
+              <span class="profile-tag">Studio / Rehasport</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Funktion / Training</span>
+              <span class="profile-tag">Muskelaufbau / Rehabilitation</span>
+              <span class="profile-tag">Ausdauer / Kreislauf</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Regulation / Praevention</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Personalentscheider</span>
+              <span class="profile-tag">Betriebsraete</span>
+              <span class="profile-tag">Betriebsaerzte</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.injoy.de/studio/augsburg" target="_blank" rel="noreferrer">INJOY Augsburg</a>
+              <a class="profile-tag" href="mailto:info@injoy-augsburg.de">info@injoy-augsburg.de</a>
+              <a class="profile-tag" href="tel:+498212411691">0821 2411691</a>
+            </div>
+            <div class="data-status-row">
+              <span class="data-status confirmed">Studioleistungen und Geschaeftsfuehrerrolle verifiziert</span>
+              <span class="data-status open">persoenliche Trainerqualifikation offen</span>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/martina-bolvary.jpg" alt="Martina Bolv&aacute;ry"></span><span class="member-name">Martina</span></div>
+              <div class="profile-title"><strong>Martina Bolv&aacute;ry</strong><span class="profile-meta">Endurance Sports / Coaching</span></div>
+            </div>
+            <p class="profile-text">Digitales und individuelles Coaching fuer Schwimmen, Laufen, Triathlon, SwimRun und Freiwasser mit Trainingsplaenen, Videoanalyse, Kraftarbeit, Belastungssteuerung und Regeneration.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Ausdauer</span>
+              <span class="profile-tag">Trainingsplaene</span>
+              <span class="profile-tag">Routinen</span>
+              <span class="profile-tag">B-Lizenz Schwimmen</span>
+              <span class="profile-tag">B-Lizenz Fitness</span>
+              <span class="profile-tag">Ernaehrungsberatung</span>
+              <span class="profile-tag">Praeventionssport</span>
+              <span class="profile-tag">Heilpraktikeranwaerterin - keine Zulassung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Eigenstaendiger Zugang</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Ausdauer / Kreislauf</span>
+              <span class="profile-tag">Schwimmtraining / Herz-Lunge-Kreislauf</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Ausdauer / Kreislauf</span>
+              <span class="profile-tag">Funktion / Training</span>
+              <span class="profile-tag">Muskelaufbau / Rehabilitation</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Chemie / Stoffwechsel / Ausdauer</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Spannend fuer die Runde</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Bewegung</span>
+              <span class="profile-tag">Ernaehrung</span>
+              <span class="profile-tag">Verletzungspraevention</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="data-status-row"><span class="data-status open">Angabe offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.martinabolvary.com/" target="_blank" rel="noreferrer">martinabolvary.com</a>
+              <a class="profile-tag" href="mailto:info@martinabolvary.com">info@martinabolvary.com</a>
+              <a class="profile-tag" href="tel:+4917657963695">0176 57963695</a>
+            </div>
+            <div class="data-status-row">
+              <span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span>
+              <span class="data-status draft">IT ist Hintergrund, kein verifiziertes aktuelles Kundenangebot</span>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/susanna-hofer.jpg" alt="Susanna Hofer"></span><span class="member-name">Susanna</span></div>
+              <div class="profile-title"><strong>Susanna Hofer</strong><span class="profile-meta">Mobiles Gesundheitstraining / EMS</span></div>
+            </div>
+            <p class="profile-text">Diplom Sport- und Gesundheitstrainerin mit mobilem Einzeltraining fuer Privatkunden und Unternehmer: EMS, Kraft und Mobilitaet, Mental- und Anti-Stress-Training, Faszienbehandlung, Ernaehrungsberatung und Gesundheitscheck.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">EMS</span>
+              <span class="profile-tag">Bewegung</span>
+              <span class="profile-tag">Entspannung</span>
+              <span class="profile-tag">Alltag</span>
+              <span class="profile-tag">Personal Training A-Lizenz</span>
+              <span class="profile-tag">Medizinisches Fitnesstraining A-Lizenz</span>
+              <span class="profile-tag">Rueckentraining A-Lizenz</span>
+              <span class="profile-tag">Sporternaehrung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Regulation</span>
+              <span class="profile-tag">Entspannung / Alltag</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Physiotherapeuten</span>
+              <span class="profile-tag">Ernaehrungsmediziner</span>
+              <span class="profile-tag">Psychotherapeuten</span>
+              <span class="profile-tag">Orthopaeden</span>
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Kosmetiker</span>
+              <span class="profile-tag">Coaches</span>
+              <span class="profile-tag">Aerzte</span>
+              <span class="profile-tag">Osteopathen</span>
+              <span class="profile-tag">Heilpraktiker</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://sh-gesundheitstraining.de/" target="_blank" rel="noreferrer">sh-gesundheitstraining.de</a>
+              <a class="profile-tag" href="mailto:mail@sh-gesundheitstraining.de">mail@sh-gesundheitstraining.de</a>
+              <a class="profile-tag" href="tel:+491732718348">0173 2718348</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Datenkarten: Coaching, Wellness und Begleitung</h2>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar">DI</span><span class="member-name">Dilek</span></div>
+              <div class="profile-title"><strong>Dilek C.</strong><span class="profile-meta">Persoenlicher SuperPatch-Empfehlungsshop</span></div>
+            </div>
+            <p class="profile-text">Offizieller persoenlicher SuperPatch-Empfehlungsshop mit aufklebbaren Wellness-Produkten auf Basis der herstellerseitig beschriebenen vibrotaktilen Technologie fuer Schlaf, Stress, Fokus, Energie, Mobilitaet, Balance und sportliche Leistung.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Schlaf</span>
+              <span class="profile-tag">Stress</span>
+              <span class="profile-tag">Balance</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Energetik / Neuro-Sensorik</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Regulation</span>
+              <span class="profile-tag">Struktur / Balance / Mobilitaet</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Friseure</span>
+              <span class="profile-tag">Handwerker</span>
+              <span class="profile-tag">Fitnessstudios</span>
+              <span class="profile-tag">Apotheken</span>
+              <span class="profile-tag">Coaches</span>
+              <span class="profile-tag">Anlageberater</span>
+              <span class="profile-tag">Osteopathen</span>
+              <span class="profile-tag">Pflegedienste</span>
+            </div>
+            <div class="data-status-row"><span class="data-status open">vollstaendiger Name und Profilfoto offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://dilekpatchdireinen.superpatch.com/" target="_blank" rel="noreferrer">Dileks SuperPatch-Shop</a>
+              <span class="profile-tag">persoenliche E-Mail offen</span>
+              <span class="profile-tag">persoenliches Telefon offen</span>
+            </div>
+            <div class="data-status-row">
+              <span class="data-status draft">Identitaet auf offizieller Seite nur als Dilek C.</span>
+              <span class="data-status open">keine persoenliche Gesundheitsqualifikation veroeffentlicht</span>
+            </div>
+            <p class="meta-note" style="margin-top: 0.7em;">Herstellerhinweis: Die Produkte sind nicht zur Diagnose, Behandlung, Heilung oder Vorbeugung von Krankheiten bestimmt.</p>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar alt">KS</span><span class="member-name">Karin</span></div>
+              <div class="profile-title"><strong>Karin Schreiber</strong><span class="profile-meta">Gesundheit und Wellness Spezialist</span></div>
+            </div>
+            <p class="profile-text">Gesundheit- und Wellness-Spezialistin sowie unabhaengige EQOLOGY-Partnerin mit Schwerpunkt Healthy Aging, testbasiertem Omega-3-Konzept, Bluttest und begleitender Kundenbetreuung.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Wellness</span>
+              <span class="profile-tag">Events</span>
+              <span class="profile-tag">Omega-3</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Chemie / Stoffwechsel / Lifestyle</span>
+            </div>
+            <div class="profile-tags">
+              <span class="profile-tag">Mental / emotional / Community</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Alle bisher genannten</span>
+              <span class="profile-tag">Hebammen</span>
+              <span class="profile-tag">Nachhilfelehrer</span>
+            </div>
+            <div class="data-status-row"><span class="data-status open">Profilfoto offen</span></div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.karinschreiber.de/" target="_blank" rel="noreferrer">karinschreiber.de</a>
+              <span class="profile-tag">E-Mail offen</span>
+              <a class="profile-tag" href="tel:+4917670291857">0176 70291857</a>
+            </div>
+            <div class="data-status-row">
+              <span class="data-status draft">Kontaktdaten und Angebot ueber offizielles BNI-Profil</span>
+              <span class="data-status open">formale Gesundheitsqualifikation offen</span>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/heidi-rohrlack.jpg" alt="Heidi Rohrlack"></span><span class="member-name">Heidi</span></div>
+              <div class="profile-title"><strong>Heidi Rohrlack</strong><span class="profile-meta">Your Personal Life Coach / Kunsttherapie / Teamtraining</span></div>
+            </div>
+            <p class="profile-text">Begleitet Menschen in persoenlichen und beruflichen Krisen und Veraenderungsprozessen. Unterstuetzt bei Staerkenentwicklung, Karriereplanung, Arbeitsperformance, Motivation und Teamkonflikten sowie Eltern in Krisen mit ihren Kindern.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Biografie-Coaching</span>
+              <span class="profile-tag">Kunsttherapie</span>
+              <span class="profile-tag">Teamtraining</span>
+              <span class="profile-tag">Elternberatung</span>
+              <span class="profile-tag">Resonanz / Dialog</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Qualifikationen</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Dipl.-Kunsttherapeutin (FH)</span>
+              <span class="profile-tag">Paedagogin</span>
+              <span class="profile-tag">Biografie-Coach</span>
+              <span class="profile-tag">humanistischer Personal Coach</span>
+              <span class="profile-tag">akkreditierte TMS-Teamtrainerin</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Arbeitszugaenge und Anknuepfungspunkte</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Mental / emotionale Prozesse</span>
+              <span class="profile-tag">Begleitung / Lebenskrisen</span>
+              <span class="profile-tag">Biografie / Neuorientierung</span>
+              <span class="profile-tag">Team / Arbeitswelt</span>
+              <span class="profile-tag">Paedagogik / Elternberatung</span>
+              <span class="profile-tag">nonverbale Kommunikation</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Zielgruppen und Empfehlungssignale</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">persoenliche und berufliche Krisen</span>
+              <span class="profile-tag">Aengste / Sinnfindung</span>
+              <span class="profile-tag">Karriere / Arbeitsmotivation</span>
+              <span class="profile-tag">Teamkonflikte</span>
+              <span class="profile-tag">Eltern in Krisen mit Kindern</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Aktuelle Multiplikatoren</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Aerzte</span>
+              <span class="profile-tag">Physio- und Ergotherapeuten</span>
+              <span class="profile-tag">Paedagogen</span>
+              <span class="profile-tag">Vermoegensberater</span>
+              <span class="profile-tag">Barkeeper</span>
+              <span class="profile-tag">Wirte</span>
+              <span class="profile-tag">Friseure</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Slogan und Kontakt</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Trust Your Power!</span>
+              <a class="profile-tag" href="https://www.heidi-rohrlack.de" target="_blank" rel="noreferrer">www.heidi-rohrlack.de</a>
+              <a class="profile-tag" href="mailto:info@heidi-rohrlack.de">info@heidi-rohrlack.de</a>
+              <span class="profile-tag">Telefon nicht veroeffentlicht</span>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">eigenes Kurzprofil und offizielle Webseite geprueft</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Projektrollen: Koordination und Datenpflege</h2>
+        <div class="profile-card-grid">
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/horst-heinrich.jpg" alt="Horst Heinrich"></span><span class="member-name">Horst</span></div>
+              <div class="profile-title"><strong>Horst Heinrich</strong><span class="profile-meta">Finanzierungsvermittlung / BNI</span></div>
+            </div>
+            <p class="profile-text">Bankkaufmann, Bankbetriebswirt, Versicherungskaufmann/IHK und Certified Financial Planner mit Immobilien- und Baufinanzierung, Versicherungs- und Anlageberatung sowie individuellen Finanzkonzepten.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Finanzierung</span>
+              <span class="profile-tag">BNI</span>
+              <span class="profile-tag">Netzwerk</span>
+              <span class="profile-tag">Immobilienfinanzierung</span>
+              <span class="profile-tag">Versicherungen / Anlageberatung</span>
+              <span class="profile-tag">Certified Financial Planner</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Rolle im Projekt</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">BNI-Struktur / Netzwerk</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Wichtiger Hebel im Prozess</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Einladungslogik</span>
+              <span class="profile-tag">Chapter-Kontakte</span>
+              <span class="profile-tag">Einladungsstrategie</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Kontakt</strong></p>
+            <div class="profile-tags">
+              <a class="profile-tag" href="https://www.heinrich-finanz.de/" target="_blank" rel="noreferrer">heinrich-finanz.de</a>
+              <a class="profile-tag" href="mailto:horst.heinrich@heinrich-finanz.de">horst.heinrich@heinrich-finanz.de</a>
+              <a class="profile-tag" href="tel:+498238967110">08238 967110</a>
+            </div>
+            <div class="data-status-row"><span class="data-status confirmed">offizielle Webseite geprueft 14.07.2026</span></div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/peter-rauch.jpg" alt="Peter Rauch"></span><span class="member-name">Peter</span></div>
+              <div class="profile-title"><strong>Peter Rauch</strong><span class="profile-meta">HTML-Bereitsteller</span></div>
+            </div>
+            <p class="profile-text">Peter Rauch hat sich angeboten, die HTML-Plattform fuer die Gruppe bereitzustellen.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">HTML</span>
+              <span class="profile-tag">Plattform</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Rolle im Projekt</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">digitale Struktur / Plattform</span>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div class="profile-head">
+              <div class="member-chip"><span class="member-avatar photo"><img src="bni-claudius-profilbilder/susanna-hofer.jpg" alt="Susanna Hofer"></span><span class="member-name">Susanna</span></div>
+              <div class="profile-title"><strong>Susanna Hofer</strong><span class="profile-meta">Struktur / Rueckmeldungen</span></div>
+            </div>
+            <p class="profile-text">Buendelt Rueckmeldungen der Mitglieder und sorgt dafuer, dass Korrekturen und offene Angaben geordnet in den Plattformprozess einfliessen.</p>
+            <div class="profile-tags">
+              <span class="profile-tag">Struktur</span>
+              <span class="profile-tag">Rueckmeldungen</span>
+              <span class="profile-tag">Buendelung</span>
+            </div>
+            <p class="small" style="margin: 0.85em 0 0.25em;"><strong>Rolle im Projekt</strong></p>
+            <div class="profile-tags">
+              <span class="profile-tag">Rueckmeldungen / Buendelung / Plattformprozess</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p>Diese Projektrollen beschreiben Organisation und Datenpflege. Sie sind keine zweite fachliche Bewertung der Mitgliederprofile.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Themenfelder aus dem aktuellen Datenstand</h2>
+        <div class="pill-grid">
+          <span class="pill">Praevention</span>
+          <span class="pill">Gesunderhaltung</span>
+          <span class="pill">Diagnostik</span>
+          <span class="pill">Naturheilkunde</span>
+          <span class="pill">Biophysikalische Informationstherapie</span>
+          <span class="pill">Osteopathie / manuelle Themen</span>
+          <span class="pill">Psychotherapie / Unterbewusstsein / Hypnose</span>
+          <span class="pill">Astropsychologie / Beratung</span>
+          <span class="pill">Pathophysiologie</span>
+          <span class="pill">Regulation</span>
+          <span class="pill">Energetik / Neuro-Sensorik</span>
+          <span class="pill">Ernaehrung</span>
+          <span class="pill">Fitness / Rehasport</span>
+          <span class="pill">EMS / Muskeltraining</span>
+          <span class="pill">Apotheke / Pflanzenheilkunde</span>
+          <span class="pill">Wellness / Coaching</span>
+          <span class="pill">Biografie- und Krisenbegleitung</span>
+          <span class="pill">Teamtraining / Karriere</span>
+          <span class="pill">Kunsttherapie / Elternberatung</span>
+          <span class="pill">Wasser / Alltag</span>
+          <span class="pill">BNI-Empfehlungen</span>
+        </div>
+        <div class="quote-box" style="margin-top: 0.9em;">
+          <p>Die Themenfelder bilden den aktuellen Datenstand ab. Sie zeigen Breite und Ueberschneidungen, aber keine Rangfolge oder abschliessende fachliche Zuordnung.</p>
+        </div>
+      </section>
+
+      <section id="kooperationen">
+        <h2>Moegliche Kooperationsfelder in der Gruppe und im Kapitel</h2>
+        <p class="small">Die folgenden Felder sind bewusst neutral formuliert und sollen nur zeigen, in welchen Themenraeumen Zusammenarbeit entstehen kann.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Versorgung und Einordnung</h3>
+            <p>Zum Beispiel dort, wo Versorgung, Beratung, Einordnung und weiterfuehrende naturheilkundliche oder therapeutische Begleitung zusammenkommen.</p>
+          </div>
+          <div class="card">
+            <h3>Ernaehrung, Training und Alltag</h3>
+            <p>Hier koennen alltagsnahe Themen wie Wasser, Ernaehrung, Bewegung, Routinen, Regeneration und Unternehmergesundheit gut ineinandergreifen.</p>
+          </div>
+          <div class="card">
+            <h3>Psyche, Schlaf und Begleitung</h3>
+            <p>Auch mentale Stabilitaet, Schlaf, Persoenlichkeitsentwicklung, Stress und lebensnahe Begleitung lassen sich sinnvoll mit anderen Gesundheitsfeldern verbinden.</p>
+          </div>
+          <div class="card">
+            <h3>Praevention und Gesundheitsnetzwerk</h3>
+            <p>Besonders stark wird die Gruppe dort, wo Praevention, Training, Gesundheitsalltag, Besucheranlaesse und Netzwerk sichtbar zusammenwirken.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>BNI-Claudius-Beispiel ausserhalb der Gesundheitsrunde:</strong> Mit der Baeckerei / Konditorei von Frau Kerstin Stollenwerk laesst sich sehr konkret zeigen, wie auch andere Kapitelmitglieder in gesundheitsnahe Angebote eingebunden werden koennen - zum Beispiel mit individuell abgestimmten Backwaren, glutenfreien Broten oder Spezialprodukten nach Rezeptvorgaben bzw. Ernaehrungskonzepten aus der Runde.</p>
+        </div>
+        <div class="warning-box" style="margin-top: 0.9em;">
+          <p><strong>Wichtig:</strong> Solche Linien sollten immer als konkrete Nutzenwege und nicht als unuebersichtliche Netzspinne dargestellt werden.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Beispielhafte Kooperationstandems 1/2</h2>
+        <p class="small">Diese Beispiele sind ein Arbeitsstand, keine Rangliste. Weitere Kombinationen werden mit den Rueckmeldungen der Mitglieder ergaenzt.</p>
+        <div style="display: grid; gap: 0.9em; margin-top: 0.9em;">
+          <div class="pair-map">
+            <div class="pair-person side-a">
+              <strong>Nadine Spiel</strong>
+              <span>Ernaehrung, Routinen und Gesundheitsalltag</span>
+            </div>
+            <div class="pair-paths">
+              <div class="pair-step">
+                <strong>Gemeinsamer Anlass</strong>
+                <p>Stress, Schlaf, Erschoepfung, alltagstaugliche Gesundheitsverbesserung.</p>
+              </div>
+              <div class="pair-step">
+                <strong>Gemeinsamer Nutzen</strong>
+                <p>Alltagsnahe Begleitung plus ganzheitliche Einordnung fuer Empfehlungen, Firmenformate und Folgeberatung.</p>
+              </div>
+            </div>
+            <div class="pair-person side-b">
+              <strong>Peter Rauch</strong>
+              <span>Heilpraktik, Einordnung und komplexere Zusammenhaenge</span>
+            </div>
+          </div>
+          <div class="pair-map">
+            <div class="pair-person side-a">
+              <strong>Christian Lippert</strong>
+              <span>Training, Rehasport und Bewegungsaufbau</span>
+            </div>
+            <div class="pair-paths">
+              <div class="pair-step">
+                <strong>Gemeinsamer Anlass</strong>
+                <p>Ruecken, Abnehmen, Trainingsstart oder funktionelle Bewegungsthemen.</p>
+              </div>
+              <div class="pair-step">
+                <strong>Gemeinsamer Nutzen</strong>
+                <p>Studio-Zugang plus osteopathische Vertiefung bei Blockaden, Mobilitaet und manuellen Themen.</p>
+              </div>
+            </div>
+            <div class="pair-person side-b">
+              <strong>Michael Jaufmann</strong>
+              <span>Osteopathie, Bewegungsapparat und manuelle Vertiefung</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Prinzip:</strong> Diese Matrix zeigt keine starren Duos fuer immer, sondern die aktuell am leichtesten erklaerbaren Nutzenwege fuer Vortraege, Empfehlungen und Besucher.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Beispielhafte Kooperationstandems 2/2</h2>
+        <p class="small">Auch diese Paarungen zeigen nur moegliche Nutzenwege und keine Bevorzugung einzelner Mitglieder.</p>
+        <div style="display: grid; gap: 0.9em; margin-top: 0.9em;">
+          <div class="pair-map">
+            <div class="pair-person side-a">
+              <strong>Christina Herrmann</strong>
+              <span>Psychotherapie, Hypnose und mentale Themen</span>
+            </div>
+            <div class="pair-paths">
+              <div class="pair-step">
+                <strong>Gemeinsamer Anlass</strong>
+                <p>Stress, Schlaf, innere Unruhe, persoenliche Belastung oder mentale Ueberforderung.</p>
+              </div>
+              <div class="pair-step">
+                <strong>Gemeinsamer Nutzen</strong>
+                <p>Mentale Begleitung plus lebensnahe Stabilisierung fuer Vortragsformate, Besucher und Empfehlungen.</p>
+              </div>
+            </div>
+            <div class="pair-person side-b">
+              <strong>Heidi Rohrlack</strong>
+              <span>Biografie, Krisenbegleitung, Teamtraining und Elternberatung</span>
+            </div>
+          </div>
+          <div class="pair-map">
+            <div class="pair-person side-a">
+              <strong>Wolfgang Spreng</strong>
+              <span>Wasser, Alltag und leicht verstaendlicher Einstieg</span>
+            </div>
+            <div class="pair-paths">
+              <div class="pair-step">
+                <strong>Gemeinsamer Anlass</strong>
+                <p>Gesundheitsalltag im Haushalt, im Buero, im Studio oder im Unternehmerumfeld.</p>
+              </div>
+              <div class="pair-step">
+                <strong>Gemeinsamer Nutzen</strong>
+                <p>Einfacher Alltagseinstieg plus Trainings- und Routinekontext fuer Aktionen, Gespraeche und Gesundheitsformate.</p>
+              </div>
+            </div>
+            <div class="pair-person side-b">
+              <strong>Martina Bolv&aacute;ry</strong>
+              <span>Ausdauer, Trainingsroutinen und Gesundheitscoaching</span>
+            </div>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 0.9em;">
+          <p>Gerade solche klaren Tandems sind fuer BNI oft staerker als eine grosse Netzgrafik, weil man sofort versteht, <strong>wer mit wem zu welchem Nutzen zusammenspielen kann</strong>.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>BNI-Claudius-Beispiel: Baeckerei / Konditorei Niedermair</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Konkreter Partner im Kapitel</h3>
+            <p><strong>Frau Kerstin Stollenwerk</strong><br>Niedermair Betriebs GmbH<br>Hauptstrasse 23<br>86420 Diedorf</p>
+            <p><strong>Tel.:</strong> 08238 7102<br><strong>Web:</strong> www.baeckerei-niedermair.de</p>
+          </div>
+          <div class="card">
+            <h3>Moegliche Kooperation mit der Gesundheitsrunde</h3>
+            <ul class="arrow-list">
+              <li>individuell abgestimmte Backwaren fuer Gesundheitsmitglieder und deren Klienten</li>
+              <li>glutenfreie Brote oder spezielle Rezepturen nach fachlichen Vorgaben aus der Runde</li>
+              <li>passende Produkte fuer Vortraege, Gesundheitstage oder BNI-Veranstaltungen</li>
+              <li>starkes Beispiel dafuer, wie Gesundheit, Alltag und Genuss sinnvoll verbunden werden koennen</li>
+            </ul>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 0.9em;">
+          <p>Gut formuliert koennte man sagen: <strong>Die Baeckerei / Konditorei Niedermair von Frau Kerstin Stollenwerk koennte fuer die Gesundheitsrunde gezielt Backwaren entwickeln und bereitstellen - etwa glutenfreie Brote oder besondere Rezepturen, die auf Empfehlungen, Ernaehrungskonzepte oder Anregungen aus der Gruppe abgestimmt sind.</strong></p>
+        </div>
+      </section>
+
+      <section id="workshop">
+        <h2>Gemeinsamer Online-Workshop als naechstes Projekt</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Aufbau des Formats</h3>
+            <ul class="arrow-list">
+              <li>ein konkreter Pain Point oder ein klar umrissenes Gesundheitsthema</li>
+              <li>pro Workshop maximal sechs Referenten</li>
+              <li>jeder Beitrag etwa 3 bis 5 Minuten</li>
+              <li>eine Person moderiert und fuehrt durch den Ablauf</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Wirkung fuer Privatkunden, Unternehmen und BNI</h3>
+            <ul class="arrow-list">
+              <li>bestehenden Privatkunden zeigen, welche Kompetenzen im Experten-Team gebuendelt sind</li>
+              <li>neue Kunden fuer die Gesundheitsgruppe gewinnen</li>
+              <li>Unternehmen und Multiplikatoren den Mehrwert eines funktionierenden Netzwerks zeigen</li>
+              <li>Interessenten an das Chapter, die Hauptpraesentation und an BNI heranfuehren</li>
+            </ul>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Kernidee:</strong> Nicht jeder muss alles allein abdecken. Gerade die Kombination mehrerer kurzer Expertenbeitraege macht die Gruppe fuer Kunden, Unternehmer und Besucher glaubwuerdiger und staerker.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Flyer-Idee von Susanna Hofer: Fit &amp; gesund durch Herbst und Winter</h2>
+        <p class="small">Susanna Hofer hat den vorab gezeigten Flyer als ersten KI-Entwurf eingebracht. Er dient ausschliesslich als Inspiration fuer die gemeinsame Ausarbeitung; Titel, Inhalte, Referenten und Gestaltung sind noch nicht festgelegt.</p>
+        <div class="two-col">
+          <div class="card">
+            <h3>Arbeitstitel und Versprechen</h3>
+            <p class="lead"><strong>Fit &amp; gesund durch Herbst und Winter</strong></p>
+            <p><strong>Impulse. Wissen. Loesungen.</strong><br>Fuer mehr Energie und Wohlbefinden - jeden Tag.</p>
+            <div class="pill-grid">
+              <span class="pill">Wissen, das inspiriert</span>
+              <span class="pill">alltagstaugliche Tipps</span>
+              <span class="pill">Experten, die sich ergaenzen</span>
+              <span class="pill">Gesundheit, die bleibt</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Warum dieser Workshop?</h3>
+            <p>Herbst und Winter stellen Koerper und Geist auf die Probe. Mit passendem Wissen, guten Strategien und unterschiedlichen Fachbereichen soll der Workshop Menschen gestaerkt und mit mehr Energie durch diese Zeit begleiten.</p>
+            <div class="quote-box" style="margin-top: 0.75em;">
+              <p><strong>Ein Ziel. Viele Experten.</strong><br>Verschiedene Blickwinkel verbinden sich zu einem gemeinsamen Ziel: Gesundheit.</p>
+            </div>
+          </div>
+        </div>
+        <div class="grid-cards" style="margin-top: 0.9em;">
+          <div class="card"><h3>Bis zu sechs Referenten</h3><p>Sechs Fachpersonen mit Spezialgebiet und einer kurzen Beschreibung ihres jeweiligen Beitrags.</p></div>
+          <div class="card"><h3>Online via Zoom</h3><p>Ein gemeinsames Online-Format mit Moderation, kurzen Impulsen und einem leicht zugaenglichen Anmeldeweg.</p></div>
+          <div class="card"><h3>Zielgruppe</h3><p>Menschen, die ihre Gesundheit aktiv in die Hand nehmen und von sich ergaenzenden Loesungsansaetzen profitieren moechten.</p></div>
+          <div class="card"><h3>Gemeinsame Mission</h3><p>Die Kompetenz des gesamten Experten-Teams sichtbar und alltagstauglich nutzbar machen.</p></div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.9em;">
+          <p><strong>Arbeitsstand:</strong> Susanna Hofers Entwurf legt noch nichts fest. Er ist eine visuelle Gespraechsgrundlage fuer die gemeinsame Weiterentwicklung.</p>
+        </div>
+      </section>
+
+      <section id="planung">
+        <h2>Naechster Ausbauschritt fuer die Gruppe</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Bis zum naechsten Meeting vorbereitet</h3>
+            <ul class="arrow-list">
+              <li>zu welchem Workshop-Thema moechte ich einen Beitrag leisten?</li>
+              <li>wie koennte mein Beitrag in 3 bis 5 Minuten aussehen?</li>
+              <li>welche Idee bringe ich fuer die Umsetzung des Workshops mit?</li>
+              <li>kurze Profilbeschreibung in die Gruppe stellen</li>
+              <li>offene Multiplikatoren oder Zielbranchen nachziehen, falls noch etwas fehlt</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Was am 14.07. konkret festgelegt werden soll</h3>
+            <ul class="arrow-list">
+              <li>Workshop-Thema</li>
+              <li>Zusammenstellung der Referenten</li>
+              <li>Terminplanung und Dauer</li>
+              <li>Marketing</li>
+              <li>Bewerbungs- und Einladungsstrategie</li>
+            </ul>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 0.9em;">
+          <p><strong>Schwerpunkt des naechsten Meetings:</strong> nicht mehr nur sammeln, sondern den gemeinsamen Workshop konkret planen und die Plattform inhaltlich weiter befuellen.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Wie Verbindungslinien uebersichtlich bleiben</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Gute Regel</h3>
+            <ul class="arrow-list">
+              <li>nicht alle mit allen verbinden</li>
+              <li>pro Person nur die 2 bis 4 staerksten Linien zeigen</li>
+              <li>jede Linie klar beschriften</li>
+              <li>lieber mehrere klare Slides als eine Netzspinne</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Welche Linien sinnvoll sind</h3>
+            <ul class="arrow-list">
+              <li>Empfehlung / Weiterleitung</li>
+              <li>gemeinsamer Vortrag</li>
+              <li>gemeinsames Angebot</li>
+              <li>Besucheranlass / Kooperation / Sichtbarkeit</li>
+            </ul>
+          </div>
+        </div>
+        <div class="warning-box" style="margin-top: 0.9em;">
+          <p><strong>Wichtig:</strong> Die Grafik soll Nutzenwege zeigen, nicht nur Beziehungen. Sonst wird sie schnell unlesbar.</p>
+        </div>
+      </section>
+
+      <section id="ballprinzip">
+        <h2>So funktioniert die Gruppe wirklich</h2>
+        <div class="statement">
+          Wenn bei einem Mitglied im Gespraech, in der Behandlung oder im Kontakt ein zusaetzliches Thema sichtbar wird, bleibt der Mensch nicht bei nur einer Person stehen. Dann wird der Ball in der Gruppe an das Mitglied weitergegeben, das fuer dieses Thema besonders gut passt. Genau so wird sichtbar, dass wir zusammen fast den ganzen medizinisch-gesundheitlichen Bereich deutlich breiter abdecken als jede einzelne Person fuer sich.
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Das gilt fuer die ganze Gruppe:</strong> Ob bei Andreas, Chong, Christina, Michael, Peter, Nadine, Susanna, Werner, Christian, Dilek, Karin, Heidi, Wolfgang oder Martina ein weiteres Thema sichtbar wird - oder ueber Horst ein passender Kontakt ins Netzwerk kommt - der Ball kann innerhalb der Runde an das Mitglied weitergegeben werden, das fuer dieses Thema gerade am besten passt.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Ballprinzip: Versorgung, Apotheke und Heilberufe</h2>
+        <p class="small">Die folgenden Weitergaben sind nur Beispiele und nicht abschliessend gemeint.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Andreas Veh</h3>
+            <p>Wenn hinter einem optischen oder alltagsnahen Thema weitere gesundheitliche Fragen sichtbar werden, kann der Ball je nach Schwerpunkt in passende Bereiche der Gruppe weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Chong Liu</h3>
+            <p>Wenn bei Apotheke, Pflanzenheilkunde, TCM oder Stoffwechselthemen zusaetzlich Ernaehrung, Mikronaehrstoffe oder chronische Themen auftauchen, kann der Ball an die dafuer passenden Mitglieder in der Runde weitergegeben werden.</p>
+          </div>
+          <div class="card">
+            <h3>Christina Herrmann</h3>
+            <p>Wenn bei psychischen Themen zugleich Schlaf, Koerperbeschwerden, Erschoepfung oder Gesundheitsalltag mitschwingen, kann der Ball an Mitglieder weitergehen, die hier ergaenzend unterstuetzen.</p>
+          </div>
+          <div class="card">
+            <h3>Michael Jaufmann</h3>
+            <p>Wenn neben Ruecken, Haltung oder Bewegungsapparat zusaetzlich Ernaehrung, Mikronaehrstoffe oder chronische Themen wichtig werden, kann der Ball an die dafuer passenden Mitglieder weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Peter Rauch</h3>
+            <p>Wenn aus naturheilkundlicher Sicht zusaetzlich Bewegung, Training, Schlaf, Begleitung oder andere alltagsnahe Themen wichtig werden, kann der Ball an passende Mitglieder aus der Gruppe weitergehen.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Ballprinzip: Praevention und Umsetzung</h2>
+        <p class="small">Die folgenden Weitergaben sind nur Beispiele und nicht abschliessend gemeint.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Nadine Spiel</h3>
+            <p>Wenn hinter Ernaehrung, Schlaf oder Routinen weitere Schmerz-, Trainings-, psychische oder medizinische Themen sichtbar werden, kann der Ball an die passenden Mitglieder weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Susanna Hofer</h3>
+            <p>Wenn beim mobilen Training tiefergehende Ernaehrungs-, Mikronaehrstoff-, Schmerz- oder Beschwerdethemen sichtbar werden, kann der Ball innerhalb der Gruppe sinnvoll weitergegeben werden.</p>
+          </div>
+          <div class="card">
+            <h3>Werner Thron</h3>
+            <p>Wenn bei seinen Kundinnen rund um Frauenfitness, Beckenboden, Blasenbeschwerden, Magnetstuhl-Anwendungen oder Training weitere Themen aus Versorgung, Psyche oder chronischen Beschwerden auftauchen, kann der Ball an geeignete Mitglieder aus der Runde weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Christian Lippert</h3>
+            <p>Wenn im Studio bei Ruecken, Rehasport oder Abnehmen zusaetzlich manuelle, ernaehrungsbezogene oder chronische Themen sichtbar werden, kann der Ball an die passenden Fachbereiche der Gruppe weitergehen.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Ballprinzip: Wellness, Alltag und Netzwerk</h2>
+        <p class="small">Die folgenden Weitergaben sind nur Beispiele und nicht abschliessend gemeint.</p>
+        <div class="grid-cards">
+          <div class="card">
+            <h3>Dilek</h3>
+            <p>Wenn aus Schlaf, Fokus, Balance oder Energie mehr gesundheitliche Tiefe wird, kann der Ball innerhalb der Gruppe an die passendsten Mitglieder weitergegeben werden.</p>
+          </div>
+          <div class="card">
+            <h3>Karin Schreiber</h3>
+            <p>Wenn aus Lifestyle- oder Wellnessfragen mehr Versorgung, Training oder gesundheitliche Klaerung entsteht, kann der Ball an passende Mitglieder der Gruppe weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Heidi Rohrlack</h3>
+            <p>Wenn bei persoenlichen oder beruflichen Krisen, Karriere- und Teamfragen oder in der Elternberatung zusaetzlich Schlaf, Stress, Koerperthemen oder Gesundheitsroutinen sichtbar werden, kann der Ball an geeignete Mitglieder aus der Runde weitergegeben werden.</p>
+          </div>
+          <div class="card">
+            <h3>Wolfgang Spreng</h3>
+            <p>Wenn ueber Wasser und Alltag weitere Gesundheitsthemen sichtbar werden, kann der Ball an passende Mitglieder aus der Gruppe weitergegeben werden.</p>
+          </div>
+          <div class="card">
+            <h3>Martina Bolv&aacute;ry</h3>
+            <p>Wenn bei Ausdauer, Routinen oder sportnahen Themen weiterfuehrendes Training, Ernaehrung oder Regeneration wichtig werden, kann der Ball an die passenden Mitglieder aus der Gruppe weitergehen.</p>
+          </div>
+          <div class="card">
+            <h3>Horst Heinrich</h3>
+            <p>Wenn ueber das Netzwerk ein passender Besucher, Multiplikator oder Kontakt auftaucht, kann Horst den Ball an die passenden Mitglieder in der Runde weitergeben.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Der eigentliche Mehrwert:</strong> Die Gruppe funktioniert nicht ueber feste Wege, sondern ueber sinnvolle, situationsbezogene Weitergaben innerhalb eines gemeinsamen Systems. Genau dadurch entsteht nach aussen ein viel breiteres und staerkeres Gesundheitsbild.</p>
+        </div>
+      </section>
+
+      <section class="hero">
+        <div class="badge">Workshop-Planung | Online-Meeting</div>
+        <h2>Dienstag, 14.07.2026 | 14:00 Uhr | online</h2>
+        <p class="lead" style="max-width: 860px; margin: 1em auto 0; color: rgba(255,255,255,0.88);">
+          Schwerpunkt ist die konkrete Planung und gemeinsame Ausarbeitung des Workshops. Der Meeting-Link vom letzten Online-Treffen wird erneut verwendet. Der Flyer-Entwurf dient dabei als offene Inspiration; noch ist nichts endgueltig festgelegt.
+        </p>
+      </section>
+
+      <section>
+        <h2>Hauptpraesentation | 6 Minuten | Beispiel-Ablauf</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>Moegliche 6-Minuten-Struktur</h3>
+            <ol class="numbered">
+              <li><strong>0:00 bis 0:40</strong><br>Kurzeroeffnung: Wer wir als Gesundheitsgruppe sind.</li>
+              <li><strong>0:40 bis 1:30</strong><br>Warum die Gruppe sinnvoll ist: mehrere Kompetenzen, ein gemeinsames Netzwerk.</li>
+              <li><strong>1:30 bis 2:40</strong><br>Kurzer Ueberblick ueber die 6 Lesefelder: Heilberufe, Versorgung, Apotheke, Praevention, Wellness und Koordination.</li>
+              <li><strong>2:40 bis 3:40</strong><br>Haeufige Multiplikatoren nennen: Friseure, Physiotherapeuten, Aerzte, Heilpraktiker.</li>
+              <li><strong>3:40 bis 4:50</strong><br>Das Ballprinzip einmal quer durch die ganze Gruppe zeigen: Versorgung, Apotheke, Heilberufe, Praevention, Begleitung, Alltag und Koordination greifen ineinander.</li>
+              <li><strong>4:50 bis 6:00</strong><br>Einladung: Wen wir suchen, fuer wen die Gruppe interessant ist und wie man mit uns in Kontakt kommt.</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3>Beispiel-Sprechtext fast direkt nutzbar</h3>
+            <p class="small"><strong>Wir sind das Experten-Team Gesundheit im BNI Claudius.</strong> In unserer Gruppe kommen unterschiedliche Gesundheitskompetenzen zusammen - von Heilberufen ueber Versorgung, Apotheke, Praevention und Training bis hin zu Wellness, Alltagsthemen und starker Vernetzung.</p>
+            <p class="small">Uns geht es nicht darum, dass jeder nur fuer sich sichtbar ist. Wir wollen als Gruppe zeigen, wie aus unterschiedlichen Fachrichtungen echte Empfehlungen, sinnvolle Kooperationen und gemeinsamer Nutzen entstehen koennen.</p>
+            <p class="small">Schon jetzt sehen wir klare Schwerpunkte: Besonders haeufig genannt wurden Friseure, Physiotherapeuten, Aerzte und Heilpraktiker. Genau dort liegen fuer uns viele gute Beruehrungspunkte zu Menschen, die Gesundheit aktiv weiterempfehlen oder mit uns zusammenarbeiten koennen.</p>
+            <p class="small">Unser Ballprinzip geht dabei durch die ganze Runde: Bei allen Mitgliedern koennen im Kontakt weitere Themen sichtbar werden. Dann kann der Ball je nach Bedarf an passende Mitglieder aus Versorgung, Apotheke, Heilberufen, Praevention, Begleitung, Alltag oder Koordination weitergegeben werden.</p>
+            <p class="small">So zeigen wir nicht starre Zustaendigkeiten, sondern ein gemeinsames Gesundheitsnetzwerk: Horst bringt Kontakte und Besucher ins Netzwerk, Susanna buendelt Rueckmeldungen, Peter stellt die HTML-Plattform bereit, und fachlich greifen die unterschiedlichen Schwerpunkte der Mitglieder sinnvoll ineinander.</p>
+            <p class="small">So zeigen wir nicht nur einzelne Leistungen, sondern dass wir uns als Gruppe den Ball sinnvoll zuwerfen und gemeinsam fast den ganzen medizinisch-gesundheitlichen Bereich deutlich breiter abdecken als jeder allein.</p>
+            <p class="small"><strong>Unser Ziel ist deshalb klar:</strong> Wir moechten als Gesundheitsgruppe gemeinsam staerker sichtbar werden, mehr Nutzen stiften und passende Besucher, Kooperationspartner und neue Kontakte fuer unser Netzwerk gewinnen.</p>
+            <p class="small"><strong>Moeglicher Schlusssatz:</strong> Wenn Sie Menschen kennen, fuer die genau solche gesundheitsnahen Themen, Kooperationen oder Netzwerkkontakte spannend sind, sprechen Sie uns gerne an.</p>
+          </div>
+        </div>
+        <div class="info-box" style="margin-top: 0.9em;">
+          <p><strong>Wichtig fuer 6 Minuten:</strong> nicht zu viele Einzelprofile, sondern ein klares Gruppenbild, 2 bis 3 starke Beispiele, die haeufigsten Multiplikatoren und ein sauberer Schluss mit Einladung.</p>
+          <p class="meta-note" style="margin-top: 0.55em;">Digitale Werkzeuge unterstuetzen die Aufbereitung, sind aber keine Mitglieder oder fachlichen Stimmen der Gruppe.</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+  <script>
+    document.querySelectorAll('.slides > section').forEach((section, index) => {
+      if (index === 0 || section.id === 'inhalt') return;
+
+      const link = document.createElement('a');
+      link.className = 'toc-home';
+      link.href = '#/inhalt';
+      link.textContent = 'Inhalt';
+      link.setAttribute('aria-label', 'Zum Inhaltsverzeichnis');
+      section.appendChild(link);
+    });
+
+    Reveal.initialize({
+      hash: true,
+      slideNumber: true,
+      controls: true,
+      progress: true,
+      center: false,
+      transition: 'slide',
+      width: '100%',
+      height: '100%',
+      margin: 0.04
+    });
+  </script>
+</body>
+</html>

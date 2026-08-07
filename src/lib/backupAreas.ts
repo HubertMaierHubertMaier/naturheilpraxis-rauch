@@ -109,6 +109,7 @@ export const BACKUP_AREAS: BackupArea[] = [
       "mitochondropathie-hws.html",
       "muedigkeit-erschoepfung-burnout.html",
       "parasiten-deutschland.html",
+      "sibo-duenndarmfehlbesiedlung.html",
       "patienteninfo-hochohmiges-wasser.html",
       "therapieweg-uebersicht.html",
       "umwelt-alltag-gesundheit.html",

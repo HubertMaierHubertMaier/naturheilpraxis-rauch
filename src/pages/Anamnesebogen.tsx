@@ -179,12 +179,12 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
             </div>
             <div>
               <CardTitle className="font-serif text-xl">
-                {language === "de" ? "Aktuell: Anamnesebogen als PDF" : "Currently: medical history form as PDF"}
+                {language === "de" ? "Aktuell: vollständiges Patientenpaket als PDF" : "Currently: complete patient package as PDF"}
               </CardTitle>
               <CardDescription>
                 {language === "de"
-                  ? "Bitte PDF herunterladen, ausfüllen, ausdrucken und zum Ersttermin mitbringen — oder vorab eingescannt an praxis_rauch@icloud.com senden."
-                  : "Acrobat Reader version – fillable on computer, printable, or send back via email."}
+                  ? "Das Paket enthält Anamnesebogen, Patientenvertrag und Datenschutz-Einwilligung. Bitte herunterladen, ausfüllen und zum Ersttermin mitbringen oder vorab eingescannt an praxis_rauch@icloud.com senden."
+                  : "The package contains the medical history form, patient contract and data protection consent. It can be completed on a computer, printed or returned by email."}
               </CardDescription>
             </div>
           </div>
@@ -192,7 +192,7 @@ const LayoutSelector = ({ language, onSelectLayout, showOnlineOptions, onNavigat
         <CardContent>
           <div className="flex">
             <AnamnesePdfButton variant="default" className="flex-1">
-              {language === "de" ? "Anamnesebogen als PDF herunterladen" : "Download anamnesis form as PDF"}
+              {language === "de" ? "Patientenpaket als PDF herunterladen" : "Download patient package as PDF"}
             </AnamnesePdfButton>
           </div>
         </CardContent>
@@ -1251,13 +1251,13 @@ const Anamnesebogen = () => {
                   <FileDown className="w-4 h-4 text-primary" />
                   <span>
                     {language === "de"
-                      ? "Lieber offline ausfüllen? Acrobat-Reader-Version (PDF) verfügbar:"
-                      : "Prefer to fill out offline? Acrobat Reader version (PDF) available:"}
+                      ? "Lieber offline ausfüllen? Das vollständige Patientenpaket ist als PDF verfügbar:"
+                      : "Prefer to fill out offline? The complete patient package is available as a PDF:"}
                   </span>
                 </div>
                 <div className="flex">
                   <AnamnesePdfButton size="sm" variant="default">
-                    {language === "de" ? "PDF herunterladen" : "Download PDF"}
+                    {language === "de" ? "PDF-Paket herunterladen" : "Download PDF package"}
                   </AnamnesePdfButton>
                 </div>
               </div>

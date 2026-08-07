@@ -42,13 +42,13 @@ Der konkrete Bauplan wurde am 27.07.2026 erstellt. Es ist noch keine neue Datenb
 Empfohlen ist genau ein hybrider Ansatz innerhalb der bestehenden PostgreSQL-/Supabase-Datenbank:
 
 1. `public.admin_knowledge_base` bleibt vorerst als lesbare Wiki und Kompatibilitaetsschicht erhalten.
-2. Ein neues Schema `knowledge` enthaelt stabile Fachobjekte, Versionen, Relationen, Quellen und freigegebene Regeln.
-3. Ein getrenntes Schema `knowledge_ingest` enthaelt ungepruefte Parser-, Import- und KI-Vorschlaege.
-4. Patientendaten bleiben ausserhalb beider Wissensschemata in ihrem besonders geschuetzten Bereich.
+2. Die fachlichen Phase-1-Tabellen liegen als `public.kb_*` in der bestehenden Supabase-Datenbank. Der Praefix bildet die logische Wissensdomaene ab, ohne zusaetzliche PostgREST-Schemafreigaben zu benoetigen.
+3. Ungepruefte Parser-, Import- und KI-Vorschlaege landen zunaechst in `public.kb_change_proposals`; direkter `authenticated`-Schreibzugriff ist entzogen.
+4. Patientendaten bleiben ausserhalb aller `kb_*`-Tabellen in ihrem besonders geschuetzten Bereich.
 5. Eine separate Graphdatenbank wird nicht eingefuehrt. PostgreSQL kann die benoetigten, kontrolliert begrenzten Graphabfragen selbst ausfuehren.
 6. Es wird keine generische EAV-Riesentabelle aufgebaut. Stabile Fachdaten erhalten konkrete Tabellen; JSON dient nur fuer vorlaeufige Importdaten und seltene Zusatzattribute.
 
-Die Ordnerstruktur dient nur der Navigation. Die fachliche Wahrheit liegt in stabilen IDs, typisierten Beziehungen, konkreten Quellen und unveraenderlichen Revisionen.
+Die Ordnerstruktur dient nur der Navigation. Die fachliche Wahrheit liegt in stabilen IDs, typisierten Beziehungen, konkreten Quellen und unveraenderlichen Revisionen. Die spaeter in diesem Bauplan verwendeten Namen `knowledge.kb_*` sind fachliche Konzeptnamen; die tatsaechliche Phase-1-Implementierung verwendet `public.kb_*`.
 
 ## Kritische Ausgangsrisiken
 
@@ -547,7 +547,7 @@ Ohne erfolgreichen Export und Restore darf keine Datenmigration beginnen.
 
 ### Phase 1: Additives Fundament
 
-- neue Schemas und Kernobjekte parallel anlegen
+- neue `public.kb_*`-Kernobjekte parallel anlegen
 - kontrollierte Typen, Revisionen, Quellen, Aussagen, Rollen und RLS einrichten
 - `admin_knowledge_base` weder umbenennen noch loeschen oder inhaltlich umschreiben
 - Backup- und Restoredefinitionen um alle neuen Tabellen erweitern
@@ -656,3 +656,56 @@ Die neuen Lesepfade werden dann per Feature Flag deaktiviert. Die alte Wiki blei
 Vor SQL-Migrationen oder UI-Umbauten wird der vollstaendige Live-Bestand von `admin_knowledge_base` autorisiert exportiert und in einer isolierten Umgebung wiederhergestellt. In der aktuellen Sitzung fehlen Supabase-Zugang und Projektverknuepfung; deshalb wurde bewusst noch keine Live-Abfrage oder Migration ausgefuehrt.
 
 Nach erfolgreicher Sicherung wird Phase 1 als kleine additive Migration mit Kernobjekten, Quellen, Revisionen und RLS vorbereitet. Die sieben Pilotdatensaetze folgen erst danach im Pruefbereich.
+
+## Stopppunkt fuer die naechste Sitzung
+
+Stand vom 27.07.2026:
+
+1. Der vollstaendige technische Wiki-Datenbank-Bauplan ist erstellt und in dieser Datei dauerhaft dokumentiert.
+2. Der Bauplan und die allgemeine Speicher-/Datenschutzregel wurden mit Commit `9076ae3` auf GitHub `main` gesichert.
+3. Die neue Datenbankstruktur wurde noch nicht als Migration implementiert und nicht live ausgerollt.
+4. Die bestehende Wiki und alle bisherigen Daten bleiben unveraendert.
+5. Die naechste Sitzung beginnt mit Phase 0: vollstaendiger autorisierter Export von `admin_knowledge_base`, Inventur mit IDs und Hashes sowie ein isolierter Restore-Test.
+6. Ohne nachgewiesene Vollstaendigkeit und erfolgreichen Restore wird keine neue Wissensdatenbankmigration gestartet.
+
+## Phase-0-Ergebnis vom 28.07.2026
+
+Phase 0 wurde erfolgreich abgeschlossen:
+
+1. Lokales Vollbackup: `Naturheilpraxis-DATEN-voll-Backup-2026-07-28_08-18.zip`, SHA-256 `26f0a4fa33b5333c37c4a5f944145c58d4b42b0a50fc6251f00cf3a7122e8502`.
+2. Lokales Codebackup: `Naturheilpraxis-CODE-Backup-2026-07-28_08-18.zip`, SHA-256 `165dae9ec05b17ee9627129687c4258c2c301880075eef0c6b9772105e1a445d`.
+3. Beide ZIPs sind lesbar und enthalten keine `.ERROR.txt`-Eintraege.
+4. Das Codebackup entspricht GitHub-Commit `12bfd05` und enthaelt Bauplan, Speicherregel, Migrationen und Backup-Function.
+5. Wiki-Export: 436 erwartete und 436 vorhandene Zeilen, 436 eindeutige gueltige UUIDs, keine fehlenden Pflichtfelder.
+6. Bestand: 32 Kategorien und 1087 eindeutige Tags.
+7. Es gibt 12 normalisierte Titel-Dublettengruppen, darunter zwei exakt doppelte Vitaplace-Titel. Diese werden nur dokumentiert und nicht automatisch zusammengefuehrt.
+8. Die Live-Datenbank enthaelt zusaetzlich `knowledge_product_links` mit 2 ungeprueften Verknuepfungen und `mannayan_products` mit 542 allgemeinen Produkten.
+9. Beide Produktverknuepfungen zeigen auf vorhandene Wiki- und Produkt-UUIDs; es gibt keine verwaisten Beziehungen.
+10. Der isolierte PostgreSQL-kompatible Restore-Test hat 436/436 Wiki-Zeilen, 542/542 Produkte und 2/2 Verknuepfungen mit exakten Feldvergleichen wiederhergestellt.
+
+Die Rohbackups und extrahierten Daten bleiben ausschliesslich lokal ausserhalb des Git-Repositories. Auf GitHub wird nur der technische Pruefbericht ohne Patientendaten gesichert.
+
+Abgleich mit dem aktuellen Codebackup: `knowledge_product_links` ist in der GitHub-Migration `20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql` und im dortigen Supabase-Typstand korrekt enthalten. Nur der alte, stark zurueckliegende lokale Hauptarbeitsstand kannte diese Dateien noch nicht. Es besteht deshalb keine fehlende Live-Migration fuer diese Tabelle. Die bestehende Migration hat ausserdem bereits Review-, Evidenz-, Dosierungs-, Quellen- und Sicherheitsfelder an `admin_knowledge_base` ergaenzt; Phase 1 muss darauf aufbauen und darf diese Arbeit nicht duplizieren.
+
+Naechster Schritt: additive Phase-1-Migration zunaechst lokal entwerfen und testen; keine Live-Ausrollung ohne erneute Pruefung.
+
+## Phase-1-Ergebnis vom 28.07.2026
+
+Phase 1 ist technisch vorbereitet, aber noch nicht live ausgerollt:
+
+1. `supabase/migrations/20260728090000_create_kb_phase1_core.sql` erstellt genau 17 additive `public.kb_*`-Tabellen.
+2. `admin_knowledge_base` und Patiententabellen werden von der Migration weder referenziert noch geaendert.
+3. Neue Revisionen beginnen nur als `draft`. Entitaeten, Aussagen und Artikel durchlaufen zusaetzlich eine verpflichtende Sicherheitspruefung; Quellen nicht.
+4. Genehmigte, freigegebene und historische Revisionen sowie ihre fachlichen Abhaengigkeiten sind gegen direkte Aenderung und Loeschung geschuetzt.
+5. Freigegebene Aussagen benoetigen eine freigegebene primaere Quelle. Der Rueckzug der letzten Quelle wird deferrable blockiert und betroffene Aussagen werden bei Quellenstatusaenderungen statementweit geordnet gesperrt.
+6. Graphkanten benoetigen eine `entity_relation`-Aussage, einen aktiven Relationstyp und eine passende genehmigte Typdomaene.
+7. RLS und Grants verweigern `anon` und Patienten den Zugriff. Nur Administratoren erhalten direkten Fachzugriff; `kb_change_proposals` bleibt fuer `authenticated` ohne direkten INSERT/UPDATE.
+8. Wiki-Teilbackup und Backup-Edge-Function enthalten alle neuen Tabellen. Fehlende Tabellen fuehren zu HTTP 500 statt zu einem formal erfolgreichen Teilbackup.
+9. Ein echter PGlite-Migrationsintegrationstest sowie die Gesamtsuite sind gruen: 28/28 fokussierte Tests und 239/239 Gesamttests.
+10. Beide TypeScript-Pruefungen, Produktionsbuild und `git diff --check` sind bestanden.
+11. Die unabhaengige Abschlusspruefung lautet `APPROVE` ohne offene P0-/P1-Befunde.
+12. Verbleibende Restrisiken sind der fehlende Remote-Supabase-Lauf, der fehlende echte Mehrverbindungs-Konkurrenztest und der sourcebasierte statt laufzeitbasierte Edge-Function-Test.
+
+Verbindliche Ausrollreihenfolge: Backup bestaetigen, SQL-Migration ausrollen und pruefen, Supabase-Typen regenerieren, erst danach Backup-Edge-Function ausrollen, neue Backups erzeugen und isoliert wiederherstellen. Vor gesonderter Freigabe findet keine Live-Migration statt.
+
+Der gepruefte technische Phase-1-Stand ist mit Commit `e46effb` auf GitHub `main` gesichert. GitHub `main` wurde danach direkt auf den vollstaendigen Hash `e46effba1242cdc3542f2dd3e055f820b4668ef8` verifiziert. Dies ist nur die technische Vorbereitung; Supabase und Lovable wurden nicht ausgerollt.

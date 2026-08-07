@@ -2,19 +2,19 @@ import { useState } from "react";
 import { FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { downloadAnamneseBlankoPdf } from "@/lib/anamnesePdfDownload";
+import { downloadAnamnesePackagePdf } from "@/lib/anamnesePdfDownload";
 
 type AnamnesePdfButtonProps = Omit<ButtonProps, "onClick"> & {
   label?: string;
 };
 
-export function AnamnesePdfButton({ label = "Anamnesebogen-PDF herunterladen", disabled, children, ...props }: AnamnesePdfButtonProps) {
+export function AnamnesePdfButton({ label = "Patientenpaket-PDF herunterladen", disabled, children, ...props }: AnamnesePdfButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
     setLoading(true);
     try {
-      await downloadAnamneseBlankoPdf();
+      await downloadAnamnesePackagePdf();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "PDF-Download nicht freigeschaltet");
     } finally {

@@ -27,16 +27,18 @@ MUTED = HexColor("#666666")
 BORDER = HexColor("#9aa89a")
 
 FONT_DIR = Path("/nix/store/0hdgmcjy7q8zn7h3amz8nf96l9qh7wv0-liberation-fonts-2.1.5/share/fonts/truetype")
+FONT = "Helvetica"
+BOLD = "Helvetica-Bold"
+ITALIC = "Helvetica-Oblique"
 try:
     pdfmetrics.registerFont(TTFont("PraxisSans", str(FONT_DIR / "LiberationSans-Regular.ttf")))
     pdfmetrics.registerFont(TTFont("PraxisSans-Bold", str(FONT_DIR / "LiberationSans-Bold.ttf")))
     pdfmetrics.registerFont(TTFont("PraxisSans-Italic", str(FONT_DIR / "LiberationSans-Italic.ttf")))
+    FONT = "PraxisSans"
+    BOLD = "PraxisSans-Bold"
+    ITALIC = "PraxisSans-Italic"
 except Exception:
     pass
-
-FONT = "PraxisSans"
-BOLD = "PraxisSans-Bold"
-ITALIC = "PraxisSans-Italic"
 
 BASE = Path("assets/protected-pdfs")
 
@@ -226,14 +228,18 @@ def refresh_pdf(cfg: dict) -> None:
         return
     reader = PdfReader(str(path))
     writer = PdfWriter()
-    pages = list(reader.pages)
-    last_text = pages[-1].extract_text() or ""
+    end = len(reader.pages)
+    last_text = reader.pages[-1].extract_text() or ""
     if "Bestätigung & Unterschrift" in last_text:
-        pages = pages[:-1]
-    for page in pages:
-        writer.add_page(page)
+        end -= 1
+    writer.append(str(path), pages=(0, end))
     sig = create_signature_page(cfg)
     writer.append(sig)
+    # Fruehere Versionen behielten sichtbare Widget-Felder auf den Seiten,
+    # registrierten sie aber nicht mehr vollstaendig im AcroForm-Feldbaum.
+    # Adobe Reader kann die Formulare nur zuverlaessig speichern, wenn alle
+    # Widgets dort wieder angehaengt sind.
+    writer.reattach_fields()
     with path.open("wb") as fh:
         writer.write(fh)
     print(f"{path}: {len(reader.pages)} -> {len(writer.pages)} Seiten")

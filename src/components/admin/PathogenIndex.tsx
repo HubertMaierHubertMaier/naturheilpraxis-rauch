@@ -20,6 +20,11 @@ interface PathogenProduct {
   dosierung: string;
 }
 
+export interface ParsedPathogenProduct extends PathogenProduct {
+  pathogen: string;
+  gruppe?: string;
+}
+
 interface PathogenData {
   pathogen: string;
   gruppe: string; // Bakterien, Viren, Pilze, Parasiten, Sonstige
@@ -140,8 +145,49 @@ function extractProductName(title: string): string {
   return name;
 }
 
-function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: string }[] {
-  const results: { pathogen: string; wirksamkeit: string }[] = [];
+export function parsePathogenProducts(content: string, fallbackProductName = ""): ParsedPathogenProduct[] {
+  const results: ParsedPathogenProduct[] = [];
+
+  // New grouped Wiki entries use row-level products so one entry can contain
+  // several precise pathogen-to-remedy assignments.
+  const mappingRegex = /##\s*(?:🦠\s*)?Pathogen-Mittel-Zuordnung([\s\S]*?)(?=##\s(?!#)|$)/gi;
+  let mappingMatch;
+  while ((mappingMatch = mappingRegex.exec(content)) !== null) {
+    const rows = mappingMatch[1]
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("|") && line.endsWith("|"))
+      .map((line) => line.slice(1, -1).split("|").map((cell) => cell.trim()));
+    if (rows.length < 2) continue;
+
+    const normalizeHeader = (value: string) => value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+    const headers = rows[0].map(normalizeHeader);
+    const column = (name: string) => headers.indexOf(name);
+    const pathogenColumn = column("pathogen");
+    const productColumn = column("mittel");
+    if (pathogenColumn < 0 || productColumn < 0) continue;
+
+    const groupColumn = column("gruppe");
+    const relationColumn = Math.max(column("zuordnungquelle"), column("zuordnung"));
+    const applicationColumn = column("anwendung");
+    for (const cells of rows.slice(1)) {
+      if (cells.every((cell) => /^:?-{3,}:?$/.test(cell))) continue;
+      const pathogen = cells[pathogenColumn]?.replace(/\*\*/g, "").trim();
+      const productName = cells[productColumn]?.replace(/\*\*/g, "").trim();
+      if (!pathogen || !productName) continue;
+      results.push({
+        pathogen,
+        gruppe: groupColumn >= 0 ? cells[groupColumn]?.trim() : undefined,
+        productName,
+        wirksamkeit: relationColumn >= 0 ? cells[relationColumn]?.trim() || "Hersteller-/Therapeutenempfehlung" : "Hersteller-/Therapeutenempfehlung",
+        dosierung: applicationColumn >= 0 ? cells[applicationColumn]?.trim() || "Siehe Wiki-Eintrag" : "Siehe Wiki-Eintrag",
+      });
+    }
+  }
 
   // Match "## 🦠 Wirkspektrum / Pathogene" and "## 🦠 Wirkspektrum" variants
 
@@ -155,7 +201,12 @@ function parsePathogenTable(content: string): { pathogen: string; wirksamkeit: s
       if (name.toLowerCase() === "pathogen" || name.toLowerCase() === "pflanze" || name.match(/^[-]+$/)) continue;
       if (wirk.toLowerCase() === "wirksamkeit" || wirk.toLowerCase() === "wirkung" || wirk.match(/^[-]+$/)) continue;
       if (wirk.toLowerCase() === "evidenzgrad" || wirk.toLowerCase() === "evidenz") continue;
-      results.push({ pathogen: name, wirksamkeit: wirk });
+      results.push({
+        pathogen: name,
+        productName: fallbackProductName,
+        wirksamkeit: wirk,
+        dosierung: "",
+      });
     }
   };
 
@@ -211,22 +262,26 @@ export function PathogenIndex({ entries, loading }: PathogenIndexProps) {
     for (const entry of entries) {
       if (!entry.content) continue;
 
-      const productName = extractProductName(entry.title);
-      const pathogens = parsePathogenTable(entry.content);
-      const dosierung = parseDosierung(entry.content);
+      const defaultProductName = extractProductName(entry.title);
+      const pathogens = parsePathogenProducts(entry.content, defaultProductName);
+      const defaultDosierung = parseDosierung(entry.content);
 
-      for (const { pathogen, wirksamkeit } of pathogens) {
+      for (const { pathogen, gruppe, productName, wirksamkeit, dosierung } of pathogens) {
         const key = pathogen.toLowerCase().trim();
         if (!index[key]) {
           index[key] = {
             pathogen,
-            gruppe: classifyPathogen(pathogen),
+            gruppe: gruppe || classifyPathogen(pathogen),
             products: [],
           };
         }
         // Avoid duplicates
         if (!index[key].products.some((p) => p.productName === productName)) {
-          index[key].products.push({ productName, wirksamkeit, dosierung });
+          index[key].products.push({
+            productName,
+            wirksamkeit,
+            dosierung: dosierung || defaultDosierung,
+          });
         }
       }
     }
@@ -383,8 +438,8 @@ export function PathogenIndex({ entries, loading }: PathogenIndexProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[160px]">Produkt</TableHead>
-                    <TableHead className="w-[280px]">Wirksamkeit</TableHead>
-                    <TableHead>Dosierung</TableHead>
+                    <TableHead className="w-[280px]">Zuordnung / Quelle</TableHead>
+                    <TableHead>Anwendung</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

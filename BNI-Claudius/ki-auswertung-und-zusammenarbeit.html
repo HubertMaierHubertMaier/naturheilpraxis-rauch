@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BNI Gesundheitsrunde - Was passiert mit euren Antworten?</title>
+  <meta name="description" content="Verstaendliche Erklaerung fuer die Gesundheitsrunde: Wozu die Antworten gesammelt werden und wie Auswertung und KI-Unterstuetzung helfen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f9f7f2;
+      --bg-card: #f2ede4;
+      --bg-dark: #1f2924;
+      --text: #1f2924;
+      --text-muted: #5a6b5f;
+      --primary: #46715b;
+      --primary-dark: #365a47;
+      --accent: #b35a42;
+      --white: #ffffff;
+      --warning-bg: #fff3cd;
+      --warning-text: #856404;
+      --success-bg: #d4edda;
+      --success-text: #155724;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.6;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 50%, var(--primary-dark) 100%);
+      color: var(--white);
+      padding: 4.5rem 1.5rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(70,113,91,0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(179,90,66,0.18) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .wrap {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.82);
+      font-size: 0.84rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-heading);
+      line-height: 1.15;
+      margin: 0 0 0.6rem;
+      color: var(--primary-dark);
+    }
+
+    h1 {
+      color: var(--white);
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      margin-bottom: 0.8rem;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 2.1vw, 2.2rem);
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 0.7rem;
+    }
+
+    p {
+      margin: 0 0 1rem;
+      font-size: 1.02rem;
+    }
+
+    .lead {
+      color: rgba(255,255,255,0.88);
+      font-size: 1.15rem;
+      max-width: 860px;
+    }
+
+    .section {
+      padding: 2.4rem 0;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 1rem;
+    }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .card,
+    .info-box,
+    .warning-box,
+    .success-box,
+    .quote-box {
+      border-radius: 16px;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid rgba(70,113,91,0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    .card { background: var(--bg-card); }
+    .info-box { background: rgba(70,113,91,0.08); border-left: 4px solid var(--primary); }
+    .warning-box { background: var(--warning-bg); border-left: 4px solid #ffc107; color: var(--warning-text); }
+    .success-box { background: var(--success-bg); border-left: 4px solid #28a745; color: var(--success-text); }
+    .quote-box { background: #fff; border-left: 4px solid var(--accent); }
+
+    .warning-box p, .warning-box li, .warning-box strong { color: var(--warning-text); }
+    .success-box p, .success-box li, .success-box strong { color: var(--success-text); }
+
+    ul, ol { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    li { margin-bottom: 0.42rem; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.7rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(70,113,91,0.09);
+      border: 1px solid rgba(70,113,91,0.12);
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="badge">BNI Claudius - Gesundheitsrunde</div>
+      <h1>Was passiert mit euren Antworten?</h1>
+      <p class="lead">
+        Diese Seite erklaert den Teilnehmern in einfacher Sprache, warum die Steckbriefe gesammelt werden,
+        was daraus entsteht und wie KI uns in der Auswertung und Zusammenarbeit helfen kann.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="wrap">
+        <h2>Wozu wir diese Infos sammeln</h2>
+        <div class="grid-3">
+          <div class="card">
+            <h3>Klarheit</h3>
+            <p>Damit wir verstehen, wofuer jeder in der Runde eigentlich steht und wann man an wen denken soll.</p>
+          </div>
+          <div class="card">
+            <h3>Kooperation</h3>
+            <p>Damit wir erkennen, welche Personen gut zusammenpassen und sich fachlich gut ergaenzen.</p>
+          </div>
+          <div class="card">
+            <h3>Umsetzung</h3>
+            <p>Damit daraus spaeter wirklich Flyer, Landingpage, Vortraege, Social Media und gemeinsame Angebote entstehen koennen.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Was die Teilnehmer nicht leisten muessen</h2>
+        <div class="warning-box">
+          <ul>
+            <li>Keine perfekten Texte schreiben</li>
+            <li>Keine ausgefeilte Marketing-Sprache liefern</li>
+            <li>Keine fertigen Konzepte entwickeln</li>
+            <li>Keine aufwaendigen Formulare bearbeiten</li>
+          </ul>
+        </div>
+        <div class="success-box" style="margin-top: 1rem;">
+          <p><strong>Es reichen einfache Stichpunkte.</strong> Wer moechte, kann Antworten sogar als Sprachnachricht geben und sie werden spaeter uebertragen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Was wir aus den Antworten konkret machen koennen</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>In der Auswertung</h3>
+            <ul>
+              <li>haeufig genannte Multiplikatoren erkennen</li>
+              <li>gemeinsame Vortragsthemen herausfiltern</li>
+              <li>Ueberschneidungen und Luecken sichtbar machen</li>
+              <li>Kooperationspaare und Teamkombinationen finden</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>In der Zusammenarbeit</h3>
+            <ul>
+              <li>gemeinsame Angebotsideen entwickeln</li>
+              <li>Textbausteine fuer Flyer und Landingpage erstellen</li>
+              <li>Vortraege und Workshops strukturieren</li>
+              <li>die 16.10.-Praesentation gezielt vorbereiten</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Wie KI dabei konkret helfen kann</h2>
+        <div class="grid-3">
+          <div class="info-box">
+            <h3>1. Strukturieren</h3>
+            <p>KI kann viele einzelne Antworten ordnen, zusammenfassen und in klare Themenfelder bringen.</p>
+          </div>
+          <div class="info-box">
+            <h3>2. Gemeinsamkeiten finden</h3>
+            <p>KI kann erkennen, welche Branchen, Themen und Kooperationen sich besonders oft ueberschneiden.</p>
+          </div>
+          <div class="info-box">
+            <h3>3. Texte vorbereiten</h3>
+            <p>KI kann aus den gesammelten Inhalten Formulierungen fuer Flyer, Landingpage, Social Media oder Praesentationen vorbereiten.</p>
+          </div>
+        </div>
+        <div class="quote-box" style="margin-top: 1rem;">
+          <p><strong>Wichtig:</strong> Die KI ersetzt nicht eure fachliche Meinung. Sie hilft dabei, Inhalte schneller zu ordnen, zu verdichten und in eine verstaendliche Form zu bringen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Was daraus fuer die Gruppe entstehen kann</h2>
+        <div class="pill-row">
+          <span class="pill">Gruppenprofil</span>
+          <span class="pill">Flyer</span>
+          <span class="pill">Landingpage</span>
+          <span class="pill">Social-Media-Themen</span>
+          <span class="pill">Vortragsreihe</span>
+          <span class="pill">Multiplikatorenliste</span>
+          <span class="pill">Praesentation 16.10.</span>
+          <span class="pill">Einladungswuensche an BNI</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Was wir dafuer von jedem brauchen</h2>
+        <div class="card">
+          <ul>
+            <li>ein paar ehrliche Stichpunkte zu Rolle, Leistungen und Wunsch-Multiplikatoren</li>
+            <li>eine kurze Einordnung, wann man an euch denken soll</li>
+            <li>moeglichst 3 typische Saetze, die ihr oft von Kunden / Patienten / Klienten hoert</li>
+            <li>gerne Foto, Logo und Website, falls spaeter etwas fuer die Gruppe verwendet werden darf</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Wichtige Grenzen</h2>
+        <div class="warning-box">
+          <ul>
+            <li>Keine Patientendaten oder vertraulichen Falldetails in die Gruppen-Auswertung</li>
+            <li>Keine sensiblen internen Informationen, die nicht fuer Gruppenarbeit gedacht sind</li>
+            <li>Keine Heilversprechen oder unklare fachliche Vermischung</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <h2>Kurz gesagt</h2>
+        <div class="success-box">
+          <p><strong>Ihr liefert die Inhalte.</strong> Die Auswertung bringt Struktur hinein. Und mit Hilfe von KI koennen daraus schneller gemeinsame Ideen, Texte, Vortraege und Aussenauftritte entstehen.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

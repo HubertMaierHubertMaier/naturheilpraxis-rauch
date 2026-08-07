@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { hashVerificationCode } from "../_shared/verificationCode.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +36,33 @@ function normalizePassword(value: string): string {
 
 function generateBindingToken(): string {
   return crypto.randomUUID();
+}
+
+async function findVerificationCodeMatch(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  type: "login" | "registration" | "password_reset",
+  submittedCode: string,
+) {
+  const submittedCodeHash = await hashVerificationCode(submittedCode);
+  const { data, error } = await supabase
+    .from("verification_codes")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("type", type)
+    .eq("used", false)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error || !data?.length) {
+    return { verificationCode: null, error };
+  }
+
+  return {
+    verificationCode: data.find((row) => row.code === submittedCode || row.code === submittedCodeHash) ?? null,
+    error: null,
+  };
 }
 
 type VerifyCodeRequest = z.infer<typeof verifyCodeSchema>;
@@ -137,16 +165,12 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Find valid verification code
-      const { data: verificationCode, error: codeError } = await supabase
-        .from("verification_codes")
-        .select("*")
-        .eq("user_id", profile.user_id)
-        .eq("code", code)
-        .eq("type", "registration")
-        .eq("used", false)
-        .gt("expires_at", new Date().toISOString())
-        .single();
+      const { verificationCode, error: codeError } = await findVerificationCodeMatch(
+        supabase,
+        profile.user_id,
+        "registration",
+        code,
+      );
 
       if (codeError || !verificationCode) {
         return new Response(
@@ -215,16 +239,12 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Find valid verification code
-      const { data: verificationCode, error: codeError } = await supabase
-        .from("verification_codes")
-        .select("*")
-        .eq("user_id", profile.user_id)
-        .eq("code", code)
-        .eq("type", "login")
-        .eq("used", false)
-        .gt("expires_at", new Date().toISOString())
-        .single();
+      const { verificationCode, error: codeError } = await findVerificationCodeMatch(
+        supabase,
+        profile.user_id,
+        "login",
+        code,
+      );
 
       if (codeError || !verificationCode) {
         return new Response(
@@ -297,16 +317,12 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Find valid verification code
-      const { data: verificationCode, error: codeError } = await supabase
-        .from("verification_codes")
-        .select("*")
-        .eq("user_id", profile.user_id)
-        .eq("code", code)
-        .eq("type", "password_reset")
-        .eq("used", false)
-        .gt("expires_at", new Date().toISOString())
-        .single();
+      const { verificationCode, error: codeError } = await findVerificationCodeMatch(
+        supabase,
+        profile.user_id,
+        "password_reset",
+        code,
+      );
 
       if (codeError || !verificationCode) {
         return new Response(

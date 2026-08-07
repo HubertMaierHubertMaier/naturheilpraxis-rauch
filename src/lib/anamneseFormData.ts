@@ -383,9 +383,11 @@ export const initialFormData = {
     bluttransfusion: { ja: false, jahr: "", grund: "" },
     chemotherapie: { ja: false, jahr: "", art: "" },
     strahlentherapie: { ja: false, bereich: "" },
-    szintigraphie: { ja: false, datum: "", grund: "" },
-    petCt: { ja: false, datum: "", grund: "" },
-    radioiodtherapie: { ja: false, datum: "", grund: "", dosis: "" },
+    ctKontrastmittel: { ja: false, datum: "", grund: "", termine: [] as { datum: string; grund: string; dosis: string }[] },
+    szintigraphie: { ja: false, datum: "", grund: "", termine: [] as { datum: string; grund: string; dosis: string }[] },
+    petCt: { ja: false, datum: "", grund: "", termine: [] as { datum: string; grund: string; dosis: string }[] },
+    radioioddiagnostik: { ja: false, datum: "", grund: "", dosis: "", termine: [] as { datum: string; grund: string; dosis: string }[] },
+    radioiodtherapie: { ja: false, datum: "", grund: "", dosis: "", termine: [] as { datum: string; grund: string; dosis: string }[] },
   },
   
   // VI. Krebserkrankung

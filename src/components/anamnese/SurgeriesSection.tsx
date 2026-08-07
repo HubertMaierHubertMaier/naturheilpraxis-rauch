@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { format, differenceInWeeks, parse, isValid } from "date-fns";
 import { de, enUS } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
@@ -299,6 +299,38 @@ const SurgeriesSection = ({ formData, updateFormData }: SurgeriesSectionProps) =
           />
         ))}
 
+        {/* CT with iodinated contrast medium */}
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="ctKontrastmittel"
+              checked={formData.unfaelleOperationen?.ctKontrastmittel?.ja || false}
+              onCheckedChange={(checked) => updateNestedField("ctKontrastmittel", "ja", checked)}
+            />
+            <Label htmlFor="ctKontrastmittel">
+              {language === "de" ? "CT mit jodhaltigem Kontrastmittel" : "CT with iodinated contrast medium"}
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground pl-6">
+            {language === "de"
+              ? "Das Kontrastmittel enthält nicht-radioaktives Jod. Bitte mehrere Untersuchungen jeweils einzeln eintragen."
+              : "The contrast medium contains non-radioactive iodine. Please enter repeated examinations separately."}
+          </p>
+          {formData.unfaelleOperationen?.ctKontrastmittel?.ja && (
+            <NuclearMedicineDetails
+              formData={formData}
+              updateNestedField={updateNestedField}
+              language={language}
+              fieldName="ctKontrastmittel"
+              requiredWeeks={0}
+              nameDe="CT mit jodhaltigem Kontrastmittel"
+              nameEn="CT with iodinated contrast medium"
+              placeholderDe="z.B. Bauch, Brustkorb, Gefäße"
+              placeholderEn="e.g. abdomen, chest, blood vessels"
+            />
+          )}
+        </div>
+
         {/* Nuklearmedizinische Untersuchungen */}
         <div className="mt-6 mb-4">
           <h4 className="text-base font-medium text-muted-foreground flex items-center gap-2">
@@ -306,8 +338,8 @@ const SurgeriesSection = ({ formData, updateFormData }: SurgeriesSectionProps) =
           </h4>
           <p className="text-sm text-muted-foreground mt-1">
             {language === "de"
-              ? "Diese Untersuchungen erfordern bestimmte Wartezeiten vor weiteren Behandlungen."
-              : "These examinations require certain waiting periods before further treatments."}
+              ? "Praxisinterner Planungshinweis: Nach Untersuchungen mit radioaktiven Stoffen sind Untersuchungen und Therapien in der Naturheilpraxis Peter Rauch für mindestens etwa 6 Wochen nicht vorgesehen; nach einer Radiojodtherapie gilt derzeit ein längerer Abstand von 12 Wochen. Das ist keine pauschale Sperre für medizinisch notwendige Maßnahmen. Bitte den konkreten Termin vorab mit der Praxis abstimmen."
+              : "Practice planning note: After examinations involving radioactive substances, examinations and treatments at Naturheilpraxis Peter Rauch are not scheduled for at least approximately 6 weeks; a longer interval of 12 weeks currently applies after radioiodine therapy. This is not a general restriction on medically necessary care. Please coordinate the specific appointment with the practice in advance."}
           </p>
         </div>
 
@@ -367,11 +399,47 @@ const SurgeriesSection = ({ formData, updateFormData }: SurgeriesSectionProps) =
               updateNestedField={updateNestedField}
               language={language}
               fieldName="petCt"
-              requiredWeeks={4}
+              requiredWeeks={6}
               nameDe="PET-CT"
               nameEn="PET-CT"
               placeholderDe="z.B. Tumorstaging, Metastasensuche"
               placeholderEn="e.g. tumor staging, metastasis detection"
+              birthYear={birthYear}
+            />
+          )}
+        </div>
+
+        {/* Radioiodine diagnostics / whole-body scintigraphy */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="radioioddiagnostik"
+              checked={formData.unfaelleOperationen?.radioioddiagnostik?.ja || false}
+              onCheckedChange={(checked) => updateNestedField("radioioddiagnostik", "ja", checked)}
+            />
+            <Label htmlFor="radioioddiagnostik">
+              {language === "de"
+                ? "Radiojoddiagnostik / Ganzkörperszintigrafie, ggf. SPECT/CT"
+                : "Radioiodine diagnostics / whole-body scintigraphy, possibly SPECT/CT"}
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground pl-6">
+            {language === "de"
+              ? "Nuklearmedizinische Untersuchung, bei der radioaktives Jod meist als Kapsel eingenommen wird. Die CT-Komponente einer möglichen SPECT/CT ist selbst ein Röntgenverfahren."
+              : "Nuclear medicine examination in which radioactive iodine is usually taken as a capsule. The CT component of a possible SPECT/CT is itself an X-ray procedure."}
+          </p>
+          {formData.unfaelleOperationen?.radioioddiagnostik?.ja && (
+            <NuclearMedicineDetails
+              formData={formData}
+              updateNestedField={updateNestedField}
+              language={language}
+              fieldName="radioioddiagnostik"
+              requiredWeeks={6}
+              nameDe="Radiojoddiagnostik"
+              nameEn="Radioiodine diagnostics"
+              placeholderDe="z.B. Schilddrüsenkarzinom-Nachsorge, Radiojodtest"
+              placeholderEn="e.g. thyroid cancer follow-up, radioiodine test"
+              showDosis={true}
               birthYear={birthYear}
             />
           )}
@@ -443,109 +511,153 @@ const NuclearMedicineDetails = ({
   showDosis = false,
 }: NuclearMedicineDetailsProps) => {
   const data = formData.unfaelleOperationen?.[fieldName as keyof typeof formData.unfaelleOperationen] as any;
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarOpenIndex, setCalendarOpenIndex] = useState<number | null>(null);
 
   const dateLocale = language === "de" ? de : enUS;
+  const legacyEntry = {
+    datum: String(data?.datum || ""),
+    grund: String(data?.grund || ""),
+    dosis: String(data?.dosis || ""),
+  };
+  const entries = Array.isArray(data?.termine) && data.termine.length > 0
+    ? data.termine
+    : [legacyEntry];
 
-  const parsedDate = useMemo(() => {
-    if (!data?.datum) return null;
-    const parsed = parse(data.datum, "yyyy-MM-dd", new Date());
-    return isValid(parsed) ? parsed : null;
-  }, [data?.datum]);
+  const updateEntries = (next: { datum: string; grund: string; dosis: string }[]) => {
+    updateNestedField(fieldName, "termine", next);
+  };
 
-  const weeksSince = useMemo(() => {
-    if (!parsedDate) return null;
-    return differenceInWeeks(new Date(), parsedDate);
-  }, [parsedDate]);
+  const updateEntry = (index: number, key: "datum" | "grund" | "dosis", value: string) => {
+    updateEntries(entries.map((entry: any, entryIndex: number) =>
+      entryIndex === index ? { ...entry, [key]: value } : entry
+    ));
+  };
 
-  const isWaitComplete = weeksSince !== null && weeksSince >= requiredWeeks;
+  const addEntry = () => {
+    updateEntries([...entries, { datum: "", grund: "", dosis: "" }]);
+  };
+
+  const removeEntry = (index: number) => {
+    const next = entries.filter((_: any, entryIndex: number) => entryIndex !== index);
+    updateEntries(next.length > 0 ? next : [{ datum: "", grund: "", dosis: "" }]);
+  };
 
   return (
-    <div className="space-y-4 pl-6 p-4 bg-muted/30 rounded-lg">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label>{language === "de" ? "Datum" : "Date"}</Label>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !data?.datum && "text-muted-foreground"
+    <div className="space-y-4 pl-6">
+      {entries.map((entry: any, index: number) => {
+        const parsed = entry.datum ? parse(entry.datum, "yyyy-MM-dd", new Date()) : null;
+        const parsedDate = parsed && isValid(parsed) ? parsed : null;
+        const weeksSince = parsedDate ? differenceInWeeks(new Date(), parsedDate) : null;
+        const isWaitComplete = requiredWeeks === 0 || (weeksSince !== null && weeksSince >= requiredWeeks);
+        const remainingWeeks = Math.max(0, requiredWeeks - (weeksSince || 0));
+
+        return (
+          <div key={index} className="space-y-4 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between gap-3">
+              <h5 className="text-sm font-medium">
+                {language === "de" ? `Eintrag ${index + 1}` : `Entry ${index + 1}`}
+              </h5>
+              {entries.length > 1 && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeEntry(index)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{language === "de" ? "Datum" : "Date"}</Label>
+                <Popover
+                  open={calendarOpenIndex === index}
+                  onOpenChange={(open) => setCalendarOpenIndex(open ? index : null)}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !entry.datum && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {parsedDate
+                        ? format(parsedDate, "PPP", { locale: dateLocale })
+                        : (language === "de" ? "Datum wählen" : "Pick a date")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={parsedDate || undefined}
+                      onSelect={(date) => {
+                        if (date) updateEntry(index, "datum", format(date, "yyyy-MM-dd"));
+                        setCalendarOpenIndex(null);
+                      }}
+                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === "de" ? "Grund" : "Reason"}</Label>
+                <Input
+                  placeholder={language === "de" ? placeholderDe : placeholderEn}
+                  value={entry.grund || ""}
+                  onChange={(e) => updateEntry(index, "grund", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {showDosis && (
+              <div className="space-y-2">
+                <Label>{language === "de" ? "Dosis / Aktivität (falls bekannt)" : "Dose / activity (if known)"}</Label>
+                <Input
+                  placeholder={language === "de" ? "z.B. Radiopharmakon und MBq" : "e.g. radiopharmaceutical and MBq"}
+                  value={entry.dosis || ""}
+                  onChange={(e) => updateEntry(index, "dosis", e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
+            )}
+
+            {requiredWeeks > 0 && parsedDate && (
+              <div className={cn(
+                "flex items-center gap-2 p-3 rounded-lg",
+                isWaitComplete ? "bg-green-100 dark:bg-green-950/30" : "bg-amber-100 dark:bg-amber-950/30"
+              )}>
+                {isWaitComplete ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-green-800 dark:text-green-200">
+                      {language === "de"
+                        ? `Praxisinterner Abstand erfüllt (${weeksSince} Wochen seit ${nameDe})`
+                        : `Practice-specific interval complete (${weeksSince} weeks since ${nameEn})`}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <span className="text-sm text-amber-800 dark:text-amber-200">
+                      {language === "de"
+                        ? `Praxisinterner Abstand: noch etwa ${remainingWeeks} Wochen (insgesamt ${requiredWeeks} Wochen)`
+                        : `Practice-specific interval: approximately ${remainingWeeks} weeks remaining (${requiredWeeks} weeks total)`}
+                    </span>
+                  </>
                 )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {parsedDate
-                  ? format(parsedDate, "PPP", { locale: dateLocale })
-                  : (language === "de" ? "Datum wählen" : "Pick a date")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={parsedDate || undefined}
-                onSelect={(date) => {
-                  if (date) {
-                    updateNestedField(fieldName, "datum", format(date, "yyyy-MM-dd"));
-                  }
-                  setCalendarOpen(false);
-                }}
-                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
 
-        <div className="space-y-2">
-          <Label>{language === "de" ? "Grund" : "Reason"}</Label>
-          <Input
-            placeholder={language === "de" ? placeholderDe : placeholderEn}
-            value={data?.grund || ""}
-            onChange={(e) => updateNestedField(fieldName, "grund", e.target.value)}
-          />
-        </div>
-      </div>
-
-      {showDosis && (
-        <div className="space-y-2">
-          <Label>{language === "de" ? "Dosis (falls bekannt)" : "Dosage (if known)"}</Label>
-          <Input
-            placeholder={language === "de" ? "z.B. 3700 MBq" : "e.g. 3700 MBq"}
-            value={data?.dosis || ""}
-            onChange={(e) => updateNestedField(fieldName, "dosis", e.target.value)}
-            className="max-w-xs"
-          />
-        </div>
-      )}
-
-      {parsedDate && (
-        <div className={cn(
-          "flex items-center gap-2 p-3 rounded-lg",
-          isWaitComplete ? "bg-green-100 dark:bg-green-950/30" : "bg-amber-100 dark:bg-amber-950/30"
-        )}>
-          {isWaitComplete ? (
-            <>
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-green-800 dark:text-green-200">
-                {language === "de"
-                  ? `Wartezeit erfüllt (${weeksSince} Wochen seit ${nameDe})`
-                  : `Waiting period complete (${weeksSince} weeks since ${nameEn})`}
-              </span>
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <span className="text-sm text-amber-800 dark:text-amber-200">
-                {language === "de"
-                  ? `Wartezeit: ${requiredWeeks - (weeksSince || 0)} Wochen verbleibend (von ${requiredWeeks} Wochen erforderlich)`
-                  : `Waiting period: ${requiredWeeks - (weeksSince || 0)} weeks remaining (of ${requiredWeeks} weeks required)`}
-              </span>
-            </>
-          )}
-        </div>
-      )}
+      <Button type="button" variant="outline" size="sm" onClick={addEntry}>
+        <Plus className="mr-2 h-4 w-4" />
+        {language === "de" ? "Weitere Untersuchung hinzufügen" : "Add another examination"}
+      </Button>
     </div>
   );
 };

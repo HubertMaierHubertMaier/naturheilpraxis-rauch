@@ -49,6 +49,7 @@ const AppUebersicht = lazy(() => import("./pages/AppUebersicht"));
 const Neupatient = lazy(() => import("./pages/Neupatient"));
 const ReizdarmHypnose = lazy(() => import("./pages/ReizdarmHypnose"));
 const ParkinsonHypnose = lazy(() => import("./pages/ParkinsonHypnose"));
+const BNIGesundheitsrunde = lazy(() => import("./pages/BNIGesundheitsrunde"));
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
               <Route path="/app-uebersicht" element={<AppUebersicht />} />
+              <Route path="/bni-gesundheitsrunde" element={<BNIGesundheitsrunde />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

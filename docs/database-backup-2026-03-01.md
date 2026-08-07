@@ -1,5 +1,17 @@
 # Datenbank-Sicherung – Stand: 2026-03-01
 
+## Warnung
+
+Diese Datei ist kein aktuelles Arbeitsdokument und keine Source of Truth.
+
+Sie enthaelt sensible Alt-/Produktionsdaten und ist im aktuellen Sanierungskontext als Sicherheits- und Datenschutzartefakt zu behandeln.
+
+Regeln fuer diese Datei:
+
+1. nicht fuer normale Entwicklungsarbeit verwenden
+2. nicht als aktuelle fachliche oder technische Wahrheit zitieren
+3. nur nach expliziter Datenschutz-/Bereinigungsentscheidung weiter anfassen
+
 ## 1. profiles (17 Einträge)
 
 | user_id | email | first_name | last_name | date_of_birth | phone | created_at |

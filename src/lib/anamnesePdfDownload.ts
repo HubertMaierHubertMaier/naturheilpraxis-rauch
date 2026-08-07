@@ -5,10 +5,10 @@ type DownloadResponse = {
   error?: string;
 };
 
-export async function downloadAnamneseBlankoPdf() {
+export async function downloadAnamnesePackagePdf() {
   const { data, error } = await supabase.functions.invoke<DownloadResponse>(
     "download-anamnesis-pdf",
-    { body: { document: "anamnesebogen" } }
+    { body: { document: "patientenpaket" } }
   );
 
   if (error || data?.error || !data?.signedUrl) {
@@ -17,7 +17,7 @@ export async function downloadAnamneseBlankoPdf() {
 
   const link = document.createElement("a");
   link.href = data.signedUrl;
-  link.download = "anamnesebogen-blanko.pdf";
+  link.download = "patientenpaket-blanko.pdf";
   link.rel = "noopener noreferrer";
   document.body.appendChild(link);
   link.click();

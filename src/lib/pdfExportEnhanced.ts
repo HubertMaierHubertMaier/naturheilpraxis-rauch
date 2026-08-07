@@ -858,9 +858,51 @@ class AnamnesePdfBuilder {
     this.renderCondition(this.t("Strahlentherapie", "Radiation Therapy"), uo.strahlentherapie);
     this.addSpacing();
     this.addSubHeader(this.t("Nuklearmedizinische Untersuchungen", "Nuclear Medicine"));
-    this.renderCondition(this.t("Szintigraphie", "Scintigraphy"), uo.szintigraphie);
-    this.renderCondition("PET-CT", uo.petCt);
-    this.renderCondition(this.t("Radioiodtherapie", "Radioiodine Therapy"), uo.radioiodtherapie);
+    this.addFieldAlways(
+      this.t("Praxisinterner Planungshinweis", "Practice planning note"),
+      this.t(
+        "Nach Untersuchungen mit radioaktiven Stoffen sind Termine in der Naturheilpraxis Peter Rauch für mindestens etwa 6 Wochen nicht vorgesehen; nach einer Radiojodtherapie gelten derzeit 12 Wochen. Medizinisch notwendige Maßnahmen sind davon nicht pauschal ausgeschlossen.",
+        "After examinations involving radioactive substances, appointments at Naturheilpraxis Peter Rauch are not scheduled for at least approximately 6 weeks; 12 weeks currently apply after radioiodine therapy. Medically necessary care is not generally excluded."
+      ),
+      5
+    );
+
+    const renderProcedureHistory = (label: string, procedure: any, intervalWeeks = 0) => {
+      if (!procedure?.ja) return;
+      this.addCheckboxField(label, true);
+      const legacy = { datum: procedure.datum || "", grund: procedure.grund || "", dosis: procedure.dosis || "" };
+      const entries = Array.isArray(procedure.termine) && procedure.termine.length > 0
+        ? procedure.termine
+        : [legacy];
+      entries.forEach((entry: any, index: number) => {
+        const details = [
+          entry.datum ? `${this.t("Datum", "Date")}: ${entry.datum}` : "",
+          entry.grund ? `${this.t("Grund", "Reason")}: ${entry.grund}` : "",
+          entry.dosis ? `${this.t("Dosis/Aktivität", "Dose/activity")}: ${entry.dosis}` : "",
+        ].filter(Boolean).join(" – ");
+        this.addField(`${label} ${index + 1}`, details || this.t("ohne Detailangaben", "without details"), 10);
+      });
+      if (intervalWeeks > 0) {
+        this.addField(
+          this.t("Praxisinterner Abstand", "Practice-specific interval"),
+          this.t(`${intervalWeeks} Wochen`, `${intervalWeeks} weeks`),
+          10
+        );
+      }
+    };
+
+    renderProcedureHistory(
+      this.t("CT mit jodhaltigem Kontrastmittel (Jod nicht radioaktiv)", "CT with iodinated contrast medium (iodine not radioactive)"),
+      uo.ctKontrastmittel
+    );
+    renderProcedureHistory(this.t("Szintigraphie", "Scintigraphy"), uo.szintigraphie, 6);
+    renderProcedureHistory("PET-CT", uo.petCt, 6);
+    renderProcedureHistory(
+      this.t("Radiojoddiagnostik / Ganzkörperszintigrafie, ggf. SPECT/CT", "Radioiodine diagnostics / whole-body scintigraphy, possibly SPECT/CT"),
+      uo.radioioddiagnostik,
+      6
+    );
+    renderProcedureHistory(this.t("Radiojodtherapie", "Radioiodine Therapy"), uo.radioiodtherapie, 12);
     this.addSpacing(10);
   }
 
