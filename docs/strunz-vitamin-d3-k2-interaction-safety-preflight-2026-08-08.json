@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:24:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamin-d3-k2",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": ["anticoagulant consultation", "avoid additional vitamin D supplements"],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/medicines/colecalciferol/taking-colecalciferol-with-other-medicines-and-herbal-supplements/",
+      "status": "accessible_general_medicine_guidance",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2023-01-10"
+    },
+    {
+      "source_url": "https://www.nhs.uk/medicines/colecalciferol/who-can-and-cannot-take-colecalciferol/",
+      "status": "accessible_general_medicine_guidance",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2023-01-10"
+    },
+    {
+      "source_url": "https://www.nhs.uk/medicines/warfarin/",
+      "status": "accessible_anticoagulant_guidance",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2026-02-24"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-k/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The independent medicine guidance identifies interaction topics relevant to vitamin-D and vitamin-K review, but it does not validate this product, its forms, its dose, or an individual person's medication list.",
+    "topics_requiring_separate_review": [
+      "anticoagulants and vitamin-K consistency",
+      "digoxin",
+      "thiazide-type diuretics",
+      "antiepileptic medicines",
+      "laxatives and cholestyramine",
+      "steroids",
+      "antifungal medicines",
+      "actinomycin",
+      "duplicate calcium or vitamin-D intake",
+      "other vitamins, minerals, herbal remedies and supplements"
+    ]
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "The independent sources provide general contraindication and safety topics, not a product or patient clearance.",
+    "topics_requiring_separate_review": [
+      "hypercalcaemia and hypercalciuria",
+      "kidney disease and kidney stones",
+      "hypervitaminosis D",
+      "sarcoidosis",
+      "calcification",
+      "pregnancy and breastfeeding",
+      "age and total exposure context",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "Medicine guidance for colecalciferol is not automatically equivalent to this product's declared D3/K2 formulation.",
+    "The independent sources do not establish efficacy for any condition or symptom.",
+    "No individual medication review, dose approval, interaction clearance or patient-facing publication was performed."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
