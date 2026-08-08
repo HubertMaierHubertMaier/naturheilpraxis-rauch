@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:52:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamin-c-komplex",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": [],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The accessible NHS vitamin-C guidance provides general nutrient context but does not clear the declared vitamin-C and botanical-extract combination for an individual medication or supplement list.",
+    "topics_requiring_separate_review": [
+      "additional vitamin-C products and total intake",
+      "iron and other mineral co-intake",
+      "bitter orange extract and medicine interactions",
+      "quercetin and medicine interactions",
+      "camu-camu extract identity and standardization",
+      "herbal remedies and complementary medicines"
+    ],
+    "source_status_for_topics": "not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance.",
+    "topics_requiring_separate_review": [
+      "children and adolescents",
+      "pregnancy and breastfeeding",
+      "kidney and gastrointestinal context",
+      "iron-overload and other relevant medical context",
+      "botanical extract identity, contaminants and standardization",
+      "duplicate intake and total exposure context",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General NHS vitamin-C guidance is not product-specific interaction evidence.",
+    "No efficacy, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction topics remain questions for independent verification, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
