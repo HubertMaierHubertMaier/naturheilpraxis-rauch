@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-08T14:43:00.000Z",
+  "publication": "unpublished_internal_reference",
+  "source_url": "https://www.efsa.europa.eu/en/topics/topic/food-supplements",
+  "source_type": "independent_regulatory_science_overview",
+  "scope": "EU food-supplement safety, nutrient-source evaluation, health-claim assessment and tolerable upper intake levels",
+  "import_status": "reference_only_not_mapped_to_products_or_conditions",
+  "database_writes": false,
+  "wiki_writes": false,
+  "clinical_assertions": [],
+  "safety_review_note": "Use as an independent framework reference only. Product-, ingredient-, population- and dose-specific evaluation remains required before any safety or health interpretation.",
+  "manufacturer_claim_validation": "required"
+}
