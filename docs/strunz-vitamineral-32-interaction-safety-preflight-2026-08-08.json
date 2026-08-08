@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:56:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamineral-32-maracuja",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": [
+    "medical consultation during pregnancy because of vitamin A",
+    "anticoagulant consultation because of vitamin K",
+    "avoid additional zinc supplements"
+  ],
+  "independent_sources_checked": [
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-a/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-e/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-k/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/calcium/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/", "status": "accessible_general_reference", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/medicines/colecalciferol/taking-colecalciferol-with-other-medicines-and-herbal-supplements/", "status": "accessible_general_medicine_guidance", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/medicines/ferrous-sulfate/taking-ferrous-sulfate-with-other-medicines-and-herbal-supplements/", "status": "accessible_general_medicine_guidance", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/medicines/warfarin/", "status": "accessible_anticoagulant_guidance", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.nhs.uk/medicines/levothyroxine/", "status": "accessible_current_medicine_guidance", "product_specific_clearance": "not_established"}
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The independent sources identify multiple nutrient-medicine and duplicate-intake topics, but none validates this 23-label powder or an individual medication list.",
+    "topics_requiring_separate_review": [
+      "vitamin-K and anticoagulant consistency",
+      "vitamin-D, calcium and medicines affecting calcium balance",
+      "iron with calcium, magnesium, zinc, antacids, antibiotics, bisphosphonates, levothyroxine and other listed medicines",
+      "biotin and thyroid laboratory tests",
+      "iodine and thyroid treatment context",
+      "zinc and copper balance",
+      "duplicate intake across all 23 nutrient labels",
+      "other vitamins, minerals, herbal remedies and fortified foods"
+    ],
+    "source_status_for_topics": "general_context_only_product_review_not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer warning topics are triage inputs only. The combination requires an individual and product-specific review before any mapping.",
+    "topics_requiring_separate_review": [
+      "pregnancy and breastfeeding with vitamin-A content",
+      "anticoagulant and bleeding-risk context with vitamin-K content",
+      "children and adolescents",
+      "kidney, hypercalcaemia and kidney-stone context",
+      "thyroid disease and iodine context",
+      "iron-overload and non-iron-anaemia context",
+      "copper balance and high-zinc context",
+      "total exposure from all nutrient supplements and fortified foods",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General nutrient and medicine guidance is not product-specific interaction evidence.",
+    "No nutrient total, efficacy assessment, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction and safety topics remain review gates, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
