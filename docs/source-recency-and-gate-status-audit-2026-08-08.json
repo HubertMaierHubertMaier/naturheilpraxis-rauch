@@ -54,6 +54,13 @@
       "gate_status": "requires_currentness_review_no_clearance"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+      "recency_class": "older_population_and_risk_review_framework",
+      "published_or_updated": "2017-07-12",
+      "gate_use": ["folate_population_context", "folic_acid_fortification_context", "adverse_effect_risk_review_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
       "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
       "recency_class": "current_discussion_paper",
       "published_or_updated": "2026-07-06",
