@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T20:55:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamin-d3-k2",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Vitamin D3 + K2",
+    "serving": "1 drop",
+    "vitamin_d3": "25 ug",
+    "vitamin_k2": "15 ug, MK-7 all-trans",
+    "manufacturer_warning_topics": ["anticoagulant consultation", "avoid additional vitamin D supplements"]
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-k/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminK-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    },
+    {
+      "source_url": "https://www.efsa.europa.eu/en/efsajournal/pub/4547",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer declaration names D3 and MK-7 all-trans, but an independent form-specific equivalence and bioavailability review is not established.",
+    "required_before_any_mapping": ["identity verification", "form equivalence", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer warning topics are triage inputs only. Population-specific assessment remains open and must be separate from form and interaction review.",
+    "required_before_any_mapping": ["pregnancy and breastfeeding context", "anticoagulant and bleeding-risk context", "vitamin-D-related medical conditions", "duplicate intake and total exposure context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
