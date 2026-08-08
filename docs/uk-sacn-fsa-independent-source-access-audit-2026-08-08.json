@@ -24,6 +24,11 @@
       "query_scope": "GOV.UK search for SACN zinc",
       "result": "No direct current SACN zinc report identified; the results included the general SACN collection and an older 2008 zinc-related record, neither imported as a current nutrient-specific frame.",
       "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for COT folic acid tolerable upper level",
+      "result": "No separate direct COT folic-acid upper-level report identified; two guessed official publication routes returned 404 and the search returned the current DHSC folic-acid guidance plus an older consultation response.",
+      "use_status": "not_imported"
     }
   ],
   "publication": "unpublished_internal_source_access_audit",
