@@ -9,6 +9,23 @@
     "access_errors": 0,
     "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
   },
+  "search_gaps": [
+    {
+      "query_scope": "GOV.UK search for SACN vitamin K",
+      "result": "No direct current SACN vitamin-K report identified; returned results were general SACN collection or other nutrient material.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for SACN magnesium",
+      "result": "No direct current SACN magnesium report identified; returned results were general SACN collection or unrelated nutrition material.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for SACN zinc",
+      "result": "No direct current SACN zinc report identified; the results included the general SACN collection and an older 2008 zinc-related record, neither imported as a current nutrient-specific frame.",
+      "use_status": "not_imported"
+    }
+  ],
   "publication": "unpublished_internal_source_access_audit",
   "scope": "Record accessible current or official UK source routes that can supplement the general NHS frames without importing product, condition or dose decisions.",
   "sources": [
