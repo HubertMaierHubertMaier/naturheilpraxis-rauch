@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-08T11:50:00.000Z",
+  "source_scope": "Public manufacturer product declarations from locally archived 2026-08-04 snapshots. Facts are normalized into original structured fields; no page text, images, reviews, or disease recommendations are copied.",
+  "publication": {
+    "candidate_status": "unpublished",
+    "wiki_writes": false,
+    "database_writes": false,
+    "medical_approval": false,
+    "dosage_approval": false
+  },
+  "coverage": {
+    "product_declaration_cards": 9,
+    "condition_or_symptom_cards": 0,
+    "reason": "A manufacturer product declaration is not a condition-specific recommendation. Any later condition card requires its own source, evidence, and safety review."
+  },
+  "source_cards": [
+    {
+      "source_id": "strunz-20260804-vitamin-d3-k2",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+      "snapshot_sha256": "8dfaa1d8bca35605621018fec6e36fb253fc1c7c40f7d3c9c5ed113ed0cf3b98",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Vitamin D3 + K2",
+        "ean": "4260180440829",
+        "serving": "1 drop",
+        "manufacturer_daily_use": "1 drop"
+      },
+      "nutrients": [
+        { "name": "Vitamin D3", "amount": "25", "unit": "ug", "nrv_percent": 500 },
+        { "name": "Vitamin K2", "form": "MK-7 all-trans", "amount": "15", "unit": "ug", "nrv_percent": 20 }
+      ],
+      "manufacturer_warning_topics": ["anticoagulant consultation", "avoid additional vitamin D supplements"]
+    },
+    {
+      "source_id": "strunz-20260804-magnesium-caps",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/magnesium-caps.html",
+      "snapshot_sha256": "e7974d945afcede483437dcb2601410b796084e1f28a779a99651e84044cd0cf",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Magnesium Caps",
+        "ean": "4260180441079",
+        "serving": "3 capsules",
+        "manufacturer_daily_use": "3 capsules"
+      },
+      "nutrients": [
+        { "name": "Magnesium", "amount": "346", "unit": "mg", "nrv_percent": 92 },
+        { "name": "Vitamin B6", "form": "pyridoxal-5-phosphate", "amount": "1.2", "unit": "mg", "nrv_percent": 86 }
+      ],
+      "declared_component_forms": ["magnesium malate", "magnesium bisglycinate", "magnesium citrate"],
+      "manufacturer_warning_topics": ["not intended for children under four"]
+    },
+    {
+      "source_id": "strunz-20260804-eisen-caps",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+      "snapshot_sha256": "79f4a5d1f9ad7c7ce040f896361dacdd29548484da2ba4d8bdd60830545be974",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Eisen Caps",
+        "ean": "4260180441345",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Iron", "amount": "14", "unit": "mg", "nrv_percent": 100 },
+        { "name": "Vitamin C", "amount": "84", "unit": "mg", "nrv_percent": 105 }
+      ],
+      "declared_component_amounts": [
+        { "name": "iron bisglycinate", "amount": "43.5", "unit": "mg" },
+        { "name": "iron sulfate", "amount": "13.5", "unit": "mg" },
+        { "name": "acerola fruit juice powder", "amount": "498", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": ["medical consultation for men, postmenopausal women, and pregnancy", "avoid additional iron supplements"]
+    },
+    {
+      "source_id": "strunz-20260804-zink-caps",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/forever-young-zink-caps.html",
+      "snapshot_sha256": "d448ab716af5df819ab686ca135557d2cafbf4e35cb289cfbb4f210e7ac693f0",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Zink Caps",
+        "ean": "4260180441338",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Zinc", "amount": "15", "unit": "mg", "nrv_percent": 150 },
+        { "name": "Vitamin C", "amount": "160", "unit": "mg", "nrv_percent": 200 }
+      ],
+      "declared_component_amounts": [
+        { "name": "zinc bisglycinate", "amount": "28", "unit": "mg" },
+        { "name": "zinc picolinate", "amount": "34.9", "unit": "mg" },
+        { "name": "aronia berry fruit extract", "amount": "200", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": ["avoid additional zinc supplements"]
+    },
+    {
+      "source_id": "strunz-20260804-selen-vitamin-c",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+      "snapshot_sha256": "1e57455d887fd6e157b5b54a157a8ba7d029a61aad2c420300786f3c5cd6412e",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Selen und Vitamin C",
+        "ean": "4260180440966",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Vitamin C", "amount": "222", "unit": "mg", "nrv_percent": 278 },
+        { "name": "Selenium", "amount": "150", "unit": "ug", "nrv_percent": 273 }
+      ],
+      "declared_component_amounts": [
+        { "name": "rosehip fruit extract", "amount": "445", "unit": "mg" },
+        { "name": "mustard seed extract", "amount": "42.8", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": []
+    },
+    {
+      "source_id": "strunz-20260804-jod",
+      "publisher": "for you eHealth via Strunz product page",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/for-you-jod.html",
+      "snapshot_sha256": "6422d17ebf3c78e0507d4ea1d752d026e09f1b5b00ef518ee802f8f8a158a46f",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "for you eHealth",
+        "name": "Jod",
+        "ean": "4260538090904",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Iodine", "amount": "256", "unit": "ug", "nrv_percent": 170 }
+      ],
+      "declared_component_amounts": [
+        { "name": "brown algae powder", "amount": "365", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": []
+    },
+    {
+      "source_id": "strunz-20260804-vitamin-b-komplex",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+      "snapshot_sha256": "1096b32e29b5a2bd7897766f2c78d8a8ff86042d450f155c411a47f219ebdaae",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Vitamin B Komplex",
+        "ean": "4260180441505",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Pantothenic acid", "amount": "81", "unit": "mg", "nrv_percent": 1350 },
+        { "name": "Niacin", "amount": "47", "unit": "mg", "nrv_percent": 293 },
+        { "name": "Thiamin", "amount": "30", "unit": "mg", "nrv_percent": 2727 },
+        { "name": "Riboflavin", "amount": "30", "unit": "mg", "nrv_percent": 2143 },
+        { "name": "Vitamin B6", "amount": "20", "unit": "mg", "nrv_percent": 1428 },
+        { "name": "Folate", "amount": "352", "unit": "ug", "nrv_percent": 176 },
+        { "name": "Biotin", "amount": "387", "unit": "ug", "nrv_percent": 774 },
+        { "name": "Vitamin B12", "amount": "200", "unit": "ug", "nrv_percent": 8000 }
+      ],
+      "declared_component_amounts": [
+        { "name": "choline", "amount": "19.5", "unit": "mg" },
+        { "name": "myo-inositol", "amount": "40", "unit": "mg" },
+        { "name": "PABA", "amount": "40", "unit": "mg" },
+        { "name": "bamboo shoot extract", "amount": "10", "unit": "mg" },
+        { "name": "silicon dioxide from bamboo shoot extract", "amount": "7.5", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": []
+    },
+    {
+      "source_id": "strunz-20260804-vitamin-c-komplex",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+      "snapshot_sha256": "9d1fab6c762b7ffd656b7e221920eab4ef2e6067dc1ca232cbe1d70510064991",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Vitamin C Komplex",
+        "ean": "4260180441468",
+        "serving": "1 capsule",
+        "manufacturer_daily_use": "1 capsule"
+      },
+      "nutrients": [
+        { "name": "Vitamin C", "amount": "500", "unit": "mg", "nrv_percent": 625 }
+      ],
+      "declared_component_amounts": [
+        { "name": "camu-camu fruit extract", "amount": "160", "unit": "mg" },
+        { "name": "bitter orange fruit extract", "amount": "146", "unit": "mg" },
+        { "name": "bioflavonoids from bitter orange extract", "amount": "51", "unit": "mg" },
+        { "name": "quercetin", "amount": "10", "unit": "mg" }
+      ],
+      "manufacturer_warning_topics": []
+    },
+    {
+      "source_id": "strunz-20260804-vitamineral-32-maracuja",
+      "publisher": "Strunz GmbH",
+      "source_type": "manufacturer_product_declaration",
+      "source_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+      "snapshot_sha256": "f6984f2ff4f10c604c1de338f5090de7deb3887d36d0c91640fe775ff03f8979",
+      "retrieved_at": "2026-08-04T19:10:02Z",
+      "candidate_status": "unpublished",
+      "review": {
+        "evidence": "unreviewed",
+        "safety": "unreviewed",
+        "dosage": "manufacturer_declared_not_approved",
+        "medical_use": "not_assessed"
+      },
+      "product": {
+        "brand": "FOREVER YOUNG",
+        "name": "Vitamineral 32 Maracuja",
+        "ean": "4260180440386",
+        "serving": "24.4 g powder",
+        "manufacturer_daily_use": "1 serving"
+      },
+      "nutrients": [
+        { "name": "Vitamin E", "amount": "37", "unit": "mg", "nrv_percent": 310 },
+        { "name": "Vitamin A", "amount": "200", "unit": "ug", "nrv_percent": 25 },
+        { "name": "Vitamin K", "amount": "40", "unit": "ug", "nrv_percent": 53 },
+        { "name": "Vitamin D", "amount": "5", "unit": "ug", "nrv_percent": 100 },
+        { "name": "Vitamin C", "amount": "300", "unit": "mg", "nrv_percent": 375 },
+        { "name": "Niacin", "amount": "21", "unit": "mg", "nrv_percent": 130 },
+        { "name": "Pantothenic acid", "amount": "7.8", "unit": "mg", "nrv_percent": 130 },
+        { "name": "Vitamin B6", "amount": "6", "unit": "mg", "nrv_percent": 427 },
+        { "name": "Riboflavin", "amount": "2.8", "unit": "mg", "nrv_percent": 200 },
+        { "name": "Thiamin", "amount": "1.4", "unit": "mg", "nrv_percent": 130 },
+        { "name": "Folate", "amount": "260", "unit": "ug", "nrv_percent": 130 },
+        { "name": "Biotin", "amount": "150", "unit": "ug", "nrv_percent": 300 },
+        { "name": "Vitamin B12", "amount": "3.3", "unit": "ug", "nrv_percent": 130 },
+        { "name": "Calcium", "amount": "252", "unit": "mg", "nrv_percent": 31 },
+        { "name": "Magnesium", "amount": "121", "unit": "mg", "nrv_percent": 32 },
+        { "name": "Zinc", "amount": "7.6", "unit": "mg", "nrv_percent": 76 },
+        { "name": "Iron", "amount": "2.5", "unit": "mg", "nrv_percent": 18 },
+        { "name": "Manganese", "amount": "1.7", "unit": "mg", "nrv_percent": 84 },
+        { "name": "Copper", "amount": "0.75", "unit": "mg", "nrv_percent": 75 },
+        { "name": "Chromium", "amount": "103", "unit": "ug", "nrv_percent": 257 },
+        { "name": "Iodine", "amount": "48.4", "unit": "ug", "nrv_percent": 32 },
+        { "name": "Molybdenum", "amount": "35", "unit": "ug", "nrv_percent": 71 },
+        { "name": "Selenium", "amount": "30", "unit": "ug", "nrv_percent": 55 }
+      ],
+      "manufacturer_warning_topics": ["medical consultation during pregnancy because of vitamin A", "anticoagulant consultation because of vitamin K", "avoid additional zinc supplements"]
+    }
+  ]
+}

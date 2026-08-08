@@ -31,6 +31,10 @@ const klinghardtImportBatch = JSON.parse(readFileSync(
   resolve(process.cwd(), "docs/klinghardt-talks-001-025-import-batch.json"),
   "utf8",
 ));
+const strunzFactImportBatch = JSON.parse(readFileSync(
+  resolve(process.cwd(), "docs/strunz-public-product-import-batch-2026-08-04.json"),
+  "utf8",
+));
 
 const stagingTables = [
   "kb_import_batches",
@@ -69,6 +73,7 @@ const patientId = "10000000-0000-4000-8000-000000000002";
 const batchOneId = "81000000-0000-4000-8000-000000000001";
 const batchTwoId = "81000000-0000-4000-8000-000000000002";
 const klinghardtBatchId = "81000000-0000-4000-8000-000000000003";
+const strunzFactBatchId = "81000000-0000-4000-8000-000000000004";
 const sourceCandidateId = "82000000-0000-4000-8000-000000000001";
 const targetSourceCandidateId = "82000000-0000-4000-8000-000000000002";
 const collisionSourceCandidateId = "82000000-0000-4000-8000-000000000003";
@@ -243,6 +248,83 @@ describe("Wiki Phase 3 import staging", () => {
       expect(staged.rows[0]).toEqual({
         candidate_count: 62,
         unreviewed_count: 62,
+        releaseable_count: 0,
+      });
+    } finally {
+      await db.exec("RESET ROLE;");
+    }
+  });
+
+  it("stages public Strunz declarations only as unpublished factual candidates", async () => {
+    await db.exec("SET ROLE kb_importer;");
+    try {
+      await db.query(
+        `INSERT INTO public.kb_import_batches (
+          id, source_kind, source_label, source_hash, parser_name, parser_version,
+          model_name, prompt_hash, batch_status, candidate_count, error_count,
+          data_classification, metadata, created_by
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, NULL
+        )`,
+        [
+          strunzFactBatchId,
+          strunzFactImportBatch.batch.source_kind,
+          strunzFactImportBatch.batch.source_label,
+          strunzFactImportBatch.batch.source_hash,
+          strunzFactImportBatch.batch.parser_name,
+          strunzFactImportBatch.batch.parser_version,
+          strunzFactImportBatch.batch.model_name,
+          strunzFactImportBatch.batch.prompt_hash,
+          strunzFactImportBatch.batch.batch_status,
+          strunzFactImportBatch.batch.candidate_count,
+          strunzFactImportBatch.batch.error_count,
+          strunzFactImportBatch.batch.data_classification,
+          JSON.stringify(strunzFactImportBatch.batch.metadata),
+        ],
+      );
+      for (const candidate of strunzFactImportBatch.source_candidates) {
+        await db.query(
+          `INSERT INTO public.kb_source_candidates (
+            batch_id, candidate_key, candidate_status, proposed_source_type, title,
+            publisher, publication_date, source_url, external_identifier, rights_status,
+            source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb
+          )`,
+          [
+            strunzFactBatchId,
+            candidate.candidate_key,
+            candidate.candidate_status,
+            candidate.proposed_source_type,
+            candidate.title,
+            candidate.publisher,
+            candidate.publication_date,
+            candidate.source_url,
+            candidate.external_identifier,
+            candidate.rights_status,
+            candidate.source_locator,
+            candidate.original_excerpt,
+            candidate.confidence,
+            candidate.ambiguity_notes,
+            JSON.stringify(candidate.proposed_data),
+          ],
+        );
+      }
+      const staged = await db.query<{
+        candidate_count: number;
+        unreviewed_count: number;
+        releaseable_count: number;
+      }>(`
+        SELECT
+          count(*)::integer AS candidate_count,
+          count(*) FILTER (WHERE candidate_status = 'imported_unreviewed')::integer AS unreviewed_count,
+          count(*) FILTER (WHERE candidate_status IN ('approved', 'released'))::integer AS releaseable_count
+        FROM public.kb_source_candidates
+        WHERE batch_id = '${strunzFactBatchId}'
+      `);
+      expect(staged.rows[0]).toEqual({
+        candidate_count: 9,
+        unreviewed_count: 9,
         releaseable_count: 0,
       });
     } finally {
