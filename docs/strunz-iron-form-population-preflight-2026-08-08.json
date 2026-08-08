@@ -27,6 +27,13 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "status": "accessible_independent_government_scientific_report",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "published": "2011-02-25"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
       "status": "http_403_during_preflight",
       "form_specific_equivalence": "not_reviewed",
@@ -35,12 +42,12 @@
   ],
   "form_review": {
     "status": "not_cleared",
-    "current_record": "The declaration lists iron bisglycinate and iron sulfate component amounts alongside an iron nutrient amount. Independent form-specific equivalence and reconciliation of declared component and nutrient amounts is not established.",
+    "current_record": "The declaration lists iron bisglycinate and iron sulfate component amounts alongside an iron nutrient amount. NHS and SACN provide general population context, but independent form-specific equivalence and reconciliation of declared component and nutrient amounts is not established.",
     "required_before_any_mapping": ["identity verification", "elemental-versus-component amount reconciliation", "form equivalence", "bioavailability context", "source recency"]
   },
   "population_review": {
     "status": "not_cleared",
-    "current_record": "The manufacturer warning topics are triage inputs only. Population-specific assessment remains open and must be separate from form and interaction review.",
+    "current_record": "The manufacturer warning topics are triage inputs only. NHS and SACN provide general population context, not product or patient clearance; population-specific assessment remains open and must be separate from form and interaction review.",
     "required_before_any_mapping": ["men and postmenopausal women", "pregnancy and breastfeeding context", "children and accidental ingestion risk", "iron-deficiency workup context", "duplicate intake and total exposure context"]
   },
   "not_established": [

@@ -24,6 +24,13 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "status": "accessible_independent_risk_statement",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "published": "2022-11-24"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/",
       "status": "http_403_during_preflight",
       "form_specific_equivalence": "not_reviewed",
@@ -32,12 +39,12 @@
   ],
   "form_review": {
     "status": "not_cleared",
-    "current_record": "The candidate declares an iodine amount and brown algae powder component, but does not declare the iodine species or standardization details. Independent form identity, contaminant/variability context and amount reconciliation are not established.",
+    "current_record": "The candidate declares an iodine amount and brown algae powder component, but does not declare the iodine species or standardization details. NHS and COT provide general population and maternal-exposure context, but independent form identity, contaminant/variability context and amount reconciliation are not established.",
     "required_before_any_mapping": ["identity verification", "iodine species and standardization", "source and batch variability context", "amount reconciliation", "source recency"]
   },
   "population_review": {
     "status": "not_cleared",
-    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance; population-specific assessment remains open.",
+    "current_record": "No manufacturer warning topics are listed. NHS and COT provide general population and maternal-exposure context, not product or patient clearance; population-specific assessment remains open.",
     "required_before_any_mapping": ["thyroid-disease context", "pregnancy and breastfeeding context", "children and adolescents", "duplicate iodine intake context", "seaweed and other dietary-source context"]
   },
   "not_established": [

@@ -29,6 +29,13 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "status": "accessible_independent_government_scientific_report",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "last_updated": "2023-12-11"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
       "status": "http_403_during_preflight",
       "form_specific_equivalence": "not_reviewed",
@@ -49,12 +56,12 @@
   ],
   "form_review": {
     "status": "not_cleared",
-    "current_record": "The manufacturer declaration names D3 and MK-7 all-trans, but an independent form-specific equivalence and bioavailability review is not established.",
+    "current_record": "The manufacturer declaration names D3 and MK-7 all-trans. NHS and SACN provide general population context, but an independent form-specific equivalence and bioavailability review is not established.",
     "required_before_any_mapping": ["identity verification", "form equivalence", "bioavailability context", "source recency"]
   },
   "population_review": {
     "status": "not_cleared",
-    "current_record": "The manufacturer warning topics are triage inputs only. Population-specific assessment remains open and must be separate from form and interaction review.",
+    "current_record": "The manufacturer warning topics are triage inputs only. NHS and SACN provide general population context, not product or patient clearance; population-specific assessment remains open and must be separate from form and interaction review.",
     "required_before_any_mapping": ["pregnancy and breastfeeding context", "anticoagulant and bleeding-risk context", "vitamin-D-related medical conditions", "duplicate intake and total exposure context"]
   },
   "not_established": [
