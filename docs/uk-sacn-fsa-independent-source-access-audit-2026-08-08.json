@@ -4,8 +4,8 @@
   "latest_access_check": {
     "checked_at": "2026-08-09T00:00:00.000Z",
     "method": "GET_with_followed_redirects",
-    "source_urls_checked": 11,
-    "http_200_responses": 11,
+    "source_urls_checked": 12,
+    "http_200_responses": 12,
     "access_errors": 0,
     "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
   },
@@ -32,8 +32,8 @@
     },
     {
       "query_scope": "GOV.UK search for current magnesium safety guidance",
-      "result": "The search returned a current item titled 'Magnesium: general information' updated 2024-11-26, but the direct publication route could not be reconstructed from the search response; attempted official URL variants returned 404.",
-      "use_status": "not_imported"
+      "result": "The official API resolved the current UKHSA route 'Magnesium: health effects and incident management', last updated 2024-11-26. It is restricted to chemical-exposure and incident-response context, not food supplements.",
+      "use_status": "source_added_restricted_scope"
     },
     {
       "query_scope": "GOV.UK search for current zinc safety guidance",
@@ -170,6 +170,18 @@
       "last_updated": "2026-07-10",
       "scope": "Current UK folic-acid fortification, pregnancy-context and interaction-triage guidance",
       "restriction": "Public-health and regulatory context only; it does not establish product composition, efficacy, suitability, individual dose or safety clearance.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+      "publisher": "UK Health Security Agency",
+      "source_type": "independent_government_chemical_hazard_guidance",
+      "access_status": "accessible",
+      "published": "2014-07-01",
+      "last_updated": "2024-11-26",
+      "scope": "Chemical magnesium exposure health effects and incident-response context",
+      "restriction": "Chemical-incident guidance only; it does not establish food-supplement form, oral dose, bioavailability, suitability, interaction clearance or product safety.",
       "product_mapping": "not_performed",
       "condition_mapping": "not_performed"
     }

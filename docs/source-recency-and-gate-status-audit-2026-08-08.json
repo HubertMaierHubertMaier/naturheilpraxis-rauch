@@ -80,6 +80,13 @@
       "published_or_updated": "2026-07-10",
       "gate_use": ["folate_fortification_context", "pregnancy_context", "interaction_triage_context"],
       "gate_status": "context_only_no_product_or_individual_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+      "recency_class": "current_but_chemical_incident_scope",
+      "published_or_updated": "2024-11-26",
+      "gate_use": ["magnesium_chemical_exposure_context", "incident_response_context"],
+      "gate_status": "restricted_context_only_no_supplement_clearance"
     }
   ],
   "additional_nhs_recency_checks": [
