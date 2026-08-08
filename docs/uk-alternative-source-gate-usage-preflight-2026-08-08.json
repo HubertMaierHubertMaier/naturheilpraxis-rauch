@@ -39,6 +39,27 @@
       "usable_for": ["supplement_form_context", "label_and_warning_context", "claims_boundary_context", "general_safety_process_context"],
       "does_not_close": ["ingredient_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
       "recency_note": "Published and updated 2026-06-25."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "source_role": "population_level_selenium_evidence_and_evidence_limitations",
+      "usable_for": ["population_context", "general_evidence_framework"],
+      "does_not_close": ["selenium_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2013; statement scope and currentness require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+      "source_role": "population_and_pregnancy_context_for_vitamin_a_and_retinol",
+      "usable_for": ["population_context", "pregnancy_population_gate", "general_evidence_framework"],
+      "does_not_close": ["vitamin_a_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2005; currentness and scope require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+      "source_role": "vitamin_e_maternal_exposure_gap_awareness_only",
+      "usable_for": ["source_gap_awareness"],
+      "does_not_close": ["vitamin_e_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2026-07-06; explicitly a discussion paper that should not be cited."
     }
   ],
   "gate_effect": {
@@ -51,5 +72,5 @@
     "database_writes": false,
     "wiki_writes": false
   },
-  "conclusion": "The five accessible UK sources improve general context and source-access coverage but do not authorize any product, ingredient-form, interaction, dose, condition or patient-facing decision."
+  "conclusion": "The eight accessible UK source routes improve general context and source-access coverage; one vitamin-E route is explicitly not citable. None authorizes any product, ingredient-form, interaction, dose, condition or patient-facing decision."
 }
