@@ -27,11 +27,14 @@
     {"source_url": "https://www.nhs.uk/medicines/colecalciferol/taking-colecalciferol-with-other-medicines-and-herbal-supplements/", "status": "accessible_general_medicine_guidance", "product_specific_clearance": "not_established"},
     {"source_url": "https://www.nhs.uk/medicines/ferrous-sulfate/taking-ferrous-sulfate-with-other-medicines-and-herbal-supplements/", "status": "accessible_general_medicine_guidance", "product_specific_clearance": "not_established"},
     {"source_url": "https://www.nhs.uk/medicines/warfarin/", "status": "accessible_anticoagulant_guidance", "product_specific_clearance": "not_established"},
-    {"source_url": "https://www.nhs.uk/medicines/levothyroxine/", "status": "accessible_current_medicine_guidance", "product_specific_clearance": "not_established"}
+    {"source_url": "https://www.nhs.uk/medicines/levothyroxine/", "status": "accessible_current_medicine_guidance", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a", "status": "accessible_independent_government_scientific_report", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013", "status": "accessible_independent_government_scientific_statement", "product_specific_clearance": "not_established"},
+    {"source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health", "status": "accessible_but_not_citable", "product_specific_clearance": "not_established"}
   ],
   "interaction_review": {
     "status": "not_cleared",
-    "current_record": "The independent sources identify multiple nutrient-medicine and duplicate-intake topics, but none validates this 23-label powder or an individual medication list.",
+    "current_record": "The independent NHS, SACN and COT source set identifies multiple nutrient-medicine and duplicate-intake topics, but none validates this 23-label powder or an individual medication list; the vitamin-E discussion paper is explicitly not citable.",
     "topics_requiring_separate_review": [
       "vitamin-K and anticoagulant consistency",
       "vitamin-D, calcium and medicines affecting calcium balance",

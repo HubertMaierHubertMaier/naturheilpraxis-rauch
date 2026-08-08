@@ -51,17 +51,20 @@
     {"source_file": "docs/nhs-calcium-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/calcium/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
     {"source_file": "docs/nhs-iodine-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
     {"source_file": "docs/nhs-iron-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
-    {"source_file": "docs/nhs-other-minerals-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"}
+    {"source_file": "docs/nhs-other-minerals-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json", "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a", "status": "accessible_independent_government_scientific_report", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json", "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013", "status": "accessible_independent_government_scientific_statement", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json", "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health", "status": "accessible_but_not_citable", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"}
   ],
   "form_review": {
     "status": "not_cleared",
-    "current_record": "The candidate declares 23 nutrient labels in a powder serving but does not declare the chemical forms or source identity for the individual nutrients. Independent form identity, equivalence, bioavailability and multi-ingredient reconciliation are not established.",
+    "current_record": "The candidate declares 23 nutrient labels in a powder serving but does not declare the chemical forms or source identity for the individual nutrients. NHS, SACN and COT provide general context, with the vitamin-E discussion paper explicitly not citable; independent form identity, equivalence, bioavailability and multi-ingredient reconciliation are not established.",
     "required_before_any_mapping": ["identity verification", "form disclosure or confirmation for each nutrient", "powder matrix and source context", "bioavailability context", "source recency"]
   },
   "population_review": {
     "status": "not_cleared",
     "current_record": "The manufacturer warning topics are triage inputs only. The combination requires a separate population review before any product or condition mapping.",
-    "required_before_any_mapping": ["pregnancy and breastfeeding context because vitamin-A content is declared", "anticoagulant and bleeding-risk context because vitamin-K content is declared", "children and adolescents", "kidney, thyroid and other relevant medical context", "duplicate intake across all 24 labels", "dietary and fortified-food contribution"]
+    "required_before_any_mapping": ["pregnancy and breastfeeding context because vitamin-A content is declared", "anticoagulant and bleeding-risk context because vitamin-K content is declared", "children and adolescents", "kidney, thyroid and other relevant medical context", "duplicate intake across all 23 labels", "dietary and fortified-food contribution"]
   },
   "not_established": [
     "efficacy for any condition or symptom",

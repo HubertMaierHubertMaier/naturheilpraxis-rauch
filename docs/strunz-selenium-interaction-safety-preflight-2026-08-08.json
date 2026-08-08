@@ -23,6 +23,12 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "status": "accessible_independent_government_scientific_statement",
+      "product_specific_clearance": "not_established",
+      "published": "2013-05-12"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/",
       "status": "http_403_during_preflight",
       "product_specific_clearance": "not_reviewed"
@@ -30,7 +36,7 @@
   ],
   "interaction_review": {
     "status": "not_cleared",
-    "current_record": "The accessible NHS pages provide general selenium and vitamin-C safety context but do not clear the declared combination of selenium, vitamin C and botanical extracts for an individual medication or supplement list.",
+    "current_record": "The accessible NHS and SACN pages provide general selenium and vitamin-C safety context but do not clear the declared combination of selenium, vitamin C and botanical extracts for an individual medication or supplement list.",
     "topics_requiring_separate_review": [
       "additional selenium products and total intake",
       "dietary selenium sources and variable intake",

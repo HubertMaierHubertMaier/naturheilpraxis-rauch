@@ -33,6 +33,13 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "status": "accessible_independent_government_scientific_statement",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "published": "2013-05-12"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/",
       "status": "http_403_during_preflight",
       "form_specific_equivalence": "not_reviewed",
@@ -41,7 +48,7 @@
   ],
   "form_review": {
     "status": "not_cleared",
-    "current_record": "The candidate declares selenium and vitamin C nutrient amounts plus botanical component amounts, but no selenium or vitamin-C forms are declared in the candidate. Independent form identity, equivalence and bioavailability review is not established.",
+    "current_record": "The candidate declares selenium and vitamin C nutrient amounts plus botanical component amounts, but no selenium or vitamin-C forms are declared in the candidate. NHS and SACN provide general population context, but independent form identity, equivalence and bioavailability review is not established.",
     "required_before_any_mapping": ["identity verification", "form disclosure or confirmation", "bioavailability context", "source recency"]
   },
   "population_review": {
