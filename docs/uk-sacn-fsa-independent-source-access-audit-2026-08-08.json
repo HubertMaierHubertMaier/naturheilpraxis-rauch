@@ -111,7 +111,7 @@
     "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",
     "The 2005, 2011, 2013, 2014 and 2022 scientific sources require recency and scope review before any later use.",
     "The 2026 vitamin-E discussion paper is accessibly available for gap awareness but is explicitly not citable and cannot close any gate.",
-    "NIH ODS professional fact-sheet routes tested separately remained HTTP 403.",
+    "NIH ODS professional HTML routes and direct Consumer PDF routes tested separately remained HTTP 403.",
     "No database, wiki, product or condition mapping is performed by this audit."
   ],
   "database_writes": false,
