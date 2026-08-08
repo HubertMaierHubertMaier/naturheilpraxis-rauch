@@ -73,6 +73,13 @@
       "published_or_updated": "2026-05-19",
       "gate_use": ["claims_boundary_context", "commercial_communication_context"],
       "gate_status": "regulatory_context_only_no_product_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+      "recency_class": "current_public_health_and_regulatory_context",
+      "published_or_updated": "2026-07-10",
+      "gate_use": ["folate_fortification_context", "pregnancy_context", "interaction_triage_context"],
+      "gate_status": "context_only_no_product_or_individual_clearance"
     }
   ],
   "additional_nhs_recency_checks": [

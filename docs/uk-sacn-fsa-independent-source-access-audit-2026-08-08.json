@@ -4,8 +4,8 @@
   "latest_access_check": {
     "checked_at": "2026-08-09T00:00:00.000Z",
     "method": "GET_with_followed_redirects",
-    "source_urls_checked": 10,
-    "http_200_responses": 10,
+    "source_urls_checked": 11,
+    "http_200_responses": 11,
     "access_errors": 0,
     "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
   },
@@ -145,6 +145,18 @@
       "restriction": "Claims-register status is a regulatory communication context only; it does not establish product composition, efficacy, suitability, interaction clearance or safety.",
       "product_mapping": "not_performed",
       "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+      "publisher": "Department of Health and Social Care",
+      "source_type": "current_government_public_health_guidance",
+      "access_status": "accessible",
+      "published": "2026-07-10",
+      "last_updated": "2026-07-10",
+      "scope": "Current UK folic-acid fortification, pregnancy-context and interaction-triage guidance",
+      "restriction": "Public-health and regulatory context only; it does not establish product composition, efficacy, suitability, individual dose or safety clearance.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
     }
   ],
   "access_gaps_reduced": [
@@ -155,7 +167,8 @@
     "Official SACN selenium route",
     "Official vitamin-A route for pregnancy and retinol context",
     "Official SACN folic-acid recommendations route",
-    "Current Great Britain nutrition and health claims register route"
+    "Current Great Britain nutrition and health claims register route",
+    "Current GOV.UK folic-acid fortification and pregnancy-context route"
   ],
   "remaining_limits": [
     "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",
