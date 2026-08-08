@@ -9,6 +9,7 @@
   "alternative_source_access_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json",
   "alternative_source_gate_usage_preflight": "docs/uk-alternative-source-gate-usage-preflight-2026-08-08.json",
   "source_recency_audit": "docs/source-recency-and-gate-status-audit-2026-08-08.json",
+  "release_block_safety_audit": "docs/release-block-safety-audit-2026-08-08.json",
   "products": [
     {"source_id": "strunz-20260804-vitamin-d3-k2", "product": "Vitamin D3 + K2", "form_population_preflight": "4ce3885", "interaction_safety_preflight": "f9397d6"},
     {"source_id": "strunz-20260804-magnesium-caps", "product": "Magnesium Caps", "form_population_preflight": "42e9005", "interaction_safety_preflight": "2f3da2c"},
