@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T20:52:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "scope": "Separate the next review gates for the 9 unpublished Strunz product declaration cards without making efficacy, dosage or medical decisions.",
+  "source_file": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "status": "blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_cards": [
+    {
+      "source_id": "strunz-20260804-vitamin-d3-k2",
+      "product": "Vitamin D3 + K2",
+      "declared_forms": ["Vitamin K2: MK-7 all-trans"],
+      "manufacturer_warning_topics": ["anticoagulant consultation", "avoid additional vitamin D supplements"],
+      "form_review": "required_not_started",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-magnesium-caps",
+      "product": "Magnesium Caps",
+      "declared_forms": ["magnesium malate", "magnesium bisglycinate", "magnesium citrate", "Vitamin B6: pyridoxal-5-phosphate"],
+      "manufacturer_warning_topics": ["not intended for children under four"],
+      "form_review": "required_not_started",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-eisen-caps",
+      "product": "Eisen Caps",
+      "declared_forms": [],
+      "manufacturer_warning_topics": ["medical consultation for men, postmenopausal women, and pregnancy", "avoid additional iron supplements"],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-zink-caps",
+      "product": "Zink Caps",
+      "declared_forms": [],
+      "manufacturer_warning_topics": ["avoid additional zinc supplements"],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-selen-vitamin-c",
+      "product": "Selen und Vitamin C",
+      "declared_forms": [],
+      "manufacturer_warning_topics": [],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-jod",
+      "product": "Jod",
+      "declared_forms": [],
+      "manufacturer_warning_topics": [],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-vitamin-b-komplex",
+      "product": "Vitamin B Komplex",
+      "declared_forms": [],
+      "manufacturer_warning_topics": [],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-vitamin-c-komplex",
+      "product": "Vitamin C Komplex",
+      "declared_forms": [],
+      "manufacturer_warning_topics": [],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    },
+    {
+      "source_id": "strunz-20260804-vitamineral-32-maracuja",
+      "product": "Vitamineral 32 Maracuja",
+      "declared_forms": [],
+      "manufacturer_warning_topics": ["medical consultation during pregnancy because of vitamin A", "anticoagulant consultation because of vitamin K", "avoid additional zinc supplements"],
+      "form_review": "not_declared_in_candidate",
+      "population_review": "required_not_started",
+      "interaction_review": "required_not_started",
+      "safety_review": "required_not_started"
+    }
+  ],
+  "review_gates": [
+    "1_form_identity_and_equivalence",
+    "2_population_context_and_exclusions",
+    "3_interactions_and_duplicate_intake",
+    "4_safety_and_upper_limit_context",
+    "5_only_after_manual_review_consider_any_product_or_condition_mapping"
+  ],
+  "interpretation_limits": [
+    "Manufacturer warning topics are triage inputs only, not independent safety conclusions.",
+    "A missing declared form is an information gap, not evidence that no form exists.",
+    "General NHS, WHO, EFSA and EU frames do not establish product-specific efficacy, bioavailability, suitability or dose approval.",
+    "No condition or symptom card is created by this preflight."
+  ],
+  "form_review": "not_completed",
+  "population_review": "not_completed",
+  "interaction_review": "not_completed",
+  "safety_review": "not_completed",
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
