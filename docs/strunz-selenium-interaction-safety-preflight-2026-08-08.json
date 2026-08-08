@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:40:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-selen-vitamin-c",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": [],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The accessible NHS pages provide general selenium and vitamin-C safety context but do not clear the declared combination of selenium, vitamin C and botanical extracts for an individual medication or supplement list.",
+    "topics_requiring_separate_review": [
+      "additional selenium products and total intake",
+      "dietary selenium sources and variable intake",
+      "vitamin-C-containing products and total intake",
+      "botanical-extract and medicine interactions",
+      "thyroid and other relevant medical context",
+      "herbal remedies and complementary medicines"
+    ],
+    "source_status_for_topics": "not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance.",
+    "topics_requiring_separate_review": [
+      "children and adolescents",
+      "pregnancy and breastfeeding",
+      "selenium total exposure and dietary variation",
+      "thyroid and other relevant medical context",
+      "botanical extract identity and standardization",
+      "duplicate intake from multinutrient products",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General NHS nutrient guidance is not product-specific interaction evidence.",
+    "No efficacy, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction topics remain questions for independent verification, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
