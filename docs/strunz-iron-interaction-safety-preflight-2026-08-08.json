@@ -32,6 +32,14 @@
       "page_last_reviewed": "2020-08-03"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "status": "accessible_independent_government_scientific_report",
+      "product_specific_clearance": "not_established",
+      "form_specific_equivalence": "not_established",
+      "published": "2011-02-25",
+      "scope": "Population-level iron status, dietary context and evidence gaps"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
       "status": "http_403_during_preflight",
       "product_specific_clearance": "not_reviewed",
@@ -40,7 +48,7 @@
   ],
   "interaction_review": {
     "status": "not_cleared",
-    "current_record": "NHS ferrous-sulfate guidance identifies interaction and absorption topics, but the source is not a product-specific clearance for the declared iron bisglycinate and iron sulfate combination.",
+    "current_record": "NHS ferrous-sulfate guidance and the SACN iron report identify general interaction, absorption and population-context topics, but neither source is a product-specific clearance for the declared iron bisglycinate and iron sulfate combination.",
     "topics_requiring_separate_review": [
       "additional iron, calcium, magnesium and zinc products",
       "antacids and indigestion remedies",
