@@ -23,6 +23,13 @@
       "page_last_reviewed": "2026-07-06"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "status": "accessible_independent_risk_statement",
+      "product_specific_clearance": "not_established",
+      "published": "2022-11-24",
+      "scope": "Excess-iodine exposure context in preconception, pregnancy and lactation"
+    },
+    {
       "source_url": "https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/",
       "status": "http_403_during_preflight",
       "product_specific_clearance": "not_reviewed"
@@ -30,7 +37,7 @@
   ],
   "interaction_review": {
     "status": "not_cleared",
-    "current_record": "The independent iodine and thyroid-medicine pages provide general context but do not clear the declared brown-algae iodine product for an individual thyroid condition or medication list.",
+    "current_record": "The independent iodine, thyroid-medicine and COT maternal-exposure pages provide general context but do not clear the declared brown-algae iodine product for an individual thyroid condition or medication list.",
     "topics_requiring_separate_review": [
       "existing thyroid disease and thyroid laboratory context",
       "thyroid medicines and supplement disclosure",
