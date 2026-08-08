@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:16:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamin-c-komplex",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Vitamin C Komplex",
+    "serving": "1 capsule",
+    "vitamin_c": "500 mg",
+    "declared_component_amounts": [
+      {"name": "camu-camu fruit extract", "amount": "160 mg"},
+      {"name": "bitter orange fruit extract", "amount": "146 mg"},
+      {"name": "bioflavonoids from bitter orange extract", "amount": "51 mg"},
+      {"name": "quercetin", "amount": "10 mg"}
+    ],
+    "manufacturer_warning_topics": []
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The candidate declares a vitamin-C amount and several botanical/extract components but does not declare the chemical form of vitamin C. Independent form identity, extract standardization, interaction and bioavailability review is not established.",
+    "required_before_any_mapping": ["identity verification", "form disclosure or confirmation", "extract standardization", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance; population-specific assessment remains open.",
+    "required_before_any_mapping": ["children and adolescents", "pregnancy and breastfeeding context", "botanical-extract population context", "kidney and gastrointestinal context", "duplicate intake and total exposure context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
