@@ -27,6 +27,10 @@ const snapshotValidationSource = readFileSync(
   resolve(process.cwd(), "supabase/functions/_shared/wikiSnapshotValidation.ts"),
   "utf8",
 );
+const klinghardtImportBatch = JSON.parse(readFileSync(
+  resolve(process.cwd(), "docs/klinghardt-talks-001-025-import-batch.json"),
+  "utf8",
+));
 
 const stagingTables = [
   "kb_import_batches",
@@ -64,6 +68,7 @@ const adminId = "10000000-0000-4000-8000-000000000001";
 const patientId = "10000000-0000-4000-8000-000000000002";
 const batchOneId = "81000000-0000-4000-8000-000000000001";
 const batchTwoId = "81000000-0000-4000-8000-000000000002";
+const klinghardtBatchId = "81000000-0000-4000-8000-000000000003";
 const sourceCandidateId = "82000000-0000-4000-8000-000000000001";
 const targetSourceCandidateId = "82000000-0000-4000-8000-000000000002";
 const collisionSourceCandidateId = "82000000-0000-4000-8000-000000000003";
@@ -168,6 +173,83 @@ afterAll(async () => {
 });
 
 describe("Wiki Phase 3 import staging", () => {
+  it("stages all reviewed Klinghardt source cards only as unpublished candidates", async () => {
+    await db.exec("SET ROLE kb_importer;");
+    try {
+      await db.query(
+        `INSERT INTO public.kb_import_batches (
+          id, source_kind, source_label, source_hash, parser_name, parser_version,
+          model_name, prompt_hash, batch_status, candidate_count, error_count,
+          data_classification, metadata, created_by
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, NULL
+        )`,
+        [
+          klinghardtBatchId,
+          klinghardtImportBatch.batch.source_kind,
+          klinghardtImportBatch.batch.source_label,
+          klinghardtImportBatch.batch.source_hash,
+          klinghardtImportBatch.batch.parser_name,
+          klinghardtImportBatch.batch.parser_version,
+          klinghardtImportBatch.batch.model_name,
+          klinghardtImportBatch.batch.prompt_hash,
+          klinghardtImportBatch.batch.batch_status,
+          klinghardtImportBatch.batch.candidate_count,
+          klinghardtImportBatch.batch.error_count,
+          klinghardtImportBatch.batch.data_classification,
+          JSON.stringify(klinghardtImportBatch.batch.metadata),
+        ],
+      );
+      for (const candidate of klinghardtImportBatch.source_candidates) {
+        await db.query(
+          `INSERT INTO public.kb_source_candidates (
+            batch_id, candidate_key, candidate_status, proposed_source_type, title,
+            publisher, publication_date, source_url, external_identifier, rights_status,
+            source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb
+          )`,
+          [
+            klinghardtBatchId,
+            candidate.candidate_key,
+            candidate.candidate_status,
+            candidate.proposed_source_type,
+            candidate.title,
+            candidate.publisher,
+            candidate.publication_date,
+            candidate.source_url,
+            candidate.external_identifier,
+            candidate.rights_status,
+            candidate.source_locator,
+            candidate.original_excerpt,
+            candidate.confidence,
+            candidate.ambiguity_notes,
+            JSON.stringify(candidate.proposed_data),
+          ],
+        );
+      }
+      const staged = await db.query<{
+        candidate_count: number;
+        unreviewed_count: number;
+        releaseable_count: number;
+      }>(`
+        SELECT
+          count(*)::integer AS candidate_count,
+          count(*) FILTER (WHERE candidate_status = 'imported_unreviewed')::integer AS unreviewed_count,
+          count(*) FILTER (WHERE candidate_status IN ('approved', 'released'))::integer AS releaseable_count
+        FROM public.kb_source_candidates
+        WHERE batch_id = '${klinghardtBatchId}'
+      `);
+      expect(staged.rows[0]).toEqual({
+        candidate_count: 62,
+        unreviewed_count: 62,
+        releaseable_count: 0,
+      });
+    } finally {
+      await db.exec("RESET ROLE;");
+    }
+  });
+
   it("creates exactly eight isolated staging tables with no approval statuses", async () => {
     const tables = await db.query<{ table_name: string }>(`
       SELECT table_name FROM information_schema.tables
