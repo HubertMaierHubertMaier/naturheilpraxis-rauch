@@ -502,6 +502,8 @@ export function BackupCenter() {
         generatedAt: string;
         tables: Record<string, { rows: Record<string, unknown>[]; error?: string }>;
         storage: Record<string, Array<{ path: string; size: number; signedUrl: string }>>;
+        wikiSnapshotManifest?: Record<string, { rows: number; sha256: string }> | null;
+        legacyBridgeValidation?: Record<string, number> | null;
       };
 
       // 2) Tabellen ablegen
@@ -513,6 +515,12 @@ export function BackupCenter() {
         } else {
           zip.file(`db/${name}.json`, JSON.stringify(t.rows, null, 2));
         }
+      }
+      if (payload.legacyBridgeValidation) {
+        zip.file("db/kb_legacy_bridge_validation.json", JSON.stringify(payload.legacyBridgeValidation, null, 2));
+      }
+      if (payload.wikiSnapshotManifest) {
+        zip.file("db/kb_wiki_snapshot_manifest.json", JSON.stringify(payload.wikiSnapshotManifest, null, 2));
       }
       setProgress(25);
 
@@ -573,6 +581,23 @@ export function BackupCenter() {
       }
 
       // 5) Area-Manifest + Restore-Anleitung
+      const wikiTableCount = area.tables.length;
+      const wikiBridgeRestoreLines = area.id === "wiki" ? [
+        "",
+        "## Verbindliche Restore-Reihenfolge fuer die Wiki-Bruecke",
+        "",
+        `Alle ${wikiTableCount} Wiki-Tabellen stammen aus einem gemeinsamen Datenbank-Snapshot. \`kb_wiki_snapshot_manifest.json\` enthaelt ihre verbindlichen Zeilenzahlen und SHA-256-Hashes.`,
+        "",
+        "1. Restore ausschliesslich als Datenbankeigner in einer Transaktion ausfuehren und `SET CONSTRAINTS ALL DEFERRED` setzen.",
+        `2. Auf allen ${wikiTableCount} Wiki-Tabellen \`DISABLE TRIGGER USER\` setzen. Fremdschluesseltrigger bleiben aktiv; Review-, Snapshot-, Import-, Promotion- und Capture-Trigger werden fuer den exakten Reimport pausiert.`,
+        "3. Vorhandene Wiki-Daten einschliesslich der durch Migrationen angelegten Seeds in umgekehrter Fremdschluesselreihenfolge leeren. Kein `CASCADE` auf nicht zum Wiki gehoerende Tabellen anwenden.",
+        "4. Importreihenfolge: kontrollierte Typen; Entitaeten vor Entitaetsrevisionen; Quellen vor Quellenrevisionen; Aussagen und Quellenbelege vor den fuenf therapeutischen Detailtabellen; Zusammensetzungskomponenten nach allen Details; Artikel vor Artikelrevisionen und Artikel-Entitaeten; Import-Batches vor Kandidaten, typisierten Kandidatenzeilen, Vertragssiegeln und Auditzeilen; Quellen-Promotionen erst nach Kandidaten, Entscheidungen und Kern-Quellenrevisionen; Legacy-Wiki und Produkte vor Produktverknuepfungen.",
+        "5. Nach dem Import `SET CONSTRAINTS ALL IMMEDIATE` ausfuehren. Nur wenn alle Fremdschluessel gueltig sind, fortfahren.",
+        `6. Auf allen ${wikiTableCount} Tabellen \`ENABLE TRIGGER USER\` setzen, bevor validiert oder committet wird.`,
+        "7. `kb_export_wiki_snapshot()` ausfuehren und nur committen, wenn `missing_articles`, `invalid_current_snapshots`, `orphaned_active_articles`, `invalid_source_promotions`, `invalid_therapeutic_catalog_revisions` und `invalid_entity_candidate_contracts` jeweils 0 sind.",
+        "8. Jede Zeilenzahl und jeden SHA-256-Wert des neuen Manifests exakt mit `kb_wiki_snapshot_manifest.json` aus diesem Backup vergleichen.",
+        "9. Bei jeder Abweichung Transaktion zurueckrollen; niemals Brueckenzeilen automatisch zusammenfuehren oder neu nummerieren.",
+      ] : [];
       zip.file(
         "AREA-MANIFEST.json",
         JSON.stringify(
@@ -592,6 +617,8 @@ export function BackupCenter() {
             ),
             publicAssets: area.publicAssets,
             sourcePaths: area.sourcePaths,
+            wikiSnapshotManifest: payload.wikiSnapshotManifest ?? null,
+            legacyBridgeValidation: payload.legacyBridgeValidation ?? null,
           },
           null,
           2,
@@ -623,6 +650,7 @@ export function BackupCenter() {
           "gezielt diese Pfade extrahieren:",
           "",
           ...area.sourcePaths.map((p) => `- \`${p}\``),
+          ...wikiBridgeRestoreLines,
           "",
         ].join("\n"),
       );
