@@ -1,6 +1,14 @@
 {
   "schema_version": 1,
   "audited_at": "2026-08-08T21:30:00.000Z",
+  "latest_access_check": {
+    "checked_at": "2026-08-08T22:00:00.000Z",
+    "method": "GET_with_followed_redirects",
+    "source_urls_checked": 8,
+    "http_200_responses": 8,
+    "access_errors": 0,
+    "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
+  },
   "publication": "unpublished_internal_source_access_audit",
   "scope": "Record accessible current or official UK source routes that can supplement the general NHS frames without importing product, condition or dose decisions.",
   "sources": [
