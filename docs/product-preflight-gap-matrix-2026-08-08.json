@@ -7,6 +7,7 @@
   "source_coverage_audit": "docs/nutrient-reference-coverage-audit-2026-08-08.json",
   "product_preflight": "docs/product-form-population-interaction-safety-preflight-2026-08-08.json",
   "alternative_source_access_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json",
+  "alternative_source_gate_usage_preflight": "docs/uk-alternative-source-gate-usage-preflight-2026-08-08.json",
   "products": [
     {"source_id": "strunz-20260804-vitamin-d3-k2", "product": "Vitamin D3 + K2", "form_population_preflight": "4ce3885", "interaction_safety_preflight": "f9397d6"},
     {"source_id": "strunz-20260804-magnesium-caps", "product": "Magnesium Caps", "form_population_preflight": "42e9005", "interaction_safety_preflight": "2f3da2c"},
@@ -25,7 +26,7 @@
     "safety": ["ingredient-specific contraindications", "upper-limit and total-exposure context", "current formulation verification", "manual independent review"]
   },
   "source_access_gaps": [
-    "Five official UK SACN, COT and FSA source routes are now accessible and may be used as general evidence or regulatory context only; no product or condition mapping is established.",
+    "Eight official UK SACN, COT and FSA source routes are now accessible, with one vitamin-E discussion paper explicitly not citable; usable routes remain general evidence or regulatory context only and establish no product or condition mapping.",
     "NIH ODS professional fact-sheet URLs tested for D, K, magnesium, B6, B12, iron, zinc, selenium, iodine and vitamin C returned HTTP 403 during preflight.",
     "Some general NHS pages are dated 2020-08-03; currentness must be rechecked before any later use.",
     "No accessible source in this audit establishes product-specific form equivalence, efficacy, suitability, interaction clearance or safety."
