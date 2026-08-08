@@ -31,7 +31,7 @@
     "safety": ["ingredient-specific contraindications", "upper-limit and total-exposure context", "current formulation verification", "manual independent review"]
   },
   "source_access_gaps": [
-    "Eight official UK SACN, COT and FSA source routes are now accessible, with one vitamin-E discussion paper explicitly not citable; usable routes remain general evidence or regulatory context only and establish no product or condition mapping.",
+    "Ten official UK SACN, COT and FSA source URLs are now accessible, with one vitamin-E discussion paper explicitly not citable; usable routes remain general evidence or regulatory context only and establish no product or condition mapping.",
     "NIH ODS professional fact-sheet URLs tested for D, K, magnesium, B6, B12, iron, zinc, selenium, iodine and vitamin C returned HTTP 403 during preflight.",
     "Some general NHS pages are dated 2020-08-03; currentness must be rechecked before any later use.",
     "No accessible source in this audit establishes product-specific form equivalence, efficacy, suitability, interaction clearance or safety."
