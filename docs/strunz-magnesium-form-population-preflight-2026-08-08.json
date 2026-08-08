@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T20:58:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-magnesium-caps",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Magnesium Caps",
+    "serving": "3 capsules",
+    "magnesium": "346 mg",
+    "magnesium_forms": ["magnesium malate", "magnesium bisglycinate", "magnesium citrate"],
+    "vitamin_b6": "1.2 mg, pyridoxal-5-phosphate",
+    "manufacturer_warning_topics": ["not intended for children under four"]
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer declaration names three magnesium salts and pyridoxal-5-phosphate, but independent form-specific equivalence and bioavailability review is not established.",
+    "required_before_any_mapping": ["identity verification", "form equivalence", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "The under-four warning is a manufacturer triage input only. Population-specific assessment remains open and must be separate from form and interaction review.",
+    "required_before_any_mapping": ["children and adolescents", "pregnancy and breastfeeding context", "kidney-function context", "duplicate intake and total exposure context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
