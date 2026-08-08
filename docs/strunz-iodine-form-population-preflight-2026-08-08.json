@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:08:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-jod",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Jod",
+    "serving": "1 capsule",
+    "iodine": "256 ug",
+    "declared_component_amounts": [
+      {"name": "brown algae powder", "amount": "365 mg"}
+    ],
+    "manufacturer_warning_topics": []
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The candidate declares an iodine amount and brown algae powder component, but does not declare the iodine species or standardization details. Independent form identity, contaminant/variability context and amount reconciliation are not established.",
+    "required_before_any_mapping": ["identity verification", "iodine species and standardization", "source and batch variability context", "amount reconciliation", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance; population-specific assessment remains open.",
+    "required_before_any_mapping": ["thyroid-disease context", "pregnancy and breastfeeding context", "children and adolescents", "duplicate iodine intake context", "seaweed and other dietary-source context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
