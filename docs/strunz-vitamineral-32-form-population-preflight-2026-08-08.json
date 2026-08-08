@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:20:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamineral-32-maracuja",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Vitamineral 32 Maracuja",
+    "serving": "24.4 g powder",
+    "declared_nutrient_label_count": 23,
+    "declared_nutrient_labels": [
+      "Vitamin E",
+      "Vitamin A",
+      "Vitamin K",
+      "Vitamin D",
+      "Vitamin C",
+      "Niacin",
+      "Pantothenic acid",
+      "Vitamin B6",
+      "Riboflavin",
+      "Thiamin",
+      "Folate",
+      "Biotin",
+      "Vitamin B12",
+      "Calcium",
+      "Magnesium",
+      "Zinc",
+      "Iron",
+      "Manganese",
+      "Copper",
+      "Chromium",
+      "Iodine",
+      "Molybdenum",
+      "Selenium"
+    ],
+    "manufacturer_warning_topics": [
+      "medical consultation during pregnancy because of vitamin A",
+      "anticoagulant consultation because of vitamin K",
+      "avoid additional zinc supplements"
+    ]
+  },
+  "independent_sources_checked": [
+    {"source_file": "docs/nhs-vitamin-a-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-a/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-b-vitamins-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-vitamin-c-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-vitamin-d-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-vitamin-e-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-e/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-vitamin-k-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-k/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-calcium-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/calcium/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-iodine-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-iron-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"},
+    {"source_file": "docs/nhs-other-minerals-reference-2026-08-08.json", "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/", "status": "accessible_general_reference", "form_specific_equivalence": "not_established", "population_specific_product_clearance": "not_established"}
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The candidate declares 23 nutrient labels in a powder serving but does not declare the chemical forms or source identity for the individual nutrients. Independent form identity, equivalence, bioavailability and multi-ingredient reconciliation are not established.",
+    "required_before_any_mapping": ["identity verification", "form disclosure or confirmation for each nutrient", "powder matrix and source context", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer warning topics are triage inputs only. The combination requires a separate population review before any product or condition mapping.",
+    "required_before_any_mapping": ["pregnancy and breastfeeding context because vitamin-A content is declared", "anticoagulant and bleeding-risk context because vitamin-K content is declared", "children and adolescents", "kidney, thyroid and other relevant medical context", "duplicate intake across all 24 labels", "dietary and fortified-food contribution"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
