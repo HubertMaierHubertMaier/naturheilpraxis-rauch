@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:44:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-jod",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": [],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/medicines/levothyroxine/",
+      "status": "accessible_current_medicine_guidance",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2026-07-06"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The independent iodine and thyroid-medicine pages provide general context but do not clear the declared brown-algae iodine product for an individual thyroid condition or medication list.",
+    "topics_requiring_separate_review": [
+      "existing thyroid disease and thyroid laboratory context",
+      "thyroid medicines and supplement disclosure",
+      "levothyroxine timing and co-intake questions",
+      "brown-algae source variability and iodine standardization",
+      "additional iodine, seaweed and fortified-food intake",
+      "herbal remedies and complementary medicines"
+    ],
+    "source_status_for_topics": "not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance.",
+    "topics_requiring_separate_review": [
+      "thyroid dysfunction and thyroid treatment",
+      "pregnancy and breastfeeding",
+      "children and adolescents",
+      "vegan and other dietary-source context",
+      "seaweed and variable iodine exposure",
+      "brown-algae identity, contaminants and batch variability",
+      "duplicate intake and total exposure context",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General iodine guidance and levothyroxine information are not product-specific interaction evidence.",
+    "No efficacy, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction topics remain questions for independent verification, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
