@@ -70,7 +70,7 @@ describe("therapy retrieval PostgreSQL conformance harness", () => {
   });
 
   it("uses only locked test dependencies and contains no deployment path", () => {
-    expect(workflowSource).toContain("permissions:\n  contents: read");
+    expect(workflowSource).toMatch(/permissions:\r?\n  contents: read/);
     expect(workflowSource).toContain("run: npm ci");
     expect(workflowSource).not.toMatch(
       /supabase\s+(?:db\s+push|functions\s+deploy)|npm\s+run\s+deploy|production/i,
