@@ -39,11 +39,18 @@
       "status": "accessible_general_reference",
       "product_specific_clearance": "not_established",
       "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "status": "accessible_independent_government_scientific_report",
+      "product_specific_clearance": "not_established",
+      "last_updated": "2023-12-11",
+      "scope": "Population-level vitamin-D evidence and UK reference-intake context"
     }
   ],
   "interaction_review": {
     "status": "not_cleared",
-    "current_record": "The independent medicine guidance identifies interaction topics relevant to vitamin-D and vitamin-K review, but it does not validate this product, its forms, its dose, or an individual person's medication list.",
+    "current_record": "The independent medicine guidance and SACN vitamin-D report identify general interaction, population and intake-context topics, but they do not validate this product, its forms, its dose, or an individual person's medication list.",
     "topics_requiring_separate_review": [
       "anticoagulants and vitamin-K consistency",
       "digoxin",
