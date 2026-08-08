@@ -29,6 +29,16 @@
       "query_scope": "GOV.UK search for COT folic acid tolerable upper level",
       "result": "No separate direct COT folic-acid upper-level report identified; two guessed official publication routes returned 404 and the search returned the current DHSC folic-acid guidance plus an older consultation response.",
       "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for current magnesium safety guidance",
+      "result": "The search returned a current item titled 'Magnesium: general information' updated 2024-11-26, but the direct publication route could not be reconstructed from the search response; attempted official URL variants returned 404.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for current zinc safety guidance",
+      "result": "The search returned the current general food-supplement guidance and older or unrelated zinc records, but no directly identified current nutrient-specific zinc safety framework.",
+      "use_status": "not_imported"
     }
   ],
   "publication": "unpublished_internal_source_access_audit",
