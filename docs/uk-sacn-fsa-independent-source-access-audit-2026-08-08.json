@@ -37,7 +37,7 @@
     },
     {
       "query_scope": "GOV.UK search for current zinc safety guidance",
-      "result": "The search returned the current general food-supplement guidance and older or unrelated zinc records, but no directly identified current nutrient-specific zinc safety framework.",
+      "result": "The API resolved the older 2008 FCDO research-output record as a Journal of Nutrition model article about phytate effects on zinc reference intakes. It is not a current UK safety assessment, and the article states that experimental studies are required to test its predictions; no current nutrient-specific zinc safety framework was identified.",
       "use_status": "not_imported"
     }
   ],
