@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T21:30:00.000Z",
+  "publication": "unpublished_internal_source_access_audit",
+  "scope": "Record accessible current or official UK source routes that can supplement the general NHS frames without importing product, condition or dose decisions.",
+  "sources": [
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a804e36ed915d74e622dafa/SACN_Vitamin_D_and_Health_report.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2016-07-21",
+      "last_updated": "2023-12-11",
+      "scope": "Population-level vitamin-D evidence and UK reference-intake context",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7df3dd40f0b62305b7fd53/SACN_Iron_and_Health_Report.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2011-02-25",
+      "last_updated": null,
+      "scope": "Population-level iron status, dietary context and evidence gaps",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7e469ced915d74e62253f3/SACN_Iodine_and_Health_2014.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_statement",
+      "access_status": "accessible",
+      "published": "2014-02-18",
+      "last_updated": null,
+      "scope": "Population-level iodine evidence, adequacy questions and evidence limitations",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "publisher": "Committee on Toxicity of Chemicals in Food, Consumer Products and the Environment",
+      "source_type": "independent_government_risk_statement",
+      "access_status": "accessible",
+      "published": "2022-11-24",
+      "last_updated": null,
+      "scope": "Excess-iodine exposure questions in preconception, pregnancy and lactation, including source variability and uncertainty",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+      "publisher": "Food Standards Agency",
+      "source_type": "current_government_food_supplement_guidance",
+      "access_status": "accessible",
+      "published": "2026-06-25",
+      "last_updated": "2026-06-25",
+      "scope": "General food-supplement definition, forms, label/warning context, claims boundaries and safety escalation",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    }
+  ],
+  "access_gaps_reduced": [
+    "Current official UK source route for general food-supplement safety and claims context",
+    "Official SACN vitamin-D report route updated in 2023",
+    "Official SACN and COT iodine routes with maternal-exposure context",
+    "Official SACN iron report route"
+  ],
+  "remaining_limits": [
+    "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",
+    "The 2011, 2014 and 2022 scientific sources require recency and scope review before any later use.",
+    "NIH ODS professional fact-sheet routes tested separately remained HTTP 403.",
+    "No database, wiki, product or condition mapping is performed by this audit."
+  ],
+  "database_writes": false,
+  "wiki_writes": false
+}
