@@ -61,17 +61,56 @@
       "scope": "General food-supplement definition, forms, label/warning context, claims boundaries and safety escalation",
       "product_mapping": "not_performed",
       "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7ea6b440f0b62305b824ce/SACN_Selenium_and_Health_2013.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_statement",
+      "access_status": "accessible",
+      "published": "2013-05-12",
+      "last_updated": null,
+      "scope": "Population-level selenium evidence, dietary intake context and evidence limitations",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7de3e5e5274a2e8ab4478d/SACN_Review_of_Dietary_Advice_on_Vitamin_A.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2005-07-26",
+      "last_updated": null,
+      "scope": "Population and pregnancy context for dietary advice on vitamin A, liver and retinol supplements",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+      "publisher": "Committee on Toxicity of Chemicals in Food, Consumer Products and the Environment",
+      "source_type": "current_government_discussion_paper",
+      "access_status": "accessible_but_not_citable",
+      "published": "2026-07-06",
+      "last_updated": null,
+      "scope": "Discussion paper on excess vitamin-E and maternal-health questions",
+      "restriction": "The page states that this is a discussion paper, does not represent Committee views and should not be cited.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
     }
   ],
   "access_gaps_reduced": [
     "Current official UK source route for general food-supplement safety and claims context",
     "Official SACN vitamin-D report route updated in 2023",
     "Official SACN and COT iodine routes with maternal-exposure context",
-    "Official SACN iron report route"
+    "Official SACN iron report route",
+    "Official SACN selenium route",
+    "Official vitamin-A route for pregnancy and retinol context"
   ],
   "remaining_limits": [
     "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",
-    "The 2011, 2014 and 2022 scientific sources require recency and scope review before any later use.",
+    "The 2005, 2011, 2013, 2014 and 2022 scientific sources require recency and scope review before any later use.",
+    "The 2026 vitamin-E discussion paper is accessibly available for gap awareness but is explicitly not citable and cannot close any gate.",
     "NIH ODS professional fact-sheet routes tested separately remained HTTP 403.",
     "No database, wiki, product or condition mapping is performed by this audit."
   ],
