@@ -2,10 +2,10 @@
   "schema_version": 1,
   "audited_at": "2026-08-08T21:30:00.000Z",
   "latest_access_check": {
-    "checked_at": "2026-08-08T22:12:00.000Z",
+    "checked_at": "2026-08-09T00:00:00.000Z",
     "method": "GET_with_followed_redirects",
-    "source_urls_checked": 9,
-    "http_200_responses": 9,
+    "source_urls_checked": 10,
+    "http_200_responses": 10,
     "access_errors": 0,
     "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
   },
@@ -112,6 +112,17 @@
       "condition_mapping": "not_performed"
     },
     {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2017-07-12",
+      "last_updated": null,
+      "scope": "Population-level folic-acid fortification and adverse-effect risk-review context, including neural-tube-defect prevention context",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
       "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
       "publisher": "Committee on Toxicity of Chemicals in Food, Consumer Products and the Environment",
       "source_type": "current_government_discussion_paper",
@@ -143,6 +154,7 @@
     "Official SACN iron report route",
     "Official SACN selenium route",
     "Official vitamin-A route for pregnancy and retinol context",
+    "Official SACN folic-acid recommendations route",
     "Current Great Britain nutrition and health claims register route"
   ],
   "remaining_limits": [
