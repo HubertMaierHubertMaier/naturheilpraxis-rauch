@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-08T14:00:00.000Z",
+  "publication": "unpublished_internal_triage",
+  "database_writes": false,
+  "wiki_writes": false,
+  "clinical_assertion_imports": 0,
+  "sources": [
+    {
+      "area_key": "strunz-application-area:schilddruese",
+      "source_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+      "source_type": "commercial_manufacturer_application_page",
+      "classification": "manufacturer_claims_only",
+      "product_catalogue_present": true,
+      "customer_reviews_excluded": true,
+      "clinical_assertions": [],
+      "independent_evidence_required": true,
+      "safety_review_required": true,
+      "note": "Commercial category page with product links. It cannot establish a disease, symptom, efficacy, safety, or dose card."
+    },
+    {
+      "area_key": "strunz-application-area:entzuendungen",
+      "source_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+      "source_type": "commercial_manufacturer_application_page",
+      "classification": "manufacturer_claims_only",
+      "product_catalogue_present": true,
+      "customer_reviews_excluded": true,
+      "clinical_assertions": [],
+      "independent_evidence_required": true,
+      "safety_review_required": true,
+      "note": "Commercial category page with product links. It cannot establish a disease, symptom, efficacy, safety, or dose card."
+    },
+    {
+      "area_key": "strunz-application-area:allergien",
+      "source_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+      "source_type": "commercial_manufacturer_application_page",
+      "classification": "manufacturer_claims_only",
+      "product_catalogue_present": true,
+      "customer_reviews_excluded": true,
+      "clinical_assertions": [],
+      "independent_evidence_required": true,
+      "safety_review_required": true,
+      "note": "Commercial category page with product links. It cannot establish a disease, symptom, efficacy, safety, or dose card."
+    },
+    {
+      "area_key": "strunz-application-area:darm-verdauung",
+      "source_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+      "source_type": "commercial_manufacturer_application_page",
+      "classification": "manufacturer_claims_only",
+      "product_catalogue_present": true,
+      "customer_reviews_excluded": true,
+      "clinical_assertions": [],
+      "independent_evidence_required": true,
+      "safety_review_required": true,
+      "note": "Commercial category page with product links. It cannot establish a disease, symptom, efficacy, safety, or dose card."
+    }
+  ]
+}
