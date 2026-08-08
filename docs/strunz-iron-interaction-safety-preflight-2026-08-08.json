@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:32:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-eisen-caps",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": ["medical consultation for men, postmenopausal women, and pregnancy", "avoid additional iron supplements"],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/medicines/ferrous-sulfate/taking-ferrous-sulfate-with-other-medicines-and-herbal-supplements/",
+      "status": "accessible_general_medicine_guidance",
+      "product_specific_clearance": "not_established",
+      "form_specific_equivalence": "not_established",
+      "page_last_reviewed": "2023-02-09"
+    },
+    {
+      "source_url": "https://www.nhs.uk/medicines/ferrous-sulfate/who-can-and-cannot-take-ferrous-sulfate/",
+      "status": "accessible_general_medicine_guidance",
+      "product_specific_clearance": "not_established",
+      "form_specific_equivalence": "not_established",
+      "page_last_reviewed": "2023-02-09"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "form_specific_equivalence": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed",
+      "form_specific_equivalence": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "NHS ferrous-sulfate guidance identifies interaction and absorption topics, but the source is not a product-specific clearance for the declared iron bisglycinate and iron sulfate combination.",
+    "topics_requiring_separate_review": [
+      "additional iron, calcium, magnesium and zinc products",
+      "antacids and indigestion remedies",
+      "tetracycline, quinolone and other antibiotics",
+      "HIV antivirals",
+      "magnesium-containing laxatives",
+      "bisphosphonates",
+      "cholestyramine",
+      "eltrombopag",
+      "levothyroxine",
+      "levodopa, carbidopa and entacapone",
+      "mycophenolate",
+      "methyldopa",
+      "penicillamine and trientine",
+      "herbal remedies and total mineral exposure"
+    ]
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer warning topics and general NHS medicine restrictions are triage inputs only. They do not establish suitability, treatment need or safety for this product or an individual.",
+    "topics_requiring_separate_review": [
+      "men and postmenopausal women",
+      "pregnancy and breastfeeding",
+      "children and accidental ingestion",
+      "non-iron anaemia and iron-overload conditions",
+      "haemochromatosis and haemosiderosis",
+      "sickle-cell disease and thalassaemia",
+      "gastrointestinal disease and prior stomach surgery",
+      "blood transfusions and existing iron treatment",
+      "duplicate iron and total exposure context",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "Ferrous-sulfate medicine guidance is not automatically equivalent to the declared mixed iron forms.",
+    "No diagnosis, efficacy assessment, dose approval, individual medication review or patient-facing publication was performed.",
+    "The listed topics are review gates, not product-specific findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
