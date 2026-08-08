@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:28:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-magnesium-caps",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": ["not intended for children under four"],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The accessible NHS pages provide general nutrient and supplement safety context but do not clear the declared magnesium salts or pyridoxal-5-phosphate combination for an individual medication list.",
+    "topics_requiring_separate_review": [
+      "kidney function and medicines affecting magnesium clearance",
+      "antibiotics and mineral-binding or absorption timing questions",
+      "bisphosphonates and absorption timing questions",
+      "thyroid medicines and absorption timing questions",
+      "other magnesium, calcium, iron and zinc products",
+      "vitamin-B6-containing products and duplicate exposure",
+      "herbal remedies and complementary medicines"
+    ],
+    "source_status_for_topics": "not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "The under-four warning is a manufacturer triage input only. General NHS guidance does not establish product-specific safety or an individual exposure limit.",
+    "topics_requiring_separate_review": [
+      "children and accidental ingestion",
+      "kidney disease and impaired clearance",
+      "pregnancy and breastfeeding",
+      "gastrointestinal tolerance",
+      "long-term vitamin-B6 exposure",
+      "total exposure from all supplements and fortified foods",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General NHS nutrient guidance is not product-specific interaction evidence.",
+    "No efficacy, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction topics remain questions for independent verification, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
