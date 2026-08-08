@@ -60,6 +60,13 @@
       "usable_for": ["source_gap_awareness"],
       "does_not_close": ["vitamin_e_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
       "recency_note": "Published 2026-07-06; explicitly a discussion paper that should not be cited."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "source_role": "current_great_britain_claims_and_regulatory_boundary_context",
+      "usable_for": ["claims_boundary_context", "commercial_communication_context"],
+      "does_not_close": ["ingredient_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Last updated 2026-05-19; authorised/rejected claim status is not product evidence."
     }
   ],
   "gate_effect": {
@@ -72,5 +79,5 @@
     "database_writes": false,
     "wiki_writes": false
   },
-  "conclusion": "The eight accessible UK source routes improve general context and source-access coverage; one vitamin-E route is explicitly not citable. None authorizes any product, ingredient-form, interaction, dose, condition or patient-facing decision."
+  "conclusion": "The nine accessible UK source routes improve general and regulatory context; one vitamin-E route is explicitly not citable. None authorizes any product, ingredient-form, interaction, dose, condition or patient-facing decision."
 }

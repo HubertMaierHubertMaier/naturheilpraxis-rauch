@@ -2,10 +2,10 @@
   "schema_version": 1,
   "audited_at": "2026-08-08T21:30:00.000Z",
   "latest_access_check": {
-    "checked_at": "2026-08-08T22:00:00.000Z",
+    "checked_at": "2026-08-08T22:12:00.000Z",
     "method": "GET_with_followed_redirects",
-    "source_urls_checked": 8,
-    "http_200_responses": 8,
+    "source_urls_checked": 9,
+    "http_200_responses": 9,
     "access_errors": 0,
     "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
   },
@@ -105,6 +105,18 @@
       "restriction": "The page states that this is a discussion paper, does not represent Committee views and should not be cited.",
       "product_mapping": "not_performed",
       "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "publisher": "Department of Health and Social Care",
+      "source_type": "current_government_claims_register",
+      "access_status": "accessible",
+      "published": "2020-12-31",
+      "last_updated": "2026-05-19",
+      "scope": "Authorised and rejected nutrition and health claims for commercial communications in Great Britain",
+      "restriction": "Claims-register status is a regulatory communication context only; it does not establish product composition, efficacy, suitability, interaction clearance or safety.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
     }
   ],
   "access_gaps_reduced": [
@@ -113,7 +125,8 @@
     "Official SACN and COT iodine routes with maternal-exposure context",
     "Official SACN iron report route",
     "Official SACN selenium route",
-    "Official vitamin-A route for pregnancy and retinol context"
+    "Official vitamin-A route for pregnancy and retinol context",
+    "Current Great Britain nutrition and health claims register route"
   ],
   "remaining_limits": [
     "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",

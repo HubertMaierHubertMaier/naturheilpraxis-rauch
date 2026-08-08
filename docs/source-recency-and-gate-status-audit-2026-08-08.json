@@ -59,6 +59,13 @@
       "published_or_updated": "2026-07-06",
       "gate_use": ["vitamin_e_gap_awareness_only"],
       "gate_status": "not_citable_do_not_use_as_evidence"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "recency_class": "current_claims_register",
+      "published_or_updated": "2026-05-19",
+      "gate_use": ["claims_boundary_context", "commercial_communication_context"],
+      "gate_status": "regulatory_context_only_no_product_clearance"
     }
   ],
   "overall_gate_effect": {
