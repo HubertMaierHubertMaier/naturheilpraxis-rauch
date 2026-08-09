@@ -73,6 +73,19 @@ FROM expected, imported, revisions, incomplete, mismatched_records;
 Acceptance criteria: `expected_legacy_rows = imported_articles =
 imported_revisions`, `incomplete_imports = 0`, and `field_mismatches = 0`.
 
+## Verified Deployment Result
+
+The authorized deployment applied the Phase 1 core schema migration followed
+by the legacy import. The final read-only aggregate check recorded 618 legacy
+and internal-source rows, 618 imported articles, 618 imported draft revisions,
+zero incomplete imports, and zero JSONB field mismatches. The count includes
+the preserved 436 legacy Wiki entries and 182 existing internal source and
+audit drafts. `public.admin_knowledge_base` was not updated or deleted.
+
+All imported revisions remain `draft` records with
+`origin_type = 'legacy_snapshot'`. RLS remains admin-only; neither anonymous
+nor patient roles can read the structured Wiki tables.
+
 ## Safety Boundary
 
 - Do not update or delete any `admin_knowledge_base` row during this rollout.
