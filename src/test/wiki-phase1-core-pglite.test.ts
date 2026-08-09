@@ -255,6 +255,20 @@ describe("Wiki Phase 1 PGlite migration", () => {
     expect(counts.rows).toEqual([{ articles: 1, revisions: 1 }]);
   });
 
+  it("preserves the complete legacy row without field loss", async () => {
+    const mismatches = await db.query<{ total: number }>(`
+      SELECT count(*)::int AS total
+      FROM public.admin_knowledge_base AS legacy
+      JOIN public.kb_articles AS article
+        ON article.id = legacy.id
+      JOIN public.kb_article_revisions AS revision
+        ON revision.id = article.current_revision_id
+      WHERE revision.metadata -> 'legacy_record' IS DISTINCT FROM to_jsonb(legacy)
+    `);
+
+    expect(mismatches.rows).toEqual([{ total: 0 }]);
+  });
+
   it("enforces composite current-revision ownership", async () => {
     await db.exec(`
       INSERT INTO public.kb_entities (id, entity_type_code, canonical_key)
