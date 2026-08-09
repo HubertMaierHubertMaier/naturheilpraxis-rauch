@@ -308,6 +308,890 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_article_entities: {
+        Row: {
+          article_revision_id: string
+          context_text: string
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          rank: number
+          role: string
+        }
+        Insert: {
+          article_revision_id: string
+          context_text?: string
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          rank?: number
+          role: string
+        }
+        Update: {
+          article_revision_id?: string
+          context_text?: string
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          rank?: number
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_article_entities_article_revision_id_fkey"
+            columns: ["article_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_article_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_article_entities_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_article_revisions: {
+        Row: {
+          article_id: string
+          category_path: string
+          content_hash: string
+          content_markdown: string
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          origin_type: string
+          released_at: string | null
+          review_due_at: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision_no: number
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          article_id: string
+          category_path?: string
+          content_hash: string
+          content_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no: number
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          article_id?: string
+          category_path?: string
+          content_hash?: string
+          content_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no?: number
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_article_revisions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "kb_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_articles: {
+        Row: {
+          article_kind: string
+          canonical_key: string
+          created_at: string
+          created_by: string | null
+          current_revision_id: string | null
+          id: string
+          lifecycle_status: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          article_kind?: string
+          canonical_key: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          article_kind?: string
+          canonical_key?: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_current_revision_fk"
+            columns: ["id", "current_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_article_revisions"
+            referencedColumns: ["article_id", "id"]
+          },
+        ]
+      }
+      kb_assertion_sources: {
+        Row: {
+          assertion_id: string
+          created_at: string
+          created_by: string | null
+          is_primary: boolean
+          locator: string
+          original_quote: string
+          source_revision_id: string
+          source_role: string
+        }
+        Insert: {
+          assertion_id: string
+          created_at?: string
+          created_by?: string | null
+          is_primary?: boolean
+          locator?: string
+          original_quote?: string
+          source_revision_id: string
+          source_role: string
+        }
+        Update: {
+          assertion_id?: string
+          created_at?: string
+          created_by?: string | null
+          is_primary?: boolean
+          locator?: string
+          original_quote?: string
+          source_revision_id?: string
+          source_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_assertion_sources_assertion_id_fkey"
+            columns: ["assertion_id"]
+            isOneToOne: false
+            referencedRelation: "kb_assertions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_assertion_sources_source_revision_id_fkey"
+            columns: ["source_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_assertions: {
+        Row: {
+          assertion_kind: string
+          canonical_key: string
+          claim_text: string
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          evidence_basis: string
+          evidence_quality: string
+          id: string
+          metadata: Json
+          origin_type: string
+          released_at: string | null
+          review_due_at: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          supersedes_assertion_id: string | null
+          valid_from: string | null
+          valid_until: string | null
+          version_no: number
+        }
+        Insert: {
+          assertion_kind: string
+          canonical_key: string
+          claim_text: string
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          evidence_basis?: string
+          evidence_quality?: string
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          supersedes_assertion_id?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          version_no: number
+        }
+        Update: {
+          assertion_kind?: string
+          canonical_key?: string
+          claim_text?: string
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          evidence_basis?: string
+          evidence_quality?: string
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          supersedes_assertion_id?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_assertions_supersedes_assertion_id_fkey"
+            columns: ["supersedes_assertion_id"]
+            isOneToOne: false
+            referencedRelation: "kb_assertions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_change_proposals: {
+        Row: {
+          data_classification: string
+          id: string
+          operation: string
+          origin_type: string
+          proposal: Json
+          proposal_kind: string
+          review_notes: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          target_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          data_classification?: string
+          id?: string
+          operation: string
+          origin_type: string
+          proposal: Json
+          proposal_kind: string
+          review_notes?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          target_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          data_classification?: string
+          id?: string
+          operation?: string
+          origin_type?: string
+          proposal?: Json
+          proposal_kind?: string
+          review_notes?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          target_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kb_entities: {
+        Row: {
+          canonical_key: string
+          created_at: string
+          created_by: string | null
+          current_revision_id: string | null
+          entity_type_code: string
+          id: string
+          lifecycle_status: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          canonical_key: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          entity_type_code: string
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          canonical_key?: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          entity_type_code?: string
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entities_current_revision_fk"
+            columns: ["id", "current_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_revisions"
+            referencedColumns: ["entity_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_entities_entity_type_code_fkey"
+            columns: ["entity_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_types"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      kb_entity_identifiers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          id: string
+          is_primary: boolean
+          namespace: string | null
+          normalized_value: string
+          scheme_code: string
+          valid_from: string | null
+          valid_until: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          id?: string
+          is_primary?: boolean
+          namespace?: string | null
+          normalized_value: string
+          scheme_code: string
+          valid_from?: string | null
+          valid_until?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          id?: string
+          is_primary?: boolean
+          namespace?: string | null
+          normalized_value?: string
+          scheme_code?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entity_identifiers_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_entity_identifiers_scheme_code_fkey"
+            columns: ["scheme_code"]
+            isOneToOne: false
+            referencedRelation: "kb_identifier_schemes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      kb_entity_names: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          id: string
+          is_preferred: boolean
+          language_code: string
+          name: string
+          name_kind: string
+          normalized_name: string
+          retired_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          id?: string
+          is_preferred?: boolean
+          language_code?: string
+          name: string
+          name_kind: string
+          normalized_name: string
+          retired_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          id?: string
+          is_preferred?: boolean
+          language_code?: string
+          name?: string
+          name_kind?: string
+          normalized_name?: string
+          retired_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entity_names_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_entity_relations: {
+        Row: {
+          assertion_id: string
+          assignment_strength: string
+          context_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          object_entity_id: string
+          rank: number
+          relation_type_code: string
+          subject_entity_id: string
+        }
+        Insert: {
+          assertion_id: string
+          assignment_strength?: string
+          context_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          object_entity_id: string
+          rank?: number
+          relation_type_code: string
+          subject_entity_id: string
+        }
+        Update: {
+          assertion_id?: string
+          assignment_strength?: string
+          context_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          object_entity_id?: string
+          rank?: number
+          relation_type_code?: string
+          subject_entity_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entity_relations_assertion_id_fkey"
+            columns: ["assertion_id"]
+            isOneToOne: true
+            referencedRelation: "kb_assertions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_entity_relations_object_entity_id_fkey"
+            columns: ["object_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_entity_relations_relation_type_code_fkey"
+            columns: ["relation_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_relation_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "kb_entity_relations_subject_entity_id_fkey"
+            columns: ["subject_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_entity_revisions: {
+        Row: {
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          description_markdown: string
+          display_name: string
+          entity_id: string
+          id: string
+          metadata: Json
+          origin_type: string
+          released_at: string | null
+          review_due_at: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision_no: number
+          summary: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          description_markdown?: string
+          display_name: string
+          entity_id: string
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no: number
+          summary?: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          description_markdown?: string
+          display_name?: string
+          entity_id?: string
+          id?: string
+          metadata?: Json
+          origin_type?: string
+          released_at?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no?: number
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entity_revisions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_entity_types: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          is_active: boolean
+          label: string
+          metadata: Json
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          label: string
+          metadata?: Json
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          label?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
+      kb_identifier_schemes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          is_active: boolean
+          is_globally_unique: boolean
+          label: string
+          value_pattern: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          is_globally_unique: boolean
+          label: string
+          value_pattern?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          is_globally_unique?: boolean
+          label?: string
+          value_pattern?: string | null
+        }
+        Relationships: []
+      }
+      kb_relation_type_domains: {
+        Row: {
+          object_entity_type_code: string
+          relation_type_code: string
+          review_status: string
+          subject_entity_type_code: string
+        }
+        Insert: {
+          object_entity_type_code: string
+          relation_type_code: string
+          review_status?: string
+          subject_entity_type_code: string
+        }
+        Update: {
+          object_entity_type_code?: string
+          relation_type_code?: string
+          review_status?: string
+          subject_entity_type_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_relation_type_domains_object_entity_type_code_fkey"
+            columns: ["object_entity_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "kb_relation_type_domains_relation_type_code_fkey"
+            columns: ["relation_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_relation_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "kb_relation_type_domains_subject_entity_type_code_fkey"
+            columns: ["subject_entity_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_types"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      kb_relation_types: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          is_active: boolean
+          is_symmetric: boolean
+          label: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          is_symmetric?: boolean
+          label: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          is_active?: boolean
+          is_symmetric?: boolean
+          label?: string
+        }
+        Relationships: []
+      }
+      kb_source_revisions: {
+        Row: {
+          archive_location: string | null
+          authors: string[]
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          doi: string | null
+          edition: string | null
+          file_sha256: string | null
+          id: string
+          isbn: string | null
+          metadata: Json
+          pmid: string | null
+          published_on: string | null
+          publisher: string | null
+          released_at: string | null
+          retrieved_on: string | null
+          review_due_at: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision_no: number
+          rights_status: string
+          source_id: string
+          source_type: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          archive_location?: string | null
+          authors?: string[]
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          doi?: string | null
+          edition?: string | null
+          file_sha256?: string | null
+          id?: string
+          isbn?: string | null
+          metadata?: Json
+          pmid?: string | null
+          published_on?: string | null
+          publisher?: string | null
+          released_at?: string | null
+          retrieved_on?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no: number
+          rights_status?: string
+          source_id: string
+          source_type: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          archive_location?: string | null
+          authors?: string[]
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          doi?: string | null
+          edition?: string | null
+          file_sha256?: string | null
+          id?: string
+          isbn?: string | null
+          metadata?: Json
+          pmid?: string | null
+          published_on?: string | null
+          publisher?: string | null
+          released_at?: string | null
+          retrieved_on?: string | null
+          review_due_at?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_no?: number
+          rights_status?: string
+          source_id?: string
+          source_type?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_source_revisions_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "kb_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_sources: {
+        Row: {
+          canonical_key: string
+          created_at: string
+          created_by: string | null
+          current_revision_id: string | null
+          id: string
+          lifecycle_status: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          canonical_key: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          canonical_key?: string
+          created_at?: string
+          created_by?: string | null
+          current_revision_id?: string | null
+          id?: string
+          lifecycle_status?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_sources_current_revision_fk"
+            columns: ["id", "current_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_revisions"
+            referencedColumns: ["source_id", "id"]
+          },
+        ]
+      }
       knowledge_product_links: {
         Row: {
           clinical_topics: string[]
