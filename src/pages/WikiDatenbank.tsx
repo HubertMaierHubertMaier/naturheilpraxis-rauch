@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Database, ExternalLink, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, Bug, Database, ExternalLink, Link2, Search, ShieldCheck } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,26 +8,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PathogenIndex } from "@/components/admin/PathogenIndex";
 
 interface WikiEntry {
   id: string;
   title: string;
   category: string;
-  tags?: string[];
+  tags: string[];
   content: string;
   updated_at: string;
-  review_status?: string;
-  evidence_level?: string;
-  rights_status?: string;
-  patient_facing_allowed?: boolean;
+  entry_kind: string;
+  review_status: string;
+  evidence_level: string;
+  dosage_status: string;
+  rights_status: string;
+  source_citations: unknown;
+  therapeutic_topics: string[];
+  contraindications: string[];
+  interaction_tags: string[];
+  safety_notes: string;
+  patient_facing_allowed: boolean;
 }
 
-const metrics = [
-  { value: "229", label: "Vertragstests bestanden" },
-  { value: "12/12", label: "Quellen erreichbar" },
-  { value: "0", label: "Produktmappings" },
-  { value: "Read-only", label: "Betriebsmodus" },
-];
+interface SourceCitation {
+  label: string;
+  url: string;
+}
+
+interface KnowledgeProductLink {
+  id: string;
+  knowledge_entry_id: string;
+  relation_type: string;
+  clinical_topics: string[];
+  confidence: number;
+  safety_notes: string;
+  review_status: string;
+  admin_knowledge_base: { title: string } | null;
+  mannayan_products: { name: string } | null;
+}
 
 function normalize(value: string) {
   return value.toLocaleLowerCase("de").normalize("NFD").replace(/\p{Diacritic}/gu, "");
@@ -40,9 +59,32 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(date);
 }
 
+function sourceCitations(value: unknown): SourceCitation[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((citation) => {
+    if (!citation || typeof citation !== "object") return [];
+    const record = citation as Record<string, unknown>;
+    const url = typeof record.url === "string" ? record.url : "";
+    if (!url) return [];
+    return [{
+      url,
+      label: typeof record.label === "string" && record.label.trim() ? record.label : url,
+    }];
+  });
+}
+
+const relationLabels: Record<string, string> = {
+  exact_product: "Exaktes Produkt",
+  ingredient_match: "Inhaltsstoff-Bezug",
+  topic_match: "Gesundheitsthema",
+  alternative: "Alternative",
+  do_not_combine: "Nicht kombinieren",
+};
+
 export default function WikiDatenbank() {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [entries, setEntries] = useState<WikiEntry[]>([]);
+  const [productLinks, setProductLinks] = useState<KnowledgeProductLink[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,12 +96,22 @@ export default function WikiDatenbank() {
       setLoading(true);
       setError(null);
       try {
-        const result = await supabase
-          .from("admin_knowledge_base")
-          .select("*")
-          .order("updated_at", { ascending: false });
-        if (result.error) throw result.error;
-        if (active) setEntries((result.data as WikiEntry[]) || []);
+        const [entryResult, linkResult] = await Promise.all([
+          supabase
+            .from("admin_knowledge_base")
+            .select("*")
+            .order("updated_at", { ascending: false }),
+          supabase
+            .from("knowledge_product_links")
+            .select("id, knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, review_status, admin_knowledge_base(title), mannayan_products(name)")
+            .order("updated_at", { ascending: false }),
+        ]);
+        if (entryResult.error) throw entryResult.error;
+        if (linkResult.error) throw linkResult.error;
+        if (active) {
+          setEntries((entryResult.data as WikiEntry[]) || []);
+          setProductLinks((linkResult.data as unknown as KnowledgeProductLink[]) || []);
+        }
       } catch (loadError) {
         if (active) {
           setEntries([]);
@@ -98,6 +150,14 @@ export default function WikiDatenbank() {
     ].join(" "));
     return haystack.includes(query);
   });
+
+  const sourceCount = entries.reduce((count, entry) => count + sourceCitations(entry.source_citations).length, 0);
+  const metrics = [
+    { value: loading ? "..." : String(entries.length), label: "Wiki-Eintraege" },
+    { value: loading ? "..." : String(productLinks.length), label: "Mittelverknuepfungen" },
+    { value: loading ? "..." : String(sourceCount), label: "Quellenbelege" },
+    { value: "Read-only", label: "Betriebsmodus" },
+  ];
 
   return (
     <Layout>
@@ -139,64 +199,112 @@ export default function WikiDatenbank() {
           ))}
         </section>
 
-        <Card className="mt-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Wissenseinträge durchsuchen
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Titel, Kategorie, Tag oder Inhalt durchsuchen ..."
-                className="pl-9"
-                aria-label="WikiDatenbank durchsuchen"
-              />
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-              <span>{loading ? "Einträge werden gelesen ..." : `${filteredEntries.length} von ${entries.length} Einträgen`}</span>
-              <span>Keine Schreib- oder Löschaktionen in dieser Ansicht</span>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="entries" className="mt-6">
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
+            <TabsTrigger value="entries" className="gap-2"><BookOpen className="h-4 w-4" /> Alle Wiki-Eintraege</TabsTrigger>
+            <TabsTrigger value="pathogens" className="gap-2"><Bug className="h-4 w-4" /> Pathogene</TabsTrigger>
+            <TabsTrigger value="links" className="gap-2"><Link2 className="h-4 w-4" /> Mittelverknuepfungen</TabsTrigger>
+          </TabsList>
 
-        {error && (
-          <Card className="mt-6 border-amber-300 bg-amber-50/60">
-            <CardContent className="p-5 text-sm text-amber-900">
-              Die neue Ansicht ist technisch bereit, aber die autorisierte Datenbankverbindung ist noch nicht aktiv: {error}
-            </CardContent>
-          </Card>
-        )}
-
-        <section className="mt-6 space-y-4" aria-live="polite">
-          {!loading && !error && filteredEntries.length === 0 && (
-            <Card><CardContent className="p-8 text-center text-muted-foreground">Noch keine Einträge für diese Suche vorhanden.</CardContent></Card>
-          )}
-          {filteredEntries.map((entry) => (
-            <Card key={entry.id}>
-              <CardContent className="p-5 md:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">{entry.category || "Allgemein"}</p>
-                    <h2 className="mt-1 text-xl font-semibold text-foreground">{entry.title}</h2>
-                  </div>
-                  <Badge variant="secondary">Aktualisiert {formatDate(entry.updated_at)}</Badge>
+          <TabsContent value="entries" className="space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Vollstaendigen Wiki-Bestand durchsuchen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Mittel, Symptom, Erkrankung, Pathogen, Kategorie, Tag oder Inhalt durchsuchen ..."
+                    className="pl-9"
+                    aria-label="WikiDatenbank durchsuchen"
+                  />
                 </div>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{entry.content}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(entry.tags || []).map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
-                  {entry.review_status && <Badge variant="outline">Prüfung: {entry.review_status}</Badge>}
-                  {entry.rights_status && <Badge variant="outline">Rechte: {entry.rights_status}</Badge>}
-                  {entry.patient_facing_allowed === false && <Badge variant="outline">Nicht patientengerichtet</Badge>}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                  <span>{loading ? "Eintraege werden gelesen ..." : `${filteredEntries.length} von ${entries.length} Eintraegen`}</span>
+                  <span>Keine Schreib-, Loesch- oder Freigabeaktionen in dieser Ansicht</span>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </section>
+
+            {error && (
+              <Card className="border-amber-300 bg-amber-50/60">
+                <CardContent className="p-5 text-sm text-amber-900">
+                  Die neue Ansicht ist technisch bereit, aber die autorisierte Datenbankverbindung ist noch nicht aktiv: {error}
+                </CardContent>
+              </Card>
+            )}
+
+            <section className="space-y-4" aria-live="polite">
+              {!loading && !error && filteredEntries.length === 0 && (
+                <Card><CardContent className="p-8 text-center text-muted-foreground">Noch keine Eintraege fuer diese Suche vorhanden.</CardContent></Card>
+              )}
+              {filteredEntries.map((entry) => {
+                const sources = sourceCitations(entry.source_citations);
+                return (
+                  <Card key={entry.id}>
+                    <CardContent className="p-5 md:p-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-primary">{entry.category || "Allgemein"}</p>
+                          <h2 className="mt-1 text-xl font-semibold text-foreground">{entry.title}</h2>
+                        </div>
+                        <Badge variant="secondary">Aktualisiert {formatDate(entry.updated_at)}</Badge>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Badge variant="outline">Art: {entry.entry_kind || "unbekannt"}</Badge>
+                        <Badge variant="outline">Pruefung: {entry.review_status || "unbekannt"}</Badge>
+                        <Badge variant="outline">Evidenz: {entry.evidence_level || "unbewertet"}</Badge>
+                        <Badge variant="outline">Dosis: {entry.dosage_status || "unbekannt"}</Badge>
+                        <Badge variant="outline">Rechte: {entry.rights_status || "unbekannt"}</Badge>
+                        {entry.patient_facing_allowed === false && <Badge variant="outline">Nicht patientengerichtet</Badge>}
+                      </div>
+                      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{entry.content}</p>
+                      {(entry.tags || []).length > 0 && <div className="mt-4 flex flex-wrap gap-2">{entry.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
+                      {(entry.therapeutic_topics || []).length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Themen</p><div className="mt-2 flex flex-wrap gap-2">{entry.therapeutic_topics.map((topic) => <Badge key={topic} variant="outline">{topic}</Badge>)}</div></div>}
+                      {sources.length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quellen</p><div className="mt-2 flex flex-wrap gap-3 text-sm">{sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">{source.label}<ExternalLink className="h-3.5 w-3.5" /></a>)}</div></div>}
+                      {(entry.contraindications || []).length > 0 && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"><strong>Gegenanzeigen:</strong> {entry.contraindications.join(", ")}</div>}
+                      {(entry.interaction_tags || []).length > 0 && <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"><strong>Interaktionen:</strong> {entry.interaction_tags.join(", ")}</div>}
+                      {entry.safety_notes && <div className="mt-3 rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground"><strong>Sicherheitsnotiz:</strong> {entry.safety_notes}</div>}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </section>
+          </TabsContent>
+
+          <TabsContent value="pathogens" className="mt-6">
+            <PathogenIndex entries={entries} loading={loading} />
+          </TabsContent>
+
+          <TabsContent value="links" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"><Link2 className="h-5 w-5 text-primary" /> Bestehende Wiki-Mittelverknuepfungen</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!loading && productLinks.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Keine Mittelverknuepfungen vorhanden.</p>}
+                {productLinks.map((link) => (
+                  <div key={link.id} className="rounded-lg border p-4">
+                    <p className="font-medium text-foreground">{link.admin_knowledge_base?.title || "Wiki-Eintrag fehlt"} <span className="text-muted-foreground">→</span> {link.mannayan_products?.name || "Mittel fehlt"}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="outline">{relationLabels[link.relation_type] || link.relation_type}</Badge>
+                      <Badge variant="outline">Pruefung: {link.review_status}</Badge>
+                      <Badge variant="outline">Vertrauen: {link.confidence}%</Badge>
+                    </div>
+                    {link.clinical_topics.length > 0 && <p className="mt-3 text-sm text-muted-foreground">Themen: {link.clinical_topics.join(", ")}</p>}
+                    {link.safety_notes && <p className="mt-3 text-sm text-amber-800">Sicherheitsnotiz: {link.safety_notes}</p>}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <footer className="mt-8 flex flex-wrap gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1"><ShieldCheck className="h-4 w-4" /> Keine Live-Schreibvorgänge</span>
