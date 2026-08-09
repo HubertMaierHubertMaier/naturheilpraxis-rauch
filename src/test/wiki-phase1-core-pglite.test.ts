@@ -241,6 +241,20 @@ describe("Wiki Phase 1 PGlite migration", () => {
     }]);
   });
 
+  it("is idempotent when an authorized deployment is retried", async () => {
+    await db.exec(legacyImportMigration);
+
+    const counts = await db.query<{ articles: number; revisions: number }>(`
+      SELECT
+        (SELECT count(*)::int FROM public.kb_articles
+          WHERE canonical_key LIKE 'legacy-admin-knowledge:%') AS articles,
+        (SELECT count(*)::int FROM public.kb_article_revisions
+          WHERE origin_type = 'legacy_snapshot') AS revisions
+    `);
+
+    expect(counts.rows).toEqual([{ articles: 1, revisions: 1 }]);
+  });
+
   it("enforces composite current-revision ownership", async () => {
     await db.exec(`
       INSERT INTO public.kb_entities (id, entity_type_code, canonical_key)
