@@ -52,17 +52,26 @@ WITH expected AS (
       OR revision.metadata ->> 'import_origin' <> 'admin_knowledge_base'
       OR revision.metadata ->> 'source_citations_preserved' <> 'true'
     )
+), mismatched_records AS (
+  SELECT count(*) AS total
+  FROM public.admin_knowledge_base AS legacy
+  LEFT JOIN public.kb_articles AS article
+    ON article.id = legacy.id
+  LEFT JOIN public.kb_article_revisions AS revision
+    ON revision.id = article.current_revision_id
+  WHERE revision.metadata -> 'legacy_record' IS DISTINCT FROM to_jsonb(legacy)
 )
 SELECT
   expected.total AS expected_legacy_rows,
   imported.total AS imported_articles,
   revisions.total AS imported_revisions,
-  incomplete.total AS incomplete_imports
-FROM expected, imported, revisions, incomplete;
+  incomplete.total AS incomplete_imports,
+  mismatched_records.total AS field_mismatches
+FROM expected, imported, revisions, incomplete, mismatched_records;
 ```
 
 Acceptance criteria: `expected_legacy_rows = imported_articles =
-imported_revisions` and `incomplete_imports = 0`.
+imported_revisions`, `incomplete_imports = 0`, and `field_mismatches = 0`.
 
 ## Safety Boundary
 
