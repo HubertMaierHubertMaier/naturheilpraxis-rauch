@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-09T12:50:00.000Z",
+  "publication": "unpublished_internal_technical_closure_status",
+  "scope": "Local technical Wiki and database contract chain only; no live, clinical, product or patient-facing release.",
+  "branch": "db-step7d-20260808-integration-preflight",
+  "technical_status": "locally_verified_not_live",
+  "verified_contract_tests": {
+    "wiki_and_postgresql_contract_tests": 229,
+    "all_targeted_blocks_passed": true,
+    "coverage": [
+      "core schema and PGlite",
+      "legacy bridge and import staging",
+      "therapeutic catalog and entity contracts",
+      "draft promotion and knowledge release",
+      "search documents, clinical rules and laboratory contracts",
+      "homeopathic reader, repertory, parser, row-hash and import contracts",
+      "nutrient import and parser contracts",
+      "snapshot validation",
+      "PostgreSQL conformance policy contract"
+    ]
+  },
+  "technical_boundary": {
+    "database_writes": false,
+    "wiki_writes": false,
+    "source_imports": false,
+    "live_deployment": false,
+    "patient_facing_publication": false,
+    "product_mappings": 0,
+    "condition_mappings": 0
+  },
+  "remaining_gates": [
+    "authorized read-only remote database comparison",
+    "disposable PostgreSQL runtime execution where not covered by the existing CI evidence",
+    "written rights and permitted source scope before any real source import",
+    "independent form, population, interaction and safety review for all 9 product candidates",
+    "manual approval before any migration, import, release promotion or live activation"
+  ],
+  "result": "The local technical Wiki contract chain can be treated as verified for this work block. The overall database project cannot be marked completed because live, rights, clinical, product and safety gates remain open.",
+  "next_action": "Continue only with independent source and gate review or an explicitly authorized technical live-preflight step; do not write, import or publish."
+}
