@@ -26,7 +26,7 @@ describe("Phase 4 security access matrix", () => {
 
   it("keeps admin/patient-only routes classified as non-public", () => {
     const restrictedRoutes = routeAccessMatrix.filter((route) =>
-      ["/admin", "/anamnesebogen", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank"].includes(route.path)
+      ["/admin", "/anamnesebogen", "/patienten", "/dashboard", "/patienten-bibliothek", "/wissensdatenbank", "/wikidatenbank"].includes(route.path)
     );
 
     expect(restrictedRoutes.map((route) => route.path).sort()).toEqual([
@@ -35,6 +35,7 @@ describe("Phase 4 security access matrix", () => {
       "/dashboard",
       "/patienten",
       "/patienten-bibliothek",
+      "/wikidatenbank",
       "/wissensdatenbank",
     ]);
     expect(restrictedRoutes).not.toContainEqual(expect.objectContaining({ routeAudience: "public" }));
