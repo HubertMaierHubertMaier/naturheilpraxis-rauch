@@ -48,6 +48,23 @@ interface KnowledgeProductLink {
   mannayan_products: { name: string } | null;
 }
 
+interface StructuredArticle {
+  id: string;
+  article_kind: string;
+  current_revision_id: string | null;
+  updated_at: string;
+}
+
+interface StructuredArticleRevision {
+  id: string;
+  title: string;
+  category_path: string;
+  tags: string[];
+  content_markdown: string;
+  review_status: string;
+  metadata: unknown;
+}
+
 function normalize(value: string) {
   return value.toLocaleLowerCase("de").normalize("NFD").replace(/\p{Diacritic}/gu, "");
 }
@@ -88,6 +105,7 @@ function sourceCitations(value: unknown): SourceCitation[] {
       record.source_document,
       record.source_inventory,
       record.product,
+      record.legacy_record,
     ].forEach((nested) => visit(nested, depth + 1));
   };
 
@@ -118,20 +136,55 @@ export default function WikiDatenbank() {
       setLoading(true);
       setError(null);
       try {
-        const [entryResult, linkResult] = await Promise.all([
+        const [articleResult, revisionResult, linkResult] = await Promise.all([
           supabase
-            .from("admin_knowledge_base")
-            .select("*")
+            .from("kb_articles")
+            .select("id, article_kind, current_revision_id, updated_at")
             .order("updated_at", { ascending: false }),
+          supabase
+            .from("kb_article_revisions")
+            .select("id, title, category_path, tags, content_markdown, review_status, metadata"),
           supabase
             .from("knowledge_product_links")
             .select("id, knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, review_status, admin_knowledge_base(title), mannayan_products(name)")
             .order("updated_at", { ascending: false }),
         ]);
-        if (entryResult.error) throw entryResult.error;
+        if (articleResult.error) throw articleResult.error;
+        if (revisionResult.error) throw revisionResult.error;
         if (linkResult.error) throw linkResult.error;
         if (active) {
-          setEntries((entryResult.data as WikiEntry[]) || []);
+          const revisions = new Map(
+            ((revisionResult.data as StructuredArticleRevision[]) || []).map((revision) => [revision.id, revision]),
+          );
+          setEntries(((articleResult.data as StructuredArticle[]) || []).flatMap((article) => {
+            const revision = article.current_revision_id ? revisions.get(article.current_revision_id) : undefined;
+            if (!revision) return [];
+            const legacy = revision.metadata && typeof revision.metadata === "object"
+              ? (revision.metadata as Record<string, unknown>).legacy_record as Record<string, unknown> | undefined
+              : undefined;
+            const strings = (key: string) => Array.isArray(legacy?.[key])
+              ? legacy[key].filter((value): value is string => typeof value === "string")
+              : [];
+            return [{
+              id: article.id,
+              title: revision.title,
+              category: revision.category_path,
+              tags: revision.tags || [],
+              content: revision.content_markdown,
+              updated_at: article.updated_at,
+              entry_kind: article.article_kind,
+              review_status: revision.review_status,
+              evidence_level: typeof legacy?.evidence_level === "string" ? legacy.evidence_level : "unbewertet",
+              dosage_status: typeof legacy?.dosage_status === "string" ? legacy.dosage_status : "unverifiziert",
+              rights_status: typeof legacy?.rights_status === "string" ? legacy.rights_status : "unbekannt",
+              source_citations: revision.metadata,
+              therapeutic_topics: strings("therapeutic_topics"),
+              contraindications: strings("contraindications"),
+              interaction_tags: strings("interaction_tags"),
+              safety_notes: typeof legacy?.safety_notes === "string" ? legacy.safety_notes : "",
+              patient_facing_allowed: false,
+            }];
+          }));
           setProductLinks((linkResult.data as unknown as KnowledgeProductLink[]) || []);
         }
       } catch (loadError) {
