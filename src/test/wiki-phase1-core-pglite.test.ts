@@ -1119,4 +1119,45 @@ describe("Wiki Phase 1 PGlite migration", () => {
       await db.exec("RESET ROLE;");
     }
   });
+
+  it("imports the verified 436-row legacy Wiki inventory without loss", async () => {
+    await db.exec(`
+      INSERT INTO public.admin_knowledge_base (id, title, category, content)
+      SELECT
+        ('90000000-0000-4000-8000-' || lpad(row_number::text, 12, '0'))::uuid,
+        'Legacy row ' || row_number,
+        'Legacy inventory',
+        'Complete preserved legacy content ' || row_number
+      FROM generate_series(2, 436) AS row_number;
+    `);
+    await db.exec(legacyImportMigration);
+
+    const inventory = await db.query<{
+      legacy_rows: number;
+      imported_articles: number;
+      imported_revisions: number;
+      field_mismatches: number;
+    }>(`
+      SELECT
+        (SELECT count(*)::int FROM public.admin_knowledge_base) AS legacy_rows,
+        (SELECT count(*)::int FROM public.kb_articles
+          WHERE canonical_key LIKE 'legacy-admin-knowledge:%') AS imported_articles,
+        (SELECT count(*)::int FROM public.kb_article_revisions
+          WHERE origin_type = 'legacy_snapshot') AS imported_revisions,
+        (
+          SELECT count(*)::int
+          FROM public.admin_knowledge_base AS legacy
+          JOIN public.kb_articles AS article ON article.id = legacy.id
+          JOIN public.kb_article_revisions AS revision ON revision.id = article.current_revision_id
+          WHERE revision.metadata -> 'legacy_record' IS DISTINCT FROM to_jsonb(legacy)
+        ) AS field_mismatches
+    `);
+
+    expect(inventory.rows).toEqual([{
+      legacy_rows: 436,
+      imported_articles: 436,
+      imported_revisions: 436,
+      field_mismatches: 0,
+    }]);
+  });
 });
