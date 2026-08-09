@@ -1066,6 +1066,7 @@ describe("Wiki Phase 1 PGlite migration", () => {
     await db.exec("SET ROLE anon;");
     try {
       await expect(db.exec("SELECT * FROM public.kb_entities;")).rejects.toThrow(/permission denied/);
+      await expect(db.exec("SELECT * FROM public.kb_articles;")).rejects.toThrow(/permission denied/);
     } finally {
       await db.exec("RESET ROLE;");
     }
@@ -1091,6 +1092,10 @@ describe("Wiki Phase 1 PGlite migration", () => {
         "SELECT count(*)::int AS count FROM public.kb_entities",
       );
       expect(patientRows.rows[0].count).toBe(0);
+      const patientArticles = await db.query<{ count: number }>(
+        "SELECT count(*)::int AS count FROM public.kb_articles",
+      );
+      expect(patientArticles.rows[0].count).toBe(0);
       await expect(db.exec(`
         INSERT INTO public.kb_entities (entity_type_code, canonical_key)
         VALUES ('product', 'product:patient-denied')
@@ -1101,6 +1106,10 @@ describe("Wiki Phase 1 PGlite migration", () => {
         "SELECT count(*)::int AS count FROM public.kb_entities",
       );
       expect(adminRows.rows[0].count).toBeGreaterThan(0);
+      const adminArticles = await db.query<{ count: number }>(
+        "SELECT count(*)::int AS count FROM public.kb_articles",
+      );
+      expect(adminArticles.rows[0].count).toBeGreaterThan(0);
       await db.exec(`
         INSERT INTO public.kb_entities (entity_type_code, canonical_key)
         VALUES ('product', 'product:admin-allowed')
