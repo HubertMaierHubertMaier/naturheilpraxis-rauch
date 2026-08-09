@@ -9,6 +9,10 @@ const migration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260728090000_create_kb_phase1_core.sql"),
   "utf8",
 );
+const legacyImportMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260809214500_import_legacy_wiki_into_kb.sql"),
+  "utf8",
+);
 
 const kbTables = [
   "kb_article_entities",
@@ -110,11 +114,26 @@ beforeAll(async () => {
 
     CREATE TABLE public.admin_knowledge_base (
       id uuid PRIMARY KEY,
-      title text NOT NULL
+      title text NOT NULL,
+      category text NOT NULL DEFAULT '',
+      tags text[] NOT NULL DEFAULT '{}',
+      content text NOT NULL DEFAULT '',
+      source_citations jsonb NOT NULL DEFAULT '[]'::jsonb,
+      safety_notes text NOT NULL DEFAULT '',
+      patient_facing_allowed boolean NOT NULL DEFAULT false
     );
 
-    INSERT INTO public.admin_knowledge_base (id, title)
-    VALUES ('00000000-0000-4000-8000-000000000001', 'Legacy unchanged');
+    INSERT INTO public.admin_knowledge_base (
+      id, title, category, tags, content, source_citations, safety_notes
+    ) VALUES (
+      '00000000-0000-4000-8000-000000000001',
+      'Legacy unchanged',
+      'Naturheilkunde',
+      ARRAY['Altbestand', 'Quelle'],
+      'Vollstaendiger Altinhalt',
+      '[{"label":"Alte Quelle","url":"https://example.test/legacy"}]'::jsonb,
+      'Ungepruefte historische Sicherheitsnotiz'
+    );
 
     INSERT INTO public.user_roles (user_id, role)
     VALUES
@@ -122,6 +141,7 @@ beforeAll(async () => {
       ('${patientId}', 'patient');
   `);
   await db.exec(migration);
+  await db.exec(legacyImportMigration);
 }, 30_000);
 
 afterAll(async () => {
@@ -168,6 +188,56 @@ describe("Wiki Phase 1 PGlite migration", () => {
     expect(legacy.rows).toEqual([{
       id: "00000000-0000-4000-8000-000000000001",
       title: "Legacy unchanged",
+    }]);
+  });
+
+  it("imports each legacy wiki row as a complete internal draft article", async () => {
+    const imported = await db.query<{
+      canonical_key: string;
+      current_revision_id: string;
+      title: string;
+      origin_type: string;
+      review_status: string;
+      import_origin: string;
+      legacy_title: string;
+      category_path: string;
+      tags: string[];
+      content_markdown: string;
+      source_citations: string;
+      safety_notes: string;
+    }>(`
+      SELECT
+        article.canonical_key,
+        article.current_revision_id::text,
+        revision.title,
+        revision.origin_type,
+        revision.review_status,
+        revision.metadata ->> 'import_origin' AS import_origin,
+        revision.metadata -> 'legacy_record' ->> 'title' AS legacy_title,
+        revision.category_path,
+        revision.tags,
+        revision.content_markdown,
+        (revision.metadata -> 'legacy_record' -> 'source_citations')::text AS source_citations,
+        revision.metadata -> 'legacy_record' ->> 'safety_notes' AS safety_notes
+      FROM public.kb_articles AS article
+      JOIN public.kb_article_revisions AS revision
+        ON revision.id = article.current_revision_id
+      WHERE article.id = '00000000-0000-4000-8000-000000000001'
+    `);
+
+    expect(imported.rows).toEqual([{
+      canonical_key: "legacy-admin-knowledge:00000000-0000-4000-8000-000000000001",
+      current_revision_id: "00000000-0000-4000-8000-000000000001",
+      title: "Legacy unchanged",
+      origin_type: "legacy_snapshot",
+      review_status: "draft",
+      import_origin: "admin_knowledge_base",
+      legacy_title: "Legacy unchanged",
+      category_path: "Naturheilkunde",
+      tags: ["Altbestand", "Quelle"],
+      content_markdown: "Vollstaendiger Altinhalt",
+      source_citations: '[{"url": "https://example.test/legacy", "label": "Alte Quelle"}]',
+      safety_notes: "Ungepruefte historische Sicherheitsnotiz",
     }]);
   });
 
