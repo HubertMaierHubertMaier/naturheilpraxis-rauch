@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-09",
+  "publication": "unpublished_internal_local_wiki_staging",
+  "staging_url": "http://127.0.0.1:4173/wiki-staging.html",
+  "build": {
+    "command": "npm run build",
+    "status": "passed",
+    "vite_modules_transformed": 3788,
+    "production_build": true
+  },
+  "runtime_check": {
+    "command": "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
+    "http_status": 200,
+    "page_title": "Wiki-Staging | Naturheilpraxis Rauch",
+    "local_only": true,
+    "parallel_wiki_database_route": "/wikidatenbank",
+    "parallel_route_http_status": 200,
+    "legacy_wiki_route": "/wissensdatenbank",
+    "legacy_wiki_unchanged": true
+  },
+  "content_scope": {
+    "technical_contract_tests": 229,
+    "source_access_recheck": "12/12 HTTP 200",
+    "unpublished_product_candidates": 9,
+    "open_reviews_per_candidate": 4,
+    "candidates_without_declared_form": 7,
+    "product_mappings": 0,
+    "condition_mappings": 0
+  },
+  "safety_boundary": {
+    "read_only": true,
+    "database_writes": false,
+    "wiki_writes": false,
+    "source_imports": false,
+    "live_deployment": false,
+    "patient_facing_publication": false,
+    "medical_or_dosage_approval": false,
+    "open_gates": ["form", "population", "interaction", "safety"]
+  },
+  "technical_sources": [
+    "docs/wiki-technical-closure-status-2026-08-09.json",
+    "docs/source-access-recheck-2026-08-09.json",
+    "public/wiki-staging.html",
+    "src/pages/WikiDatenbank.tsx",
+    "src/App.tsx"
+  ]
+}

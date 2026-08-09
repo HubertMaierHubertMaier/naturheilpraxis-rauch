@@ -41,6 +41,7 @@ const Patientenaufklaerung = lazy(() => import("./pages/Patientenaufklaerung"));
 const Erstanmeldung = lazy(() => import("./pages/Erstanmeldung"));
 const Quellenhinweis = lazy(() => import("./pages/Quellenhinweis"));
 const Wissensdatenbank = lazy(() => import("./pages/Wissensdatenbank"));
+const WikiDatenbank = lazy(() => import("./pages/WikiDatenbank"));
 const Raucherentwoehnung = lazy(() => import("./pages/Raucherentwoehnung"));
 const SchilddrueseHypnose = lazy(() => import("./pages/SchilddrueseHypnose"));
 const Infothek = lazy(() => import("./pages/Infothek"));
@@ -107,6 +108,7 @@ const App = () => (
               <Route path="/knieschwellung" element={<InfothekGateRoute><Knieschwellung /></InfothekGateRoute>} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
+              <Route path="/wikidatenbank" element={<WikiDatenbank />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
