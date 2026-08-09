@@ -56,6 +56,7 @@ const buttons: ButtonRow[] = [
   { name: "Admin-Dashboard", path: "/admin", access: "admin", description: "Verwaltung: FAQs, Praxisinfos, Preise, Patienten, Bibliothek-Upload.", location: "Header (Admin)" },
   { name: "Patienten-Verwaltung", path: "/patienten", access: "admin", description: "Tabellarische Verwaltung, manuelle Verifikation, E-Mail-Resend.", location: "Header (Admin)" },
   { name: "Wiki / Wissensdatenbank", path: "/wissensdatenbank", access: "admin", description: "Internes Wiki mit Dosierungen, Pathogen-Nomenklatur, Therapieprotokollen.", location: "Header (Admin)" },
+  { name: "WikiDatenbank", path: "/wikidatenbank", access: "admin", description: "Neue getrennte read-only Datenbankansicht neben der bisherigen Wiki.", location: "Header (Admin)" },
   { name: "Bibliothek (Verwaltung)", path: "/patienten-bibliothek", access: "admin", description: "Upload und Sichtbarkeit der Patienten-PDFs/MP3s steuern (Tab im Admin).", location: "Admin → Tab Bibliothek" },
   { name: "Datensicherheit", path: "/datenschutz-fahrplan.html", access: "admin", description: "Interner DSGVO/Sicherheits-Fahrplan.", location: "Header (Admin)" },
   { name: "Übersicht der APP", path: "/app-uebersicht", access: "admin", description: "Diese Seite – Übersicht aller Buttons mit Zugriffsfarben.", location: "Header (Admin)" },
