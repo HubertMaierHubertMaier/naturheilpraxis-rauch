@@ -60,17 +60,39 @@ function formatDate(value: string) {
 }
 
 function sourceCitations(value: unknown): SourceCitation[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((citation) => {
-    if (!citation || typeof citation !== "object") return [];
-    const record = citation as Record<string, unknown>;
-    const url = typeof record.url === "string" ? record.url : "";
-    if (!url) return [];
-    return [{
-      url,
-      label: typeof record.label === "string" && record.label.trim() ? record.label : url,
-    }];
-  });
+  const citations = new Map<string, SourceCitation>();
+  const visited = new Set<object>();
+  const text = (candidate: unknown) => typeof candidate === "string" ? candidate.trim() : "";
+
+  const visit = (candidate: unknown, depth = 0): void => {
+    if (!candidate || depth > 5) return;
+    if (Array.isArray(candidate)) {
+      candidate.forEach((item) => visit(item, depth + 1));
+      return;
+    }
+    if (typeof candidate !== "object" || visited.has(candidate)) return;
+    visited.add(candidate);
+
+    const record = candidate as Record<string, unknown>;
+    const url = [record.url, record.source_url, record.manufacturerSource]
+      .map(text)
+      .find(Boolean);
+    if (url) {
+      const label = [record.label, record.title, record.publisher].map(text).find(Boolean) || url;
+      citations.set(url, { url, label });
+    }
+
+    [
+      record.source_citations,
+      record.proposed_data,
+      record.source_document,
+      record.source_inventory,
+      record.product,
+    ].forEach((nested) => visit(nested, depth + 1));
+  };
+
+  visit(value);
+  return [...citations.values()];
 }
 
 const relationLabels: Record<string, string> = {
