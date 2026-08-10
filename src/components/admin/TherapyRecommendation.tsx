@@ -852,6 +852,23 @@ const isFalseEmptyBefundHtml = (html: string) => {
     && !/(Diagnosen\s*&|Medikamente|Chronologische Untersuchungs|Strukturierte Anamnese|Laborwert-Verlauf)/i.test(visible);
 };
 
+const extractClinicalReportText = (html: string) => html
+  .replace(/<script[\s\S]*?<\/script>/gi, "\n")
+  .replace(/<style[\s\S]*?<\/style>/gi, "\n")
+  .replace(/<br\s*\/?\s*>/gi, "\n")
+  .replace(/<\/(?:h[1-6]|p|div|li|tr|td|th)>/gi, "\n")
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&nbsp;/gi, " ")
+  .replace(/&amp;/gi, "&")
+  .replace(/&lt;/gi, "<")
+  .replace(/&gt;/gi, ">")
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;/gi, "'")
+  .replace(/[ \t]+\n/g, "\n")
+  .replace(/\n{3,}/g, "\n\n")
+  .replace(/[ \t]{2,}/g, " ")
+  .trim();
+
 /**
  * Client-seitiger Notfall-Renderer: baut aus den gespeicherten Teilanalysen ein
  * vollständiges Befund-HTML, wenn der Server keine vollständige Zusammenführung
@@ -3550,7 +3567,8 @@ export function TherapyRecommendation() {
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === submitPid;
     const belastungenText = formatPathogensForAI(pathogens);
-    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage].some((x) => x.trim()) || mannayanOrders.length > 0;
+    const befundAuswertungText = extractClinicalReportText(docAnalysisHtml);
+    const hasAnyDoc = [laborKomplett, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, befundAuswertungText].some((x) => x.trim()) || mannayanOrders.length > 0;
     const hasManualDiagnosis = manualDiagnosen.some((entry) => entry.diagnose.trim());
     if (!isErweitern && !belastungenText && !symptome.trim() && !erkrankung.trim() && !hasAnyDoc && !hasManualDiagnosis) {
       toast({ title: "Bitte mindestens ein Feld ausfüllen", description: "Belastungen, Symptome, Erkrankung oder ein Dokument (Labor / Arztbericht / sonstige Untersuchungen)", variant: "destructive" });
@@ -3631,6 +3649,7 @@ export function TherapyRecommendation() {
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
             vievaPlus: vievaPlus.trim() || undefined,
             vievaPlusDatum: vievaPlusDatum.trim() || undefined,
+            befundAuswertung: befundAuswertungText || undefined,
             perplexityAnalyse: perplexityAnalyse.trim() || undefined,
             eigeneTherapieVorlage: eigeneTherapieVorlage.trim() || undefined,
             mannayanOrders: mannayanOrders.length > 0 ? mannayanOrders : undefined,

@@ -27,6 +27,17 @@ describe("therapy safety", () => {
     expect(source).toContain("bei dokumentiertem Prostatakarzinom oder Androgendeprivation niemals automatisch als Kernkandidat");
   });
 
+  it("passes the completed Befund-Auswertung into the structured therapy workflow", () => {
+    const recommendationSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const edgeSource = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
+
+    expect(recommendationSource).toContain("extractClinicalReportText(docAnalysisHtml)");
+    expect(recommendationSource).toContain("befundAuswertung: befundAuswertungText || undefined");
+    expect(edgeSource).toContain("befundAuswertung");
+    expect(edgeSource).toContain("VORHANDENE BEFUND-AUSWERTUNG – PRIMÄRER ZUSAMMENFASSENDER KONTEXT");
+    expect(edgeSource).toContain("befundAuswertungChars");
+  });
+
   it("keeps wiki-product links admin-only and reviewed before AI use", () => {
     const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260715155222_728b55a8-4b41-4449-9e5b-976c711ed4ed.sql"), "utf8");
     const edgeSource = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");

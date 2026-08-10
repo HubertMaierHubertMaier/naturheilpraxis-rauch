@@ -698,7 +698,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
     const manualDiagnosesText = Array.isArray(manualDiagnosen)
       ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
           .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
@@ -706,6 +706,7 @@ serve(async (req) => {
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
     const vievaPlusText: string = typeof vievaPlus === "string" ? vievaPlus.trim() : "";
+    const befundAuswertungText: string = typeof befundAuswertung === "string" ? befundAuswertung.trim() : "";
     const perplexityAnalyseText: string = typeof perplexityAnalyse === "string" ? perplexityAnalyse.trim() : "";
     const eigeneTherapieText: string = typeof eigeneTherapieVorlage === "string" ? eigeneTherapieVorlage.trim() : "";
     const mannayanOrdersText: string = Array.isArray(mannayanOrders)
@@ -715,14 +716,14 @@ serve(async (req) => {
         }).filter(Boolean).join("\n\n")
       : "";
     // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
-    const totalPatientChars = (sonstigeUntersuchungenText.length + vievaPlusText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    const totalPatientChars = (sonstigeUntersuchungenText.length + vievaPlusText.length + befundAuswertungText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
     if (totalPatientChars > 80_000) {
       console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
     }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !vievaPlusText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
+    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !vievaPlusText && !befundAuswertungText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
@@ -793,7 +794,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, vievaPlusText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, vievaPlusText, befundAuswertungText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -997,6 +998,7 @@ serve(async (req) => {
         metatronHeelInput: metatronHeelText || null,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
         vievaPlusChars: vievaPlusText.length,
+        befundAuswertungChars: befundAuswertungText.length,
         perplexityAnalyseChars: perplexityAnalyseText.length,
         eigeneTherapieChars: eigeneTherapieText.length,
         mannayanOrdersCount: Array.isArray(mannayanOrders) ? mannayanOrders.length : 0,
@@ -1392,9 +1394,15 @@ WICHTIG:
 - Bei jedem Mittel erklären, warum es als interner Kandidat geprüft wird; keine Wirksamkeit als gesichert darstellen, wenn die Evidenzmetadaten dies nicht tragen.
 - Schreibe KOMPAKT: pro Mittel max. 1 Begründungssatz, keine doppelten Erklärungen.`;
 
+    const befundContext = befundAuswertungText
+      ? `\n\nVORHANDENE BEFUND-AUSWERTUNG – PRIMÄRER ZUSAMMENFASSENDER KONTEXT:\n${befundAuswertungText}\n\nVerwende diese bereits erstellte Befund-Auswertung als zentrale Grundlage für die Priorisierung. Prüfe sie gegen die darunter gelieferten Rohfelder, aber baue die Befundauswertung nicht erneut und ersetze keine vorhandenen Befunde durch Vermutungen. Übernimm alle für die Therapie relevanten Diagnosen, Symptome, Labor-/Messwertmuster, Zeitbezüge, Warnhinweise und offenen Fragen.\n`
+      : "";
+
     const userMessage = isNachschlag
       ? `Patientendaten:
 ${patientInfo.join("\n")}
+
+${befundContext}
 
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}
@@ -1426,6 +1434,8 @@ DEINE AUFGABE JETZT:
 Erfinde keine Mittel – nutze ausschließlich die Wissensdatenbank.`
       : `Patientendaten:
 ${patientInfo.join("\n")}
+
+${befundContext}
 
 Belastungen/Pathogene: ${belastungen || "Nicht angegeben"}
 Symptome: ${symptome || "Nicht angegeben"}  
