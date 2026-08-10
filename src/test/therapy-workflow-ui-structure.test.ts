@@ -28,5 +28,10 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("disabled={isStreaming || therapyStartBlockedByBefund}");
     expect(source).toContain("hasEffectivelySelectedBefundSources");
     expect(source).toContain("sameBefundSourceRevision(recentlyCompleted.sourceRevision, analysisSources)");
+    expect(source).toContain("pathogensText: pathogensText || undefined");
+    expect(source).toContain("metatronDatum: metatronDatum.trim() || undefined");
+    expect(source).toContain("metatronDatum={metatronDatum}");
+    expect(source).toContain("pdfPassword={vievaPlusPdfPassword}");
+    expect(source).toContain("onPdfPasswordChange={setVievaPlusPdfPassword}");
   });
 });

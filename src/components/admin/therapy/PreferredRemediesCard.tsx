@@ -46,11 +46,21 @@ export function PreferredRemediesCard({
     let active = true;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("admin_knowledge_base")
-        .select("title, category")
-        .order("title", { ascending: true });
-      if (active && data) setAllEntries(data as WikiItem[]);
+      const { data: articles } = await supabase
+        .from("kb_articles")
+        .select("current_revision_id")
+        .not("current_revision_id", "is", null);
+      const revisionIds = (articles || []).flatMap((article) => article.current_revision_id ? [article.current_revision_id] : []);
+      const { data } = revisionIds.length
+        ? await supabase
+          .from("kb_article_revisions")
+          .select("title, category_path")
+          .in("id", revisionIds)
+          .order("title", { ascending: true })
+        : { data: [] };
+      if (active && data) {
+        setAllEntries(data.map((item) => ({ title: item.title, category: item.category_path })));
+      }
       setLoading(false);
     })();
     return () => {

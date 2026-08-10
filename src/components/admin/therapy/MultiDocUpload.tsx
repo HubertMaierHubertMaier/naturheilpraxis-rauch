@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logTherapyEvent } from "./therapyEventLog";
@@ -33,6 +34,8 @@ interface Props {
   documentDate?: string;
   documentType?: string;
   requireDocumentDate?: boolean;
+  pdfPassword?: string;
+  onPdfPasswordChange?: (value: string) => void;
 }
 
 type PendingFile = {
@@ -60,6 +63,11 @@ export type ClinicalDocumentExtractionResult = {
   ocrPages?: number;
   ocrFailedPages?: number[];
   removedIdentifierCategories?: string[];
+};
+
+export const isPdfPasswordError = (error: unknown): boolean => {
+  const candidate = error as { name?: unknown; message?: unknown } | null;
+  return candidate?.name === "PasswordException" || /password|passwort|kennwort/i.test(String(candidate?.message || ""));
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
@@ -93,6 +101,8 @@ export async function extractClinicalDocumentText(
   onProgress?: (status: string) => void,
   sharedOcrSession?: OcrExtractionSession,
   identitySalt = "",
+  pdfPassword = "",
+  onPasswordCaptured?: (password: string) => void,
 ): Promise<ClinicalDocumentExtractionResult> {
   if (file.type.startsWith("image/")) {
     throw new Error("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet. Bitte den sicheren PDF-Import verwenden.");
@@ -107,7 +117,27 @@ export async function extractClinicalDocumentText(
   throwIfAborted(signal);
   const fileData = await file.arrayBuffer();
   throwIfAborted(signal);
-  const loadingTask = pdfjs.getDocument({ data: fileData });
+  const normalizedPassword = pdfPassword.trim();
+  let passwordCancelled = false;
+  let currentPassword = normalizedPassword;
+  const loadingTask = pdfjs.getDocument({
+    data: fileData,
+    ...(normalizedPassword ? { password: normalizedPassword } : {}),
+  });
+  loadingTask.onPassword = (updatePassword: (password: string) => void, reason: number) => {
+    const reasonText = reason === 2
+      ? "Das eingegebene Passwort war falsch."
+      : "Diese PDF ist passwortgeschützt.";
+    const entered = window.prompt(`${reasonText}\nBitte das Vieva-Pro-PDF-Passwort eingeben:`, currentPassword);
+    if (entered === null) {
+      passwordCancelled = true;
+      void loadingTask.destroy();
+      return;
+    }
+    currentPassword = entered;
+    onPasswordCaptured?.(entered);
+    updatePassword(entered);
+  };
   let destroyLoadingTaskPromise: Promise<void> | undefined;
   const destroyLoadingTask = () => {
     destroyLoadingTaskPromise ||= loadingTask.destroy();
@@ -120,6 +150,7 @@ export async function extractClinicalDocumentText(
     doc = await loadingTask.promise;
   } catch (error) {
     await destroyLoadingTask();
+    if (passwordCancelled) throw new Error("PDF-Passwortabfrage abgebrochen.");
     throw error;
   }
   const totalPages = doc.numPages;
@@ -247,7 +278,7 @@ export async function extractClinicalDocumentText(
   };
 }
 
-export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false }: Props) {
+export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pseudonymIdRef = useRef(pseudonymId);
   const extractionRunRef = useRef(0);
@@ -288,6 +319,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const runExtraction = async () => {
     if (!files.length) return;
     const extractionDocumentDate = documentDate.trim();
+    let extractionPassword = pdfPassword.trim();
     if (requireDocumentDate && !extractionDocumentDate) {
       toast({ title: "Erstellungsdatum fehlt", description: "Bitte vor dem Auslesen das Datum der Analyse eintragen.", variant: "destructive" });
       return;
@@ -322,7 +354,10 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             if (!scopeIsCurrent()) return;
             updated[index] = { ...updated[index], progress };
             setFiles([...updated]);
-          }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "");
+          }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "", extractionPassword, (capturedPassword) => {
+            extractionPassword = capturedPassword;
+            onPdfPasswordChange?.(capturedPassword);
+          });
           if (!scopeIsCurrent()) return;
           const piiHits = (extracted.removedIdentifierCategories || []).map((kind) => ({ kind }));
           const datedText = extractionDocumentDate
@@ -345,7 +380,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             ...updated[index],
             status: "error",
             progress: undefined,
-            error: (error as Error).message || "Fehler",
+            error: isPdfPasswordError(error)
+              ? "Geschütztes PDF konnte nicht geöffnet werden. Passwort fehlt oder ist falsch."
+              : (error as Error).message || "Fehler",
           };
         }
         setFiles([...updated]);
@@ -398,6 +435,21 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
 
   return (
     <div className="space-y-2">
+      {onPdfPasswordChange && (
+        <div className="rounded-md border border-amber-300/70 bg-amber-50/60 dark:bg-amber-950/15 dark:border-amber-900/40 p-2.5 space-y-1.5">
+          <label className="text-xs font-medium block" htmlFor="protected-pdf-password">Vieva-Pro-PDF-Passwort</label>
+          <Input
+            id="protected-pdf-password"
+            type="password"
+            value={pdfPassword}
+            onChange={(event) => onPdfPasswordChange(event.target.value)}
+            placeholder="Passwort nur für diese PDF eingeben"
+            autoComplete="off"
+            className="h-8 text-xs bg-background"
+          />
+          <p className="text-[11px] text-muted-foreground">Wird nur lokal zum Öffnen der PDF an PDF.js übergeben und nicht gespeichert, protokolliert oder an die KI gesendet.</p>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 items-center">
         <input
           ref={inputRef}

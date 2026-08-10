@@ -50,9 +50,27 @@ export const missingPatientProfileFields = (
 
 export const addAnalysisDocumentMetadata = (text: string, documentDate: string, documentType: string): string => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(documentDate)) throw new Error("Ungültiges Erstellungsdatum der Analyse.");
-  const firstLineEnd = text.indexOf("\n");
-  if (firstLineEnd < 0) return `${text}\nDokumenttyp: ${documentType}\nErstellt am: ${documentDate}`;
-  return `${text.slice(0, firstLineEnd + 1)}Dokumenttyp: ${documentType}\nErstellt am: ${documentDate}\n${text.slice(firstLineEnd + 1)}`;
+  const metadata = [`Dokumenttyp: ${documentType}`, `Erstellt am: ${documentDate}`];
+  const normalized = text.trim();
+  if (!normalized) return metadata.join("\n");
+
+  const isDocumentMarker = (line: string) => /^===\s*(?:(?:📄|📷)\s*[^=\n]+?|KLINISCHES\s+DOKUMENT\s+[a-f0-9]{12}(?:\s*\(\d+\s*S\.\))?)\s*===\s*$/i.test(line.trim());
+  const lines = normalized.split(/\r?\n/);
+  const hasDocumentMarker = lines.some(isDocumentMarker);
+  if (!hasDocumentMarker) return `${metadata.join("\n")}\n${normalized}`;
+
+  const output: string[] = [];
+  lines.forEach((line, index) => {
+    output.push(line);
+    if (!isDocumentMarker(line)) return;
+
+    // Alte gespeicherte PDF-Blöcke können den Marker, aber noch keine Metadaten enthalten.
+    // Nur den Kopf des jeweiligen Blocks prüfen, damit medizinischer Freitext nicht zählt.
+    const header = lines.slice(index + 1, index + 5).filter((entry) => entry.trim()).map((entry) => entry.trim());
+    if (!header.some((entry) => /^Dokumenttyp\s*:/i.test(entry))) output.push(metadata[0]);
+    if (!header.some((entry) => /^Erstellt am\s*:/i.test(entry))) output.push(metadata[1]);
+  });
+  return output.join("\n").trim();
 };
 
 export const createNeutralDocumentId = async (text: string, identitySalt = ""): Promise<string> => {
