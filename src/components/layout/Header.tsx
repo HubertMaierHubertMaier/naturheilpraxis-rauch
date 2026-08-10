@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, Database, ShieldCheck, Library, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
+import { Menu, X, Leaf, LogIn, LogOut, User, Shield, BookOpen, Database, ShieldCheck, Library, LayoutGrid, ChevronDown, ClipboardList, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -63,6 +63,7 @@ export function Header() {
         { label: "Admin", href: withDevParam("/admin"), icon: Shield },
         { label: "Wiki", href: withDevParam("/wissensdatenbank"), icon: BookOpen },
         { label: "WikiDatenbank", href: withDevParam("/wikidatenbank"), icon: Database },
+        { label: "Therapie-Kandidaten", href: withDevParam("/therapie-kandidaten"), icon: Stethoscope },
         { label: "Bibliothek", href: withDevParam("/patienten-bibliothek"), icon: Library },
       ]
     : [];
@@ -211,6 +212,12 @@ export function Header() {
                         <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
                         <Database className="h-4 w-4" />
                         WikiDatenbank
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={withDevParam("/therapie-kandidaten")} className="flex items-center gap-2 cursor-pointer">
+                        <Stethoscope className="h-4 w-4" />
+                        Interne Therapie-Kandidaten
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

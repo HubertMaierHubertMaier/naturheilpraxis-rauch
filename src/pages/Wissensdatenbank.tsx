@@ -6,9 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KnowledgeBaseManager } from "@/components/admin/KnowledgeBaseManager";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Bug, Link2, Stethoscope, Users } from "lucide-react";
+import { BookOpen, Bug, Link2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { TherapyRecommendation } from "@/components/admin/TherapyRecommendation";
 import { TherapyPatientOverview } from "@/components/admin/therapy/TherapyPatientOverview";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { KnowledgeProductLinkManager } from "@/components/admin/KnowledgeProductLinkManager";
@@ -28,8 +27,9 @@ const TAB_STORAGE_KEY = "wissensdatenbank.activeTab.v2";
 const Wissensdatenbank = () => {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(() => {
-    if (typeof window === "undefined") return "therapie";
-    return sessionStorage.getItem(TAB_STORAGE_KEY) || "therapie";
+    if (typeof window === "undefined") return "wiki";
+    const stored = sessionStorage.getItem(TAB_STORAGE_KEY);
+    return stored === "therapie" ? "wiki" : stored || "wiki";
   });
   const handleTabChange = (val: string) => {
     setActiveTab(val);
@@ -83,10 +83,6 @@ const Wissensdatenbank = () => {
               <Link2 className="h-4 w-4" />
               Mannayan-Zuordnungen
             </TabsTrigger>
-            <TabsTrigger value="therapie" className="gap-2">
-              <Stethoscope className="h-4 w-4" />
-              Therapie-Empfehlung
-            </TabsTrigger>
             <TabsTrigger value="patienten" className="gap-2">
               <Users className="h-4 w-4" />
               Patientenübersicht
@@ -100,11 +96,6 @@ const Wissensdatenbank = () => {
           </TabsContent>
           <TabsContent value="zuordnungen">
             <KnowledgeProductLinkManager />
-          </TabsContent>
-          <TabsContent value="therapie">
-            <ErrorBoundary label="Therapie-Empfehlung">
-              <TherapyRecommendation />
-            </ErrorBoundary>
           </TabsContent>
           <TabsContent value="patienten">
             <TherapyPatientOverview />
