@@ -33,6 +33,7 @@ interface Props {
   arztbericht?: string;
   arztberichtDatum?: string;
   metatronHeel?: string;
+  metatronDatum?: string;
   sonstigeUntersuchungen?: string;
   vievaPlus?: string;
   perplexityAnalyse?: string;
@@ -54,7 +55,7 @@ const splitLines = (s?: string) =>
 export function LiveInputSummary({
   pathogens, symptome, erkrankung,
   laborErhoeht = "", laborErniedrigt = "", laborKomplett = "", laborDatum = "",
-  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", sonstigeUntersuchungen = "", vievaPlus = "", perplexityAnalyse = "", eigeneTherapieVorlage = "", mannayanOrders = [],
+  stuhlbefund = "", arztbericht = "", arztberichtDatum = "", metatronHeel = "", metatronDatum = "", sonstigeUntersuchungen = "", vievaPlus = "", perplexityAnalyse = "", eigeneTherapieVorlage = "", mannayanOrders = [],
 }: Props) {
   const filledPathogens = pathogens.filter((p) => p.name.trim());
 
@@ -217,6 +218,7 @@ export function LiveInputSummary({
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-fuchsia-700 dark:text-fuchsia-300">
               <Radio className="h-3.5 w-3.5" />
               Metatron Hospital / NLS / HEEL ({metatronList.length} Zeilen)
+              {metatronDatum && <span className="font-normal text-muted-foreground normal-case">· Analyse vom {metatronDatum}</span>}
             </div>
             <pre className="text-xs whitespace-pre-wrap font-sans bg-muted/40 p-2 rounded max-h-48 overflow-y-auto">{metatronHeel}</pre>
           </div>

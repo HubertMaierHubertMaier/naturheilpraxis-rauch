@@ -33,7 +33,8 @@ const psa = (datum: string, wert: string, bewertung = "normal") => ({
 describe("laboratory trend analysis", () => {
   it("invalidates checkpoints created with the previous laboratory prompt", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9"');
+    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v10"');
+    expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v8"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-sensitive-lab-extraction-v7"');
   });

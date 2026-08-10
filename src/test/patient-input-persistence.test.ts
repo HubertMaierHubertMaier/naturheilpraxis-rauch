@@ -54,6 +54,16 @@ describe("patient input persistence", () => {
     expect(() => addAnalysisDocumentMetadata("Text", "28.07.2026", "Vieva Plus")).toThrow("Ungültiges Erstellungsdatum");
   });
 
+  it("adds missing dates to every existing neutral document block without duplicating metadata", () => {
+    const dated = addAnalysisDocumentMetadata(
+      "=== 📄 Dokument-abcdef123456 (1 S.) ===\nAlter Befund\n\n=== 📄 Dokument-fedcba654321 (1 S.) ===\nDokumenttyp: Metatron Hospital\nNeuer Befund",
+      "2026-07-28",
+      "Metatron Hospital",
+    );
+    expect(dated.match(/Erstellt am: 2026-07-28/g)).toHaveLength(2);
+    expect(dated.match(/Dokumenttyp: Metatron Hospital/g)).toHaveLength(1);
+  });
+
   it("gives text-identical analyses different stable IDs for different dates", async () => {
     const first = await createNeutralDocumentId("identischer Befund", "Vieva Plus|2026-01-01");
     const second = await createNeutralDocumentId("identischer Befund", "Vieva Plus|2026-07-01");

@@ -78,6 +78,7 @@ import {
   mergeExtractedSymptoms,
   missingPatientProfileFields,
   shouldApplyCloudDraft,
+  addAnalysisDocumentMetadata,
 } from "@/lib/patientInputPersistence";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
@@ -177,7 +178,7 @@ type ExtractedBefundInputs = {
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9";
+const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v10";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -396,8 +397,8 @@ const splitMarkedDocumentSources = (fieldKey: string, fallbackLabel: string, tex
 
 const includeStandaloneAnalysisDate = (text: string, date: string, documentType: string) => {
   const trimmed = text.trim();
-  if (!trimmed || !date.trim() || /===\s*(?:📄|📷|KLINISCHES\s+DOKUMENT)/i.test(trimmed)) return trimmed;
-  return `Dokumenttyp: ${documentType}\nErstellt am: ${date.trim()}\n${trimmed}`;
+  if (!trimmed || !date.trim()) return trimmed;
+  return addAnalysisDocumentMetadata(trimmed, date.trim(), documentType);
 };
 
 const sameBefundSourceRevision = (left: SelectableAnalysisSource[] | null, right: SelectableAnalysisSource[]) => {
@@ -877,7 +878,7 @@ const extractClinicalReportText = (html: string) => html
  */
 const buildClientFallbackAnalysisHtml = (
   partials: string[],
-  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[]; mannayanOrdersText?: string },
+  ctx: { pseudonymId?: string; alter?: string; geschlecht?: string; totalChars: number; duplicateNotes: string[]; mannayanOrdersText?: string; pathogensText?: string },
 ): string => {
   const escapeHtml = (v: unknown) => String(v ?? "")
     .replace(/&/g, "&amp;")
@@ -952,6 +953,7 @@ const buildClientFallbackAnalysisHtml = (
     </tbody></table>`;
   };
   const mannayanRows = parseMannayanRows(ctx.mannayanOrdersText);
+  const pathogensText = String(ctx.pathogensText || "").trim();
   const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
   const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
   return `<!DOCTYPE html>
@@ -964,6 +966,8 @@ const buildClientFallbackAnalysisHtml = (
 
 <h2>1. Übersicht der eingereichten Unterlagen</h2>
 <table><tbody><tr><th>Teilpakete</th><td>${partials.length}</td></tr><tr><th>Verarbeiteter Umfang</th><td>${escapeHtml(ctx.totalChars.toLocaleString("de-DE"))} Zeichen</td></tr><tr><th>Duplikate</th><td>${ctx.duplicateNotes.length ? ctx.duplicateNotes.map(escapeHtml).join("<br>") : "Keine vorab erkannten identischen Duplikate."}</td></tr></tbody></table>
+
+${pathogensText ? `<h2>1a. Dokumentierte Pathogene / Belastungen</h2><div class="meta"><strong>Quelle:</strong> Metatron / NLS / EAV-Eingabe<br><pre style="white-space:pre-wrap;font-family:inherit">${escapeHtml(pathogensText)}</pre></div>` : ""}
 
 <h2>2. Chronologische Untersuchungs-Übersicht</h2>
 <table><thead><tr><th>Datum</th><th>Quelle</th><th>Untersuchung</th><th>Hauptbefund</th><th>Auffällig?</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.documents, (item: any) => `<td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.untersuchung || "—")}</td><td>${escapeHtml(item?.hauptbefund || "—")}</td><td>${escapeHtml(item?.auffaellig || "—")}</td><td>${beleg(item)}</td>`)}</tbody></table>
@@ -1156,6 +1160,7 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [vievaPlus, setVievaPlus] = useState("");
   const [vievaPlusDatum, setVievaPlusDatum] = useState("");
+  const [vievaPlusPdfPassword, setVievaPlusPdfPassword] = useState("");
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
   const [apothekerRezept, setApothekerRezept] = useState("");
@@ -1225,6 +1230,11 @@ export function TherapyRecommendation() {
   const docAnalysisRunIdRef = useRef(0);
   const patientScopeGenerationRef = useRef(0);
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Das Vieva-PDF-Passwort bleibt ausschließlich für den aktuellen Patienten im flüchtigen Zustand.
+    setVievaPlusPdfPassword("");
+  }, [pseudonymId]);
   const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
@@ -2072,6 +2082,7 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setVievaPlus("");
     setVievaPlusDatum("");
+    setVievaPlusPdfPassword("");
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
     setApothekerRezept("");
@@ -2564,7 +2575,8 @@ export function TherapyRecommendation() {
       return;
     }
     const totalChars = prepared.analyzedChars;
-    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, analysisPid, selectedSourceIds.join("|"), prepared.duplicateNotes.join("|")].join("|"));
+    const pathogensText = formatPathogensForAI(pathogens).trim();
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, analysisPid, selectedSourceIds.join("|"), pathogensText, metatronDatum, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(analysisPid, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, analysisPid);
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
@@ -2648,6 +2660,8 @@ export function TherapyRecommendation() {
                 alter: alter.trim() || undefined,
                 geschlecht: geschlecht || undefined,
                 pseudonymId: analysisPid || undefined,
+                pathogensText: pathogensText || undefined,
+                metatronDatum: metatronDatum.trim() || undefined,
                 mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               }),
             });
@@ -2871,6 +2885,8 @@ export function TherapyRecommendation() {
               alter: alter.trim() || undefined,
               geschlecht: geschlecht || undefined,
               pseudonymId: analysisPid || undefined,
+              pathogensText: pathogensText || undefined,
+              metatronDatum: metatronDatum.trim() || undefined,
               useProModel: useProModel || undefined,
               mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               previousResultForCompare: addPreviousComparison && result && result.trim().length > 200
@@ -2935,6 +2951,7 @@ export function TherapyRecommendation() {
           totalChars,
           duplicateNotes: prepared.duplicateNotes,
           mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
+          pathogensText: pathogensText || undefined,
         });
         analysisMode = `${analysisMode}+client-fallback`;
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
@@ -4719,6 +4736,8 @@ export function TherapyRecommendation() {
                     documentDate={vievaPlusDatum}
                     documentType="Vieva Plus"
                     requireDocumentDate
+                    pdfPassword={vievaPlusPdfPassword}
+                    onPdfPasswordChange={setVievaPlusPdfPassword}
                     onExtracted={(text, sourcePseudonymId) => {
                       if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
                       setVievaPlus((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
@@ -4731,7 +4750,7 @@ export function TherapyRecommendation() {
                     rows={12}
                     className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
                   />
-                  <p className="text-xs text-muted-foreground mt-2">Die PDF wird lokal im Browser gelesen und bei Bedarf lokal per OCR erkannt. Direkte Identifikatoren werden vor Speicherung und Analyse entfernt; das Original wird nicht archiviert. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen.</p>
+                   <p className="text-xs text-muted-foreground mt-2">Die PDF wird lokal im Browser gelesen und bei Bedarf lokal per OCR erkannt. Direkte Identifikatoren werden vor Speicherung und Analyse entfernt; das Original wird nicht archiviert. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen. Die Recherche- und Preisprüfung in Sorra Control ist davon getrennt.</p>
                 </div>
               </TabsContent>
 
@@ -5218,6 +5237,7 @@ export function TherapyRecommendation() {
         arztbericht={arztbericht}
         arztberichtDatum={arztberichtDatum}
         metatronHeel={metatronHeel}
+        metatronDatum={metatronDatum}
         sonstigeUntersuchungen={sonstigeUntersuchungen}
         vievaPlus={vievaPlus}
         perplexityAnalyse={perplexityAnalyse}
