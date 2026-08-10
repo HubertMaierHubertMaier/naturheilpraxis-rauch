@@ -999,6 +999,8 @@ MENGENLIMIT:
 - Hoechstens 4 weitere optionale Reservekandidaten.
 - Pro klinischem Hauptthema hoechstens 2 Mittel; wirkgleiche oder inhaltsgleiche Produkte nicht doppeln.
 - Ein Wiki-Treffer ist nur ein Kandidat und keine Pflichtaufnahme.
+- Der Startplan darf hoechstens 3 gleichzeitig neu beginnende Mittel enthalten. Weitere passende Kandidaten muessen klar als Reserve oder spaetere Phase gekennzeichnet werden, nicht parallel angesetzt werden.
+- Ernaehrung und Verhalten sind gleichwertige Therapiebausteine und zaehlen nicht als zusaetzliche Mittel. Formuliere dort jeweils hoechstens 3 konkret umsetzbare, zum Befund passende Schritte.
 
 ZWEISTUFIGER WIKI-PROZESS (VERBINDLICH FÜR ALLE PATIENTEN):
 - Phase 1 ist die Gesamt-Wiki-Sichtung: ALLE Einträge aus ALLEN Kategorien werden gegen die Eingabe aus der Therapie-Maske bewertet. Es gibt keine Beschränkung auf Homotoxikologie, Heel, Vitaplace oder Stuhldiagnostik.
@@ -1166,6 +1168,9 @@ KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - Priorisiere Mittel nach Wichtigkeit: Die wichtigsten 2-3 Mittel zuerst, optionale Ergänzungen kennzeichnen
 
 AUSGABEFORMAT:
+## 🎯 Priorisierung & Therapieziele
+Nenne hoechstens drei Ziele in Reihenfolge 1 bis 3. Begruende die Reihenfolge mit gesicherten Diagnosen, Symptomen, Alter, Medikation sowie Labor-/Stuhlbefunden. Resonanzhinweise bleiben klar getrennt und duerfen die Reihenfolge nicht allein bestimmen.
+
 ## 🔍 Analyse der Belastungen
 Kurze Zusammenfassung der identifizierten Probleme.
 
@@ -1290,7 +1295,13 @@ WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die 
 ${budget ? `- **Budget-Check**: Passt die Empfehlung in das Budget von ${budget} €? Falls nicht, welche Mittel weglassen?` : ""}
 
 ## 📋 Therapieprotokoll
-Zeitlicher Ablauf der Einnahme (welche Mittel wann, in welcher Reihenfolge).
+Zeitlicher Ablauf in Phasen: Startphase (maximal 3 gleichzeitig neu beginnende Mittel), anschliessende Aufbau-/Erweiterungsphase und Verlaufskontrolle. Nenne klar, welche Reservekandidaten nicht parallel in der Startphase eingesetzt werden.
+
+## 🥗 Ernährung
+Hoechstens drei priorisierte, konkrete und zum Befund passende Massnahmen. Keine allgemeine Standardliste und keine unbelegten Wirkversprechen.
+
+## 🚶 Verhalten & Alltag
+Hoechstens drei priorisierte, konkrete Schritte zu Schlaf, Bewegung, Belastungssteuerung oder anderen passenden Gewohnheiten. Keine allgemeinen Standardlisten.
 
 ## 🔄 Begleitmaßnahmen
 Empfehlungen zu Ernährung, Darmaufbau, Entgiftungsunterstützung. Hier auch günstige Hausmittel wie Knoblauch-Zitronen-Kur, Kurkuma-Paste, Ingwertee etc.

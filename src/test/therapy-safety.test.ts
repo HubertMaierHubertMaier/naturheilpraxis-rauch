@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseTherapyMarkdown } from "@/lib/therapyParser";
-import { assessRemedyWithWikiSafety, assessSelectedCombinationSafety, buildInitialRemedySelection, buildRemedySafetyMap, patientOutputRestrictionsForRemedy } from "@/lib/therapySelection";
+import { parseBulkPaste } from "@/components/admin/therapy/PathogenInput";
+import { assessRemedyWithWikiSafety, assessSelectedCombinationSafety, buildInitialRemedySelection, buildRemedySafetyMap, MAX_START_PLAN_REMEDIES, patientOutputRestrictionsForRemedy } from "@/lib/therapySelection";
 import { assessRemedySafety, buildSafetyContextWarnings } from "../../supabase/functions/_shared/therapySafety";
 
 describe("therapy safety", () => {
@@ -68,6 +69,26 @@ describe("therapy safety", () => {
       priority: "essential",
       reason: "ausfuehrlichere Begruendung",
     }));
+  });
+
+  it("keeps therapy goals, nutrition and behaviour as separate plan sections", () => {
+    const parsed = parseTherapyMarkdown([
+      "## 🎯 Priorisierung & Therapieziele",
+      "1. Erstes Ziel",
+      "## 🥗 Ernährung",
+      "- Erste Massnahme",
+      "## 🚶 Verhalten & Alltag",
+      "- Zweite Massnahme",
+    ].join("\n"));
+
+    expect(parsed.intro.map((section) => section.title)).toContain("Priorisierung & Therapieziele");
+    expect(parsed.outro.map((section) => section.title)).toEqual(expect.arrayContaining(["Ernährung", "Verhalten & Alltag"]));
+  });
+
+  it("parses the advertised spaced-hyphen pathogen format", () => {
+    expect(parseBulkPaste("Borrelia burgdorferi - Gel, ZNS, Hz")).toEqual([
+      expect.objectContaining({ name: "Borrelia burgdorferi", organe: "Gelenke, Zentrales Nervensystem, Herz" }),
+    ]);
   });
 
   it("blocks liquorice from automatic selection when hypertension is documented", () => {
@@ -195,7 +216,7 @@ describe("therapy safety", () => {
     const selected = buildInitialRemedySelection(parsed, context, wiki);
     const warnings = buildRemedySafetyMap(parsed, context, wiki);
 
-    expect(selected.size).toBe(6);
+    expect(selected.size).toBe(MAX_START_PLAN_REMEDIES);
     expect(selected.has("0|3")).toBe(false);
     expect(warnings.get("0|3")?.[0].id).toBe("liquorice-hypertension");
     expect(selected.has("0|8")).toBe(false);

@@ -14,6 +14,8 @@ export interface PathogenEntry {
 interface Props {
   entries: PathogenEntry[];
   onChange: (entries: PathogenEntry[]) => void;
+  bulkText: string;
+  onBulkTextChange: (value: string) => void;
 }
 
 const newId = () => Math.random().toString(36).slice(2, 9);
@@ -149,8 +151,9 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   const isCategoryHeader = (s: string) =>
     /^(BAKTERIEN|VIREN|PARASITEN|PILZE|TOXINE|SCHWERMETALLE|MYKOSEN|PATHOGENE)$/i.test(s);
 
-  // Inline-Separator: : | = → tab    (Bindestriche sind unzuverlässig wegen Pathogen-Namen)
-  const INLINE_SEP = /\s*[:\|=→]\s*|\t+/;
+  // Bindestriche nur mit Leerraum als Separator werten, damit Namen wie
+  // "Epstein-Barr-Virus" unverändert bleiben.
+  const INLINE_SEP = /\s*[:\|=→]\s*|\s+-\s+|\t+/;
   // "Index: 0.42" / "Idx 0,42" am Zeilenende (mit oder ohne Pipe davor)
   const INDEX_LABEL_TAIL = /\s*[\|~]?\s*(?:index|idx)\s*[:=]?\s*([0-9]+([.,][0-9]+)?)\s*$/i;
   // Reine Zahl mit Trenner am Ende: " | 0.42"
@@ -261,13 +264,13 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   return entries;
 }
 
-export function PathogenInput({ entries, onChange }: Props) {
+export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }: Props) {
   // Schnell-Eingabe ist STANDARD und immer sichtbar.
   // Manuelle Einzelfeld-Liste ist optional ausklappbar.
-  const [bulkText, setBulkText] = useState("");
   const [manualOpen, setManualOpen] = useState(false);
 
   const filledCount = entries.filter((e) => e.name.trim()).length;
+  const stagedCount = parseBulkPaste(bulkText).length;
 
   const update = (id: string, patch: Partial<PathogenEntry>) => {
     onChange(entries.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -288,13 +291,13 @@ export function PathogenInput({ entries, onChange }: Props) {
     if (parsed.length === 0) return;
     const existing = entries.filter((e) => e.name.trim());
     onChange([...existing, ...parsed]);
-    setBulkText("");
+    onBulkTextChange("");
     setManualOpen(true); // Liste automatisch öffnen, damit der Nutzer das Ergebnis sieht
   };
 
   const clearAll = () => {
     onChange([emptyEntry()]);
-    setBulkText("");
+    onBulkTextChange("");
   };
 
   return (
@@ -322,7 +325,7 @@ export function PathogenInput({ entries, onChange }: Props) {
         </p>
         <Textarea
           value={bulkText}
-          onChange={(e) => setBulkText(e.target.value)}
+          onChange={(e) => onBulkTextChange(e.target.value)}
           rows={6}
           className="text-xs font-mono bg-background"
           placeholder={
@@ -338,9 +341,14 @@ export function PathogenInput({ entries, onChange }: Props) {
           </Button>
           <Button type="button" size="sm" onClick={applyBulk} disabled={!bulkText.trim()}>
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Zur Liste hinzufügen
+            {stagedCount ? `${stagedCount} zur Liste hinzufügen` : "Zur Liste hinzufügen"}
           </Button>
         </div>
+        {stagedCount > 0 && (
+          <p className="text-[11px] text-amber-700 dark:text-amber-300">
+            {stagedCount} Eintrag{stagedCount === 1 ? "" : "e"} vorgemerkt. Die Auto-Sicherung übernimmt sie auch ohne diesen Klick in die Patientenakte.
+          </p>
+        )}
       </div>
 
       {/* Manuelle Einzelfeld-Bearbeitung – optional aufklappbar */}

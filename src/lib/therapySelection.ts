@@ -30,6 +30,7 @@ export type WikiSafetyEntry = {
 
 export const MAX_AUTO_SELECTED_ESSENTIAL = 3;
 export const MAX_AUTO_SELECTED_RECOMMENDED = 3;
+export const MAX_START_PLAN_REMEDIES = MAX_AUTO_SELECTED_ESSENTIAL + MAX_AUTO_SELECTED_RECOMMENDED;
 
 const normalize = (value: unknown) => String(value ?? "")
   .normalize("NFKD")

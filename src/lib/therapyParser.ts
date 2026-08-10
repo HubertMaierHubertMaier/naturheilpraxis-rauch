@@ -53,6 +53,7 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
 
 const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"]; emoji: string; title: string; placement: "intro" | "outro" }> = [
   { match: /umfassende anamnese|anamnese/i, variant: "info", emoji: "🧾", title: "Umfassende Anamnese", placement: "intro" },
+  { match: /priorisier.*therapieziele|therapieziele.*priorisier|therapieziele/i, variant: "success", emoji: "🎯", title: "Priorisierung & Therapieziele", placement: "intro" },
   { match: /folge.?termine|woche\s*4|evaluierung|anpassung|phase\s*2/i, variant: "info", emoji: "📅", title: "Phase 2: Folge-Termine", placement: "intro" },
   { match: /analyse.*belastung/i, variant: "info", emoji: "🔍", title: "Analyse der Belastungen", placement: "intro" },
   { match: /bewertung.*bisherig|bewertung der bisherigen/i, variant: "info", emoji: "📊", title: "Bewertung der bisherigen Therapie", placement: "intro" },
@@ -62,6 +63,8 @@ const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"];
   { match: /sicherheitshinweis/i, variant: "warning", emoji: "⚠️", title: "Sicherheitshinweise", placement: "intro" },
   { match: /kostenübersicht/i, variant: "muted", emoji: "💰", title: "Kostenübersicht", placement: "outro" },
   { match: /therapieprotokoll|zeitlicher ablauf/i, variant: "success", emoji: "📋", title: "Therapieprotokoll", placement: "outro" },
+  { match: /ernährung(?!.*typ)/i, variant: "info", emoji: "🥗", title: "Ernährung", placement: "outro" },
+  { match: /verhalten.*alltag|alltag.*verhalten|bewegung.*schlaf/i, variant: "info", emoji: "🚶", title: "Verhalten & Alltag", placement: "outro" },
   { match: /begleitmaßnahmen/i, variant: "info", emoji: "🔄", title: "Begleitmaßnahmen", placement: "outro" },
   { match: /ausgeschlossen/i, variant: "danger", emoji: "❌", title: "Ausgeschlossene Mittel", placement: "outro" },
   { match: /wissensdatenbank.?lücken|wiki.?lücken|wissensdatenbank.?abgleich|^lücken/i, variant: "warning", emoji: "🕳️", title: "Wissensdatenbank-Lücken", placement: "intro" },

@@ -43,9 +43,19 @@ export function CategoryFilter({ selected, onChange }: Props) {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("admin_knowledge_base")
-        .select("category");
+      const { data: articles, error: articleError } = await supabase
+        .from("kb_articles")
+        .select("current_revision_id")
+        .not("current_revision_id", "is", null);
+      if (articleError) {
+        console.error("CategoryFilter load error:", articleError);
+        setLoading(false);
+        return;
+      }
+      const revisionIds = (articles || []).flatMap((article) => article.current_revision_id ? [article.current_revision_id] : []);
+      const { data, error } = revisionIds.length
+        ? await supabase.from("kb_article_revisions").select("category_path").in("id", revisionIds)
+        : { data: [], error: null };
       if (error) {
         console.error("CategoryFilter load error:", error);
         setLoading(false);
@@ -53,7 +63,7 @@ export function CategoryFilter({ selected, onChange }: Props) {
       }
       const map = new Map<string, TopNode>();
       for (const row of data || []) {
-        const raw = (row.category || "").trim() || "Allgemein";
+        const raw = (row.category_path || "").trim() || "Allgemein";
         const parts = raw.split(">").map((p) => p.trim()).filter(Boolean);
         const top = parts[0] || "Allgemein";
         if (!map.has(top)) {

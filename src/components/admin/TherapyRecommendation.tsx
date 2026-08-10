@@ -17,7 +17,7 @@ import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
 import { openPrintRecipe } from "./therapy/printRecipe";
-import { PathogenInput, emptyEntry, formatPathogensForAI, type PathogenEntry } from "./therapy/PathogenInput";
+import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 import { useNextFreePseudonym } from "@/hooks/useNextFreePseudonym";
@@ -55,6 +55,7 @@ import {
   assessSelectedCombinationSafety,
   buildInitialRemedySelection,
   buildRemedySafetyMap,
+  MAX_START_PLAN_REMEDIES,
   patientOutputRestrictionsForRemedy,
   type WikiProductSafetyLink,
 } from "@/lib/therapySelection";
@@ -1109,6 +1110,7 @@ export function TherapyRecommendation() {
   const [pseudonymFormatWarning, setPseudonymFormatWarning] = useState<string | null>(null);
   const [linkedOrderInfo, setLinkedOrderInfo] = useState<{ count: number; numbers: string[] } | null>(null);
   const [pathogens, setPathogens] = useState<PathogenEntry[]>([emptyEntry()]);
+  const [pathogenBulkText, setPathogenBulkText] = useState("");
   const [symptome, setSymptome] = useState("");
   const [erkrankung, setErkrankung] = useState("");
   const [alter, setAlter] = useState("");
@@ -1258,10 +1260,15 @@ export function TherapyRecommendation() {
   }, [pseudonymId]);
 
   const buildInputData = useCallback((extra: Record<string, unknown> = {}) => {
+    const stagedPathogens = parseBulkPaste(pathogenBulkText);
+    const inputPathogens = stagedPathogens.length
+      ? [...pathogens.filter((entry) => entry.name.trim() || entry.organe.trim() || entry.index.trim()), ...stagedPathogens]
+      : pathogens;
     const data = deidentifyClinicalData({
       _pseudonym_id: normalizePseudonymId(pseudonymId),
       pseudonymId: normalizePseudonymId(pseudonymId),
-      pathogens,
+      pathogens: inputPathogens,
+      pathogenBulkText,
       symptome,
       erkrankung,
       alter,
@@ -1295,11 +1302,11 @@ export function TherapyRecommendation() {
       pinnedMittel,
       manualDiagnosen,
       manualMittel,
-      belastungen: formatPathogensForAI(pathogens),
+      belastungen: formatPathogensForAI(inputPathogens),
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1371,7 +1378,9 @@ export function TherapyRecommendation() {
         return;
       }
     }
-    if (Array.isArray(data.pathogens) && data.pathogens.length) setPathogens(data.pathogens as PathogenEntry[]);
+    const hasStructuredPathogens = Array.isArray(data.pathogens) && data.pathogens.some((entry: PathogenEntry) => entry.name?.trim() || entry.organe?.trim() || entry.index?.trim());
+    if (hasStructuredPathogens) setPathogens(data.pathogens as PathogenEntry[]);
+    setPathogenBulkText(hasStructuredPathogens ? "" : asText(data.pathogenBulkText));
     if (typeof data.symptome === "string") setSymptome(data.symptome);
     if (typeof data.erkrankung === "string") setErkrankung(data.erkrankung);
     if (typeof data.alter === "string") setAlter(data.alter);
@@ -1556,8 +1565,8 @@ export function TherapyRecommendation() {
   const hasMeaningfulInput = useMemo(() => {
     const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
-    return textFields.some((v) => v.trim()) || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+    return textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -1672,16 +1681,21 @@ export function TherapyRecommendation() {
   // ---- Wiki-Mittel für Autocomplete laden (einmalig) ----
   useEffect(() => {
     (async () => {
-      const [{ data }, { data: linkData }] = await Promise.all([
+      const [{ data: articles }, { data: revisions }, { data: linkData }] = await Promise.all([
         (supabase as any)
-          .from("admin_knowledge_base")
-          .select("id, title, content, entry_kind, review_status, evidence_level, dosage_status, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
+          .from("kb_articles")
+          .select("id, article_kind, current_revision_id")
+          .limit(2000),
+        (supabase as any)
+          .from("kb_article_revisions")
+          .select("id, title, content_markdown, review_status, metadata")
           .limit(2000),
         (supabase as any)
           .from("knowledge_product_links")
           .select("knowledge_entry_id, relation_type, review_status, safety_notes, mannayan_products(name)"),
       ]);
-      if (!data) return;
+      if (!articles || !revisions) return;
+      const revisionsById = new Map((revisions as any[]).map((revision) => [revision.id, revision]));
       const linksByEntry = new Map<string, WikiProductSafetyLink[]>();
       for (const link of (linkData || []) as any[]) {
         const product = Array.isArray(link.mannayan_products) ? link.mannayan_products[0] : link.mannayan_products;
@@ -1696,30 +1710,35 @@ export function TherapyRecommendation() {
         linksByEntry.set(link.knowledge_entry_id, links);
       }
       const items: WikiRemedyEntry[] = [];
-      for (const row of data as any[]) {
-        const title = row.title?.trim();
+      for (const article of articles as any[]) {
+        const revision = revisionsById.get(article.current_revision_id);
+        if (!revision) continue;
+        const legacy = revision.metadata && typeof revision.metadata === "object"
+          ? (revision.metadata.legacy_record || {}) as Record<string, unknown>
+          : {};
+        const title = revision.title?.trim();
         if (!title) continue;
         // Latin-Name aus erster Zeile/Klammer
-        const latinMatch = row.content?.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
-        const content = row.content || "";
+        const content = revision.content_markdown || "";
+        const latinMatch = content.match(/\(([A-Z][a-zäöü]+\s+[a-zäöü]+)\)/);
         items.push({
-          id: row.id,
+          id: article.id,
           title,
           name: title,
           latin: latinMatch?.[1],
           dosage: extractWikiField(content, ["Dosierung", "Dosis", "Einnahmeempfehlung"]),
           application: extractWikiField(content, ["Anwendung", "Einnahme", "Applikation"]),
           reason: extractWikiField(content, ["Indikation", "Begründung", "Einsatz", "Wirkung", "Eigenschaften", "Geeignet für", "Anwendungsgebiet", "Anwendungsgebiete"]),
-          entryKind: row.entry_kind,
-          reviewStatus: row.review_status,
-          evidenceLevel: row.evidence_level,
-          dosageStatus: row.dosage_status,
-          contraindications: row.contraindications || [],
-          interactionTags: row.interaction_tags || [],
-          safetyNotes: row.safety_notes || "",
-          patientFacingAllowed: row.patient_facing_allowed === true,
-          commercialClaimsReviewed: row.commercial_claims_reviewed === true,
-          productLinks: linksByEntry.get(row.id) || [],
+          entryKind: article.article_kind,
+          reviewStatus: revision.review_status,
+          evidenceLevel: typeof legacy.evidence_level === "string" ? legacy.evidence_level : "unrated",
+          dosageStatus: typeof legacy.dosage_status === "string" ? legacy.dosage_status : "unverified",
+          contraindications: Array.isArray(legacy.contraindications) ? legacy.contraindications.filter((value): value is string => typeof value === "string") : [],
+          interactionTags: Array.isArray(legacy.interaction_tags) ? legacy.interaction_tags.filter((value): value is string => typeof value === "string") : [],
+          safetyNotes: typeof legacy.safety_notes === "string" ? legacy.safety_notes : "",
+          patientFacingAllowed: false,
+          commercialClaimsReviewed: false,
+          productLinks: linksByEntry.get(article.id) || [],
         });
       }
       setWikiRemedies(items);
@@ -1780,6 +1799,12 @@ export function TherapyRecommendation() {
         ].join("\n"));
         if (!accepted) return;
       }
+      const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
+      if (selectedPlanCount >= MAX_START_PLAN_REMEDIES && !window.confirm([
+        `Der Startplan enthält bereits ${selectedPlanCount} Mittel.`,
+        "Für eine umsetzbare Therapie sollten weitere Kandidaten erst in einer späteren Phase eingesetzt werden.",
+        "Trotzdem zusätzlich als Startplan-Kandidat markieren?",
+      ].join("\n"))) return;
     }
     setSelectedKeys((prev) => {
       const next = new Set(prev);
@@ -1793,6 +1818,15 @@ export function TherapyRecommendation() {
     const skipped = selectAll
       ? remedyIndices.filter((ri) => safetyWarningsByKey.has(`${categoryIndex}|${ri}`)).length
       : 0;
+    const newSafeSelections = selectAll
+      ? remedyIndices.filter((ri) => !selectedKeys.has(`${categoryIndex}|${ri}`) && !safetyWarningsByKey.has(`${categoryIndex}|${ri}`)).length
+      : 0;
+    const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
+    if (selectAll && selectedPlanCount + newSafeSelections > MAX_START_PLAN_REMEDIES && !window.confirm([
+      `Dadurch würden ${selectedPlanCount + newSafeSelections} Mittel als Startplan-Kandidaten markiert.`,
+      `Der Richtwert sind höchstens ${MAX_START_PLAN_REMEDIES}; weitere passende Mittel bleiben besser für spätere Phasen reserviert.`,
+      "Trotzdem alle sicheren Kandidaten dieser Gruppe markieren?",
+    ].join("\n"))) return;
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       remedyIndices.forEach((ri) => {
@@ -2207,7 +2241,9 @@ export function TherapyRecommendation() {
     setApothekerRezept(asText(d.apothekerRezept));
     setZusatzTherapie(asText(d.zusatzTherapie));
     if (Array.isArray(d.mannayanOrders)) setMannayanOrders(d.mannayanOrders as MannayanOrderContext[]);
-    if (Array.isArray(d.pathogens)) setPathogens(d.pathogens as PathogenEntry[]);
+    const hasStructuredPathogens = Array.isArray(d.pathogens) && d.pathogens.some((entry: PathogenEntry) => entry.name?.trim() || entry.organe?.trim() || entry.index?.trim());
+    if (hasStructuredPathogens) setPathogens(d.pathogens as PathogenEntry[]);
+    setPathogenBulkText(hasStructuredPathogens ? "" : asText(d.pathogenBulkText));
     if (Array.isArray(d.selectedCategories)) setSelectedCategories(d.selectedCategories as string[]);
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie as string[]);
@@ -3908,6 +3944,12 @@ export function TherapyRecommendation() {
       .filter((item) => item.name.trim())
       .flatMap((item) => patientOutputRestrictionsForRemedy(item.name, wikiRemedies).map((reason) => ({ remedyName: item.name, reason })));
     const patientOutputRestrictions = [...selectedPatientRestrictions, ...manualPatientRestrictions];
+    const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
+    if (selectedPlanCount > MAX_START_PLAN_REMEDIES && !window.confirm([
+      `Der Therapieplan enthält ${selectedPlanCount} Mittel.`,
+      `Für die erste Einnahmephase sind höchstens ${MAX_START_PLAN_REMEDIES} Mittel als Richtwert vorgesehen.`,
+      "Bitte sicherstellen, dass weitere Mittel als spätere Phase oder Reserve gekennzeichnet sind. Internen Plan dennoch finalisieren?",
+    ].join("\n"))) return;
     const blockingWarnings = finalWarnings.filter((item) => item.severity === "avoid");
     if (blockingWarnings.length) {
       toast({
@@ -3989,8 +4031,8 @@ export function TherapyRecommendation() {
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Geben Sie die Belastungen, Symptome oder Erkrankung des Patienten ein. Die KI analysiert Ihre Wissensdatenbank und erstellt eine individuelle Therapie-Empfehlung mit Sicherheitsprüfung.
+          <p className="text-sm text-muted-foreground">
+            Erfassen Sie Befunde, Symptome und Diagnosen. Die Wissensdatenbank erzeugt daraus einen internen, priorisierten Therapieentwurf mit Ernährung, Verhalten, Mitteln und Sicherheitsprüfung.
       </p>
 
       {/* ⬇️ Datei-/Quellen-Auswahl ganz oben sichtbar */}
@@ -4450,7 +4492,12 @@ export function TherapyRecommendation() {
                     <AlertTriangle className="h-3.5 w-3.5 text-accent" />
                     Belastungen / Pathogene
                   </label>
-                  <PathogenInput entries={pathogens} onChange={setPathogens} />
+                  <PathogenInput
+                    entries={pathogens}
+                    onChange={setPathogens}
+                    bulkText={pathogenBulkText}
+                    onBulkTextChange={setPathogenBulkText}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Symptome</label>
@@ -5751,7 +5798,7 @@ export function TherapyRecommendation() {
               {workflowStage === "edit" && (
                 <>
                   <span className="text-xs text-muted-foreground self-center">
-                    Stufe 1 von 3 · {selectedKeys.size} Mittel angehakt
+                    Stufe 1 von 3 · {selectedKeys.size} Mittel angehakt · Richtwert Startphase: höchstens {MAX_START_PLAN_REMEDIES}
                   </span>
                   <Button onClick={() => openManualAddons(true)} className="gap-2">
                     Auswahl übernehmen ▸
