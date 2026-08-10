@@ -121,6 +121,12 @@ const extractWikiField = (content: string, labels: string[]) => {
 
 const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag", "Eßlöffel pro Tag"];
 const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
+const REQUIRED_PLAN_SECTIONS = [
+  "Priorisierung & Therapieziele",
+  "Therapieprotokoll",
+  "Ernährung",
+  "Verhalten & Alltag",
+] as const;
 
 const textFromClinicalValue = (value: unknown): string => {
   if (typeof value === "string") return value.trim() ? value : "";
@@ -1627,6 +1633,13 @@ export function TherapyRecommendation() {
     age: alter,
   }), [medikamente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett, symptome, schwanger, alter]);
   const parsedTherapyResult = useMemo(() => parseTherapyMarkdown(result), [result]);
+  const missingPlanSections = useMemo(() => {
+    const available = new Set([
+      ...parsedTherapyResult.intro,
+      ...parsedTherapyResult.outro,
+    ].map((section) => section.title));
+    return REQUIRED_PLAN_SECTIONS.filter((title) => !available.has(title));
+  }, [parsedTherapyResult]);
   const safetyWarningsByKey = useMemo(
     () => buildRemedySafetyMap(parsedTherapyResult, therapySafetyContext, wikiRemedies),
     [parsedTherapyResult, therapySafetyContext, wikiRemedies],
@@ -3911,6 +3924,12 @@ export function TherapyRecommendation() {
       toast({ title: "Medikationsliste fehlt", description: "Bitte aktuelle Arzneimittel eintragen oder ausdrücklich 'keine Medikamente' dokumentieren.", variant: "destructive" });
       return;
     }
+    if (missingPlanSections.length && !window.confirm([
+      "Der Entwurf enthält noch nicht alle Bausteine eines priorisierten Therapieplans:",
+      ...missingPlanSections.map((title) => `- ${title}`),
+      "",
+      "Der Entwurf sollte normalerweise neu generiert werden. Internen Plan dennoch nach eigener fachlicher Prüfung finalisieren?",
+    ].join("\n"))) return;
     const selectedWarnings = Array.from(safetyWarningsByKey.entries())
       .filter(([key]) => selectedKeys.has(key))
       .flatMap(([key, warnings]) => {
@@ -5748,6 +5767,7 @@ export function TherapyRecommendation() {
               result={result}
               isStreaming={isStreaming}
               stuhlbefund={stuhlbefund}
+              missingPlanSections={missingPlanSections}
               selectedKeys={selectedKeys}
               onToggleRemedy={toggleRemedy}
               onToggleAll={toggleAllInCategory}
@@ -6129,6 +6149,7 @@ function ParsedResultView({
   result,
   isStreaming,
   stuhlbefund,
+  missingPlanSections,
   selectedKeys,
   onToggleRemedy,
   onToggleAll,
@@ -6139,6 +6160,7 @@ function ParsedResultView({
   result: string;
   isStreaming: boolean;
   stuhlbefund: string;
+  missingPlanSections: readonly string[];
   selectedKeys?: Set<string>;
   onToggleRemedy?: (key: string) => void;
   onToggleAll?: (categoryIndex: number, remedyIndices: number[], selectAll: boolean) => void;
@@ -6228,6 +6250,13 @@ function ParsedResultView({
                 <div><strong>{warning.title}:</strong> {warning.message} {warning.action}</div>
               </div>
             ))}
+          </CardContent>
+        </Card>
+      )}
+      {!isStreaming && missingPlanSections.length > 0 && (
+        <Card className="border-amber-500/50 bg-amber-50/80 dark:bg-amber-950/20">
+          <CardContent className="py-3 text-sm text-amber-900 dark:text-amber-200">
+            <strong>Priorisierter Therapieentwurf noch unvollständig:</strong> {missingPlanSections.join(", ")}. Bitte die Auswertung erneut erzeugen oder die fehlenden Bereiche fachlich ergänzen.
           </CardContent>
         </Card>
       )}

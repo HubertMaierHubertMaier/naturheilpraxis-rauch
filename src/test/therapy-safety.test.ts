@@ -13,6 +13,13 @@ describe("therapy safety", () => {
     expect(source).toContain("deidentifyClinicalData(await req.json())");
     expect(source).toContain("directIdentifierCategories(JSON.stringify(requestBody))");
     expect(source).toContain("Hoechstens 3 essentielle und 3 empfohlene Kernkandidaten");
+    expect(source).toContain('.from("kb_articles")');
+    expect(source).toContain('.from("kb_article_revisions")');
+    expect(source).toContain("Der Startplan darf hoechstens 3 gleichzeitig neu beginnende Mittel enthalten");
+    expect(source).toContain("Ein vollstaendiger interne Therapieentwurf MUSS alle folgenden Abschnitte enthalten");
+    expect(source).toContain("## 🥗 Ernährung");
+    expect(source).toContain("## 🚶 Verhalten & Alltag");
+    expect(source).not.toContain('.from("admin_knowledge_base")');
     expect(source).not.toContain("forcedWikiRemedySection");
     expect(source).not.toContain("nimm es trotzdem auf");
     expect(source).not.toContain("ca. 600 % wirksamer");

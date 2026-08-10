@@ -107,7 +107,7 @@ const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
-const CACHE_VERSION = "v13";
+const CACHE_VERSION = "v14-structured-kb";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
 const MAP_REDUCE_BATCH_SIZE = 40; // Einträge pro Batch (nur Titel+Kategorie+Tags+Snippet)
@@ -199,18 +199,86 @@ type SupabaseQueryClient = {
   };
 };
 
+type StructuredArticleRow = {
+  id: string;
+  article_kind: string;
+  current_revision_id: string | null;
+  updated_at: string;
+};
+
+type StructuredRevisionRow = {
+  id: string;
+  title: string;
+  category_path: string;
+  tags: unknown;
+  content_markdown: string;
+  review_status: string;
+  metadata: unknown;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> => (
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}
+);
+
+const asString = (value: unknown): string => typeof value === "string" ? value : "";
+
+const asStringArray = (value: unknown): string[] => (
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []
+);
+
+const asCitations = (value: unknown): Array<{ url?: string; label?: string }> => (
+  Array.isArray(value)
+    ? value.flatMap((item) => {
+      const source = asRecord(item);
+      const url = asString(source.url);
+      const label = asString(source.label);
+      return url || label ? [{ ...(url ? { url } : {}), ...(label ? { label } : {}) }] : [];
+    })
+    : []
+);
+
+function mapStructuredWikiEntries(articles: StructuredArticleRow[], revisions: StructuredRevisionRow[]): WikiEntry[] {
+  const revisionById = new Map(revisions.map((revision) => [revision.id, revision]));
+  return articles.flatMap((article) => {
+    const revision = article.current_revision_id ? revisionById.get(article.current_revision_id) : undefined;
+    if (!revision) return [];
+    const metadata = asRecord(revision.metadata);
+    const legacy = asRecord(metadata.legacy_record);
+    const field = (key: string) => legacy[key] ?? metadata[key];
+    return [{
+      id: article.id,
+      entry_kind: article.article_kind,
+      title: revision.title,
+      category: revision.category_path,
+      tags: asStringArray(revision.tags),
+      content: revision.content_markdown,
+      review_status: revision.review_status === "draft" ? "unreviewed" : revision.review_status,
+      evidence_level: asString(field("evidence_level")),
+      dosage_status: asString(field("dosage_status")),
+      rights_status: asString(field("rights_status")),
+      source_citations: asCitations(field("source_citations")),
+      therapeutic_topics: asStringArray(field("therapeutic_topics")),
+      contraindications: asStringArray(field("contraindications")),
+      interaction_tags: asStringArray(field("interaction_tags")),
+      safety_notes: asString(field("safety_notes")),
+      patient_facing_allowed: field("patient_facing_allowed") === true,
+      commercial_claims_reviewed: field("commercial_claims_reviewed") === true,
+    }];
+  });
+}
+
 async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: WikiEntry[]; cacheHit: boolean }> {
   const { data: sigRows, error: sigError } = await client
-    .from("admin_knowledge_base")
+    .from("kb_articles")
     .select("updated_at")
     .order("updated_at", { ascending: false })
     .limit(1);
-  if (sigError) throw new Error("Wiki-Signatur konnte nicht geladen werden: " + sigError.message);
+  if (sigError) throw new Error("Strukturierte Wiki-Signatur konnte nicht geladen werden: " + sigError.message);
 
   const { count, error: countError } = await client
-    .from("admin_knowledge_base")
+    .from("kb_articles")
     .select("*", { count: "exact", head: true });
-  if (countError) throw new Error("Wiki-Anzahl konnte nicht geladen werden: " + countError.message);
+  if (countError) throw new Error("Strukturierte Wiki-Anzahl konnte nicht geladen werden: " + countError.message);
 
   const maxUpdated = sigRows?.[0]?.updated_at ?? "empty";
   const signature = `${CACHE_VERSION}|${count ?? 0}|${maxUpdated}`;
@@ -222,13 +290,21 @@ async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: 
   }
 
   console.log(`Wiki cache MISS (new signature=${signature})`);
-  const { data: wikiEntries, error: wikiError } = await client
-    .from("admin_knowledge_base")
-    .select("id, title, category, tags, content, entry_kind, review_status, evidence_level, dosage_status, rights_status, source_citations, therapeutic_topics, contraindications, interaction_tags, safety_notes, patient_facing_allowed, commercial_claims_reviewed")
+  const { data: articleRows, error: articleError } = await client
+    .from("kb_articles")
+    .select("id, article_kind, current_revision_id, updated_at")
     .order("updated_at", { ascending: false });
-  if (wikiError) throw new Error("Wiki-Daten konnten nicht geladen werden: " + wikiError.message);
+  if (articleError) throw new Error("Strukturierte Wiki-Artikel konnten nicht geladen werden: " + articleError.message);
+  const { data: revisionRows, error: revisionError } = await client
+    .from("kb_article_revisions")
+    .select("id, title, category_path, tags, content_markdown, review_status, metadata")
+    .order("created_at", { ascending: false });
+  if (revisionError) throw new Error("Strukturierte Wiki-Revisionen konnten nicht geladen werden: " + revisionError.message);
 
-  const entries = (wikiEntries || []) as WikiEntry[];
+  const entries = mapStructuredWikiEntries(
+    (articleRows || []) as StructuredArticleRow[],
+    (revisionRows || []) as StructuredRevisionRow[],
+  );
   WIKI_CACHE = { signature, entries, builtAt: now };
   return { entries, cacheHit: false };
 }
@@ -650,7 +726,7 @@ serve(async (req) => {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
-    // Fetch wiki entries (cached) and select only the relevant ones for this query
+    // Fetch structured wiki entries (cached) and select only the relevant ones for this query.
     const { entries: cachedEntries, cacheHit } = await loadWikiEntries(userClient);
     let allEntries = cachedEntries.filter((entry) => entry.review_status !== "restricted");
 
@@ -1068,11 +1144,8 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
    - **BMI 30–34.9 (Adipositas I)**: zusätzlich Hinweis auf metabolisches Syndrom (HbA1c, Lipidstatus, Leberenzyme prüfen), NAFLD-Risiko, Schilddrüse (TSH, fT3/fT4) abklären lassen.
    - **BMI ≥ 35 (Adipositas II/III)**: hohe kardiometabolische Gefahr – konsequente Ernährungsumstellung, Empfehlung zur engmaschigen praxisinternen Begleitung; Bildgebung/Diagnostik nur bei zusätzlichem Verdacht.
    - **BMI ≥ 25 + Hashimoto/SD-Verdacht**: explizit Selen, Zink, Tyrosin, Jodstatus prüfen.
-   - **PFLICHT bei BMI ≥ 25**: In der Sektion "🥗 Ernährung & Stoffwechsel" (oder im Begleitmaßnahmen-Block) MUSS folgender Patientenhinweis stehen:
-     > "Bitte lesen Sie zur Ernährungsumstellung die Patienteninfos in unserer Infothek – insbesondere **LOGI-Kost & Mitochondrien**: https://naturheilpraxis-rauch.lovable.app/logi-ernaehrung-mitochondrien.html sowie das **Diabetes-Handout** https://naturheilpraxis-rauch.lovable.app/diabetes-handout.html"
-     Zusätzlich passende Vitaplace-Mittel prüfen: **Vitaplace Komplex FiguWo** (Gewichtsregulation) und **Vitaplace Darm + Leber Pulver** (Mikrobiom, Hungergefühl, Leberentlastung).
-   - **Allgemein (jede BMI-Kategorie)**: Am Ende der Empfehlung im Block "🔄 Begleitmaßnahmen" einen kurzen Verweis auf die Patienten-Infothek (https://naturheilpraxis-rauch.lovable.app) ergänzen, damit der Patient weiterführende Informationen selbständig nachlesen kann.
-   - Falls BMI nicht angegeben: KEINE Annahmen treffen, kein Ernährungsblock erzwingen – aber den allgemeinen Infothek-Verweis dennoch im Begleitmaßnahmen-Block aufnehmen.
+    - **Bei BMI ≥ 25**: Leite im internen Block "🥗 Ernährung" hoechstens drei konkrete und befundbezogene Schritte ab. Pruefe passende Wiki-Kandidaten gegen Medikation, Sicherheit und Budget, statt automatisch Produkte vorzusehen.
+    - Falls BMI nicht angegeben: KEINE Annahmen treffen und keinen Ernaehrungsblock erzwingen.
 
 3. **Medikamente**: ${medikamente || "Keine angegeben"}
    - Blutverdünner (Marcumar, Warfarin, Eliquis, Xarelto etc.): KEINE Gewürznelke, KEIN Ingwer hochdosiert, KEIN Kurkuma hochdosiert, KEIN Omega-3 hochdosiert, KEIN Ginkgo
@@ -1168,6 +1241,8 @@ KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - Priorisiere Mittel nach Wichtigkeit: Die wichtigsten 2-3 Mittel zuerst, optionale Ergänzungen kennzeichnen
 
 AUSGABEFORMAT:
+Ein vollstaendiger interne Therapieentwurf MUSS alle folgenden Abschnitte enthalten, auch wenn fuer einen Bereich nur fehlende Daten oder ein gezielter Klaerungsschritt dokumentiert werden kann: Priorisierung & Therapieziele, Therapieprotokoll, Ernaehrung und Verhalten & Alltag.
+
 ## 🎯 Priorisierung & Therapieziele
 Nenne hoechstens drei Ziele in Reihenfolge 1 bis 3. Begruende die Reihenfolge mit gesicherten Diagnosen, Symptomen, Alter, Medikation sowie Labor-/Stuhlbefunden. Resonanzhinweise bleiben klar getrennt und duerfen die Reihenfolge nicht allein bestimmen.
 
@@ -1298,13 +1373,13 @@ ${budget ? `- **Budget-Check**: Passt die Empfehlung in das Budget von ${budget}
 Zeitlicher Ablauf in Phasen: Startphase (maximal 3 gleichzeitig neu beginnende Mittel), anschliessende Aufbau-/Erweiterungsphase und Verlaufskontrolle. Nenne klar, welche Reservekandidaten nicht parallel in der Startphase eingesetzt werden.
 
 ## 🥗 Ernährung
-Hoechstens drei priorisierte, konkrete und zum Befund passende Massnahmen. Keine allgemeine Standardliste und keine unbelegten Wirkversprechen.
+Hoechstens drei priorisierte, konkrete und zum Befund passende Massnahmen. Keine allgemeine Standardliste und keine unbelegten Wirkversprechen. Wenn die Datenlage keine individuelle Ernaehrungspriorisierung erlaubt, nenne genau die fehlenden Informationen statt allgemeine Empfehlungen zu erfinden.
 
 ## 🚶 Verhalten & Alltag
-Hoechstens drei priorisierte, konkrete Schritte zu Schlaf, Bewegung, Belastungssteuerung oder anderen passenden Gewohnheiten. Keine allgemeinen Standardlisten.
+Hoechstens drei priorisierte, konkrete Schritte zu Schlaf, Bewegung, Belastungssteuerung oder anderen passenden Gewohnheiten. Keine allgemeinen Standardlisten. Wenn die Datenlage keine individuelle Priorisierung erlaubt, nenne genau die fehlenden Informationen statt allgemeine Empfehlungen zu erfinden.
 
 ## 🔄 Begleitmaßnahmen
-Empfehlungen zu Ernährung, Darmaufbau, Entgiftungsunterstützung. Hier auch günstige Hausmittel wie Knoblauch-Zitronen-Kur, Kurkuma-Paste, Ingwertee etc.
+Nur ergänzende Maßnahmen, die nicht bereits unter Ernährung oder Verhalten & Alltag stehen. Hausmittel nur bei Wiki-Beleg und innerhalb des Mengenlimits nennen.
 
 ## ❌ Ausgeschlossene Mittel
 Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft, Medikamente).
