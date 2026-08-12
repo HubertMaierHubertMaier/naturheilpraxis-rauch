@@ -74,7 +74,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/knieschwellung", component: "Knieschwellung", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/admin", component: "AdminDashboard", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles", "app_settings", "audit_log"], edgeFunctions: ["get-patients", "generate-icd10", "send-icd10-report"], riskNote: "Admin page enforces access in component via useAuth/useAdminCheck plus local-only dev bypass." },
   { path: "/wissensdatenbank", component: "Wissensdatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "knowledge_product_links", "mannayan_products", "therapy_sessions"], edgeFunctions: ["analyze-documents", "therapy-recommend", "get-therapy-sessions", "enrich-wiki-tags", "extract-lab-image", "generate-diagnoses"], riskNote: "Admin-only knowledge/therapy workspace; component redirects non-admins." },
-  { path: "/wikidatenbank", component: "WikiDatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base"], edgeFunctions: [], riskNote: "Admin-only read-only knowledge view; component redirects non-admins and exposes no write or import action." },
+  { path: "/wikidatenbank", component: "WikiDatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["kb_articles", "kb_article_revisions", "knowledge_product_links"], edgeFunctions: [], riskNote: "Admin-only read-only knowledge and import-review view; component also reads separately migrated admin-only staging tables and exposes no write, promotion, or release action." },
   { path: "/therapie-kandidaten", component: "TherapieKandidaten", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "therapy_sessions"], edgeFunctions: ["analyze-documents", "therapy-recommend", "get-therapy-sessions", "extract-lab-image", "generate-diagnoses"], riskNote: "Standalone internal therapy-candidate workspace; component redirects non-admins." },
   { path: "/patienten", component: "PatientenManagerPage", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles"], edgeFunctions: ["get-patients"], riskNote: "Admin-only patient list; component denies non-admins and dev bypass is localhost-restricted." },
   { path: "/dashboard", component: "PatientDashboard", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions"], edgeFunctions: [], riskNote: "Patient dashboard requires an authenticated and 2FA-bound session; RLS must constrain submissions to the signed-in patient." },
@@ -108,6 +108,33 @@ export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
 
 
 export const tableAccessMatrix: TableAccessMatrixEntry[] = [
+  ...[
+    "kb_article_entities",
+    "kb_assertion_sources",
+    "kb_assertions",
+    "kb_change_proposals",
+    "kb_entities",
+    "kb_entity_identifiers",
+    "kb_entity_names",
+    "kb_entity_relations",
+    "kb_entity_revisions",
+    "kb_entity_types",
+    "kb_identifier_schemes",
+    "kb_relation_type_domains",
+    "kb_relation_types",
+    "kb_source_revisions",
+    "kb_sources",
+  ].map((name): TableAccessMatrixEntry => ({
+    name,
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: false,
+    frontendConsumers: ["WikiDatenbank", "Wissensdatenbank"],
+    policySummary: "Admin-only structured knowledge access through RLS.",
+    riskNote: "Internal knowledge metadata; keep public and patient access blocked.",
+  })),
   {
     name: "admin_knowledge_base",
     audience: "admin",

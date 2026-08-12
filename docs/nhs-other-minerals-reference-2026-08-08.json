@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-08T20:46:00.000Z",
+  "publication": "unpublished_internal_reference",
+  "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+  "source_type": "independent_national_health_service_guidance",
+  "publisher": "National Health Service, United Kingdom",
+  "scope": "General guidance for beta-carotene, chromium, copper, magnesium, manganese, molybdenum, phosphorus, potassium, selenium, salt and zinc, including dietary sources, population context and public safety guidance",
+  "import_status": "reference_only_not_mapped_to_products_or_conditions",
+  "database_writes": false,
+  "wiki_writes": false,
+  "clinical_assertions": [],
+  "reference_summary": "The NHS page provides a population-level framework for several minerals represented in the unpublished product declarations, including magnesium, zinc and selenium. It does not validate the composition, form, efficacy, suitability, dose or safety of any Strunz or Mannayan product or individual use case; ingredient-, form-, population- and dose-specific review remains required.",
+  "product_mapping": "not_performed",
+  "evidence_review": "required_for_each_product_or_condition",
+  "safety_review": "required_for_each_ingredient_population_and_dose",
+  "dose_handling": "Any numeric guidance on the source remains source context only and is not imported as a patient, product or practice dose."
+}

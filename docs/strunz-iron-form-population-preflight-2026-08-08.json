@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:00:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-eisen-caps",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Eisen Caps",
+    "serving": "1 capsule",
+    "iron": "14 mg",
+    "vitamin_c": "84 mg",
+    "declared_component_amounts": [
+      {"name": "iron bisglycinate", "amount": "43.5 mg"},
+      {"name": "iron sulfate", "amount": "13.5 mg"},
+      {"name": "acerola fruit juice powder", "amount": "498 mg"}
+    ],
+    "manufacturer_warning_topics": ["medical consultation for men, postmenopausal women, and pregnancy", "avoid additional iron supplements"]
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "status": "accessible_independent_government_scientific_report",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "published": "2011-02-25"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The declaration lists iron bisglycinate and iron sulfate component amounts alongside an iron nutrient amount. NHS and SACN provide general population context, but independent form-specific equivalence and reconciliation of declared component and nutrient amounts is not established.",
+    "required_before_any_mapping": ["identity verification", "elemental-versus-component amount reconciliation", "form equivalence", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "The manufacturer warning topics are triage inputs only. NHS and SACN provide general population context, not product or patient clearance; population-specific assessment remains open and must be separate from form and interaction review.",
+    "required_before_any_mapping": ["men and postmenopausal women", "pregnancy and breastfeeding context", "children and accidental ingestion risk", "iron-deficiency workup context", "duplicate intake and total exposure context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

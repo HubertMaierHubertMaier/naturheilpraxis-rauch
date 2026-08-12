@@ -68,6 +68,16 @@ const REQUIRED_KB_TABLES = [
   "kb_change_proposals",
 ] as const;
 
+const REQUIRED_KB_IMPORT_TABLES = [
+  "kb_import_batches",
+  "kb_source_candidates",
+  "kb_entity_candidates",
+  "kb_relation_candidates",
+  "kb_dosage_candidates",
+  "kb_safety_candidates",
+  "kb_import_events",
+] as const;
+
 // Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
 // Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
 // damit neue Tabellen/Buckets automatisch mitgesichert werden.
@@ -81,6 +91,7 @@ const FALLBACK_TABLES = [...new Set([
   "iaa_submissions",
   "infothek_gating",
   ...REQUIRED_KB_TABLES,
+  ...REQUIRED_KB_IMPORT_TABLES,
   "knowledge_product_links",
   "mannayan_orders",
   "mannayan_products",
@@ -111,6 +122,7 @@ const AREA_MAP: Record<string, AreaDef> = {
       "mannayan_products",
       "knowledge_product_links",
       ...REQUIRED_KB_TABLES,
+      ...REQUIRED_KB_IMPORT_TABLES,
       "faqs",
       "practice_pricing",
       "practice_info",
@@ -151,7 +163,7 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
     }
     const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/"));
     if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
-    const tables = [...new Set([...filtered, ...REQUIRED_KB_TABLES])].sort();
+    const tables = [...new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])].sort();
     return { tables, source: "openapi" };
   } catch (err) {
     console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);

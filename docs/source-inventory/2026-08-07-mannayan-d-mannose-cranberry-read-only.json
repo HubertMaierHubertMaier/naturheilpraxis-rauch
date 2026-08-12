@@ -1,0 +1,10 @@
+{
+  "inventory":"B1 Mannayan D-MANNOSE & CRANBERRY+","capturedAt":"2026-08-07","status":"blocked_read_only",
+  "restrictions":{"liveDatabaseWrites":0,"wikiWrites":0,"imports":0,"sourceAssignments":0,"medicalEvaluations":0,"safetyClearances":0,"dosageClearances":0},
+  "product":{"manufacturer":"Mannayan GmbH & Co. KG","title":"Mannayan D-MANNOSE & CRANBERRY + (Pulver)","productNumber":"010053","packaging":"50 g Pulver","priceEur":27.9,"manufacturerSource":"https://mannayan.com/Mannayan-D-MANNOSE-CRANBERRY-Pulver/010053"},
+  "atomicStatements":[
+    {"id":"product-title","value":"Mannayan D-MANNOSE & CRANBERRY+","source":"manufacturer","status":"blocked_read_only"},{"id":"product-number","value":"010053","source":"manufacturer","status":"blocked_read_only"},{"id":"d-mannose-mg-per-g","value":950,"source":"manufacturer","status":"blocked_read_only"},{"id":"cranberry-extract-mg-per-g","value":50,"source":"manufacturer","status":"blocked_read_only"},{"id":"cranberry-pac-percent","value":10,"source":"manufacturer","status":"blocked_read_only"},{"id":"ingredients","value":"D-Mannose, Cranberry-Extrakt","source":"manufacturer","status":"blocked_read_only"},{"id":"manufacturer-intake","value":"1 Teeloeffel (2 bis 3 g) bis zweimal taeglich; regelmaessig 1,5 g taeglich","source":"manufacturer","status":"blocked_read_only"},{"id":"manufacturer-risk-warning","value":"Bei Fruchtzuckerunvertraeglichkeit Verdauungsprobleme moeglich; Schwangere und Stillende sollen Therapeuten konsultieren","source":"manufacturer","status":"blocked_read_only"},{"id":"mandatory-warnings","value":"Tagesmenge nicht ueberschreiten; kein Ernaehrungsersatz; kindersicher aufbewahren; kuehl, trocken, lichtgeschuetzt; Siegel pruefen","source":"manufacturer","status":"blocked_read_only"}
+  ],
+  "sourceGaps":["Unabhaengige Sicherheits- und Interaktionsquellen zu D-Mannose und Cranberry-Extrakt","Getrennte Wirksamkeitsbewertung"],
+  "conclusion":"Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Bug, Database, ExternalLink, Link2, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, Bug, Database, ExternalLink, FileSearch, Link2, Search, ShieldCheck } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +65,41 @@ interface StructuredArticleRevision {
   metadata: unknown;
 }
 
+interface ImportBatch {
+  id: string;
+  source_label: string;
+  batch_status: string;
+  candidate_count: number;
+  metadata: unknown;
+  created_at: string;
+}
+
+interface ImportCandidate {
+  id: string;
+  batch_id: string;
+  candidate_status: string;
+  title?: string;
+  display_name?: string;
+  application_text?: string;
+  action_text?: string;
+  source_locator: string;
+  ambiguity_notes: string;
+}
+
+type CandidateKind = "Quelle" | "Entitaet" | "Dosis" | "Sicherheit";
+
+interface DisplayCandidate extends ImportCandidate {
+  kind: CandidateKind;
+  label: string;
+}
+
+interface ReadOnlyQuery {
+  select(columns: string): ReadOnlyQuery;
+  order(column: string, options: { ascending: boolean }): Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+}
+
+const importDb = supabase as unknown as { from(table: string): ReadOnlyQuery };
+
 function normalize(value: string) {
   return value.toLocaleLowerCase("de").normalize("NFD").replace(/\p{Diacritic}/gu, "");
 }
@@ -125,6 +160,8 @@ export default function WikiDatenbank() {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [entries, setEntries] = useState<WikiEntry[]>([]);
   const [productLinks, setProductLinks] = useState<KnowledgeProductLink[]>([]);
+  const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
+  const [importCandidates, setImportCandidates] = useState<DisplayCandidate[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +173,7 @@ export default function WikiDatenbank() {
       setLoading(true);
       setError(null);
       try {
-        const [articleResult, revisionResult, linkResult] = await Promise.all([
+        const [articleResult, revisionResult, linkResult, batchResult, sourceResult, entityResult, dosageResult, safetyResult] = await Promise.all([
           supabase
             .from("kb_articles")
             .select("id, article_kind, current_revision_id, updated_at")
@@ -148,6 +185,26 @@ export default function WikiDatenbank() {
             .from("knowledge_product_links")
             .select("id, knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, review_status, admin_knowledge_base(title), mannayan_products(name)")
             .order("updated_at", { ascending: false }),
+          importDb
+            .from("kb_import_batches")
+            .select("id, source_label, batch_status, candidate_count, metadata, created_at")
+            .order("created_at", { ascending: false }),
+          importDb
+            .from("kb_source_candidates")
+            .select("id, batch_id, candidate_status, title, source_locator, ambiguity_notes")
+            .order("created_at", { ascending: false }),
+          importDb
+            .from("kb_entity_candidates")
+            .select("id, batch_id, candidate_status, display_name, source_locator, ambiguity_notes")
+            .order("created_at", { ascending: false }),
+          importDb
+            .from("kb_dosage_candidates")
+            .select("id, batch_id, candidate_status, application_text, source_locator, ambiguity_notes")
+            .order("created_at", { ascending: false }),
+          importDb
+            .from("kb_safety_candidates")
+            .select("id, batch_id, candidate_status, action_text, source_locator, ambiguity_notes")
+            .order("created_at", { ascending: false }),
         ]);
         if (articleResult.error) throw articleResult.error;
         if (revisionResult.error) throw revisionResult.error;
@@ -186,10 +243,24 @@ export default function WikiDatenbank() {
             }];
           }));
           setProductLinks((linkResult.data as unknown as KnowledgeProductLink[]) || []);
+          const importResults = [batchResult, sourceResult, entityResult, dosageResult, safetyResult];
+          const importSchemaMissing = importResults.some((result) => result.error && /does not exist|schema cache|could not find/i.test(result.error.message));
+          const importUnexpectedError = importResults.find((result) => result.error && !/does not exist|schema cache|could not find/i.test(result.error.message));
+          if (importUnexpectedError?.error) throw importUnexpectedError.error;
+          setImportBatches(importSchemaMissing ? [] : ((batchResult.data as ImportBatch[]) || []));
+          const displayCandidates = [
+            ...((sourceResult.data as ImportCandidate[]) || []).map((candidate) => ({ ...candidate, kind: "Quelle" as const, label: candidate.title || "Quelle ohne Titel" })),
+            ...((entityResult.data as ImportCandidate[]) || []).map((candidate) => ({ ...candidate, kind: "Entitaet" as const, label: candidate.display_name || "Entitaet ohne Namen" })),
+            ...((dosageResult.data as ImportCandidate[]) || []).map((candidate) => ({ ...candidate, kind: "Dosis" as const, label: candidate.application_text || "Dosierung pruefen" })),
+            ...((safetyResult.data as ImportCandidate[]) || []).map((candidate) => ({ ...candidate, kind: "Sicherheit" as const, label: candidate.action_text || "Sicherheit pruefen" })),
+          ];
+          setImportCandidates(importSchemaMissing ? [] : displayCandidates);
         }
       } catch (loadError) {
         if (active) {
           setEntries([]);
+          setImportBatches([]);
+          setImportCandidates([]);
           setError(loadError instanceof Error ? loadError.message : "Die WikiDatenbank ist noch nicht verbunden.");
         }
       } finally {
@@ -231,7 +302,7 @@ export default function WikiDatenbank() {
     { value: loading ? "..." : String(entries.length), label: "Wiki-Eintraege" },
     { value: loading ? "..." : String(productLinks.length), label: "Mittelverknuepfungen" },
     { value: loading ? "..." : String(sourceCount), label: "Quellenbelege" },
-    { value: "Read-only", label: "Betriebsmodus" },
+    { value: loading ? "..." : String(importCandidates.length), label: "Importkandidaten" },
   ];
 
   return (
@@ -279,6 +350,7 @@ export default function WikiDatenbank() {
             <TabsTrigger value="entries" className="gap-2"><BookOpen className="h-4 w-4" /> Alle Wiki-Eintraege</TabsTrigger>
             <TabsTrigger value="pathogens" className="gap-2"><Bug className="h-4 w-4" /> Pathogene</TabsTrigger>
             <TabsTrigger value="links" className="gap-2"><Link2 className="h-4 w-4" /> Mittelverknuepfungen</TabsTrigger>
+            <TabsTrigger value="imports" className="gap-2"><FileSearch className="h-4 w-4" /> Importpruefung</TabsTrigger>
           </TabsList>
 
           <TabsContent value="entries" className="space-y-6">
@@ -374,6 +446,55 @@ export default function WikiDatenbank() {
                     </div>
                     {link.clinical_topics.length > 0 && <p className="mt-3 text-sm text-muted-foreground">Themen: {link.clinical_topics.join(", ")}</p>}
                     {link.safety_notes && <p className="mt-3 text-sm text-amber-800">Sicherheitsnotiz: {link.safety_notes}</p>}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="imports" className="mt-6 space-y-6">
+            <Card className="border-amber-300 bg-amber-50/40">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"><FileSearch className="h-5 w-5 text-amber-700" /> Unveroeffentlichte Importpruefung</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Diese Datensaetze sind nur intern sichtbar und bleiben ungeprueft. Die Ansicht bietet keine Annahme-, Freigabe- oder Schreibaktion.
+              </CardContent>
+            </Card>
+
+            <section className="grid gap-4 md:grid-cols-2">
+              {importBatches.map((batch) => {
+                const metadata = batch.metadata && typeof batch.metadata === "object" ? batch.metadata as Record<string, unknown> : {};
+                return (
+                  <Card key={batch.id}>
+                    <CardContent className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h2 className="font-semibold text-foreground">{batch.source_label}</h2>
+                        <Badge variant="outline">{batch.batch_status}</Badge>
+                      </div>
+                      <p className="mt-3 text-2xl font-bold text-primary">{batch.candidate_count}</p>
+                      <p className="text-sm text-muted-foreground">Kandidaten, erstellt {formatDate(batch.created_at)}</p>
+                      {typeof metadata.source_family === "string" && <p className="mt-3 text-sm text-muted-foreground">Bestand: {metadata.source_family}</p>}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </section>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quellen-, Entitaets-, Dosis- und Sicherheitskandidaten</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!loading && importCandidates.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Importkandidaten vorhanden.</p>}
+                {importCandidates.map((candidate) => (
+                  <div key={`${candidate.kind}-${candidate.id}`} className="rounded-lg border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <p className="font-medium text-foreground">{candidate.label}</p>
+                      <div className="flex gap-2"><Badge variant="secondary">{candidate.kind}</Badge><Badge variant="outline">{candidate.candidate_status}</Badge></div>
+                    </div>
+                    {candidate.source_locator && <p className="mt-2 break-all text-xs text-muted-foreground">Fundstelle: {candidate.source_locator}</p>}
+                    {candidate.ambiguity_notes && <p className="mt-2 text-sm text-muted-foreground">{candidate.ambiguity_notes}</p>}
                   </div>
                 ))}
               </CardContent>

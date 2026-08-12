@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T22:20:00.000Z",
+  "publication": "unpublished_internal_gate_summary",
+  "scope": "Aggregate source-status counts across the 9 product-specific form/population and interaction/safety preflight reports.",
+  "products": 9,
+  "form_population_reports": 9,
+  "interaction_safety_reports": 9,
+  "all_products_have_both_open_reports": true,
+  "source_reference_count_across_reports": 90,
+  "http_403_reference_count": 21,
+  "not_citable_reference_count": 2,
+  "open_gates": {
+    "form": 9,
+    "population": 9,
+    "interaction": 9,
+    "safety": 9
+  },
+  "mappings": {
+    "product": 0,
+    "condition": 0,
+    "clinical": 0,
+    "dose": 0
+  },
+  "interpretation": "Counts describe evidence and access bookkeeping only. HTTP 403 and not-citable references remain gaps; accessible general sources do not establish product form, efficacy, suitability, interaction clearance, safety or dose approval.",
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}
