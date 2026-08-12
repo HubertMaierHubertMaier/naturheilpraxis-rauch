@@ -12,6 +12,9 @@ const clinicalMeasurementPattern = new RegExp(
 );
 const explicitNameFieldPattern = new RegExp(String.raw`^(\s*)(${ocrNameLabel})\s*(?::|=|-)?\s+(.+?)\s*$`, "iu");
 const explicitAddressFieldPattern = new RegExp(String.raw`^(\s*)(${addressFieldLabel})\s*(?::|=|-)?\s+(.+?)\s*$`, "iu");
+const reportColumnHeaderPattern = /^Name(?:[\s|;,-]+(?:Messwert|Wert|Ergebnis|Einheit|Referenz(?:bereich)?|Norm(?:bereich)?|Status|Bewertung|Hinweis|Beschreibung|Bedeutung|Optimalbereich|Istwert|Sollwert)){3,}[\s|;,-]*$/iu;
+
+const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim());
 
 const findClinicalMeasurementStart = (line: string, fromIndex = 0) => {
   clinicalMeasurementPattern.lastIndex = fromIndex;
@@ -154,7 +157,14 @@ export const deidentifyClinicalText = (value: unknown) => {
     safeDocumentMarkers.push(match);
     return token;
   });
-  let redacted = markerProtected
+  const safeColumnHeaders: string[] = [];
+  const headerProtected = markerProtected.replace(/^.*$/gmu, (line) => {
+    if (!isReportColumnHeader(line)) return line;
+    const token = `__CLINICAL_COLUMN_HEADER_${safeColumnHeaders.length}__`;
+    safeColumnHeaders.push(line);
+    return token;
+  });
+  let redacted = headerProtected
     .replace(/===\s*(?:📄|📷)\s*[^=\n]+\s*===/gu, "=== Dokument ===")
     .replace(/^\s*\[Originaldatei[^\]\n]*\]\s*$/gimu, "")
     .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, "[E-Mail entfernt]")
@@ -191,9 +201,13 @@ export const deidentifyClinicalText = (value: unknown) => {
   redacted = redactBarePostalCities(redacted);
   for (const name of detectedNames) redacted = redacted.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`, "giu"), "[Name entfernt]");
   const restoredPseudonyms = protectedValue.restore(redacted);
-  return safeDocumentMarkers.reduce(
+  const restoredDocumentMarkers = safeDocumentMarkers.reduce(
     (current, marker, index) => current.split(`__CLINICAL_DOCUMENT_MARKER_${index}__`).join(marker),
     restoredPseudonyms,
+  );
+  return safeColumnHeaders.reduce(
+    (current, header, index) => current.split(`__CLINICAL_COLUMN_HEADER_${index}__`).join(header),
+    restoredDocumentMarkers,
   ).trim();
 };
 
@@ -239,10 +253,11 @@ export const directIdentifierCategories = (value: unknown) => {
     ["Bankverbindung", /\bIBAN\s*[:.]?\s*[A-Z]{2}\d{2}(?:\s?[A-Z0-9]){10,30}\b/iu],
     ["Code", /\b(?:QR-?Code|Barcode|Strichcode)\s*[:.]?\s*[^\n]{3,160}/iu],
   ];
-  if (collectLikelyPersonNames(text).length) categories.add("Name");
-  for (const [category, pattern] of checks) if (pattern.test(text)) categories.add(category);
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  if (lines.some(hasUnredactedExplicitNameField)) categories.add("Name");
+  const identifierText = lines.filter((line) => !isReportColumnHeader(line)).join("\n");
+  if (collectLikelyPersonNames(identifierText).length) categories.add("Name");
+  for (const [category, pattern] of checks) if (pattern.test(identifierText)) categories.add(category);
+  if (lines.some((line) => !isReportColumnHeader(line) && hasUnredactedExplicitNameField(line))) categories.add("Name");
   if (lines.some(hasUnredactedExplicitAddressField)) categories.add("Anschrift");
   if (lines.some(hasBarePostalCity)) categories.add("Anschrift");
   return Array.from(categories);
@@ -252,6 +267,7 @@ export const removeResidualDirectIdentifierLines = (value: unknown) => String(va
   .replace(/\r\n?/g, "\n")
   .split("\n")
   .map((line) => {
+    if (isReportColumnHeader(line)) return line;
     if (!directIdentifierCategories(line).length) return line;
 
     const retried = deidentifyClinicalText(line);

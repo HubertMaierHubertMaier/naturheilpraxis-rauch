@@ -327,6 +327,25 @@ describe("laboratory trend analysis", () => {
     expect(directIdentifierCategories(result)).toContain("Name");
   });
 
+  it("keeps unambiguous report column headers without weakening name detection", () => {
+    for (const header of [
+      "Name Messwert Einheit Referenzbereich Bewertung",
+      "Name | Ergebnis | Normbereich | Status | Hinweis",
+    ]) {
+      const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(header));
+      expect(result).toBe(header);
+      expect(directIdentifierCategories(result)).toEqual([]);
+    }
+
+    for (const unsafe of [
+      "Name: Erika Beispiel",
+      "Name Erika Beispiel Messwert Einheit Referenzbereich",
+      "Name Messwert Einheit UnbekanntesFeld",
+    ]) {
+      expect(directIdentifierCategories(unsafe)).toContain("Name");
+    }
+  });
+
   it("sanitizes nested source labels and direct identifier fields before persistence", () => {
     const result = deidentifyClinicalData({
       pseudonymId: "P-2031-0042",
