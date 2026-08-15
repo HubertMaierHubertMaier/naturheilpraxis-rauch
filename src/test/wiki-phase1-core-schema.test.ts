@@ -399,9 +399,9 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(fallbackTables.some((table) => table.startsWith("kb_"))).toBe(false);
   });
 
-  it("always merges required KB tables into successful OpenAPI discovery", () => {
-    expect(backupExportSource).toContain("new Set([...filtered, ...REQUIRED_KB_TABLES])");
-    expect(backupExportSource).toContain('return { tables, source: "openapi" }');
+  it("exports only tables confirmed by successful OpenAPI discovery", () => {
+    expect(backupExportSource).toContain('return { tables: [...new Set(filtered)].sort(), source: "openapi" }');
+    expect(backupExportSource).not.toContain("new Set([...filtered, ...REQUIRED_KB_TABLES])");
   });
 
   it("fails subset and database exports when any table cannot be exported", () => {
