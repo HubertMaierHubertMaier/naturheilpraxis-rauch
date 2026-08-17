@@ -218,13 +218,19 @@ function isoTimestamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 }
 
+async function hashStoragePath(salt: string, bucket: string, path: string): Promise<string> {
+  const value = new TextEncoder().encode(`${salt}\0${bucket}\0${path}`);
+  const digest = await crypto.subtle.digest("SHA-256", value);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function sanitizeGithubInput(repo: string | null, branch: string | null): { repo: string; branch: string } {
   const cleanedRepo = (repo ?? "").trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
   const cleanedBranch = (branch ?? "main").trim() || "main";
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleanedRepo)) {
     throw new Error("Ungültiges GitHub-Repo. Erwartet: besitzer/repo");
   }
-  if (!/^[A-Za-z0-9._\/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
+  if (!/^[A-Za-z0-9._/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
     throw new Error("Ungültiger GitHub-Branch.");
   }
   return { repo: cleanedRepo, branch: cleanedBranch };
@@ -363,25 +369,42 @@ type StorageFileEntry = { path: string; size: number };
 async function listAllFiles(
   client: ReturnType<typeof createClient>,
   bucket: string,
-  prefix = "",
 ): Promise<StorageFileEntry[]> {
   const out: StorageFileEntry[] = [];
-  const { data, error } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000, sortBy: { column: "name", order: "asc" } });
-  if (error) throw error;
-  for (const item of data ?? []) {
-    const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-    // Verzeichnis erkennen: kein metadata-Eintrag mit size
-    const meta = (item as unknown as { metadata?: { size?: number } }).metadata;
-    if (meta && typeof meta.size === "number") {
-      out.push({ path: fullPath, size: meta.size });
-    } else if (!meta) {
-      // Unterordner -> rekursiv
-      const sub = await listAllFiles(client, bucket, fullPath);
-      out.push(...sub);
+  const seenPaths = new Set<string>();
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+
+  while (true) {
+    const { data, error } = await client.storage.from(bucket).listV2({
+      limit: 1000,
+      with_delimiter: false,
+      ...(cursor ? { cursor } : {}),
+    });
+    if (error) throw error;
+    if (!data) throw new Error(`Storage-Liste fuer Bucket ${bucket} ist leer`);
+
+    for (const item of data.objects) {
+      const size = item.metadata?.size;
+      if (!item.name || typeof size !== "number" || !Number.isSafeInteger(size) || size < 0) {
+        throw new Error(`Storage-Metadaten fuer Bucket ${bucket} sind unvollstaendig`);
+      }
+      if (seenPaths.has(item.name)) {
+        throw new Error(`Storage-Liste fuer Bucket ${bucket} enthaelt doppelte Pfade`);
+      }
+      seenPaths.add(item.name);
+      out.push({ path: item.name, size });
     }
+
+    if (!data.hasNext) break;
+    const nextCursor = data.nextCursor;
+    if (!nextCursor || seenCursors.has(nextCursor)) {
+      throw new Error(`Storage-Paginierung fuer Bucket ${bucket} ist unvollstaendig`);
+    }
+    seenCursors.add(nextCursor);
+    cursor = nextCursor;
   }
+
   return out;
 }
 
@@ -569,7 +592,7 @@ Deno.serve(async (req) => {
       // GitHub API endpoint supports private repos with token and returns a redirect to codeload
       const apiUrl = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(branch)}`;
       const codeloadUrl = `https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`;
-      let githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
+      const githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
       if (!githubRes.ok || !githubRes.body) {
         const status = githubRes.status;
         if (status === 404 && !githubToken) {
@@ -667,12 +690,21 @@ Deno.serve(async (req) => {
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
-      const storageErrors: Array<{ bucket: string; message: string }> = [];
+      const storageErrors: Array<{
+        bucket: string;
+        message: string;
+        diagnostic?: {
+          salt: string;
+          missing: Array<{ pathDigest: string; size: number; reason: "signed_url_missing" }>;
+        };
+      }> = [];
       const { buckets: dynamicBuckets } = await discoverBuckets(adminClient);
       for (const bucket of dynamicBuckets) {
         try {
           const files = await listAllFiles(adminClient, bucket);
           const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
+          const auditSalt = crypto.randomUUID();
+          const missing: Array<{ pathDigest: string; size: number; reason: "signed_url_missing" }> = [];
           // signedUrls in Batches erzeugen (createSignedUrls akzeptiert max ~100)
           const batchSize = 100;
           for (let i = 0; i < files.length; i += batchSize) {
@@ -685,11 +717,21 @@ Deno.serve(async (req) => {
               const su = data?.[j];
               if (su?.signedUrl) {
                 entries.push({ path: batch[j].path, size: batch[j].size, signedUrl: su.signedUrl });
+              } else {
+                missing.push({
+                  pathDigest: await hashStoragePath(auditSalt, bucket, batch[j].path),
+                  size: batch[j].size,
+                  reason: "signed_url_missing",
+                });
               }
             }
           }
           if (entries.length !== files.length) {
-            throw new Error(`${entries.length} von ${files.length} signierten Datei-URLs erzeugt`);
+            const message = `${entries.length} von ${files.length} signierten Datei-URLs erzeugt`;
+            const diagnostic = { salt: auditSalt, missing };
+            console.error(`[backup-export] storage-list-audit ${bucket}:`, JSON.stringify({ message, diagnostic }));
+            storageErrors.push({ bucket, message, diagnostic });
+            continue;
           }
           result[bucket] = entries;
         } catch (e) {
