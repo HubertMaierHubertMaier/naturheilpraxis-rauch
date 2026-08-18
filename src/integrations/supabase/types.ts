@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      _kb_owner_import_3f7a22a0_chunks: {
+        Row: {
+          created_at: string
+          data: string
+          data_length: number
+          data_md5: string
+          import_key: string
+          payload_length: number
+          payload_md5: string
+          seq: number
+          total_chunks: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          data_length: number
+          data_md5: string
+          import_key: string
+          payload_length: number
+          payload_md5: string
+          seq: number
+          total_chunks: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          data_length?: number
+          data_md5?: string
+          import_key?: string
+          payload_length?: number
+          payload_md5?: string
+          seq?: number
+          total_chunks?: number
+        }
+        Relationships: []
+      }
       admin_knowledge_base: {
         Row: {
           category: string
