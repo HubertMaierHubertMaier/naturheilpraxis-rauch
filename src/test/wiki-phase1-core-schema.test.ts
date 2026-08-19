@@ -39,6 +39,10 @@ const kbImportTables = [
   "kb_relation_candidates",
   "kb_dosage_candidates",
   "kb_safety_candidates",
+  "kb_review_decisions",
+  "kb_import_errors",
+  "kb_import_candidate_proposals",
+  "kb_import_proposal_review_events",
   "kb_import_events",
 ];
 
@@ -418,9 +422,9 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(fallbackTables.some((table) => table.startsWith("kb_"))).toBe(false);
   });
 
-  it("always merges required KB tables into successful OpenAPI discovery", () => {
-    expect(backupExportSource).toContain("new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])");
-    expect(backupExportSource).toContain('return { tables, source: "openapi" }');
+  it("exports only tables confirmed by successful OpenAPI discovery", () => {
+    expect(backupExportSource).toContain('return { tables: [...new Set(filtered)].sort(), source: "openapi" }');
+    expect(backupExportSource).not.toContain("new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])");
   });
 
   it("fails subset and database exports when any table cannot be exported", () => {

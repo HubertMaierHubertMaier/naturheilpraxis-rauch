@@ -80,6 +80,13 @@ import {
   shouldApplyCloudDraft,
   addAnalysisDocumentMetadata,
 } from "@/lib/patientInputPersistence";
+import {
+  DIRECT_BEFUND_TARGETS,
+  directBefundTargetLabel,
+  prepareDirectBefundHandoffText,
+  type DirectBefundTarget,
+} from "@/lib/directBefundHandoff";
+import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
 import * as pdfjs from "pdfjs-dist";
 // @ts-ignore - vite handles ?url
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -87,7 +94,19 @@ import mammoth from "mammoth";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-type ManualRemedyEntry = { name: string; dosage: string; application: string; duration: string; reason: string; group: string };
+const SYNTHETIC_THERAPY_CASE = {
+  id: "SYNTH-THERAPY-STRUCTURE-001",
+  befundAuswertung: "Rein synthetischer Testfall. Dokumentiert sind ein erhoehter HbA1c-Wert, ein erniedrigter Magnesiumwert, allgemeine Erschoepfung und Muskelkraempfe. Ein Laborhinweis nennt Borrelia burgdorferi. Zusaetzlich liegt ein separat gekennzeichneter NLS-Resonanzhinweis auf ein anderes Pathogen vor. Arterielle Hypertonie und Ramipril sind als Sicherheitskontext angegeben.",
+  symptome: "Erschoepfung; Muskelkraempfe",
+  erkrankung: "Arterielle Hypertonie",
+  laborKomplett: "HbA1c 6,2 % (synthetisch); Magnesium 0,68 mmol/l (synthetisch); Borrelia-Laborhinweis (synthetisch)",
+  medikamente: "Ramipril 5 mg (synthetisch)",
+  metatronHeel: "Separater synthetischer NLS-Resonanzhinweis; kein laborbasierter Infektionsnachweis",
+} as const;
+
+const SYNTHETIC_THERAPY_REPORT_HTML = `<!doctype html><html lang="de"><body><main data-synthetic-case-id="${SYNTHETIC_THERAPY_CASE.id}"><h1>Synthetische Befund-Auswertung</h1><p>${SYNTHETIC_THERAPY_CASE.befundAuswertung}</p><p><strong>Datenschutz:</strong> Keine reale Identitaet und keine Patientendatei.</p></main></body></html>`;
+
+type ManualRemedyEntry = { name: string; manufacturer: string; dosage: string; application: string; duration: string; reason: string; patientExplanation: string; safety: string; group: string };
 type WikiRemedyEntry = {
   id?: string;
   title: string;
@@ -124,9 +143,11 @@ const DOSAGE_UNITS = ["Tropfen pro Tag", "Kap-Tabl pro Tag", "Teelöffel pro Tag
 const INTAKE_PATTERNS = ["1-0-1", "1-0-0", "1-1-1", "über den Tag verteilt"];
 const REQUIRED_PLAN_SECTIONS = [
   "Priorisierung & Therapieziele",
+  "Sicherheitshinweise",
   "Therapieprotokoll",
   "Ernährung",
   "Verhalten & Alltag",
+  "Verlaufskontrolle",
 ] as const;
 
 const textFromClinicalValue = (value: unknown): string => {
@@ -167,7 +188,20 @@ type AnalysisDocChunk = { label: string; text: string };
 type AnalysisSourceSummary = { key: string; label: string; chars: number; lines: number };
 type DocumentInventoryItem = { name: string; datum?: string; pages?: number; chars?: number; archivePath?: string; loadedAt?: string; source?: string; location?: string; note?: string };
 type SelectableAnalysisSource = { key: string; label: string; text: string; group: "kontext" | "befund" | "dokument" | "recherche"; chars: number; lines: number };
-type PendingDirectBefundFile = { id: string; file: File; status: "queued" | "processing" | "done" | "error"; chars?: number; pages?: number; error?: string };
+type PendingDirectBefundFile = {
+  id: string;
+  file: File;
+  status: "queued" | "processing" | "ready" | "done" | "error";
+  documentType: DirectBefundTarget | "";
+  documentDate: string;
+  privacyReviewed: boolean;
+  previewText?: string;
+  removedIdentifierCategories?: string[];
+  chars?: number;
+  pages?: number;
+  error?: string;
+  errorKind?: string;
+};
 type ExtractedBefundInputs = {
   forPseudonymId: string;
   diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1692,7 +1726,7 @@ export function TherapyRecommendation() {
   }, [isStreaming, safetyWarningsByKey]);
 
   // Kandidaten erst nach abgeschlossenem Stream initialisieren. Automatisch markiert
-  // werden hoechstens drei essentielle und drei empfohlene Mittel ohne Sicherheitswarnung.
+  // werden insgesamt hoechstens drei Mittel ohne Sicherheitswarnung.
   const lastInitResultRef = useRef<string>("");
   useEffect(() => {
     if (!result) {
@@ -1879,10 +1913,10 @@ export function TherapyRecommendation() {
     if (skipped) toast({ title: "Warnmittel nicht automatisch markiert", description: `${skipped} Mittel muessen einzeln fachlich geprueft werden.` });
   };
 
-  const createEmptyManualRemedy = (): ManualRemedyEntry => ({ name: "", dosage: "", application: "", duration: "", reason: "", group: "Manuell ergänzt" });
+  const createEmptyManualRemedy = (): ManualRemedyEntry => ({ name: "", manufacturer: "", dosage: "", application: "", duration: "", reason: "", patientExplanation: "", safety: "", group: "Manuell ergänzt" });
 
   const goToPreviewFromAddons = () => {
-    setManualMittel((arr) => arr.filter((m) => m.name.trim() || m.dosage.trim() || m.application.trim() || m.duration.trim() || m.reason.trim()));
+    setManualMittel((arr) => arr.filter((m) => m.name.trim() || (m.manufacturer || "").trim() || m.dosage.trim() || m.application.trim() || m.duration.trim() || m.reason.trim() || (m.patientExplanation || "").trim() || (m.safety || "").trim()));
     setWorkflowStage("preview");
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     toast({ title: "Ergänzungen übernommen", description: "Die Vorschau enthält jetzt die zusätzlich eingetragenen Mittel." });
@@ -1891,7 +1925,7 @@ export function TherapyRecommendation() {
   const openManualAddons = (ensureInputRow = false) => {
     if (ensureInputRow) {
       setManualMittel((arr) => {
-        const hasBlankRow = arr.some((m) => !m.name.trim() && !m.dosage.trim() && !m.application.trim() && !m.duration.trim() && !m.reason.trim());
+        const hasBlankRow = arr.some((m) => !m.name.trim() && !(m.manufacturer || "").trim() && !m.dosage.trim() && !m.application.trim() && !m.duration.trim() && !m.reason.trim() && !(m.patientExplanation || "").trim() && !(m.safety || "").trim());
         return hasBlankRow ? arr : [...arr, createEmptyManualRemedy()];
       });
     }
@@ -2127,6 +2161,42 @@ export function TherapyRecommendation() {
     setHpCheckTimestamp("");
     setHpCheckLoading(false);
   }, []);
+
+  const syntheticCaseLoadBlocked = !!pseudonymId.trim()
+    || !!hasMeaningfulInput
+    || !!result.trim()
+    || !!docAnalysisHtml.trim()
+    || !!apothekerRezept.trim()
+    || !!zusatzTherapie.trim()
+    || !!therapieNotiz.trim()
+    || manualDiagnosen.length > 0
+    || manualMittel.length > 0
+    || diagnosen.length > 0
+    || pendingDirectBefundFiles.length > 0;
+
+  const handleLoadSyntheticTherapyCase = () => {
+    if (syntheticCaseLoadBlocked) {
+      toast({
+        title: "Prueffall nicht geladen",
+        description: "Der synthetische Fall darf nur ein vollstaendig leeres Formular fuellen. Vorhandene Eingaben werden nicht ueberschrieben.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    clearPatientScopedState();
+    setSymptome(SYNTHETIC_THERAPY_CASE.symptome);
+    setErkrankung(SYNTHETIC_THERAPY_CASE.erkrankung);
+    setMedikamente(SYNTHETIC_THERAPY_CASE.medikamente);
+    setLaborKomplett(SYNTHETIC_THERAPY_CASE.laborKomplett);
+    setMetatronHeel(SYNTHETIC_THERAPY_CASE.metatronHeel);
+    setDocAnalysisHtml(SYNTHETIC_THERAPY_REPORT_HTML);
+    setUseMapReduce(true);
+    toast({
+      title: "Synthetischer Prueffall geladen",
+      description: "Nur Formularfelder wurden gefuellt. Es wurde nichts gespeichert, hochgeladen oder generiert.",
+    });
+  };
 
   const handlePseudonymChange = useCallback((nextValue: string) => {
     // Validierung: bei Standard-Schema P-YYYY-NNNN max. 4 Ziffern im letzten Segment zulassen
@@ -3162,7 +3232,14 @@ export function TherapyRecommendation() {
     const stamp = Date.now().toString(36);
     setPendingDirectBefundFiles((prev) => [
       ...prev,
-      ...files.map((file, index) => ({ id: `${stamp}-${index}-${file.name}`, file, status: "queued" as const })),
+      ...files.map((file, index) => ({
+        id: `${stamp}-${index}-${file.name}`,
+        file,
+        status: "queued" as const,
+        documentType: "" as const,
+        documentDate: "",
+        privacyReviewed: false,
+      })),
     ]);
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
@@ -3175,40 +3252,102 @@ export function TherapyRecommendation() {
     }
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
-    const queue = pendingDirectBefundFiles.filter((item) => item.status !== "done");
+    const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
-    const successful: Array<{ pages?: number; chars?: number; removedIdentifierCategories?: string[] }> = [];
+    const missingType = queue.find((item) => !item.documentType);
+    if (missingType) {
+      toast({ title: "Dokumentart fehlt", description: "Bitte für jede Datei ausdrücklich Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.", variant: "destructive" });
+      return;
+    }
+    const missingDate = queue.find((item) => !item.documentDate.trim());
+    if (missingDate) {
+      toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
+      return;
+    }
+    let successful = 0;
     for (const item of queue) {
       if (!scopeIsCurrent()) return;
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
+        const documentType = item.documentType;
+        if (!documentType) throw new Error("Bitte eine gültige Dokumentart auswählen.");
         const extracted = await extractClinicalDocumentText(item.file, "doctor", (message) => {
           if (scopeIsCurrent()) toast(message);
-        });
+        }, undefined, undefined, `${directBefundTargetLabel(documentType)}|${item.documentDate}`);
         if (!scopeIsCurrent()) return;
-        setSonstigeUntersuchungen((prev) => mergeExtractedBlockIntoField(prev, extracted.text));
-        successful.push({ pages: extracted.pages, chars: extracted.chars, removedIdentifierCategories: extracted.removedIdentifierCategories });
-        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "done", chars: extracted.chars, pages: extracted.pages } : row));
+        const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate);
+        successful += 1;
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
+          ...row,
+          status: "ready",
+          previewText,
+          privacyReviewed: false,
+          removedIdentifierCategories: extracted.removedIdentifierCategories,
+          chars: extracted.chars,
+          pages: extracted.pages,
+        } : row));
       } catch (error: any) {
         if (!scopeIsCurrent()) return;
-        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", error: error?.message || "Fehler beim Auslesen" } : row));
+        const failure = classifyClinicalPdfFailure(error);
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", errorKind: failure.label, error: failure.message } : row));
       }
     }
-    if (successful.length) {
+    if (successful) {
       if (!scopeIsCurrent()) return;
-      const identifierCategories = Array.from(new Set(successful.flatMap((item) => item.removedIdentifierCategories || [])));
-      await logTherapyEvent(pid, "documents_uploaded", {
-        document_count: successful.length,
-        total_pages: successful.reduce((sum, item) => sum + Number(item.pages || 0), 0),
-        total_chars: successful.reduce((sum, item) => sum + Number(item.chars || 0), 0),
-        identifier_categories: identifierCategories,
-        original_archived: false,
-        privacy_mode: "local-deidentification",
-      });
-      if (!scopeIsCurrent()) return;
-      toast({ title: "PDFs datenschutzbereinigt übernommen", description: `${successful.length} Datei(en) stehen zum Anhaken bereit; Originale wurden nicht archiviert.` });
-      setHistoryRefresh((n) => n + 1);
+      toast({ title: "Datenschutzbereinigte Vorschau bereit", description: `${successful} Datei(en) lokal ausgelesen. Bitte jede Vorschau prüfen und erst danach gesammelt übernehmen.` });
     }
+  };
+
+  const handoffDirectBefundFiles = async () => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) {
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen.", variant: "destructive" });
+      return;
+    }
+    const ready = pendingDirectBefundFiles.filter((item) => item.status === "ready");
+    if (!ready.length) return;
+    if (ready.some((item) => !item.documentType)) {
+      toast({ title: "Dokumentart fehlt", description: "Mindestens eine Vorschau hat keine bestätigte Dokumentart und wurde nicht übernommen.", variant: "destructive" });
+      return;
+    }
+    if (ready.some((item) => !item.privacyReviewed || !item.previewText?.trim())) {
+      toast({ title: "Datenschutzprüfung fehlt", description: "Bitte jede bereinigte Vorschau sichtbar prüfen und bestätigen.", variant: "destructive" });
+      return;
+    }
+    const scopeGeneration = patientScopeGenerationRef.current;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    const append = (setter: typeof setLaborKomplett, text: string) => setter((previous) => mergeExtractedBlockIntoField(previous, text));
+    const documentTypes = new Set<string>();
+    for (const item of ready) {
+      if (!scopeIsCurrent()) return;
+      const documentType = item.documentType;
+      if (!documentType) return;
+      const text = item.previewText || "";
+      switch (documentType) {
+        case "labor": append(setLaborKomplett, text); break;
+        case "metatron": append(setMetatronHeel, text); break;
+        case "vieva": append(setVievaPlus, text); break;
+        case "arzt-anamnese": append(setArztbericht, text); break;
+        case "sonstige": append(setSonstigeUntersuchungen, text); break;
+      }
+      documentTypes.add(directBefundTargetLabel(documentType));
+    }
+    const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
+    await logTherapyEvent(pid, "documents_uploaded", {
+      document_count: ready.length,
+      total_pages: ready.reduce((sum, item) => sum + Number(item.pages || 0), 0),
+      total_chars: ready.reduce((sum, item) => sum + Number(item.chars || 0), 0),
+      identifier_categories: identifierCategories,
+      document_types: Array.from(documentTypes),
+      privacy_preview_confirmed: true,
+      original_archived: false,
+      privacy_mode: "local-deidentification",
+    });
+    if (!scopeIsCurrent()) return;
+    const readyIds = new Set(ready.map((item) => item.id));
+    setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
+    toast({ title: "Dokumente richtig zugeordnet", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen; Originale wurden nicht archiviert.` });
+    setHistoryRefresh((n) => n + 1);
   };
 
   const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
@@ -3518,9 +3657,28 @@ export function TherapyRecommendation() {
   const allBefundSourcesManuallyDeselected = nonContextAnalysisSources.length > 0 && nonContextAnalysisSources.every((source) => (
     sourceSelectionRef.current.manualSelections[normalizeAnalysisSourceId(source.key)] === false
   ));
-  const therapyStartBlockedByBefund = isAnalyzingDocs
+  const syntheticCaseIsReady = !pseudonymId.trim()
+    && docAnalysisHtml.includes(`data-synthetic-case-id="${SYNTHETIC_THERAPY_CASE.id}"`)
+    && docAnalysisHtml.includes(SYNTHETIC_THERAPY_CASE.befundAuswertung)
+    && symptome === SYNTHETIC_THERAPY_CASE.symptome
+    && erkrankung === SYNTHETIC_THERAPY_CASE.erkrankung
+    && laborKomplett === SYNTHETIC_THERAPY_CASE.laborKomplett
+    && medikamente === SYNTHETIC_THERAPY_CASE.medikamente
+    && metatronHeel === SYNTHETIC_THERAPY_CASE.metatronHeel
+    && ![alter, geschlecht, groesseCm, gewichtKg, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie].some((value) => value.trim())
+    && schwanger === "nein"
+    && !pathogenBulkText.trim()
+    && !pathogens.some((entry) => entry.name.trim() || entry.organe.trim() || entry.index.trim())
+    && selectedCategories.length === 0
+    && bevorzugteLinie.length === 0
+    && pinnedMittel.length === 0
+    && mannayanOrders.length === 0
+    && manualDiagnosen.length === 0
+    && manualMittel.length === 0
+    && useMapReduce;
+  const therapyStartBlockedByBefund = !syntheticCaseIsReady && (isAnalyzingDocs
     || hasEffectivelySelectedBefundSources
-    || (nonContextAnalysisSources.length > 0 && !allBefundSourcesManuallyDeselected && !docAnalysisHtml);
+    || (nonContextAnalysisSources.length > 0 && !allBefundSourcesManuallyDeselected && !docAnalysisHtml));
 
   const loadMannayanOrdersForCurrentPatient = useCallback(async () => {
     const pid = normalizePseudonymId(pseudonymId);
@@ -3924,7 +4082,7 @@ export function TherapyRecommendation() {
           ? warnings.map((item) => `SICHERHEIT ${severityLabel(item.severity)}: ${item.title}. ${item.action}`).join(" ")
           : "";
         const name = r.latin ? `**${r.name}** (${r.latin})` : `**${r.name}**`;
-        lines.push(`- ${name} | ${r.dosage} | ${r.application} | ${r.duration} | ${r.priorityRaw} | ${r.cost} | ${[r.reason, warningText].filter(Boolean).join(" ")}`);
+        lines.push(`- ${name} | ${r.manufacturer || "nicht belegt"} | ${r.dosage} | ${r.application} | ${r.duration} | ${r.priorityRaw} | ${r.cost} | ${r.reason} | ${r.patientExplanation || "Patientenerklärung manuell ergänzen"} | ${[r.safety, warningText].filter(Boolean).join(" ") || "Keine konkrete Angabe im verwendeten Beleg – individuell prüfen"}`);
       });
       lines.push("");
     });
@@ -3936,7 +4094,7 @@ export function TherapyRecommendation() {
         const warningText = warnings.length
           ? warnings.map((item) => `SICHERHEIT ${severityLabel(item.severity)}: ${item.title}. ${item.action}`).join(" ")
           : "";
-        lines.push(`- **${m.name}** | ${m.dosage || "—"} | ${m.application || "—"} | ${m.duration || "—"} | manuell | — | ${[m.reason, warningText].filter(Boolean).join(" ")}`);
+        lines.push(`- **${m.name}** | ${m.manufacturer || "nicht belegt"} | ${m.dosage || "—"} | ${m.application || "—"} | ${m.duration || "—"} | manuell | — | ${m.reason} | ${m.patientExplanation || "Patientenerklärung manuell ergänzen"} | ${[m.safety, warningText].filter(Boolean).join(" ") || "Keine konkrete Angabe im verwendeten Beleg – individuell prüfen"}`);
       });
       lines.push("");
     }
@@ -4086,9 +4244,35 @@ export function TherapyRecommendation() {
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
 
-          <p className="text-sm text-muted-foreground">
-            Erfassen Sie Befunde, Symptome und Diagnosen. Die Wissensdatenbank erzeugt daraus einen internen, priorisierten Therapieentwurf mit Ernährung, Verhalten, Mitteln und Sicherheitsprüfung.
+      <p className="text-sm text-muted-foreground">
+            Erfassen Sie Befunde, Symptome und Diagnosen. Die Wissensdatenbank erzeugt daraus einen strukturierten internen Therapieentwurf mit getrennten Stoffgruppen, Firmenangabe, Dosierung, verständlichem Warum, Ernährung, Verlauf und Sicherheitsprüfung.
       </p>
+
+      <Card className="border-sky-300 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/20">
+        <CardContent className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2 font-semibold text-sky-950 dark:text-sky-100">
+              <ClipboardList className="h-4 w-4" />
+              Sicherer Struktur-Prueffall
+              <Badge variant="outline">{SYNTHETIC_THERAPY_CASE.id}</Badge>
+              {syntheticCaseIsReady && <Badge className="bg-emerald-600">geladen</Badge>}
+            </div>
+            <p className="text-xs text-sky-900/80 dark:text-sky-200/80">
+              Fuellt nur ein leeres Formular mit rein synthetischen Angaben. Keine Pseudonym-ID, keine Patientendatei, keine Speicherung und keine automatische KI- oder Datenbankanfrage.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleLoadSyntheticTherapyCase}
+            disabled={syntheticCaseLoadBlocked}
+            title={syntheticCaseLoadBlocked ? "Nur bei vollstaendig leerem Formular verfuegbar" : "Rein synthetischen Struktur-Prueffall laden"}
+            className="shrink-0 border-sky-400"
+          >
+            Synthetischen Prueffall laden
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* ⬇️ Datei-/Quellen-Auswahl ganz oben sichtbar */}
       <Card className="border-primary/60 bg-primary/[0.06] shadow-md ring-2 ring-primary/30">
@@ -4118,7 +4302,7 @@ export function TherapyRecommendation() {
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <input ref={directBefundFileRef} type="file" accept="application/pdf,image/*" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                 <FileUp className="h-3.5 w-3.5" />
                 PDFs hier auswählen
@@ -4128,23 +4312,69 @@ export function TherapyRecommendation() {
                 Archiv neu laden
               </Button>
               {pendingDirectBefundFiles.length > 0 && (
-                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.every((file) => file.status === "done") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={!pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                   {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                  Auslesen und in Auswahl übernehmen
+                  Sicher auslesen und Vorschau erstellen
+                </Button>
+              )}
+              {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
+                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && !file.privacyReviewed))} className="gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Geprüfte Inhalte passend übernehmen
                 </Button>
               )}
             </div>
             {pendingDirectBefundFiles.length > 0 && (
               <div className="divide-y rounded-md border bg-muted/20 text-xs">
                 {pendingDirectBefundFiles.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 p-2">
-                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                    <span className="min-w-0 flex-1 truncate" title={item.file.name}>{item.file.name}</span>
-                    {item.pages ? <span className="text-muted-foreground whitespace-nowrap">{item.pages} S.</span> : null}
-                    {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
-                    {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-                    {item.status === "error" && <span className="max-w-[280px] truncate text-destructive" title={item.error}>Fehler: {item.error}</span>}
-                    {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                  <div key={item.id} className="space-y-2 p-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                      <span className="min-w-0 flex-1 truncate" title={item.file.name}>{item.file.name}</span>
+                      {item.pages ? <span className="text-muted-foreground whitespace-nowrap">{item.pages} S.</span> : null}
+                      {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+                      {item.status === "ready" && <Badge variant="outline" className="text-[10px]">Vorschau</Badge>}
+                      {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                      {item.status === "error" && <span className="max-w-[280px] truncate text-destructive" title={item.error}>Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
+                      {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
+                      <Select
+                        value={item.documentType || undefined}
+                        onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value } : file))}
+                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                      >
+                        <SelectTrigger className="h-8 text-xs" aria-label="Dokumentart">
+                          <SelectValue placeholder="Dokumentart wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIRECT_BEFUND_TARGETS.map((target) => <SelectItem key={target.value} value={target.value}>{target.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="date"
+                        aria-label="Dokumentdatum"
+                        value={item.documentDate}
+                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value } : file))}
+                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    {item.status === "ready" && item.previewText && (
+                      <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                        <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
+                        <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words rounded bg-background p-2 text-[11px] leading-relaxed">{item.previewText}</pre>
+                        <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
+                          <input
+                            type="checkbox"
+                            checked={item.privacyReviewed}
+                            onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file))}
+                            className="mt-0.5"
+                          />
+                          Vorschau geprüft: keine Namen, Initialen, Geburtsdaten, Adressen, Dateinamen oder anderen direkten Identifikatoren im Text.
+                        </label>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -4728,6 +4958,10 @@ export function TherapyRecommendation() {
                     <label className="text-xs font-medium whitespace-nowrap">Analyse erstellt am:</label>
                     <Input type="date" value={vievaPlusDatum} onChange={(event) => setVievaPlusDatum(event.target.value)} className="h-8 w-auto text-xs" />
                     {vievaPlusDatum && <button type="button" onClick={() => setVievaPlusDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>}
+                  </div>
+                  {!vievaPlusDatum && <p role="status" className="mb-3 text-xs font-medium text-amber-800 dark:text-amber-200">Vor dem PDF-Import zuerst das Analyse-Datum eintragen.</p>}
+                  <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-100">
+                    <strong>Datenschutz- und Sicherheitsprüfung:</strong> Vor dem Einlesen Namen, Geburtsdatum, Adresse, Dateiname und weitere Identifikatoren kontrollieren. Nur den zum aktuellen Pseudonym gehörenden Befund verwenden. Das PDF-Passwort wird nicht gespeichert; das Original wird nicht archiviert. Die Vieva-Auswertung ist eine Befundquelle und ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung.
                   </div>
                   <MultiDocUpload
                     pseudonymId={pseudonymId}
@@ -5618,7 +5852,7 @@ export function TherapyRecommendation() {
             className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white"
           >
             {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Therapie-Empfehlung generieren"}
+            {isStreaming ? (useMapReduce ? "Stufe 1+2 läuft (kann 30-60 Sek dauern)..." : "Analyse läuft...") : "Strukturierte Therapie-Empfehlung generieren"}
           </Button>
           {therapyStartBlockedByBefund && !isStreaming && !isAnalyzingDocs && (
             <p className="w-full text-xs text-amber-700 dark:text-amber-300">Bitte zuerst oben alle ausgewählten neuen oder geänderten Befundquellen vollständig auswerten.</p>
@@ -6040,6 +6274,12 @@ function ManualRemedyRow({
         )}
       </div>
       <Input
+        className="col-span-12 md:col-span-2"
+        placeholder="Firma / Hersteller"
+        value={entry.manufacturer || ""}
+        onChange={(e) => onChange({ manufacturer: e.target.value })}
+      />
+      <Input
         className="col-span-12 md:col-span-2 font-mono text-sm"
         placeholder="Dosierung"
         value={entry.dosage}
@@ -6052,20 +6292,32 @@ function ManualRemedyRow({
         onChange={(e) => onChange({ application: e.target.value })}
       />
       <Input
-        className="col-span-10 md:col-span-1"
+        className="col-span-10 md:col-span-2"
         placeholder="Dauer"
         value={entry.duration}
         onChange={(e) => onChange({ duration: e.target.value })}
       />
+      <Button variant="ghost" size="icon" className="col-span-2 md:col-span-1 h-9 w-9 text-destructive" onClick={onRemove}>
+        <X className="h-4 w-4" />
+      </Button>
       <Input
-        className="col-span-12 md:col-span-3"
-        placeholder="Begründung / Indikation"
+        className="col-span-12"
+        placeholder="Interner Befundbezug / fachliche Begründung"
         value={entry.reason}
         onChange={(e) => onChange({ reason: e.target.value })}
       />
-      <Button variant="ghost" size="icon" className="col-span-1 h-9 w-9 text-destructive" onClick={onRemove}>
-        <X className="h-4 w-4" />
-      </Button>
+      <Input
+        className="col-span-12"
+        placeholder="Einfache Erklärung für den Patienten: Warum soll ich das einnehmen?"
+        value={entry.patientExplanation || ""}
+        onChange={(e) => onChange({ patientExplanation: e.target.value })}
+      />
+      <Input
+        className="col-span-12 border-amber-400/60"
+        placeholder="Gefahren / Gegenanzeigen / Wechselwirkungen"
+        value={entry.safety || ""}
+        onChange={(e) => onChange({ safety: e.target.value })}
+      />
       </div>
       <div className="grid gap-2 md:grid-cols-2">
         <Select onValueChange={applyDosageSelect}>
@@ -6104,7 +6356,7 @@ function TherapyPreview({
 }: {
   result: string;
   selectedKeys: Set<string>;
-  manualMittel: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group: string }>;
+  manualMittel: Array<{ name: string; manufacturer: string; dosage: string; application: string; duration: string; reason: string; patientExplanation: string; safety: string; group: string }>;
   manualDiagnosen: DiagnoseEntry[];
   therapieNotiz: string;
   safetyWarningsByKey: Map<string, TherapySafetyWarning[]>;
@@ -6144,7 +6396,10 @@ function TherapyPreview({
               {g.remedies.map((r, j) => (
                 <li key={j} className="border-l-2 border-primary/30 pl-2">
                   <strong>{r.name}</strong>{r.latin && <em className="text-muted-foreground"> ({r.latin})</em>}
-                  <span className="text-muted-foreground"> · {r.dosage} · {r.application} · {r.duration}</span>
+                   <span className="text-muted-foreground"> · Firma: {r.manufacturer || "nicht belegt"} · {r.dosage} · {r.application} · {r.duration}</span>
+                   {r.reason && <div className="text-muted-foreground italic">Befundbezug: {r.reason.replace(/\s*\[WIKI_ID:[0-9a-f-]{36}\]\s*/gi, " ").trim()}</div>}
+                   {r.patientExplanation && <div className="text-muted-foreground italic">Für den Patienten: {r.patientExplanation}</div>}
+                   {r.safety && <div className="text-amber-800 dark:text-amber-300">Gefahren / Gegenanzeigen: {r.safety}</div>}
                   {(safetyWarningsByKey.get(`${g.categoryIndex}|${parsed.categories[g.categoryIndex].remedies.indexOf(r)}`) || []).map((warning) => (
                     <div key={warning.id} className="mt-1 text-amber-800 dark:text-amber-300">
                       ⚠ {warning.title}: {warning.action}
@@ -6162,8 +6417,10 @@ function TherapyPreview({
               {manualMittel.map((m, i) => (
                 <li key={i} className="border-l-2 border-accent/40 pl-2">
                   <strong>{m.name}</strong>
-                  <span className="text-muted-foreground"> · {m.dosage || "—"} · {m.application || "—"} · {m.duration || "—"}</span>
-                  {m.reason && <span className="text-muted-foreground italic"> – {m.reason}</span>}
+                   <span className="text-muted-foreground"> · Firma: {m.manufacturer || "nicht belegt"} · {m.dosage || "—"} · {m.application || "—"} · {m.duration || "—"}</span>
+                   {m.reason && <div className="text-muted-foreground italic">Befundbezug: {m.reason}</div>}
+                   {m.patientExplanation && <div className="text-muted-foreground italic">Für den Patienten: {m.patientExplanation}</div>}
+                   {m.safety && <div className="text-amber-800 dark:text-amber-300">Gefahren / Gegenanzeigen: {m.safety}</div>}
                 </li>
               ))}
             </ul>

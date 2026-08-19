@@ -154,6 +154,21 @@ describe("laboratory trend analysis", () => {
     expect(directIdentifierCategories(result)).toEqual([]);
   });
 
+  it("does not block Vieva text when the name is redacted, empty, or absent", () => {
+    const cases = [
+      "Name: [personenbezogene Angabe entfernt]\nVitamin D 22 ng/ml",
+      "Name:\nVitamin D 22 ng/ml",
+      "Vitamin D 22 ng/ml",
+    ];
+
+    for (const source of cases) {
+      expect(directIdentifierCategories(source)).toEqual([]);
+      const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+      expect(result).toContain("Vitamin D 22 ng/ml");
+      expect(directIdentifierCategories(result)).toEqual([]);
+    }
+  });
+
   it("handles missing separators, comma-order names, and common OCR label substitutions", () => {
     const source = [
       "Patient Beispiel, Erika",

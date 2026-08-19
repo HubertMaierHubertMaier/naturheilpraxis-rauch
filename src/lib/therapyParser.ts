@@ -4,6 +4,7 @@
 export interface RemedyRow {
   name: string;
   latin?: string;
+  manufacturer: string;
   dosage: string;
   application: string;
   duration: string;
@@ -11,6 +12,8 @@ export interface RemedyRow {
   priorityRaw: string;
   cost: string;
   reason: string;
+  patientExplanation: string;
+  safety: string;
 }
 
 export interface CategoryGroup {
@@ -36,13 +39,18 @@ export interface ParsedTherapy {
 const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: string; title: string }> = [
   { match: /hausmittel|gewürze/i, tone: "sand", emoji: "🌿", title: "Hausmittel & Gewürze" },
   { match: /vitamine/i, tone: "terracotta", emoji: "🍋", title: "Vitamine" },
-  { match: /mineralstoffe|spurenelemente/i, tone: "terracotta", emoji: "🧂", title: "Mineralstoffe & Spurenelemente" },
-  { match: /fettsäuren|aminosäuren/i, tone: "terracotta", emoji: "🐟", title: "Fettsäuren & Aminosäuren" },
+  { match: /aminosäuren/i, tone: "terracotta", emoji: "🧬", title: "Aminosäuren" },
+  { match: /mineralstoffe|spurenelemente/i, tone: "terracotta", emoji: "🧂", title: "Spurenelemente & Mineralstoffe" },
+  { match: /fettsäuren|omega-?3/i, tone: "terracotta", emoji: "🐟", title: "Fettsäuren" },
+  { match: /pathogen.*nutramedix|nutramedix.*pathogen|pathogenbezogene mittel/i, tone: "sage", emoji: "🦠", title: "Pathogenbezogene Mittel (NutraMedix)" },
+  { match: /symptombezogene mittel|mittel.*symptom/i, tone: "mist", emoji: "🩹", title: "Symptombezogene Mittel" },
+  { match: /diagnosebezogene mittel|erkrankungsbezogene mittel|mittel.*diagnos/i, tone: "mist", emoji: "🩺", title: "Diagnosebezogene Mittel" },
+  { match: /mannayan/i, tone: "terracotta", emoji: "🏭", title: "Mannayan-Produkte" },
   { match: /phytotherapie|tinktur/i, tone: "sage", emoji: "🌱", title: "Phytotherapie & Tinkturen" },
   { match: /heilpilze|mykotherapie/i, tone: "sage", emoji: "🍄", title: "Heilpilze (Mykotherapie)" },
   { match: /sanum|isopathie|enderlein/i, tone: "sage", emoji: "🧪", title: "Sanum-Therapie" },
   { match: /pascoe|heel|komplexhom/i, tone: "mist", emoji: "💼", title: "Pascoe & Heel (Komplexhomöopathie)" },
-  { match: /vitaplace/i, tone: "terracotta", emoji: "🏭", title: "Vitaplace" },
+  { match: /vitaplace/i, tone: "terracotta", emoji: "🧴", title: "Vitaplace-Apothekenprodukte" },
   { match: /homöopathie|komplexmittel/i, tone: "mist", emoji: "💧", title: "Homöopathie & Komplexmittel" },
   { match: /probiotika|präbiotika|darmaufbau/i, tone: "mist", emoji: "🧫", title: "Probiotika & Darmaufbau" },
   { match: /spezialpräparate/i, tone: "neutral", emoji: "💎", title: "Spezialpräparate" },
@@ -65,6 +73,7 @@ const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"];
   { match: /therapieprotokoll|zeitlicher ablauf/i, variant: "success", emoji: "📋", title: "Therapieprotokoll", placement: "outro" },
   { match: /ernährung(?!.*typ)/i, variant: "info", emoji: "🥗", title: "Ernährung", placement: "outro" },
   { match: /verhalten.*alltag|alltag.*verhalten|bewegung.*schlaf/i, variant: "info", emoji: "🚶", title: "Verhalten & Alltag", placement: "outro" },
+  { match: /verlaufskontrolle|kontrollplan|therapiekontrolle/i, variant: "success", emoji: "📈", title: "Verlaufskontrolle", placement: "outro" },
   { match: /begleitmaßnahmen/i, variant: "info", emoji: "🔄", title: "Begleitmaßnahmen", placement: "outro" },
   { match: /ausgeschlossen/i, variant: "danger", emoji: "❌", title: "Ausgeschlossene Mittel", placement: "outro" },
   { match: /wissensdatenbank.?lücken|wiki.?lücken|wissensdatenbank.?abgleich|^lücken/i, variant: "warning", emoji: "🕳️", title: "Wissensdatenbank-Lücken", placement: "intro" },
@@ -85,14 +94,16 @@ function detectFreeSection(heading: string) {
 }
 
 function parsePriority(raw: string): RemedyRow["priority"] {
-  if (/essentiell/i.test(raw)) return "essential";
-  if (/empfohlen/i.test(raw)) return "recommended";
-  if (/optional/i.test(raw)) return "optional";
+  if (/\b(?:nicht|niemals|keinesfalls|weder|kein(?:e|en|er|es)?)\b[^|]{0,60}\b(?:essentiell|empfohlen|optional)\b/i.test(raw)) return "unknown";
+  if (/\bessentiell\b/i.test(raw)) return "essential";
+  if (/\bempfohlen\b/i.test(raw)) return "recommended";
+  if (/\boptional\b/i.test(raw)) return "optional";
   return "unknown";
 }
 
 function parseRemedyLine(line: string): RemedyRow | null {
-  // Expected: - **Name** (Latin) | Dosage | Application | Duration | Priority | Cost | Reason
+  // Current: - **Name** (Latin) | Manufacturer | Dosage | Application | Duration | Priority | Cost | Clinical reason | Patient explanation | Safety
+  // Persisted plans without the manufacturer column remain readable.
   const cleaned = line.replace(/^[-*]\s+/, "").trim();
   const parts = cleaned.split("|").map((p) => p.trim());
   if (parts.length < 4) return null;
@@ -102,38 +113,78 @@ function parseRemedyLine(line: string): RemedyRow | null {
   const name = nameMatch ? nameMatch[1].trim() : namePart.replace(/\*\*/g, "").trim();
   const latin = nameMatch?.[2]?.trim();
 
-  const [, dosage = "", application = "", duration = "", priorityRaw = "", cost = "", ...reasonParts] = parts;
+  // Only the two documented priority columns may affect field alignment.
+  const currentPriority = parsePriority(parts[5] || "");
+  const legacyPriority = parsePriority(parts[4] || "");
+  const hasManufacturer = currentPriority !== "unknown" || parts.length >= 10;
+  const priorityIndex = hasManufacturer
+    ? currentPriority !== "unknown" ? 5 : -1
+    : legacyPriority !== "unknown" ? 4 : -1;
+  const manufacturer = hasManufacturer ? parts[1] || "" : "";
+  const dosage = parts[hasManufacturer ? 2 : 1] || "";
+  const application = parts[hasManufacturer ? 3 : 2] || "";
+  const duration = parts[hasManufacturer ? 4 : 3] || "";
+  const priorityRaw = priorityIndex > 0 ? parts[priorityIndex] : parts[hasManufacturer ? 5 : 4] || "";
+  const cost = parts[priorityIndex > 0 ? priorityIndex + 1 : hasManufacturer ? 6 : 5] || "";
+  const reasonParts = parts.slice(priorityIndex > 0 ? priorityIndex + 2 : hasManufacturer ? 7 : 6);
+  const hasSeparatePatientExplanation = hasManufacturer && reasonParts.length >= 2;
+  const hasSeparateSafety = hasManufacturer && reasonParts.length >= 3;
+  const reason = (hasSeparatePatientExplanation ? reasonParts.slice(0, 1) : reasonParts).join(" | ").trim();
+  const patientExplanation = hasSeparatePatientExplanation ? reasonParts[1] : reason;
+  const safety = hasSeparateSafety ? reasonParts.slice(2).join(" | ").trim() : "";
 
   return {
     name,
     latin,
+    manufacturer,
     dosage,
     application,
     duration,
     priority: parsePriority(priorityRaw),
     priorityRaw,
     cost,
-    reason: reasonParts.join(" | ").trim(),
+    reason,
+    patientExplanation,
+    safety,
   };
 }
 
 const remedyIdentity = (value: string) => value
+  .toLowerCase()
+  .replace(/ä/g, "ae")
+  .replace(/ö/g, "oe")
+  .replace(/ü/g, "ue")
+  .replace(/ß/g, "ss")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
   .replace(/[^a-z0-9]+/g, " ")
   .trim();
 
+const mergeDistinctText = (current: string, candidate: string): string => {
+  const left = current.trim();
+  const right = candidate.trim();
+  if (!left) return right;
+  if (!right) return left;
+  const normalizedLeft = left.toLocaleLowerCase("de").replace(/\s+/g, " ");
+  const normalizedRight = right.toLocaleLowerCase("de").replace(/\s+/g, " ");
+  if (normalizedLeft.includes(normalizedRight)) return left;
+  if (normalizedRight.includes(normalizedLeft)) return right;
+  return `${left} | ${right}`;
+};
+
 const mergeRemedyRows = (current: RemedyRow, candidate: RemedyRow): RemedyRow => ({
   ...current,
-  latin: current.latin || candidate.latin,
-  dosage: current.dosage || candidate.dosage,
-  application: current.application || candidate.application,
-  duration: current.duration || candidate.duration,
+  latin: mergeDistinctText(current.latin || "", candidate.latin || "") || undefined,
+  manufacturer: mergeDistinctText(current.manufacturer, candidate.manufacturer),
+  dosage: mergeDistinctText(current.dosage, candidate.dosage),
+  application: mergeDistinctText(current.application, candidate.application),
+  duration: mergeDistinctText(current.duration, candidate.duration),
   priority: priorityOrder(current.priority) <= priorityOrder(candidate.priority) ? current.priority : candidate.priority,
-  priorityRaw: priorityOrder(current.priority) <= priorityOrder(candidate.priority) ? current.priorityRaw : candidate.priorityRaw,
-  cost: current.cost || candidate.cost,
-  reason: current.reason.length >= candidate.reason.length ? current.reason : candidate.reason,
+  priorityRaw: mergeDistinctText(current.priorityRaw, candidate.priorityRaw),
+  cost: mergeDistinctText(current.cost, candidate.cost),
+  reason: mergeDistinctText(current.reason, candidate.reason),
+  patientExplanation: mergeDistinctText(current.patientExplanation, candidate.patientExplanation),
+  safety: mergeDistinctText(current.safety, candidate.safety),
 });
 
 export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
@@ -176,7 +227,17 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
   const remedyByIdentity = new Map<string, RemedyRow>();
 
   for (const block of blocks) {
-    if (block.kind === "category" && block.def) {
+    const dynamicCategory = block.kind === "unknown" && block.lines.some((line) => {
+      const trimmed = line.trim();
+      if ((!trimmed.startsWith("-") && !trimmed.startsWith("*")) || !trimmed.includes("|")) return false;
+      const row = parseRemedyLine(trimmed);
+      const fieldCount = trimmed.split("|").length;
+      return Boolean(row && (row.priority !== "unknown" || (fieldCount >= 10 && /\*\*.+?\*\*/.test(trimmed))));
+    });
+    if ((block.kind === "category" && block.def) || dynamicCategory) {
+      const categoryDef = block.kind === "category" && block.def
+        ? block.def
+        : { tone: "neutral" as const, emoji: "💊", title: block.kind === "unknown" ? block.heading : "Weitere Mittel" };
       const remedies: RemedyRow[] = [];
       for (const l of block.lines) {
         const trimmed = l.trim();
@@ -186,15 +247,15 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
         if (row && row.name) remedies.push(row);
       }
       if (remedies.length === 0) continue;
-      let category = categoryByTitle.get(block.def.title);
+      let category = categoryByTitle.get(categoryDef.title);
       if (!category) {
         category = {
-          emoji: block.def.emoji,
-          title: block.def.title,
-          tone: block.def.tone,
+          emoji: categoryDef.emoji,
+          title: categoryDef.title,
+          tone: categoryDef.tone,
           remedies: [],
         };
-        categoryByTitle.set(block.def.title, category);
+        categoryByTitle.set(categoryDef.title, category);
         result.categories.push(category);
       }
       remedies.forEach((remedy) => {
@@ -231,6 +292,7 @@ export function parseTherapyMarkdown(markdown: string): ParsedTherapy {
     }
   }
 
+  result.categories = result.categories.filter((category) => category.remedies.length > 0);
   return result;
 }
 

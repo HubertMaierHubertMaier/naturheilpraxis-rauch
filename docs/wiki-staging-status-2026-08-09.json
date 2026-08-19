@@ -2,7 +2,9 @@
   "schema_version": 1,
   "checked_at": "2026-08-09",
   "publication": "unpublished_internal_local_wiki_staging",
-  "staging_url": "http://127.0.0.1:4173/wiki-staging.html",
+  "historical_staging_url": "http://127.0.0.1:4173/wiki-staging.html",
+  "current_internal_path": "protected-content/internal/wiki-staging.html",
+  "public_path_retired_at": "2026-08-19",
   "build": {
     "command": "npm run build",
     "status": "passed",
@@ -41,7 +43,7 @@
   "technical_sources": [
     "docs/wiki-technical-closure-status-2026-08-09.json",
     "docs/source-access-recheck-2026-08-09.json",
-    "public/wiki-staging.html",
+    "protected-content/internal/wiki-staging.html",
     "src/pages/WikiDatenbank.tsx",
     "src/App.tsx"
   ]

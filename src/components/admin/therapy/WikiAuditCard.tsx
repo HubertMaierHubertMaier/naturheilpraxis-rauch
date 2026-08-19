@@ -26,6 +26,16 @@ export interface WikiAuditInfo {
   selectedCategories: string[];
   used: WikiAuditEntry[];
   skippedSample: WikiAuditEntry[];
+  infothekTotal?: number;
+  infothekUsedCount?: number;
+  infothekContextChars?: number;
+  infothekCacheHit?: boolean;
+  infothekErrors?: string[];
+  infothekUsed?: Array<{ filename: string; title: string; score: number }>;
+  stagingUsedCount?: number;
+  stagingContextChars?: number;
+  stagingErrors?: string[];
+  stagingUsed?: Array<{ id: string; kind: string; label: string; status: string }>;
 }
 
 export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
@@ -45,7 +55,7 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm font-serif flex items-center gap-2 text-blue-800 dark:text-blue-300">
             <Database className="h-4 w-4" />
-            Wiki-Audit: KI hat {audit.usedCount} von {audit.afterCategoryFilter} Einträgen gelesen
+            Wissens-Audit: {audit.usedCount} von {audit.afterCategoryFilter} Wiki-Einträgen gelesen
             {audit.mapReduceUsed && (
               <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300">
                 🚀 Map-Reduce (alle bewertet)
@@ -79,7 +89,34 @@ export function WikiAuditCard({ audit }: { audit: WikiAuditInfo }) {
             <Stat label="Kontext-Größe" value={`${audit.contextChars.toLocaleString("de-DE")} / ${audit.contextLimit.toLocaleString("de-DE")} (${contextFill}%)`} />
             <Stat label="Cache" value={audit.cacheHit ? "HIT" : "frisch geladen"} />
             <Stat label="Query-Tokens" value={audit.queryTokens.length} />
+            <Stat label="Infothek verwendet" value={`${audit.infothekUsedCount || 0} / ${audit.infothekTotal || 0}`} />
+            <Stat label="Pruefkandidaten" value={audit.stagingUsedCount || 0} />
           </div>
+
+          {((audit.infothekErrors?.length || 0) > 0 || (audit.stagingErrors?.length || 0) > 0) && (
+            <div className="rounded border border-amber-300/60 bg-amber-100/60 p-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+              <strong>Teilweise nicht geladene interne Quellen:</strong>{" "}
+              {[...(audit.infothekErrors || []), ...(audit.stagingErrors || [])].join(" | ")}
+            </div>
+          )}
+
+          {(audit.infothekUsed?.length || 0) > 0 && (
+            <div>
+              <p className="text-xs font-medium text-foreground">Infothek-HTML als ergaenzender Kontext ({audit.infothekUsed!.length})</p>
+              <div className="mt-2 space-y-1 rounded border bg-background p-2 text-xs">
+                {audit.infothekUsed!.map((entry) => <p key={entry.filename}><strong>{entry.title}</strong> <span className="text-muted-foreground">[{entry.filename}] · Score {entry.score}</span></p>)}
+              </div>
+            </div>
+          )}
+
+          {(audit.stagingUsed?.length || 0) > 0 && (
+            <div>
+              <p className="text-xs font-medium text-foreground">Interne Import-Pruefkandidaten ({audit.stagingUsed!.length})</p>
+              <div className="mt-2 space-y-1 rounded border border-amber-200 bg-amber-50/40 p-2 text-xs dark:border-amber-900/40 dark:bg-amber-950/20">
+                {audit.stagingUsed!.map((entry) => <p key={`${entry.kind}-${entry.id}`}><strong>{entry.label}</strong> <span className="text-muted-foreground">{entry.kind} · {entry.status}</span></p>)}
+              </div>
+            </div>
+          )}
 
           {/* Filter info */}
           {audit.selectedCategories.length > 0 && (

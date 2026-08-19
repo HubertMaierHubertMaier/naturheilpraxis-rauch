@@ -15,6 +15,7 @@ import {
   assessDocumentExtraction,
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
+  classifyClinicalPdfFailure,
   MAX_OCR_WORKER_INITIALIZATION_ATTEMPTS,
   reconstructPdfTextLines,
   shouldRunLocalOcr,
@@ -47,6 +48,7 @@ type PendingFile = {
   ocrFailedPages?: number[];
   progress?: string;
   error?: string;
+  errorKind?: string;
   piiHits?: PiiHit[];
 };
 
@@ -63,11 +65,6 @@ export type ClinicalDocumentExtractionResult = {
   ocrPages?: number;
   ocrFailedPages?: number[];
   removedIdentifierCategories?: string[];
-};
-
-export const isPdfPasswordError = (error: unknown): boolean => {
-  const candidate = error as { name?: unknown; message?: unknown } | null;
-  return candidate?.name === "PasswordException" || /password|passwort|kennwort/i.test(String(candidate?.message || ""));
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
@@ -376,13 +373,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           };
         } catch (error) {
           if (!scopeIsCurrent()) return;
+          const failure = classifyClinicalPdfFailure(error);
           updated[index] = {
             ...updated[index],
             status: "error",
             progress: undefined,
-            error: isPdfPasswordError(error)
-              ? "Geschütztes PDF konnte nicht geöffnet werden. Passwort fehlt oder ist falsch."
-              : (error as Error).message || "Fehler",
+            errorKind: failure.label,
+            error: failure.message,
           };
         }
         setFiles([...updated]);
@@ -499,7 +496,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
                   OCR-Hinweis
                 </span>
               )}
-              {pending.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pending.error}>Fehler: {pending.error}</span>}
+              {pending.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pending.error}>Fehler ({pending.errorKind || "Technik"}): {pending.error}</span>}
               {!loading && pending.status !== "processing" && (
                 <button type="button" onClick={() => removeAt(index)} className="text-muted-foreground hover:text-rose-700">
                   <X className="h-3.5 w-3.5" />

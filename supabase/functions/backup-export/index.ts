@@ -75,6 +75,10 @@ const REQUIRED_KB_IMPORT_TABLES = [
   "kb_relation_candidates",
   "kb_dosage_candidates",
   "kb_safety_candidates",
+  "kb_review_decisions",
+  "kb_import_errors",
+  "kb_import_candidate_proposals",
+  "kb_import_proposal_review_events",
   "kb_import_events",
 ] as const;
 
@@ -163,8 +167,7 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
     }
     const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/"));
     if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
-    const tables = [...new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])].sort();
-    return { tables, source: "openapi" };
+    return { tables: [...new Set(filtered)].sort(), source: "openapi" };
   } catch (err) {
     console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
     return { tables: FALLBACK_TABLES, source: "fallback" };
@@ -231,13 +234,19 @@ function isoTimestamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 }
 
+async function hashStoragePath(salt: string, bucket: string, path: string): Promise<string> {
+  const value = new TextEncoder().encode(`${salt}\0${bucket}\0${path}`);
+  const digest = await crypto.subtle.digest("SHA-256", value);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function sanitizeGithubInput(repo: string | null, branch: string | null): { repo: string; branch: string } {
   const cleanedRepo = (repo ?? "").trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
   const cleanedBranch = (branch ?? "main").trim() || "main";
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleanedRepo)) {
     throw new Error("Ungültiges GitHub-Repo. Erwartet: besitzer/repo");
   }
-  if (!/^[A-Za-z0-9._\/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
+  if (!/^[A-Za-z0-9._/-]{1,200}$/.test(cleanedBranch) || cleanedBranch.includes("..") || cleanedBranch.startsWith("/") || cleanedBranch.endsWith("/")) {
     throw new Error("Ungültiger GitHub-Branch.");
   }
   return { repo: cleanedRepo, branch: cleanedBranch };
@@ -320,6 +329,39 @@ type AuthUserExport = {
   mfa_factors: Array<{ id: string; type: string; status: string; created_at: string }>;
 };
 
+function serializeAuthUser(u: {
+  id: string;
+  email?: string | null;
+  phone?: string | null;
+  created_at: string;
+  last_sign_in_at?: string | null;
+  email_confirmed_at?: string | null;
+  phone_confirmed_at?: string | null;
+  banned_until?: string | null;
+  user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
+  factors?: Array<{ id: string; factor_type: string; status: string; created_at: string }>;
+}): AuthUserExport {
+  return {
+    id: u.id,
+    email: u.email ?? null,
+    phone: u.phone ?? null,
+    created_at: u.created_at,
+    last_sign_in_at: u.last_sign_in_at ?? null,
+    email_confirmed_at: u.email_confirmed_at ?? null,
+    phone_confirmed_at: u.phone_confirmed_at ?? null,
+    banned_until: u.banned_until ?? null,
+    user_metadata: u.user_metadata ?? {},
+    app_metadata: u.app_metadata ?? {},
+    mfa_factors: (u.factors ?? []).map((f) => ({
+      id: f.id,
+      type: f.factor_type,
+      status: f.status,
+      created_at: f.created_at,
+    })),
+  };
+}
+
 async function fetchAllAuthUsers(
   client: ReturnType<typeof createClient>,
 ): Promise<AuthUserExport[]> {
@@ -331,26 +373,7 @@ async function fetchAllAuthUsers(
     const { data, error } = await client.auth.admin.listUsers({ page, perPage });
     if (error) throw error;
     const users = data?.users ?? [];
-    for (const u of users) {
-      all.push({
-        id: u.id,
-        email: u.email ?? null,
-        phone: u.phone ?? null,
-        created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at ?? null,
-        email_confirmed_at: u.email_confirmed_at ?? null,
-        phone_confirmed_at: u.phone_confirmed_at ?? null,
-        banned_until: (u as unknown as { banned_until?: string }).banned_until ?? null,
-        user_metadata: u.user_metadata ?? {},
-        app_metadata: u.app_metadata ?? {},
-        mfa_factors: (u.factors ?? []).map((f) => ({
-          id: f.id,
-          type: f.factor_type,
-          status: f.status,
-          created_at: f.created_at,
-        })),
-      });
-    }
+    for (const u of users) all.push(serializeAuthUser(u));
     if (users.length < perPage) break;
     page++;
   }
@@ -568,7 +591,7 @@ Deno.serve(async (req) => {
       // GitHub API endpoint supports private repos with token and returns a redirect to codeload
       const apiUrl = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(branch)}`;
       const codeloadUrl = `https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`;
-      let githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
+      const githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
       if (!githubRes.ok || !githubRes.body) {
         const status = githubRes.status;
         if (status === 404 && !githubToken) {
@@ -591,14 +614,96 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Export in small responses so the Edge Function never has to hold and
+    // compress the complete database in memory at once.
+    if (mode === "table-page") {
+      const table = (url.searchParams.get("table") || "").trim();
+      const from = Number(url.searchParams.get("from") ?? "0");
+      const limit = Number(url.searchParams.get("limit") ?? "500");
+      if (!/^[A-Za-z0-9_]+$/.test(table) || TABLE_BLOCKLIST.has(table)) {
+        return new Response(JSON.stringify({ error: "invalid table" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!Number.isInteger(from) || from < 0 || !Number.isInteger(limit) || limit < 1 || limit > 1000) {
+        return new Response(JSON.stringify({ error: "invalid pagination" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data, error, count } = await adminClient
+        .from(table)
+        .select("*", { count: "exact" })
+        .range(from, from + limit - 1);
+      if (error) {
+        return new Response(JSON.stringify({ error: "table_export_failed", table, message: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const rows = (data ?? []) as Record<string, unknown>[];
+      const total = count ?? from + rows.length;
+      return new Response(JSON.stringify({
+        table,
+        from,
+        rows,
+        total,
+        nextFrom: from + rows.length < total ? from + rows.length : null,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
+
+    if (mode === "auth-page") {
+      const page = Number(url.searchParams.get("page") ?? "1");
+      const perPage = Number(url.searchParams.get("perPage") ?? "500");
+      if (!Number.isInteger(page) || page < 1 || !Number.isInteger(perPage) || perPage < 1 || perPage > 1000) {
+        return new Response(JSON.stringify({ error: "invalid pagination" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+      if (error) {
+        return new Response(JSON.stringify({ error: "auth_export_failed", message: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const users = (data?.users ?? []).map(serializeAuthUser);
+      const reportedTotal = (data as unknown as { total?: number } | null)?.total;
+      return new Response(JSON.stringify({
+        page,
+        users,
+        total: typeof reportedTotal === "number" ? reportedTotal : null,
+        nextPage: users.length === perPage ? page + 1 : null,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
+
     // Neuer Modus: Storage-Liste mit signierten URLs (Client lädt selbst)
     if (mode === "storage-list") {
       const result: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
+      const storageErrors: Array<{
+        bucket: string;
+        message: string;
+        diagnostic?: {
+          salt: string;
+          missing: Array<{ pathDigest: string; size: number; reason: "signed_url_missing" }>;
+        };
+      }> = [];
       const { buckets: dynamicBuckets } = await discoverBuckets(adminClient);
       for (const bucket of dynamicBuckets) {
         try {
           const files = await listAllFiles(adminClient, bucket);
           const entries: Array<{ path: string; size: number; signedUrl: string }> = [];
+          const auditSalt = crypto.randomUUID();
+          const missing: Array<{ pathDigest: string; size: number; reason: "signed_url_missing" }> = [];
           // signedUrls in Batches erzeugen (createSignedUrls akzeptiert max ~100)
           const batchSize = 100;
           for (let i = 0; i < files.length; i += batchSize) {
@@ -611,14 +716,33 @@ Deno.serve(async (req) => {
               const su = data?.[j];
               if (su?.signedUrl) {
                 entries.push({ path: batch[j].path, size: batch[j].size, signedUrl: su.signedUrl });
+              } else {
+                missing.push({
+                  pathDigest: await hashStoragePath(auditSalt, bucket, batch[j].path),
+                  size: batch[j].size,
+                  reason: "signed_url_missing",
+                });
               }
             }
+          }
+          if (entries.length !== files.length) {
+            const message = `${entries.length} von ${files.length} signierten Datei-URLs erzeugt`;
+            const diagnostic = { salt: auditSalt, missing };
+            console.error(`[backup-export] storage-list-audit ${bucket}:`, JSON.stringify({ message, diagnostic }));
+            storageErrors.push({ bucket, message, diagnostic });
+            continue;
           }
           result[bucket] = entries;
         } catch (e) {
           console.error(`[backup-export] storage-list ${bucket}:`, e);
-          result[bucket] = [];
+          storageErrors.push({ bucket, message: e instanceof Error ? e.message : String(e) });
         }
+      }
+      if (storageErrors.length > 0) {
+        return new Response(JSON.stringify({ error: "storage_list_failed", storageErrors }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       return new Response(JSON.stringify(result), {
         status: 200,
@@ -702,7 +826,7 @@ Deno.serve(async (req) => {
 
     if (mode !== "db") {
       return new Response(
-        JSON.stringify({ error: "mode must be stats|db|storage-list|github-code|subset" }),
+        JSON.stringify({ error: "mode must be stats|db|table-page|auth-page|storage-list|github-code|subset" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }

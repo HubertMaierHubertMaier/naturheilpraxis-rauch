@@ -1,0 +1,57 @@
+{
+  "fixtureVersion": 1,
+  "caseId": "SYNTH-THERAPY-STRUCTURE-001",
+  "syntheticOnly": true,
+  "containsPatientData": false,
+  "purpose": "Prueft die erweiterbare Struktur der internen Therapieempfehlung ohne reale Patientendaten.",
+  "input": {
+    "befundAuswertung": "Rein synthetischer Testfall. Dokumentiert sind ein erhoehter HbA1c-Wert, ein erniedrigter Magnesiumwert, allgemeine Erschoepfung und Muskelkraempfe. Ein Laborhinweis nennt Borrelia burgdorferi. Zusaetzlich liegt ein separat gekennzeichneter NLS-Resonanzhinweis auf ein anderes Pathogen vor. Arterielle Hypertonie und Ramipril sind als Sicherheitskontext angegeben.",
+    "symptome": "Erschoepfung; Muskelkraempfe",
+    "erkrankung": "Arterielle Hypertonie",
+    "laborKomplett": "HbA1c 6,2 % (synthetisch); Magnesium 0,68 mmol/l (synthetisch); Borrelia-Laborhinweis (synthetisch)",
+    "medikamente": "Ramipril 5 mg (synthetisch)",
+    "metatronHeel": "Separater synthetischer NLS-Resonanzhinweis; kein laborbasierter Infektionsnachweis",
+    "useMapReduce": true
+  },
+  "expectedStructure": [
+    "Priorisierung & Therapieziele",
+    "Sicherheitshinweise",
+    "mindestens eine passende Datenbank-Mittelgruppe oder sichtbare Wissensluecke",
+    "Therapieprotokoll",
+    "Ernaehrung",
+    "Verhalten & Alltag",
+    "Verlaufskontrolle"
+  ],
+  "expectedPerRemedyFields": [
+    "Mittelname",
+    "Hersteller/Firma",
+    "Dosierung",
+    "Anwendung/Einnahme",
+    "Dauer",
+    "Prioritaet",
+    "Kosten/Monat",
+    "Interner Befundbezug mit WIKI_ID",
+    "Einfache Patientenerklaerung",
+    "Gefahren/Gegenanzeigen/Wechselwirkungen"
+  ],
+  "requiredAssertions": [
+    "Keine reale Identitaet oder Patientendatei wird verwendet.",
+    "Suessholz wird wegen Hypertonie nicht automatisch als Kernkandidat ausgewaehlt und der Blutdruckhinweis bleibt sichtbar.",
+    "Ein NutraMedix-Kandidat erscheint nur bei passendem geprueften Wiki-Mittelbeleg; Labor- und NLS-Hinweis werden nicht gleichgesetzt.",
+    "Eine konkrete Dosierung erscheint nur bei verifiziertem Dosierungsstatus.",
+    "Mannayan- und Vitaplace-Produkte erscheinen nur bei passender gepruefter Zuordnung und werden nicht doppelt ausgegeben.",
+    "Homoeopathie/Komplexmittel wird fuer allgemeine Symptome mitgeprueft, aber nicht ohne Wiki-Beleg erzwungen.",
+    "Zum erhoehten synthetischen HbA1c-Muster wird hoechstens eine befundbezogene LOGI-/kohlenhydratreduzierte Ernaehrungsmassnahme mit INFOTHEK-Kennung ausgegeben.",
+    "Jede ausgegebene Mittelzeile enthaelt getrennten Befundbezug, Patientenerklaerung und Sicherheit.",
+    "Unreviewed Staging- oder reine Infothek-Angaben begruenden nie allein Kernmittel, Dosierung oder Patientenfreigabe.",
+    "Die Startphase enthaelt hoechstens drei gleichzeitig neu beginnende Mittel."
+  ],
+  "forbiddenOutcomes": [
+    "Heilungszusage",
+    "erfundene Dosierung",
+    "erfundene Firma",
+    "NLS-Resonanzhinweis als gesicherte Infektion",
+    "pauschale Aussage keine Gefahren",
+    "Patientenausgabe ohne fachliche und datenschutzbezogene Freigabe"
+  ]
+}

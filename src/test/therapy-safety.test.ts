@@ -7,6 +7,18 @@ import { assessRemedyWithWikiSafety, assessSelectedCombinationSafety, buildIniti
 import { assessRemedySafety, buildSafetyContextWarnings } from "../../supabase/functions/_shared/therapySafety";
 
 describe("therapy safety", () => {
+  it("keeps the structure verification fixture synthetic and privacy-safe", () => {
+    const fixture = JSON.parse(readFileSync(resolve(process.cwd(), "docs/therapy-recommendation-structure-synthetic-case-2026-08-18.json"), "utf8"));
+    expect(fixture.syntheticOnly).toBe(true);
+    expect(fixture.containsPatientData).toBe(false);
+    expect(fixture.expectedPerRemedyFields).toEqual(expect.arrayContaining([
+      "Hersteller/Firma",
+      "Einfache Patientenerklaerung",
+      "Gefahren/Gegenanzeigen/Wechselwirkungen",
+    ]));
+    expect(fixture.forbiddenOutcomes).toContain("Patientenausgabe ohne fachliche und datenschutzbezogene Freigabe");
+  });
+
   it("keeps the edge prompt candidate-based and privacy-gated", () => {
     const source = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
     expect(source).toContain("INTERNE naturheilkundliche KANDIDATENLISTE");
@@ -16,15 +28,38 @@ describe("therapy safety", () => {
     expect(source).toContain('.from("kb_articles")');
     expect(source).toContain('.from("kb_article_revisions")');
     expect(source).toContain("Der Startplan darf hoechstens 3 gleichzeitig neu beginnende Mittel enthalten");
-    expect(source).toContain("Ein vollstaendiger interne Therapieentwurf MUSS alle folgenden Abschnitte enthalten");
+    expect(source).toContain("Ein vollstaendiger interner Therapieentwurf MUSS alle folgenden Abschnitte enthalten");
     expect(source).toContain("## 🥗 Ernährung");
     expect(source).toContain("## 🚶 Verhalten & Alltag");
+    expect(source).toContain("## 📈 Verlaufskontrolle");
+    expect(source).toContain("### 🧬 Aminosäuren");
+    expect(source).toContain("### 🦠 Pathogenbezogene Mittel (NutraMedix)");
+    expect(source).toContain("### 🩹 Symptombezogene Mittel");
+    expect(source).toContain("### 🧴 Vitaplace-Apothekenprodukte");
+    expect(source).toContain("Hersteller/Firma | Dosierung");
+    expect(source).toContain("Einfache Patientenerklärung | Gefahren / Gegenanzeigen / Wechselwirkungen");
+    expect(source).toContain("Suessholz bei dokumentiertem Bluthochdruck nicht als Kernkandidat");
+    expect(source).toContain("Nur bei dokumentiert erhoehtem HbA1c/Glukosemuster");
     expect(source).not.toContain('.from("admin_knowledge_base")');
     expect(source).not.toContain("forcedWikiRemedySection");
     expect(source).not.toContain("nimm es trotzdem auf");
     expect(source).not.toContain("ca. 600 % wirksamer");
     expect(source).not.toContain("ABSOLUT VERBOTENE FORMULIERUNGEN");
     expect(source).toContain("bei dokumentiertem Prostatakarzinom oder Androgendeprivation niemals automatisch als Kernkandidat");
+    expect(source).toContain("normalizeTherapyKnowledgeSearchText");
+    expect(source).toContain("const sameEntry = (a: WikiEntry, b: WikiEntry) => a.id === b.id");
+    expect(source).toContain("const wordScoreTokens = tokenizeQuery(scoringQueryText)");
+    expect(source).toContain("scoreMap.set(e.id, sc)");
+    expect(source).toContain("const aiScore = aiScores.get(e.id)");
+    expect(source).toContain("includedEntryIds");
+    expect(source).toContain("Finales Kontextlimit erreicht – vollständiger Eintrag nicht gesendet");
+    expect(source).toContain("[WIKI-AUSZUG GEKUERZT: Originaleintrag");
+    expect(source).toContain("der vollstaendige Text bleibt im internen Wiki erhalten");
+    expect(source).toContain("MAX_KNOWLEDGE_QUERY_TOKENS = 256");
+    expect(source).toContain("scoreEntriesViaAI(restPool, queryText, LOVABLE_API_KEY)");
+    expect(source).not.toContain("context = context.slice(0, MAX_TOTAL_CHARS)");
+    expect(source).not.toContain("return combined.slice(0, MAX_ENTRY_CHARS)");
+    expect(source).not.toContain("Boost-Ordner (garantiert)");
   });
 
   it("passes the completed Befund-Auswertung into the structured therapy workflow", () => {
@@ -82,11 +117,125 @@ describe("therapy safety", () => {
 
     expect(parsed.categories).toHaveLength(2);
     expect(parsed.categories[0].remedies).toHaveLength(1);
-    expect(parsed.categories[0].remedies[0]).toEqual(expect.objectContaining({
+    const vitaminC = parsed.categories[0].remedies[0];
+    expect(vitaminC).toEqual(expect.objectContaining({
       name: "Vitamin C",
       priority: "essential",
-      reason: "ausfuehrlichere Begruendung",
     }));
+    expect(vitaminC.reason).toContain("kurz");
+    expect(vitaminC.reason).toContain("ausfuehrlichere Begruendung");
+  });
+
+  it("keeps every distinct warning when duplicate remedy rows are merged", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Hausmittel & Gewürze",
+      "- **Süßholz** (Glycyrrhiza glabra) | Firma A | 1×1 | oral | 1 Woche | Empfohlen | 10 € | Erster Befundbezug. | Erste Erklärung. | Nicht bei Bluthochdruck.",
+      "## Phytotherapie",
+      "- **Suessholz** (Glycyrrhiza uralensis) | Firma B | 2×1 | als Tee | 2 Wochen | Optional | 15 € | Zweiter Befundbezug. | Zweite Erklärung. | Wechselwirkungen zusätzlich prüfen.",
+    ].join("\n"));
+
+    expect(parsed.categories).toHaveLength(1);
+    const remedy = parsed.categories[0].remedies[0];
+    expect(remedy.reason).toContain("Erster Befundbezug.");
+    expect(remedy.reason).toContain("Zweiter Befundbezug.");
+    expect(remedy.patientExplanation).toContain("Erste Erklärung.");
+    expect(remedy.patientExplanation).toContain("Zweite Erklärung.");
+    expect(remedy.safety).toContain("Nicht bei Bluthochdruck.");
+    expect(remedy.safety).toContain("Wechselwirkungen zusätzlich prüfen.");
+    expect(remedy.latin).toContain("Glycyrrhiza glabra");
+    expect(remedy.latin).toContain("Glycyrrhiza uralensis");
+    expect(remedy.manufacturer).toContain("Firma A");
+    expect(remedy.manufacturer).toContain("Firma B");
+    expect(remedy.dosage).toContain("1×1");
+    expect(remedy.dosage).toContain("2×1");
+    expect(remedy.application).toContain("oral");
+    expect(remedy.application).toContain("als Tee");
+    expect(remedy.duration).toContain("1 Woche");
+    expect(remedy.duration).toContain("2 Wochen");
+    expect(remedy.priority).toBe("recommended");
+    expect(remedy.priorityRaw).toContain("Empfohlen");
+    expect(remedy.priorityRaw).toContain("Optional");
+    expect(remedy.cost).toContain("10 €");
+    expect(remedy.cost).toContain("15 €");
+  });
+
+  it("keeps current structured columns aligned when the priority label is unknown", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Enzyme aus der Wissensdatenbank",
+      "- **Testenzym** | Musterfirma | Dosierung fachlich prüfen | oral | Verlauf prüfen | Nicht empfohlen | unbekannt | Interner Befundbezug. | Einfache Erklärung. | Bei ungeklärten Wechselwirkungen nicht empfohlen.",
+    ].join("\n"));
+
+    expect(parsed.categories[0].remedies[0]).toEqual(expect.objectContaining({
+      name: "Testenzym",
+      manufacturer: "Musterfirma",
+      dosage: "Dosierung fachlich prüfen",
+      application: "oral",
+      duration: "Verlauf prüfen",
+      priority: "unknown",
+      priorityRaw: "Nicht empfohlen",
+      cost: "unbekannt",
+      reason: "Interner Befundbezug.",
+      patientExplanation: "Einfache Erklärung.",
+      safety: "Bei ungeklärten Wechselwirkungen nicht empfohlen.",
+    }));
+  });
+
+  it("never treats extended negative priority phrases as positive recommendations", () => {
+    for (const priority of ["Nicht empfohlen", "Nicht automatisch empfohlen", "Nicht als Kernkandidat empfohlen", "Keinesfalls essentiell", "Weder empfohlen noch optional"]) {
+      const parsed = parseTherapyMarkdown([
+        "## Enzyme aus der Wissensdatenbank",
+        `- **Testenzym** | Musterfirma | Dosierung fachlich prüfen | oral | Verlauf prüfen | ${priority} | unbekannt | Interner Befundbezug. | Einfache Erklärung. | Fachlich prüfen.`,
+      ].join("\n"));
+
+      expect(parsed.categories[0].remedies[0]).toEqual(expect.objectContaining({
+        priority: "unknown",
+        priorityRaw: priority,
+        manufacturer: "Musterfirma",
+        cost: "unbekannt",
+      }));
+    }
+  });
+
+  it("keeps amino acids separate and parses the manufacturer in the structured row", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Aminosäuren",
+      "- **L-Lysin** | Musterfirma | 2×1 Kapsel | oral | 4 Wochen | Empfohlen | ~20 € | Befundbezug. [WIKI_ID:11111111-1111-4111-8111-111111111111] | Einfache Erklärung. | Bei Unverträglichkeit pausieren.",
+      "## Fettsäuren",
+      "- **Omega-3** | Andere Firma | 1×1 Kapsel | oral | 8 Wochen | Optional | ~25 € | Befundbezug. [WIKI_ID:22222222-2222-4222-8222-222222222222] | Einfache Erklärung. | Blutverdünnung prüfen.",
+    ].join("\n"));
+
+    expect(parsed.categories.map((category) => category.title)).toEqual(["Aminosäuren", "Fettsäuren"]);
+    expect(parsed.categories[0].remedies[0]).toEqual(expect.objectContaining({
+      name: "L-Lysin",
+      manufacturer: "Musterfirma",
+      dosage: "2×1 Kapsel",
+      priority: "recommended",
+      patientExplanation: "Einfache Erklärung.",
+      safety: "Bei Unverträglichkeit pausieren.",
+    }));
+  });
+
+  it("renders additional database categories as structured remedy groups", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Enzyme aus der Wissensdatenbank",
+      "- **Belegtes Enzym** | Musterfirma | Dosierung manuell prüfen | oral | Verlauf prüfen | Optional | unbekannt | Befundbezug. [WIKI_ID:33333333-3333-4333-8333-333333333333] | Einfache Erklärung. | Individuell prüfen.",
+    ].join("\n"));
+
+    expect(parsed.categories).toEqual([
+      expect.objectContaining({ title: "Enzyme aus der Wissensdatenbank", remedies: [expect.objectContaining({ name: "Belegtes Enzym" })] }),
+    ]);
+  });
+
+  it("does not mistake a pipe-formatted review list for a remedy category", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Prüfung der eingebrachten Therapie/Verordnung",
+      "- Mittel | Herkunft | Patiententhema | Bewertung | Begründung | Anpassung",
+    ].join("\n"));
+
+    expect(parsed.categories).toHaveLength(0);
+    expect(parsed.intro).toEqual([
+      expect.objectContaining({ title: "Prüfung der eingebrachten Therapie/Verordnung" }),
+    ]);
   });
 
   it("keeps therapy goals, nutrition and behaviour as separate plan sections", () => {
@@ -97,10 +246,12 @@ describe("therapy safety", () => {
       "- Erste Massnahme",
       "## 🚶 Verhalten & Alltag",
       "- Zweite Massnahme",
+      "## 📈 Verlaufskontrolle",
+      "- Nach vier Wochen fachlich kontrollieren",
     ].join("\n"));
 
     expect(parsed.intro.map((section) => section.title)).toContain("Priorisierung & Therapieziele");
-    expect(parsed.outro.map((section) => section.title)).toEqual(expect.arrayContaining(["Ernährung", "Verhalten & Alltag"]));
+    expect(parsed.outro.map((section) => section.title)).toEqual(expect.arrayContaining(["Ernährung", "Verhalten & Alltag", "Verlaufskontrolle"]));
   });
 
   it("parses the advertised spaced-hyphen pathogen format", () => {
@@ -156,6 +307,47 @@ describe("therapy safety", () => {
     ]));
   });
 
+  it("matches German remedy spelling variants and counts a repeated Wiki ID only once", () => {
+    const wikiEntries = [{
+      id: "44444444-4444-4444-8444-444444444444",
+      title: "Süßholz",
+      entryKind: "remedy",
+      reviewStatus: "reviewed",
+      evidenceLevel: "moderate",
+      dosageStatus: "verified",
+      contraindications: ["Hypertonie"],
+      productLinks: [],
+    }];
+    const warnings = assessRemedyWithWikiSafety(
+      "Suessholz",
+      { conditions: "Bluthochdruck", medications: "Ramipril 5 mg" },
+      wikiEntries,
+      "Quelle A [WIKI_ID:44444444-4444-4444-8444-444444444444] | Quelle B [WIKI_ID:44444444-4444-4444-8444-444444444444]",
+      true,
+    );
+
+    expect(warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-contraindication", severity: "avoid" }),
+    ]));
+    expect(warnings).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-source-id-missing" }),
+    ]));
+    expect(warnings).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-source-remedy-mismatch" }),
+    ]));
+  });
+
+  it("keeps distinct Wiki warning details that share the same warning class", () => {
+    const warnings = assessRemedyWithWikiSafety("Testmittel", {}, [
+      { title: "Testmittel", entryKind: "remedy", reviewStatus: "needs_review", evidenceLevel: "moderate", dosageStatus: "verified" },
+      { title: "Testmittel", entryKind: "remedy", reviewStatus: "draft", evidenceLevel: "moderate", dosageStatus: "verified" },
+    ]);
+    const reviewWarning = warnings.find((warning) => warning.id === "wiki-unreviewed");
+
+    expect(reviewWarning?.message).toContain("needs_review");
+    expect(reviewWarning?.message).toContain("draft");
+  });
+
   it("warns about bleeding-relevant remedies with anticoagulants", () => {
     const warnings = assessRemedySafety("Mannayan Curcu Forte +", {
       medications: "Apixaban (Eliquis) 5 mg 1-0-1",
@@ -168,12 +360,22 @@ describe("therapy safety", () => {
   it("shows source, review, evidence, dosage and interaction metadata for each Wiki candidate", () => {
     const categorySource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/CategoryCard.tsx"), "utf8");
     const recommendationSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const printSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/printRecipe.ts"), "utf8");
 
     for (const label of ["Wiki-ID:", "Art:", "Review:", "Evidenz:", "Dosierung:", "Kontraindikationen:", "Interaktionen:"]) {
       expect(categorySource).toContain(label);
     }
     expect(categorySource).toContain("wikiEntry?.safetyNotes");
+    expect(categorySource).toContain("Für den Patienten:");
+    expect(categorySource).toContain("Gefahren / Gegenanzeigen:");
     expect(recommendationSource).toContain("wikiEntries={wikiRemedies}");
+    expect(printSource).toContain("withoutInternalSourceMarkers");
+    expect(printSource).toContain("INFOTHEK-AUSZUG");
+    expect(printSource).toContain("WIKI-AUSZUG GEKUERZT");
+    expect(printSource).toContain('r.patientExplanation || clinicalReason');
+    expect(printSource).toContain("r.safety");
+    expect(printSource).toContain('isPraxis ? r.reason : withoutInternalSourceMarkers(r.reason)');
+    expect(printSource).toContain('withoutInternalSourceMarkers(m.patientExplanation || m.reason || "")');
   });
 
   it("blocks testosterone-supporting candidates from automatic selection in prostate cancer or ADT context", () => {
@@ -209,7 +411,7 @@ describe("therapy safety", () => {
     ]);
   });
 
-  it("selects at most three essential and three recommended safe candidates", () => {
+  it("selects at most three safe remedies for the initial phase", () => {
     const parsed = parseTherapyMarkdown([
       "## Vitamine",
       "- **Vitamin C** | 1 | oral | 1 Woche | Essentiell | - | A [WIKI_ID:11111111-1111-4111-8111-111111111111]",
@@ -235,9 +437,30 @@ describe("therapy safety", () => {
     const warnings = buildRemedySafetyMap(parsed, context, wiki);
 
     expect(selected.size).toBe(MAX_START_PLAN_REMEDIES);
+    expect(MAX_START_PLAN_REMEDIES).toBe(3);
     expect(selected.has("0|3")).toBe(false);
     expect(warnings.get("0|3")?.[0].id).toBe("liquorice-hypertension");
     expect(selected.has("0|8")).toBe(false);
+  });
+
+  it("fills remaining initial-phase slots with recommended remedies", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Mineralstoffe",
+      "- **Magnesium** | 1 | oral | 1 Woche | Essentiell | - | A [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+      "- **Zink** | 1 | oral | 1 Woche | Essentiell | - | B [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+      "- **Selen** | 1 | oral | 1 Woche | Empfohlen | - | C [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+      "- **Kalium** | 1 | oral | 1 Woche | Empfohlen | - | D [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+    ].join("\n"));
+    const wiki = [{
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "Testquelle",
+      reviewStatus: "reviewed",
+      evidenceLevel: "moderate",
+      dosageStatus: "verified",
+      productLinks: ["Magnesium", "Zink", "Selen", "Kalium"].map((productName) => ({ productName, relationType: "exact_product", reviewStatus: "reviewed" })),
+    }];
+
+    expect(Array.from(buildInitialRemedySelection(parsed, {}, wiki))).toEqual(["0|0", "0|1", "0|2"]);
   });
 
   it("does not auto-select a candidate with unrated evidence even if the Wiki review is otherwise complete", () => {
@@ -259,6 +482,31 @@ describe("therapy safety", () => {
     expect(buildRemedySafetyMap(parsed, context, wiki).get("0|0")).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "wiki-evidence-unrated", severity: "review" }),
     ]));
+  });
+
+  it("does not auto-select a remedy without verified dosage metadata", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Phytotherapie",
+      "- **Testmittel** | Dosierung manuell prüfen | oral | Verlauf prüfen | Essentiell | - | Quelle [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+    ].join("\n"));
+    const wiki = [{
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "Testmittel",
+      entryKind: "remedy",
+      reviewStatus: "reviewed",
+      evidenceLevel: "moderate",
+    }];
+
+    expect(buildInitialRemedySelection(parsed, {}, wiki).size).toBe(0);
+    expect(buildRemedySafetyMap(parsed, {}, wiki).get("0|0")).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-dosage-unverified", severity: "review" }),
+    ]));
+    expect(patientOutputRestrictionsForRemedy(
+      "Testmittel",
+      wiki,
+      "Quelle [WIKI_ID:11111111-1111-4111-8111-111111111111]",
+      true,
+    )).toContain("Testmittel: Dosierung nicht verifiziert");
   });
 
   it("does not auto-select diagnostic or reference Wiki entries as remedies", () => {

@@ -5,6 +5,7 @@ import {
   assessDocumentExtraction,
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
+  classifyClinicalPdfFailure,
   hasPracticalDocumentText,
   reconstructPdfTextLines,
   selectPreferredPageText,
@@ -141,5 +142,13 @@ describe("clinical PDF extraction decisions", () => {
 
     expect(width * scale * height * scale).toBeLessThanOrEqual(MAX_OCR_PAGE_PIXELS + 1);
     expect(calculateOcrRenderScale(595, 842)).toBe(2.5);
+  });
+
+  it("separates password, OCR, privacy, format and technical PDF failures", () => {
+    expect(classifyClinicalPdfFailure({ name: "PasswordException" }).kind).toBe("password");
+    expect(classifyClinicalPdfFailure(new Error("praktisch keinen auswertbaren Text nach OCR")).kind).toBe("text");
+    expect(classifyClinicalPdfFailure(new Error("Datenschutz-Sicherheitsstopp: Identifikator")).kind).toBe("privacy");
+    expect(classifyClinicalPdfFailure(new Error("Im Datenschutzmodus sind nur PDFs erlaubt.")).kind).toBe("format");
+    expect(classifyClinicalPdfFailure(new Error("unerwartet")).kind).toBe("technical");
   });
 });

@@ -6,11 +6,11 @@
   "patient_facing_allowed": false,
   "totals": {
     "batches": 4,
-    "sources": 229,
+    "sources": 230,
     "entities": 124,
     "dosages": 119,
     "safety": 92,
-    "candidates": 564
+    "candidates": 565
   },
   "batches": [
     {
@@ -23299,13 +23299,13 @@
         "id": "ffe44e71-68ab-55dd-8f3f-1ef92b227417",
         "source_kind": "json",
         "source_label": "Strunz Produktdeklarationen sowie Vitamin-, Mineralstoff- und Sicherheitspruefungen 2026-08-04 bis 09",
-        "source_hash": "333a0fde40b9d9e619e5f6f1bdedd8f5e487435696c23d109a04d6f5a9c256c9",
+        "source_hash": "3f90f69a885bdc111e6a2c76a2010b3ca6977446056ff14fc3f92ef574047dcb",
         "parser_name": "build-existing-knowledge-import",
         "parser_version": "1.0.0",
         "model_name": "",
         "prompt_hash": null,
         "batch_status": "created",
-        "candidate_count": 88,
+        "candidate_count": 89,
         "error_count": 0,
         "data_classification": "general_knowledge",
         "metadata": {
@@ -23314,7 +23314,7 @@
           "publication": "unpublished_internal_staging",
           "import_scope": "strunz-products-and-nutrient-reviews-2026-08-04-09",
           "product_source_cards": 9,
-          "review_and_reference_artifacts": 43,
+          "review_and_reference_artifacts": 44,
           "source_family": "Strunz und unabhaengige Naehrstoffquellen"
         }
       },
@@ -25486,6 +25486,116 @@
                 "wiki_writes": false,
                 "patient_facing_publication": false
               },
+              "source_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json"
+            }
+          }
+        },
+        {
+          "id": "33e9f6c7-0fc2-5a5c-849d-aa0e250dcb90",
+          "batch_id": "ffe44e71-68ab-55dd-8f3f-1ef92b227417",
+          "candidate_key": "source:internal-nutrient-review:source-access-recheck-2026-08-15",
+          "candidate_status": "imported_unreviewed",
+          "data_classification": "general_knowledge",
+          "proposed_source_type": "practice_document",
+          "title": "source-access-recheck-2026-08-15",
+          "publisher": "Interne Quellen- und Sicherheitspruefung",
+          "publication_date": null,
+          "source_url": "",
+          "external_identifier": "",
+          "rights_status": "unknown",
+          "source_locator": "docs/source-access-recheck-2026-08-15.json",
+          "original_excerpt": "{\"schema_version\":1,\"checked_at\":\"2026-08-15T15:30:41.469Z\",\"publication\":\"unpublished_internal_source_access_recheck\",\"method\":\"web_fetch_with_followed_redirects\",\"source_urls_checked\":12,\"content_responses\":12,\"access_errors\":0,\"sources\":[{\"url\":\"https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance\",\"accessible\":true,\"observed_page_update\":\"2026-06-25\"},{\"url\":\"https://www.gov.uk/government/publications/folic-acid/folic-acid\",\"accessible\":true,\"observed_page_update\":\"2026-07-10\"},{\"url\":\"https://www.gov.uk/government/publications/magnesium-properties-and-incident-management\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/sacn-iron-and-health-report\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a\",\"accessible\":true},{\"url\":\"https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations\",\"accessible\":true,\"published\":\"2017-07-12\",\"note\":\"SACN-Bericht mit aktualisierten Empfehlungen; die Seite nennt keine spaetere Aktualisierung.\"},{\"url\":\"https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register\",\"accessible\":true,\"published\":\"2020-12-31\",\"observed_page_update\":\"2026-05-19\",\"note\":\"Register enthaelt autorisierte und abgelehnte Claims; nur autorisierte Claims duerfen in Grossbritannien kommerziell verwendet werden.\"},{\"url\":\"https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation\",\"accessible\":true,\"published\":\"2022-11-24\",\"note\":\"COT Statement 02/22; Sicherheits- und Personengruppenhinweise getrennt von Quellenaussagen erhalten.\"},{\"url\":\"https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health\",\"accessible\":true,\"published\":\"2026-07-06\",\"citation_status\":\"discussion_paper_not_committee_view\",\"note\":\"Die Seite bezeichnet das Dokument ausdruecklich als Diskussionspapier, das nicht die Auffassung des Ausschusses darstellt und nicht als solche zitiert werden darf. Die interne Quellenaufnahme bleibt dennoch vollstaendig erhalten.\"}],\"interpretation\":{\"access_only\":false,\"all_saved_urls_reachable\":true,\"page_metadata_refreshed\":true,\"original_statements_retained\":true,\"evidence_and_safety_remain_separate\":true,\"vitamin_e_discussion_paper_remains_not_citable_as_committee_view\":true,\"product_mapping\":\"not_performed\",\"condition_mapping\":\"not_performed\",\"database_writes\":false,\"wiki_writes\":false,\"patient_facing_publication\":false},\"supersedes_access_recheck\":\"docs/source-access-recheck-2026-08-09.json\",\"source_audit\":\"docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json\"}",
+          "confidence": 100,
+          "ambiguity_notes": "Der Original-Pruefstand bleibt vollstaendig erhalten; offene Evidenz oder Sicherheit verhindert keine interne Aufnahme, aber jede Freigabe.",
+          "proposed_data": {
+            "admin_only": true,
+            "patient_facing_allowed": false,
+            "review_status": "unreviewed",
+            "artifact_file": "source-access-recheck-2026-08-15.json",
+            "artifact": {
+              "schema_version": 1,
+              "checked_at": "2026-08-15T15:30:41.469Z",
+              "publication": "unpublished_internal_source_access_recheck",
+              "method": "web_fetch_with_followed_redirects",
+              "source_urls_checked": 12,
+              "content_responses": 12,
+              "access_errors": 0,
+              "sources": [
+                {
+                  "url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+                  "accessible": true,
+                  "observed_page_update": "2026-06-25"
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+                  "accessible": true,
+                  "observed_page_update": "2026-07-10"
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+                  "accessible": true
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+                  "accessible": true,
+                  "published": "2017-07-12",
+                  "note": "SACN-Bericht mit aktualisierten Empfehlungen; die Seite nennt keine spaetere Aktualisierung."
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+                  "accessible": true,
+                  "published": "2020-12-31",
+                  "observed_page_update": "2026-05-19",
+                  "note": "Register enthaelt autorisierte und abgelehnte Claims; nur autorisierte Claims duerfen in Grossbritannien kommerziell verwendet werden."
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+                  "accessible": true,
+                  "published": "2022-11-24",
+                  "note": "COT Statement 02/22; Sicherheits- und Personengruppenhinweise getrennt von Quellenaussagen erhalten."
+                },
+                {
+                  "url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+                  "accessible": true,
+                  "published": "2026-07-06",
+                  "citation_status": "discussion_paper_not_committee_view",
+                  "note": "Die Seite bezeichnet das Dokument ausdruecklich als Diskussionspapier, das nicht die Auffassung des Ausschusses darstellt und nicht als solche zitiert werden darf. Die interne Quellenaufnahme bleibt dennoch vollstaendig erhalten."
+                }
+              ],
+              "interpretation": {
+                "access_only": false,
+                "all_saved_urls_reachable": true,
+                "page_metadata_refreshed": true,
+                "original_statements_retained": true,
+                "evidence_and_safety_remain_separate": true,
+                "vitamin_e_discussion_paper_remains_not_citable_as_committee_view": true,
+                "product_mapping": "not_performed",
+                "condition_mapping": "not_performed",
+                "database_writes": false,
+                "wiki_writes": false,
+                "patient_facing_publication": false
+              },
+              "supersedes_access_recheck": "docs/source-access-recheck-2026-08-09.json",
               "source_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json"
             }
           }

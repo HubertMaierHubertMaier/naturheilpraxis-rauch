@@ -34,7 +34,9 @@ type Stats = {
   generatedAt: string;
   tables: Array<{ name: string; rows: number }>;
   buckets: Array<{ name: string; files: number; totalBytes: number }>;
+  authUserCount: number;
   secrets: string[];
+  discovery: { tableSource: string; bucketSource: string };
 };
 
 type StorageList = Record<string, Array<{ path: string; size: number; signedUrl: string }>>;
@@ -62,6 +64,98 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+function escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const text = typeof value === "object" ? JSON.stringify(value) : String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function rowsToCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return "";
+  const columns = Object.keys(rows[0]);
+  return [
+    columns.join(","),
+    ...rows.map((row) => columns.map((column) => escapeCsvValue(row[column])).join(",")),
+  ].join("\n");
+}
+
+function buildAuthReadme(authUserCount: number): string {
+  return [
+    "AUTH-BENUTZERKONTEN — Wiederherstellungs-Hinweis",
+    "================================================",
+    "",
+    `Anzahl Konten: ${authUserCount}`,
+    "",
+    "Passwörter sind nicht enthalten, da der Provider nur gesalzene Hashes speichert.",
+    "Bei einer Wiederherstellung die IDs aus users.json übernehmen, Konten über die",
+    "Admin-API neu anlegen und anschließend Passwort-Reset-Mails versenden.",
+    "2FA-Faktoren müssen von den Patienten neu eingerichtet werden.",
+  ].join("\n");
+}
+
+function buildSecretsChecklist(): string {
+  return [
+    "SECRETS-CHECKLISTE",
+    "===================",
+    "",
+    "Die Werte werden aus Sicherheitsgründen nicht exportiert und müssen bei einer Wiederherstellung neu gesetzt werden.",
+    "",
+    ...REQUIRED_SECRETS.map((secret) => `[ ] ${secret}`),
+  ].join("\n");
+}
+
+function buildBackupManifest(
+  stats: Stats,
+  exportedRows: Record<string, number>,
+  unavailableTables: string[],
+  authUserCount: number,
+  mode: "db" | "full",
+): string {
+  const lines = [
+    "# BACKUP-MANIFEST — Naturheilpraxis Peter Rauch",
+    "",
+    `Erstellt: ${new Date().toISOString()}`,
+    `Modus: ${mode === "full" ? "Voll-Backup (Datenbank + Storage + Auth-Users)" : "Schnell-Backup (Datenbank + Auth-Users)"}`,
+    "",
+    "## Enthaltene Datenbanktabellen",
+    "",
+    "| Tabelle | exportierte Zeilen | Dateien |",
+    "|---------|-------------------:|---------|",
+    ...Object.entries(exportedRows).map(
+      ([table, rows]) => `| \`${table}\` | ${rows} | \`db/${table}.json\` + \`db/${table}.csv\` |`,
+    ),
+    "",
+    `Auth-Benutzerkonten: ${authUserCount} (ohne Passwörter, siehe \`auth/users.json\`)`,
+    "",
+  ];
+  if (unavailableTables.length > 0) {
+    lines.push("## Im Schema vorgemerkt, aber in dieser Datenbank nicht vorhanden", "");
+    for (const table of unavailableTables) lines.push(`- \`${table}\``);
+    lines.push("");
+  }
+  if (mode === "full") {
+    lines.push("## Storage-Buckets", "");
+    for (const bucket of stats.buckets) {
+      lines.push(`- \`storage/${bucket.name}/\`: ${bucket.files} Datei(en), ${formatBytes(bucket.totalBytes)}`);
+    }
+    lines.push("");
+  }
+  lines.push(
+    "## Wiederherstellung",
+    "",
+    "1. Code und Datenbankschema aus dem getrennten GitHub-Codebackup wiederherstellen.",
+    "2. Auth-Konten mit identischen IDs aus `auth/users.json` neu anlegen.",
+    "3. Tabellen aus `db/*.json` kontrolliert in Abhängigkeitsreihenfolge importieren.",
+    "4. Beim Voll-Backup Dateien aus `storage/<bucket>/` in die passenden Buckets hochladen.",
+    "5. Secret-Werte anhand `SECRETS-CHECKLISTE.txt` aus den Provider-Dashboards neu setzen.",
+    "",
+    "## Datenschutz",
+    "",
+    "Dieses Backup enthält personenbezogene Gesundheitsdaten. Verschlüsselt aufbewahren, nicht versenden und vor jeder Weitergabe erneut prüfen.",
+  );
+  return lines.join("\n");
+}
+
 function isoTimestamp(): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -84,15 +178,19 @@ function getApiKey(): string {
   );
 }
 
-function saveBlob(blob: Blob, filename: string) {
+function saveBlob(blob: Blob, filename: string, preparedWindow?: Window | null) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const targetDocument = preparedWindow && !preparedWindow.closed ? preparedWindow.document : document;
+  const a = targetDocument.createElement("a");
   a.href = url;
   a.download = filename;
-  document.body.appendChild(a);
+  targetDocument.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    preparedWindow?.close();
+  }, 5000);
 }
 
 export function BackupCenter() {
@@ -236,8 +334,7 @@ export function BackupCenter() {
       info = getGithubZipDownload();
       const { bytes, filename } = await fetchGithubZipBytes(token);
       setProgress(100);
-      saveBlob(new Blob([bytes], { type: "application/zip" }), filename);
-      preparedWindow?.close();
+      saveBlob(new Blob([bytes], { type: "application/zip" }), filename, preparedWindow);
       const dur = Math.round((Date.now() - started) / 1000);
       setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0 });
       markDone("lastGithub");
@@ -310,28 +407,134 @@ export function BackupCenter() {
     return token;
   }
 
-  async function fetchDbZipBytes(token: string): Promise<{ bytes: ArrayBuffer; filename: string }> {
-    const url = `${getFunctionsUrl()}/backup-export?mode=db`;
+  async function fetchBackupJson<T>(url: string, token: string): Promise<T> {
     const apikey = getApiKey();
-    log("Lade Datenbank-Export von Server…");
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}`, apikey },
     });
     if (!res.ok) {
       let detail = "";
       try {
-        detail = (await res.json())?.error ?? "";
+        const body = await res.json();
+        detail = body?.message ?? body?.error ?? "";
       } catch {
         /* ignore */
       }
-      throw new Error(`DB-Export HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
+      throw new Error(`Backup-Export HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
     }
-    const buf = await res.arrayBuffer();
-    const cd = res.headers.get("Content-Disposition") ?? "";
-    const match = cd.match(/filename="?([^"]+)"?/);
-    const filename = match?.[1] ?? `db-backup.zip`;
-    log(`Datenbank-ZIP empfangen (${formatBytes(buf.byteLength)}).`);
-    return { bytes: buf, filename };
+    return (await res.json()) as T;
+  }
+
+  async function fetchDbZipBytes(
+    token: string,
+    mode: "db" | "full",
+    onProgress: (fraction: number) => void,
+  ): Promise<{ bytes: ArrayBuffer; filename: string; stats: Stats }> {
+    const baseUrl = `${getFunctionsUrl()}/backup-export`;
+    log("Ermittle vollständigen Datenbankumfang…");
+    const exportStats = await fetchBackupJson<Stats>(`${baseUrl}?mode=stats`, token);
+    setStats(exportStats);
+    const zip = new JSZip();
+    const exportedRows: Record<string, number> = {};
+    const unavailableTables = exportStats.tables.filter((table) => table.rows < 0).map((table) => table.name);
+    if (exportStats.discovery.tableSource !== "openapi") {
+      throw new Error("Die vollständige Tabellenliste konnte nicht automatisch bestätigt werden");
+    }
+    if (mode === "full" && exportStats.discovery.bucketSource !== "api") {
+      throw new Error("Die vollständige Storage-Bucket-Liste konnte nicht automatisch bestätigt werden");
+    }
+    if (unavailableTables.length > 0) {
+      throw new Error(`${unavailableTables.length} Tabelle(n) konnten nicht gelesen werden`);
+    }
+    if (mode === "full" && exportStats.buckets.some((bucket) => bucket.files < 0 || bucket.totalBytes < 0)) {
+      throw new Error("Mindestens ein Storage-Bucket konnte nicht vollständig gezählt werden");
+    }
+    const tables = exportStats.tables;
+    onProgress(0.03);
+
+    for (let index = 0; index < tables.length; index++) {
+      const table = tables[index];
+      const rows: Record<string, unknown>[] = [];
+      let nextFrom: number | null = 0;
+      let total = table.rows;
+      let pageGuard = 0;
+      while (nextFrom !== null) {
+        if (pageGuard++ > 10000) throw new Error(`Tabelle ${table.name}: Seitengrenze überschritten`);
+        const page = await fetchBackupJson<{
+          table: string;
+          from: number;
+          rows: Record<string, unknown>[];
+          total: number;
+          nextFrom: number | null;
+        }>(
+          `${baseUrl}?mode=table-page&table=${encodeURIComponent(table.name)}&from=${nextFrom}&limit=500`,
+          token,
+        );
+        if (page.table !== table.name || page.from !== nextFrom || !Array.isArray(page.rows)) {
+          throw new Error(`Tabelle ${table.name}: ungültige Exportantwort`);
+        }
+        total = page.total;
+        rows.push(...page.rows);
+        if (page.nextFrom !== null && page.nextFrom <= nextFrom) {
+          throw new Error(`Tabelle ${table.name}: ungültige Seitennummer`);
+        }
+        nextFrom = page.nextFrom;
+      }
+      if (rows.length !== total) {
+        throw new Error(`Tabelle ${table.name}: ${rows.length} von ${total} Zeilen empfangen`);
+      }
+      zip.file(`db/${table.name}.json`, JSON.stringify(rows, null, 2));
+      zip.file(`db/${table.name}.csv`, rowsToCsv(rows));
+      exportedRows[table.name] = rows.length;
+      log(`Tabelle ${index + 1}/${tables.length} gesichert (${rows.length} Zeilen).`);
+      onProgress(0.05 + ((index + 1) / Math.max(1, tables.length)) * 0.72);
+    }
+
+    log("Sichere Auth-Benutzerkonten…");
+    const authUsers: Record<string, unknown>[] = [];
+    let authPage: number | null = 1;
+    let authGuard = 0;
+    let reportedAuthTotal: number | null = null;
+    while (authPage !== null) {
+      if (authGuard++ > 1000) throw new Error("Auth-Export: Seitengrenze überschritten");
+      const page = await fetchBackupJson<{
+        page: number;
+        users: Record<string, unknown>[];
+        total: number | null;
+        nextPage: number | null;
+      }>(`${baseUrl}?mode=auth-page&page=${authPage}&perPage=500`, token);
+      if (page.page !== authPage || !Array.isArray(page.users)) throw new Error("Auth-Export: ungültige Antwort");
+      authUsers.push(...page.users);
+      if (typeof page.total === "number") reportedAuthTotal = page.total;
+      if (page.nextPage !== null && page.nextPage <= authPage) throw new Error("Auth-Export: ungültige Seitennummer");
+      authPage = page.nextPage;
+    }
+    const expectedAuthTotal = reportedAuthTotal ?? exportStats.authUserCount;
+    if (expectedAuthTotal >= 0 && authUsers.length !== expectedAuthTotal) {
+      throw new Error(`Auth-Export: ${authUsers.length} von ${expectedAuthTotal} Konten empfangen`);
+    }
+    zip.file("auth/users.json", JSON.stringify(authUsers, null, 2));
+    zip.file("auth/users.csv", rowsToCsv(authUsers));
+    zip.file("auth/README.txt", buildAuthReadme(authUsers.length));
+    zip.file("BACKUP-MANIFEST.md", buildBackupManifest(exportStats, exportedRows, unavailableTables, authUsers.length, mode));
+    zip.file("SECRETS-CHECKLISTE.txt", buildSecretsChecklist());
+    zip.file("stats.json", JSON.stringify({
+      ...exportStats,
+      exportedAt: new Date().toISOString(),
+      exportedRows,
+      unavailableTables,
+      exportedAuthUsers: authUsers.length,
+    }, null, 2));
+    onProgress(0.82);
+
+    log("Packe Datenbank lokal im Browser…");
+    const bytes = await zip.generateAsync(
+      { type: "arraybuffer", compression: "DEFLATE", compressionOptions: { level: 6 } },
+      (meta) => onProgress(0.82 + (meta.percent / 100) * 0.18),
+    );
+    const filename = `Naturheilpraxis-DATEN-Backup-${isoTimestamp()}.zip`;
+    log(`Datenbank-ZIP erstellt (${formatBytes(bytes.byteLength)}).`);
+    return { bytes, filename, stats: exportStats };
   }
 
   const downloadDbBackup = async () => {
@@ -342,8 +545,9 @@ export function BackupCenter() {
     const started = Date.now();
     try {
       const token = await getToken();
-      setProgress(20);
-      const { bytes, filename } = await fetchDbZipBytes(token);
+      const { bytes } = await fetchDbZipBytes(token, "db", (fraction) => {
+        setProgress(Math.round(5 + fraction * 90));
+      });
       setProgress(100);
       const fn = `Naturheilpraxis-DATEN-Backup-${isoTimestamp()}.zip`;
       saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
@@ -373,7 +577,9 @@ export function BackupCenter() {
       const token = await getToken();
 
       // 1) DB-ZIP holen und entpacken (wir packen alles neu zusammen)
-      const { bytes: dbBytes } = await fetchDbZipBytes(token);
+      const { bytes: dbBytes, stats: exportStats } = await fetchDbZipBytes(token, "full", (fraction) => {
+        setProgress(Math.round(fraction * 10));
+      });
       const zip = await JSZip.loadAsync(dbBytes);
       setProgress(10);
 
@@ -393,6 +599,18 @@ export function BackupCenter() {
         throw new Error(`Storage-Liste HTTP ${listRes.status}${detail ? ` — ${detail}` : ""}`);
       }
       const storage = (await listRes.json()) as StorageList;
+
+      for (const bucket of exportStats.buckets) {
+        const files = storage[bucket.name];
+        if (!Array.isArray(files)) throw new Error(`Storage-Bucket ${bucket.name} fehlt in der Exportliste`);
+        const listedBytes = files.reduce((sum, file) => sum + file.size, 0);
+        if (bucket.files >= 0 && files.length !== bucket.files) {
+          throw new Error(`Storage-Bucket ${bucket.name}: ${files.length} von ${bucket.files} Dateien aufgelistet`);
+        }
+        if (bucket.totalBytes >= 0 && listedBytes !== bucket.totalBytes) {
+          throw new Error(`Storage-Bucket ${bucket.name}: Dateigröße stimmt nicht mit der Übersicht überein`);
+        }
+      }
 
       const allFiles: Array<{ bucket: string; path: string; size: number; signedUrl: string }> = [];
       for (const [bucket, files] of Object.entries(storage)) {
@@ -436,6 +654,9 @@ export function BackupCenter() {
         }
       }
       await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+      if (warnings > 0 || downloadedBytes !== totalBytes) {
+        throw new Error(`Storage-Download unvollständig: ${done}/${allFiles.length} Dateien, ${warnings} Fehler`);
+      }
 
       // 4) ZIP final bauen und speichern
       log("Packe finales ZIP…");
@@ -461,11 +682,13 @@ export function BackupCenter() {
           `Voll-Backup heruntergeladen (${formatBytes(finalBlob.size)}) — ${warnings} Datei(en) mit Fehler.`,
         );
       }
+      return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
       log(`FEHLER: ${msg}`);
       setLastResult({ ok: false, message: msg });
       toast.error(`Voll-Backup fehlgeschlagen: ${msg}`);
+      return false;
     } finally {
       setDownloading(null);
     }
@@ -665,12 +888,17 @@ export function BackupCenter() {
       githubWindow = window.open("", "_blank");
       if (githubWindow) {
         githubWindow.document.write("<p style='font-family:system-ui;padding:24px'>Code-ZIP wartet auf Fertigstellung des Daten-Backups…</p>");
+        githubWindow.document.close();
       }
     }
     setOneClickRunning(true);
     try {
       toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
-      await downloadFullBackup();
+      const fullBackupSucceeded = await downloadFullBackup();
+      if (!fullBackupSucceeded) {
+        githubWindow?.close();
+        return;
+      }
       // give browser a tick before triggering 2nd download
       await new Promise((r) => setTimeout(r, 800));
       if (githubRepo.trim()) {
@@ -1008,7 +1236,7 @@ export function BackupCenter() {
             Einzel-Backups (für Profis)
           </CardTitle>
           <CardDescription>
-            Brauchst du nur einen Teil? Hier kannst du <em>Schnell-Backup</em> (nur Datenbank, sekundenschnell)
+            Brauchst du nur einen Teil? Hier kannst du <em>Schnell-Backup</em> (nur Datenbank, tabellenweise)
             oder <em>Voll-Backup</em> (Datenbank + alle Dateien) separat starten. Für den Alltag reicht
             der grüne Knopf ganz oben.
           </CardDescription>
@@ -1027,7 +1255,7 @@ export function BackupCenter() {
               <span className="text-xs opacity-90 leading-tight">
                 {downloading === "db"
                   ? "Wird erstellt…"
-                  : `Nur Datenbank · ≈ ${totalRows} Zeilen · sekundenschnell`}
+                  : `Nur Datenbank · ≈ ${totalRows} Zeilen · stabil in Teilpaketen`}
               </span>
             </Button>
 

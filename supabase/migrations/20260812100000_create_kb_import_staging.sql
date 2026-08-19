@@ -827,7 +827,7 @@ REVOKE ALL ON TABLE
   public.kb_article_revisions,
   public.kb_article_entities,
   public.kb_change_proposals
-FROM service_role;
+FROM kb_importer;
 
 GRANT SELECT ON TABLE
   public.kb_entity_types,
@@ -847,7 +847,7 @@ GRANT SELECT ON TABLE
   public.kb_article_revisions,
   public.kb_article_entities,
   public.kb_change_proposals
-TO service_role;
+TO kb_importer;
 
 REVOKE ALL ON FUNCTION public.kb_enforce_import_candidate_workflow()
   FROM PUBLIC, anon, authenticated;

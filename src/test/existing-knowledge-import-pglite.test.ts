@@ -9,6 +9,7 @@ const readMigration = (name: string) => readFileSync(resolve(process.cwd(), "sup
 const coreMigration = readMigration("20260728090000_create_kb_phase1_core.sql");
 const stagingMigration = readMigration("20260812100000_create_kb_import_staging.sql");
 const seedMigration = readMigration("20260812101000_import_existing_knowledge_candidates.sql");
+const proposalGateMigration = readMigration("20260819160000_add_import_candidate_proposal_gate.sql");
 const bundle = JSON.parse(readFileSync(resolve(process.cwd(), "docs/existing-knowledge-import-batches-2026-08-12.json"), "utf8"));
 
 const adminId = "10000000-0000-4000-8000-000000000001";
@@ -50,6 +51,7 @@ beforeAll(async () => {
   await db.exec(coreMigration);
   await db.exec(stagingMigration);
   await db.exec(seedMigration);
+  await db.exec(proposalGateMigration);
 }, 30_000);
 
 afterAll(async () => {
@@ -119,5 +121,146 @@ describe("Existing knowledge staging import", () => {
     await db.exec("RESET ROLE; RESET request.jwt.claim.sub; SET ROLE anon;");
     await expect(db.query("SELECT count(*) FROM public.kb_entity_candidates")).rejects.toThrow(/permission denied/);
     await db.exec("RESET ROLE;");
+  });
+
+  it("keeps service writes intact while limiting the importer to core reads", async () => {
+    const proposalId = "80000000-0000-4000-8000-000000000099";
+
+    await db.exec(`
+      SET ROLE service_role;
+      INSERT INTO public.kb_change_proposals (
+        id, proposal_kind, operation, proposal, origin_type, submitted_by
+      ) VALUES (
+        '${proposalId}', 'entity', 'create', '{}'::jsonb, 'human', NULL
+      );
+      RESET ROLE;
+    `);
+
+    await db.exec("SET ROLE kb_importer;");
+    try {
+      const coreRows = await db.query<{ value: number }>(
+        "SELECT count(*)::int AS value FROM public.kb_entities",
+      );
+      expect(coreRows.rows[0].value).toBeGreaterThanOrEqual(0);
+      await expect(db.exec(`
+        INSERT INTO public.kb_entities (entity_type_code, canonical_key)
+        VALUES ('product', 'product:importer-denied')
+      `)).rejects.toThrow(/permission denied/);
+    } finally {
+      await db.exec("RESET ROLE;");
+    }
+  });
+
+  it("gates accepted candidates through an audited proposal without writing core knowledge", async () => {
+    const batchId = "91000000-0000-4000-8000-000000000001";
+    const sourceCandidateId = "91000000-0000-4000-8000-000000000002";
+
+    await db.exec(`
+      SET ROLE kb_importer;
+      INSERT INTO public.kb_import_batches (
+        id, source_kind, source_label, source_hash, created_by
+      ) VALUES (
+        '${batchId}', 'manual', 'Proposal gate regression', '${"a".repeat(64)}', NULL
+      );
+      UPDATE public.kb_import_batches
+         SET batch_status = 'processing'
+       WHERE id = '${batchId}';
+      INSERT INTO public.kb_source_candidates (
+        id, batch_id, candidate_key, title, source_locator, original_excerpt, proposed_data
+      ) VALUES (
+        '${sourceCandidateId}',
+        '${batchId}',
+        'proposal-gate-source',
+        'Preserved source statement',
+        'Regression source, page 1',
+        'Complete original statement',
+        '{"evidence_assessment":"separate","safety_assessment":"separate"}'::jsonb
+      );
+      UPDATE public.kb_import_batches
+         SET batch_status = 'ready_for_review', candidate_count = 1, completed_at = now()
+       WHERE id = '${batchId}';
+      RESET ROLE;
+    `);
+
+    const coreSourcesBefore = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_sources");
+
+    await db.exec(`SET ROLE authenticated; SET request.jwt.claim.sub = '${adminId}';`);
+    try {
+      await db.query(`
+        SELECT public.kb_record_import_review_decision(
+          'source', '${sourceCandidateId}', 'accept_as_draft', 'Source retained; evidence and safety remain separate.'
+        )
+      `);
+      await db.query(`SELECT public.kb_complete_import_batch_review('${batchId}')`);
+
+      const submitted = await db.query<{ proposal_id: string }>(`
+        SELECT public.kb_submit_import_candidate_proposal('source', '${sourceCandidateId}')::text AS proposal_id
+      `);
+      const proposalId = submitted.rows[0].proposal_id;
+      const repeated = await db.query<{ proposal_id: string }>(`
+        SELECT public.kb_submit_import_candidate_proposal('source', '${sourceCandidateId}')::text AS proposal_id
+      `);
+      expect(repeated.rows[0].proposal_id).toBe(proposalId);
+
+      const proposal = await db.query<{
+        status: string;
+        title: string;
+        excerpt: string;
+        visibility: string;
+        automatically_applied: boolean;
+        patient_use_approved: boolean;
+        link_count: number;
+      }>(`
+        SELECT
+          proposal.status,
+          proposal.proposal -> 'candidate' ->> 'title' AS title,
+          proposal.proposal -> 'candidate' ->> 'original_excerpt' AS excerpt,
+          proposal.proposal -> 'review_boundary' ->> 'visibility' AS visibility,
+          (proposal.proposal -> 'review_boundary' ->> 'automatically_applied_to_core')::boolean AS automatically_applied,
+          (proposal.proposal -> 'review_boundary' ->> 'patient_use_approved')::boolean AS patient_use_approved,
+          (SELECT count(*)::int FROM public.kb_import_candidate_proposals WHERE proposal_id = proposal.id) AS link_count
+        FROM public.kb_change_proposals AS proposal
+        WHERE proposal.id = '${proposalId}'
+      `);
+      expect(proposal.rows[0]).toEqual({
+        status: "submitted",
+        title: "Preserved source statement",
+        excerpt: "Complete original statement",
+        visibility: "admin_only",
+        automatically_applied: false,
+        patient_use_approved: false,
+        link_count: 1,
+      });
+
+      await db.query(`SELECT public.kb_review_import_candidate_proposal('${proposalId}', 'start_review', '')`);
+      await expect(db.query(`SELECT public.kb_review_import_candidate_proposal('${proposalId}', 'accept', '')`)).rejects.toThrow(/requires review notes/);
+      await db.query(`
+        SELECT public.kb_review_import_candidate_proposal(
+          '${proposalId}', 'accept', 'Accepted for later mapping only; no core or patient release.'
+        )
+      `);
+
+      const reviewed = await db.query<{ status: string; events: number; review_notes: string }>(`
+        SELECT
+          proposal.status,
+          proposal.review_notes,
+          (SELECT count(*)::int FROM public.kb_import_proposal_review_events WHERE proposal_id = proposal.id) AS events
+        FROM public.kb_change_proposals AS proposal
+        WHERE proposal.id = '${proposalId}'
+      `);
+      expect(reviewed.rows[0]).toEqual({
+        status: "accepted",
+        review_notes: "Accepted for later mapping only; no core or patient release.",
+        events: 2,
+      });
+
+      const coreSourcesAfter = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_sources");
+      expect(coreSourcesAfter.rows[0].value).toBe(coreSourcesBefore.rows[0].value);
+
+      await db.query("SELECT set_config('request.jwt.claim.sub', $1, false)", [patientId]);
+      await expect(db.query(`SELECT public.kb_submit_import_candidate_proposal('source', '${sourceCandidateId}')`)).rejects.toThrow(/Only administrators/);
+    } finally {
+      await db.exec("RESET ROLE; RESET request.jwt.claim.sub;");
+    }
   });
 });

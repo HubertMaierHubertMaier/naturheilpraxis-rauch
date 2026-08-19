@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-16T22:33:32.8238173+02:00",
+  "status": "passed",
+  "scope": "Read-only local revalidation of the existing knowledge staging import; no live access and no database write",
+  "inputs": {
+    "generator": "scripts/build-existing-knowledge-import.mjs",
+    "bundle": "docs/existing-knowledge-import-batches-2026-08-12.json",
+    "staging_schema": "supabase/migrations/20260812100000_create_kb_import_staging.sql",
+    "seed_sql": "supabase/migrations/20260812101000_import_existing_knowledge_candidates.sql",
+    "previous_readiness": "docs/wiki-local-import-readiness-2026-08-15.json"
+  },
+  "generator_reproducibility": {
+    "command": "node scripts/build-existing-knowledge-import.mjs --verify",
+    "status": "passed",
+    "json_matches_generator": true,
+    "sql_matches_generator": true
+  },
+  "totals": {
+    "batches": 4,
+    "sources": 230,
+    "entities": 124,
+    "dosages": 119,
+    "safety": 92,
+    "candidates": 565
+  },
+  "batch_counts": [
+    { "id": "mannayan", "candidates": 228, "sources": 57, "entities": 57, "dosages": 57, "safety": 57 },
+    { "id": "klinghardt", "candidates": 62, "sources": 62, "entities": 0, "dosages": 0, "safety": 0 },
+    { "id": "strunz", "candidates": 89, "sources": 53, "entities": 9, "dosages": 9, "safety": 18 },
+    { "id": "wiki_and_consolidated_sources", "candidates": 186, "sources": 58, "entities": 58, "dosages": 53, "safety": 17 }
+  ],
+  "integrity": {
+    "duplicate_ids": 0,
+    "duplicate_kind_candidate_keys": 0,
+    "duplicate_nonempty_source_urls": 0,
+    "duplicate_nonempty_canonical_entity_keys": 0,
+    "missing_original_excerpts": 0,
+    "broken_candidate_relations": 0
+  },
+  "retention_and_visibility": {
+    "original_source_content_retained": true,
+    "all_candidates_admin_only": true,
+    "candidate_status": "imported_unreviewed",
+    "data_classification": "general_knowledge",
+    "patient_facing_allowed": false
+  },
+  "sql_review": {
+    "write_targets": [
+      "kb_import_batches",
+      "kb_source_candidates",
+      "kb_entity_candidates",
+      "kb_dosage_candidates",
+      "kb_safety_candidates"
+    ],
+    "unexpected_write_targets": 0,
+    "destructive_sql_statements": 0
+  },
+  "local_pglite_test": {
+    "command": "npm test -- src/test/existing-knowledge-import-pglite.test.ts --reporter=verbose",
+    "status": "passed",
+    "test_files": 1,
+    "tests": 3,
+    "verified": [
+      "all 565 retained candidates load into local staging",
+      "the seed is idempotent and rejects a changed immutable manifest",
+      "admin read access works while patient and anonymous reads remain blocked"
+    ]
+  },
+  "operations": {
+    "database_writes_executed": false,
+    "live_database_reads_executed": false,
+    "external_access_executed": false,
+    "server_publication_executed": false
+  },
+  "validation_note": "An initial ad-hoc SQL scan matched the word delete inside retained source text. The statement-anchored rerun passed; this was not a data or SQL failure.",
+  "remaining_gate": "Live import remains blocked until a real Lovable data full backup is green, the staging schema is deliberately published through an authorized path, the current live inventory is deduplicated, and only the missing admin-only unreviewed rows are imported and visibly checked."
+}

@@ -2,6 +2,17 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
 import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
+import {
+  INFOTHEK_KNOWLEDGE_FILES,
+  buildInfothekKnowledgeContext,
+  buildStagingKnowledgeContext,
+  infothekHtmlToKnowledgeDocument,
+  normalizeTherapyKnowledgeSearchText,
+  selectRelevantInfothekDocuments,
+  selectRelevantStagingCandidates,
+  type InfothekKnowledgeDocument,
+  type StagingKnowledgeCandidate,
+} from "../_shared/therapyKnowledgeContext.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -103,10 +114,19 @@ interface WikiCache {
 let WIKI_CACHE: WikiCache | null = null;
 const WIKI_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min Sicherheitsnetz
 
+interface InfothekCache {
+  documents: InfothekKnowledgeDocument[];
+  errors: string[];
+  builtAt: number;
+}
+let INFOTHEK_CACHE: InfothekCache | null = null;
+const INFOTHEK_CACHE_TTL_MS = 10 * 60 * 1000;
+
 // Limits sind pro Request (nach Filterung). Das Lovable AI Gateway lehnt sehr große
 // Single-Messages ab (400 "Invalid input"), daher konservativ dimensionieren.
 const MAX_ENTRY_CHARS = 3000;
 const MAX_TOTAL_CHARS = 25_000; // ~6k Tokens – konservativ unter Gateway-Limit
+const MAX_KNOWLEDGE_QUERY_TOKENS = 256;
 const CACHE_VERSION = "v14-structured-kb";
 
 // Map-Reduce-Konfiguration (Stufe 1: KI bewertet ALLE Einträge in Batches)
@@ -169,9 +189,8 @@ async function scoreEntriesViaAI(
         return;
       }
       batch.forEach((e, i) => {
-        const key = `${e.title}|||${e.category}`;
         const sc = Math.max(0, Math.min(10, Number(scores[i]) || 0));
-        scoreMap.set(key, sc);
+        scoreMap.set(e.id, sc);
       });
     } catch (err) {
       console.warn(`Batch ${batchIdx} Fehler:`, err instanceof Error ? err.message : String(err));
@@ -313,17 +332,16 @@ async function loadWikiEntries(client: SupabaseQueryClient): Promise<{ entries: 
 function tokenizeQuery(text: string): string[] {
   const STOPWORDS = new Set([
     "und", "oder", "der", "die", "das", "den", "dem", "des", "ein", "eine", "einer", "eines",
-    "mit", "ohne", "von", "vom", "zur", "zum", "für", "auf", "bei", "auch", "ist", "sind",
+    "mit", "ohne", "von", "vom", "zur", "zum", "fuer", "auf", "bei", "auch", "ist", "sind",
     "im", "in", "an", "am", "auf", "als", "wie", "noch", "nicht", "kein", "keine",
     "organe", "organ", "index", "nicht", "angegeben", "li", "re", "rechts", "links",
   ]);
   return Array.from(new Set(
-    text
-      .toLowerCase()
-      .replace(/[^\wäöüß\s]/g, " ")
+    normalizeTherapyKnowledgeSearchText(text)
+      .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
       .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
-  ));
+  )).slice(0, MAX_KNOWLEDGE_QUERY_TOKENS);
 }
 
 type SymptomTarget = {
@@ -403,7 +421,7 @@ function expandQueryForScoring(queryText: string): string {
   const extra = getActiveSymptomTargets(queryText)
     .flatMap((target) => [...target.wikiTitles, ...target.keywords])
     .join(" ");
-  return [queryText, extra].filter(Boolean).join(" ");
+  return [extra, queryText].filter(Boolean).join(" ");
 }
 
 // Scored-Auswahl der relevantesten Wiki-Einträge basierend auf Query-Tokens.
@@ -419,16 +437,16 @@ function selectRelevantEntriesScored(
   const tokens = tokenizeQuery(queryText);
 
   const scored = entries.map((e) => {
-    const haystack = (
+    const haystack = normalizeTherapyKnowledgeSearchText(
       e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")
-    ).toLowerCase();
+    );
     let score = 0;
     if (tokens.length === 0) {
       score = 1; // Fallback gleich gewichten
     } else {
       for (const tok of tokens) {
-        if ((e.title || "").toLowerCase().includes(tok)) score += 10;
-        if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) score += 5;
+        if (normalizeTherapyKnowledgeSearchText(e.title || "").includes(tok)) score += 10;
+        if ((e.tags || []).some((t) => normalizeTherapyKnowledgeSearchText(t).includes(tok))) score += 5;
         const matches = haystack.split(tok).length - 1;
         score += Math.min(matches, 8);
       }
@@ -471,12 +489,13 @@ function selectRelevantEntriesScored(
 
 function buildEntryContent(entry: WikiEntry, queryText: string): string {
   const content = entry.content || "";
+  if (content.length <= MAX_ENTRY_CHARS) return content;
   const tokens = tokenizeQuery(queryText);
   const lines = content.split("\n");
   const picked = new Set<number>();
 
   lines.forEach((line, idx) => {
-    const normalized = line.toLowerCase();
+    const normalized = normalizeTherapyKnowledgeSearchText(line);
     const isHeading = /^#{2,4}\s/.test(line);
     const hit = tokens.some((tok) => normalized.includes(tok));
     if (hit || (isHeading && tokens.some((tok) => normalized.includes(tok)))) {
@@ -489,7 +508,12 @@ function buildEntryContent(entry: WikiEntry, queryText: string): string {
   const combined = snippets && !head.includes(snippets.slice(0, 120))
     ? `${head}\n\n### Relevante Trefferstellen im Eintrag\n${snippets}`
     : head;
-  return combined.slice(0, MAX_ENTRY_CHARS);
+  const marker = `\n\n[WIKI-AUSZUG GEKUERZT: Originaleintrag ${content.length} Zeichen; der vollstaendige Text bleibt im internen Wiki erhalten.]`;
+  const available = MAX_ENTRY_CHARS - marker.length;
+  const candidate = combined.slice(0, available);
+  const wordBoundary = Math.max(candidate.lastIndexOf("\n"), candidate.lastIndexOf(" "));
+  const cutoff = wordBoundary >= Math.floor(available * 0.7) ? wordBoundary : available;
+  return `${candidate.slice(0, cutoff).trimEnd()}${marker}`;
 }
 
 function buildEntryMetadata(entry: WikiEntry): string {
@@ -512,19 +536,31 @@ function buildEntryMetadata(entry: WikiEntry): string {
   ].filter(Boolean).join("\n");
 }
 
-function buildContext(entries: WikiEntry[], queryText: string): string {
-  let context = entries
-    .map((e) => {
-      const content = buildEntryContent(e, queryText);
-      return `### ${e.title} [${e.category}] Wiki-ID: ${e.id} Tags: ${(e.tags || []).join(", ")}\n${buildEntryMetadata(e)}\n\n${content}`;
-    })
-    .join("\n\n---\n\n");
+function buildContext(entries: WikiEntry[], queryText: string, maximumCharacters = MAX_TOTAL_CHARS) {
+  const separator = "\n\n---\n\n";
+  const blocks: string[] = [];
+  const includedEntryIds = new Set<string>();
+  const omittedEntryIds = new Set<string>();
+  let used = 0;
 
-  if (context.length > MAX_TOTAL_CHARS) {
-    context = context.slice(0, MAX_TOTAL_CHARS) + "\n\n[... Wissensdatenbank gekürzt ...]";
-  }
-  if (!context.trim()) context = "(Keine relevanten Wissensdatenbank-Einträge gefunden)";
-  return context;
+  entries.forEach((entry) => {
+    const content = buildEntryContent(entry, queryText);
+    const block = `### ${entry.title} [${entry.category}] Wiki-ID: ${entry.id} Tags: ${(entry.tags || []).join(", ")}\n${buildEntryMetadata(entry)}\n\n${content}`;
+    const additional = (blocks.length > 0 ? separator.length : 0) + block.length;
+    if (used + additional > maximumCharacters) {
+      omittedEntryIds.add(entry.id);
+      return;
+    }
+    blocks.push(block);
+    includedEntryIds.add(entry.id);
+    used += additional;
+  });
+
+  return {
+    text: blocks.length > 0 ? blocks.join(separator) : "(Keine relevanten Wissensdatenbank-Einträge gefunden)",
+    includedEntryIds,
+    omittedEntryIds,
+  };
 }
 
 function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
@@ -536,7 +572,7 @@ function buildPhaseOneShortlist(scored: ScoredEntry[], maxItems = 80): string {
 }
 
 function entryText(e: WikiEntry): string {
-  return `${e.title} ${e.category} ${(e.tags || []).join(" ")} ${(e.therapeutic_topics || []).join(" ")} ${(e.interaction_tags || []).join(" ")} ${e.content || ""}`.toLowerCase();
+  return normalizeTherapyKnowledgeSearchText(`${e.title} ${e.category} ${(e.tags || []).join(" ")} ${(e.therapeutic_topics || []).join(" ")} ${(e.interaction_tags || []).join(" ")} ${e.content || ""}`);
 }
 
 function isVitaplaceProbiotic(e: WikiEntry): boolean {
@@ -550,7 +586,7 @@ function isVitaplaceProbiotic(e: WikiEntry): boolean {
       text.includes("bifidobacterium") ||
       text.includes("lactobacillus") ||
       text.includes("inulin") ||
-      text.includes("resistente stärke")
+      text.includes(normalizeTherapyKnowledgeSearchText("resistente stärke"))
     )
   );
 }
@@ -561,17 +597,17 @@ function extractProbioticHighlights(e: WikiEntry): string {
 }
 
 function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredLines: string[], manualTitles: string[], symptomTargets: SymptomTarget[] = []): WikiEntry[] {
-  const query = queryText.toLowerCase();
-  const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"];
-  const preferred = preferredLines.map((l) => l.toLowerCase());
-  const manual = manualTitles.map((t) => t.toLowerCase());
+  const query = normalizeTherapyKnowledgeSearchText(queryText);
+  const probioticTerms = ["bifidobacterium", "lactobacillus", "akkermansia", "faecalibacterium", "enterococcus", "probiotik", "präbiotik", "mikrobiom", "darmflora", "darmaufbau"].map(normalizeTherapyKnowledgeSearchText);
+  const preferred = preferredLines.map(normalizeTherapyKnowledgeSearchText);
+  const manual = manualTitles.map(normalizeTherapyKnowledgeSearchText);
   const score = (e: WikiEntry) => {
     const text = entryText(e);
     let s = 0;
-    if (manual.includes((e.title || "").toLowerCase())) s += 100_000;
+    if (manual.includes(normalizeTherapyKnowledgeSearchText(e.title || ""))) s += 100_000;
     for (const target of symptomTargets) {
-      if (target.wikiTitles.some((title) => title.toLowerCase() === (e.title || "").toLowerCase())) s += 80_000;
-      if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase()))) s += 60_000;
+      if (target.wikiTitles.some((title) => normalizeTherapyKnowledgeSearchText(title) === normalizeTherapyKnowledgeSearchText(e.title || ""))) s += 80_000;
+      if (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(normalizeTherapyKnowledgeSearchText(kw)))) s += 60_000;
     }
     if (/homotoxikologie/i.test(e.category || "") && /therapeutischer\s+index/i.test(e.title || "")) s += 70_000;
     if (isVitaplaceProbiotic(e)) s += 50_000;
@@ -584,6 +620,117 @@ function prioritySortEntries(entries: WikiEntry[], queryText: string, preferredL
     return s;
   };
   return [...entries].sort((a, b) => score(b) - score(a));
+}
+
+async function loadInfothekKnowledgeDocuments(adminClient: any): Promise<{ documents: InfothekKnowledgeDocument[]; errors: string[]; cacheHit: boolean }> {
+  const now = Date.now();
+  if (INFOTHEK_CACHE && now - INFOTHEK_CACHE.builtAt < INFOTHEK_CACHE_TTL_MS) {
+    return { documents: INFOTHEK_CACHE.documents, errors: INFOTHEK_CACHE.errors, cacheHit: true };
+  }
+
+  const loaded = await Promise.all(INFOTHEK_KNOWLEDGE_FILES.map(async (filename) => {
+    const { data, error } = await adminClient.storage.from("website-content").download(`infothek/${filename}`);
+    if (error || !data) return { error: `${filename}: ${error?.message || "nicht gefunden"}` };
+    return { document: infothekHtmlToKnowledgeDocument(filename, await data.text()) };
+  }));
+  const documents = loaded.flatMap((item) => "document" in item && item.document ? [item.document] : []);
+  const errors = loaded.flatMap((item) => "error" in item && item.error ? [item.error] : []);
+  INFOTHEK_CACHE = { documents, errors, builtAt: now };
+  return { documents, errors, cacheHit: false };
+}
+
+function stagingSearchFilter(columns: string[], tokens: string[]): string {
+  const variants = (token: string) => {
+    const umlaut = token
+      .replace(/ae/g, "ä")
+      .replace(/oe/g, "ö")
+      .replace(/ue/g, "ü")
+      .replace(/ss/g, "ß");
+    return [...new Set([token, umlaut])];
+  };
+  return tokens.flatMap((token) => variants(token)
+    .flatMap((variant) => columns.map((column) => `${column}.ilike.%${variant}%`)))
+    .join(",");
+}
+
+async function loadRelevantStagingKnowledgeCandidates(
+  adminClient: any,
+  queryText: string,
+): Promise<{ candidates: StagingKnowledgeCandidate[]; errors: string[] }> {
+  const genericTerms = new Set(["aktuelle", "bekannte", "symptome", "erkrankungen", "diagnosen", "patientenkontext", "befund", "auswertung", "quelle", "datum"]);
+  const searchTokens = tokenizeQuery(queryText)
+    .map((token) => token.replace(/[^\p{L}\p{N}-]+/gu, ""))
+    .filter((token) => token.length >= 4 && !genericTerms.has(token))
+    .slice(0, 8);
+  if (searchTokens.length === 0) return { candidates: [], errors: [] };
+
+  const statuses = ["imported_unreviewed", "needs_clarification", "accepted_as_draft"];
+  const configs = [
+    {
+      table: "kb_source_candidates",
+      kind: "source" as const,
+      select: "id, candidate_status, title, publisher, source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data",
+      columns: ["title", "publisher", "source_locator", "original_excerpt", "ambiguity_notes"],
+      label: (row: any) => row.title,
+      text: (row: any) => [row.publisher, row.original_excerpt, row.ambiguity_notes].filter(Boolean).join("\n"),
+    },
+    {
+      table: "kb_entity_candidates",
+      kind: "entity" as const,
+      select: "id, candidate_status, display_name, aliases, description_markdown, source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data",
+      columns: ["display_name", "description_markdown", "source_locator", "original_excerpt", "ambiguity_notes"],
+      label: (row: any) => row.display_name,
+      text: (row: any) => [Array.isArray(row.aliases) ? row.aliases.join(", ") : "", row.description_markdown, row.original_excerpt, row.ambiguity_notes].filter(Boolean).join("\n"),
+    },
+    {
+      table: "kb_relation_candidates",
+      kind: "relation" as const,
+      select: "id, candidate_status, candidate_key, proposed_relation_type_code, assignment_strength, source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data",
+      columns: ["candidate_key", "proposed_relation_type_code", "assignment_strength", "source_locator", "original_excerpt", "ambiguity_notes"],
+      label: (row: any) => row.proposed_relation_type_code || row.candidate_key,
+      text: (row: any) => [row.assignment_strength, row.original_excerpt, row.ambiguity_notes].filter(Boolean).join("\n"),
+    },
+    {
+      table: "kb_dosage_candidates",
+      kind: "dosage" as const,
+      select: "id, candidate_status, application_route, minimum_dose, maximum_dose, dose_unit, reference_period, frequency_text, duration_text, timing_text, application_text, source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data",
+      columns: ["application_route", "dose_unit", "reference_period", "frequency_text", "duration_text", "timing_text", "application_text", "source_locator", "original_excerpt", "ambiguity_notes"],
+      label: (row: any) => row.application_text || "Dosierung pruefen",
+      text: (row: any) => [row.application_route, row.minimum_dose, row.maximum_dose, row.dose_unit, row.reference_period, row.frequency_text, row.duration_text, row.timing_text, row.original_excerpt, row.ambiguity_notes].filter((value) => value !== null && value !== undefined && value !== "").join(" | "),
+    },
+    {
+      table: "kb_safety_candidates",
+      kind: "safety" as const,
+      select: "id, candidate_status, rule_type, severity, action_text, source_locator, original_excerpt, confidence, ambiguity_notes, proposed_data",
+      columns: ["rule_type", "severity", "action_text", "source_locator", "original_excerpt", "ambiguity_notes"],
+      label: (row: any) => row.action_text || "Sicherheit pruefen",
+      text: (row: any) => [row.rule_type, row.severity, row.original_excerpt, row.ambiguity_notes].filter(Boolean).join("\n"),
+    },
+  ];
+
+  const results = await Promise.all(configs.map(async (config) => {
+    const { data, error } = await adminClient.from(config.table)
+      .select(config.select)
+      .in("candidate_status", statuses)
+      .or(stagingSearchFilter(config.columns, searchTokens))
+      .limit(8);
+    if (error) return { config, rows: [] as any[], error: `${config.table}: ${error.message}` };
+    return { config, rows: Array.isArray(data) ? data : [], error: "" };
+  }));
+  const candidates = results.flatMap(({ config, rows }) => rows.map((row: any) => ({
+    id: String(row.id),
+    kind: config.kind,
+    status: String(row.candidate_status || "imported_unreviewed"),
+    label: String(config.label(row) || "Kandidat ohne Bezeichnung"),
+    text: String(config.text(row) || ""),
+    sourceLocator: typeof row.source_locator === "string" ? row.source_locator : undefined,
+    confidence: typeof row.confidence === "number" ? row.confidence : undefined,
+    proposedData: row.proposed_data,
+  })));
+  return {
+    candidates: selectRelevantStagingCandidates(candidates, tokenizeQuery(queryText)),
+    errors: results.flatMap((result) => result.error ? [result.error] : []),
+  };
 }
 
 function sanitizeRecommendation(text: string): string {
@@ -775,7 +922,7 @@ serve(async (req) => {
         );
     console.log(
       `Boost folders: ${selectedCats.length === 0 ? "NONE" : selectedCats.join(", ")} → ` +
-      `${boostEntries.length} forced entries (search pool: ${allEntries.length})`
+      `${boostEntries.length} boost matches (search pool: ${allEntries.length})`
     );
 
     // Pinned remedies: titles to ALWAYS include in context
@@ -794,11 +941,20 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, bisherigeMittel, eigeneTherapieText, mannayanOrdersText, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeelText, sonstigeUntersuchungenText, vievaPlusText, befundAuswertungText, perplexityAnalyseText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, laborErhoeht, laborErniedrigt, befundAuswertungText, stuhlbefund, laborKomplett, arztbericht, metatronHeelText, vievaPlusText, sonstigeUntersuchungenText, bisherigeMittel, perplexityAnalyseText, eigeneTherapieText, mannayanOrdersText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
     const scoringQueryText = expandQueryForScoring(queryText);
+    const knowledgeQueryTokens = tokenizeQuery(scoringQueryText);
+    const infothekLoad = await loadInfothekKnowledgeDocuments(adminClient);
+    const selectedInfothekDocuments = selectRelevantInfothekDocuments(infothekLoad.documents, knowledgeQueryTokens);
+    const infothekContext = buildInfothekKnowledgeContext(selectedInfothekDocuments);
+    const stagingLoad = await loadRelevantStagingKnowledgeCandidates(adminClient, scoringQueryText);
+    const stagingContext = buildStagingKnowledgeContext(stagingLoad.candidates);
+    if (infothekLoad.errors.length > 0) console.warn("Infothek-Kontext teilweise nicht geladen:", infothekLoad.errors);
+    if (stagingLoad.errors.length > 0) console.warn("Staging-Kontext teilweise nicht geladen:", stagingLoad.errors);
+    console.log(`Zusatzwissen: Infothek ${selectedInfothekDocuments.length}/${infothekLoad.documents.length}, Staging ${stagingLoad.candidates.length}, Zeichen ${infothekContext.length + stagingContext.length}`);
     const hasHomotoxContext = activeSymptomTargets.length > 0 || selectedCats.some((c) => /homotoxikologie/i.test(c)) || preferredLines.some((l) => /heel|homotox/i.test(l));
     const symptomDirective = buildSymptomDirective(queryText, hasHomotoxContext);
 
@@ -827,11 +983,11 @@ serve(async (req) => {
     const symptomPinnedCandidates: WikiEntry[] = activeSymptomTargets.length === 0
       ? []
       : allEntries.filter((e) => {
-          const title = (e.title || "").toLowerCase();
+          const title = normalizeTherapyKnowledgeSearchText(e.title || "");
           const text = entryText(e);
           return activeSymptomTargets.some((target) =>
-            target.wikiTitles.some((t) => t.toLowerCase() === title) ||
-            (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(kw.toLowerCase())))
+            target.wikiTitles.some((t) => normalizeTherapyKnowledgeSearchText(t) === title) ||
+            (/homotoxikologie/i.test(e.category || "") && target.keywords.some((kw) => text.includes(normalizeTherapyKnowledgeSearchText(kw))))
           );
         });
     const symptomPinnedEntries = prioritySortEntries(symptomPinnedCandidates, scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets).slice(0, 6);
@@ -843,9 +999,9 @@ serve(async (req) => {
     // WICHTIG: Boost-Ordner sind KEIN Filter und KEINE Exklusiv-Auswahl; sie markieren nur Schwerpunktbereiche.
     // Die eigentliche Phase-1-Sichtung läuft unten immer über die gesamte Wiki.
     const manualPinned = pinnedTitles.length > 0
-      ? allEntries.filter((e) => pinnedTitles.some((t) => e.title.toLowerCase() === t.toLowerCase()))
+      ? allEntries.filter((e) => pinnedTitles.some((t) => normalizeTherapyKnowledgeSearchText(e.title) === normalizeTherapyKnowledgeSearchText(t)))
       : [];
-    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.title === b.title && a.category === b.category;
+    const sameEntry = (a: WikiEntry, b: WikiEntry) => a.id === b.id;
     const pinnedEntries = [
       ...manualPinned,
       ...symptomPinnedEntries.filter((s) => !manualPinned.some((m) => sameEntry(m, s))),
@@ -860,7 +1016,7 @@ serve(async (req) => {
     );
 
     // Score the rest, but exclude already-pinned entries
-    const restPool = filteredByCategory;
+    const restPool = filteredByCategory.filter((entry) => !pinnedEntries.some((pinned) => sameEntry(pinned, entry)));
     const remainingBudget = Math.max(2000, MAX_TOTAL_CHARS - pinnedReserveChars);
 
     let restRelevant: WikiEntry[];
@@ -871,20 +1027,19 @@ serve(async (req) => {
     if (mustUseFullWikiMapReduce && restPool.length > 0) {
       // ===== MAP-REDUCE STUFE 1: KI bewertet IMMER ALLE Wiki-Einträge in Batches =====
       mapReduceUsed = true;
-      const aiScores = await scoreEntriesViaAI(restPool, scoringQueryText, LOVABLE_API_KEY);
+      const aiScores = await scoreEntriesViaAI(restPool, queryText, LOVABLE_API_KEY);
 
       // Kombiniere KI-Score (×10 Gewicht) + Wort-Score (Fallback für unbewertete Einträge)
+      const wordScoreTokens = tokenizeQuery(scoringQueryText);
       const wordScored = restPool.map((e) => {
-        const haystack = (e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || "")).toLowerCase();
-          const tokens = tokenizeQuery(scoringQueryText);
+        const haystack = normalizeTherapyKnowledgeSearchText(e.title + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.content || ""));
         let s = 0;
-        for (const tok of tokens) {
-          if ((e.title || "").toLowerCase().includes(tok)) s += 10;
-          if ((e.tags || []).some((t) => t.toLowerCase().includes(tok))) s += 5;
+        for (const tok of wordScoreTokens) {
+          if (normalizeTherapyKnowledgeSearchText(e.title || "").includes(tok)) s += 10;
+          if ((e.tags || []).some((t) => normalizeTherapyKnowledgeSearchText(t).includes(tok))) s += 5;
           s += Math.min(haystack.split(tok).length - 1, 8);
         }
-        const key = `${e.title}|||${e.category}`;
-        const aiScore = aiScores.get(key);
+        const aiScore = aiScores.get(e.id);
         // KI-Score dominiert; Wort-Score nur als Fallback wenn KI nicht antwortete
         const finalScore = aiScore !== undefined ? aiScore * 100 : s;
         return { entry: e, score: finalScore, included: false, reason: aiScore !== undefined ? `KI-Score ${aiScore}/10` : `Wort-Score ${s} (KI keine Antwort)` } as ScoredEntry;
@@ -943,15 +1098,26 @@ serve(async (req) => {
     }
 
     const relevantEntries = prioritySortEntries([...pinnedEntries, ...restRelevant], scoringQueryText, preferredLines, pinnedTitles, activeSymptomTargets);
-    const vitaplaceProbioticsInContext = relevantEntries.filter(isVitaplaceProbiotic);
-    const vitaplaceContext = vitaplaceProbioticsInContext.length > 0
-      ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${vitaplaceProbioticsInContext.map((e) => `- ${e.title}: ${extractProbioticHighlights(e) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
+    const vitaplaceContextFor = (entries: WikiEntry[]) => entries.length > 0
+      ? `\n\n### ZWANGSKONTEXT – Vitaplace-Probiotika bei Mikrobiom-/Bifido-/Lacto-Befund\n${entries.map((entry) => `- ${entry.title}: ${extractProbioticHighlights(entry) || "Vitaplace-Probiotikum/Darmaufbau"}`).join("\n")}`
       : "";
-    const wikiContext = buildContext(relevantEntries, scoringQueryText) + vitaplaceContext;
+    const vitaplaceReserve = vitaplaceContextFor(relevantEntries.filter(isVitaplaceProbiotic)).slice(0, 3000);
+    const builtWikiContext = buildContext(relevantEntries, scoringQueryText, MAX_TOTAL_CHARS - vitaplaceReserve.length);
+    const entriesInContext = relevantEntries.filter((entry) => builtWikiContext.includedEntryIds.has(entry.id));
+    const vitaplaceProbioticsInContext = entriesInContext.filter(isVitaplaceProbiotic);
+    const vitaplaceContext = vitaplaceContextFor(vitaplaceProbioticsInContext).slice(0, vitaplaceReserve.length);
+    const wikiContext = builtWikiContext.text + vitaplaceContext;
+    restScored.forEach((scoredEntry) => {
+      if (scoredEntry.included && builtWikiContext.omittedEntryIds.has(scoredEntry.entry.id)) {
+        scoredEntry.included = false;
+        scoredEntry.reason = "Finales Kontextlimit erreicht – vollständiger Eintrag nicht gesendet";
+      }
+    });
+    const includedPinnedEntries = pinnedEntries.filter((entry) => builtWikiContext.includedEntryIds.has(entry.id));
     const phaseOneShortlist = buildPhaseOneShortlist(restScored, 30);
     console.log(
       `Wiki: ${allEntries.length} total (full DB search) → ` +
-      `${pinnedEntries.length} pinned (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restRelevant.length} relevant, ` +
+      `${includedPinnedEntries.length}/${pinnedEntries.length} pinned im Kontext (${manualPinned.length} manual + ${symptomPinnedEntries.length} auto-symptom + ${autoPinnedFromStuhl.length} auto-stuhl + ${boostEntries.length} boost-folder) + ${restScored.filter((entry) => entry.included).length} relevant, ` +
       `context=${wikiContext.length} chars, cacheHit=${cacheHit}, mapReduce=${mapReduceUsed}, ` +
       `preferredLines=[${preferredLines.join(",")}], symptomAxes=[${activeSymptomTargets.map((t) => t.label).join(",")}]`
     );
@@ -961,11 +1127,11 @@ serve(async (req) => {
       if (manualPinned.some((m) => sameEntry(m, e))) return "📌 Manuell gepinnt";
       if (symptomPinnedEntries.some((s) => sameEntry(s, e))) return "🧭 Auto-Pin (Symptome/Homotoxikologie)";
       if (autoPinnedFromStuhl.some((a) => sameEntry(a, e))) return "🔬 Auto-Pin (Stuhlbefund)";
-      if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Boost-Ordner (garantiert)";
+      if (boostEntries.some((b) => sameEntry(b, e))) return "⭐ Schwerpunktordner";
       return "📌 Pinned";
     };
     const usedEntries = [
-      ...pinnedEntries.map((e) => ({
+      ...includedPinnedEntries.map((e) => ({
         title: e.title, category: e.category, score: 9999,
         reason: reasonFor(e)
       })),
@@ -973,27 +1139,37 @@ serve(async (req) => {
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "✅ Relevant"
       })),
     ];
-    const skippedEntries = restScored
+    const skippedPinnedEntries = pinnedEntries
+      .filter((entry) => !builtWikiContext.includedEntryIds.has(entry.id))
+      .map((entry) => ({
+        title: entry.title,
+        category: entry.category,
+        score: 9999,
+        reason: "Finales Kontextlimit erreicht – vollständiger Pflichtkontext nicht gesendet",
+      }));
+    const skippedEntries = [...skippedPinnedEntries, ...restScored
       .filter((s) => !s.included)
       .slice(0, 50)
       .map((s) => ({
         title: s.entry.title, category: s.entry.category, score: s.score, reason: s.reason || "—"
-      }));
+      }))].slice(0, 50);
 
     const auditPayload = {
       __audit__: {
         totalInDb: allEntries.length,
         afterCategoryFilter: allEntries.length, // legacy field: search pool = full DB
         boostFolderCount: boostEntries.length,
-        pinnedCount: pinnedEntries.length,
-        relevantCount: restRelevant.length,
+        pinnedCount: includedPinnedEntries.length,
+        pinnedRequestedCount: pinnedEntries.length,
+        relevantCount: restScored.filter((entry) => entry.included).length,
         usedCount: usedEntries.length,
-        skippedTotalCount: restScored.filter((s) => !s.included).length,
+        skippedTotalCount: skippedPinnedEntries.length + restScored.filter((s) => !s.included).length,
         contextChars: wikiContext.length,
         contextLimit: MAX_TOTAL_CHARS,
         cacheHit,
         mapReduceUsed,
         queryTokens: tokenizeQuery(queryText),
+        queryTokenLimit: MAX_KNOWLEDGE_QUERY_TOKENS,
         symptomAxes: activeSymptomTargets.map((t) => t.label),
         metatronHeelInput: metatronHeelText || null,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
@@ -1002,6 +1178,16 @@ serve(async (req) => {
         perplexityAnalyseChars: perplexityAnalyseText.length,
         eigeneTherapieChars: eigeneTherapieText.length,
         mannayanOrdersCount: Array.isArray(mannayanOrders) ? mannayanOrders.length : 0,
+        infothekTotal: infothekLoad.documents.length,
+        infothekUsedCount: selectedInfothekDocuments.length,
+        infothekContextChars: infothekContext.length,
+        infothekCacheHit: infothekLoad.cacheHit,
+        infothekErrors: infothekLoad.errors,
+        infothekUsed: selectedInfothekDocuments.map((document) => ({ filename: document.filename, title: document.title, score: document.score })),
+        stagingUsedCount: stagingLoad.candidates.length,
+        stagingContextChars: stagingContext.length,
+        stagingErrors: stagingLoad.errors,
+        stagingUsed: stagingLoad.candidates.map((candidate) => ({ id: candidate.id, kind: candidate.kind, label: candidate.label, status: candidate.status })),
         boostCategories: selectedCats,
         selectedCategories: selectedCats, // legacy alias
         used: usedEntries,
@@ -1059,6 +1245,8 @@ REGELN:
 - Wiki-Eintraege mit Pruefstatus "unreviewed"/"needs_review" oder Evidenz "unrated" nicht als essentielle Kernkandidaten ausgeben.
 - Dosierungen nur verwenden, wenn der Wiki-Metadatensatz "Dosierungsstatus: verified" ausweist; sonst "Dosierung manuell pruefen" schreiben.
 - Eine Mannayan-Zuordnung ist nur Produktkontext und niemals alleiniger Wirksamkeits- oder Indikationsnachweis.
+- Import-Pruefkandidaten mit Kennung [UNREVIEWED_STAGING:...] bleiben als interne Quellenhinweise erhalten, duerfen aber nie allein ein Kernmittel, eine Dosierung oder eine Freigabe begruenden. Quelleninhalt, Evidenz und Sicherheit getrennt dokumentieren.
+- Infothek-Inhalte mit Kennung [INFOTHEK:datei.html] sind ergaenzender Praxis- und Lebensstilkontext. Mittel, Dosierungen oder Wirksamkeitsaussagen daraus nur uebernehmen, wenn ein passender Wiki-Beleg sie traegt; sonst als internen Quellenhinweis oder Wissensluecke ausgeben.
 - Erkannte Arzneimittelgruppen: ${medicationGroups.length ? medicationGroups.join(", ") : "keine sicher erkannt"}.
 - Disclaimer: "Interne Kandidatenliste – jede Auswahl wird fachlich, produktspezifisch und anhand der aktuellen Medikation geprüft."
 
@@ -1066,6 +1254,10 @@ Du hast Zugriff auf die folgende Wissensdatenbank mit Naturheilmitteln, Pathogen
 
 WISSENSDATENBANK:
 ${wikiContext}
+
+${stagingContext || "INTERNE IMPORT-PRUEFKANDIDATEN: Keine relevanten Treffer fuer diesen Fall."}
+
+${infothekContext || "ERGÄNZENDER INFOTHEK-KONTEXT: Keine relevanten HTML-Treffer fuer diesen Fall."}
 
 ${phaseOneShortlist ? `\n${phaseOneShortlist}\n` : ""}
 
@@ -1234,16 +1426,27 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
 KOSTENRICHTLINIEN (ZWINGEND BEACHTEN):
 - NutraMedix-Produkte kosten ca. 35-45 € pro 30ml Flasche
 - ${budget ? `Das maximale Budget des Patienten beträgt ${budget} Euro.` : "Kein Budget angegeben – trotzdem kostenbewusst empfehlen."}
-- **IMMER günstige Alternativen zuerst empfehlen**: Gewürze und Hausmittel wie Knoblauch (frisch, roh – stark antimikrobiell), Kurkuma, Oregano (frisch/getrocknet), Ingwer, Nelken, Thymian, Zimt, Meerrettich, Schwarzkümmelöl etc.
+- **Günstige Alternativen zuerst prüfen**, aber nur bei passendem Wiki-Beleg und bestandener Sicherheitsprüfung: z.B. Gewürze und Hausmittel wie Knoblauch, Kurkuma, Oregano, Ingwer, Nelken, Thymian, Zimt, Meerrettich oder Schwarzkümmelöl.
 - Teure Spezialpräparate (NutraMedix, Biopure etc.) NUR empfehlen wenn:
   a) keine günstige Alternative existiert
-  b) die günstige Alternative nicht ausreichend wirksam ist
+  b) die günstige Alternative fachlich nicht passend oder nicht ausreichend belegt ist
   c) das Budget es erlaubt
 - Schätze die ungefähren Gesamtkosten pro Monat für die empfohlenen Mittel
 - Priorisiere Mittel nach Wichtigkeit: Die wichtigsten 2-3 Mittel zuerst, optionale Ergänzungen kennzeichnen
 
 AUSGABEFORMAT:
-Ein vollstaendiger interne Therapieentwurf MUSS alle folgenden Abschnitte enthalten, auch wenn fuer einen Bereich nur fehlende Daten oder ein gezielter Klaerungsschritt dokumentiert werden kann: Priorisierung & Therapieziele, Therapieprotokoll, Ernaehrung und Verhalten & Alltag.
+Ein vollstaendiger interner Therapieentwurf MUSS alle folgenden Abschnitte enthalten, auch wenn fuer einen Bereich nur fehlende Daten oder ein gezielter Klaerungsschritt dokumentiert werden kann: Priorisierung & Therapieziele, Sicherheitshinweise, Therapieprotokoll, Ernaehrung, Verhalten & Alltag und Verlaufskontrolle.
+
+SYSTEMATISCHE ABLEITUNG (VERBINDLICH):
+1. Ordne jeden Kandidaten genau einem dokumentierten Befund, Laborwert, Pathogen, Symptom oder einer Diagnose zu. Ohne konkreten Bezug keine Aufnahme.
+2. Pruefe nacheinander Vitamine, Aminosaeuren, Spurenelemente/Mineralstoffe, Fettsaeuren, Pathogene, Symptome, Diagnosen, Darm/Mikrobiom, Pflanzenmittel und weitere passende Wiki-Kategorien. Diese Liste ist eine erweiterbare Grundstruktur: Zusaetzliche Datenbankkategorien duerfen als eigene fachlich benannte Gruppe erscheinen. Eine leere Kategorie wird nicht mit allgemeinen Standardmitteln gefuellt.
+3. Gib Firma/Hersteller nur an, wenn sie im Wiki, im geprueften Produktlink oder im offiziellen Produktnamen belegt ist; sonst schreibe "nicht belegt".
+4. Ordne passende Mannayan- und Vitaplace-Apothekenprodukte in die fachlich passende Stoff- oder Therapiegruppe ein und nenne die Produktlinie als Firma. Nutze einen eigenen Produktlinien-Abschnitt nur, wenn eine fachliche Gruppe nicht eindeutig ist. Dasselbe Produkt nie doppelt auffuehren.
+5. NutraMedix-Mittel bei Pathogenen nur bei einem konkret genannten Pathogen und passendem geprueften Wiki-Mittelbeleg. Laborbestaetigung und Metatron/NLS-Resonanzhinweis in der Begruendung strikt unterscheiden; ein Resonanzhinweis ist kein Infektionsnachweis.
+6. Bei allgemeinen Symptomen Homoeopathie und Komplexmittel als eigene Kandidatengruppe mitpruefen, aber nur bei konkretem Wiki-Beleg, passender Indikation und bestandener Sicherheitspruefung.
+7. Trenne die interne fachliche Begruendung vom einfachen Patiententext: Befundbezug nennt den konkreten Messwert, das Symptom oder die Diagnose plus Wiki-ID; Patientenerklaerung beantwortet ohne Fachjargon "Warum soll ich das einnehmen?". Keine Heilungszusage und keine unbelegte Wirksamkeitsbehauptung.
+8. Fuehre bei jedem Mittel Gefahren, Gegenanzeigen und relevante Wechselwirkungen auf. Beispiel: Suessholz bei dokumentiertem Bluthochdruck nicht als Kernkandidat ausgeben und den Blutdruckhinweis sichtbar nennen. Wenn im verwendeten Beleg keine konkrete Sicherheitsangabe steht, schreibe "Keine konkrete Angabe im verwendeten Beleg – individuell pruefen" statt "keine Gefahren".
+9. Ernaehrung immer aus einem konkreten Befundmuster ableiten. Beispiel: Nur bei dokumentiert erhoehtem HbA1c/Glukosemuster eine kohlenhydratreduzierte LOGI-orientierte Kost pruefen und die passende Quelle [INFOTHEK:logi-ernaehrung-mitochondrien.html] sichtbar nennen; fehlende Messwerte nicht erfinden.
 
 ## 🎯 Priorisierung & Therapieziele
 Nenne hoechstens drei Ziele in Reihenfolge 1 bis 3. Begruende die Reihenfolge mit gesicherten Diagnosen, Symptomen, Alter, Medikation sowie Labor-/Stuhlbefunden. Resonanzhinweise bleiben klar getrennt und duerfen die Reihenfolge nicht allein bestimmen.
@@ -1301,6 +1504,13 @@ BEISPIELE:
 
 Falls KEINE Lücken: Schreibe genau "✅ Für diesen Fall sind alle relevanten Wiki-Einträge vorhanden."
 
+## 📚 Weitere interne Quellenhinweise
+Fuehre hier fallbezogen relevante Angaben aus Infothek und Import-Pruefbereich auf, die wegen fehlender fachlicher Pruefung oder fehlendem Wiki-Beleg nicht als Kernmittel oder Dosierung verwendet werden duerfen.
+- Infothek-Angaben immer mit [INFOTHEK:datei.html] kennzeichnen.
+- Importangaben immer mit [UNREVIEWED_STAGING:art:id] und ihrem Pruefstatus kennzeichnen.
+- Wissenschaftliche und naturheilkundliche Quellenaussagen intern erhalten; Evidenz, Sicherheit und offene Pruefung getrennt nennen.
+- Wenn keine solchen Hinweise relevant sind, schreibe: "Keine zusaetzlichen internen Quellenhinweise fuer diesen Fall."
+
 ## ⚠️ Sicherheitshinweise
 Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwangerschaft, Medikamenten.
 
@@ -1308,17 +1518,29 @@ Spezifische Kontraindikationen für diesen Patienten basierend auf Alter, Schwan
 
 WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschriften (nur die Gruppen ausgeben, in denen Du tatsächlich etwas empfiehlst). Die Reihenfolge ist verbindlich:
 
-### 🌿 Hausmittel & Gewürze
-(Knoblauch, Kurkuma, Oregano, Ingwer, Nelken, Thymian, Zimt, Meerrettich, Schwarzkümmelöl, Zitrone usw.)
-
 ### 🍋 Vitamine
 (Vitamin C, D, B-Komplex, A, E, K2 usw.)
 
-### 🧂 Mineralstoffe & Spurenelemente
+### 🧬 Aminosäuren
+(L-Carnitin, Taurin, Lysin, NAC, Glycin, Tryptophan usw.)
+
+### 🧂 Spurenelemente & Mineralstoffe
 (Magnesium, Zink, Selen, Eisen, Jod, Kalium usw.)
 
-### 🐟 Fettsäuren & Aminosäuren
-(Omega-3, Krill-Öl, L-Carnitin, Taurin, Lysin, NAC usw.)
+### 🐟 Fettsäuren
+(Omega-3, EPA/DHA, Krill-Öl usw.)
+
+### 🦠 Pathogenbezogene Mittel (NutraMedix)
+(z.B. Samento, Banderol oder Cumanda nur bei konkret genanntem Pathogen, passendem Wiki-Beleg und klarer Kennzeichnung der Befundart)
+
+### 🩹 Symptombezogene Mittel
+(Nur Kandidaten, deren konkreter Symptombezug in Befund und Wiki belegt ist.)
+
+### 🩺 Diagnosebezogene Mittel
+(Nur ergänzende Kandidaten zu einer dokumentierten Diagnose; bestehende ärztliche Behandlung und Wechselwirkungen beachten.)
+
+### 🌿 Hausmittel & Gewürze
+(Knoblauch, Kurkuma, Oregano, Ingwer, Nelken, Thymian, Zimt, Meerrettich, Schwarzkümmelöl, Zitrone usw.)
 
 ### 🌱 Phytotherapie & Tinkturen
 (CERES-Urtinkturen, Ceylon-Zimt, Manuka, Kapuzinerkresse, Schwarzwalnuss, Wermut, Beifuß usw. – sofern nicht reine Hausmittel)
@@ -1330,34 +1552,43 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 (MUCOKEHL, NIGERSAN, NOTAKEHL, FORTAKEHL, PEFRAKEHL, ALBICANSAN, EXMYKEHL, SANUVIS, CITROKEHL, ACIDUM TARTARICUM, FORMASAN, ALKALA N, ZINKOKEHL, UTILIN, RECARCIN, LATENSIN, BOVISAN, LEPTUCIN, ARTHROKEHLAN, SANUKEHL-Haptene usw.)
 
 ### 💧 Homöopathie & Komplexmittel
-(Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; Klassische Homöopathika; spagyrische Mittel)
+(Bei allgemeinen Symptomen gezielt mitpruefen: Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; klassische Homöopathika; spagyrische Mittel. Nur belegte, passende Einzelkandidaten ausgeben.)
 
 ### 🧫 Probiotika, Präbiotika & Darmaufbau
 (Vitaplace **Biotik Sensitiv Pulver** und **Biotik Balance Kapseln** = Mehrstamm-Probiotika der Praxis-Eigenmarke mit *Bifidobacterium bifidum/infantis/lactis/longum* und *Lactobacillus acidophilus/casei/lactis/paracasei/plantarum* — bei Bifido-/Lacto-Mangel BEVORZUGT empfehlen; Symbioflor 1+2, Mutaflor, RMS-Biofrid, EM-Ferment, Flohsamen, Inulin)
 
 ### 💎 Spezialpräparate
-(NutraMedix Samento/Banderol/Cumanda, Biopure, Quicksilver Scientific u.ä. – nur wenn günstige Alternativen nicht ausreichen)
+(Biopure, Quicksilver Scientific u.ä. – nur wenn eine fachlich passendere Gruppe nicht greift und günstigere Alternativen nicht ausreichen)
+
+### 🏭 Mannayan-Produkte
+(Nur fuer geprueft verknuepfte Mannayan-Produkte ohne eindeutig passende Stoffgruppe; nicht zusaetzlich zu einer bereits erfolgten Einordnung ausgeben.)
+
+### 🧴 Vitaplace-Apothekenprodukte
+(Vitaplace-Produkte sind vielfaeltig und werden bevorzugt ihrer fachlich passenden Gruppe zugeordnet. Dieser Abschnitt ist nur fuer Produkte ohne eindeutige Stoff- oder Therapiegruppe.)
 
 ### 🩺 Apparative & klinische Therapien
 (Infusionen, Ozon, IHHT, Colon-Hydrotherapie, Frequenztherapie, Bioresonanz)
 
 INNERHALB JEDER GRUPPE: Gib jedes Mittel ZWINGEND in folgendem strukturierten Format aus, damit das Frontend es als Tabellenzeile darstellen kann. Trenne die Felder mit Pipe-Zeichen " | " und beginne JEDE Mittel-Zeile mit Bindestrich + Leerzeichen:
 
-- **Mittelname** | Dosierung | Anwendung/Einnahme | Dauer | Priorität | Kosten/Monat | Begründung
+- **Mittelname** | Hersteller/Firma | Dosierung | Anwendung/Einnahme | Dauer | Priorität | Kosten/Monat | Interner Befundbezug | Einfache Patientenerklärung | Gefahren / Gegenanzeigen / Wechselwirkungen
 
 WO:
 - **Mittelname**: Name in doppelten Sternchen, ggf. mit lateinischem Namen in Klammern
+- Hersteller/Firma: belegte Firma aus Wiki, geprueftem Produktlink oder offiziellem Produktnamen; sonst "nicht belegt"
 - Dosierung: z.B. "2×1 Tbl. tgl." oder "3×8 Tropfen"
 - Anwendung/Einnahme: z.B. "oral, vor dem Essen" oder "in Wasser einnehmen"
 - Dauer: z.B. "4 Wochen" oder "dauerhaft"
 - Priorität: NUR eines von: 🔴 Essentiell | 🟡 Empfohlen | 🟢 Optional
 - Kosten/Monat: z.B. "~5 €" oder "~40 €"
-- Begründung: KURZ (max 1 Satz) warum dieses Mittel als Kandidat geprüft wird. Am Ende zwingend die exakte Quellenkennung aus dem Wiki-Kontext ergänzen: [WIKI_ID:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
+- Interner Befundbezug: KURZ (max 1 Satz) mit dem konkreten Laborwert, Pathogen, Symptom oder Diagnosebezug. Am Ende zwingend die exakte Quellenkennung aus dem Wiki-Kontext ergänzen: [WIKI_ID:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
+- Einfache Patientenerklärung: KURZ (max 1 Satz), ohne Fachjargon und ohne interne Quellenkennung; beantwortet "Warum soll ich das einnehmen?"
+- Gefahren / Gegenanzeigen / Wechselwirkungen: patientenbezogen aus Wiki-Sicherheit, Medikation, Alter, Schwangerschaft und Diagnosen; keine Entwarnung erfinden
 
 BEISPIELFORMAT (nur Struktur, keine Therapievorlage):
-- **Wiki-Mittel A** | Dosierung manuell prüfen | oral | Verlauf prüfen | 🟡 Empfohlen | unbekannt | Kandidat passend zum dokumentierten Thema. [WIKI_ID:00000000-0000-0000-0000-000000000000]
+- **Wiki-Mittel A** | nicht belegt | Dosierung manuell prüfen | oral | Verlauf prüfen | 🟡 Empfohlen | unbekannt | Bezug zum dokumentierten Symptom. [WIKI_ID:00000000-0000-0000-0000-000000000000] | Dieses Mittel wird geprüft, weil es zu Ihren beschriebenen Beschwerden passen kann. | Keine konkrete Angabe im verwendeten Beleg – individuell prüfen
 
-WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel.
+WICHTIG: KEINE Unterpunkte, KEIN Fließtext zwischen den Mittel-Zeilen. Nur die strukturierten Pipe-Zeilen, eine pro Mittel. Innerhalb eines Feldes niemals ein weiteres Pipe-Zeichen verwenden.
 
 🚫 ABSOLUT VERBOTEN – EIN MITTEL PRO ZEILE:
 - NIEMALS mehrere eigenständige Präparate in einem **Mittelname**-Feld zusammenfassen (kein "Hepeel / Arsuraneel", kein "Gastricumeel / Hepeel / Spascupreel", kein "Coenzyme compositum / Ubichinon compositum").
@@ -1375,10 +1606,13 @@ ${budget ? `- **Budget-Check**: Passt die Empfehlung in das Budget von ${budget}
 Zeitlicher Ablauf in Phasen: Startphase (maximal 3 gleichzeitig neu beginnende Mittel), anschliessende Aufbau-/Erweiterungsphase und Verlaufskontrolle. Nenne klar, welche Reservekandidaten nicht parallel in der Startphase eingesetzt werden.
 
 ## 🥗 Ernährung
-Hoechstens drei priorisierte, konkrete und zum Befund passende Massnahmen. Keine allgemeine Standardliste und keine unbelegten Wirkversprechen. Wenn die Datenlage keine individuelle Ernaehrungspriorisierung erlaubt, nenne genau die fehlenden Informationen statt allgemeine Empfehlungen zu erfinden.
+Hoechstens drei priorisierte, konkrete und zum Befund passende Massnahmen. Fuer jede Massnahme zwingend in dieser Reihenfolge: **Befundbezug**, **Massnahme**, **Warum fuer den Patienten**, **Quelle** und **Kontrolle**. Infothek-Verweise als [INFOTHEK:datei.html] nennen. Keine allgemeine Standardliste und keine unbelegten Wirkversprechen. Wenn die Datenlage keine individuelle Ernaehrungspriorisierung erlaubt, nenne genau die fehlenden Informationen statt allgemeine Empfehlungen zu erfinden.
 
 ## 🚶 Verhalten & Alltag
 Hoechstens drei priorisierte, konkrete Schritte zu Schlaf, Bewegung, Belastungssteuerung oder anderen passenden Gewohnheiten. Keine allgemeinen Standardlisten. Wenn die Datenlage keine individuelle Priorisierung erlaubt, nenne genau die fehlenden Informationen statt allgemeine Empfehlungen zu erfinden.
+
+## 📈 Verlaufskontrolle
+Nenne fuer die Startphase konkret: Was wird kontrolliert, wann wird kontrolliert, woran wird Nutzen oder Unvertraeglichkeit erkannt und wann muss pausiert beziehungsweise aerztlich abgeklärt werden. Keine neuen Laborwerte oder Zeitpunkte erfinden; bei fehlender Grundlage einen manuellen Kontrolltermin verlangen.
 
 ## 🔄 Begleitmaßnahmen
 Nur ergänzende Maßnahmen, die nicht bereits unter Ernährung oder Verhalten & Alltag stehen. Hausmittel nur bei Wiki-Beleg und innerhalb des Mengenlimits nennen.
@@ -1389,6 +1623,7 @@ Mittel die NICHT gegeben werden dürfen mit Begründung (Alter, Schwangerschaft,
 WICHTIG: 
 - Empfehle NUR Mittel die in der Wissensdatenbank vorhanden sind. Erfinde keine neuen Mittel oder Dosierungen.
 - Als Mittel automatisch ausgeben darfst du nur Wiki-Eintraege mit Eintragsart remedy oder product oder ein ueber eine gepruefte exact_product-Verknuepfung benanntes Produkt. Diagnose-, Protokoll-, Geraete- und allgemeine Referenzeintraege duerfen nur als Kontext dienen.
+- Infothek- und Import-Pruefhinweise ohne passenden geprueften Wiki-Mittelbeleg duerfen nicht in die Mittel-Tabellen gelangen; sie bleiben im Abschnitt "Weitere interne Quellenhinweise" oder werden als Wissensluecke markiert.
 - WENN ein notwendiges Mittel fehlt: NICHT improvisieren, sondern als Lücke unter "🕳️ Wissensdatenbank-Lücken" (Abschnitt früh oben) melden.
 - Gewürze und Hausmittel nur nach denselben Relevanz-, Quellen- und Sicherheitsregeln wie andere Kandidaten aufnehmen.
 - Bei jedem Mittel erklären, warum es als interner Kandidat geprüft wird; keine Wirksamkeit als gesichert darstellen, wenn die Evidenzmetadaten dies nicht tragen.
