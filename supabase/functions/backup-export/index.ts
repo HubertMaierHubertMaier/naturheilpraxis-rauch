@@ -385,25 +385,42 @@ type StorageFileEntry = { path: string; size: number };
 async function listAllFiles(
   client: ReturnType<typeof createClient>,
   bucket: string,
-  prefix = "",
 ): Promise<StorageFileEntry[]> {
   const out: StorageFileEntry[] = [];
-  const { data, error } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000, sortBy: { column: "name", order: "asc" } });
-  if (error) throw error;
-  for (const item of data ?? []) {
-    const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-    // Verzeichnis erkennen: kein metadata-Eintrag mit size
-    const meta = (item as unknown as { metadata?: { size?: number } }).metadata;
-    if (meta && typeof meta.size === "number") {
-      out.push({ path: fullPath, size: meta.size });
-    } else if (!meta) {
-      // Unterordner -> rekursiv
-      const sub = await listAllFiles(client, bucket, fullPath);
-      out.push(...sub);
+  const seenPaths = new Set<string>();
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+
+  while (true) {
+    const { data, error } = await client.storage.from(bucket).listV2({
+      limit: 1000,
+      with_delimiter: false,
+      ...(cursor ? { cursor } : {}),
+    });
+    if (error) throw error;
+    if (!data) throw new Error(`Storage-Liste fuer Bucket ${bucket} ist leer`);
+
+    for (const item of data.objects) {
+      const size = item.metadata?.size;
+      if (!item.name || typeof size !== "number" || !Number.isSafeInteger(size) || size < 0) {
+        throw new Error(`Storage-Metadaten fuer Bucket ${bucket} sind unvollstaendig`);
+      }
+      if (seenPaths.has(item.name)) {
+        throw new Error(`Storage-Liste fuer Bucket ${bucket} enthaelt doppelte Pfade`);
+      }
+      seenPaths.add(item.name);
+      out.push({ path: item.name, size });
     }
+
+    if (!data.hasNext) break;
+    const nextCursor = data.nextCursor;
+    if (!nextCursor || seenCursors.has(nextCursor)) {
+      throw new Error(`Storage-Paginierung fuer Bucket ${bucket} ist unvollstaendig`);
+    }
+    seenCursors.add(nextCursor);
+    cursor = nextCursor;
   }
+
   return out;
 }
 

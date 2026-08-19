@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      _kb_owner_import_3f7a22a0_chunks: {
+        Row: {
+          created_at: string
+          data: string
+          data_length: number
+          data_md5: string
+          import_key: string
+          payload_length: number
+          payload_md5: string
+          seq: number
+          total_chunks: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          data_length: number
+          data_md5: string
+          import_key: string
+          payload_length: number
+          payload_md5: string
+          seq: number
+          total_chunks: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          data_length?: number
+          data_md5?: string
+          import_key?: string
+          payload_length?: number
+          payload_md5?: string
+          seq?: number
+          total_chunks?: number
+        }
+        Relationships: []
+      }
       admin_knowledge_base: {
         Row: {
           category: string
@@ -641,6 +677,160 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_dosage_candidates: {
+        Row: {
+          ambiguity_notes: string
+          application_route: string
+          application_text: string
+          batch_id: string
+          candidate_key: string
+          candidate_status: string
+          confidence: number
+          created_at: string
+          data_classification: string
+          dose_unit: string
+          duration_text: string
+          frequency_text: string
+          id: string
+          indication_candidate_id: string | null
+          indication_entity_id: string | null
+          maximum_dose: number | null
+          minimum_dose: number | null
+          original_excerpt: string
+          proposed_data: Json
+          reference_period: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_candidate_id: string
+          source_locator: string
+          subject_candidate_id: string | null
+          subject_entity_id: string | null
+          timing_text: string
+        }
+        Insert: {
+          ambiguity_notes?: string
+          application_route?: string
+          application_text?: string
+          batch_id: string
+          candidate_key: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          dose_unit?: string
+          duration_text?: string
+          frequency_text?: string
+          id?: string
+          indication_candidate_id?: string | null
+          indication_entity_id?: string | null
+          maximum_dose?: number | null
+          minimum_dose?: number | null
+          original_excerpt?: string
+          proposed_data?: Json
+          reference_period?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+          timing_text?: string
+        }
+        Update: {
+          ambiguity_notes?: string
+          application_route?: string
+          application_text?: string
+          batch_id?: string
+          candidate_key?: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          dose_unit?: string
+          duration_text?: string
+          frequency_text?: string
+          id?: string
+          indication_candidate_id?: string | null
+          indication_entity_id?: string | null
+          maximum_dose?: number | null
+          minimum_dose?: number | null
+          original_excerpt?: string
+          proposed_data?: Json
+          reference_period?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id?: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+          timing_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_dosage_candidates_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_indication_candidate_id_fkey"
+            columns: ["indication_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_indication_entity_id_fkey"
+            columns: ["indication_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_indication_same_batch_fk"
+            columns: ["batch_id", "indication_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_source_candidate_id_fkey"
+            columns: ["source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_source_same_batch_fk"
+            columns: ["batch_id", "source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_subject_candidate_id_fkey"
+            columns: ["subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_subject_entity_id_fkey"
+            columns: ["subject_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_dosage_candidates_subject_same_batch_fk"
+            columns: ["batch_id", "subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+        ]
+      }
       kb_entities: {
         Row: {
           canonical_key: string
@@ -689,6 +879,111 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kb_entity_types"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      kb_entity_candidates: {
+        Row: {
+          aliases: string[]
+          ambiguity_notes: string
+          batch_id: string
+          candidate_key: string
+          candidate_status: string
+          confidence: number
+          created_at: string
+          data_classification: string
+          description_markdown: string
+          display_name: string
+          id: string
+          original_excerpt: string
+          proposed_canonical_key: string | null
+          proposed_data: Json
+          proposed_entity_type_code: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_candidate_id: string | null
+          source_locator: string
+          target_entity_id: string | null
+        }
+        Insert: {
+          aliases?: string[]
+          ambiguity_notes?: string
+          batch_id: string
+          candidate_key: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          description_markdown?: string
+          display_name: string
+          id?: string
+          original_excerpt?: string
+          proposed_canonical_key?: string | null
+          proposed_data?: Json
+          proposed_entity_type_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id?: string | null
+          source_locator?: string
+          target_entity_id?: string | null
+        }
+        Update: {
+          aliases?: string[]
+          ambiguity_notes?: string
+          batch_id?: string
+          candidate_key?: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          description_markdown?: string
+          display_name?: string
+          id?: string
+          original_excerpt?: string
+          proposed_canonical_key?: string | null
+          proposed_data?: Json
+          proposed_entity_type_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id?: string | null
+          source_locator?: string
+          target_entity_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_entity_candidates_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_entity_candidates_proposed_entity_type_code_fkey"
+            columns: ["proposed_entity_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "kb_entity_candidates_source_candidate_id_fkey"
+            columns: ["source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_entity_candidates_source_same_batch_fk"
+            columns: ["batch_id", "source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_entity_candidates_target_entity_id_fkey"
+            columns: ["target_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -986,6 +1281,253 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_import_batches: {
+        Row: {
+          batch_status: string
+          candidate_count: number
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          data_classification: string
+          error_count: number
+          id: string
+          metadata: Json
+          model_name: string
+          parser_name: string
+          parser_version: string
+          prompt_hash: string | null
+          source_hash: string
+          source_kind: string
+          source_label: string
+        }
+        Insert: {
+          batch_status?: string
+          candidate_count?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_classification?: string
+          error_count?: number
+          id?: string
+          metadata?: Json
+          model_name?: string
+          parser_name?: string
+          parser_version?: string
+          prompt_hash?: string | null
+          source_hash: string
+          source_kind: string
+          source_label: string
+        }
+        Update: {
+          batch_status?: string
+          candidate_count?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_classification?: string
+          error_count?: number
+          id?: string
+          metadata?: Json
+          model_name?: string
+          parser_name?: string
+          parser_version?: string
+          prompt_hash?: string | null
+          source_hash?: string
+          source_kind?: string
+          source_label?: string
+        }
+        Relationships: []
+      }
+      kb_import_errors: {
+        Row: {
+          batch_id: string
+          candidate_key: string
+          candidate_kind: string | null
+          created_at: string
+          data_classification: string
+          error_code: string
+          error_message: string
+          id: string
+          original_excerpt: string
+          severity: string
+          source_locator: string
+        }
+        Insert: {
+          batch_id: string
+          candidate_key?: string
+          candidate_kind?: string | null
+          created_at?: string
+          data_classification?: string
+          error_code: string
+          error_message: string
+          id?: string
+          original_excerpt?: string
+          severity?: string
+          source_locator?: string
+        }
+        Update: {
+          batch_id?: string
+          candidate_key?: string
+          candidate_kind?: string | null
+          created_at?: string
+          data_classification?: string
+          error_code?: string
+          error_message?: string
+          id?: string
+          original_excerpt?: string
+          severity?: string
+          source_locator?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_errors_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_relation_candidates: {
+        Row: {
+          ambiguity_notes: string
+          assignment_strength: string
+          batch_id: string
+          candidate_key: string
+          candidate_status: string
+          confidence: number
+          created_at: string
+          data_classification: string
+          id: string
+          object_candidate_id: string | null
+          object_entity_id: string | null
+          original_excerpt: string
+          proposed_data: Json
+          proposed_relation_type_code: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_candidate_id: string
+          source_locator: string
+          subject_candidate_id: string | null
+          subject_entity_id: string | null
+        }
+        Insert: {
+          ambiguity_notes?: string
+          assignment_strength?: string
+          batch_id: string
+          candidate_key: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          id?: string
+          object_candidate_id?: string | null
+          object_entity_id?: string | null
+          original_excerpt?: string
+          proposed_data?: Json
+          proposed_relation_type_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+        }
+        Update: {
+          ambiguity_notes?: string
+          assignment_strength?: string
+          batch_id?: string
+          candidate_key?: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          id?: string
+          object_candidate_id?: string | null
+          object_entity_id?: string | null
+          original_excerpt?: string
+          proposed_data?: Json
+          proposed_relation_type_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_candidate_id?: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_relation_candidates_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_object_candidate_id_fkey"
+            columns: ["object_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_object_entity_id_fkey"
+            columns: ["object_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_object_same_batch_fk"
+            columns: ["batch_id", "object_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_proposed_relation_type_code_fkey"
+            columns: ["proposed_relation_type_code"]
+            isOneToOne: false
+            referencedRelation: "kb_relation_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_source_candidate_id_fkey"
+            columns: ["source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_source_same_batch_fk"
+            columns: ["batch_id", "source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_subject_candidate_id_fkey"
+            columns: ["subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_subject_entity_id_fkey"
+            columns: ["subject_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_relation_candidates_subject_same_batch_fk"
+            columns: ["batch_id", "subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+        ]
+      }
       kb_relation_type_domains: {
         Row: {
           object_entity_type_code: string
@@ -1055,6 +1597,268 @@ export type Database = {
           label?: string
         }
         Relationships: []
+      }
+      kb_review_decisions: {
+        Row: {
+          candidate_id: string
+          candidate_kind: string
+          data_classification: string
+          decided_at: string
+          decided_by: string
+          decision: string
+          decision_notes: string
+          id: string
+          status_after: string
+          status_before: string
+        }
+        Insert: {
+          candidate_id: string
+          candidate_kind: string
+          data_classification?: string
+          decided_at?: string
+          decided_by?: string
+          decision: string
+          decision_notes?: string
+          id?: string
+          status_after: string
+          status_before: string
+        }
+        Update: {
+          candidate_id?: string
+          candidate_kind?: string
+          data_classification?: string
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          decision_notes?: string
+          id?: string
+          status_after?: string
+          status_before?: string
+        }
+        Relationships: []
+      }
+      kb_safety_candidates: {
+        Row: {
+          action_text: string
+          ambiguity_notes: string
+          batch_id: string
+          candidate_key: string
+          candidate_status: string
+          confidence: number
+          created_at: string
+          data_classification: string
+          id: string
+          original_excerpt: string
+          proposed_data: Json
+          related_candidate_id: string | null
+          related_entity_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rule_type: string
+          severity: string
+          source_candidate_id: string
+          source_locator: string
+          subject_candidate_id: string | null
+          subject_entity_id: string | null
+        }
+        Insert: {
+          action_text: string
+          ambiguity_notes?: string
+          batch_id: string
+          candidate_key: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          id?: string
+          original_excerpt?: string
+          proposed_data?: Json
+          related_candidate_id?: string | null
+          related_entity_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_type: string
+          severity?: string
+          source_candidate_id: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+        }
+        Update: {
+          action_text?: string
+          ambiguity_notes?: string
+          batch_id?: string
+          candidate_key?: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          id?: string
+          original_excerpt?: string
+          proposed_data?: Json
+          related_candidate_id?: string | null
+          related_entity_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_type?: string
+          severity?: string
+          source_candidate_id?: string
+          source_locator?: string
+          subject_candidate_id?: string | null
+          subject_entity_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_safety_candidates_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_related_candidate_id_fkey"
+            columns: ["related_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_related_entity_id_fkey"
+            columns: ["related_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_related_same_batch_fk"
+            columns: ["batch_id", "related_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_source_candidate_id_fkey"
+            columns: ["source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_source_same_batch_fk"
+            columns: ["batch_id", "source_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_subject_candidate_id_fkey"
+            columns: ["subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_subject_entity_id_fkey"
+            columns: ["subject_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_safety_candidates_subject_same_batch_fk"
+            columns: ["batch_id", "subject_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_candidates"
+            referencedColumns: ["batch_id", "id"]
+          },
+        ]
+      }
+      kb_source_candidates: {
+        Row: {
+          ambiguity_notes: string
+          batch_id: string
+          candidate_key: string
+          candidate_status: string
+          confidence: number
+          created_at: string
+          data_classification: string
+          external_identifier: string
+          id: string
+          original_excerpt: string
+          proposed_data: Json
+          proposed_source_type: string
+          publication_date: string | null
+          publisher: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rights_status: string
+          source_locator: string
+          source_url: string
+          target_source_id: string | null
+          title: string
+        }
+        Insert: {
+          ambiguity_notes?: string
+          batch_id: string
+          candidate_key: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          external_identifier?: string
+          id?: string
+          original_excerpt?: string
+          proposed_data?: Json
+          proposed_source_type?: string
+          publication_date?: string | null
+          publisher?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_status?: string
+          source_locator?: string
+          source_url?: string
+          target_source_id?: string | null
+          title: string
+        }
+        Update: {
+          ambiguity_notes?: string
+          batch_id?: string
+          candidate_key?: string
+          candidate_status?: string
+          confidence?: number
+          created_at?: string
+          data_classification?: string
+          external_identifier?: string
+          id?: string
+          original_excerpt?: string
+          proposed_data?: Json
+          proposed_source_type?: string
+          publication_date?: string | null
+          publisher?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_status?: string
+          source_locator?: string
+          source_url?: string
+          target_source_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_source_candidates_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_source_candidates_target_source_id_fkey"
+            columns: ["target_source_id"]
+            isOneToOne: false
+            referencedRelation: "kb_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kb_source_revisions: {
         Row: {
@@ -1849,6 +2653,19 @@ export type Database = {
         Returns: boolean
       }
       is_verified_patient: { Args: { _user_id: string }; Returns: boolean }
+      kb_complete_import_batch_review: {
+        Args: { _batch_id: string }
+        Returns: undefined
+      }
+      kb_record_import_review_decision: {
+        Args: {
+          _candidate_id: string
+          _candidate_kind: string
+          _decision: string
+          _decision_notes?: string
+        }
+        Returns: string
+      }
       list_admin_accounts: {
         Args: never
         Returns: {
