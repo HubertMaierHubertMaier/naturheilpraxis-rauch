@@ -1338,6 +1338,51 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_import_candidate_proposals: {
+        Row: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          created_at: string
+          created_by: string
+          id: string
+          proposal_id: string
+        }
+        Insert: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          proposal_id: string
+        }
+        Update: {
+          batch_id?: string
+          candidate_id?: string
+          candidate_kind?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_candidate_proposals_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_candidate_proposals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "kb_change_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_import_errors: {
         Row: {
           batch_id: string
@@ -1384,6 +1429,50 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_import_proposal_review_events: {
+        Row: {
+          acted_at: string
+          acted_by: string
+          data_classification: string
+          id: string
+          proposal_id: string
+          review_action: string
+          review_notes: string
+          status_after: string
+          status_before: string
+        }
+        Insert: {
+          acted_at?: string
+          acted_by?: string
+          data_classification?: string
+          id?: string
+          proposal_id: string
+          review_action: string
+          review_notes?: string
+          status_after: string
+          status_before: string
+        }
+        Update: {
+          acted_at?: string
+          acted_by?: string
+          data_classification?: string
+          id?: string
+          proposal_id?: string
+          review_action?: string
+          review_notes?: string
+          status_after?: string
+          status_before?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_proposal_review_events_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "kb_change_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -2664,6 +2753,18 @@ export type Database = {
           _decision: string
           _decision_notes?: string
         }
+        Returns: string
+      }
+      kb_review_import_candidate_proposal: {
+        Args: {
+          _proposal_id: string
+          _review_action: string
+          _review_notes?: string
+        }
+        Returns: string
+      }
+      kb_submit_import_candidate_proposal: {
+        Args: { _candidate_id: string; _candidate_kind: string }
         Returns: string
       }
       list_admin_accounts: {
