@@ -11,6 +11,7 @@ const supabaseTypesSource = readFileSync("src/integrations/supabase/types.ts", "
 const postTypeMigrationSources = [
   readFileSync("supabase/migrations/20260812100000_create_kb_import_staging.sql", "utf8"),
   readFileSync("supabase/migrations/20260819160000_add_import_candidate_proposal_gate.sql", "utf8"),
+  readFileSync("supabase/migrations/20260820120000_materialize_import_candidates_as_internal_drafts.sql", "utf8"),
 ];
 const infothekGatingGrantMigration = readFileSync(
   "supabase/migrations/20260715170606_f314dfe0-f8d4-4689-bc4d-efdb61700575.sql",

@@ -64,6 +64,24 @@
       "indexable": false
     },
     {
+      "file": "fit-gesund-herbst-winter-7-minuten.html",
+      "visibility": "internal",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-pharmaceutical-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
+      "file": "fit-gesund-herbst-winter-infothek.html",
+      "visibility": "internal",
+      "targetPath": null,
+      "risk": "high",
+      "reviewTrack": "medical-pharmaceutical-and-hwg",
+      "reviewStatus": "pending",
+      "indexable": false
+    },
+    {
       "file": "krankheit-ist-messbar.html",
       "visibility": "public",
       "targetPath": "/ratgeber/frequenztherapie",

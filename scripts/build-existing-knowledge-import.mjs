@@ -290,7 +290,7 @@ function consolidatedResearchBatch() {
 
 function mannayanBatch() {
   const files = readdirSync(inventoryRoot)
-    .filter((name) => name.endsWith(".json"))
+    .filter((name) => name.endsWith(".json") && /mannayan/i.test(name))
     .sort();
   const sourceBytes = files.map((name) => `${name}\n${readFileSync(resolve(inventoryRoot, name), "utf8")}`).join("\n");
   const batch = createBatch("mannayan-source-inventories-2026-08-07", {

@@ -103,6 +103,13 @@ interface ImportCandidateProposalLink {
   proposal_id: string;
 }
 
+interface ImportCoreLink {
+  candidate_kind: string;
+  candidate_id: string;
+  batch_id: string;
+  core_record_kind: string;
+}
+
 interface ImportChangeProposal {
   id: string;
   proposal_kind: string;
@@ -357,6 +364,7 @@ export default function WikiDatenbank() {
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [candidateProposalIds, setCandidateProposalIds] = useState<Record<string, string>>({});
   const [importChangeProposals, setImportChangeProposals] = useState<ImportChangeProposal[]>([]);
+  const [importCoreLinks, setImportCoreLinks] = useState<ImportCoreLink[]>([]);
   const [proposalReviewNotes, setProposalReviewNotes] = useState<Record<string, string>>({});
   const [reviewingCandidateKey, setReviewingCandidateKey] = useState<string | null>(null);
   const [completingBatchId, setCompletingBatchId] = useState<string | null>(null);
@@ -495,7 +503,7 @@ export default function WikiDatenbank() {
       setLoading(true);
       setError(null);
       try {
-        const [articleResult, revisionResult, linkResult, batchResult, sourceResult, entityResult, relationResult, dosageResult, safetyResult, proposalLinkResult, changeProposalResult] = await Promise.all([
+        const [articleResult, revisionResult, linkResult, batchResult, sourceResult, entityResult, relationResult, dosageResult, safetyResult, proposalLinkResult, changeProposalResult, coreLinkResult] = await Promise.all([
           supabase
             .from("kb_articles")
             .select("id, article_kind, current_revision_id, updated_at")
@@ -538,6 +546,9 @@ export default function WikiDatenbank() {
             .from("kb_change_proposals")
             .select("id, proposal_kind, status, submitted_at, reviewed_at, review_notes")
             .order("submitted_at", { ascending: false }),
+          importDb
+            .from("kb_import_core_links")
+            .select("candidate_kind, candidate_id, batch_id, core_record_kind"),
         ]);
         if (articleResult.error) throw articleResult.error;
         if (revisionResult.error) throw revisionResult.error;
@@ -586,6 +597,7 @@ export default function WikiDatenbank() {
           if (importUnexpectedError?.error) throw importUnexpectedError.error;
           if (proposalLinkResult.error && !/does not exist|schema cache|could not find/i.test(proposalLinkResult.error.message)) throw proposalLinkResult.error;
           if (changeProposalResult.error && !/does not exist|schema cache|could not find/i.test(changeProposalResult.error.message)) throw changeProposalResult.error;
+          if (coreLinkResult.error && !/does not exist|schema cache|could not find/i.test(coreLinkResult.error.message)) throw coreLinkResult.error;
           setImportBatches(importSchemaMissing ? [] : ((batchResult.data as ImportBatch[]) || []));
           const displayCandidates = [
             ...((sourceResult.data as ImportCandidate[]) || []).map((candidate) => ({ ...candidate, kind: "Quelle" as const, label: candidate.title || "Quelle ohne Titel" })),
@@ -600,6 +612,7 @@ export default function WikiDatenbank() {
           const linkedProposalIds = new Set(proposalLinks.map((link) => link.proposal_id));
           const changeProposals = changeProposalResult.error ? [] : ((changeProposalResult.data as ImportChangeProposal[]) || []);
           setImportChangeProposals(changeProposals.filter((proposal) => linkedProposalIds.has(proposal.id)));
+          setImportCoreLinks(coreLinkResult.error ? [] : ((coreLinkResult.data as ImportCoreLink[]) || []));
         }
       } catch (loadError) {
         if (active) {
@@ -608,6 +621,7 @@ export default function WikiDatenbank() {
           setImportCandidates([]);
           setCandidateProposalIds({});
           setImportChangeProposals([]);
+          setImportCoreLinks([]);
           setError(loadError instanceof Error ? loadError.message : "Die WikiDatenbank ist noch nicht verbunden.");
         }
       } finally {
@@ -694,11 +708,13 @@ export default function WikiDatenbank() {
   });
 
   const sourceCount = entries.reduce((count, entry) => count + sourceCitations(entry.source_citations).length, 0);
+  const importCoreLinkByCandidate = new Map(importCoreLinks.map((link) => [`${link.candidate_kind}:${link.candidate_id}`, link]));
   const metrics = [
     { value: loading ? "..." : String(entries.length), label: "Wiki-Eintraege" },
     { value: loading ? "..." : String(productLinks.length), label: "Mittelverknuepfungen" },
     { value: loading ? "..." : String(sourceCount), label: "Quellenbelege" },
-    { value: loading ? "..." : String(importCandidates.length), label: "Importkandidaten" },
+    { value: loading ? "..." : String(importCoreLinks.length), label: "Im internen Quellenkern" },
+    { value: loading ? "..." : String(importCandidates.length), label: "Import-Pruefdatensaetze" },
   ];
 
   return (
@@ -730,7 +746,7 @@ export default function WikiDatenbank() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Technischer Status">
+        <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Technischer Status">
           {metrics.map((metric) => (
             <Card key={metric.label}>
               <CardContent className="p-5">
@@ -917,8 +933,9 @@ export default function WikiDatenbank() {
                 <CardTitle className="flex items-center gap-2 text-lg"><FileSearch className="h-5 w-5 text-amber-700" /> Unveroeffentlichte Importpruefung</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Diese Datensaetze sind nur intern sichtbar. Jede Entscheidung verlangt eine Pruefnotiz und wird ueber den geschuetzten Admin-Reviewweg dauerhaft protokolliert.</p>
-                <p><strong>Reihenfolge:</strong> zuerst Quellen, dann Entitaeten, danach Beziehungen, Dosierungen und Sicherheit. „Interner Entwurf“ ist keine Veroeffentlichung, Kernuebernahme oder Patientenfreigabe.</p>
+                <p><strong>Interner Quellenkern:</strong> {importCoreLinks.length} von {importCandidates.length} Datensaetzen sind quellengetreu als interne Entwuerfe im Kernbestand verknuepft. Sie bleiben nur fuer Admins sichtbar.</p>
+                <p>Die folgende Pruefung bewertet Struktur, Evidenz, Dosierung und Sicherheit. Jede Entscheidung verlangt eine Pruefnotiz und wird ueber den geschuetzten Admin-Reviewweg dauerhaft protokolliert.</p>
+                <p><strong>Reihenfolge:</strong> zuerst Quellen, dann Entitaeten, danach Beziehungen, Dosierungen und Sicherheit. „Interner Entwurf“ ist keine fachliche Freigabe, Veroeffentlichung oder Patientenfreigabe.</p>
               </CardContent>
             </Card>
 
@@ -927,6 +944,7 @@ export default function WikiDatenbank() {
                 const metadata = batch.metadata && typeof batch.metadata === "object" ? batch.metadata as Record<string, unknown> : {};
                 const batchCandidates = importCandidates.filter((candidate) => candidate.batch_id === batch.id);
                 const decidedCandidates = batchCandidates.filter((candidate) => terminalCandidateStatuses.includes(candidate.candidate_status)).length;
+                const coreLinkedCandidates = importCoreLinks.filter((link) => link.batch_id === batch.id).length;
                 const allCandidatesLoaded = batchCandidates.length === batch.candidate_count;
                 const canCompleteReview = batch.batch_status === "ready_for_review" && allCandidatesLoaded && decidedCandidates === batch.candidate_count && batch.candidate_count > 0;
                 return (
@@ -939,6 +957,7 @@ export default function WikiDatenbank() {
                       <p className="mt-3 text-2xl font-bold text-primary">{batch.candidate_count}</p>
                       <p className="text-sm text-muted-foreground">Kandidaten, erstellt {formatDate(batch.created_at)}</p>
                       <p className="mt-2 text-sm text-muted-foreground">Abschliessend entschieden: {decidedCandidates}/{batch.candidate_count}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">Im internen Quellenkern: {coreLinkedCandidates}/{batch.candidate_count}</p>
                       {typeof metadata.source_family === "string" && <p className="mt-3 text-sm text-muted-foreground">Bestand: {metadata.source_family}</p>}
                       {batch.batch_status === "ready_for_review" && (
                         <Button
@@ -960,11 +979,11 @@ export default function WikiDatenbank() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Getrennte Kernpruefung</CardTitle>
+                <CardTitle className="text-lg">Getrennte fachliche Strukturpruefung</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">Diese Vorschlaege enthalten den vollstaendigen Stagingkandidaten, seine Quellenabhaengigkeiten und den ersten Reviewnachweis. Selbst der Status accepted veraendert keine Kerntabelle und ist keine Veroeffentlichung oder Patientenfreigabe.</p>
-                {!loading && importChangeProposals.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Noch kein Kandidat wurde fuer die getrennte Kernpruefung eingereicht.</p>}
+                <p className="text-sm text-muted-foreground">Diese Vorschlaege dienen der spaeteren fachlich strukturierten Zuordnung. Der quellengetreue interne Entwurf bleibt bereits erhalten; selbst der Status accepted ist noch keine fachliche Freigabe, Veroeffentlichung oder Patientenfreigabe.</p>
+                {!loading && importChangeProposals.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Noch kein Kandidat wurde fuer die getrennte fachliche Strukturpruefung eingereicht.</p>}
                 {importChangeProposals.map((proposal) => {
                   const candidate = importCandidates.find((item) => candidateProposalIds[candidateProposalKey(item)] === proposal.id);
                   const note = proposalReviewNotes[proposal.id] || "";
@@ -1007,7 +1026,11 @@ export default function WikiDatenbank() {
                   <div key={`${candidate.kind}-${candidate.id}`} className="rounded-lg border p-4">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <p className="font-medium text-foreground">{candidate.label}</p>
-                      <div className="flex gap-2"><Badge variant="secondary">{candidate.kind}</Badge><Badge variant="outline">{candidate.candidate_status}</Badge></div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary">{candidate.kind}</Badge>
+                        <Badge variant="outline">{candidate.candidate_status}</Badge>
+                        {importCoreLinkByCandidate.has(candidateProposalKey(candidate)) && <Badge variant="outline">Interner Quellenkern</Badge>}
+                      </div>
                     </div>
                     {candidate.source_locator && <p className="mt-2 break-all text-xs text-muted-foreground">Fundstelle: {candidate.source_locator}</p>}
                     {candidate.ambiguity_notes && <p className="mt-2 text-sm text-muted-foreground">{candidate.ambiguity_notes}</p>}
@@ -1137,11 +1160,11 @@ function ImportCandidateReviewControls({
     return (
       <div className="mt-4 space-y-3 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
         <p>Entscheidung protokolliert: <strong>{candidate.candidate_status}</strong>. Ein angenommener Kandidat bleibt ein interner Entwurf.</p>
-        {accepted && proposalId && <p className="break-all text-foreground"><strong>Getrennte Kernpruefung vorgemerkt:</strong> {proposalId}</p>}
+        {accepted && proposalId && <p className="break-all text-foreground"><strong>Getrennte fachliche Strukturpruefung vorgemerkt:</strong> {proposalId}</p>}
         {accepted && !proposalId && (
           <div className="space-y-2">
             <Button type="button" size="sm" variant="outline" disabled={busy || !batchReviewed} onClick={onSubmitProposal}>
-              {submittingProposal ? "Wird vorgemerkt ..." : "Zur getrennten Kernpruefung einreichen"}
+              {submittingProposal ? "Wird vorgemerkt ..." : "Zur fachlichen Strukturpruefung einreichen"}
             </Button>
             <p>{batchReviewed ? "Dies erstellt nur einen submitted-Vorschlag; Kerndaten, Freigaben und Patientensicht bleiben unveraendert." : "Die Einreichung wird erst nach Abschluss des gesamten Importpakets freigeschaltet."}</p>
           </div>
@@ -1170,7 +1193,7 @@ function ImportCandidateReviewControls({
         <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={() => onDecision("mark_duplicate")}>Dublette</Button>
         <Button type="button" size="sm" variant="destructive" disabled={disabled} onClick={() => onDecision("reject")}>Ablehnen</Button>
       </div>
-      <p className="text-[11px] text-amber-900/80 dark:text-amber-200/80">Die serverseitige Pruefung erzwingt Admin-Rolle und Abhaengigkeiten. Annahme bedeutet nur interner Entwurf, niemals automatische Kernuebernahme oder Patientenfreigabe.</p>
+      <p className="text-[11px] text-amber-900/80 dark:text-amber-200/80">Die serverseitige Pruefung erzwingt Admin-Rolle und Abhaengigkeiten. Der Quellenstand bleibt intern erhalten; Annahme bedeutet niemals automatische fachliche Freigabe oder Patientenfreigabe.</p>
     </div>
   );
 }

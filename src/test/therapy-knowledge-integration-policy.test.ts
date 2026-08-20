@@ -23,6 +23,8 @@ describe("shared knowledge integration policy", () => {
     expect(searchSource).toContain("safeExternalUrl");
     expect(searchSource).toContain("Alle strukturierten Originalfelder anzeigen");
     expect(searchSource).toContain("Nur intern / ungeprueft");
+    expect(searchSource).toContain('.from("kb_import_core_links")');
+    expect(searchSource).toContain("Interner Quellenkern");
     expect(searchSource).toContain("Keine Schreib-, Loesch- oder Freigabeaktionen in dieser Ansicht");
   });
 });

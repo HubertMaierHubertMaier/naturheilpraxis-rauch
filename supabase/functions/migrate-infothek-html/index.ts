@@ -12,6 +12,8 @@ const INFOTHEK_ROUTES = [
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/ersttermin-naturheilpraxis.html",
+  "/fit-gesund-herbst-winter-7-minuten.html",
+  "/fit-gesund-herbst-winter-infothek.html",
   "/krankheit-ist-messbar.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/logi-ernaehrung-mitochondrien.html",

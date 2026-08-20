@@ -10,6 +10,7 @@ const coreMigration = readMigration("20260728090000_create_kb_phase1_core.sql");
 const stagingMigration = readMigration("20260812100000_create_kb_import_staging.sql");
 const seedMigration = readMigration("20260812101000_import_existing_knowledge_candidates.sql");
 const proposalGateMigration = readMigration("20260819160000_add_import_candidate_proposal_gate.sql");
+const materializationMigration = readMigration("20260820120000_materialize_import_candidates_as_internal_drafts.sql");
 const bundle = JSON.parse(readFileSync(resolve(process.cwd(), "docs/existing-knowledge-import-batches-2026-08-12.json"), "utf8"));
 
 const adminId = "10000000-0000-4000-8000-000000000001";
@@ -52,6 +53,7 @@ beforeAll(async () => {
   await db.exec(stagingMigration);
   await db.exec(seedMigration);
   await db.exec(proposalGateMigration);
+  await db.exec(materializationMigration);
 }, 30_000);
 
 afterAll(async () => {
@@ -109,17 +111,104 @@ describe("Existing knowledge staging import", () => {
     await db.exec("ROLLBACK;").catch(() => undefined);
   });
 
+  it("materializes all 565 candidates as protected internal drafts without changing review state", async () => {
+    const counts = await db.query<{
+      links: number;
+      source_links: number;
+      entity_links: number;
+      article_links: number;
+      assertion_links: number;
+      patient_links: number;
+      unsafe_links: number;
+      snapshots: number;
+      assertion_sources: number;
+      unreviewed_candidates: number;
+    }>(`
+      SELECT
+        (SELECT count(*)::int FROM public.kb_import_core_links) AS links,
+        (SELECT count(*)::int FROM public.kb_import_core_links WHERE core_record_kind = 'source') AS source_links,
+        (SELECT count(*)::int FROM public.kb_import_core_links WHERE core_record_kind = 'entity') AS entity_links,
+        (SELECT count(*)::int FROM public.kb_import_core_links WHERE core_record_kind = 'article') AS article_links,
+        (SELECT count(*)::int FROM public.kb_import_core_links WHERE core_record_kind = 'assertion') AS assertion_links,
+        (SELECT count(*)::int FROM public.kb_import_core_links WHERE patient_facing_allowed) AS patient_links,
+        (
+          SELECT count(*)::int FROM public.kb_import_core_links
+          WHERE visibility <> 'admin_only'
+             OR materialization_status <> 'internal_draft'
+             OR evidence_status <> 'unreviewed'
+             OR safety_status <> 'unreviewed'
+             OR metadata ->> 'semantic_review_still_required' <> 'true'
+        ) AS unsafe_links,
+        (
+          (SELECT count(*) FROM public.kb_import_core_links link JOIN public.kb_source_revisions revision ON revision.id = link.core_source_revision_id WHERE revision.metadata ? 'candidate_snapshot')
+          + (SELECT count(*) FROM public.kb_import_core_links link JOIN public.kb_entity_revisions revision ON revision.id = link.core_entity_revision_id WHERE revision.metadata ? 'candidate_snapshot')
+          + (SELECT count(*) FROM public.kb_import_core_links link JOIN public.kb_article_revisions revision ON revision.id = link.core_article_revision_id WHERE revision.metadata ? 'candidate_snapshot')
+          + (SELECT count(*) FROM public.kb_import_core_links link JOIN public.kb_assertions assertion ON assertion.id = link.core_assertion_id WHERE assertion.metadata ? 'candidate_snapshot')
+        )::int AS snapshots,
+        (SELECT count(*)::int FROM public.kb_assertion_sources) AS assertion_sources,
+        (
+          SELECT count(*)::int FROM (
+            SELECT candidate_status FROM public.kb_source_candidates
+            UNION ALL SELECT candidate_status FROM public.kb_entity_candidates
+            UNION ALL SELECT candidate_status FROM public.kb_relation_candidates
+            UNION ALL SELECT candidate_status FROM public.kb_dosage_candidates
+            UNION ALL SELECT candidate_status FROM public.kb_safety_candidates
+          ) candidates WHERE candidate_status = 'imported_unreviewed'
+        ) AS unreviewed_candidates
+    `);
+
+    expect(counts.rows[0]).toEqual({
+      links: bundle.totals.candidates,
+      source_links: bundle.totals.sources,
+      entity_links: 66,
+      article_links: 58,
+      assertion_links: bundle.totals.dosages + bundle.totals.safety,
+      patient_links: 0,
+      unsafe_links: 0,
+      snapshots: bundle.totals.candidates,
+      assertion_sources: bundle.totals.dosages + bundle.totals.safety,
+      unreviewed_candidates: bundle.totals.candidates,
+    });
+
+    await db.exec(`SET ROLE authenticated; SET request.jwt.claim.sub = '${adminId}';`);
+    try {
+      const repeated = await db.query<{ result: {
+        materialized_now: number;
+        total_core_links: number;
+        visibility: string;
+        patient_facing_allowed: boolean;
+        semantic_review_still_required: boolean;
+      } }>(`
+        SELECT public.kb_materialize_import_candidates_as_internal_drafts(NULL) AS result
+      `);
+      expect(repeated.rows[0].result).toEqual({
+        materialized_now: 0,
+        total_core_links: bundle.totals.candidates,
+        visibility: "admin_only",
+        patient_facing_allowed: false,
+        semantic_review_still_required: true,
+      });
+    } finally {
+      await db.exec("RESET ROLE; RESET request.jwt.claim.sub;");
+    }
+  });
+
   it("allows admin read access but denies patient and anonymous reads", async () => {
     await db.exec(`SET ROLE authenticated; SET request.jwt.claim.sub = '${adminId}';`);
     const admin = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_entity_candidates");
     expect(admin.rows[0].value).toBe(bundle.totals.entities);
+    const adminCoreLinks = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_import_core_links");
+    expect(adminCoreLinks.rows[0].value).toBe(bundle.totals.candidates);
 
     await db.exec(`SET request.jwt.claim.sub = '${patientId}';`);
     const patient = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_entity_candidates");
     expect(patient.rows[0].value).toBe(0);
+    const patientCoreLinks = await db.query<{ value: number }>("SELECT count(*)::int AS value FROM public.kb_import_core_links");
+    expect(patientCoreLinks.rows[0].value).toBe(0);
 
     await db.exec("RESET ROLE; RESET request.jwt.claim.sub; SET ROLE anon;");
     await expect(db.query("SELECT count(*) FROM public.kb_entity_candidates")).rejects.toThrow(/permission denied/);
+    await expect(db.query("SELECT count(*) FROM public.kb_import_core_links")).rejects.toThrow(/permission denied/);
     await db.exec("RESET ROLE;");
   });
 

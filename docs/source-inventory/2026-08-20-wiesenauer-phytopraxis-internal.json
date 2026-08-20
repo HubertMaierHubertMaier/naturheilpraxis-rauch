@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-20",
+  "status": "internal_draft",
+  "visibility": "admin_only",
+  "patientFacingAllowed": false,
+  "reviewStatus": "unreviewed",
+  "source": {
+    "author": "Markus Wiesenauer",
+    "title": "PhytoPraxis",
+    "publisher": "Springer Berlin Heidelberg",
+    "edition": "Kindle-Version"
+  },
+  "retentionRule": "Die von Peter übermittelten Quellenaussagen, Arzneidrogen, Präparate, Dosierungen, Fundstellen und Zuordnungen bleiben vollständig erhalten. Evidenz, Sicherheit und Freigabe werden getrennt dokumentiert.",
+  "sections": [
+    {
+      "id": "table-20-1",
+      "title": "20.1 Phytotherapie bei rheumatischen Erkrankungen, Schmerzsyndromen, stumpfen Verletzungen",
+      "locator": "S. 376, Tabelle 20.1",
+      "categoryPaths": ["Rheumatische Erkrankungen", "Schmerzsyndrome", "Stumpfe Verletzungen"],
+      "rawExcerpt": "20.1Phytotherapie bei rheumatischen Erkrankungen, Schmerzsyndromen, stumpfen Verletzungen Symptomatik Arzneidrogen Präparatebeispiel Schmerzen der Gelenke, Bewegungseinschränkung Brennnesselblätter Rheuma-Hek forte 1–0–1 Tbl. arthrotisch bedingte Schmerzen, Bewegungseinschränkung Teufelskrallenwurzel Doloteffin 2–2–2 Tbl. entzündungsbedingte Schmerzen, Bewegungseinschränkung der Gelenke und der Wirbelsäule Bromelain Phlogenzym mono 1–0–(1) Tabl. vor d. Essen weichteilrheumatische Schmerzen, auch Fibromyalgie, arthrotische Gelenkschmerzen, Bursitis, Karpaltunnelsyndrom Eschenrinde, Goldrutenkraut, Zitterpappelrinde und blätter Phytodolor Tinktur 40–40–40–40 Tr. initial; 20–20–20–(20) Tr. bei Besserung starke Schmerzzustände, insbesondere an Sehnen, Bändern, Muskelansätzen, peripheren Nerven , bei reduziertem Allgemeinbefinden und psychischer Verstimmung Johanniskraut Neuroplant 300 mgnovo 1–1–1–0 Tbl.",
+      "rows": [
+        {"id":"rheuma-hek-forte","symptomatik":"Schmerzen der Gelenke, Bewegungseinschränkung","arzneidrogen":["Brennnesselblätter"],"praeparat":"Rheuma-Hek forte","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"doloteffin","symptomatik":"arthrotisch bedingte Schmerzen, Bewegungseinschränkung","arzneidrogen":["Teufelskrallenwurzel"],"praeparat":"Doloteffin","dosierung":"2–2–2 Tbl.","route":"oral"},
+        {"id":"phlogenzym-mono","symptomatik":"entzündungsbedingte Schmerzen, Bewegungseinschränkung der Gelenke und der Wirbelsäule","arzneidrogen":["Bromelain"],"praeparat":"Phlogenzym mono","dosierung":"1–0–(1) Tabl. vor d. Essen","route":"oral"},
+        {"id":"phytodolor","symptomatik":"weichteilrheumatische Schmerzen, auch Fibromyalgie, arthrotische Gelenkschmerzen, Bursitis, Karpaltunnelsyndrom","arzneidrogen":["Eschenrinde","Goldrutenkraut","Zitterpappelrinde und -blätter"],"praeparat":"Phytodolor Tinktur","dosierung":"40–40–40–40 Tr. initial; 20–20–20–(20) Tr. bei Besserung","route":"oral"},
+        {"id":"neuroplant-300-mg-novo","symptomatik":"starke Schmerzzustände, insbesondere an Sehnen, Bändern, Muskelansätzen, peripheren Nerven, bei reduziertem Allgemeinbefinden und psychischer Verstimmung","arzneidrogen":["Johanniskraut"],"praeparat":"Neuroplant 300 mg novo","dosierung":"1–1–1–0 Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "table-20-2",
+      "title": "20.2 Externa bei rheumatischen Erkrankungen, Schmerzsyndromen, stumpfen Verletzungen",
+      "locator": "S. 376–377, Tabelle 20.2",
+      "categoryPaths": ["Rheumatische Erkrankungen", "Schmerzsyndrome", "Stumpfe Verletzungen"],
+      "rawExcerpt": "Eine unterstützende Therapie bei stumpfen Verletzungen (Distorsion, Kompression, Kontusion) umfasst analgetische, antiphlogistische und inflammatorische Komponenten mit dem Ziel der Primärheilung (Tab. 20.1; Tab. 20.2); bei postoperativen Zuständen wie auch bei Hautverletzungen generell ist die Phytotherapie ebenfalls indiziert (Kap. 21). Tab. 20.2Externa bei rheumatischen Erkrankungen, Schmerzsyndromen, stumpfen Verletzungen Symptomatik Arzneidrogen Präparatebeispiel starke weichteilrheumatische Schmerzen, auch an Muskel- und Sehnenansätzen Cayennepfefferfrüchte Capsamol-Salbe 3× tgl. auftragen Muskelschmerzen, Nervenschmerzen (z. B. Ischialgie), Sehnenscheidenentzündung Latschenkiefernöl, Rosmarinöl poly-elan Salbe 2- bis 3× tgl. einreiben Muskel- und Gelenkschmerzen, schmerzhafte Sehnenansätze und Sehnenscheidenentzündungen Eucalyptusöl, Pfefferminzöl, Rosmarinöl Doloplant Creme 3–5× tgl. einreiben Schmerzen und Bewegungseinschränkung an Gelenken und Muskeln, auch traumatisch bedingt Beinwellwurzel Kytta-Salbe f 3× tgl. einreiben Weitere Schmerzsyndrome wie Cephalgie, Migräne, Neuralgie werden in Kap. 4 »Neurologische Erkrankungen« besprochen",
+      "contextClaims": [
+        "Unterstützende Therapie bei stumpfen Verletzungen (Distorsion, Kompression, Kontusion) mit analgetischen, antiphlogistischen und im übermittelten Text als inflammatorisch bezeichneten Komponenten und dem Ziel der Primärheilung.",
+        "Postoperative Zustände und Hautverletzungen werden mit einem Verweis auf Kapitel 21 genannt.",
+        "Cephalgie, Migräne und Neuralgie werden mit einem Verweis auf Kapitel 4 Neurologische Erkrankungen genannt."
+      ],
+      "rows": [
+        {"id":"capsamol-salbe","symptomatik":"starke weichteilrheumatische Schmerzen, auch an Muskel- und Sehnenansätzen","arzneidrogen":["Cayennepfefferfrüchte"],"praeparat":"Capsamol-Salbe","dosierung":"3× tgl. auftragen","route":"topical"},
+        {"id":"poly-elan-salbe","symptomatik":"Muskelschmerzen, Nervenschmerzen (z. B. Ischialgie), Sehnenscheidenentzündung","arzneidrogen":["Latschenkiefernöl","Rosmarinöl"],"praeparat":"poly-elan Salbe","dosierung":"2- bis 3× tgl. einreiben","route":"topical"},
+        {"id":"doloplant-creme","symptomatik":"Muskel- und Gelenkschmerzen, schmerzhafte Sehnenansätze und Sehnenscheidenentzündungen","arzneidrogen":["Eucalyptusöl","Pfefferminzöl","Rosmarinöl"],"praeparat":"Doloplant Creme","dosierung":"3–5× tgl. einreiben","route":"topical"},
+        {"id":"kytta-salbe-f","symptomatik":"Schmerzen und Bewegungseinschränkung an Gelenken und Muskeln, auch traumatisch bedingt","arzneidrogen":["Beinwellwurzel"],"praeparat":"Kytta-Salbe f","dosierung":"3× tgl. einreiben","route":"topical"}
+      ]
+    },
+    {
+      "id": "table-10-1",
+      "title": "10.1 Phytotherapie bei rezidivierenden Infekten – Infektanfälligkeit",
+      "locator": "S. 184, Tabelle 10.1",
+      "categoryPaths": ["Infekt", "Rezidivierende Infekte"],
+      "rawExcerpt": "10.1Phytotherapie bei rezidivierenden Infekten – Infektanfälligkeit Symptomatik Arzneidrogen Präparatebeispiel allgemeine Infektprophylaxe Sonnenhutkraut Echinacin-Liquiduma 2,5–2,5–2,5 ml (Intervalltherapie) Infektneigung bei Erschöpfungs-Syndrom Rosenwurz-Wurzel Vitango 1–(1–)–0 Tabl. Infektneigung bei psychischen und physischen Belastungen Ginsengwurzel Ardey-aktiv 1–1–1 Past. rez. Herpes labialis, Genitalherpes Färberhülsenwurzel, Lebensbaumspitzen, Sonnenhutwurzel Esberitox compact 1–1–1 Tbl. Infektbereitschaft: bei den ersten Anzeichen Eibischwurzel, Eichenrinde, Kamillenblüten, Löwenzahnkraut, Schafgarbenkraut, Walnussblätter Imupret N 2–2–2 Drg. rez. Sinusitis und Sinu-Bronchitis, absteigende Infekte Eisenkraut, Enzianwurzel, Gartensauerampferkraut, Holunderblüten, Schlüsselblumenblüten mit Kelch Sinupret extract 1–1–1 Drg. (ab 18. Lebensjahr Sinupret forte 1–1–1 Drg. (ab 12. Lebensjahr) Sinupret Saft, 7,0–7,0–7,0 ml (Kinder vom 6.–11. Lj.: 3,5–3,5–3,5 ml; Kinder vom 2.–5. Lj.: 2,1–2,1–2,1 ml) rez. Darminfekte bei pathogener Darmflora, auch durch Antibiotika oder Bestrahlung Escherichia coli Nissle Mutaflor 1–0–(1) Kps. (einschleichend dosieren) rez. Infekte im Urogenitalbereich Liebstöckelwurzel, Rosmarinblätter, Tausendgüldenkraut Canephron N 2–2–2 Drg. rez. Infekte im Urogenitalbereich, Reizblase Goldrutenkraut Cystinol long 1–1–1 Kps. Prostatitis-Syndrom Sägepalmenfrüchte Prostagutt uno 1–0–0 Kps.",
+      "rows": [
+        {"id":"echinacin-liquiduma","symptomatik":"allgemeine Infektprophylaxe","arzneidrogen":["Sonnenhutkraut"],"praeparat":"Echinacin-Liquiduma","dosierung":"2,5–2,5–2,5 ml (Intervalltherapie)","route":"oral"},
+        {"id":"vitango","symptomatik":"Infektneigung bei Erschöpfungs-Syndrom","arzneidrogen":["Rosenwurz-Wurzel"],"praeparat":"Vitango","dosierung":"1–(1–)–0 Tabl.","route":"oral"},
+        {"id":"ardey-aktiv","symptomatik":"Infektneigung bei psychischen und physischen Belastungen","arzneidrogen":["Ginsengwurzel"],"praeparat":"Ardey-aktiv","dosierung":"1–1–1 Past.","route":"oral"},
+        {"id":"esberitox-compact","symptomatik":"rez. Herpes labialis, Genitalherpes","arzneidrogen":["Färberhülsenwurzel","Lebensbaumspitzen","Sonnenhutwurzel"],"praeparat":"Esberitox compact","dosierung":"1–1–1 Tbl.","route":"oral"},
+        {"id":"imupret-n","symptomatik":"Infektbereitschaft: bei den ersten Anzeichen","arzneidrogen":["Eibischwurzel","Eichenrinde","Kamillenblüten","Löwenzahnkraut","Schafgarbenkraut","Walnussblätter"],"praeparat":"Imupret N","dosierung":"2–2–2 Drg.","route":"oral"},
+        {"id":"sinupret","symptomatik":"rez. Sinusitis und Sinu-Bronchitis, absteigende Infekte","arzneidrogen":["Eisenkraut","Enzianwurzel","Gartensauerampferkraut","Holunderblüten","Schlüsselblumenblüten mit Kelch"],"praeparate":[{"name":"Sinupret extract","dosierung":"1–1–1 Drg.","age":"ab 18. Lebensjahr"},{"name":"Sinupret forte","dosierung":"1–1–1 Drg.","age":"ab 12. Lebensjahr"},{"name":"Sinupret Saft","dosierung":"7,0–7,0–7,0 ml","ageDetails":["Kinder 6.–11. Lj.: 3,5–3,5–3,5 ml","Kinder 2.–5. Lj.: 2,1–2,1–2,1 ml"]}],"route":"oral"},
+        {"id":"mutaflor","symptomatik":"rez. Darminfekte bei pathogener Darmflora, auch durch Antibiotika oder Bestrahlung","arzneidrogen":["Escherichia coli Nissle"],"praeparat":"Mutaflor","dosierung":"1–0–(1) Kps. (einschleichend dosieren)","route":"oral"},
+        {"id":"canephron-n","symptomatik":"rez. Infekte im Urogenitalbereich","arzneidrogen":["Liebstöckelwurzel","Rosmarinblätter","Tausendgüldenkraut"],"praeparat":"Canephron N","dosierung":"2–2–2 Drg.","route":"oral"},
+        {"id":"cystinol-long","symptomatik":"rez. Infekte im Urogenitalbereich, Reizblase","arzneidrogen":["Goldrutenkraut"],"praeparat":"Cystinol long","dosierung":"1–1–1 Kps.","route":"oral"},
+        {"id":"prostagutt-uno","symptomatik":"Prostatitis-Syndrom","arzneidrogen":["Sägepalmenfrüchte"],"praeparat":"Prostagutt uno","dosierung":"1–0–0 Kps.","route":"oral"}
+      ]
+    },
+    {
+      "id": "table-11-1",
+      "title": "11.1 Phytotherapie bei Schilddrüsenerkrankungen",
+      "locator": "S. 191–192, Tabelle 11.1",
+      "categoryPaths": ["Schilddrüsenprobleme"],
+      "rawExcerpt": "11.1Phytotherapie bei Schilddrüsenerkrankungen Symptomatik Arzneidrogen Präparatebeispiel Schilddrüsenüberfunktion: ausgeprägte Nervosität, inneres Zittern Wolfstrappkrauta Thyreogutt mono Tabletten 1–1–1 Tbl. mit Unruhe- und Spannungszuständen sowie Schlafstörungen Lavendelöl Lasea 0–0–1 Kps. mit Unruhe und Angstzuständen Baldrianwurzel, Melissenblätter Euvegal 320/160 mg 1–0–1 Tbl. Herzunruhe mit Herzjagen (funktionell) Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–0–(1) Tbl.",
+      "rows": [
+        {"id":"thyreogutt-mono-tabletten","symptomatik":"Schilddrüsenüberfunktion: ausgeprägte Nervosität, inneres Zittern","arzneidrogen":["Wolfstrappkrauta"],"praeparat":"Thyreogutt mono Tabletten","dosierung":"1–1–1 Tbl.","route":"oral"},
+        {"id":"lasea","symptomatik":"mit Unruhe- und Spannungszuständen sowie Schlafstörungen","arzneidrogen":["Lavendelöl"],"praeparat":"Lasea","dosierung":"0–0–1 Kps.","route":"oral"},
+        {"id":"euvegal-320-160","symptomatik":"mit Unruhe und Angstzuständen","arzneidrogen":["Baldrianwurzel","Melissenblätter"],"praeparat":"Euvegal 320/160 mg","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"crataegutt-novo-thyroid","symptomatik":"Herzunruhe mit Herzjagen (funktionell)","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–0–(1) Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "page-196-thyreogutt",
+      "title": "Fertigarzneimittel Monopräparate – Thyreogutt mono",
+      "locator": "S. 196",
+      "categoryPaths": ["Schilddrüsenprobleme"],
+      "rawExcerpt": "Fertigarzneimittel Monopräparate – Thyreogutt mono Tabletten, 1–1–1 Tbl. – Thyreogutt mono Tropfen, 10–10–10 Tr.",
+      "rows": [
+        {"id":"thyreogutt-mono-tabletten-page-196","praeparat":"Thyreogutt mono Tabletten","dosierung":"1–1–1 Tbl.","route":"oral"},
+        {"id":"thyreogutt-mono-tropfen","praeparat":"Thyreogutt mono Tropfen","dosierung":"10–10–10 Tr.","route":"oral","compositionStatus":"not stated in this excerpt"}
+      ]
+    },
+    {
+      "id": "table-12-2",
+      "title": "12.2 Phytotherapie bei Herzrhythmusstörungen",
+      "locator": "S. 200, Tabelle 12.2",
+      "categoryPaths": ["Herz", "Herzrhythmusstörungen"],
+      "rawExcerpt": "Tab. 12.2Phytotherapie bei Herzrhythmusstörungen Symptomatik Arzneidrogen Präparatebeispiel Rhythmusstörungen, auch bei Blutdruckschwankungen Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–0–1 Tbl. Rhythmusstörungen verschiedener Genese Besenginsterkraut Spartiol 10–10–10 Tr. Rhythmusstörungen bei Hyperthyreose Wolfstrappkraut Thyreogutt mono Tabletten 1–(1)–1 Tbl. Rhythmusstörungen bei Unruhe- und Spannungszuständen mit Schlafstörungen Baldrianwurzel, Hopfenzapfen Allunapret 1–1–1 Tbl.",
+      "rows": [
+        {"id":"crataegutt-novo-rhythmus","symptomatik":"Rhythmusstörungen, auch bei Blutdruckschwankungen","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"spartiol","symptomatik":"Rhythmusstörungen verschiedener Genese","arzneidrogen":["Besenginsterkraut"],"praeparat":"Spartiol","dosierung":"10–10–10 Tr.","route":"oral"},
+        {"id":"thyreogutt-mono-rhythmus","symptomatik":"Rhythmusstörungen bei Hyperthyreose","arzneidrogen":["Wolfstrappkraut"],"praeparat":"Thyreogutt mono Tabletten","dosierung":"1–(1)–1 Tbl.","route":"oral"},
+        {"id":"allunapret","symptomatik":"Rhythmusstörungen bei Unruhe- und Spannungszuständen mit Schlafstörungen","arzneidrogen":["Baldrianwurzel","Hopfenzapfen"],"praeparat":"Allunapret","dosierung":"1–1–1 Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "table-12-3",
+      "title": "12.3 Phytotherapie bei Herzinsuffizienz",
+      "locator": "S. 201, Tabelle 12.3",
+      "categoryPaths": ["Herz", "Herzinsuffizienz"],
+      "rawExcerpt": "12.3Phytotherapie bei Herzinsuffizienz Symptomatik Arzneidrogen Präparatebeispiela NYHA II–(III) Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–1–1 Tbl. postinfektiöse Herzinsuffizienz; Verbesserung der Verträglichkeit von Digitalisglykosiden und chemisch-synthetischen Kardiaka Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–0–1 Tbl.",
+      "rows": [
+        {"id":"crataegutt-novo-nyha","symptomatik":"NYHA II–(III)","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–1–1 Tbl.","route":"oral"},
+        {"id":"crataegutt-novo-postinfektioes","symptomatik":"postinfektiöse Herzinsuffizienz; Verbesserung der Verträglichkeit von Digitalisglykosiden und chemisch-synthetischen Kardiaka","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–0–1 Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "table-13-1",
+      "title": "13.1 Phytotherapie bei Hypotonie und orthostatischer Dysregulation",
+      "locator": "S. 215–216, Tabelle 13.1",
+      "categoryPaths": ["Hypotonie", "Orthostatische Dysregulation"],
+      "rawExcerpt": "13.1Phytotherapie bei Hypotonie und orthostatischer Dysregulation Symptomatik Arzneidrogen Präparatebeispiel akute Kreislaufschwäche Campher, Weißdornbeeren Korodin Herz-Kreislauf-Tropfen akut: alle 5 Min. 5 Tr. bei Neigung zu akuter Kreislaufschwäche Campher, Weißdornbeeren Korodin Herz-Kreislauf-Tropfen 10–10–10 Tr. Hypotonie Weißdornblätter mit Blüten Crataegutt Herz-Kreislauf-Tropfen 30(40)–30(40)–30(40) Tr. und bei Bedarf Hypotonie mit Niedergeschlagenheit, Unwohlsein, Kopfschmerzen Ginkgoblätter (Spezialextrakt) Tebonin spezial 80 mg 1–(1)–0 Tbl.",
+      "rows": [
+        {"id":"korodin-akut","symptomatik":"akute Kreislaufschwäche","arzneidrogen":["Campher","Weißdornbeeren"],"praeparat":"Korodin Herz-Kreislauf-Tropfen","dosierung":"akut: alle 5 Min. 5 Tr.","route":"oral"},
+        {"id":"korodin-neigung","symptomatik":"bei Neigung zu akuter Kreislaufschwäche","arzneidrogen":["Campher","Weißdornbeeren"],"praeparat":"Korodin Herz-Kreislauf-Tropfen","dosierung":"10–10–10 Tr.","route":"oral"},
+        {"id":"crataegutt-herz-kreislauf","symptomatik":"Hypotonie","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt Herz-Kreislauf-Tropfen","dosierung":"30(40)–30(40)–30(40) Tr. und bei Bedarf","route":"oral"},
+        {"id":"tebonin-spezial-80","symptomatik":"Hypotonie mit Niedergeschlagenheit, Unwohlsein, Kopfschmerzen","arzneidrogen":["Ginkgoblätter (Spezialextrakt)"],"praeparat":"Tebonin spezial 80 mg","dosierung":"1–(1)–0 Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "hypertonie-page-216-217",
+      "title": "Phytotherapie bei Hypertonie",
+      "locator": "S. 216–217",
+      "categoryPaths": ["Hypertonie"],
+      "rawExcerpt": "Symptomatik Arzneidrogen Präparatebeispiel labiler Hypertonus; bei Hypertonus als Adjuvanstherapie, auch im Zusammenhang mit nachlassender Herzleistung Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–0–1 Tbl. Grenzwert-Hypertonus, auch bei Fettstoffwechselstörung Knoblauchzwiebel Kwai forte 300 mg3–3–3 erhöhter Blutdruck bei Angst- und Spannungszuständen Baldrianwurzel, Melissenblätter Euvegal Tropfen 5–5–5 ml und bei Bedarf labiler Hypertonus im Klimakterium Traubensilberkerzen-Wurzelstock Klimadynon uno 1–0–0 Filmtbl.",
+      "rows": [
+        {"id":"crataegutt-novo-hypertonie","symptomatik":"labiler Hypertonus; bei Hypertonus als Adjuvanstherapie, auch im Zusammenhang mit nachlassender Herzleistung","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"kwai-forte-300","symptomatik":"Grenzwert-Hypertonus, auch bei Fettstoffwechselstörung","arzneidrogen":["Knoblauchzwiebel"],"praeparat":"Kwai forte 300 mg","dosierung":"3–3–3","route":"oral","doseUnitStatus":"not stated in transmitted excerpt"},
+        {"id":"euvegal-tropfen","symptomatik":"erhöhter Blutdruck bei Angst- und Spannungszuständen","arzneidrogen":["Baldrianwurzel","Melissenblätter"],"praeparat":"Euvegal Tropfen","dosierung":"5–5–5 ml und bei Bedarf","route":"oral"},
+        {"id":"klimadynon-uno","symptomatik":"labiler Hypertonus im Klimakterium","arzneidrogen":["Traubensilberkerzen-Wurzelstock"],"praeparat":"Klimadynon uno","dosierung":"1–0–0 Filmtbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "rauwolfia-page-217",
+      "title": "Rauwolfia zur Blutdrucksenkung – heutiger Quellenstatus",
+      "locator": "S. 217",
+      "categoryPaths": ["Hypertonie"],
+      "rawExcerpt": "Die zur Blutdrucksenkung früher verwendete Rauwolfia steht nur noch in Form von Arzneimitteln der homöopathischen Therapierichtung zur Verfügung (z. B. Homviotensin Tabletten, 1–1–1).",
+      "rows": [
+        {"id":"homviotensin-tabletten","symptomatik":"Blutdrucksenkung; Rauwolfia laut Quelle nur noch in Arzneimitteln der homöopathischen Therapierichtung verfügbar","arzneidrogen":["Rauwolfia"],"praeparat":"Homviotensin Tabletten","dosierung":"1–1–1","route":"oral","sourceClaimStatus":"current availability statement requires verification"}
+      ]
+    },
+    {
+      "id": "table-13-3",
+      "title": "13.3 Phytotherapie bei KHK",
+      "locator": "S. 217–218, Tabelle 13.3",
+      "categoryPaths": ["KHK"],
+      "rawExcerpt": "13.3Phytotherapie bei KHKa Symptomatik Arzneidrogen Präparatebeispiel Phyto-Basistherapie bei KHK Weißdornblätter mit Blüten Crataegutt novo 450 mg 1–0–1 Tbl. vegetativ mitverursachte pectanginöse Beschwerden Lavendelöl Lasea 0–0–1 Kps. Unruhe- und Spannungszustände mit pectanginösen Beschwerden Baldrianwurzel, Hopfenzapfen, Melissenblätter Sedacur forte 2–2–2 Tbl. KHK mit arteriellen Durchblutungsstörungen Ginkgoblätter (Spezialextrakt) Tebonin intens 120 mg 1–0–1–0 Tbl.",
+      "additionalCitationFragment": "13.3Phytotherapie – Wiesenauer, Markus. PhytoPraxis (S.217). Springer Berlin Heidelberg. Kindle-Version.",
+      "hardSafetySourceExcerpt": "Keine Indikation für die Phytotherapie sind akute Angina-pectoris-Anfälle!",
+      "rows": [
+        {"id":"crataegutt-novo-khk","symptomatik":"Phyto-Basistherapie bei KHK","arzneidrogen":["Weißdornblätter mit Blüten"],"praeparat":"Crataegutt novo 450 mg","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"lasea-pectanginoes","symptomatik":"vegetativ mitverursachte pectanginöse Beschwerden","arzneidrogen":["Lavendelöl"],"praeparat":"Lasea","dosierung":"0–0–1 Kps.","route":"oral"},
+        {"id":"sedacur-forte-pectanginoes","symptomatik":"Unruhe- und Spannungszustände mit pectanginösen Beschwerden","arzneidrogen":["Baldrianwurzel","Hopfenzapfen","Melissenblätter"],"praeparat":"Sedacur forte","dosierung":"2–2–2 Tbl.","route":"oral"},
+        {"id":"tebonin-intens-120-khk","symptomatik":"KHK mit arteriellen Durchblutungsstörungen","arzneidrogen":["Ginkgoblätter (Spezialextrakt)"],"praeparat":"Tebonin intens 120 mg","dosierung":"1–0–1–0 Tbl.","route":"oral"}
+      ]
+    },
+    {
+      "id": "table-13-4",
+      "title": "13.4 Phytotherapie bei pAVK",
+      "locator": "S. 218–219, Tabelle 13.4",
+      "categoryPaths": ["pAVK"],
+      "rawExcerpt": "13.4Phytotherapie bei pAVKa Symptomatik Arzneidrogen Präparatebeispiel (beginnende) pAVK mit typischen Beschwerden Ginkgoblätter (Spezialextrakt) Tebonin konzent 240 mg 1–0–0 Tbl. Externa lokaler Gewebsdefekt1, Stadium IV, wie z. B. Ulzeration, Gangrän Kamillenblüten Hamamelisblätter/ -zweige Kamillin Extern für Umschläge und Spülungen danach: Hametum-Creme auf die Wundränder auftragen Präventivmaßnahme zur Behandlung gefährdeter Hautstellen, z. B. Fuß-Unterschenkel-Bereich",
+      "contextClaims": [
+        "Präventivmaßnahme zur Behandlung gefährdeter Hautstellen, zum Beispiel im Fuß-Unterschenkel-Bereich.",
+        "Die Quellenaussage zu akuten Angina-pectoris-Anfällen auf Seite 218 wird als harte Ausschluss- und Notfallsperre mitgeführt."
+      ],
+      "rows": [
+        {"id":"tebonin-konzent-240-pavk","symptomatik":"(beginnende) pAVK mit typischen Beschwerden","arzneidrogen":["Ginkgoblätter (Spezialextrakt)"],"praeparat":"Tebonin konzent 240 mg","dosierung":"1–0–0 Tbl.","route":"oral"},
+        {"id":"kamillin-hametum-pavk-stadium-iv","symptomatik":"lokaler Gewebsdefekt, Stadium IV, wie z. B. Ulzeration, Gangrän","arzneidrogen":["Kamillenblüten","Hamamelisblätter/-zweige"],"praeparat":"Kamillin Extern; danach Hametum-Creme","dosierung":"Kamillin Extern für Umschläge und Spülungen; danach Hametum-Creme auf die Wundränder auftragen","route":"topical"}
+      ]
+    },
+    {
+      "id": "table-14-1",
+      "title": "14.1 Phytotherapie bei chronisch venöser Insuffizienz und Thrombophlebitis",
+      "locator": "S. 229–230, Tabelle 14.1",
+      "categoryPaths": ["Chronisch venöse Insuffizienz", "Thrombophlebitis"],
+      "rawExcerpt": "14.1Phytotherapie bei chronisch venöser Insuffizienz und Thrombophlebitis Symptomatik Arzneidrogen Präparatebeispiel Schwellung, Schmerzen; verstärkte Venenzeichnung. Entzündungszeichen, Wadenkrämpfe, CVI Rosskastaniensamen Venoplant retard S 1–0–1 Tbl. bei anamnestisch bekannter Magenempfindlichkeit Mäusedornwurzelstock Phlebodril 2–0–2 Kps. Schmerzen, Schweregefühl und Missempfindungen in den Beinen, Wadenkrämpfe, Ödeme Rote Weinlaubblätter Antistax extra 1(2)–0–0 Tbl. Externa Schwellung, »müde, schwere Beine« Rosskastaniensamen Venostasin Creme (z. B. Salbenverband) schmerzhaft entzündeter Venenstrang Arnikablüten Kneipp Arnika Salbe S (z. B. Salbenverband) als Adjuvans",
+      "rows": [
+        {"id":"venoplant-retard-s","symptomatik":"Schwellung, Schmerzen; verstärkte Venenzeichnung, Entzündungszeichen, Wadenkrämpfe, CVI","arzneidrogen":["Rosskastaniensamen"],"praeparat":"Venoplant retard S","dosierung":"1–0–1 Tbl.","route":"oral"},
+        {"id":"phlebodril","symptomatik":"bei anamnestisch bekannter Magenempfindlichkeit","arzneidrogen":["Mäusedornwurzelstock"],"praeparat":"Phlebodril","dosierung":"2–0–2 Kps.","route":"oral"},
+        {"id":"antistax-extra","symptomatik":"Schmerzen, Schweregefühl und Missempfindungen in den Beinen, Wadenkrämpfe, Ödeme","arzneidrogen":["Rote Weinlaubblätter"],"praeparat":"Antistax extra","dosierung":"1(2)–0–0 Tbl.","route":"oral"},
+        {"id":"venostasin-creme","symptomatik":"Schwellung, müde, schwere Beine","arzneidrogen":["Rosskastaniensamen"],"praeparat":"Venostasin Creme","dosierung":"z. B. Salbenverband","route":"topical"},
+        {"id":"kneipp-arnika-salbe-s","symptomatik":"schmerzhaft entzündeter Venenstrang","arzneidrogen":["Arnikablüten"],"praeparat":"Kneipp Arnika Salbe S","dosierung":"z. B. Salbenverband; als Adjuvans","route":"topical"}
+      ]
+    },
+    {
+      "id": "table-14-2",
+      "title": "14.2 Phytotherapie bei Ulcus cruris varicosum",
+      "locator": "S. 231, Tabelle 14.2",
+      "categoryPaths": ["Ulcus cruris varicosum"],
+      "rawExcerpt": "14.2Phytotherapie bei Ulcus cruris varicosum1 Symptomatik Arzneidrogen Präparatebeispiel offenes Bein, Zeichen chronisch venöser Insuffizienz Rosskastanien-samen Aescorin forte 1–0–1 Kps. (mit viel Flüssigkeit) bei Neigung zur Superinfektion Sonnenhutkraut Echinacin-Liquidum 2,5–2,5–2,5 ml Externa loksaler Gewebsdefekt mit Entzündungsneigung Kamillenblüten Hamamelisblätter/-zweige Kamillosan Konzentrat Lösung für Umschläge und Spülungen, danach: Hametum-Creme auf die Wundränder auftragen, auch im Wechsel mit Calendumed-Creme (s. u.) schlecht heilende Wundränder Ringelblumenblüten Calendumed-Creme mit nässendem Ekzem Eichenrinde Eichenrinden-Extrakt Fa. Schupp (für Teilbad oder Umschläge), anschließend Hametum-Creme (s. o.)",
+      "rows": [
+        {"id":"aescorin-forte-ulcus","symptomatik":"offenes Bein, Zeichen chronisch venöser Insuffizienz","arzneidrogen":["Rosskastaniensamen"],"praeparat":"Aescorin forte","dosierung":"1–0–1 Kps. (mit viel Flüssigkeit)","route":"oral"},
+        {"id":"echinacin-liquidum-superinfektion","symptomatik":"bei Neigung zur Superinfektion","arzneidrogen":["Sonnenhutkraut"],"praeparat":"Echinacin-Liquidum","dosierung":"2,5–2,5–2,5 ml","route":"oral"},
+        {"id":"kamillosan-hametum-calendumed-ulcus","symptomatik":"lokaler Gewebsdefekt mit Entzündungsneigung","arzneidrogen":["Kamillenblüten","Hamamelisblätter/-zweige"],"praeparat":"Kamillosan Konzentrat; danach Hametum-Creme, auch im Wechsel mit Calendumed-Creme","dosierung":"Lösung für Umschläge und Spülungen; danach Hametum-Creme auf die Wundränder auftragen, auch im Wechsel mit Calendumed-Creme","route":"topical"},
+        {"id":"calendumed-creme-wundraender","symptomatik":"schlecht heilende Wundränder","arzneidrogen":["Ringelblumenblüten"],"praeparat":"Calendumed-Creme","dosierung":"äußerliche Anwendung; Häufigkeit im übermittelten Text nicht angegeben","route":"topical"},
+        {"id":"eichenrinden-extrakt-naessendes-ekzem","symptomatik":"nässendes Ekzem","arzneidrogen":["Eichenrinde"],"praeparat":"Eichenrinden-Extrakt Fa. Schupp; anschließend Hametum-Creme","dosierung":"für Teilbad oder Umschläge; anschließend Hametum-Creme","route":"topical"}
+      ]
+    },
+    {
+      "id": "table-14-3",
+      "title": "14.3 Phytotherapie bei Hämorrhoidalleiden",
+      "locator": "S. 232, Tabelle 14.3",
+      "categoryPaths": ["Hämorrhoidalleiden"],
+      "rawExcerpt": "14.3Phytotherapie bei Hämorrhoidalleiden Symptomatik Arzneidrogen Präparatebeispiel rezidivierende Hämorrhoidalbeschwerden Mariendistelfrüchte Hepar Pasc 1–1–1 Tbl. akut entzündlich schmerzhafte Hämorrhoiden Rosskastaniensamen Aescorin forte 1–0–1 Kps. Externa akut entzündliche Beschwerden, auch bei Analfissuren und Marisken Kamillenblüten Kamillin-Extern-Robugen 1 Portionsbtl. auf 1 l Wasser als Sitzbad Hämorrhoiden, auch mit Juckreiz, feuchte Analregion Eichenrinde Eichenrinden-Extrakt Fa. Schupp als Sitzbad Schmerzen beim Stuhlgang, leicht blutend, rezidivierende Entzündungen, Analfissuren Hamamelisblätter Hametum Hämorrhoidensalbe und -zäpfchen 1–0–1 Zäpfchen (nach dem Stuhlgang)",
+      "rows": [
+        {"id":"hepar-pasc-haemorrhoiden","symptomatik":"rezidivierende Hämorrhoidalbeschwerden","arzneidrogen":["Mariendistelfrüchte"],"praeparat":"Hepar Pasc","dosierung":"1–1–1 Tbl.","route":"oral"},
+        {"id":"aescorin-forte-haemorrhoiden","symptomatik":"akut entzündlich schmerzhafte Hämorrhoiden","arzneidrogen":["Rosskastaniensamen"],"praeparat":"Aescorin forte","dosierung":"1–0–1 Kps.","route":"oral"},
+        {"id":"kamillin-extern-robugen","symptomatik":"akut entzündliche Beschwerden, auch bei Analfissuren und Marisken","arzneidrogen":["Kamillenblüten"],"praeparat":"Kamillin-Extern-Robugen","dosierung":"1 Portionsbtl. auf 1 l Wasser als Sitzbad","route":"topical"},
+        {"id":"eichenrinden-extrakt-haemorrhoiden","symptomatik":"Hämorrhoiden, auch mit Juckreiz, feuchte Analregion","arzneidrogen":["Eichenrinde"],"praeparat":"Eichenrinden-Extrakt Fa. Schupp","dosierung":"als Sitzbad","route":"topical"},
+        {"id":"hametum-haemorrhoiden","symptomatik":"Schmerzen beim Stuhlgang, leicht blutend, rezidivierende Entzündungen, Analfissuren","arzneidrogen":["Hamamelisblätter"],"praeparat":"Hametum Hämorrhoidensalbe und -zäpfchen","dosierung":"1–0–1 Zäpfchen (nach dem Stuhlgang)","route":"rectal/topical"}
+      ]
+    }
+  ],
+  "transcriptionFlags": [
+    {"section":"table-20-2","text":"inflammatorische","reason":"Auffälliges Quellenwort; unverändert bewahrt und gegen die Buchansicht zu prüfen."},
+    {"section":"table-10-1","text":"Echinacin-Liquiduma","reason":"Möglicher Fußnotenmarker oder OCR-Anhang; nicht still korrigiert."},
+    {"section":"table-10-1","text":"1–(1–)–0","reason":"Auffällige Klammerung; unverändert bewahrt."},
+    {"section":"table-10-1","text":"Sinupret extract ... (ab 18. Lebensjahr Sinupret forte ...","reason":"Schließende Klammer beziehungsweise Tabellenlayout im übermittelten Text nicht eindeutig."},
+    {"section":"table-11-1","text":"Wolfstrappkrauta","reason":"Möglicher Fußnotenmarker; nicht still korrigiert."},
+    {"section":"table-12-3","text":"Präparatebeispiela","reason":"Möglicher Fußnotenmarker; nicht still korrigiert."},
+    {"section":"hypertonie-page-216-217","text":"Kwai forte 300 mg3–3–3","reason":"Trennzeichen und Darreichungseinheit fehlen im übermittelten Text; Dosis nicht ergänzt."},
+    {"section":"table-13-3","text":"KHKa","reason":"Möglicher Fußnotenmarker; nicht still korrigiert."},
+    {"section":"table-13-4","text":"pAVKa / Gewebsdefekt1","reason":"Mögliche Fußnotenmarker; nicht still korrigiert."},
+    {"section":"table-14-2","text":"Ulcus cruris varicosum1 / loksaler","reason":"Möglicher Fußnotenmarker und auffällige Schreibstelle; Rohtext unverändert bewahrt."}
+  ],
+  "separatedAssessment": {
+    "evidenceStatus": "unreviewed",
+    "safetyStatus": "unreviewed",
+    "dosageStatus": "unverified",
+    "medicalReviewRequired": true,
+    "pharmaceuticalReviewRequired": true,
+    "copyrightAndTranscriptionReviewRequired": true,
+    "automaticTherapyUseAllowed": false,
+    "publicationAllowed": false,
+    "patientFacingAllowed": false,
+    "criticalAreas": [
+      "Herzrhythmusstörungen und Herzinsuffizienz",
+      "Hyperthyreose und Schilddrüsenmedikation",
+      "akute Kreislaufschwäche, Hypotonie und Hypertonie",
+      "Digitalisglykoside und andere Kardiaka",
+      "KHK, pectanginöse Beschwerden und akute Angina-pectoris-Anfälle",
+      "pAVK Stadium IV, Ulzeration und Gangrän",
+      "Thrombophlebitis, entzündeter Venenstrang und mögliche Thrombose",
+      "offenes Bein, Ulcus cruris, Superinfektion und Wundversorgung",
+      "rektale Blutung, Analfissuren und entzündliche Hämorrhoidalbeschwerden",
+      "Kinder- und Altersdosierungen",
+      "hochinteraktive Arzneidrogen wie Johanniskraut",
+      "topische Anwendung, Hautzustand und Allergien"
+    ]
+  }
+}

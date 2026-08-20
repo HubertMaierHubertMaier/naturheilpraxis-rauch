@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-20",
+  "title": "Herbst und Winter: HNO-, Virus-, TCM- und Praxisquellen",
+  "scope": "internal_source_retention",
+  "visibility": "admin_only",
+  "reviewStatus": "unreviewed",
+  "patientFacingAllowed": false,
+  "publicationStatus": "unpublished_internal_draft",
+  "provenanceNotice": "Die fachlichen Angaben aus Peters aktuellem Auftrag sind hier strukturiert und inhaltlich erhalten. Der exakte fruehere Chatwortlaut liegt nicht als lokale Quelldatei vor; deshalb sind diese Angaben als normalisiert und nicht als woertliches Zitat markiert. Buchinhalte werden aus Urheberrechtsgruenden nur mit Fundstelle und eigenstaendiger Kurzparaphrase erfasst.",
+  "sources": [
+    {
+      "id": "peter-practice-autumn-winter-2026-08-20",
+      "sourceType": "practice_document",
+      "title": "Praxisangaben von Peter Rauch fuer Herbst, Winter und akute HNO-Beschwerden",
+      "author": "Peter Rauch",
+      "sourceLocator": "Aktueller Auftrag vom 20.08.2026; normalisierte Inhaltsfassung",
+      "rightsStatus": "own_content",
+      "captureMode": "normalized_from_current_instruction",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "peter-001",
+          "kind": "practice_measure",
+          "text": "Nasendusche als lokale Massnahme bei Beschwerden der oberen Atemwege.",
+          "evidenceStatus": "separate_review_pending"
+        },
+        {
+          "id": "peter-002",
+          "kind": "practice_measure",
+          "text": "Hohe Vitamin-B2-Gaben wurden als Praxisansatz genannt; eine konkrete Menge wurde im gesicherten Fortsetzungsstand nicht erhalten.",
+          "evidenceStatus": "dose_and_safety_review_required"
+        },
+        {
+          "id": "peter-003",
+          "kind": "experience_medicine",
+          "text": "Frequenzanwendungen und Herd-Therapie wurden als ergaenzende Praxisverfahren genannt.",
+          "evidenceStatus": "not_established_by_evidence_based_medicine"
+        },
+        {
+          "id": "peter-004",
+          "kind": "practice_protocol",
+          "text": "Als zusammengehoerige Praxiselemente wurden ChipCard LY, Derma-Clean Ly, Mannayan Vit C+ und Echinacea genannt.",
+          "evidenceStatus": "source_claim_unreviewed"
+        },
+        {
+          "id": "peter-005",
+          "kind": "dosage",
+          "subject": "Mannayan ANTIOXI+",
+          "text": "1 mal taeglich 1 Tablette.",
+          "structured": { "minimumDose": 1, "maximumDose": 1, "doseUnit": "Tablette", "frequency": "1 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-006",
+          "kind": "dosage",
+          "subject": "Mannayan BETA+",
+          "text": "1 mal taeglich 1 Kapsel.",
+          "structured": { "minimumDose": 1, "maximumDose": 1, "doseUnit": "Kapsel", "frequency": "1 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-007",
+          "kind": "application",
+          "text": "Nach einer Frequenzanwendung 50 Minuten geerdet bleiben.",
+          "structured": { "durationMinutes": 50 },
+          "evidenceStatus": "experience_medicine_unreviewed"
+        },
+        {
+          "id": "peter-008",
+          "kind": "dosage",
+          "subject": "Barberry",
+          "text": "2 mal taeglich 15 bis 30 Tropfen, 30 Minuten vor dem Essen, in einem halben Glas Wasser.",
+          "structured": { "minimumDose": 15, "maximumDose": 30, "doseUnit": "Tropfen", "frequency": "2 mal taeglich", "timing": "30 Minuten vor dem Essen", "application": "in einem halben Glas Wasser" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-009",
+          "kind": "dosage",
+          "subject": "Banderol",
+          "text": "2 mal taeglich 1 bis 30 Tropfen, langsam steigern, in 120 ml Wasser.",
+          "structured": { "minimumDose": 1, "maximumDose": 30, "doseUnit": "Tropfen", "frequency": "2 mal taeglich", "titration": "langsam steigern", "application": "in 120 ml Wasser" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-010",
+          "kind": "dosage",
+          "subject": "Mannayan GLUCAN+",
+          "text": "1 mal taeglich 1 Kapsel.",
+          "structured": { "minimumDose": 1, "maximumDose": 1, "doseUnit": "Kapsel", "frequency": "1 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-011",
+          "kind": "dosage",
+          "subject": "Takuna",
+          "text": "2 mal taeglich 8 Tropfen.",
+          "structured": { "minimumDose": 8, "maximumDose": 8, "doseUnit": "Tropfen", "frequency": "2 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-012",
+          "kind": "dosage",
+          "subject": "Samento",
+          "text": "2 mal taeglich 8 Tropfen.",
+          "structured": { "minimumDose": 8, "maximumDose": 8, "doseUnit": "Tropfen", "frequency": "2 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-013",
+          "kind": "dosage",
+          "subject": "Houttuynia",
+          "text": "2 mal taeglich 15 Tropfen.",
+          "structured": { "minimumDose": 15, "maximumDose": 15, "doseUnit": "Tropfen", "frequency": "2 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-014",
+          "kind": "dosage",
+          "subject": "Mannayan Weihrauch",
+          "text": "1 mal taeglich 1 Kapsel.",
+          "structured": { "minimumDose": 1, "maximumDose": 1, "doseUnit": "Kapsel", "frequency": "1 mal taeglich" },
+          "evidenceStatus": "practice_dose_unreviewed"
+        },
+        {
+          "id": "peter-015",
+          "kind": "dosage",
+          "subject": "Mannayan ZINK+",
+          "text": "2 mal taeglich 1 Tablette; akut 1 mal 5 Tabletten.",
+          "structured": { "regular": "2 mal taeglich 1 Tablette", "acute": "1 mal 5 Tabletten" },
+          "evidenceStatus": "dose_and_safety_review_required"
+        },
+        {
+          "id": "peter-016",
+          "kind": "practice_protocol",
+          "text": "Bei tiefsitzender HNO-Symptomatik wurden Derma-Clean Ly, MineralVit Gold, Mineralsalz, DTX-Card sowie Derma-Clean N und L genannt.",
+          "evidenceStatus": "source_claim_unreviewed"
+        },
+        {
+          "id": "peter-017",
+          "kind": "mapping_request",
+          "text": "Die HNO-Zuordnung soll Rhinitis und Schnupfen, Schleimhaut- und Augenbeteiligung, bakterielle Kokken, Staphylokokken, Streptokokken, Viren, saisonale Coronaviren und getrennt SARS-CoV-2/COVID-19 erfassen.",
+          "evidenceStatus": "database_mapping_requested"
+        },
+        {
+          "id": "peter-018",
+          "kind": "mapping_request",
+          "text": "Weitere gewuenschte Zuordnungen sind Abszesse, Gelenk- und Knieinfektionen, Nierenentzuendung, Lungenentzuendung sowie Innenohr- und Stirnhoehlenbeschwerden.",
+          "evidenceStatus": "database_mapping_requested"
+        },
+        {
+          "id": "peter-019",
+          "kind": "experience_medicine",
+          "text": "Fuer die HNO-ChipCard wurden Wirkungszuordnungen sowie die Begriffe Lymph-Entgiftung und Radikale ausleiten genannt.",
+          "evidenceStatus": "unverified_claim_requires_explicit_label"
+        }
+      ]
+    },
+    {
+      "id": "baklayan-akutbehandlung",
+      "sourceType": "website",
+      "title": "Akutbehandlung in unserer Praxis",
+      "publisher": "Heilpraktiker Bioresonanz Muenchen",
+      "sourceUrl": "https://heilpraktiker-bioresonanz-muenchen.de/akutbehandlung-in-unserer-praxis/",
+      "sourceLocator": "Von Peter benannte und im vorherigen Arbeitsschritt abgerufene Seite",
+      "rightsStatus": "quoted",
+      "captureMode": "content_summary_from_previous_fetch",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "baklayan-001",
+          "kind": "source_summary",
+          "text": "Die Seite beschreibt typische Zeichen akuter Erkaeltungs- und HNO-Beschwerden und stellt das TRIKOMBIN im Rahmen eines bioenergetischen Praxisansatzes dar.",
+          "evidenceStatus": "publisher_claim"
+        },
+        {
+          "id": "baklayan-002",
+          "kind": "experience_medicine",
+          "text": "Aussagen zu diagnostischen oder therapeutischen Wirkungen des TRIKOMBIN sind Anbieter- beziehungsweise Praxisaussagen und nicht als wissenschaftlich belegte Wirkung freigegeben.",
+          "evidenceStatus": "not_independently_verified"
+        }
+      ]
+    },
+    {
+      "id": "greten-tcm-page-1625",
+      "sourceType": "reference_work",
+      "title": "Kursbuch Traditionelle Chinesische Medizin",
+      "author": "Henry Johannes Greten",
+      "publisher": "Thieme",
+      "sourceLocator": "Kindle-Ausgabe, Seite 1625",
+      "rightsStatus": "quoted",
+      "captureMode": "locator_and_short_paraphrase",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "greten-1625-001",
+          "kind": "traditional_model",
+          "text": "Im Abschnitt zur Erkaeltungsprophylaxe werden Ingwertee, Wintercandies, Moxa-Bad und Rosmarin genannt.",
+          "evidenceStatus": "traditional_tcm_source_not_clinical_proof"
+        }
+      ]
+    },
+    {
+      "id": "greten-tcm-page-333",
+      "sourceType": "reference_work",
+      "title": "Kursbuch Traditionelle Chinesische Medizin",
+      "author": "Henry Johannes Greten",
+      "publisher": "Thieme",
+      "sourceLocator": "Kindle-Ausgabe, Seite 333",
+      "rightsStatus": "quoted",
+      "captureMode": "locator_and_short_paraphrase",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "greten-333-001",
+          "kind": "traditional_model",
+          "text": "Die Nase wird im TCM-Modell als Koerperoeffnung des Pulmonalorbis eingeordnet.",
+          "evidenceStatus": "traditional_tcm_model_not_anatomical_claim"
+        }
+      ]
+    },
+    {
+      "id": "greten-tcm-pages-543-547",
+      "sourceType": "reference_work",
+      "title": "Kursbuch Traditionelle Chinesische Medizin",
+      "author": "Henry Johannes Greten",
+      "publisher": "Thieme",
+      "sourceLocator": "Kindle-Ausgabe, Seiten 543 bis 547",
+      "rightsStatus": "quoted",
+      "captureMode": "locator_and_short_paraphrase",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "greten-543-547-001",
+          "kind": "traditional_model",
+          "text": "Die Fundstelle beschreibt die Algor-laedens-Theorie und deren Stadien I bis III als traditionelles TCM-Erklaerungsmodell.",
+          "evidenceStatus": "traditional_tcm_model_not_pathophysiological_proof"
+        }
+      ]
+    },
+    {
+      "id": "strunz-neue-wege-pages-161-162",
+      "sourceType": "reference_work",
+      "title": "Neue Wege der Heilung: Gesundheit geschieht von innen",
+      "author": "Ulrich Strunz",
+      "sourceLocator": "Seiten 161 bis 162; von Peter im aktuellen Auftrag uebermittelte Inhaltsangaben",
+      "rightsStatus": "quoted",
+      "captureMode": "normalized_from_current_instruction",
+      "verbatim": false,
+      "statements": [
+        {
+          "id": "strunz-161-162-001",
+          "kind": "source_protocol",
+          "text": "Die Fundstelle fasst das Schema unter der Ueberschrift 'Unschlagbar mit C + E + Zn' zusammen.",
+          "evidenceStatus": "source_claim_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-002",
+          "kind": "dosage",
+          "subject": "Vitamin C",
+          "text": "1 bis 3 g.",
+          "structured": { "minimumDose": 1, "maximumDose": 3, "doseUnit": "g" },
+          "evidenceStatus": "source_dose_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-003",
+          "kind": "dosage",
+          "subject": "Zink",
+          "text": "30 bis 60 mg taeglich.",
+          "structured": { "minimumDose": 30, "maximumDose": 60, "doseUnit": "mg", "frequency": "taeglich" },
+          "evidenceStatus": "source_dose_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-004",
+          "kind": "dosage",
+          "subject": "Vitamin E",
+          "text": "400 IE.",
+          "structured": { "minimumDose": 400, "maximumDose": 400, "doseUnit": "IE" },
+          "evidenceStatus": "source_dose_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-005",
+          "kind": "dosage",
+          "subject": "Kohlenhydrate",
+          "text": "Weniger als 50 g pro Tag.",
+          "structured": { "maximumDoseExclusive": 50, "doseUnit": "g", "referencePeriod": "Tag" },
+          "evidenceStatus": "source_dose_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-006",
+          "kind": "dosage",
+          "subject": "Protein",
+          "text": "1 bis 2 g pro kg Koerpergewicht.",
+          "structured": { "minimumDose": 1, "maximumDose": 2, "doseUnit": "g/kg Koerpergewicht" },
+          "evidenceStatus": "source_dose_unreviewed"
+        },
+        {
+          "id": "strunz-161-162-007",
+          "kind": "dosage",
+          "subject": "Omega-3-Fettsaeuren",
+          "text": "2 bis 6 g pro Tag.",
+          "structured": { "minimumDose": 2, "maximumDose": 6, "doseUnit": "g", "referencePeriod": "Tag" },
+          "evidenceStatus": "source_dose_unreviewed"
+        }
+      ]
+    },
+    {
+      "id": "mannayan-local-inventories",
+      "sourceType": "manufacturer",
+      "title": "Lokale Mannayan-Produktinventare",
+      "publisher": "Mannayan GmbH & Co. KG",
+      "sourceLocator": "docs/source-inventory/2026-08-07-mannayan-{antioxi,beta-lutein,glucan,zink}-read-only.json",
+      "rightsStatus": "quoted",
+      "captureMode": "local_read_only_inventory",
+      "verbatim": true,
+      "statements": [
+        {
+          "id": "mannayan-zink-001",
+          "kind": "composition",
+          "text": "Mannayan ZINK+ enthaelt laut Herstellerinventar pro Tablette 15 mg Zink und 1 mg Kupfer.",
+          "evidenceStatus": "manufacturer_composition"
+        },
+        {
+          "id": "mannayan-glucan-001",
+          "kind": "composition",
+          "text": "Mannayan GLUCAN+ enthaelt laut Herstellerinventar pro Kapsel 250 mg Beta-Glucan, 30 mg Vitamin C, 1,5 mg Zink und 30 Mikrogramm Selen.",
+          "evidenceStatus": "manufacturer_composition"
+        },
+        {
+          "id": "mannayan-antioxi-001",
+          "kind": "composition",
+          "text": "Mannayan ANTIOXI+ enthaelt laut Herstellerinventar pro Kapsel unter anderem 100 mg Vitamin C, 50 mg Ubiquinol, 40 mg Vitamin E, 15 mg Zink, 4,5 mg Beta-Carotin, 750 Mikrogramm Vitamin A, 4 mg Vitamin B2, 2 mg Mangan und 150 Mikrogramm Selen.",
+          "evidenceStatus": "manufacturer_composition"
+        },
+        {
+          "id": "mannayan-beta-001",
+          "kind": "composition",
+          "text": "Mannayan BETA+ mit Lutein enthaelt laut Herstellerinventar unter anderem Heidelbeerextrakt, Quercetin, Brokkolipulver, Traubenkernextrakt, Gruenteeextrakt, Ingwerextrakt, Curcuminoide, Lycopin, Lutein, Beta-Carotin und Zeaxanthin.",
+          "evidenceStatus": "manufacturer_composition"
+        }
+      ]
+    },
+    {
+      "id": "nutramedix-local-existing-wiki",
+      "sourceType": "practice_document",
+      "title": "NutraMedix-Produktuebersicht nach Kategorien",
+      "sourceLocator": "supabase/migrations/20260324183009_5d17abd7-5c9f-4f2b-a99d-94c3be43195d.sql",
+      "rightsStatus": "unknown",
+      "captureMode": "existing_local_knowledge_source",
+      "verbatim": true,
+      "statements": [
+        {
+          "id": "nutramedix-001",
+          "kind": "cross_reference",
+          "text": "Die vorhandene interne Quelle enthaelt Produkt-, Pathogen- und Dosierungsangaben zu Samento, Banderol, Barberry, Takuna und Houttuynia. Diese Bestandsangaben bleiben von Peters aktuellem Praxisschema getrennt und muessen vor einer fachlichen Zusammenfuehrung abgeglichen werden.",
+          "evidenceStatus": "existing_source_unreviewed"
+        }
+      ]
+    }
+  ],
+  "safetySeparation": [
+    {
+      "id": "safety-001",
+      "subject": "Mannayan ZINK+",
+      "assessment": "Fuenf Tabletten entsprechen nach dem lokalen Herstellerinventar 75 mg Zink. Dieses Akutschema wird nicht patientenseitig freigegeben und benoetigt vor jeder Verwendung eine aerztliche beziehungsweise pharmazeutische Pruefung von Dauer, Gesamtzufuhr, Kupferhaushalt, Arzneimittelabstaenden und individuellen Risiken.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-002",
+      "subject": "Vitamin B2 hoch dosiert",
+      "assessment": "Konkrete Menge, Dauer, Indikation, Gegenanzeigen und Wechselwirkungen sind nicht dokumentiert. Keine Dosierungsfreigabe.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-003",
+      "subject": "Pflanzliche Tinkturen",
+      "assessment": "Barberry, Banderol, Takuna, Samento und Houttuynia benoetigen vor Anwendung eine individuelle Pruefung von Schwangerschaft und Stillzeit, Alter, Allergien, Leber- und Nierenfunktion sowie Arzneimittelinteraktionen.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-004",
+      "subject": "Nahrungsergaenzungsmittel-Kombination",
+      "assessment": "Bei ANTIOXI+, BETA+, GLUCAN+, ZINK+, Vitamin C+ und weiteren Produkten muessen Inhaltsstoffe und Gesamtzufuhr gemeinsam geprueft werden. Herstellerangaben sind kein Wirksamkeitsnachweis.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-005",
+      "subject": "Frequenz-, ChipCard- und TRIKOMBIN-Verfahren",
+      "assessment": "Diese Verfahren gehoeren zur Erfahrungsheilkunde. Diagnostische oder therapeutische Wirkungen sind nicht im Sinne der evidenzbasierten Medizin belegt und duerfen notwendige Diagnostik oder Behandlung nicht ersetzen oder verzoegern.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-006",
+      "subject": "Akute Atemwegs- und HNO-Beschwerden",
+      "assessment": "Atemnot, Brustschmerz, Verwirrtheit, blaeuliche Lippen, Kreislaufprobleme, deutliche Verschlechterung, sehr hohes oder anhaltendes Fieber, Nackensteife, starke einseitige Schwellung, schwere Ohr- oder Stirnhoehlenbeschwerden sowie Verdacht auf Pneumonie oder schweren COVID-19-Verlauf erfordern unverzuegliche medizinische Abklaerung.",
+      "severity": "avoid_delay"
+    },
+    {
+      "id": "safety-007",
+      "subject": "TCM-Modell",
+      "assessment": "Pulmonalorbis und Algor-laedens werden als traditionelle Deutungsmodelle und nicht als moderne Anatomie, Mikrobiologie oder Pathophysiologie dargestellt.",
+      "severity": "information"
+    },
+    {
+      "id": "safety-008",
+      "subject": "Strunz-Quellenprotokoll",
+      "assessment": "Die Kombination ist eine erhaltene Buchaussage und keine freigegebene allgemeine Einnahme- oder Ernaehrungsanweisung. Indikation, Dauer, Gesamtzufuhr, Laborwerte, Vorerkrankungen und Arzneimittel muessen getrennt geprueft werden.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-009",
+      "subject": "Vitamin C 1 bis 3 g",
+      "assessment": "Vor Anwendung sind insbesondere gastrointestinale Beschwerden, Nierenfunktion, Steinrisiko, Eisenstoffwechsel, Gesamtzufuhr und Arzneimittelinteraktionen zu pruefen.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-010",
+      "subject": "Zink 30 bis 60 mg taeglich",
+      "assessment": "Keine Freigabe ohne Festlegung von Dauer und Gesamtzufuhr sowie Pruefung von Kupferhaushalt, gastrointestinalen Risiken und Arzneimittelabstaenden. Ueberschneidungen mit ZINK+, ANTIOXI+ und GLUCAN+ sind einzubeziehen.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-011",
+      "subject": "Vitamin E 400 IE",
+      "assessment": "Die Vitamin-E-Form und die Umrechnung der Einheit sind offen. Blutungsrisiko, Gerinnungshemmer, Thrombozytenhemmer, Operationen und Gesamtzufuhr muessen vor Anwendung geprueft werden.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-012",
+      "subject": "Weniger als 50 g Kohlenhydrate pro Tag",
+      "assessment": "Die starke Kohlenhydratreduktion ist keine pauschale Empfehlung. Diabetesmedikation, Schwangerschaft und Stillzeit, Essstoerungen, Leber- und Nierenerkrankungen sowie individuelle Energieversorgung muessen geprueft werden.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-013",
+      "subject": "Protein 1 bis 2 g pro kg Koerpergewicht",
+      "assessment": "Der breite Bereich benoetigt eine individuelle Einordnung nach Koerpergewicht, Alter, Aktivitaet, Gesamtenergie sowie Nieren- und Leberfunktion.",
+      "severity": "require_review"
+    },
+    {
+      "id": "safety-014",
+      "subject": "Omega-3-Fettsaeuren 2 bis 6 g pro Tag",
+      "assessment": "Produktzusammensetzung und Anteil von EPA und DHA sind nicht dokumentiert. Dosis, Blutungsrisiko, Arzneimittel, Operationen, Vertraeglichkeit und Gesamtzufuhr muessen fachlich geprueft werden.",
+      "severity": "require_review"
+    }
+  ],
+  "databaseTargets": {
+    "sourceCandidates": true,
+    "entityCandidates": [
+      "Praxisprotokoll",
+      "HNO-Symptomkomplex",
+      "Rhinitis und Schnupfen",
+      "Schleimhaut- und Augenbeteiligung",
+      "bakterielle Kokken",
+      "Staphylokokken",
+      "Streptokokken",
+      "respiratorische Viren",
+      "saisonale Coronaviren",
+      "SARS-CoV-2",
+      "Abszess",
+      "Gelenk- und Knieinfektion",
+      "Nierenentzuendung",
+      "Lungenentzuendung",
+      "Innenohrbeschwerden",
+      "Stirnhoehlenbeschwerden",
+      "HNO-ChipCard",
+      "Praxisverfahren und genannte Mittel",
+      "Strunz-Quellenprotokoll Seiten 161 bis 162",
+      "Vitamin C",
+      "Zink",
+      "Vitamin E",
+      "kohlenhydratreduzierte Ernaehrung",
+      "Protein",
+      "Omega-3-Fettsaeuren"
+    ],
+    "relationCandidates": true,
+    "dosageCandidates": true,
+    "safetyCandidates": true
+  },
+  "openChecks": [
+    "Originalwortlaut des frueheren Chats dauerhaft nachtragen, falls er wieder zweifelsfrei vorliegt.",
+    "Baklayan-Seite vor einer spaeteren Freigabe erneut quellengetreu archivieren und Aussagen abschnittsgenau belegen.",
+    "Alle Dosierungen, Kombinationen, Gegenanzeigen und Interaktionen fachlich pruefen.",
+    "Strunz-Fundstelle Seiten 161 bis 162 vor einer spaeteren Freigabe am Original abgleichen; die aktuelle Erfassung beruht auf Peters uebermittelten Inhaltsangaben.",
+    "Copyright- und Zitatpruefung der Greten-Fundstellen.",
+    "Medizinische und HWG-Pruefung beider HTML-Fassungen.",
+    "Keine Patientensicht oder Veroeffentlichung vor dokumentierter Freigabe."
+  ]
+}

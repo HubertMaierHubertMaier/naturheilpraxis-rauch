@@ -43,6 +43,7 @@ const kbImportTables = [
   "kb_import_errors",
   "kb_import_candidate_proposals",
   "kb_import_proposal_review_events",
+  "kb_import_core_links",
   "kb_import_events",
 ];
 
