@@ -49,4 +49,17 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('case "arzt-anamnese": append(setArztbericht, text)');
     expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
   });
+
+  it("keeps later findings in autosave and transfers the Vieva date", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+    const autoSaveBlock = source.slice(
+      source.indexOf("// ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----"),
+      source.indexOf("const manualDiagnosisContext"),
+    );
+
+    expect(autoSaveBlock).not.toContain('workflowStage === "finalized"');
+    expect(autoSaveBlock).not.toContain("workflowStage, assertPayloadMatchesPseudonym");
+    expect(source).toContain('filter((item) => item.documentType === "vieva")');
+    expect(source).toContain("if (latestVievaDate) setVievaPlusDatum(latestVievaDate)");
+  });
 });

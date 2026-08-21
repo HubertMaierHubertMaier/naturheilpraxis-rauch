@@ -1637,7 +1637,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (autoSaveSuppressedRef.current || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput || workflowStage === "finalized") return;
+    if (autoSaveSuppressedRef.current || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput) return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
@@ -1680,7 +1680,7 @@ export function TherapyRecommendation() {
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     };
-  }, [pseudonymId, hasMeaningfulInput, buildInputData, workflowStage, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
+  }, [pseudonymId, hasMeaningfulInput, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
   const manualDiagnosisContext = useMemo(() => manualDiagnosen
     .filter((entry) => entry.diagnose.trim())
@@ -3332,6 +3332,13 @@ export function TherapyRecommendation() {
       }
       documentTypes.add(directBefundTargetLabel(documentType));
     }
+    const latestVievaDate = ready
+      .filter((item) => item.documentType === "vieva")
+      .map((item) => item.documentDate.trim())
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    if (latestVievaDate) setVievaPlusDatum(latestVievaDate);
     const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
     await logTherapyEvent(pid, "documents_uploaded", {
       document_count: ready.length,
