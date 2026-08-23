@@ -3314,6 +3314,17 @@ export function TherapyRecommendation() {
       toast({ title: "Datenschutzprüfung fehlt", description: "Bitte jede bereinigte Vorschau sichtbar prüfen und bestätigen.", variant: "destructive" });
       return;
     }
+    const residualIdentifiers = Array.from(new Set(
+      ready.flatMap((item) => directIdentifierCategories(item.previewText || "")),
+    ));
+    if (residualIdentifiers.length) {
+      toast({
+        title: "Datenschutz-Sicherheitsstopp",
+        description: `${residualIdentifiers.join(", ")} wurde bei der zweiten Restprüfung erkannt. Es wird nichts übernommen.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const append = (setter: typeof setLaborKomplett, text: string) => setter((previous) => mergeExtractedBlockIntoField(previous, text));
