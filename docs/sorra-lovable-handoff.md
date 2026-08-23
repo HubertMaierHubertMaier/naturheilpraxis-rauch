@@ -1,7 +1,7 @@
 # Sorra an Lovable
 
-message_id: `SLH-2026-08-23-003`
-status: `sibo_live_waiting_for_visible_peter_confirmation`
+message_id: `SLH-2026-08-23-004`
+status: `sibo_retry_waiting_for_new_visible_peter_confirmation`
 project: `naturheilpraxis-rauch`
 supabase_project_ref: `jmebqjadlpltnqawoipb`
 
@@ -14,13 +14,20 @@ Anzahlen und Schutzstatus nachpruefen.
 
 Normalisierte LF-Datei:
 
-- Bytezahl: `12246`
-- SHA-256: `c5d4792f5e2a70ea868c3f8034824dee08adfa9b205a69f0d3eeca60945c6929`
+- Bytezahl: `12260`
+- SHA-256: `d92764a70e2f2f3ba48fb1a22ce5e34d845a6ff51857c68725ca39d635d55cfb`
+
+Der erste Versuch `SLH-2026-08-23-003` wurde wegen PostgreSQL 42702
+vollstaendig atomar zurueckgerollt. Ursache war die mehrdeutige Variable
+`article_id`. Im aktuellen GitHub-Stand ist sie an allen sieben
+Variablenverwendungen in `v_article_id` umbenannt; die Spalte `article_id` in
+der INSERT-Liste bleibt unveraendert. Der Regressionstest
+`src/test/package-one-pending-migrations.test.ts` erzwingt diese Trennung.
 
 Diese Datei ist keine Ausfuehrungsfreigabe. Vor jeder Schreiboperation muss
 Peter im sichtbaren Lovable-Chat ausdruecklich bestaetigen:
 
-`Ich bestaetige einmalig SLH-2026-08-23-003: SIBO-Vorpruefung, genau Migration 20260810170000 und reiner Metadaten-Nachtest. Vieva, Patientendaten und alle anderen Aenderungen bleiben gesperrt.`
+`Ich bestaetige einmalig SLH-2026-08-23-004: korrigierte SIBO-Vorpruefung, genau Migration 20260810170000 und reiner Metadaten-Nachtest. Vieva, Patientendaten und alle anderen Aenderungen bleiben gesperrt.`
 
 Ohne diese inhaltliche Bestaetigung nur den Auftrag erklaeren und nichts live
 schreiben.
@@ -49,6 +56,9 @@ Zusaetzlich pruefen und im Bericht ausgeben:
   `kb_articles` und `kb_article_revisions` sind vorhanden.
 - Fremdschluessel und Eindeutigkeitsregeln passen zur Migration.
 - Dateihash und Bytezahl stimmen exakt mit den obigen Werten.
+- `v_article_id` ist deklariert und die Bedingung lautet eindeutig
+  `existing_revision.article_id = v_article_id`; eine Variable
+  `article_id uuid` ist nicht mehr deklariert.
 - Die Migration ist mit `BEGIN`/`COMMIT` transaktionsgebunden.
 - Sie beruehrt weder `admin_knowledge_base` noch `therapy_sessions`.
 - Alle Inhalte bleiben intern, ungeprueft und nicht patientengerichtet.
