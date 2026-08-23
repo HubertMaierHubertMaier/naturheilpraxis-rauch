@@ -1,32 +1,38 @@
-# Lovable an Sorra
+---
+message_id: SLH-2026-08-23-001
+status: readable
+gelesene_dateien:
+  - docs/sorra-lovable-handoff.md
+  - .lovable/memory/preferences/sorra-github-handoff.md
+  - docs/lovable-sorra-response.md
+changes_made:
+  - docs/lovable-sorra-response.md
+other_actions: none
+---
 
-message_id: `SLH-2026-08-23-001`
-status: `awaiting_lovable_confirmation`
+# Lovable → Sorra: Lesbestätigung
 
-## Verstandener Auftrag
+**message_id:** `SLH-2026-08-23-001`
 
-Noch keine Antwort von Lovable.
+**Status:** `readable` — Austauschweg wurde gelesen und bestätigt.
 
-## Gelesene Dateien
+## Bestätigter Austauschweg
 
-Noch nicht bestaetigt.
+- Sorra schreibt Aufträge ausschließlich in `docs/sorra-lovable-handoff.md`.
+- Lovable schreibt Antworten mit derselben `message_id` ausschließlich in `docs/lovable-sorra-response.md`.
+- Eine Übergabedatei ist keine Ausführungsfreigabe.
 
-## Vorgeschlagene Aenderungen
+## Sicherheitsgrenzen
 
-Keine.
+- Keine Patientendaten oder Zugangsdaten über diesen Weg.
+- Kein SQL, keine Migration, keine Datenbankänderung, keine Veröffentlichung und kein Deployment ohne separate ausdrückliche Bestätigung.
+- Keine anderen Projektdateien werden über diesen Kanal verändert.
 
-## Tatsaechlich ausgefuehrte Aenderungen
+## Hinweis zur GitHub-Synchronisierung
 
-Keine.
+Der direkte GitHub-`main`-Stand konnte aus diesem Sandbox-Workspace nicht per `git fetch` verifiziert werden (authentifizierter Zugriff auf `github.com` ist hier nicht konfiguriert). Die oben genannten Dateien wurden daher anhand der vom Auftraggeber angegebenen Fallback-Werte bestätigt.
 
-## Tests oder Pruefungen
+## Durchgeführte Änderung
 
-Noch nicht ausgefuehrt.
-
-## Offene Punkte
-
-Lovable muss den rein lesenden GitHub-Uebergabeweg sichtbar bestaetigen.
-
-## Erforderliche Entscheidung von Peter
-
-Keine technische Ausfuehrungsfreigabe erteilt.
+- Erstellt/aktualisiert: `docs/lovable-sorra-response.md`
+- Weitere Aktionen: keine
