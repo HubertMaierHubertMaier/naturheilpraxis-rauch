@@ -62,4 +62,14 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('filter((item) => item.documentType === "vieva")');
     expect(source).toContain("if (latestVievaDate) setVievaPlusDatum(latestVievaDate)");
   });
+
+  it("blocks the synthetic case until a saved patient pseudonym has been restored", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+
+    expect(source).toContain("const [sessionPseudonymRestored, setSessionPseudonymRestored] = useState(false)");
+    expect(source).toContain("setSessionPseudonymRestored(true)");
+    expect(source).toContain("const syntheticCaseLoadBlocked = !sessionPseudonymRestored");
+    expect(source).toContain("|| !!pseudonymId.trim()");
+    expect(source).toContain("Warte, bis ein vorhandener Patientenstand sicher erkannt wurde");
+  });
 });

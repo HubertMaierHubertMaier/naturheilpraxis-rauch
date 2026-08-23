@@ -779,11 +779,20 @@ export default function WikiDatenbank() {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Mittel, Symptom, Erkrankung, Pathogen, Kategorie, Tag oder Inhalt durchsuchen ..."
+                    placeholder="Einzelbegriff oder kombiniert, z. B. Klinghardt, Covid oder Buhner, Banderol ..."
                     className="pl-9"
                     aria-label="WikiDatenbank durchsuchen"
                   />
                 </div>
+                {queryTerms.length > 1 && (
+                  <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-emerald-950">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">Kombinierte UND-Suche:</span>
+                      {queryTerms.map((term) => <Badge key={term} variant="outline">{term}</Badge>)}
+                    </div>
+                    <p className="mt-2 text-emerald-900/80">Es erscheinen nur Ergebnisse, in denen alle Suchbegriffe gemeinsam vorkommen.</p>
+                  </div>
+                )}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
                   <span>{loading ? "Eintraege werden gelesen ..." : hasQuery ? `${filteredEntries.length} Wiki-Treffer, ${detailedImportResults.length} Treffer im geschuetzten Pruefbereich` : `${entries.length} Wiki-Eintraege und ${importCandidates.length} Importkandidaten durchsuchbar`}</span>
                   <span>Keine Schreib-, Loesch- oder Freigabeaktionen in dieser Ansicht</span>
@@ -796,7 +805,7 @@ export default function WikiDatenbank() {
                 <CardContent className="p-5 text-sm text-blue-950">
                   <p className="font-semibold">Gesamtsuche nach „{deferredSearch}“</p>
                   <p className="mt-1 text-blue-900/80">
-                    Die Suche verbindet den strukturierten Wiki-Bestand, gepruefte Produktverknuepfungen und den geschuetzten Import-Pruefbereich. Ungepruefte Angaben bleiben deutlich gekennzeichnet und werden nicht automatisch freigegeben.
+                    Die Suche verbindet den strukturierten Wiki-Bestand, gepruefte Produktverknuepfungen und den geschuetzten Import-Pruefbereich. {queryTerms.length > 1 ? "Bei der kombinierten Suche muessen alle Begriffe gemeinsam im Ergebnis vorkommen. " : ""}Ungepruefte Angaben bleiben deutlich gekennzeichnet und werden nicht automatisch freigegeben.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="outline">Wiki: {filteredEntries.length}</Badge>
