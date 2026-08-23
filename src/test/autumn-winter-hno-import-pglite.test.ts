@@ -79,7 +79,7 @@ afterAll(async () => {
 
 describe("autumn/winter HNO internal import", () => {
   it("matches the immutable source inventory and retains the Strunz source", () => {
-    const inventoryHash = createHash("sha256").update(inventoryText).digest("hex");
+    const inventoryHash = createHash("sha256").update(inventoryText.replace(/\r\n/g, "\n")).digest("hex");
     expect(autumnWinterMigration).toContain(inventoryHash);
     expect(inventory).toMatchObject({
       visibility: "admin_only",

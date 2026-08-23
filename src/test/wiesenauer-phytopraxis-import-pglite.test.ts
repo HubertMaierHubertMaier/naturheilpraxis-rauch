@@ -88,7 +88,7 @@ afterAll(async () => {
 
 describe("Wiesenauer PhytoPraxis internal import", () => {
   it("is generated from the current immutable inventory", () => {
-    const inventoryHash = createHash("sha256").update(inventoryText).digest("hex");
+    const inventoryHash = createHash("sha256").update(inventoryText.replace(/\r\n/g, "\n")).digest("hex");
     expect(wiesenauerMigration).toContain(inventoryHash);
     expect(wiesenauerMigration).toContain("'admin_only'");
     expect(wiesenauerMigration).toContain("'unreviewed'");
