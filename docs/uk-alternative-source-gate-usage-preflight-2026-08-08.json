@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T21:32:00.000Z",
+  "publication": "unpublished_internal_gate_usage_preflight",
+  "source_access_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json",
+  "product_gap_matrix": "docs/product-preflight-gap-matrix-2026-08-08.json",
+  "status": "context_only_no_clearance",
+  "source_use": [
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "source_role": "population_level_vitamin_d_reference_and_source_recency",
+      "usable_for": ["population_context", "general_evidence_framework"],
+      "does_not_close": ["D3/K2_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"]
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "source_role": "population_level_iron_status_and_dietary_context",
+      "usable_for": ["population_context", "general_evidence_framework"],
+      "does_not_close": ["bisglycinate/sulfate_product_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2011; currentness and scope require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+      "source_role": "population_level_iodine_evidence_and_uncertainty_context",
+      "usable_for": ["population_context", "evidence_gap_context"],
+      "does_not_close": ["brown_algae_source_standardization", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2014; statement scope and currentness require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "source_role": "maternal_exposure_and_excess_iodine_context",
+      "usable_for": ["pregnancy_population_gate", "total_exposure_context", "source_variability_context"],
+      "does_not_close": ["product_form", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2022; source is a risk statement, not a product assessment."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+      "source_role": "current_food_supplement_definition_forms_claims_and_safety_escalation_context",
+      "usable_for": ["supplement_form_context", "label_and_warning_context", "claims_boundary_context", "general_safety_process_context"],
+      "does_not_close": ["ingredient_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published and updated 2026-06-25."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "source_role": "population_level_selenium_evidence_and_evidence_limitations",
+      "usable_for": ["population_context", "general_evidence_framework"],
+      "does_not_close": ["selenium_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2013; statement scope and currentness require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+      "source_role": "population_and_pregnancy_context_for_vitamin_a_and_retinol",
+      "usable_for": ["population_context", "pregnancy_population_gate", "general_evidence_framework"],
+      "does_not_close": ["vitamin_a_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2005; currentness and scope require explicit review."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+      "source_role": "vitamin_e_maternal_exposure_gap_awareness_only",
+      "usable_for": ["source_gap_awareness"],
+      "does_not_close": ["vitamin_e_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Published 2026-07-06; explicitly a discussion paper that should not be cited."
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "source_role": "current_great_britain_claims_and_regulatory_boundary_context",
+      "usable_for": ["claims_boundary_context", "commercial_communication_context"],
+      "does_not_close": ["ingredient_form_equivalence", "product_efficacy", "individual_suitability", "drug_interaction_clearance", "dose_approval"],
+      "recency_note": "Last updated 2026-05-19; authorised/rejected claim status is not product evidence."
+    }
+  ],
+  "gate_effect": {
+    "form_gate": "still_open",
+    "population_gate": "still_open",
+    "interaction_gate": "still_open",
+    "safety_gate": "still_open",
+    "product_mapping": "not_performed",
+    "condition_mapping": "not_performed",
+    "database_writes": false,
+    "wiki_writes": false
+  },
+  "conclusion": "The nine accessible UK source routes improve general and regulatory context; one vitamin-E route is explicitly not citable. None authorizes any product, ingredient-form, interaction, dose, condition or patient-facing decision."
+}

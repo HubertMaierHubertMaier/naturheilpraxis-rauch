@@ -33,5 +33,33 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("metatronDatum={metatronDatum}");
     expect(source).toContain("pdfPassword={vievaPlusPdfPassword}");
     expect(source).toContain("onPdfPasswordChange={setVievaPlusPdfPassword}");
+    expect(source).toContain("Vor dem PDF-Import zuerst das Analyse-Datum eintragen.");
+    expect(source).toContain("Datenschutz- und Sicherheitsprüfung:");
+    expect(source).toContain("Nur den zum aktuellen Pseudonym gehörenden Befund verwenden.");
+    expect(source).toContain("ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung");
+    expect(source).toContain("Sicher auslesen und Vorschau erstellen");
+    expect(source).toContain("Datenschutzbereinigte Vorschau");
+    expect(source).toContain("Geprüfte Inhalte passend übernehmen");
+    expect(source).toContain('documentType: "" as const');
+    expect(source).toContain('title: "Dokumentart fehlt"');
+    expect(source).not.toContain('documentType: "sonstige" as const');
+    expect(source).toContain('case "labor": append(setLaborKomplett, text)');
+    expect(source).toContain('case "metatron": append(setMetatronHeel, text)');
+    expect(source).toContain('case "vieva": append(setVievaPlus, text)');
+    expect(source).toContain('case "arzt-anamnese": append(setArztbericht, text)');
+    expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
+  });
+
+  it("keeps later findings in autosave and transfers the Vieva date", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+    const autoSaveBlock = source.slice(
+      source.indexOf("// ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----"),
+      source.indexOf("const manualDiagnosisContext"),
+    );
+
+    expect(autoSaveBlock).not.toContain('workflowStage === "finalized"');
+    expect(autoSaveBlock).not.toContain("workflowStage, assertPayloadMatchesPseudonym");
+    expect(source).toContain('filter((item) => item.documentType === "vieva")');
+    expect(source).toContain("if (latestVievaDate) setVievaPlusDatum(latestVievaDate)");
   });
 });

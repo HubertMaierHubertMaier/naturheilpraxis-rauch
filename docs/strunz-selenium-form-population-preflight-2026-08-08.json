@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:05:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-selen-vitamin-c",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Selen und Vitamin C",
+    "serving": "1 capsule",
+    "selenium": "150 ug",
+    "vitamin_c": "222 mg",
+    "declared_component_amounts": [
+      {"name": "rosehip fruit extract", "amount": "445 mg"},
+      {"name": "mustard seed extract", "amount": "42.8 mg"}
+    ],
+    "manufacturer_warning_topics": []
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "status": "accessible_independent_government_scientific_statement",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "published": "2013-05-12"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The candidate declares selenium and vitamin C nutrient amounts plus botanical component amounts, but no selenium or vitamin-C forms are declared in the candidate. NHS and SACN provide general population context, but independent form identity, equivalence and bioavailability review is not established.",
+    "required_before_any_mapping": ["identity verification", "form disclosure or confirmation", "bioavailability context", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance; population-specific assessment remains open.",
+    "required_before_any_mapping": ["children and adolescents", "pregnancy and breastfeeding context", "dietary selenium and duplicate intake context", "thyroid and other relevant medical context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

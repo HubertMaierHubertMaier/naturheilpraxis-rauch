@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T21:30:00.000Z",
+  "latest_access_check": {
+    "checked_at": "2026-08-09T00:00:00.000Z",
+    "method": "GET_with_followed_redirects",
+    "source_urls_checked": 12,
+    "http_200_responses": 12,
+    "access_errors": 0,
+    "interpretation": "Access confirmation only; it does not change source scope, recency class, citation restrictions or gate status."
+  },
+  "search_gaps": [
+    {
+      "query_scope": "GOV.UK search for SACN vitamin K",
+      "result": "No direct current SACN vitamin-K report identified; returned results were general SACN collection or other nutrient material.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for SACN magnesium",
+      "result": "No direct current SACN magnesium report identified; returned results were general SACN collection or unrelated nutrition material.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for SACN zinc",
+      "result": "No direct current SACN zinc report identified; the results included the general SACN collection and an older 2008 zinc-related record, neither imported as a current nutrient-specific frame.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for COT folic acid tolerable upper level",
+      "result": "No separate direct COT folic-acid upper-level report identified; two guessed official publication routes returned 404 and the search returned the current DHSC folic-acid guidance plus an older consultation response.",
+      "use_status": "not_imported"
+    },
+    {
+      "query_scope": "GOV.UK search for current magnesium safety guidance",
+      "result": "The official API resolved the current UKHSA route 'Magnesium: health effects and incident management', last updated 2024-11-26. It is restricted to chemical-exposure and incident-response context, not food supplements.",
+      "use_status": "source_added_restricted_scope"
+    },
+    {
+      "query_scope": "GOV.UK search for current zinc safety guidance",
+      "result": "The API resolved the older 2008 FCDO research-output record as a Journal of Nutrition model article about phytate effects on zinc reference intakes. It is not a current UK safety assessment, and the article states that experimental studies are required to test its predictions; no current nutrient-specific zinc safety framework was identified.",
+      "use_status": "not_imported"
+    }
+  ],
+  "publication": "unpublished_internal_source_access_audit",
+  "scope": "Record accessible current or official UK source routes that can supplement the general NHS frames without importing product, condition or dose decisions.",
+  "sources": [
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a804e36ed915d74e622dafa/SACN_Vitamin_D_and_Health_report.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2016-07-21",
+      "last_updated": "2023-12-11",
+      "scope": "Population-level vitamin-D evidence and UK reference-intake context",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7df3dd40f0b62305b7fd53/SACN_Iron_and_Health_Report.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2011-02-25",
+      "last_updated": null,
+      "scope": "Population-level iron status, dietary context and evidence gaps",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7e469ced915d74e62253f3/SACN_Iodine_and_Health_2014.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_statement",
+      "access_status": "accessible",
+      "published": "2014-02-18",
+      "last_updated": null,
+      "scope": "Population-level iodine evidence, adequacy questions and evidence limitations",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "publisher": "Committee on Toxicity of Chemicals in Food, Consumer Products and the Environment",
+      "source_type": "independent_government_risk_statement",
+      "access_status": "accessible",
+      "published": "2022-11-24",
+      "last_updated": null,
+      "scope": "Excess-iodine exposure questions in preconception, pregnancy and lactation, including source variability and uncertainty",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+      "publisher": "Food Standards Agency",
+      "source_type": "current_government_food_supplement_guidance",
+      "access_status": "accessible",
+      "published": "2026-06-25",
+      "last_updated": "2026-06-25",
+      "scope": "General food-supplement definition, forms, label/warning context, claims boundaries and safety escalation",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7ea6b440f0b62305b824ce/SACN_Selenium_and_Health_2013.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_statement",
+      "access_status": "accessible",
+      "published": "2013-05-12",
+      "last_updated": null,
+      "scope": "Population-level selenium evidence, dietary intake context and evidence limitations",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+      "document_url": "https://assets.publishing.service.gov.uk/media/5a7de3e5e5274a2e8ab4478d/SACN_Review_of_Dietary_Advice_on_Vitamin_A.pdf",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2005-07-26",
+      "last_updated": null,
+      "scope": "Population and pregnancy context for dietary advice on vitamin A, liver and retinol supplements",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+      "publisher": "Scientific Advisory Committee on Nutrition / Public Health England",
+      "source_type": "independent_government_scientific_report",
+      "access_status": "accessible",
+      "published": "2017-07-12",
+      "last_updated": null,
+      "scope": "Population-level folic-acid fortification and adverse-effect risk-review context, including neural-tube-defect prevention context",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+      "publisher": "Committee on Toxicity of Chemicals in Food, Consumer Products and the Environment",
+      "source_type": "current_government_discussion_paper",
+      "access_status": "accessible_but_not_citable",
+      "published": "2026-07-06",
+      "last_updated": null,
+      "scope": "Discussion paper on excess vitamin-E and maternal-health questions",
+      "restriction": "The page states that this is a discussion paper, does not represent Committee views and should not be cited.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "publisher": "Department of Health and Social Care",
+      "source_type": "current_government_claims_register",
+      "access_status": "accessible",
+      "published": "2020-12-31",
+      "last_updated": "2026-05-19",
+      "scope": "Authorised and rejected nutrition and health claims for commercial communications in Great Britain",
+      "restriction": "Claims-register status is a regulatory communication context only; it does not establish product composition, efficacy, suitability, interaction clearance or safety.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+      "publisher": "Department of Health and Social Care",
+      "source_type": "current_government_public_health_guidance",
+      "access_status": "accessible",
+      "published": "2026-07-10",
+      "last_updated": "2026-07-10",
+      "scope": "Current UK folic-acid fortification, pregnancy-context and interaction-triage guidance",
+      "restriction": "Public-health and regulatory context only; it does not establish product composition, efficacy, suitability, individual dose or safety clearance.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+      "publisher": "UK Health Security Agency",
+      "source_type": "independent_government_chemical_hazard_guidance",
+      "access_status": "accessible",
+      "published": "2014-07-01",
+      "last_updated": "2024-11-26",
+      "scope": "Chemical magnesium exposure health effects and incident-response context",
+      "restriction": "Chemical-incident guidance only; it does not establish food-supplement form, oral dose, bioavailability, suitability, interaction clearance or product safety.",
+      "product_mapping": "not_performed",
+      "condition_mapping": "not_performed"
+    }
+  ],
+  "access_gaps_reduced": [
+    "Current official UK source route for general food-supplement safety and claims context",
+    "Official SACN vitamin-D report route updated in 2023",
+    "Official SACN and COT iodine routes with maternal-exposure context",
+    "Official SACN iron report route",
+    "Official SACN selenium route",
+    "Official vitamin-A route for pregnancy and retinol context",
+    "Official SACN folic-acid recommendations route",
+    "Current Great Britain nutrition and health claims register route",
+    "Current GOV.UK folic-acid fortification and pregnancy-context route"
+  ],
+  "remaining_limits": [
+    "These sources are population-level or regulatory frames and do not establish product form, bioavailability, efficacy, suitability, interaction clearance or dose approval.",
+    "The 2005, 2011, 2013, 2014 and 2022 scientific sources require recency and scope review before any later use.",
+    "The 2026 vitamin-E discussion paper is accessibly available for gap awareness but is explicitly not citable and cannot close any gate.",
+    "NIH ODS professional HTML routes and direct Consumer PDF routes tested separately remained HTTP 403.",
+    "No database, wiki, product or condition mapping is performed by this audit."
+  ],
+  "database_writes": false,
+  "wiki_writes": false
+}

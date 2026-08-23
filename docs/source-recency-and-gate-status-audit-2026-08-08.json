@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T21:58:00.000Z",
+  "publication": "unpublished_internal_source_recency_audit",
+  "source_access_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json",
+  "sources": [
+    {
+      "source_url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+      "recency_class": "current",
+      "published_or_updated": "2026-06-25",
+      "gate_use": ["general_supplement_definition", "claims_boundary", "safety_process_context"],
+      "gate_status": "context_only_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+      "recency_class": "updated_but_population_framework",
+      "published_or_updated": "2023-12-11",
+      "gate_use": ["vitamin_d_population_context", "general_evidence_framework"],
+      "gate_status": "context_only_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+      "recency_class": "maternal_context_2022",
+      "published_or_updated": "2022-11-24",
+      "gate_use": ["iodine_maternal_context", "excess_exposure_context", "source_variability_context"],
+      "gate_status": "context_only_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+      "recency_class": "older_population_framework",
+      "published_or_updated": "2011-02-25",
+      "gate_use": ["iron_population_context", "dietary_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+      "recency_class": "older_population_framework",
+      "published_or_updated": "2013-05-12",
+      "gate_use": ["selenium_population_context", "evidence_gap_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+      "recency_class": "older_population_framework",
+      "published_or_updated": "2014-02-18",
+      "gate_use": ["iodine_population_context", "evidence_gap_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+      "recency_class": "older_population_and_pregnancy_framework",
+      "published_or_updated": "2005-07-26",
+      "gate_use": ["vitamin_a_population_context", "retinol_pregnancy_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+      "recency_class": "older_population_and_risk_review_framework",
+      "published_or_updated": "2017-07-12",
+      "gate_use": ["folate_population_context", "folic_acid_fortification_context", "adverse_effect_risk_review_context"],
+      "gate_status": "requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health",
+      "recency_class": "current_discussion_paper",
+      "published_or_updated": "2026-07-06",
+      "gate_use": ["vitamin_e_gap_awareness_only"],
+      "gate_status": "not_citable_do_not_use_as_evidence"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "recency_class": "current_claims_register",
+      "published_or_updated": "2026-05-19",
+      "gate_use": ["claims_boundary_context", "commercial_communication_context"],
+      "gate_status": "regulatory_context_only_no_product_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+      "recency_class": "current_public_health_and_regulatory_context",
+      "published_or_updated": "2026-07-10",
+      "gate_use": ["folate_fortification_context", "pregnancy_context", "interaction_triage_context"],
+      "gate_status": "context_only_no_product_or_individual_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+      "recency_class": "current_but_chemical_incident_scope",
+      "published_or_updated": "2024-11-26",
+      "gate_use": ["magnesium_chemical_exposure_context", "incident_response_context"],
+      "gate_status": "restricted_context_only_no_supplement_clearance"
+    }
+  ],
+  "additional_nhs_recency_checks": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/",
+      "page_last_reviewed": "2020-08-03",
+      "next_review_due": "2023-08-03",
+      "recency_status": "review_overdue",
+      "gate_status": "context_only_requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "page_last_reviewed": "2020-08-03",
+      "next_review_due": "2023-08-03",
+      "recency_status": "review_overdue",
+      "gate_status": "context_only_requires_currentness_review_no_clearance"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/calcium/",
+      "page_last_reviewed": "2020-08-03",
+      "next_review_due": "2023-08-03",
+      "recency_status": "review_overdue",
+      "gate_status": "context_only_requires_currentness_review_no_clearance"
+    }
+  ],
+  "overall_gate_effect": {
+    "form_gate": "still_open",
+    "population_gate": "still_open",
+    "interaction_gate": "still_open",
+    "safety_gate": "still_open",
+    "product_mapping": "not_performed",
+    "condition_mapping": "not_performed",
+    "database_writes": false,
+    "wiki_writes": false
+  },
+  "next_review": "Acquire or verify newer independent nutrient- and form-specific sources before relying on older population frameworks; do not infer product suitability or dose approval from this audit."
+}

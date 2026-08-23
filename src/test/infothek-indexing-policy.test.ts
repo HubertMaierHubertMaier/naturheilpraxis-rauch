@@ -12,7 +12,7 @@ const manifest = JSON.parse(
   publicOrigin: string;
   pages: Array<{
     file: string;
-    visibility: "public" | "patient";
+    visibility: "public" | "patient" | "internal";
     targetPath: string | null;
     reviewStatus: string;
     indexable: boolean;
@@ -38,8 +38,8 @@ describe("Infothek indexing policy", () => {
     expect(existsSync(resolve(root, "public/content-protection.js"))).toBe(false);
   });
 
-  it("keeps all 19 website source pages outside public hosting", () => {
-    expect(sourceHtmlFiles).toHaveLength(19);
+  it("keeps all 21 website source pages outside public hosting", () => {
+    expect(sourceHtmlFiles).toHaveLength(21);
     expect(existsSync(internalSource)).toBe(true);
   });
 
@@ -79,6 +79,28 @@ describe("Infothek indexing policy", () => {
     expect(manifest.pages.map((page) => page.file).sort()).toEqual(sourceHtmlFiles.sort());
     expect(manifest.pages.every((page) => page.reviewStatus === "pending")).toBe(true);
     expect(manifest.pages.every((page) => page.indexable === false)).toBe(true);
+  });
+
+  it("keeps both autumn/winter drafts internal and makes the talk seven minutes long", () => {
+    const protectedFiles = [
+      "fit-gesund-herbst-winter-7-minuten.html",
+      "fit-gesund-herbst-winter-infothek.html",
+    ];
+    for (const file of protectedFiles) {
+      const entry = manifest.pages.find((page) => page.file === file);
+      expect(entry?.visibility).toBe("internal");
+      expect(entry?.targetPath).toBeNull();
+    }
+
+    const talk = readFileSync(resolve(websiteSource, protectedFiles[0]), "utf8");
+    const spokenArticle = talk.match(/<article id="sprechtext"[\s\S]*?<\/article>/)?.[0];
+    expect(spokenArticle).toBeDefined();
+    const spokenWords = spokenArticle!
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&[a-z0-9#]+;/gi, " ")
+      .match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9-]+/g) ?? [];
+    expect(spokenWords.length).toBeGreaterThanOrEqual(800);
+    expect(spokenWords.length).toBeLessThanOrEqual(950);
   });
 
   it("gives every future public page one canonical target and named author", () => {

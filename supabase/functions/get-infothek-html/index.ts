@@ -8,6 +8,8 @@ const INFOTHEK_ROUTES = [
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/ersttermin-naturheilpraxis.html",
+  "/fit-gesund-herbst-winter-7-minuten.html",
+  "/fit-gesund-herbst-winter-infothek.html",
   "/krankheit-ist-messbar.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/logi-ernaehrung-mitochondrien.html",
@@ -34,6 +36,8 @@ const PATIENT_ONLY_ROUTES = new Set<string>([
 ]);
 const ADMIN_ONLY_ROUTES = new Set<string>([
   "/datenschutz-fahrplan.html",
+  "/fit-gesund-herbst-winter-7-minuten.html",
+  "/fit-gesund-herbst-winter-infothek.html",
 ]);
 
 const allowedCorsHostnames = new Set([

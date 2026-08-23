@@ -1,0 +1,27 @@
+{
+  "inventory": "B1 Mannayan CHROM+",
+  "capturedAt": "2026-08-07",
+  "status": "blocked_read_only",
+  "restrictions": { "liveDatabaseWrites": 0, "wikiWrites": 0, "imports": 0, "sourceAssignments": 0, "medicalEvaluations": 0, "safetyClearances": 0, "dosageClearances": 0 },
+  "product": { "manufacturer": "Mannayan GmbH & Co. KG", "title": "Mannayan CHROM + (60 Kapseln)", "productNumber": "010043", "packaging": "60 Kapseln, 27 g", "priceEur": 28.9, "manufacturerSource": "https://mannayan.com/Mannayan-CHROM-60-Kapseln/010043" },
+  "atomicStatements": [
+    { "id": "product-title", "value": "Mannayan CHROM+", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "product-number", "value": "010043", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "packaging", "value": "60 Kapseln, 27 g", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "price-eur", "value": 28.9, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "ingredient", "value": "Bananen-Pulver aus kontrolliertem Anbau", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "chromium-form", "value": "Chrom(III)-Picolinat", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "chromium-per-capsule-micrograms", "value": 100, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "chromium-nrv-percent", "value": 250, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "capsule-shell", "value": "Hydroxypropylmethylcellulose", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "recommended-intake", "value": "1 Kapsel taeglich", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "manufacturer-warning", "value": "Insulinpflichtige Diabetiker sollen vor Einnahme einen Arzt konsultieren", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-daily-amount", "value": "Nicht ueberschreiten", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-no-diet-replacement", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-child-safety", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "storage", "value": "lichtgeschuetzt, kuehl und trocken", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "seal-warning", "value": "Nicht verwenden, wenn Verschlussband fehlt", "source": "manufacturer", "status": "blocked_read_only" }
+  ],
+  "sourceGaps": ["Unabhaengige Sicherheitsquelle zu Chrom(III)-Picolinat", "Quellengebundener Interaktions- und Kontraindikationsabgleich, insbesondere bei Diabetesbehandlung", "Getrennte Wirksamkeitsbewertung"],
+  "conclusion": "Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

@@ -1,0 +1,881 @@
+{
+  "schema_version": 1,
+  "batch": {
+    "source_kind": "json",
+    "source_label": "Strunz oeffentliche Produktdeklarationen 2026-08-04: Faktenkarten",
+    "source_hash": "b1efd8b8d18048a451722d8e98f32b55ca67ced99f6a8dc2163ac5ff7789e2a2",
+    "parser_name": "build-strunz-public-fact-import-batch",
+    "parser_version": "1.0.0",
+    "model_name": "",
+    "prompt_hash": null,
+    "batch_status": "created",
+    "candidate_count": 9,
+    "error_count": 0,
+    "data_classification": "general_knowledge",
+    "metadata": {
+      "card_type": "strunz_public_product_fact_card",
+      "source_cards": 9,
+      "disease_or_symptom_cards": 0,
+      "import_scope": "public-product-facts-2026-08-04",
+      "publication": "unpublished_internal_staging"
+    }
+  },
+  "source_candidates": [
+    {
+      "candidate_key": "source:strunz-20260804-vitamin-d3-k2",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin D3 + K2",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+      "external_identifier": "strunz-20260804-vitamin-d3-k2",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 8dfaa1d8bca35605621018fec6e36fb253fc1c7c40f7d3c9c5ed113ed0cf3b98.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin D3 + K2; EAN 4260180440829.\n- Declared serving: 1 drop.\n- Manufacturer-declared daily use: 1 drop; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin D3: 25 ug; 500% NRV.\n- Vitamin K2 (MK-7 all-trans): 15 ug; 20% NRV.\n\n## Manufacturer warning topics\n- anticoagulant consultation.\n- avoid additional vitamin D supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-vitamin-d3-k2",
+        "aliases": [
+          "Vitamin D3 + K2"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 8dfaa1d8bca35605621018fec6e36fb253fc1c7c40f7d3c9c5ed113ed0cf3b98",
+            "url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Vitamin D3 + K2",
+          "ean": "4260180440829",
+          "serving": "1 drop",
+          "manufacturer_daily_use": "1 drop"
+        },
+        "nutrients": [
+          {
+            "name": "Vitamin D3",
+            "amount": "25",
+            "unit": "ug",
+            "nrv_percent": 500
+          },
+          {
+            "name": "Vitamin K2",
+            "form": "MK-7 all-trans",
+            "amount": "15",
+            "unit": "ug",
+            "nrv_percent": 20
+          }
+        ],
+        "declared_component_amounts": [],
+        "manufacturer_warning_topics": [
+          "anticoagulant consultation",
+          "avoid additional vitamin D supplements"
+        ],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin D3 + K2; EAN 4260180440829.\n- Declared serving: 1 drop.\n- Manufacturer-declared daily use: 1 drop; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin D3: 25 ug; 500% NRV.\n- Vitamin K2 (MK-7 all-trans): 15 ug; 20% NRV.\n\n## Manufacturer warning topics\n- anticoagulant consultation.\n- avoid additional vitamin D supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-magnesium-caps",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Magnesium Caps",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/magnesium-caps.html",
+      "external_identifier": "strunz-20260804-magnesium-caps",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 e7974d945afcede483437dcb2601410b796084e1f28a779a99651e84044cd0cf.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Magnesium Caps; EAN 4260180441079.\n- Declared serving: 3 capsules.\n- Manufacturer-declared daily use: 3 capsules; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Magnesium: 346 mg; 92% NRV.\n- Vitamin B6 (pyridoxal-5-phosphate): 1.2 mg; 86% NRV.\n\n## Manufacturer warning topics\n- not intended for children under four.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-magnesium-caps",
+        "aliases": [
+          "Magnesium Caps"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 e7974d945afcede483437dcb2601410b796084e1f28a779a99651e84044cd0cf",
+            "url": "https://www.strunz.com/magnesium-caps.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Magnesium Caps",
+          "ean": "4260180441079",
+          "serving": "3 capsules",
+          "manufacturer_daily_use": "3 capsules"
+        },
+        "nutrients": [
+          {
+            "name": "Magnesium",
+            "amount": "346",
+            "unit": "mg",
+            "nrv_percent": 92
+          },
+          {
+            "name": "Vitamin B6",
+            "form": "pyridoxal-5-phosphate",
+            "amount": "1.2",
+            "unit": "mg",
+            "nrv_percent": 86
+          }
+        ],
+        "declared_component_amounts": [],
+        "manufacturer_warning_topics": [
+          "not intended for children under four"
+        ],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Magnesium Caps; EAN 4260180441079.\n- Declared serving: 3 capsules.\n- Manufacturer-declared daily use: 3 capsules; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Magnesium: 346 mg; 92% NRV.\n- Vitamin B6 (pyridoxal-5-phosphate): 1.2 mg; 86% NRV.\n\n## Manufacturer warning topics\n- not intended for children under four.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-eisen-caps",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Eisen Caps",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+      "external_identifier": "strunz-20260804-eisen-caps",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 79f4a5d1f9ad7c7ce040f896361dacdd29548484da2ba4d8bdd60830545be974.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Eisen Caps; EAN 4260180441345.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Iron: 14 mg; 100% NRV.\n- Vitamin C: 84 mg; 105% NRV.\n\n## Manufacturer warning topics\n- medical consultation for men, postmenopausal women, and pregnancy.\n- avoid additional iron supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-eisen-caps",
+        "aliases": [
+          "Eisen Caps"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 79f4a5d1f9ad7c7ce040f896361dacdd29548484da2ba4d8bdd60830545be974",
+            "url": "https://www.strunz.com/forever-young-eisen-caps.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Eisen Caps",
+          "ean": "4260180441345",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Iron",
+            "amount": "14",
+            "unit": "mg",
+            "nrv_percent": 100
+          },
+          {
+            "name": "Vitamin C",
+            "amount": "84",
+            "unit": "mg",
+            "nrv_percent": 105
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "iron bisglycinate",
+            "amount": "43.5",
+            "unit": "mg"
+          },
+          {
+            "name": "iron sulfate",
+            "amount": "13.5",
+            "unit": "mg"
+          },
+          {
+            "name": "acerola fruit juice powder",
+            "amount": "498",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [
+          "medical consultation for men, postmenopausal women, and pregnancy",
+          "avoid additional iron supplements"
+        ],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Eisen Caps; EAN 4260180441345.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Iron: 14 mg; 100% NRV.\n- Vitamin C: 84 mg; 105% NRV.\n\n## Manufacturer warning topics\n- medical consultation for men, postmenopausal women, and pregnancy.\n- avoid additional iron supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-zink-caps",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Zink Caps",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/forever-young-zink-caps.html",
+      "external_identifier": "strunz-20260804-zink-caps",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 d448ab716af5df819ab686ca135557d2cafbf4e35cb289cfbb4f210e7ac693f0.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Zink Caps; EAN 4260180441338.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Zinc: 15 mg; 150% NRV.\n- Vitamin C: 160 mg; 200% NRV.\n\n## Manufacturer warning topics\n- avoid additional zinc supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-zink-caps",
+        "aliases": [
+          "Zink Caps"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 d448ab716af5df819ab686ca135557d2cafbf4e35cb289cfbb4f210e7ac693f0",
+            "url": "https://www.strunz.com/forever-young-zink-caps.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Zink Caps",
+          "ean": "4260180441338",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Zinc",
+            "amount": "15",
+            "unit": "mg",
+            "nrv_percent": 150
+          },
+          {
+            "name": "Vitamin C",
+            "amount": "160",
+            "unit": "mg",
+            "nrv_percent": 200
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "zinc bisglycinate",
+            "amount": "28",
+            "unit": "mg"
+          },
+          {
+            "name": "zinc picolinate",
+            "amount": "34.9",
+            "unit": "mg"
+          },
+          {
+            "name": "aronia berry fruit extract",
+            "amount": "200",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [
+          "avoid additional zinc supplements"
+        ],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Zink Caps; EAN 4260180441338.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Zinc: 15 mg; 150% NRV.\n- Vitamin C: 160 mg; 200% NRV.\n\n## Manufacturer warning topics\n- avoid additional zinc supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-selen-vitamin-c",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Selen und Vitamin C",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+      "external_identifier": "strunz-20260804-selen-vitamin-c",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 1e57455d887fd6e157b5b54a157a8ba7d029a61aad2c420300786f3c5cd6412e.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Selen und Vitamin C; EAN 4260180440966.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin C: 222 mg; 278% NRV.\n- Selenium: 150 ug; 273% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-selen-vitamin-c",
+        "aliases": [
+          "Selen und Vitamin C"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 1e57455d887fd6e157b5b54a157a8ba7d029a61aad2c420300786f3c5cd6412e",
+            "url": "https://www.strunz.com/selen-und-vitamin-c.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Selen und Vitamin C",
+          "ean": "4260180440966",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Vitamin C",
+            "amount": "222",
+            "unit": "mg",
+            "nrv_percent": 278
+          },
+          {
+            "name": "Selenium",
+            "amount": "150",
+            "unit": "ug",
+            "nrv_percent": 273
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "rosehip fruit extract",
+            "amount": "445",
+            "unit": "mg"
+          },
+          {
+            "name": "mustard seed extract",
+            "amount": "42.8",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Selen und Vitamin C; EAN 4260180440966.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin C: 222 mg; 278% NRV.\n- Selenium: 150 ug; 273% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-jod",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: for you eHealth Jod",
+      "publisher": "for you eHealth via Strunz product page",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/for-you-jod.html",
+      "external_identifier": "strunz-20260804-jod",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 6422d17ebf3c78e0507d4ea1d752d026e09f1b5b00ef518ee802f8f8a158a46f.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- for you eHealth Jod; EAN 4260538090904.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Iodine: 256 ug; 170% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-jod",
+        "aliases": [
+          "Jod"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 6422d17ebf3c78e0507d4ea1d752d026e09f1b5b00ef518ee802f8f8a158a46f",
+            "url": "https://www.strunz.com/for-you-jod.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "for you eHealth",
+          "name": "Jod",
+          "ean": "4260538090904",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Iodine",
+            "amount": "256",
+            "unit": "ug",
+            "nrv_percent": 170
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "brown algae powder",
+            "amount": "365",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- for you eHealth Jod; EAN 4260538090904.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Iodine: 256 ug; 170% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-vitamin-b-komplex",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin B Komplex",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+      "external_identifier": "strunz-20260804-vitamin-b-komplex",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 1096b32e29b5a2bd7897766f2c78d8a8ff86042d450f155c411a47f219ebdaae.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin B Komplex; EAN 4260180441505.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Pantothenic acid: 81 mg; 1350% NRV.\n- Niacin: 47 mg; 293% NRV.\n- Thiamin: 30 mg; 2727% NRV.\n- Riboflavin: 30 mg; 2143% NRV.\n- Vitamin B6: 20 mg; 1428% NRV.\n- Folate: 352 ug; 176% NRV.\n- Biotin: 387 ug; 774% NRV.\n- Vitamin B12: 200 ug; 8000% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-vitamin-b-komplex",
+        "aliases": [
+          "Vitamin B Komplex"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 1096b32e29b5a2bd7897766f2c78d8a8ff86042d450f155c411a47f219ebdaae",
+            "url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Vitamin B Komplex",
+          "ean": "4260180441505",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Pantothenic acid",
+            "amount": "81",
+            "unit": "mg",
+            "nrv_percent": 1350
+          },
+          {
+            "name": "Niacin",
+            "amount": "47",
+            "unit": "mg",
+            "nrv_percent": 293
+          },
+          {
+            "name": "Thiamin",
+            "amount": "30",
+            "unit": "mg",
+            "nrv_percent": 2727
+          },
+          {
+            "name": "Riboflavin",
+            "amount": "30",
+            "unit": "mg",
+            "nrv_percent": 2143
+          },
+          {
+            "name": "Vitamin B6",
+            "amount": "20",
+            "unit": "mg",
+            "nrv_percent": 1428
+          },
+          {
+            "name": "Folate",
+            "amount": "352",
+            "unit": "ug",
+            "nrv_percent": 176
+          },
+          {
+            "name": "Biotin",
+            "amount": "387",
+            "unit": "ug",
+            "nrv_percent": 774
+          },
+          {
+            "name": "Vitamin B12",
+            "amount": "200",
+            "unit": "ug",
+            "nrv_percent": 8000
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "choline",
+            "amount": "19.5",
+            "unit": "mg"
+          },
+          {
+            "name": "myo-inositol",
+            "amount": "40",
+            "unit": "mg"
+          },
+          {
+            "name": "PABA",
+            "amount": "40",
+            "unit": "mg"
+          },
+          {
+            "name": "bamboo shoot extract",
+            "amount": "10",
+            "unit": "mg"
+          },
+          {
+            "name": "silicon dioxide from bamboo shoot extract",
+            "amount": "7.5",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin B Komplex; EAN 4260180441505.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Pantothenic acid: 81 mg; 1350% NRV.\n- Niacin: 47 mg; 293% NRV.\n- Thiamin: 30 mg; 2727% NRV.\n- Riboflavin: 30 mg; 2143% NRV.\n- Vitamin B6: 20 mg; 1428% NRV.\n- Folate: 352 ug; 176% NRV.\n- Biotin: 387 ug; 774% NRV.\n- Vitamin B12: 200 ug; 8000% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-vitamin-c-komplex",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin C Komplex",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+      "external_identifier": "strunz-20260804-vitamin-c-komplex",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 9d1fab6c762b7ffd656b7e221920eab4ef2e6067dc1ca232cbe1d70510064991.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin C Komplex; EAN 4260180441468.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin C: 500 mg; 625% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-vitamin-c-komplex",
+        "aliases": [
+          "Vitamin C Komplex"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 9d1fab6c762b7ffd656b7e221920eab4ef2e6067dc1ca232cbe1d70510064991",
+            "url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Vitamin C Komplex",
+          "ean": "4260180441468",
+          "serving": "1 capsule",
+          "manufacturer_daily_use": "1 capsule"
+        },
+        "nutrients": [
+          {
+            "name": "Vitamin C",
+            "amount": "500",
+            "unit": "mg",
+            "nrv_percent": 625
+          }
+        ],
+        "declared_component_amounts": [
+          {
+            "name": "camu-camu fruit extract",
+            "amount": "160",
+            "unit": "mg"
+          },
+          {
+            "name": "bitter orange fruit extract",
+            "amount": "146",
+            "unit": "mg"
+          },
+          {
+            "name": "bioflavonoids from bitter orange extract",
+            "amount": "51",
+            "unit": "mg"
+          },
+          {
+            "name": "quercetin",
+            "amount": "10",
+            "unit": "mg"
+          }
+        ],
+        "manufacturer_warning_topics": [],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamin C Komplex; EAN 4260180441468.\n- Declared serving: 1 capsule.\n- Manufacturer-declared daily use: 1 capsule; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin C: 500 mg; 625% NRV.\n\n## Manufacturer warning topics\n- No product-specific warning topic was normalized from this snapshot.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    },
+    {
+      "candidate_key": "source:strunz-20260804-vitamineral-32-maracuja",
+      "candidate_status": "imported_unreviewed",
+      "proposed_source_type": "website",
+      "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamineral 32 Maracuja",
+      "publisher": "Strunz GmbH",
+      "publication_date": null,
+      "source_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+      "external_identifier": "strunz-20260804-vitamineral-32-maracuja",
+      "rights_status": "unknown",
+      "source_locator": "Public product declaration captured 2026-08-04T19:10:02Z; snapshot SHA-256 f6984f2ff4f10c604c1de338f5090de7deb3887d36d0c91640fe775ff03f8979.",
+      "original_excerpt": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamineral 32 Maracuja; EAN 4260180440386.\n- Declared serving: 24.4 g powder.\n- Manufacturer-declared daily use: 1 serving; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin E: 37 mg; 310% NRV.\n- Vitamin A: 200 ug; 25% NRV.\n- Vitamin K: 40 ug; 53% NRV.\n- Vitamin D: 5 ug; 100% NRV.\n- Vitamin C: 300 mg; 375% NRV.\n- Niacin: 21 mg; 130% NRV.\n- Pantothenic acid: 7.8 mg; 130% NRV.\n- Vitamin B6: 6 mg; 427% NRV.\n- Riboflavin: 2.8 mg; 200% NRV.\n- Thiamin: 1.4 mg; 130% NRV.\n- Folate: 260 ug; 130% NRV.\n- Biotin: 150 ug; 300% NRV.\n- Vitamin B12: 3.3 ug; 130% NRV.\n- Calcium: 252 mg; 31% NRV.\n- Magnesium: 121 mg; 32% NRV.\n- Zinc: 7.6 mg; 76% NRV.\n- Iron: 2.5 mg; 18% NRV.\n- Manganese: 1.7 mg; 84% NRV.\n- Copper: 0.75 mg; 75% NRV.\n- Chromium: 103 ug; 257% NRV.\n- Iodine: 48.4 ug; 32% NRV.\n- Molybdenum: 35 ug; 71% NRV.\n- Selenium: 30 ug; 55% NRV.\n\n## Manufacturer warning topics\n- medical consultation during pregnancy because of vitamin A.\n- anticoagulant consultation because of vitamin K.\n- avoid additional zinc supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim.",
+      "confidence": 100,
+      "ambiguity_notes": "Normalized manufacturer declaration only. It remains unpublished and separates product facts from evidence, safety, dosage approval, and medical use.",
+      "proposed_data": {
+        "card_type": "strunz_public_product_fact_card",
+        "candidate_id": "strunz-20260804-vitamineral-32-maracuja",
+        "aliases": [
+          "Vitamineral 32 Maracuja"
+        ],
+        "tags": [
+          "Herstellerangabe",
+          "Oeffentliche Produktdeklaration",
+          "Quellenkarte",
+          "Strunz",
+          "Unveroeffentlicht"
+        ],
+        "therapeutic_topics": [
+          "Vitamine und Mineralstoffe"
+        ],
+        "dosage_status": "unverified",
+        "evidence_level": "unrated",
+        "safety_notes": "Herstellerangabe; keine Praxisempfehlung, keine Selbstanwendung und keine Patientenfreigabe. Sicherheitspruefung steht aus.",
+        "source_citations": [
+          {
+            "label": "Strunz oeffentliche Produktdeklaration vom 2026-08-04T19:10:02Z; Snapshot SHA-256 f6984f2ff4f10c604c1de338f5090de7deb3887d36d0c91640fe775ff03f8979",
+            "url": "https://www.strunz.com/vitamineral32-maracuja.html"
+          }
+        ],
+        "source_file": "external/strunz/public-product-declarations/2026-08-04",
+        "product_declaration": {
+          "brand": "FOREVER YOUNG",
+          "name": "Vitamineral 32 Maracuja",
+          "ean": "4260180440386",
+          "serving": "24.4 g powder",
+          "manufacturer_daily_use": "1 serving"
+        },
+        "nutrients": [
+          {
+            "name": "Vitamin E",
+            "amount": "37",
+            "unit": "mg",
+            "nrv_percent": 310
+          },
+          {
+            "name": "Vitamin A",
+            "amount": "200",
+            "unit": "ug",
+            "nrv_percent": 25
+          },
+          {
+            "name": "Vitamin K",
+            "amount": "40",
+            "unit": "ug",
+            "nrv_percent": 53
+          },
+          {
+            "name": "Vitamin D",
+            "amount": "5",
+            "unit": "ug",
+            "nrv_percent": 100
+          },
+          {
+            "name": "Vitamin C",
+            "amount": "300",
+            "unit": "mg",
+            "nrv_percent": 375
+          },
+          {
+            "name": "Niacin",
+            "amount": "21",
+            "unit": "mg",
+            "nrv_percent": 130
+          },
+          {
+            "name": "Pantothenic acid",
+            "amount": "7.8",
+            "unit": "mg",
+            "nrv_percent": 130
+          },
+          {
+            "name": "Vitamin B6",
+            "amount": "6",
+            "unit": "mg",
+            "nrv_percent": 427
+          },
+          {
+            "name": "Riboflavin",
+            "amount": "2.8",
+            "unit": "mg",
+            "nrv_percent": 200
+          },
+          {
+            "name": "Thiamin",
+            "amount": "1.4",
+            "unit": "mg",
+            "nrv_percent": 130
+          },
+          {
+            "name": "Folate",
+            "amount": "260",
+            "unit": "ug",
+            "nrv_percent": 130
+          },
+          {
+            "name": "Biotin",
+            "amount": "150",
+            "unit": "ug",
+            "nrv_percent": 300
+          },
+          {
+            "name": "Vitamin B12",
+            "amount": "3.3",
+            "unit": "ug",
+            "nrv_percent": 130
+          },
+          {
+            "name": "Calcium",
+            "amount": "252",
+            "unit": "mg",
+            "nrv_percent": 31
+          },
+          {
+            "name": "Magnesium",
+            "amount": "121",
+            "unit": "mg",
+            "nrv_percent": 32
+          },
+          {
+            "name": "Zinc",
+            "amount": "7.6",
+            "unit": "mg",
+            "nrv_percent": 76
+          },
+          {
+            "name": "Iron",
+            "amount": "2.5",
+            "unit": "mg",
+            "nrv_percent": 18
+          },
+          {
+            "name": "Manganese",
+            "amount": "1.7",
+            "unit": "mg",
+            "nrv_percent": 84
+          },
+          {
+            "name": "Copper",
+            "amount": "0.75",
+            "unit": "mg",
+            "nrv_percent": 75
+          },
+          {
+            "name": "Chromium",
+            "amount": "103",
+            "unit": "ug",
+            "nrv_percent": 257
+          },
+          {
+            "name": "Iodine",
+            "amount": "48.4",
+            "unit": "ug",
+            "nrv_percent": 32
+          },
+          {
+            "name": "Molybdenum",
+            "amount": "35",
+            "unit": "ug",
+            "nrv_percent": 71
+          },
+          {
+            "name": "Selenium",
+            "amount": "30",
+            "unit": "ug",
+            "nrv_percent": 55
+          }
+        ],
+        "declared_component_amounts": [],
+        "manufacturer_warning_topics": [
+          "medical consultation during pregnancy because of vitamin A",
+          "anticoagulant consultation because of vitamin K",
+          "avoid additional zinc supplements"
+        ],
+        "content": "**Status:** Public manufacturer product declaration, normalized as an unpublished source candidate. This is neither a therapeutic recommendation nor patient-facing content.\n\n## Product declaration\n- FOREVER YOUNG Vitamineral 32 Maracuja; EAN 4260180440386.\n- Declared serving: 24.4 g powder.\n- Manufacturer-declared daily use: 1 serving; unreviewed and not approved as a dosage recommendation.\n\n## Declared vitamins and minerals\n- Vitamin E: 37 mg; 310% NRV.\n- Vitamin A: 200 ug; 25% NRV.\n- Vitamin K: 40 ug; 53% NRV.\n- Vitamin D: 5 ug; 100% NRV.\n- Vitamin C: 300 mg; 375% NRV.\n- Niacin: 21 mg; 130% NRV.\n- Pantothenic acid: 7.8 mg; 130% NRV.\n- Vitamin B6: 6 mg; 427% NRV.\n- Riboflavin: 2.8 mg; 200% NRV.\n- Thiamin: 1.4 mg; 130% NRV.\n- Folate: 260 ug; 130% NRV.\n- Biotin: 150 ug; 300% NRV.\n- Vitamin B12: 3.3 ug; 130% NRV.\n- Calcium: 252 mg; 31% NRV.\n- Magnesium: 121 mg; 32% NRV.\n- Zinc: 7.6 mg; 76% NRV.\n- Iron: 2.5 mg; 18% NRV.\n- Manganese: 1.7 mg; 84% NRV.\n- Copper: 0.75 mg; 75% NRV.\n- Chromium: 103 ug; 257% NRV.\n- Iodine: 48.4 ug; 32% NRV.\n- Molybdenum: 35 ug; 71% NRV.\n- Selenium: 30 ug; 55% NRV.\n\n## Manufacturer warning topics\n- medical consultation during pregnancy because of vitamin A.\n- anticoagulant consultation because of vitamin K.\n- avoid additional zinc supplements.\n\n## Review boundary\nEvidence, safety, dosage, and medical-use review remain open. The card makes no condition, symptom, prevention, or treatment claim."
+      }
+    }
+  ]
+}

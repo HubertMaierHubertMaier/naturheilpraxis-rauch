@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T20:50:00.000Z",
+  "publication": "unpublished_internal_audit",
+  "scope": "Compare the 9 unpublished Strunz product declaration cards with the independent nutrient reference frames captured locally.",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "product_cards_audited": 9,
+  "declared_nutrient_labels": [
+    "Biotin",
+    "Calcium",
+    "Chromium",
+    "Copper",
+    "Folate",
+    "Iodine",
+    "Iron",
+    "Magnesium",
+    "Manganese",
+    "Molybdenum",
+    "Niacin",
+    "Pantothenic acid",
+    "Riboflavin",
+    "Selenium",
+    "Thiamin",
+    "Vitamin A",
+    "Vitamin B12",
+    "Vitamin B6",
+    "Vitamin C",
+    "Vitamin D",
+    "Vitamin D3",
+    "Vitamin E",
+    "Vitamin K",
+    "Vitamin K2",
+    "Zinc"
+  ],
+  "coverage_groups": [
+    {
+      "reference_file": "docs/nhs-b-vitamins-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/",
+      "covers": ["Biotin", "Folate", "Niacin", "Pantothenic acid", "Riboflavin", "Thiamin", "Vitamin B12", "Vitamin B6"]
+    },
+    {
+      "reference_file": "docs/nhs-calcium-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/calcium/",
+      "covers": ["Calcium"]
+    },
+    {
+      "reference_file": "docs/nhs-iodine-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iodine/",
+      "covers": ["Iodine"]
+    },
+    {
+      "reference_file": "docs/nhs-iron-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/iron/",
+      "covers": ["Iron"]
+    },
+    {
+      "reference_file": "docs/nhs-other-minerals-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "covers": ["Chromium", "Copper", "Magnesium", "Manganese", "Molybdenum", "Selenium", "Zinc"]
+    },
+    {
+      "reference_file": "docs/nhs-vitamin-a-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-a/",
+      "covers": ["Vitamin A"]
+    },
+    {
+      "reference_file": "docs/nhs-vitamin-c-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "covers": ["Vitamin C"]
+    },
+    {
+      "reference_file": "docs/nhs-vitamin-d-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/",
+      "covers": ["Vitamin D", "Vitamin D3"]
+    },
+    {
+      "reference_file": "docs/nhs-vitamin-e-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-e/",
+      "covers": ["Vitamin E"]
+    },
+    {
+      "reference_file": "docs/nhs-vitamin-k-reference-2026-08-08.json",
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-k/",
+      "covers": ["Vitamin K", "Vitamin K2"]
+    }
+  ],
+  "coverage_result": {
+    "unique_declared_labels": 25,
+    "labels_with_general_independent_reference": 25,
+    "uncovered_labels": [],
+    "general_reference_coverage_complete": true
+  },
+  "normalization_notes": [
+    "Vitamin D3 is treated as a form of vitamin D for general source coverage only.",
+    "Vitamin K2 is treated as a form of vitamin K for general source coverage only.",
+    "The B-vitamin page covers the declared B-vitamin labels but does not validate product forms or combinations.",
+    "The NHS others page groups several minerals on one population-level page."
+  ],
+  "not_established_by_this_audit": [
+    "product composition or identity",
+    "ingredient form equivalence",
+    "bioavailability",
+    "efficacy for a condition or symptom",
+    "individual suitability or contraindication clearance",
+    "product dose approval",
+    "medical or patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

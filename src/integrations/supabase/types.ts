@@ -1338,6 +1338,174 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_import_candidate_proposals: {
+        Row: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          created_at: string
+          created_by: string
+          id: string
+          proposal_id: string
+        }
+        Insert: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          proposal_id: string
+        }
+        Update: {
+          batch_id?: string
+          candidate_id?: string
+          candidate_kind?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_candidate_proposals_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_candidate_proposals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "kb_change_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_import_core_links: {
+        Row: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          core_article_id: string | null
+          core_article_revision_id: string | null
+          core_assertion_id: string | null
+          core_entity_id: string | null
+          core_entity_revision_id: string | null
+          core_record_kind: string
+          core_source_id: string | null
+          core_source_revision_id: string | null
+          evidence_status: string
+          materialization_status: string
+          materialized_at: string
+          materialized_by: string | null
+          metadata: Json
+          patient_facing_allowed: boolean
+          safety_status: string
+          visibility: string
+        }
+        Insert: {
+          batch_id: string
+          candidate_id: string
+          candidate_kind: string
+          core_article_id?: string | null
+          core_article_revision_id?: string | null
+          core_assertion_id?: string | null
+          core_entity_id?: string | null
+          core_entity_revision_id?: string | null
+          core_record_kind: string
+          core_source_id?: string | null
+          core_source_revision_id?: string | null
+          evidence_status?: string
+          materialization_status?: string
+          materialized_at?: string
+          materialized_by?: string | null
+          metadata?: Json
+          patient_facing_allowed?: boolean
+          safety_status?: string
+          visibility?: string
+        }
+        Update: {
+          batch_id?: string
+          candidate_id?: string
+          candidate_kind?: string
+          core_article_id?: string | null
+          core_article_revision_id?: string | null
+          core_assertion_id?: string | null
+          core_entity_id?: string | null
+          core_entity_revision_id?: string | null
+          core_record_kind?: string
+          core_source_id?: string | null
+          core_source_revision_id?: string | null
+          evidence_status?: string
+          materialization_status?: string
+          materialized_at?: string
+          materialized_by?: string | null
+          metadata?: Json
+          patient_facing_allowed?: boolean
+          safety_status?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_core_links_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_article_id_fkey"
+            columns: ["core_article_id"]
+            isOneToOne: false
+            referencedRelation: "kb_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_article_revision_id_fkey"
+            columns: ["core_article_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_article_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_assertion_id_fkey"
+            columns: ["core_assertion_id"]
+            isOneToOne: false
+            referencedRelation: "kb_assertions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_entity_id_fkey"
+            columns: ["core_entity_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_entity_revision_id_fkey"
+            columns: ["core_entity_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_entity_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_source_id_fkey"
+            columns: ["core_source_id"]
+            isOneToOne: false
+            referencedRelation: "kb_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_import_core_links_core_source_revision_id_fkey"
+            columns: ["core_source_revision_id"]
+            isOneToOne: false
+            referencedRelation: "kb_source_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_import_errors: {
         Row: {
           batch_id: string
@@ -1384,6 +1552,50 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "kb_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_import_proposal_review_events: {
+        Row: {
+          acted_at: string
+          acted_by: string
+          data_classification: string
+          id: string
+          proposal_id: string
+          review_action: string
+          review_notes: string
+          status_after: string
+          status_before: string
+        }
+        Insert: {
+          acted_at?: string
+          acted_by?: string
+          data_classification?: string
+          id?: string
+          proposal_id: string
+          review_action: string
+          review_notes?: string
+          status_after: string
+          status_before: string
+        }
+        Update: {
+          acted_at?: string
+          acted_by?: string
+          data_classification?: string
+          id?: string
+          proposal_id?: string
+          review_action?: string
+          review_notes?: string
+          status_after?: string
+          status_before?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_import_proposal_review_events_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "kb_change_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -2576,6 +2788,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _kb_materialize_import_candidates_as_internal_drafts: {
+        Args: { _actor_id?: string; _batch_id?: string }
+        Returns: Json
+      }
       _strip_doc_block: {
         Args: { _archive_path: string; _filename: string; _text: string }
         Returns: string
@@ -2657,6 +2873,10 @@ export type Database = {
         Args: { _batch_id: string }
         Returns: undefined
       }
+      kb_materialize_import_candidates_as_internal_drafts: {
+        Args: { _batch_id?: string }
+        Returns: Json
+      }
       kb_record_import_review_decision: {
         Args: {
           _candidate_id: string
@@ -2664,6 +2884,18 @@ export type Database = {
           _decision: string
           _decision_notes?: string
         }
+        Returns: string
+      }
+      kb_review_import_candidate_proposal: {
+        Args: {
+          _proposal_id: string
+          _review_action: string
+          _review_notes?: string
+        }
+        Returns: string
+      }
+      kb_submit_import_candidate_proposal: {
+        Args: { _candidate_id: string; _candidate_kind: string }
         Returns: string
       }
       list_admin_accounts: {

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-15T16:28:00.000Z",
+  "scope": "Lokaler Vieva-Browserweg ausschliesslich mit kuenstlicher PDF",
+  "privacy": {
+    "synthetic_only": true,
+    "patient_files_opened": false,
+    "patient_data_processed": false,
+    "cloud_upload": false
+  },
+  "environment": {
+    "preview_url": "http://127.0.0.1:4174/.test-temp/vieva-synthetic.html",
+    "browser": "Google Chrome headless via Chrome DevTools Protocol",
+    "fixture": ".test-temp/vieva-synthetic.pdf",
+    "fixture_bytes": 3473
+  },
+  "results": {
+    "missing_date_guard": true,
+    "extraction_completed_with_date": true,
+    "synthetic_marker_retained": true,
+    "document_type_retained": true,
+    "analysis_date_retained": true,
+    "displayed_error": null
+  },
+  "verified_output": {
+    "document_type": "Vieva Plus",
+    "analysis_date": "2026-08-15",
+    "synthetic_marker": "SYNTHETISCHER VIEVA TESTBEFUND"
+  },
+  "automation_note": "Chromes automatisierter Dateidialog lieferte die richtige Testdatei, hielt aber den React-Dateizustand im Headless-Lauf nicht. Der Harness setzte deshalb danach denselben internen Warteschlangeneintrag mit dieser ausschliesslich synthetischen Datei. Datumswaechter, PDF-Extraktion, Metadaten und sichtbares Ergebnis liefen anschliessend unveraendert durch den Produktcode.",
+  "remaining_real_world_check": "Vor jeder Pruefung einer ausgewaehlten geschwaerzten Patienten-PDF ist Peters erneute konkrete Datenschutzpruefung und Dateifreigabe erforderlich. Namen, Initialen, Diagnosen, Geburtsdaten, Adressen, Dateinamen, Anlagen und sonstige identifizierende Angaben muessen vorher kontrolliert werden."
+}

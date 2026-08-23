@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="Peter Rauch, Heilpraktiker">
+  <title>7-Minuten-Vortrag: Fit und gesund durch Herbst und Winter</title>
+  <style>
+    :root {
+      --ink: #18342e;
+      --muted: #5e6c66;
+      --paper: #fffdf8;
+      --forest: #1f5b4b;
+      --moss: #8fae78;
+      --amber: #d6943a;
+      --cream: #f3ead8;
+      --danger: #9b3f32;
+      --line: rgba(31, 91, 75, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(214, 148, 58, 0.18), transparent 24rem),
+        linear-gradient(145deg, #eef4ea 0%, #f9f4e8 48%, #edf3ef 100%);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.68;
+    }
+    main { width: min(980px, calc(100% - 2rem)); margin: 2rem auto 4rem; }
+    header, article, .appendix {
+      background: rgba(255, 253, 248, 0.96);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 50px rgba(24, 52, 46, 0.09);
+    }
+    header { padding: clamp(1.5rem, 5vw, 4rem); border-radius: 28px 28px 10px 10px; }
+    .eyebrow { color: var(--forest); font: 700 0.78rem/1.2 Arial, sans-serif; letter-spacing: 0.13em; text-transform: uppercase; }
+    h1 { max-width: 14ch; margin: 0.45rem 0 1rem; font-size: clamp(2.35rem, 7vw, 5.6rem); line-height: 0.98; font-weight: 500; }
+    h1 span { color: var(--amber); font-style: italic; }
+    h2 { margin: 0 0 1rem; color: var(--forest); font-size: clamp(1.45rem, 3vw, 2rem); }
+    h3 { color: var(--forest); }
+    .lead { max-width: 68ch; color: var(--muted); font-size: 1.08rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.4rem; }
+    .tag { border-radius: 999px; padding: 0.35rem 0.75rem; background: var(--cream); color: var(--forest); font: 700 0.78rem/1 Arial, sans-serif; }
+    .tag.review { background: #f9dfd5; color: var(--danger); }
+    article { margin-top: 1rem; padding: clamp(1.4rem, 5vw, 3.4rem); }
+    .minute {
+      display: grid;
+      grid-template-columns: 6.2rem minmax(0, 1fr);
+      gap: 1.25rem;
+      padding: 1.4rem 0;
+      border-top: 1px solid var(--line);
+    }
+    .minute:first-of-type { border-top: 0; }
+    .clock { color: var(--amber); font: 800 0.78rem/1.3 Arial, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+    .minute p { margin: 0 0 0.8rem; }
+    .minute p:last-child { margin-bottom: 0; }
+    .cue { margin: 1.8rem 0 0; padding: 1rem 1.2rem; border-left: 5px solid var(--amber); background: #fff8ea; }
+    .appendix { margin-top: 1rem; padding: clamp(1.4rem, 5vw, 3.4rem); border-radius: 10px 10px 28px 28px; }
+    .not-spoken { display: inline-block; margin-bottom: 0.8rem; color: #fff; background: var(--danger); border-radius: 5px; padding: 0.35rem 0.65rem; font: 800 0.78rem/1 Arial, sans-serif; letter-spacing: 0.05em; }
+    .warning { margin: 1rem 0; padding: 1rem 1.2rem; border: 1px solid #e7b4a8; background: #fff4f0; color: #6d2e24; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font: 0.9rem/1.45 Arial, sans-serif; }
+    th, td { padding: 0.75rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: #fff; background: var(--forest); }
+    tr:nth-child(even) td { background: rgba(143, 174, 120, 0.08); }
+    small { color: var(--muted); }
+    @media (max-width: 680px) {
+      main { width: min(100% - 1rem, 980px); margin-top: 0.5rem; }
+      .minute { grid-template-columns: 1fr; gap: 0.35rem; }
+      .appendix { overflow-x: auto; }
+      table { min-width: 700px; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { width: 100%; margin: 0; }
+      header, article, .appendix { box-shadow: none; break-inside: avoid; }
+      .minute { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Sprechfassung · sieben Minuten</div>
+    <h1>Fit und gesund durch <span>Herbst und Winter</span></h1>
+    <p class="lead">Ein kurzer Vortrag von Peter Rauch über vernünftige Vorbeugung, einen sicheren Umgang mit ersten Beschwerden und die klare Grenze zwischen Selbsthilfe und notwendiger medizinischer Abklärung.</p>
+    <div class="meta">
+      <span class="tag">Zielzeit: 7 Minuten</span>
+      <span class="tag">Stand: 20.08.2026</span>
+      <span class="tag review">Entwurf · medizinische und HWG-Prüfung offen</span>
+      <span class="tag">Nur intern für Administratoren · noindex</span>
+    </div>
+  </header>
+
+  <article id="sprechtext" aria-labelledby="sprechtext-titel">
+    <h2 id="sprechtext-titel">Vortragstext</h2>
+
+    <section class="minute">
+      <div class="clock">0:00–1:00</div>
+      <div>
+        <p>Guten Tag, ich möchte Ihnen heute einen einfachen Plan mitgeben, wie Sie möglichst gut durch Herbst und Winter kommen. Dabei geht es nicht darum, jeden Infekt verhindern zu können. Das wäre ein unrealistisches Versprechen. Es geht darum, das eigene Risiko sinnvoll zu senken, erste Beschwerden ernst zu nehmen und rechtzeitig zu erkennen, wann Selbsthilfe nicht mehr genügt.</p>
+        <p>Erkältungen werden nicht allein durch kaltes Wetter verursacht. In der kühlen Jahreszeit halten wir uns häufiger gemeinsam in Innenräumen auf. Dort können sich Atemwegsviren leichter verbreiten. Trockene Luft kann außerdem die Schleimhäute belasten. Die praktische Antwort lautet deshalb: Ansteckungswege reduzieren und den Körper nicht unnötig überfordern.</p>
+        <p>Nicht jeder Atemwegsinfekt ist gleich. Eine gewöhnliche Erkältung beginnt oft eher schleichend, eine Influenza häufig plötzlich mit starkem Krankheitsgefühl, und COVID-19 kann sehr unterschiedlich verlaufen. Trotzdem lassen sich die Erreger anhand der Beschwerden allein nicht zuverlässig unterscheiden. Ob ein Test sinnvoll ist, hängt von Verlauf, persönlichem Risiko und der möglichen Konsequenz des Ergebnisses ab. Besonders gefährdete Menschen sollten deshalb früh fachlichen Rat einholen.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">1:00–2:00</div>
+      <div>
+        <p>Die wirksamsten Schritte sind erstaunlich unspektakulär: regelmäßig lüften, in vollen Innenräumen bei hoher Infektlage Abstand halten, Hände waschen und Husten oder Niesen nicht in die Hand, sondern in die Armbeuge. Wer krank ist, sollte Kontakte reduzieren. Impfungen gegen Influenza und COVID-19 können je nach Alter, Vorerkrankung und persönlichem Risiko sinnvoll sein; die individuelle Entscheidung gehört in ein ärztliches Gespräch.</p>
+        <p>Ebenso wichtig sind Schlaf, tägliche Bewegung und Erholung. Schlafmangel lässt sich nicht mit einem Nahrungsergänzungsmittel ausgleichen. Gehen Sie möglichst jeden Tag nach draußen, passen Sie Kleidung und Belastung dem Wetter an und planen Sie bewusste Ruhezeiten. Regelmäßigkeit ist wertvoller als ein extremes Programm, das nach wenigen Tagen wieder endet.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">2:00–3:00</div>
+      <div>
+        <p>Auch die Ernährung darf einfach bleiben: ausreichend trinken, Gemüse, Hülsenfrüchte, Nüsse, hochwertige Eiweißquellen und möglichst wenig stark verarbeitete Lebensmittel. Vitamin- oder Mineralstoffpräparate sind kein Schutzschild gegen Infekte. Sie können bei nachgewiesenem Mangel oder in einer individuell begründeten Situation eine Rolle spielen. Hohe Dosierungen, mehrere Kombipräparate oder lange Einnahmen sollten jedoch mit den vorhandenen Medikamenten, Vorerkrankungen und der gesamten Nährstoffzufuhr abgeglichen werden.</p>
+        <p>Das gilt besonders für Zink. Mehr ist nicht automatisch besser. Hohe Mengen können unerwünschte Wirkungen haben und bei längerer Anwendung den Kupferhaushalt beeinflussen. Eine konkrete Hochdosis ist deshalb kein allgemeiner Tipp für Zuhörerinnen und Zuhörer.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">3:00–4:00</div>
+      <div>
+        <p>Was können Sie bei den ersten Zeichen tun? Reduzieren Sie zunächst Belastung, trinken Sie nach Durst und beobachten Sie den Verlauf. Eine Nasenspülung mit geeigneter Salzlösung kann bei manchen Menschen Sekret lösen und die Nase pflegen. Verwenden Sie dafür nur dafür geeignetes steriles, destilliertes oder zuvor abgekochtes und abgekühltes Wasser und reinigen Sie das Gerät sorgfältig. Bei vollständig blockierter Nase, Ohrproblemen oder Unsicherheit fragen Sie vorher fachlich nach.</p>
+        <p>Fieber ist eine Reaktion des Körpers und nicht nur eine Zahl. Entscheidend sind Allgemeinzustand, Atmung, Kreislauf, Dauer und Begleitsymptome. Ein Symptomtagebuch mit Temperatur, Trinkmenge und Veränderungen kann helfen, den Verlauf verständlich zu schildern.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">4:00–5:00</div>
+      <div>
+        <p>In der Traditionellen Chinesischen Medizin gibt es ein eigenes Erklärungsmodell für Kälte und Atemwegsbeschwerden. Im von mir verwendeten Kursbuch werden unter anderem Ingwertee, sogenannte Wintercandies, ein Moxa-Bad und Rosmarin im Zusammenhang mit Erkältungsprophylaxe genannt. Die Nase wird dort dem Funktionskreis der Lunge zugeordnet.</p>
+        <p>Das ist ein traditionelles Modell, keine moderne anatomische oder virologische Erklärung. Wer solche Maßnahmen als wohltuend erlebt, kann sie nach individueller Verträglichkeitsprüfung ergänzend nutzen. Auch Naturprodukte können Nebenwirkungen haben. Ingwer oder Rosmarin passen nicht automatisch zu jedem Menschen, und Wärmebehandlungen sind etwa bei Fieber oder bestimmten Kreislaufproblemen nicht grundsätzlich sinnvoll.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">5:00–6:00</div>
+      <div>
+        <p>In meiner Praxis werden neben üblichen Untersuchungen auch Verfahren der Erfahrungsheilkunde eingesetzt. Dazu gehören je nach Einzelfall Frequenzanwendungen, ChipCards oder Systeme wie TRIKOMBIN. Wichtig ist mir eine ehrliche Einordnung: Für diagnostische oder therapeutische Wirkungen dieser Verfahren gibt es keine Anerkennung im Sinne der evidenzbasierten Medizin. Sie dürfen eine notwendige Laboruntersuchung, ärztliche Diagnose, verordnete Behandlung oder einen Notruf niemals ersetzen oder verzögern.</p>
+        <p>Dasselbe gilt für pflanzliche Tinkturen und Nahrungsergänzungsmittel. Eine individuelle Empfehlung muss zu Befund, Alter, Medikamenten, Allergien, Leber- und Nierenfunktion sowie zu Schwangerschaft oder Stillzeit passen. Was in einem Praxisprotokoll steht, ist nicht automatisch eine Empfehlung für alle.</p>
+      </div>
+    </section>
+
+    <section class="minute">
+      <div class="clock">6:00–7:00</div>
+      <div>
+        <p>Bitte holen Sie rasch medizinische Hilfe bei Atemnot, Brustschmerz, Verwirrtheit, bläulichen Lippen, Kreislaufproblemen oder einer deutlichen Verschlechterung. Auch sehr hohes oder anhaltendes Fieber, Nackensteife, starke einseitige Schwellung, heftige Ohr- oder Stirnhöhlenbeschwerden sowie der Verdacht auf eine Lungenentzündung oder einen schweren COVID-19-Verlauf gehören abgeklärt. Bei Unsicherheit gilt: lieber einmal zu früh nachfragen als eine ernste Entwicklung zu übersehen.</p>
+        <p>Mein Merksatz für den Winter lautet deshalb: Ansteckung vernünftig reduzieren, die Grundlagen pflegen, erste Zeichen beobachten und Grenzen respektieren. Gute Gesundheit entsteht selten durch eine einzelne Maßnahme. Sie entsteht aus vielen kleinen, passenden Entscheidungen und aus dem Wissen, wann professionelle Hilfe nötig ist. Vielen Dank.</p>
+      </div>
+    </section>
+
+    <div class="cue"><strong>Sprechhinweis:</strong> Ruhig sprechen, nach jeder Minute kurz pausieren. Die nachfolgende Tabelle ist nur Arbeitsmaterial und gehört nicht zum gesprochenen Vortrag.</div>
+  </article>
+
+  <section class="appendix" aria-labelledby="anhang-titel">
+    <span class="not-spoken">NICHT VORLESEN · NICHT FREIGEGEBEN</span>
+    <h2 id="anhang-titel">Interner Dosierungsanhang aus Peters Praxisangaben</h2>
+    <div class="warning"><strong>Keine Einnahmeanweisung:</strong> Diese Angaben dokumentieren Peters Praxisquelle unverändert inhaltlich. Sie sind fachlich, pharmazeutisch und auf Wechselwirkungen noch nicht geprüft. Sie dürfen vor dieser Prüfung nicht als allgemeine Patientenempfehlung verwendet werden.</div>
+    <table>
+      <thead><tr><th>Mittel</th><th>Genannte Praxisangabe</th><th>Offener Sicherheitsstatus</th></tr></thead>
+      <tbody>
+        <tr><td>Mannayan ANTIOXI+</td><td>1 × täglich 1 Tablette</td><td>Produktinventar nennt Kapseln; Darreichungsform und Gesamtzufuhr abgleichen.</td></tr>
+        <tr><td>Mannayan BETA+</td><td>1 × täglich 1 Kapsel</td><td>Nur Erwachsene laut Herstellerinventar; Interaktionen und Leberrisiken der Kombination prüfen.</td></tr>
+        <tr><td>Barberry</td><td>2 × täglich 15–30 Tropfen, 30 Minuten vor dem Essen, in ½ Glas Wasser</td><td>Arzneimittel, Schwangerschaft, Stillzeit, Leber und Niere prüfen.</td></tr>
+        <tr><td>Banderol</td><td>2 × täglich 1–30 Tropfen, langsam steigern, in 120 ml Wasser</td><td>Individuelle Verträglichkeit und Interaktionen prüfen.</td></tr>
+        <tr><td>Mannayan GLUCAN+</td><td>1 × täglich 1 Kapsel</td><td>Herstellerinventar nennt 1–3 Kapseln; Praxis- und Herstellerangabe getrennt erhalten.</td></tr>
+        <tr><td>Takuna</td><td>2 × täglich 8 Tropfen</td><td>Individuelle Sicherheitsprüfung offen.</td></tr>
+        <tr><td>Samento</td><td>2 × täglich 8 Tropfen</td><td>Individuelle Sicherheitsprüfung offen.</td></tr>
+        <tr><td>Houttuynia</td><td>2 × täglich 15 Tropfen</td><td>Individuelle Sicherheitsprüfung offen.</td></tr>
+        <tr><td>Mannayan Weihrauch</td><td>1 × täglich 1 Kapsel</td><td>Produktidentität, Blutungsrisiko und Arzneimittel abgleichen.</td></tr>
+        <tr><td>Mannayan ZINK+</td><td>2 × täglich 1 Tablette; akut 1 × 5 Tabletten</td><td><strong>Fünf Tabletten entsprechen laut lokalem Inventar 75 mg Zink. Keine Freigabe; besonders strenge Dosis-, Dauer- und Interaktionsprüfung erforderlich.</strong></td></tr>
+      </tbody>
+    </table>
+    <h3>Separat erhaltene Buchquelle: Ulrich Strunz, Seiten 161–162</h3>
+    <div class="warning"><strong>Nicht vorlesen und nicht anwenden:</strong> Die folgenden Mengen dokumentieren ausschließlich die von Peter übermittelte Buchfundstelle <em>Neue Wege der Heilung: Gesundheit geschieht von innen</em>. Sie sind keine freigegebene Patientenempfehlung. Originalabgleich, Indikation, Dauer, Gesamtzufuhr, Laborwerte, Medikamente und individuelle Risiken müssen vor jeder Verwendung geprüft werden.</div>
+    <table>
+      <thead><tr><th>Quellenangabe</th><th>Inhalt der Fundstelle</th><th>Getrennte Sicherheitsprüfung</th></tr></thead>
+      <tbody>
+        <tr><td>„Unschlagbar mit C + E + Zn“</td><td>Vitamin C 1–3 g; Zink 30–60 mg täglich; Vitamin E 400 IE</td><td>Nieren- und Steinrisiko, Kupferhaushalt, Darreichungsformen, Vitamin-E-Umrechnung, Blutungsrisiko, Medikamente und Doppelzufuhr prüfen.</td></tr>
+        <tr><td>Ernährungsangaben</td><td>weniger als 50 g Kohlenhydrate pro Tag; Protein 1–2 g/kg Körpergewicht; Omega-3-Fettsäuren 2–6 g pro Tag</td><td>Diabetesmedikation, Schwangerschaft, Essstörungen, Energieversorgung, Leber und Niere, Produktzusammensetzung sowie Blutungsrisiko individuell prüfen.</td></tr>
+      </tbody>
+    </table>
+    <p><small>Fundstelle: Ulrich Strunz, <em>Neue Wege der Heilung: Gesundheit geschieht von innen</em>, Seiten 161–162. Normalisierte Inhaltsfassung aus Peters aktuellem Auftrag; kein behauptetes wörtliches Vollzitat.</small></p>
+    <p><small>Weitere intern genannte Elemente: Nasendusche, hohe Vitamin-B2-Gaben ohne erhaltene Mengenangabe, Frequenzanwendungen, Herd-Therapie, ChipCard LY, Derma-Clean Ly, Mannayan Vit C+, Echinacea sowie nach Frequenzanwendung 50 Minuten geerdet bleiben. Bei tiefsitzender HNO-Symptomatik wurden Derma-Clean Ly, MineralVit Gold, Mineralsalz, DTX-Card und Derma-Clean N/L genannt. Alle Zuordnungen bleiben ungeprüfte Praxisangaben.</small></p>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-09T12:37:21.0061226Z",
+  "publication": "unpublished_internal_source_access_recheck",
+  "method": "GET_with_followed_redirects",
+  "source_urls_checked": 12,
+  "http_200_responses": 12,
+  "access_errors": 0,
+  "sources": [
+    "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+    "https://www.gov.uk/government/publications/folic-acid/folic-acid",
+    "https://www.gov.uk/government/publications/magnesium-properties-and-incident-management",
+    "https://www.gov.uk/government/publications/sacn-vitamin-d-and-health-report",
+    "https://www.gov.uk/government/publications/sacn-iron-and-health-report",
+    "https://www.gov.uk/government/publications/sacn-statement-on-iodine-and-health-2014",
+    "https://www.gov.uk/government/publications/sacn-statement-on-selenium-and-health-2013",
+    "https://www.gov.uk/government/publications/sacn-review-of-dietary-advice-on-vitamin-a",
+    "https://www.gov.uk/government/publications/folic-acid-updated-sacn-recommendations",
+    "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+    "https://www.gov.uk/government/publications/iodine/statement-on-the-potential-effects-that-excess-iodine-intake-may-have-during-preconception-pregnancy-and-lactation",
+    "https://www.gov.uk/government/publications/14th-july-2026-committee-on-toxicity-meeting/discussion-paper-on-the-effects-of-excess-vitamin-e-on-maternal-health"
+  ],
+  "interpretation": {
+    "access_only": true,
+    "source_scope_unchanged": true,
+    "recency_classes_unchanged": true,
+    "vitamin_e_discussion_paper_remains_not_citable": true,
+    "form_gate": "still_open",
+    "population_gate": "still_open",
+    "interaction_gate": "still_open",
+    "safety_gate": "still_open",
+    "product_mapping": "not_performed",
+    "condition_mapping": "not_performed",
+    "database_writes": false,
+    "wiki_writes": false,
+    "patient_facing_publication": false
+  },
+  "source_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json"
+}

@@ -9,6 +9,7 @@ describe("backup-export bounded paging", () => {
     const adminCheck = source.indexOf("if (!isAdmin)");
     const tablePage = source.indexOf('mode === "table-page"');
     const authPage = source.indexOf('mode === "auth-page"');
+
     expect(adminCheck).toBeGreaterThan(-1);
     expect(tablePage).toBeGreaterThan(adminCheck);
     expect(authPage).toBeGreaterThan(adminCheck);
@@ -28,5 +29,14 @@ describe("backup-export bounded paging", () => {
   it("fails the storage listing if any signed URL is missing", () => {
     expect(source).toContain("entries.length !== files.length");
     expect(source).toContain('error: "storage_list_failed"');
+  });
+
+  it("reports missing storage objects with salted path digests instead of raw paths", () => {
+    expect(source).toContain("async function hashStoragePath");
+    expect(source).toContain('crypto.subtle.digest("SHA-256"');
+    expect(source).toContain("pathDigest: await hashStoragePath");
+    expect(source).toContain("const diagnostic = { salt: auditSalt, missing }");
+    expect(source).toContain("storageErrors.push({ bucket, message, diagnostic })");
+    expect(source).not.toContain("missing.push({ path:");
   });
 });

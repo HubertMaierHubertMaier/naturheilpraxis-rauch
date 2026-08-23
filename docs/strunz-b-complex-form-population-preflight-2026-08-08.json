@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:12:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-vitamin-b-komplex",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "form_and_population",
+  "status": "open_not_cleared_blocked_read_only",
+  "declared_product_facts": {
+    "product": "Vitamin B Komplex",
+    "serving": "1 capsule",
+    "declared_nutrients": [
+      {"name": "Pantothenic acid", "amount": "81 mg"},
+      {"name": "Niacin", "amount": "47 mg"},
+      {"name": "Thiamin", "amount": "30 mg"},
+      {"name": "Riboflavin", "amount": "30 mg"},
+      {"name": "Vitamin B6", "amount": "20 mg"},
+      {"name": "Folate", "amount": "352 ug"},
+      {"name": "Biotin", "amount": "387 ug"},
+      {"name": "Vitamin B12", "amount": "200 ug"}
+    ],
+    "declared_component_amounts": [
+      {"name": "choline", "amount": "19.5 mg"},
+      {"name": "myo-inositol", "amount": "40 mg"},
+      {"name": "PABA", "amount": "40 mg"},
+      {"name": "bamboo shoot extract", "amount": "10 mg"},
+      {"name": "silicon dioxide from bamboo shoot extract", "amount": "7.5 mg"}
+    ],
+    "manufacturer_warning_topics": []
+  },
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-b/",
+      "status": "accessible_general_reference",
+      "form_specific_equivalence": "not_established",
+      "population_specific_product_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "form_specific_equivalence": "not_reviewed",
+      "population_specific_product_clearance": "not_reviewed"
+    }
+  ],
+  "form_review": {
+    "status": "not_cleared",
+    "current_record": "The candidate declares eight B-vitamin nutrients and additional components but does not declare the chemical forms of the B vitamins. Independent form identity, equivalence and bioavailability review is not established.",
+    "required_before_any_mapping": ["identity verification", "form disclosure or confirmation", "bioavailability context", "component classification", "source recency"]
+  },
+  "population_review": {
+    "status": "not_cleared",
+    "current_record": "No manufacturer warning topics are listed. This is an absence of declared warnings, not an independent safety clearance; population-specific assessment remains open.",
+    "required_before_any_mapping": ["pregnancy and breastfeeding context", "children and adolescents", "vitamin-B6 neurologic-symptom context", "niacin liver and flushing context", "folate and B12 diagnostic context", "duplicate intake and total exposure context"]
+  },
+  "not_established": [
+    "efficacy for any condition or symptom",
+    "individual suitability",
+    "interaction clearance",
+    "dose approval",
+    "product safety clearance",
+    "patient-facing publication"
+  ],
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

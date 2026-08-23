@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="author" content="Peter Rauch, Heilpraktiker">
+  <title>Infothek-Entwurf: Fit und gesund durch Herbst und Winter</title>
+  <style>
+    :root {
+      --night: #102b28;
+      --forest: #174f43;
+      --leaf: #6d9275;
+      --rust: #bb603e;
+      --gold: #d7a247;
+      --fog: #edf1eb;
+      --paper: #fffdf8;
+      --ink: #1d302d;
+      --muted: #60706c;
+      --danger: #8c3028;
+      --line: rgba(23, 79, 67, 0.17);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--fog); font-family: Arial, Helvetica, sans-serif; line-height: 1.62; }
+    .hero {
+      min-height: 68vh;
+      display: grid;
+      align-items: end;
+      color: #fff;
+      background:
+        linear-gradient(115deg, rgba(16, 43, 40, 0.98), rgba(23, 79, 67, 0.86)),
+        radial-gradient(circle at 76% 20%, rgba(215, 162, 71, 0.72), transparent 18rem);
+      padding: clamp(2rem, 7vw, 6rem) max(1rem, calc((100vw - 1160px) / 2));
+    }
+    .hero-inner { max-width: 900px; }
+    .kicker { color: #f4cf89; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+    h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; }
+    h1 { max-width: 14ch; margin: 0.55rem 0 1.2rem; font-size: clamp(2.7rem, 8vw, 6.8rem); font-weight: 500; line-height: 0.96; }
+    h1 em { color: #f4cf89; font-weight: 400; }
+    .hero p { max-width: 68ch; font-size: clamp(1rem, 2vw, 1.22rem); color: #e5efeb; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 1.5rem; }
+    .pill { border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.36rem 0.75rem; font-size: 0.78rem; font-weight: 700; }
+    .pill.alert { color: #fff1ef; background: rgba(140,48,40,0.68); }
+    .shell { width: min(1160px, calc(100% - 2rem)); margin: -1.5rem auto 4rem; position: relative; }
+    nav { position: sticky; top: 0.7rem; z-index: 2; display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.7rem; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,248,0.96); box-shadow: 0 12px 35px rgba(16,43,40,0.12); }
+    nav a { flex: 0 0 auto; color: var(--forest); text-decoration: none; border-radius: 999px; padding: 0.55rem 0.8rem; background: #edf4ef; font-size: 0.8rem; font-weight: 800; }
+    main section { margin-top: 1rem; padding: clamp(1.3rem, 4vw, 3rem); border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: 0 16px 40px rgba(16,43,40,0.07); }
+    h2 { margin: 0 0 1rem; color: var(--forest); font-size: clamp(1.65rem, 4vw, 2.6rem); line-height: 1.15; }
+    h3 { margin: 1.3rem 0 0.5rem; color: var(--forest); font-size: 1.22rem; }
+    p { margin: 0.5rem 0 1rem; }
+    .lede { max-width: 78ch; color: var(--muted); font-size: 1.05rem; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+    .card { grid-column: span 4; padding: 1.15rem; border-radius: 14px; background: #f2f6f1; border-top: 4px solid var(--leaf); }
+    .card.wide { grid-column: span 6; }
+    .card.full { grid-column: 1 / -1; }
+    .card h3 { margin-top: 0; }
+    .label { display: inline-block; margin-bottom: 0.45rem; color: var(--rust); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.09em; text-transform: uppercase; }
+    .notice { margin: 1rem 0; padding: 1rem 1.2rem; border-left: 5px solid var(--gold); background: #fff7e7; }
+    .danger { border-left-color: var(--danger); background: #fff0ed; color: #64251f; }
+    .evidence { border-left-color: var(--forest); background: #edf5f1; }
+    ul, ol { padding-left: 1.25rem; }
+    li { margin: 0.35rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.4rem; font-size: 0.88rem; }
+    th, td { padding: 0.72rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: #fff; background: var(--forest); }
+    tr:nth-child(even) td { background: rgba(109,146,117,0.07); }
+    code { padding: 0.1rem 0.3rem; border-radius: 4px; background: #e8eee9; }
+    .level { display: inline-block; border-radius: 999px; padding: 0.18rem 0.48rem; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+    .level.fact { color: #174f43; background: #dceee5; }
+    .level.source { color: #704b10; background: #f7e6ba; }
+    .level.open { color: #7d2d25; background: #f7d6cf; }
+    .source-list { font-size: 0.88rem; color: var(--muted); }
+    .source-list li { margin-bottom: 0.7rem; }
+    footer { padding: 2rem 0; text-align: center; color: var(--muted); font-size: 0.82rem; }
+    @media (max-width: 820px) { .card, .card.wide { grid-column: 1 / -1; } .shell { width: min(100% - 1rem, 1160px); } }
+    @media (max-width: 680px) { table { min-width: 760px; } .table-wrap { overflow-x: auto; } nav { top: 0; border-radius: 0; } }
+    @media print { body { background: #fff; } .hero { min-height: auto; color: var(--ink); background: #fff; padding: 2rem 0; } .hero p { color: var(--ink); } .kicker, h1 em { color: var(--forest); } .shell { width: 100%; margin: 0; } nav { display: none; } main section { box-shadow: none; break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="kicker">Große Infothek-Fassung · interner Prüfentwurf</div>
+      <h1>Fit und gesund durch <em>Herbst und Winter</em></h1>
+      <p>Grundlagen, akute HNO-Beschwerden, Erregergruppen, Praxisverfahren, TCM-Einordnung, Mittel, Dosierungen und Sicherheitsgrenzen in einer getrennt bewerteten Arbeitsfassung.</p>
+      <div class="status-row">
+        <span class="pill">Stand 20.08.2026</span>
+        <span class="pill">Nur intern für Administratoren</span>
+        <span class="pill">noindex</span>
+        <span class="pill alert">Nicht medizinisch oder HWG-geprüft</span>
+        <span class="pill alert">Keine Selbstmedikationsanleitung</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav aria-label="Inhaltsübersicht">
+      <a href="#orientierung">Orientierung</a>
+      <a href="#grundlagen">Grundlagen</a>
+      <a href="#hno">HNO &amp; Erreger</a>
+      <a href="#praxis">Praxisansätze</a>
+      <a href="#mittel">Mittel &amp; Dosen</a>
+      <a href="#tcm">TCM</a>
+      <a href="#sicherheit">Sicherheit</a>
+      <a href="#quellen">Quellen</a>
+    </nav>
+
+    <main>
+      <section id="orientierung">
+        <span class="label">Zuerst lesen</span>
+        <h2>So ist diese Fassung zu verstehen</h2>
+        <p class="lede">Diese Seite hält bewusst unterschiedliche Wissensarten zusammen, vermischt sie aber nicht: gut etablierte Alltagsmaßnahmen, Peters Praxisangaben, Herstellerinformationen, traditionelle TCM-Modelle und Aussagen aus der Erfahrungsheilkunde werden jeweils sichtbar gekennzeichnet.</p>
+        <div class="grid">
+          <article class="card">
+            <h3><span class="level fact">Basiswissen</span></h3>
+            <p>Hygiene, Lüften, Schlaf, Bewegung, angemessene Ernährung, Impfberatung und medizinische Warnzeichen.</p>
+          </article>
+          <article class="card">
+            <h3><span class="level source">Quellenangabe</span></h3>
+            <p>Was Peter, Hersteller, Baklayan oder Greten beschreiben. Eine erhaltene Aussage ist noch keine Bestätigung ihrer Wirksamkeit.</p>
+          </article>
+          <article class="card">
+            <h3><span class="level open">Prüfung offen</span></h3>
+            <p>Dosierungen, Produktkombinationen, Frequenz- und ChipCard-Wirkungen sowie alle individuellen Therapiezuordnungen.</p>
+          </article>
+        </div>
+        <div class="notice danger"><strong>Wichtig:</strong> Diese Arbeitsfassung ersetzt keine Diagnose und keine individuelle Behandlung. Sie darf bis zur dokumentierten medizinischen, pharmazeutischen und HWG-Prüfung nicht als allgemeine Einnahme- oder Heilungsanleitung ausgegeben werden.</div>
+      </section>
+
+      <section id="grundlagen">
+        <span class="label">Vorbeugen und früh reagieren</span>
+        <h2>Was im Herbst und Winter wirklich trägt</h2>
+        <div class="grid">
+          <article class="card wide">
+            <h3>Ansteckung vernünftig reduzieren</h3>
+            <ul>
+              <li>Innenräume regelmäßig und kräftig lüften.</li>
+              <li>Bei hoher Infektlage oder engem Kontakt situationsgerecht Abstand und Maske erwägen.</li>
+              <li>Hände waschen und in die Armbeuge husten oder niesen.</li>
+              <li>Bei Erkrankung Kontakte reduzieren und besonders gefährdete Menschen schützen.</li>
+              <li>Influenza- und COVID-19-Impfung nach Alter, Vorerkrankung und individueller ärztlicher Beratung prüfen.</li>
+            </ul>
+          </article>
+          <article class="card wide">
+            <h3>Regeneration und Schleimhäute</h3>
+            <ul>
+              <li>Ausreichend schlafen und Belastung an den Gesundheitszustand anpassen.</li>
+              <li>Täglich bewegen und möglichst Tageslicht nutzen.</li>
+              <li>Nach Durst trinken; bei Fieber und Vorerkrankungen den Bedarf individuell klären.</li>
+              <li>Raumluft nicht überheizen; Rauch und andere Schleimhautreize meiden.</li>
+              <li>Bei einer Nasendusche nur geeignetes steriles, destilliertes oder abgekochtes und abgekühltes Wasser verwenden; Gerät hygienisch reinigen.</li>
+            </ul>
+          </article>
+        </div>
+        <h3>Ernährung und Nahrungsergänzung</h3>
+        <p>Eine abwechslungsreiche Ernährung mit Gemüse, Hülsenfrüchten, Nüssen, geeigneten Eiweißquellen und wenig stark verarbeiteten Lebensmitteln unterstützt die allgemeine Versorgung. Einzelne Präparate verhindern keine Infektion zuverlässig. Sinnvoll können sie bei nachgewiesenem Mangel oder individuell begründetem Bedarf sein. Mehrere Produkte müssen gemeinsam betrachtet werden, weil sich etwa Zink, Selen, Vitamin A, Vitamin E oder Vitamin C addieren können.</p>
+        <div class="notice evidence"><strong>Trennregel:</strong> Herstellerangaben belegen Zusammensetzung und vorgesehene Verzehrmenge, nicht automatisch eine Wirkung gegen Erkältung, Bakterien, Viren oder COVID-19.</div>
+      </section>
+
+      <section id="hno">
+        <span class="label">Struktur für Infothek und Datenbank</span>
+        <h2>HNO-Beschwerden und Erregergruppen</h2>
+        <p class="lede">Ähnliche Beschwerden können unterschiedliche Ursachen haben. Farbe oder Menge des Nasensekrets allein beweisen keine bakterielle Infektion. Eine sichere Zuordnung braucht Verlauf, Untersuchung und bei Bedarf gezielte Diagnostik.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bereich</th><th>Intern zu erfassende Begriffe</th><th>Sichere Einordnung</th></tr></thead>
+            <tbody>
+              <tr><td>Nase und Nebenhöhlen</td><td>Schnupfen, Rhinitis, Schleimhautschwellung, Stirnhöhlenbeschwerden</td><td>Häufig viral; Allergie, Reizung und bakterielle Komplikation differenzialdiagnostisch beachten.</td></tr>
+              <tr><td>Augen und Schleimhäute</td><td>Tränen, Rötung, Reizung, Konjunktivitis-Bezug</td><td>Kann infektiös, allergisch oder irritativ sein; Schmerzen und Sehstörung rasch abklären.</td></tr>
+              <tr><td>Ohr und Innenohr</td><td>Ohrdruck, Ohrschmerz, Hörveränderung, Schwindel, Innenohrbeschwerden</td><td>Plötzlicher Hörverlust, starker Schwindel oder neurologische Zeichen sind dringlich.</td></tr>
+              <tr><td>Bakterielle Gruppen</td><td>Kokken, Staphylokokken, Streptokokken</td><td>Besiedlung, Nachweis und ursächliche Infektion sind nicht dasselbe.</td></tr>
+              <tr><td>Komplikationen</td><td>Abszess, Gelenk- oder Knieinfektion, Nierenentzündung, Lungenentzündung</td><td>Keine Selbstbehandlung; zeitnahe oder dringliche medizinische Diagnostik.</td></tr>
+              <tr><td>Respiratorische Viren</td><td>Rhinoviren, Influenza, RSV, Adenoviren, saisonale Coronaviren</td><td>Symptome überschneiden sich; Testung richtet sich nach Risiko und therapeutischer Konsequenz.</td></tr>
+              <tr><td>SARS-CoV-2</td><td>SARS-CoV-2 als Erreger, COVID-19 als Erkrankung, Post-/Long-COVID getrennt</td><td>Nicht mit den vier üblichen saisonalen Coronaviren gleichsetzen.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Separat erhaltene Strunz-Quelle, Seiten 161–162</h3>
+        <div class="notice danger"><strong>Quellenprotokoll, keine Einnahmeanweisung:</strong> Peter übermittelte die folgenden Inhalte aus Ulrich Strunz, <em>Neue Wege der Heilung: Gesundheit geschieht von innen</em>. Die Angaben werden vollständig intern erhalten, bleiben aber ungeprüft und nicht patientenseitig freigegeben.</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bereich</th><th>Übermittelte Quellenangabe</th><th>Getrennte Sicherheitsprüfung</th></tr></thead>
+            <tbody>
+              <tr><td>„Unschlagbar mit C + E + Zn“</td><td>Vitamin C 1–3 g; Zink 30–60 mg täglich; Vitamin E 400 IE</td><td>Nieren- und Steinrisiko, Kupferhaushalt, Arzneimittelabstände, Vitamin-E-Form und -Umrechnung, Blutungsrisiko und gesamte Nährstoffzufuhr prüfen.</td></tr>
+              <tr><td>Kohlenhydrate</td><td>weniger als 50 g pro Tag</td><td>Keine pauschale Empfehlung; insbesondere Diabetesmedikation, Schwangerschaft, Essstörungen, Energieversorgung sowie Leber und Niere prüfen.</td></tr>
+              <tr><td>Protein</td><td>1–2 g pro kg Körpergewicht</td><td>Bedarf nach Alter, Aktivität, Gesamtenergie sowie Nieren- und Leberfunktion individuell einordnen.</td></tr>
+              <tr><td>Omega-3-Fettsäuren</td><td>2–6 g pro Tag</td><td>EPA-/DHA-Anteil, Produkt, Medikamente, Operationen, Blutungsrisiko, Verträglichkeit und Gesamtzufuhr klären.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Saisonale Coronaviren und SARS-CoV-2</h3>
+        <p>Zu den etablierten saisonalen humanen Coronaviren zählen 229E, OC43, NL63 und HKU1. Sie verursachen häufig Erkältungssymptome, können bei Säuglingen, älteren oder immungeschwächten Menschen aber auch schwerer verlaufen. SARS-CoV-2 ist ein anderer Erreger. Die akute Erkrankung heißt COVID-19; mögliche anhaltende Beschwerden werden als Post- oder Long-COVID eingeordnet. Eine Datenbank muss diese Begriffe getrennt führen, damit Suchergebnisse und Therapiehinweise nicht vermischt werden.</p>
+
+        <h3>Kokken, Staphylokokken und Streptokokken</h3>
+        <p>„Kokken“ beschreibt zunächst eine Formgruppe kugelförmiger Bakterien. Staphylokokken und Streptokokken gehören dazu, unterscheiden sich aber in Arten, typischen Infektionsorten, Resistenzlage und Behandlung. Staphylococcus aureus kann beispielsweise Haut- und Weichteilinfektionen oder Abszesse verursachen. Streptococcus pyogenes kann unter anderem Rachenentzündungen auslösen; Streptococcus pneumoniae kann an Mittelohr-, Nebenhöhlen- oder Lungeninfektionen beteiligt sein. Diese möglichen Zusammenhänge sind kein Nachweis im Einzelfall.</p>
+      </section>
+
+      <section id="praxis">
+        <span class="label">Peters Angaben · getrennt bewertet</span>
+        <h2>Genannte Praxisansätze und Programme</h2>
+        <div class="notice danger"><strong>Erfahrungsheilkunde:</strong> Frequenzanwendungen, Herd-Therapie, ChipCards und TRIKOMBIN sind nicht als evidenzbasierte Diagnose oder Therapie anerkannt. Begriffe wie „Lymph-Entgiftung“ oder „Radikale ausleiten“ sind Quellenbegriffe, keine hier bestätigten physiologischen Wirkungen.</div>
+        <div class="grid">
+          <article class="card wide">
+            <h3>Früh genannte Elemente</h3>
+            <ul>
+              <li>Nasendusche</li>
+              <li>hohe Vitamin-B2-Gaben, jedoch ohne im Fortsetzungsstand erhaltene Mengenangabe</li>
+              <li>Frequenzanwendungen und Herd-Therapie</li>
+              <li>ChipCard LY und Derma-Clean Ly</li>
+              <li>Mannayan Vit C+ und Echinacea</li>
+              <li>nach einer Frequenzanwendung 50 Minuten geerdet bleiben</li>
+            </ul>
+          </article>
+          <article class="card wide">
+            <h3>Bei „tiefsitzender“ HNO-Symptomatik genannt</h3>
+            <ul>
+              <li>Derma-Clean Ly</li>
+              <li>MineralVit Gold und Mineralsalz</li>
+              <li>DTX-Card</li>
+              <li>Derma-Clean N und Derma-Clean L</li>
+            </ul>
+            <p><span class="level open">Zuordnung ungeprüft</span> „Tiefsitzend“ ist kein standardisierter Diagnosebegriff. Vor jeder Anwendung muss geklärt werden, ob eine Nebenhöhlen-, Ohr-, Bronchien- oder Lungenbeteiligung medizinisch untersucht werden muss.</p>
+          </article>
+        </div>
+
+        <h3>HNO-ChipCard: gewünschte interne Zuordnung</h3>
+        <p>Die HNO-ChipCard soll intern mit HNO-Symptomen, Rhinitis, Schleimhaut- und Augenbeteiligung, Kokken, Staphylokokken, Streptokokken, Viren, saisonalen Coronaviren und getrennt SARS-CoV-2 verknüpft werden. Zusätzlich wurden Abszesse, Gelenk- und Knieinfektionen, Nierenentzündung, Lungenentzündung, Innenohr- und Stirnhöhlenbeschwerden genannt. Diese Verknüpfungen dokumentieren Peters Praxisquelle. Sie bedeuten weder, dass ein Chip einen Erreger diagnostizieren kann, noch dass eine Wirkung gegen diese Erkrankungen belegt ist.</p>
+
+        <h3>Baklayan und TRIKOMBIN</h3>
+        <p>Die von Peter benannte Seite „Akutbehandlung in unserer Praxis“ beschreibt typische akute Erkältungs- und HNO-Zeichen und stellt das TRIKOMBIN im Rahmen eines bioenergetischen Praxisansatzes dar. Diese Darstellung wird als Aussage der Quelle erhalten. Aussagen über Erkennung oder Behandlung von Erregern durch das Gerät bleiben Anbieter- beziehungsweise Praxisaussagen und sind nicht unabhängig bestätigt.</p>
+      </section>
+
+      <section id="mittel">
+        <span class="label">Vollständiger interner Arbeitsstand</span>
+        <h2>Mittel, Dosierungen und Produktinformationen</h2>
+        <div class="notice danger"><strong>Keine Selbstmedikation:</strong> Die Tabelle bewahrt Peters genannte Praxisdosierungen. Sie ist keine freigegebene Patientenanweisung. Vor einer individuellen Verwendung müssen Identität, Darreichungsform, Gesamtzufuhr, Dauer, Medikamente, Allergien, Alter, Schwangerschaft, Stillzeit sowie Leber- und Nierenfunktion geprüft werden.</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Mittel</th><th>Peters Praxisangabe</th><th>Quellen- und Sicherheitsabgleich</th></tr></thead>
+            <tbody>
+              <tr><td>Mannayan ANTIOXI+</td><td>1 × täglich 1 Tablette</td><td>Lokales Herstellerinventar führt 60 Kapseln. Darreichungsform vor Verwendung klären.</td></tr>
+              <tr><td>Mannayan BETA+</td><td>1 × täglich 1 Kapsel</td><td>Stimmt mit Herstellerinventar überein; laut Inventar nur für Erwachsene. Kombinationsrisiken offen.</td></tr>
+              <tr><td>Barberry</td><td>2 × täglich 15–30 Tropfen, 30 Minuten vor dem Essen, in ½ Glas Wasser</td><td>Pflanzliche Tinktur; Produktidentität und Interaktionen offen.</td></tr>
+              <tr><td>Banderol</td><td>2 × täglich 1–30 Tropfen, langsam steigern, in 120 ml Wasser</td><td>Bestehende interne NutraMedix-Quelle nennt ebenfalls eine Steigerung bis 30 Tropfen, bleibt aber ungeprüft.</td></tr>
+              <tr><td>Mannayan GLUCAN+</td><td>1 × täglich 1 Kapsel</td><td>Herstellerinventar nennt 1–3 Kapseln zwischen oder vor Mahlzeiten. Beide Angaben getrennt erhalten.</td></tr>
+              <tr><td>Takuna</td><td>2 × täglich 8 Tropfen</td><td>Individuelle Sicherheits- und Interaktionsprüfung offen.</td></tr>
+              <tr><td>Samento</td><td>2 × täglich 8 Tropfen</td><td>Individuelle Sicherheits- und Interaktionsprüfung offen.</td></tr>
+              <tr><td>Houttuynia</td><td>2 × täglich 15 Tropfen</td><td>Individuelle Sicherheits- und Interaktionsprüfung offen.</td></tr>
+              <tr><td>Mannayan Weihrauch</td><td>1 × täglich 1 Kapsel</td><td>Exakte Produktidentität sowie mögliche Blutungs- und Arzneimittelrisiken prüfen.</td></tr>
+              <tr><td>Mannayan ZINK+</td><td>2 × täglich 1 Tablette; akut 1 × 5 Tabletten</td><td><strong>15 mg Zink pro Tablette laut Herstellerinventar; fünf Tabletten entsprechen 75 mg. Keine Freigabe. Dosis, Dauer, Kupferhaushalt und Arzneimittelabstände streng prüfen.</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Was die lokalen Herstellerinventare zur Zusammensetzung sagen</h3>
+        <div class="grid">
+          <article class="card wide">
+            <h3>Mannayan ZINK+</h3>
+            <p>Pro Tablette: 15 mg Zink und 1 mg Kupfer. Genannte Formen: Zinkcitrat und Kupfersulfat in einer inaktiven Lactobacillus-bulgaricus-Matrix. Der Herstellerbestand und Peters Praxisdosierung sind getrennte Quellen.</p>
+          </article>
+          <article class="card wide">
+            <h3>Mannayan GLUCAN+</h3>
+            <p>Pro Kapsel: 250 mg 1,3/1,6-Beta-Glucan aus Saccharomyces cerevisiae, 30 mg Vitamin C, 1,5 mg Zink und 30 Mikrogramm Selen. Herstellerangabe: 1–3 Kapseln täglich zwischen oder vor den Mahlzeiten.</p>
+          </article>
+          <article class="card wide">
+            <h3>Mannayan ANTIOXI+</h3>
+            <p>Pro Kapsel nennt das Inventar 100 mg Vitamin C, 50 mg Ubiquinol, 40 mg Vitamin E, 15 mg Zink, 4,5 mg Beta-Carotin, 750 Mikrogramm Vitamin A, 4 mg Vitamin B2, 2 mg Mangan und 150 Mikrogramm Selen. Eine gleichzeitige Einnahme mit weiteren Vitamin- oder Mineralstoffprodukten muss auf Doppelungen geprüft werden.</p>
+          </article>
+          <article class="card wide">
+            <h3>Mannayan BETA+ mit Lutein</h3>
+            <p>Das Inventar nennt unter anderem Heidelbeerextrakt 80 mg, Quercetin 75 mg, Brokkolipulver 60 mg, Traubenkernextrakt 50 mg, Grünteeextrakt 50 mg, Ingwerextrakt 50 mg, Curcuminoide 40 mg, Lycopin 5 mg, Lutein 5 mg, Beta-Carotin 2 mg und Zeaxanthin 0,5 mg. Offen sind insbesondere Arzneimittelinteraktionen, Leberrisiken, Schwangerschaftsbezug und die Gesamtbewertung der Kombination.</p>
+          </article>
+        </div>
+
+        <h3>Warum die Mittel nicht pauschal einem Erreger zugeordnet werden</h3>
+        <p>Die bestehende interne NutraMedix-Quelle enthält Zuordnungen zwischen Samento, Banderol, Barberry, Takuna oder Houttuynia und verschiedenen Pathogenen. Solche Angaben werden intern erhalten, aber nicht automatisch zu einer Diagnose oder Patientenempfehlung. Ein Laborbefund, eine Besiedlung, ein Metatron-/NLS-Hinweis und eine gesicherte Infektion sind unterschiedliche Befundarten. Erst nach gesicherter Quelle, Plausibilitätsprüfung, Sicherheitsbewertung und fachlicher Freigabe darf eine konkrete Beziehung für eine Therapie verwendet werden.</p>
+      </section>
+
+      <section id="tcm">
+        <span class="label">Traditionelles Modell</span>
+        <h2>TCM: Pulmonalorbis, Algor laedens und Winterpflege</h2>
+        <div class="notice evidence"><strong>Einordnung:</strong> Die folgenden Inhalte stammen aus einem TCM-Lehrbuch. Sie beschreiben ein historisch-traditionelles Funktionsmodell. Sie sind keine moderne anatomische, virologische oder pathophysiologische Erklärung.</div>
+        <h3>Erkältungsprophylaxe, Greten Seite 1625</h3>
+        <p>In der von Peter genannten Fundstelle werden Ingwertee, „Wintercandies“, ein Moxa-Bad und Rosmarin im Zusammenhang mit Erkältungsprophylaxe aufgeführt. Für eine patientengerichtete Fassung muss zu jeder Maßnahme die individuelle Verträglichkeit ergänzt werden. Wärmebehandlungen passen beispielsweise nicht automatisch bei Fieber, Kreislaufinstabilität oder eingeschränkter Wärmewahrnehmung. Auch Gewürze und Kräuter können bei Reflux, Allergien, Schwangerschaft oder Arzneimitteleinnahme relevant sein.</p>
+        <h3>Nase und Pulmonalorbis, Greten Seite 333</h3>
+        <p>Die Nase wird im TCM-Modell als Körperöffnung des Pulmonalorbis eingeordnet. Diese Formulierung beschreibt eine funktionelle Zuordnung innerhalb der TCM. Sie darf nicht so formuliert werden, als sei sie eine anatomische Verbindung oder ein Beweis für die Ursache eines konkreten HNO-Symptoms.</p>
+        <h3>Algor-laedens-Theorie, Greten Seiten 543–547</h3>
+        <p>Die Fundstelle beschreibt die Algor-laedens-Theorie und Stadien I bis III als Modell für das Eindringen und die Entwicklung einer als Kälte verstandenen Belastung. Für die Infothek wird dieses Modell eigenständig paraphrasiert und klar von moderner Infektionslehre getrennt. Die vollständigen längeren Buchpassagen werden aus Urheberrechtsgründen nicht auf dieser Seite wiedergegeben; Autor, Werk und Seiten bleiben als Fundstellen erhalten.</p>
+      </section>
+
+      <section id="sicherheit">
+        <span class="label">Grenzen und Warnzeichen</span>
+        <h2>Wann nicht abwarten?</h2>
+        <div class="grid">
+          <article class="card wide">
+            <h3>Sofortige Hilfe</h3>
+            <ul>
+              <li>starke Atemnot, bläuliche Lippen oder Brustschmerz</li>
+              <li>Verwirrtheit, Bewusstseinsstörung, Krampfanfall</li>
+              <li>schwere Kreislaufprobleme oder deutliche Austrocknung</li>
+              <li>rasch zunehmende Schwellung im Gesicht, Hals oder Rachen</li>
+              <li>Verdacht auf schwere allergische Reaktion</li>
+            </ul>
+            <p>In Deutschland im Notfall 112 wählen.</p>
+          </article>
+          <article class="card wide">
+            <h3>Zeitnahe ärztliche Abklärung</h3>
+            <ul>
+              <li>sehr hohes, anhaltendes oder nach Besserung erneut auftretendes Fieber</li>
+              <li>Atembeschwerden, ungewöhnlich starker Husten oder Verdacht auf Pneumonie</li>
+              <li>starke einseitige Stirn-, Gesichts- oder Ohrschmerzen</li>
+              <li>plötzlicher Hörverlust oder ausgeprägter Schwindel</li>
+              <li>Nackensteife, ungewöhnlicher Ausschlag oder starke Lichtscheu</li>
+              <li>schmerzhafte Gelenkschwellung, Abszess oder Zeichen einer Nierenentzündung</li>
+              <li>Verschlechterung bei Säuglingen, Schwangeren, Älteren oder immungeschwächten Menschen</li>
+            </ul>
+          </article>
+        </div>
+
+        <h3>Sicherheitsfragen vor jedem Mittel</h3>
+        <ol>
+          <li>Ist die Diagnose ausreichend geklärt, und welche Befundart liegt vor?</li>
+          <li>Welche Medikamente und anderen Präparate werden bereits eingenommen?</li>
+          <li>Gibt es Allergien, Schwangerschaft, Stillzeit oder besondere Altersrisiken?</li>
+          <li>Wie sind Leber- und Nierenfunktion, Blutungsrisiko und Vorerkrankungen?</li>
+          <li>Addieren sich Vitamine, Mineralstoffe oder Pflanzenextrakte aus mehreren Produkten?</li>
+          <li>Sind Dosis, Dauer, Einnahmezeit und Abbruchkriterien dokumentiert?</li>
+          <li>Ist klar, wann medizinisch nachkontrolliert oder abgebrochen werden muss?</li>
+        </ol>
+        <div class="notice danger"><strong>Zink-Akutschema:</strong> Peters Angabe „1 × 5 Tabletten“ entspricht mit dem lokal dokumentierten Produkt 75 mg Zink. Diese Menge bleibt gesperrt, bis Dosis, Dauer, Gesamtzufuhr, Kupferhaushalt, gastrointestinale Risiken und Arzneimittelabstände fachlich bewertet sind.</div>
+      </section>
+
+      <section id="quellen">
+        <span class="label">Nachvollziehbarkeit</span>
+        <h2>Quellen und offener Prüfstand</h2>
+        <ol class="source-list">
+          <li><strong>Peter Rauch:</strong> aktuelle Praxisangaben zu Herbst/Winter, HNO, ChipCards, Mitteln und Dosierungen; normalisierte Inhaltsfassung vom 20.08.2026. Der exakte frühere Chatwortlaut liegt nicht als lokale Quelldatei vor und wird deshalb nicht als wörtliches Zitat ausgegeben.</li>
+          <li><strong>Baklayan-Praxisquelle:</strong> „Akutbehandlung in unserer Praxis“, <code>https://heilpraktiker-bioresonanz-muenchen.de/akutbehandlung-in-unserer-praxis/</code>. Gerätewirkungen nur als Quellenbehauptung.</li>
+           <li><strong>Henry Johannes Greten:</strong> <em>Kursbuch Traditionelle Chinesische Medizin</em>, Thieme, Kindle-Ausgabe; Seiten 333, 543–547 und 1625. Hier nur Fundstellen und kurze eigenständige Paraphrasen.</li>
+           <li><strong>Ulrich Strunz:</strong> <em>Neue Wege der Heilung: Gesundheit geschieht von innen</em>, Seiten 161–162; normalisierte Inhaltsfassung aus Peters aktuellem Auftrag. Dosis- und Ernährungsaussagen bleiben ungeprüfte Quellenangaben ohne Patientenfreigabe.</li>
+          <li><strong>Mannayan-Inventare:</strong> lokale Read-only-Quelldateien für ANTIOXI+, BETA+ mit Lutein, GLUCAN+ und ZINK+ unter <code>docs/source-inventory</code>; Herstellerinformationen, keine unabhängigen Wirksamkeitsnachweise.</li>
+          <li><strong>Bestehende interne NutraMedix-Quelle:</strong> lokale Migration <code>20260324183009_5d17abd7-5c9f-4f2b-a99d-94c3be43195d.sql</code>; Produkt-, Pathogen- und Dosierungsangaben bleiben ungeprüft.</li>
+          <li><strong>Strukturiertes Gesamtinventar:</strong> <code>docs/source-inventory/2026-08-20-herbst-winter-hno-tcm-internal.json</code>.</li>
+        </ol>
+        <h3>Vor einer Patientenfreigabe offen</h3>
+        <ul>
+          <li>medizinische Prüfung aller Aussagen und Warnzeichen</li>
+          <li>pharmazeutische Prüfung aller Dosierungen, Kombinationen und Interaktionen</li>
+          <li>HWG-Prüfung, besonders bei Frequenz-, ChipCard- und Produktwirkungen</li>
+          <li>abschnittsgenauer Quellen- und Linkabgleich</li>
+          <li>Copyright- und Zitatprüfung der Buchfundstellen</li>
+          <li>mobile, barrierearme und patientenverständliche Sichtprüfung</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>© 2026 Naturheilpraxis Peter Rauch · Interner Admin-Prüfentwurf · Keine Patientenfreigabe, Veröffentlichung oder Selbstmedikationsanleitung</footer>
+  </div>
+</body>
+</html>

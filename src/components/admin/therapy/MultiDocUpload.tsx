@@ -15,6 +15,7 @@ import {
   assessDocumentExtraction,
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
+  classifyClinicalPdfFailure,
   MAX_OCR_WORKER_INITIALIZATION_ATTEMPTS,
   reconstructPdfTextLines,
   shouldRunLocalOcr,
@@ -47,7 +48,20 @@ type PendingFile = {
   ocrFailedPages?: number[];
   progress?: string;
   error?: string;
+  errorKind?: string;
   piiHits?: PiiHit[];
+};
+
+type PendingPrivacyReview = {
+  text: string;
+  sourcePseudonymId: string;
+  documentCount: number;
+  totalPages: number;
+  totalChars: number;
+  localOcrPages: number;
+  localOcrFailedPages: number;
+  failedCount: number;
+  identifierCategories: string[];
 };
 
 export type PiiHit = { kind: string };
@@ -63,11 +77,6 @@ export type ClinicalDocumentExtractionResult = {
   ocrPages?: number;
   ocrFailedPages?: number[];
   removedIdentifierCategories?: string[];
-};
-
-export const isPdfPasswordError = (error: unknown): boolean => {
-  const candidate = error as { name?: unknown; message?: unknown } | null;
-  return candidate?.name === "PasswordException" || /password|passwort|kennwort/i.test(String(candidate?.message || ""));
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
@@ -285,6 +294,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const activeExtractionRef = useRef<{ controller: AbortController; ocrSession: OcrExtractionSession }>();
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pendingReview, setPendingReview] = useState<PendingPrivacyReview>();
+  const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const { toast } = useToast();
   pseudonymIdRef.current = pseudonymId;
 
@@ -296,6 +308,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
     if (activeExtraction) void terminateAndResetWorkerSession(activeExtraction.ocrSession);
     setFiles([]);
     setLoading(false);
+    setPendingReview(undefined);
+    setPrivacyConfirmed(false);
+    setReviewSubmitting(false);
     return () => {
       extractionRunRef.current += 1;
       const activeOnCleanup = activeExtractionRef.current;
@@ -307,6 +322,8 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
 
   const addFiles = (list: FileList | null) => {
     if (!list?.length) return;
+    setPendingReview(undefined);
+    setPrivacyConfirmed(false);
     setFiles((previous) => [
       ...previous,
       ...Array.from(list).map((file) => ({ file, status: "queued" as const })),
@@ -314,7 +331,11 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const removeAt = (index: number) => setFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  const removeAt = (index: number) => {
+    setPendingReview(undefined);
+    setPrivacyConfirmed(false);
+    setFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
 
   const runExtraction = async () => {
     if (!files.length) return;
@@ -324,6 +345,8 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       toast({ title: "Erstellungsdatum fehlt", description: "Bitte vor dem Auslesen das Datum der Analyse eintragen.", variant: "destructive" });
       return;
     }
+    setPendingReview(undefined);
+    setPrivacyConfirmed(false);
     const runId = ++extractionRunRef.current;
     const sourcePseudonymId = (pseudonymId || "").trim();
     const scopeIsCurrent = () => runId === extractionRunRef.current
@@ -376,13 +399,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           };
         } catch (error) {
           if (!scopeIsCurrent()) return;
+          const failure = classifyClinicalPdfFailure(error);
           updated[index] = {
             ...updated[index],
             status: "error",
             progress: undefined,
-            error: isPdfPasswordError(error)
-              ? "Geschütztes PDF konnte nicht geöffnet werden. Passwort fehlt oder ist falsch."
-              : (error as Error).message || "Fehler",
+            errorKind: failure.label,
+            error: failure.message,
           };
         }
         setFiles([...updated]);
@@ -398,29 +421,36 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
         const categories = Array.from(new Set(withPii.flatMap((item) => (item.piiHits || []).map((hit) => hit.kind))));
         toast({
           title: "Identifikatoren lokal entfernt",
-          description: `${categories.join(", ")} wurden vor Analyse und Speicherung entfernt.`,
-        });
-        await logTherapyEvent(sourcePseudonymId, "pii_warning", {
-          document_count: withPii.length,
-          identifier_categories: categories,
-          note: "Identifikatoren lokal entfernt; keine Klartext-Treffer oder Dateinamen gespeichert.",
+          description: `${categories.join(", ")} wurden vor der Datenschutzvorschau entfernt.`,
         });
       }
       if (!scopeIsCurrent()) return;
 
-      if (combined.trim()) {
-        onExtracted(combined.trim(), sourcePseudonymId);
-        if (!scopeIsCurrent()) return;
-        toast({ title: "Inhalte datenschutzbereinigt übernommen", description: `${successDocs.length} Datei(en) verarbeitet; Originale nicht archiviert.` });
-        await logTherapyEvent(sourcePseudonymId, "documents_uploaded", {
-          document_count: successDocs.length,
-          total_pages: successDocs.reduce((sum, item) => sum + Number(item.pages || 0), 0),
-          total_chars: successDocs.reduce((sum, item) => sum + Number(item.chars || 0), 0),
-          original_archived: false,
-          privacy_mode: "local-deidentification",
-          local_ocr_pages: successDocs.reduce((sum, item) => sum + Number(item.ocrPages || 0), 0),
-          local_ocr_failed_pages: successDocs.reduce((sum, item) => sum + Number(item.ocrFailedPages?.length || 0), 0),
-          failed_count: failed.length,
+      const reviewText = combined.trim();
+      if (reviewText) {
+        const residualIdentifiers = directIdentifierCategories(reviewText);
+        if (residualIdentifiers.length) {
+          toast({
+            title: "Datenschutz-Sicherheitsstopp",
+            description: `${residualIdentifiers.join(", ")} konnte nicht zuverlässig entfernt werden. Es wird nichts übernommen.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        setPendingReview({
+          text: reviewText,
+          sourcePseudonymId,
+          documentCount: successDocs.length,
+          totalPages: successDocs.reduce((sum, item) => sum + Number(item.pages || 0), 0),
+          totalChars: reviewText.length,
+          localOcrPages: successDocs.reduce((sum, item) => sum + Number(item.ocrPages || 0), 0),
+          localOcrFailedPages: successDocs.reduce((sum, item) => sum + Number(item.ocrFailedPages?.length || 0), 0),
+          failedCount: failed.length,
+          identifierCategories: Array.from(new Set(withPii.flatMap((item) => (item.piiHits || []).map((hit) => hit.kind)))),
+        });
+        toast({
+          title: "Datenschutzvorschau bereit",
+          description: "Bitte den vollständigen bereinigten Text prüfen und erst danach ausdrücklich übernehmen.",
         });
       } else if (failed.length) {
         toast({ title: "Keine Daten extrahiert", description: failed[0].error, variant: "destructive" });
@@ -430,6 +460,67 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       await terminateAndResetWorkerSession(ocrSession);
       if (activeExtractionRef.current?.ocrSession === ocrSession) activeExtractionRef.current = undefined;
       if (scopeIsCurrent()) setLoading(false);
+    }
+  };
+
+  const discardPrivacyReview = () => {
+    setPendingReview(undefined);
+    setPrivacyConfirmed(false);
+    setFiles([]);
+  };
+
+  const confirmPrivacyReview = async () => {
+    const review = pendingReview;
+    if (!review || !privacyConfirmed || reviewSubmitting) return;
+    if ((pseudonymIdRef.current || "").trim() !== review.sourcePseudonymId) {
+      discardPrivacyReview();
+      toast({
+        title: "Datenschutzvorschau verworfen",
+        description: "Die Akte hat sich seit dem Auslesen geändert. Bitte die PDF für die aktuelle Akte erneut auswählen.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const residualIdentifiers = directIdentifierCategories(review.text);
+    if (residualIdentifiers.length) {
+      setPrivacyConfirmed(false);
+      toast({
+        title: "Datenschutz-Sicherheitsstopp",
+        description: `${residualIdentifiers.join(", ")} wurde bei der zweiten Restprüfung erkannt. Es wird nichts übernommen.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setReviewSubmitting(true);
+    try {
+      onExtracted(review.text, review.sourcePseudonymId);
+      setPendingReview(undefined);
+      setPrivacyConfirmed(false);
+      setFiles([]);
+      toast({
+        title: "Inhalte datenschutzbereinigt übernommen",
+        description: `${review.documentCount} Datei(en) verarbeitet; Originale und Dateinamen nicht archiviert.`,
+      });
+      if (review.identifierCategories.length) {
+        await logTherapyEvent(review.sourcePseudonymId, "pii_warning", {
+          document_count: review.documentCount,
+          identifier_categories: review.identifierCategories,
+          note: "Identifikatoren lokal entfernt; keine Klartext-Treffer oder Dateinamen gespeichert.",
+        });
+      }
+      await logTherapyEvent(review.sourcePseudonymId, "documents_uploaded", {
+        document_count: review.documentCount,
+        total_pages: review.totalPages,
+        total_chars: review.totalChars,
+        original_archived: false,
+        privacy_mode: "local-deidentification-confirmed",
+        local_ocr_pages: review.localOcrPages,
+        local_ocr_failed_pages: review.localOcrFailedPages,
+        failed_count: review.failedCount,
+      });
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -459,12 +550,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           className="hidden"
           onChange={(event) => addFiles(event.target.files)}
         />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={loading} className="gap-1.5">
+        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={loading || !!pendingReview} className="gap-1.5">
           <FileUp className="h-3.5 w-3.5" />
           {label}
         </Button>
         {files.length > 0 && (
-          <Button type="button" size="sm" onClick={runExtraction} disabled={loading} className="gap-1.5">
+          <Button type="button" size="sm" onClick={runExtraction} disabled={loading || !!pendingReview} className="gap-1.5">
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
             {loading ? "Verarbeite..." : `${files.length} Datei(en) sicher auslesen`}
           </Button>
@@ -499,7 +590,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
                   OCR-Hinweis
                 </span>
               )}
-              {pending.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pending.error}>Fehler: {pending.error}</span>}
+              {pending.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pending.error}>Fehler ({pending.errorKind || "Technik"}): {pending.error}</span>}
               {!loading && pending.status !== "processing" && (
                 <button type="button" onClick={() => removeAt(index)} className="text-muted-foreground hover:text-rose-700">
                   <X className="h-3.5 w-3.5" />
@@ -510,6 +601,44 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
             Datenschutzmodus: PDF-Textebenen werden bevorzugt. Nur textarme Rasterseiten werden per OCR lokal im Browser erkannt. Beim ersten OCR-Lauf lädt der Browser OCR-Programm- und Sprachdaten (Deutsch/Englisch) aus dieser Anwendung; nur diese Programmdaten werden geladen. PDF-, Canvas- und Bilddaten bleiben im Browser und gehen an keinen OCR-Cloud-Dienst. Direkte Identifikatoren werden vor Analyse und Speicherung entfernt; Originaldateien werden nicht archiviert.
           </p>
+        </div>
+      )}
+
+      {pendingReview && (
+        <div className="space-y-3 rounded-md border-2 border-amber-500 bg-amber-50/70 p-3 dark:bg-amber-950/20">
+          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
+            <ShieldAlert className="h-4 w-4" />
+            Vollständige Datenschutzvorschau
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Bis zur Bestätigung bleibt dieser Text nur im Arbeitsspeicher des Browsers. Es wird noch nichts in Eingabefelder, Protokolle, Lovable oder eine KI übernommen.
+          </p>
+          <textarea
+            readOnly
+            value={pendingReview.text}
+            spellCheck={false}
+            aria-label="Vollständiger bereinigter Dokumenttext"
+            className="min-h-[18rem] max-h-[32rem] w-full resize-y rounded-md border bg-background p-3 font-mono text-xs leading-relaxed"
+          />
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={privacyConfirmed}
+              onChange={(event) => setPrivacyConfirmed(event.target.checked)}
+              disabled={reviewSubmitting}
+              className="mt-1"
+            />
+            <span>Ich habe den vollständigen Text geprüft. Namen, Anschriften, Geburtsdaten, Kontaktdaten, echte Patienten- und Leistungserbringer-Kennnummern sowie Praxis-/Labornamen, Stempel und Unterschriften sind entfernt; das erlaubte Pseudonym darf enthalten bleiben.</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={confirmPrivacyReview} disabled={!privacyConfirmed || reviewSubmitting}>
+              {reviewSubmitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              Bereinigten Text übernehmen
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={discardPrivacyReview} disabled={reviewSubmitting}>
+              Verwerfen
+            </Button>
+          </div>
         </div>
       )}
     </div>

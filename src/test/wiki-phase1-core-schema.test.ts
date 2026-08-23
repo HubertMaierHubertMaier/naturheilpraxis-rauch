@@ -32,11 +32,27 @@ const kbTables = [
   "kb_change_proposals",
 ];
 
+const kbImportTables = [
+  "kb_import_batches",
+  "kb_source_candidates",
+  "kb_entity_candidates",
+  "kb_relation_candidates",
+  "kb_dosage_candidates",
+  "kb_safety_candidates",
+  "kb_review_decisions",
+  "kb_import_errors",
+  "kb_import_candidate_proposals",
+  "kb_import_proposal_review_events",
+  "kb_import_core_links",
+  "kb_import_events",
+];
+
 const wikiBackupTables = [
   "admin_knowledge_base",
   "mannayan_products",
   "knowledge_product_links",
   ...kbTables,
+  ...kbImportTables,
   "faqs",
   "practice_pricing",
   "practice_info",
@@ -365,16 +381,24 @@ describe("Wiki Phase 1 backup coverage", () => {
       "required KB tables",
     );
     const requiredKbTables = quotedValues(requiredKbBlock, "double");
+    const requiredImportBlock = requiredBlock(
+      backupExportSource,
+      /const REQUIRED_KB_IMPORT_TABLES = \[([\s\S]*?)\] as const;/,
+      "required KB import tables",
+    );
+    const requiredImportTables = quotedValues(requiredImportBlock, "double");
     const edgeLiteralTables = quotedValues(edgeWikiBlock, "double");
     const edgeTables = [
       ...edgeLiteralTables.slice(0, 3),
       ...requiredKbTables,
+      ...requiredImportTables,
       ...edgeLiteralTables.slice(3),
     ];
 
     expect(frontendTables).toEqual(wikiBackupTables);
     expect(requiredKbTables).toEqual(kbTables);
     expect(edgeWikiBlock).toContain("...REQUIRED_KB_TABLES");
+    expect(edgeWikiBlock).toContain("...REQUIRED_KB_IMPORT_TABLES");
     for (const table of kbTables) {
       expect(backupExportSource.match(new RegExp(`"${table}"`, "g"))).toHaveLength(1);
     }
@@ -401,7 +425,7 @@ describe("Wiki Phase 1 backup coverage", () => {
 
   it("exports only tables confirmed by successful OpenAPI discovery", () => {
     expect(backupExportSource).toContain('return { tables: [...new Set(filtered)].sort(), source: "openapi" }');
-    expect(backupExportSource).not.toContain("new Set([...filtered, ...REQUIRED_KB_TABLES])");
+    expect(backupExportSource).not.toContain("new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])");
   });
 
   it("fails subset and database exports when any table cannot be exported", () => {

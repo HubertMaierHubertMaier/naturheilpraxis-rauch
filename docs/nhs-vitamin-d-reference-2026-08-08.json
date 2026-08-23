@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-08T20:21:00.000Z",
+  "publication": "unpublished_internal_reference",
+  "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-d/",
+  "source_type": "independent_national_health_service_guidance",
+  "publisher": "National Health Service, United Kingdom",
+  "scope": "General vitamin-D function, dietary and sunlight sources, public guidance and safety warnings",
+  "import_status": "reference_only_not_mapped_to_products_or_conditions",
+  "database_writes": false,
+  "wiki_writes": false,
+  "clinical_assertions": [],
+  "reference_summary": "The NHS page is an independent public-health reference for vitamin D. It contains general guidance and safety information, but does not validate the composition, form, efficacy, suitability, dose or safety of any Strunz product or individual use case.",
+  "product_mapping": "not_performed",
+  "evidence_review": "required_for_each_product_or_condition",
+  "safety_review": "required_for_each_ingredient_population_and_dose",
+  "dose_handling": "Any numeric guidance on the source remains source context only and is not imported as a patient, product or practice dose."
+}

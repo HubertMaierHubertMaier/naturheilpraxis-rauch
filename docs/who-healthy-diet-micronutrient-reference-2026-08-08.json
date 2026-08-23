@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-08T20:18:00.000Z",
+  "publication": "unpublished_internal_reference",
+  "source_url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+  "source_type": "independent_international_public_health_guidance",
+  "publisher": "World Health Organization",
+  "scope": "General healthy-diet principles, dietary adequacy, balance, moderation, diversity, food safety and micronutrient-rich foods",
+  "import_status": "reference_only_not_mapped_to_products_or_conditions",
+  "database_writes": false,
+  "wiki_writes": false,
+  "clinical_assertions": [],
+  "reference_summary": "The WHO overview describes adequacy, balance, moderation and diversity as core principles and recommends varied nutrient-dense foods. It is a population-level framework and does not validate any Strunz product, ingredient form, disease claim, symptom claim, individual treatment, safety assessment or dose.",
+  "product_mapping": "not_performed",
+  "evidence_review": "required_for_each_product_or_condition",
+  "safety_review": "required_for_each_ingredient_population_and_dose"
+}

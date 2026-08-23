@@ -32,7 +32,7 @@ export interface EdgeFunctionAccessMatrixEntry {
   publicRationale: string;
 }
 
-export type TableAudience = "public" | "authenticated-owner" | "admin" | "service-role" | "mixed";
+export type TableAudience = "public" | "authenticated-owner" | "admin" | "service-role" | "database-owner" | "mixed";
 
 export interface TableAccessMatrixEntry {
   name: string;
@@ -74,7 +74,7 @@ export const routeAccessMatrix: RouteAccessMatrixEntry[] = [
   { path: "/knieschwellung", component: "Knieschwellung", routeAudience: "public", guardType: "none", sensitivity: "public", supabaseTables: [], edgeFunctions: [], riskNote: "Public content route." },
   { path: "/admin", component: "AdminDashboard", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles", "app_settings", "audit_log"], edgeFunctions: ["get-patients", "generate-icd10", "send-icd10-report"], riskNote: "Admin page enforces access in component via useAuth/useAdminCheck plus local-only dev bypass." },
   { path: "/wissensdatenbank", component: "Wissensdatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "knowledge_product_links", "mannayan_products", "therapy_sessions"], edgeFunctions: ["analyze-documents", "therapy-recommend", "get-therapy-sessions", "enrich-wiki-tags", "extract-lab-image", "generate-diagnoses"], riskNote: "Admin-only knowledge/therapy workspace; component redirects non-admins." },
-  { path: "/wikidatenbank", component: "WikiDatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base"], edgeFunctions: [], riskNote: "Admin-only read-only knowledge view; component redirects non-admins and exposes no write or import action." },
+  { path: "/wikidatenbank", component: "WikiDatenbank", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["kb_articles", "kb_article_revisions", "kb_change_proposals", "kb_import_batches", "kb_source_candidates", "kb_entity_candidates", "kb_relation_candidates", "kb_dosage_candidates", "kb_safety_candidates", "kb_review_decisions", "kb_import_errors", "kb_import_candidate_proposals", "kb_import_proposal_review_events", "kb_import_core_links", "knowledge_product_links"], edgeFunctions: [], riskNote: "Admin-only knowledge and import-review view. Source-faithful internal drafts and their links remain unreviewed and admin-only; review actions do not release content or enable patient access." },
   { path: "/therapie-kandidaten", component: "TherapieKandidaten", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["admin_knowledge_base", "therapy_sessions"], edgeFunctions: ["analyze-documents", "therapy-recommend", "get-therapy-sessions", "extract-lab-image", "generate-diagnoses"], riskNote: "Standalone internal therapy-candidate workspace; component redirects non-admins." },
   { path: "/patienten", component: "PatientenManagerPage", routeAudience: "admin", guardType: "component-admin-check", sensitivity: "admin-sensitive", supabaseTables: ["profiles"], edgeFunctions: ["get-patients"], riskNote: "Admin-only patient list; component denies non-admins and dev bypass is localhost-restricted." },
   { path: "/dashboard", component: "PatientDashboard", routeAudience: "patient", guardType: "ProtectedRoute", sensitivity: "patient-sensitive", supabaseTables: ["anamnesis_submissions"], edgeFunctions: [], riskNote: "Patient dashboard requires an authenticated and 2FA-bound session; RLS must constrain submissions to the signed-in patient." },
@@ -108,6 +108,55 @@ export const edgeFunctionAccessMatrix: EdgeFunctionAccessMatrixEntry[] = [
 
 
 export const tableAccessMatrix: TableAccessMatrixEntry[] = [
+  ...[
+    "kb_article_entities",
+    "kb_assertion_sources",
+    "kb_assertions",
+    "kb_change_proposals",
+    "kb_dosage_candidates",
+    "kb_entities",
+    "kb_entity_candidates",
+    "kb_entity_identifiers",
+    "kb_entity_names",
+    "kb_entity_relations",
+    "kb_entity_revisions",
+    "kb_entity_types",
+    "kb_identifier_schemes",
+    "kb_import_batches",
+    "kb_import_candidate_proposals",
+    "kb_import_core_links",
+    "kb_import_errors",
+    "kb_import_proposal_review_events",
+    "kb_relation_type_domains",
+    "kb_relation_types",
+    "kb_relation_candidates",
+    "kb_review_decisions",
+    "kb_safety_candidates",
+    "kb_source_candidates",
+    "kb_source_revisions",
+    "kb_sources",
+  ].map((name): TableAccessMatrixEntry => ({
+    name,
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: false,
+    frontendConsumers: ["WikiDatenbank", "Wissensdatenbank"],
+    policySummary: "Admin-only structured knowledge and import-review access through RLS.",
+    riskNote: "Internal knowledge or review metadata; keep public and patient access blocked.",
+  })),
+  {
+    name: "_kb_owner_import_3f7a22a0_chunks",
+    audience: "database-owner",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: false,
+    frontendConsumers: [],
+    policySummary: "Temporary owner-only transport; all application runtime roles are revoked.",
+    riskNote: "Contains only the protected 565-candidate import payload; never expose it to application roles.",
+  },
   {
     name: "admin_knowledge_base",
     audience: "admin",

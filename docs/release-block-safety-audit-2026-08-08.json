@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T22:04:00.000Z",
+  "publication": "unpublished_internal_release_block_audit",
+  "scope": "Static safety check over all local JSON artifacts in the database integration repository.",
+  "json_files_checked": 44,
+  "violations": [],
+  "checks": {
+    "database_writes_enabled": false,
+    "wiki_writes_enabled": false,
+    "product_mappings_present": false,
+    "condition_mappings_present": false,
+    "medical_approval_present": false,
+    "dosage_approval_present": false,
+    "patient_facing_publication_present": false
+  },
+  "unpublished_product_inventory": {
+    "product_declaration_cards": 9,
+    "condition_or_symptom_cards": 0,
+    "candidate_status": "unpublished",
+    "medical_approval": false,
+    "dosage_approval": false
+  },
+  "result": "All release-block checks passed. This audit does not establish efficacy, suitability, safety, interaction clearance or dose approval.",
+  "next_gate": "Continue independent evidence, form, population, interaction and safety review without release mapping.",
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

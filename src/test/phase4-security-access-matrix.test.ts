@@ -8,16 +8,25 @@ const configSource = readFileSync("supabase/config.toml", "utf8");
 const appRoutePaths = Array.from(appSource.matchAll(/<Route\s+path="([^"]+)"/g)).map((match) => match[1]);
 const configuredFunctionNames = Array.from(configSource.matchAll(/\[functions\.([^\]]+)\]/g)).map((match) => match[1]);
 const supabaseTypesSource = readFileSync("src/integrations/supabase/types.ts", "utf8");
+const postTypeMigrationSources = [
+  readFileSync("supabase/migrations/20260812100000_create_kb_import_staging.sql", "utf8"),
+  readFileSync("supabase/migrations/20260819160000_add_import_candidate_proposal_gate.sql", "utf8"),
+  readFileSync("supabase/migrations/20260820120000_materialize_import_candidates_as_internal_drafts.sql", "utf8"),
+];
 const infothekGatingGrantMigration = readFileSync(
   "supabase/migrations/20260715170606_f314dfe0-f8d4-4689-bc4d-efdb61700575.sql",
   "utf8"
 );
-const databaseTableNames = Array.from(
+const typedDatabaseTableNames = Array.from(
   supabaseTypesSource
     .split("Tables: {", 2)[1]
     .split("Views:", 1)[0]
     .matchAll(/^\s{6}([a-zA-Z_][a-zA-Z0-9_]*): \{/gm)
 ).map((match) => match[1]);
+const migratedDatabaseTableNames = postTypeMigrationSources.flatMap((source) =>
+  Array.from(source.matchAll(/CREATE TABLE public\.([a-zA-Z_][a-zA-Z0-9_]*)/g), (match) => match[1])
+);
+const databaseTableNames = [...new Set([...typedDatabaseTableNames, ...migratedDatabaseTableNames])];
 
 describe("Phase 4 security access matrix", () => {
   it("documents every application route declared in App.tsx", () => {

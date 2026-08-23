@@ -28,7 +28,7 @@ interface PrintArgs {
   /** Schulmedizinische Verdachtsdiagnosen – nur für Praxis-PDF */
   diagnosen?: DiagnoseEntry[];
   /** Manuell ergänzte Mittel – erscheinen in beiden PDFs als eigene Sektion */
-  manualMittel?: Array<{ name: string; dosage: string; application: string; duration: string; reason: string; group?: string; safetyWarnings?: TherapySafetyWarning[] }>;
+  manualMittel?: Array<{ name: string; manufacturer?: string; dosage: string; application: string; duration: string; reason: string; patientExplanation?: string; safety?: string; group?: string; safetyWarnings?: TherapySafetyWarning[] }>;
 }
 
 const escapeHtml = (s: unknown) => {
@@ -137,6 +137,12 @@ const mdBlock = (s: unknown): string => {
 // Backward-compat alias for any inline use (z.B. einzeilige Strings)
 const mdInline = (s: unknown) => mdInlineRaw(escapeHtml(s ?? ""));
 
+const withoutInternalSourceMarkers = (value: string) => value
+  .replace(/\s*\[WIKI_ID:[0-9a-f-]{36}\]\s*/gi, " ")
+  .replace(/\s*\[(?:INFOTHEK|INFOTHEK-AUSZUG|UNREVIEWED_STAGING|WIKI-AUSZUG GEKUERZT):[^\]]+\]\s*/gi, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
 function filterCategoriesBySelection(
   categories: CategoryGroup[],
   selectedKeys?: Set<string>,
@@ -214,46 +220,64 @@ export function openPrintRecipe({ parsed, patient, mode = "patient", selectedKey
 
   const renderCategory = (g: CategoryGroup, opts: { showReason: boolean; showPrio: boolean }) => {
     const rows = g.remedies
-      .map((r) => `
+      .map((r) => {
+        const clinicalReason = isPraxis ? r.reason : withoutInternalSourceMarkers(r.reason);
+        const patientExplanation = withoutInternalSourceMarkers(r.patientExplanation || clinicalReason);
+        const visibleReason = isPraxis
+          ? [clinicalReason && `Befundbezug: ${clinicalReason}`, patientExplanation && `Patientenerklärung: ${patientExplanation}`].filter(Boolean).join(" ")
+          : patientExplanation;
+        const deterministicWarnings = (r as RemedyRow & { safetyWarnings?: TherapySafetyWarning[] }).safetyWarnings || [];
+        const safetyText = [
+          r.safety,
+          ...deterministicWarnings.map((item) => `${item.title} – ${item.action}`),
+        ].filter(Boolean).map((warning) => escapeHtml(isPraxis ? warning : withoutInternalSourceMarkers(String(warning)))).join("<br>");
+        const columnCount = opts.showPrio ? 6 : 5;
+        return `
         <tr>
           <td class="name"><strong>${escapeHtml(r.name)}</strong>${r.latin ? `<div class="latin">${escapeHtml(r.latin)}</div>` : ""}</td>
+          <td>${escapeHtml(r.manufacturer || "nicht belegt")}</td>
           <td class="mono">${escapeHtml(r.dosage)}</td>
           <td>${escapeHtml(r.application)}</td>
           <td>${escapeHtml(r.duration)}</td>
           ${opts.showPrio ? `<td class="prio">${escapeHtml(r.priorityRaw)}</td>` : ""}
         </tr>
-        ${(r as RemedyRow & { safetyWarnings?: TherapySafetyWarning[] }).safetyWarnings?.length
-          ? `<tr class="safety-row"><td colspan="${opts.showPrio ? 5 : 4}"><strong>⚠ Sicherheitsprüfung:</strong> ${(r as RemedyRow & { safetyWarnings: TherapySafetyWarning[] }).safetyWarnings.map((item) => `${escapeHtml(item.title)} – ${escapeHtml(item.action)}`).join("<br>")}</td></tr>`
+        ${safetyText
+          ? `<tr class="safety-row"><td colspan="${columnCount}"><strong>⚠ Gefahren / Gegenanzeigen:</strong> ${safetyText}</td></tr>`
           : ""}
-        ${opts.showReason && r.reason ? `<tr class="reason-row"><td colspan="${opts.showPrio ? 5 : 4}" class="reason">${escapeHtml(r.reason)}</td></tr>` : ""}`)
+        ${opts.showReason && visibleReason ? `<tr class="reason-row"><td colspan="${columnCount}" class="reason"><strong>${isPraxis ? "Begründung" : "Warum"}:</strong> ${escapeHtml(visibleReason)}</td></tr>` : ""}`;
+      })
       .join("");
     return `
       <section class="cat">
         <h2>${g.emoji} ${escapeHtml(g.title)}</h2>
         <table>
-          <thead><tr><th>Mittel</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th>${opts.showPrio ? "<th>Priorität</th>" : ""}</tr></thead>
+          <thead><tr><th>Mittel</th><th>Firma</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th>${opts.showPrio ? "<th>Priorität</th>" : ""}</tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </section>`;
   };
 
-  const selectedHtml = selected.map((g) => renderCategory(g, { showReason: isPraxis, showPrio: isPraxis })).join("");
+  const selectedHtml = selected.map((g) => renderCategory(g, { showReason: true, showPrio: isPraxis })).join("");
 
   const manualMittelHtml = (manualMittel && manualMittel.length)
     ? `<section class="cat">
         <h2>✍️ Manuell ergänzte Mittel <span class="muted-small">(vom Therapeuten ergänzt, nicht aus KI/Wiki)</span></h2>
         <table>
-          <thead><tr><th>Mittel</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th>${isPraxis ? "<th>Begründung</th>" : ""}</tr></thead>
+          <thead><tr><th>Mittel</th><th>Firma</th><th>Dosierung</th><th>Anwendung</th><th>Dauer</th><th>${isPraxis ? "Begründung" : "Warum"}</th></tr></thead>
           <tbody>
             ${manualMittel.map((m) => `
               <tr>
                 <td class="name"><strong>${escapeHtml(m.name)}</strong></td>
+                <td>${escapeHtml(m.manufacturer || "nicht belegt")}</td>
                 <td class="mono">${escapeHtml(m.dosage || "—")}</td>
                 <td>${escapeHtml(m.application || "—")}</td>
                 <td>${escapeHtml(m.duration || "—")}</td>
-                ${isPraxis ? `<td class="reason-cell">${escapeHtml(m.reason || "")}</td>` : ""}
+                <td class="reason-cell">${escapeHtml(isPraxis ? [m.reason && `Befundbezug: ${m.reason}`, m.patientExplanation && `Patientenerklärung: ${m.patientExplanation}`].filter(Boolean).join(" ") : withoutInternalSourceMarkers(m.patientExplanation || m.reason || ""))}</td>
               </tr>`).join("")}
-            ${manualMittel.flatMap((m) => (m.safetyWarnings || []).map((item) => `<tr class="safety-row"><td colspan="${isPraxis ? 5 : 4}"><strong>⚠ ${escapeHtml(m.name)}:</strong> ${escapeHtml(item.title)} – ${escapeHtml(item.action)}</td></tr>`)).join("")}
+            ${manualMittel.map((m) => {
+              const warnings = [m.safety, ...(m.safetyWarnings || []).map((item) => `${item.title} – ${item.action}`)].filter(Boolean);
+              return warnings.length ? `<tr class="safety-row"><td colspan="6"><strong>⚠ ${escapeHtml(m.name)}:</strong> ${warnings.map((warning) => escapeHtml(isPraxis ? warning : withoutInternalSourceMarkers(String(warning)))).join("<br>")}</td></tr>` : "";
+            }).join("")}
           </tbody>
         </table>
       </section>`

@@ -6,15 +6,23 @@ const source = readFileSync(resolve(process.cwd(), "src/components/admin/BackupC
 
 describe("BackupCenter one-click sequence", () => {
   it("reports the full-backup result explicitly", () => {
-    const fullBackup = source.slice(source.indexOf("const downloadFullBackup"), source.indexOf("const downloadAreaBackup"));
+    const fullBackup = source.slice(
+      source.indexOf("const downloadFullBackup"),
+      source.indexOf("const downloadAreaBackup"),
+    );
+
     expect(fullBackup).toContain("return true;");
     expect(fullBackup).toContain("return false;");
   });
 
   it("does not start the code backup after a failed full backup", () => {
-    const oneClick = source.slice(source.indexOf("const runOneClick"), source.indexOf("const totalRows"));
+    const oneClick = source.slice(
+      source.indexOf("const runOneClick"),
+      source.indexOf("const totalRows"),
+    );
     const resultCheck = oneClick.indexOf("if (!fullBackupSucceeded)");
     const codeDownload = oneClick.indexOf("downloadGithubZip");
+
     expect(oneClick).toContain("const fullBackupSucceeded = await downloadFullBackup()");
     expect(resultCheck).toBeGreaterThan(-1);
     expect(oneClick).toContain("githubWindow?.close()");
@@ -22,8 +30,15 @@ describe("BackupCenter one-click sequence", () => {
   });
 
   it("uses the user-opened window for the second automatic ZIP", () => {
-    const codeBackup = source.slice(source.indexOf("const downloadGithubZip"), source.indexOf("useEffect(()", source.indexOf("const downloadGithubZip")));
-    const oneClick = source.slice(source.indexOf("const runOneClick"), source.indexOf("const totalRows"));
+    const codeBackup = source.slice(
+      source.indexOf("const downloadGithubZip"),
+      source.indexOf("useEffect(()", source.indexOf("const downloadGithubZip")),
+    );
+    const oneClick = source.slice(
+      source.indexOf("const runOneClick"),
+      source.indexOf("const totalRows"),
+    );
+
     expect(codeBackup).toContain("filename, preparedWindow");
     expect(oneClick).toContain("githubWindow.document.close()");
     expect(oneClick).toContain("downloadGithubZip(githubWindow)");
@@ -31,8 +46,14 @@ describe("BackupCenter one-click sequence", () => {
 });
 
 describe("BackupCenter resource-safe data export", () => {
-  const dataExport = source.slice(source.indexOf("async function fetchDbZipBytes"), source.indexOf("const downloadDbBackup"));
-  const fullBackup = source.slice(source.indexOf("const downloadFullBackup"), source.indexOf("const downloadAreaBackup"));
+  const dataExport = source.slice(
+    source.indexOf("async function fetchDbZipBytes"),
+    source.indexOf("const downloadDbBackup"),
+  );
+  const fullBackup = source.slice(
+    source.indexOf("const downloadFullBackup"),
+    source.indexOf("const downloadAreaBackup"),
+  );
 
   it("loads tables and auth users in bounded pages instead of requesting the monolithic DB ZIP", () => {
     expect(dataExport).toContain("?mode=stats");

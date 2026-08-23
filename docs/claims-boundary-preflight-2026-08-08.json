@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T22:16:00.000Z",
+  "publication": "unpublished_internal_claims_boundary_preflight",
+  "source_inventory": "docs/strunz-public-application-area-inventory-2026-08-04.json",
+  "manufacturer_application_areas": 21,
+  "inventory_status": {
+    "import_status": "discovered_not_imported",
+    "clinical_assertions": 0,
+    "evidence_status": "not_assessed",
+    "safety_status": "not_assessed",
+    "database_writes": false,
+    "wiki_writes": false
+  },
+  "independent_regulatory_context": [
+    {
+      "source_url": "https://www.gov.uk/government/publications/food-supplements-guidance/food-supplements-guidance",
+      "role": "general_food_supplement_and_claims_boundary_context",
+      "status": "context_only_no_product_clearance"
+    },
+    {
+      "source_url": "https://www.gov.uk/government/publications/great-britain-nutrition-and-health-claims-nhc-register",
+      "role": "authorised_and_rejected_claims_register_context",
+      "status": "context_only_no_product_clearance"
+    },
+    {
+      "source_url": "https://food.ec.europa.eu/safety/labelling-and-nutrition/nutrition-and-health-claims/health-claims_en",
+      "role": "EU_health_claims_regulatory_context",
+      "status": "context_only_no_product_clearance"
+    }
+  ],
+  "checks": {
+    "manufacturer_navigation_treated_as_authorised_claims": false,
+    "manufacturer_navigation_mapped_to_conditions": false,
+    "manufacturer_navigation_mapped_to_products": false,
+    "claims_register_used_as_product_efficacy_evidence": false,
+    "clinical_or_patient_facing_publication": false
+  },
+  "result": "All 21 manufacturer application-area entries remain navigation metadata only. No claim authorization, efficacy, suitability, interaction clearance, dose approval or patient-facing publication is inferred.",
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

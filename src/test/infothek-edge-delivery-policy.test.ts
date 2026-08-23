@@ -22,6 +22,7 @@ const gatingManagerSource = readFileSync(
   resolve(root, "src/components/admin/InfothekGatingManager.tsx"),
   "utf8",
 );
+const infothekContentSource = readFileSync(resolve(root, "src/lib/infothekContent.ts"), "utf8");
 
 const expectedRoutes = [
   "/allergiebehandlung.html",
@@ -31,6 +32,8 @@ const expectedRoutes = [
   "/datenschutz-fahrplan.html",
   "/diabetes-handout.html",
   "/ersttermin-naturheilpraxis.html",
+  "/fit-gesund-herbst-winter-7-minuten.html",
+  "/fit-gesund-herbst-winter-infothek.html",
   "/krankheit-ist-messbar.html",
   "/kraeuter-schmerz-entzuendung.html",
   "/logi-ernaehrung-mitochondrien.html",
@@ -77,7 +80,7 @@ function verifyJwt(functionName: string): boolean | undefined {
 }
 
 describe("secure Infothek Edge delivery policy", () => {
-  it("keeps both endpoints pinned to the exact 20-file allowlist", () => {
+  it("keeps both endpoints pinned to the exact 22-file allowlist", () => {
     expect(stringArray(getSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(stringArray(migrateSource, "const INFOTHEK_ROUTES")).toEqual(expectedRoutes);
     expect(getSource).toContain("!ALLOWED_ROUTE_SET.has(route)");
@@ -87,10 +90,14 @@ describe("secure Infothek Edge delivery policy", () => {
     expect(stringSet(getSource, "const PATIENT_ONLY_ROUTES")).toEqual(expectedPatientRoutes);
     expect(stringSet(getSource, "const ADMIN_ONLY_ROUTES")).toEqual([
       "/datenschutz-fahrplan.html",
+      "/fit-gesund-herbst-winter-7-minuten.html",
+      "/fit-gesund-herbst-winter-infothek.html",
     ]);
     expect(getSource).toMatch(/VISIBILITY_RANK\[fallback\]\s*>=\s*VISIBILITY_RANK\[override\]/);
     expect(getSource).toContain('if (ADMIN_ONLY_ROUTES.has(route)) return "internal"');
     expect(getSource).toContain('if (PATIENT_ONLY_ROUTES.has(route)) return "patient"');
+    expect(infothekContentSource).not.toContain("fit-gesund-herbst-winter-7-minuten.html");
+    expect(infothekContentSource).not.toContain("fit-gesund-herbst-winter-infothek.html");
   });
 
   it("does not permit path traversal, caller-selected buckets, or direct patient storage reads", () => {

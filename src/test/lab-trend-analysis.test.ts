@@ -154,6 +154,21 @@ describe("laboratory trend analysis", () => {
     expect(directIdentifierCategories(result)).toEqual([]);
   });
 
+  it("does not block Vieva text when the name is redacted, empty, or absent", () => {
+    const cases = [
+      "Name: [personenbezogene Angabe entfernt]\nVitamin D 22 ng/ml",
+      "Name:\nVitamin D 22 ng/ml",
+      "Vitamin D 22 ng/ml",
+    ];
+
+    for (const source of cases) {
+      expect(directIdentifierCategories(source)).toEqual([]);
+      const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+      expect(result).toContain("Vitamin D 22 ng/ml");
+      expect(directIdentifierCategories(result)).toEqual([]);
+    }
+  });
+
   it("handles missing separators, comma-order names, and common OCR label substitutions", () => {
     const source = [
       "Patient Beispiel, Erika",
@@ -200,6 +215,60 @@ describe("laboratory trend analysis", () => {
     expect(result).toContain("P-2031-0042");
     expect(result).toContain("CRP 2,4 mg/l");
     expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("removes provider organizations, stamps, signatures, and provider identifiers while retaining clinical data", () => {
+    const source = [
+      "Praxisname: Gesundheitszentrum Beispiel",
+      "Laborname = Diagnostik Muster GmbH",
+      "Einsender: Hausarztzentrum Beispiel",
+      "Stempel: Praxis Dr. Ada Muster",
+      "Unterschrift Dr. Max Beispiel",
+      "LANR: 123456789",
+      "BSNR 987654321",
+      "IK-Nummer: 260123456",
+      "CRP 4,2 mg/l",
+      "Labor vom 04.08.2031: PSA 0,31 ng/ml",
+    ].join("\n");
+    expect(directIdentifierCategories(source)).toEqual(expect.arrayContaining([
+      "Einrichtung",
+      "Unterschrift/Stempel",
+      "Leistungserbringer-Kennung",
+    ]));
+
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+    for (const identifier of [
+      "Gesundheitszentrum Beispiel",
+      "Diagnostik Muster GmbH",
+      "Hausarztzentrum Beispiel",
+      "Ada Muster",
+      "Max Beispiel",
+      "123456789",
+      "987654321",
+      "260123456",
+    ]) expect(result).not.toContain(identifier);
+    expect(result).toContain("CRP 4,2 mg/l");
+    expect(result).toContain("Labor vom 04.08.2031: PSA 0,31 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("keeps pseudonyms in identifier-labelled Vieva headers without allowing real patient IDs", () => {
+    const source = [
+      "Patienten-ID: P-2026-0001",
+      "Patienten-Nr.: P-2026-0042",
+      "Fall-Nr.: P-2026-1234",
+      "Name: [geschwaerzt]",
+      "Vieva Pro Analyse",
+      "Vitamin D 42 ng/ml",
+    ].join("\n");
+    const result = removeResidualDirectIdentifierLines(deidentifyClinicalText(source));
+
+    expect(result).toContain("P-2026-0001");
+    expect(result).toContain("P-2026-0042");
+    expect(result).toContain("P-2026-1234");
+    expect(result).toContain("Vitamin D 42 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+    expect(directIdentifierCategories("Patienten-ID: A123456789")).toContain("Identifikationsnummer");
   });
 
   it("removes a residual mixed header conservatively while retaining clean markers and laboratory lines", () => {
@@ -355,6 +424,11 @@ describe("laboratory trend analysis", () => {
       phoneNumber: "01234 567890",
       insuranceNumber: "A123456789",
       qrCode: "opaque-payload",
+      practiceName: "Praxis Beispiel",
+      laboratoryName: "Labor Muster GmbH",
+      signature: "Dr. Ada Muster",
+      stamp: "Praxis Beispiel",
+      provider: { name: "Dr. Ada Muster", specialty: "Labormedizin", lanr: "123456789" },
       files: [{ name: "Erika_Beispiel_Labor.pdf", pages: 2 }],
       report: { text: "Geburtsdatum 01.02.1950; Labor vom 04.08.2031: PSA 0,31 ng/ml" },
     }) as {
@@ -365,6 +439,11 @@ describe("laboratory trend analysis", () => {
       phoneNumber: string;
       insuranceNumber: string;
       qrCode: string;
+      practiceName: string;
+      laboratoryName: string;
+      signature: string;
+      stamp: string;
+      provider: { name: string; specialty: string; lanr: string };
       files: Array<{ name: string; pages: number }>;
       report: { text: string };
     };
@@ -376,6 +455,13 @@ describe("laboratory trend analysis", () => {
     expect(result.phoneNumber).toContain("entfernt");
     expect(result.insuranceNumber).toContain("entfernt");
     expect(result.qrCode).toContain("entfernt");
+    expect(result.practiceName).toContain("entfernt");
+    expect(result.laboratoryName).toContain("entfernt");
+    expect(result.signature).toContain("entfernt");
+    expect(result.stamp).toContain("entfernt");
+    expect(result.provider.name).toContain("entfernt");
+    expect(result.provider.lanr).toContain("entfernt");
+    expect(result.provider.specialty).toBe("Labormedizin");
     expect(result.files).toEqual([{ name: "Dokument", pages: 2 }]);
     expect(result.report.text).not.toContain("01.02.1950");
     expect(result.report.text).toContain("04.08.2031");
@@ -848,7 +934,14 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("📄 Dokument-${documentId}");
     expect(persistenceSource).toContain('crypto.subtle.digest("SHA-256"');
     expect(uploadSource).toContain("extractionRunRef.current");
-    expect(uploadSource).toContain("onExtracted(combined.trim(), sourcePseudonymId)");
+    expect(uploadSource).not.toContain("onExtracted(combined.trim(), sourcePseudonymId)");
+    expect(uploadSource).toContain("setPendingReview({");
+    expect(uploadSource).toContain("const confirmPrivacyReview = async () =>");
+    expect(uploadSource).toContain("const residualIdentifiers = directIdentifierCategories(review.text)");
+    expect(uploadSource).toContain("onExtracted(review.text, review.sourcePseudonymId)");
+    expect(uploadSource).toContain("Vollständige Datenschutzvorschau");
+    expect(uploadSource).toContain("disabled={!privacyConfirmed || reviewSubmitting}");
+    expect(uploadSource.indexOf("setPendingReview({")).toBeLessThan(uploadSource.indexOf("onExtracted(review.text, review.sourcePseudonymId)"));
     expect(uploadSource).not.toContain('trim().toUpperCase()');
     expect(uploadSource).toContain("if (scopeIsCurrent()) toast(message)");
     expect(clientSource).toContain("directIdentifierCategories");

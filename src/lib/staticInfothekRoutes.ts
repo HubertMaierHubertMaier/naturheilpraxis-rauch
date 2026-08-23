@@ -16,6 +16,8 @@ export const staticInfothekRoutes: StaticInfothekRoute[] = [
   { path: "/datenschutz-fahrplan.html", title: "Interner Datenschutz-Fahrplan", internal: true },
   { path: "/diabetes-handout.html", title: "Diabetes Typ 1 und Typ 2" },
   { path: "/ersttermin-naturheilpraxis.html", title: "Ihr erster Termin" },
+  { path: "/fit-gesund-herbst-winter-7-minuten.html", title: "7-Minuten-Vortrag: Fit durch Herbst und Winter", internal: true },
+  { path: "/fit-gesund-herbst-winter-infothek.html", title: "Fit und gesund durch Herbst und Winter", internal: true },
   { path: "/krankheit-ist-messbar.html", title: "Frequenztherapie" },
   { path: "/kraeuter-schmerz-entzuendung.html", title: "Kräuter und Gewürze gegen Schmerz", defaultGated: true },
   { path: "/logi-ernaehrung-mitochondrien.html", title: "LOGI-Kost und Mitochondrien" },

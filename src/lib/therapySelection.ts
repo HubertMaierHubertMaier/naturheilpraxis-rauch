@@ -30,14 +30,18 @@ export type WikiSafetyEntry = {
 
 export const MAX_AUTO_SELECTED_ESSENTIAL = 3;
 export const MAX_AUTO_SELECTED_RECOMMENDED = 3;
-export const MAX_START_PLAN_REMEDIES = MAX_AUTO_SELECTED_ESSENTIAL + MAX_AUTO_SELECTED_RECOMMENDED;
+export const MAX_START_PLAN_REMEDIES = 3;
 
 const normalize = (value: unknown) => String(value ?? "")
+  .toLowerCase()
+  .replace(/ä/g, "ae")
+  .replace(/ö/g, "oe")
+  .replace(/ü/g, "ue")
+  .replace(/ß/g, "ss")
   .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
   .replace(/\([^)]*\)/g, " ")
-  .replace(/[^a-z0-9ß]+/g, " ")
+  .replace(/[^a-z0-9]+/g, " ")
   .trim();
 
 const sameRemedy = (left: unknown, right: unknown) => {
@@ -48,10 +52,10 @@ const sameRemedy = (left: unknown, right: unknown) => {
   return Math.min(a.length, b.length) >= 8 && (a.startsWith(`${b} `) || b.startsWith(`${a} `));
 };
 
-const sourceIdsFrom = (sourceText: unknown) => Array.from(
+const sourceIdsFrom = (sourceText: unknown) => Array.from(new Set(Array.from(
   String(sourceText ?? "").matchAll(/\[WIKI_ID:([0-9a-f-]{36})\]/gi),
   (match) => match[1].toLowerCase(),
-);
+)));
 
 const matchingWikiEntries = (remedyName: unknown, entries: WikiSafetyEntry[], sourceText: unknown = "", allowNameFallback = true) => {
   const sourceIds = sourceIdsFrom(sourceText);
@@ -89,6 +93,14 @@ const wikiWarning = (
   action: string,
 ): TherapySafetyWarning => ({ id, severity, title, message, action, source: "Strukturierte interne Wiki-Sicherheitsdaten" });
 
+const mergeWarningText = (current: string, candidate: string) => {
+  const left = current.trim();
+  const right = candidate.trim();
+  if (!left || left === right || left.includes(right)) return left || right;
+  if (right.includes(left)) return right;
+  return `${left}; ${right}`;
+};
+
 export const assessRemedyWithWikiSafety = (
   remedyName: unknown,
   context: TherapySafetyContext,
@@ -98,7 +110,14 @@ export const assessRemedyWithWikiSafety = (
 ) => {
   const result = [...assessRemedySafety(remedyName, context)];
   const add = (warning: TherapySafetyWarning) => {
-    if (!result.some((existing) => existing.id === warning.id)) result.push(warning);
+    const existing = result.find((item) => item.id === warning.id);
+    if (!existing) {
+      result.push(warning);
+      return;
+    }
+    existing.message = mergeWarningText(existing.message, warning.message);
+    existing.action = mergeWarningText(existing.action, warning.action);
+    existing.source = mergeWarningText(existing.source, warning.source);
   };
   const sourceIds = sourceIdsFrom(sourceText);
   const matches = matchingWikiEntries(remedyName, wikiEntries, sourceText, !requireSourceId);
@@ -128,8 +147,8 @@ export const assessRemedyWithWikiSafety = (
     if (!entry.evidenceLevel || /^(?:unrated|unknown|unverified|insufficient)$/i.test(entry.evidenceLevel)) {
       add(wikiWarning("wiki-evidence-unrated", "review", "Evidenzstatus nicht ausreichend bewertet", `${entry.title} hat den Evidenzstatus ${entry.evidenceLevel || "unrated"}.`, "Nicht automatisch als Kernkandidat auswählen; Quellenlage und Übertragbarkeit auf den Patientenkontext fachlich prüfen."));
     }
-    if (entry.dosageStatus && !["verified", "not_applicable"].includes(entry.dosageStatus)) {
-      add(wikiWarning("wiki-dosage-unverified", "review", "Dosierung im Wiki nicht geprüft", `Dosierungsstatus: ${entry.dosageStatus}.`, "Dosierung nicht ungeprüft übernehmen; konkrete Produktinformation verwenden."));
+    if (entry.dosageStatus !== "verified") {
+      add(wikiWarning("wiki-dosage-unverified", "review", "Dosierung im Wiki nicht geprüft", `Dosierungsstatus: ${entry.dosageStatus || "unverified"}.`, "Nicht automatisch in den Startplan aufnehmen; Dosierung fachlich und anhand der konkreten Produktinformation prüfen."));
     }
     const contraindications = (entry.contraindications || []).filter((tag) => contextMatchesTag(tag, context));
     if (contraindications.length) {
@@ -158,6 +177,7 @@ export const patientOutputRestrictionsForRemedy = (remedyName: unknown, wikiEntr
   const verifiedMatches = requireSourceId && (sourceIds.length !== 1 || matches.length !== 1 || !remedyBelongsToEntry(remedyName, matches[0])) ? [] : matches;
   if (requireSourceId && verifiedMatches.length !== 1) restrictions.push(`${String(remedyName)}: keine eindeutige passende Wiki-Quelle`);
   verifiedMatches.forEach((entry) => {
+    if (entry.dosageStatus !== "verified") restrictions.push(`${entry.title}: Dosierung nicht verifiziert`);
     if (entry.patientFacingAllowed !== true) restrictions.push(`${entry.title}: nicht für Patientenausgabe freigegeben`);
     if (entry.commercialClaimsReviewed !== true) restrictions.push(`${entry.title}: Werbe-/Produktaussagen nicht geprüft`);
   });
@@ -195,9 +215,11 @@ export const buildInitialRemedySelection = (
       if (remedy.priority === "recommended") recommended.push(key);
     });
   });
+  const selectedEssential = essential.slice(0, Math.min(MAX_AUTO_SELECTED_ESSENTIAL, MAX_START_PLAN_REMEDIES));
+  const remainingSlots = MAX_START_PLAN_REMEDIES - selectedEssential.length;
   return new Set([
-    ...essential.slice(0, MAX_AUTO_SELECTED_ESSENTIAL),
-    ...recommended.slice(0, MAX_AUTO_SELECTED_RECOMMENDED),
+    ...selectedEssential,
+    ...recommended.slice(0, Math.min(MAX_AUTO_SELECTED_RECOMMENDED, remainingSlots)),
   ]);
 };
 

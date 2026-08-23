@@ -122,13 +122,14 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {selectionEnabled && <TableHead className="w-[40px]"></TableHead>}
-              <TableHead className="w-[26%]">Mittel</TableHead>
-              <TableHead className="w-[14%]">Dosierung</TableHead>
-              <TableHead className="w-[14%]">Anwendung</TableHead>
-              <TableHead className="w-[10%]">Dauer</TableHead>
-              <TableHead className="w-[12%]">Priorität</TableHead>
+              <TableHead className="w-[19%]">Mittel</TableHead>
+              <TableHead className="w-[10%]">Firma</TableHead>
+              <TableHead className="w-[12%]">Dosierung</TableHead>
+              <TableHead className="w-[12%]">Anwendung</TableHead>
+              <TableHead className="w-[8%]">Dauer</TableHead>
+              <TableHead className="w-[10%]">Priorität</TableHead>
               <TableHead className="w-[8%] text-right">Kosten</TableHead>
-              <TableHead className="w-[12%]">Begründung</TableHead>
+              <TableHead className="w-[18%]">Befundbezug / Patientenerklärung</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -189,13 +190,18 @@ export function CategoryCard({ group, categoryIndex, selectedKeys, onToggleRemed
                         ))}
                       </div>
                     )}
-                  </TableCell>
-                  <TableCell className="py-3 font-mono text-sm">{row.dosage || "—"}</TableCell>
+                   </TableCell>
+                   <TableCell className="py-3 text-sm">{row.manufacturer || "nicht belegt"}</TableCell>
+                   <TableCell className="py-3 font-mono text-sm">{row.dosage || "—"}</TableCell>
                   <TableCell className="py-3 text-sm">{row.application || "—"}</TableCell>
                   <TableCell className="py-3 text-sm">{row.duration || "—"}</TableCell>
                   <TableCell className="py-3"><PriorityBadge row={row} /></TableCell>
                   <TableCell className="py-3 text-right font-mono text-sm whitespace-nowrap">{row.cost || "—"}</TableCell>
-                   <TableCell className="py-3 text-xs text-muted-foreground">{visibleReason || "—"}</TableCell>
+                   <TableCell className="py-3 text-xs text-muted-foreground space-y-1">
+                     <div><strong>Befundbezug:</strong> {visibleReason || "—"}</div>
+                     <div><strong>Für den Patienten:</strong> {row.patientExplanation || "—"}</div>
+                     <div className="text-amber-800 dark:text-amber-300"><strong>Gefahren / Gegenanzeigen:</strong> {row.safety || "keine konkrete Angabe im verwendeten Beleg – individuell prüfen"}</div>
+                   </TableCell>
                 </TableRow>
               );
             })}

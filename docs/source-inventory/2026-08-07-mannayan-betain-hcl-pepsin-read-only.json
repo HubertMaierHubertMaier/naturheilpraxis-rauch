@@ -1,0 +1,53 @@
+{
+  "inventory": "B1 Mannayan BETAIN HCL & PEPSIN+",
+  "capturedAt": "2026-08-07",
+  "status": "blocked_read_only",
+  "restrictions": {
+    "liveDatabaseWrites": 0,
+    "wikiWrites": 0,
+    "imports": 0,
+    "sourceAssignments": 0,
+    "medicalEvaluations": 0,
+    "safetyClearances": 0,
+    "dosageClearances": 0
+  },
+  "product": {
+    "manufacturer": "Mannayan GmbH & Co. KG",
+    "title": "Mannayan BETAIN HCL & PEPSIN + (60 Kapseln)",
+    "productNumber": "010026",
+    "packaging": "60 Kapseln",
+    "weightGrams": 27,
+    "priceEur": 18.9,
+    "manufacturerSource": "https://mannayan.com/Mannayan-BETAIN-HCL-PEPSIN-60-Kapseln/010026"
+  },
+  "atomicStatements": [
+    { "id": "product-title", "value": "Mannayan BETAIN HCL & PEPSIN+", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "product-number", "value": "010026", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "packaging", "value": "60 Kapseln", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "weight-grams", "value": 27, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "price-eur", "value": 18.9, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "production-country", "value": "Deutschland", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "ingredient-1", "value": "Betain HCl", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "ingredient-2", "value": "Pepsin 1:10.000 NF", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "capsule-shell", "value": "Hydroxypropylmethylcellulose", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "betain-hcl-mg-per-capsule", "value": 345, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "pepsin-mg-per-capsule", "value": 10, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "pepsin-activity-standard", "value": "1:10.000 NF", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "recommended-intake", "value": "1-2 Kapseln taeglich zur Hauptmahlzeit mit ausreichend Fluessigkeit", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "warning-no-open-capsule", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "warning-enamel", "value": "Kapselinhalt kann Zahnschmelz angreifen", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "contraindication-ulcer", "value": "Nicht einnehmen bei bestehenden oder moeglichen Magengeschwueren", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-daily-amount", "value": "Nicht ueberschreiten", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-no-diet-replacement", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "mandatory-warning-child-safety", "value": true, "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "storage", "value": "lichtgeschuetzt, kuehl und trocken", "source": "manufacturer", "status": "blocked_read_only" },
+    { "id": "seal-warning", "value": "Nicht verwenden, wenn Verschlussband fehlt", "source": "manufacturer", "status": "blocked_read_only" }
+  ],
+  "sourceGaps": [
+    "Unabhaengige Sicherheitsquelle zu Betain-Hydrochlorid",
+    "Unabhaengige Sicherheitsquelle zu Pepsin",
+    "Quellengebundener Kontraindikations- und Interaktionsabgleich",
+    "Getrennte Wirksamkeitsbewertung"
+  ],
+  "conclusion": "Keine medizinische Bewertung, keine Sicherheits- oder Dosierungsfreigabe und keine Datenbank- oder Wiki-Zuordnung."
+}

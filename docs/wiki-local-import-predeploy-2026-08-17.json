@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-17T12:45:09Z",
+  "status": "passed_local_predeploy",
+  "contains_patient_identifiers": false,
+  "scope": "Lokale Sicherheits- und Reproduzierbarkeitspruefung vor dem bereits freigegebenen Lovable-Staging- und Fehlbestandsimport",
+  "backup_gate": {
+    "status": "green",
+    "verified_at": "2026-08-17T12:07:54.1448838Z",
+    "proof": "C:\\Users\\Administrator\\Documents\\Sorra-Sicherungen\\Lovable-Backup-2026-08-17\\LOVABLE-BACKUP-PRUEFNACHWEIS-2026-08-17.json"
+  },
+  "safety_correction": {
+    "issue": "Das Staging-Schema zielte bei den Leserechten fuer bestehende Kern-Wiki-Tabellen irrtuemlich auf service_role statt auf kb_importer.",
+    "risk_prevented": "Vorhandene serverseitige Schreibwege auf den Kern-Wiki-Tabellen haetten ihre ausdruecklich erteilten Rechte verloren.",
+    "correction": "Nur kb_importer wird auf den bestehenden Kern-Wiki-Tabellen auf SELECT begrenzt; die vorhandenen service_role-Rechte bleiben unveraendert.",
+    "migration": "supabase/migrations/20260812100000_create_kb_import_staging.sql",
+    "regression_test": "src/test/existing-knowledge-import-pglite.test.ts"
+  },
+  "bundle": {
+    "batches": 4,
+    "sources": 230,
+    "entities": 124,
+    "dosages": 119,
+    "safety": 92,
+    "candidates": 565,
+    "admin_only": true,
+    "candidate_status": "imported_unreviewed",
+    "patient_facing_allowed": false
+  },
+  "verification": [
+    {
+      "command": "node scripts/build-existing-knowledge-import.mjs --verify",
+      "status": "passed",
+      "result": "Generator, JSON und Seed-SQL stimmen fuer 4 Pakete und 565 Kandidaten ueberein."
+    },
+    {
+      "command": "node --test test/existing-knowledge-import.test.mjs",
+      "status": "passed",
+      "tests": 3,
+      "result": "Quellenerhalt, verlustfreie Artefaktaufnahme und keine Freigabebeforderung bestaetigt."
+    },
+    {
+      "command": "npm test -- src/test/wiki-phase1-core-schema.test.ts src/test/existing-knowledge-import-pglite.test.ts --reporter=verbose",
+      "status": "passed",
+      "tests": 19,
+      "result": "Kernschema, Backupabdeckung, 565er-Import, Idempotenz, Manipulationssperre, Admin-Lesen, Patienten-/Anonymensperre, bestehender service_role-Schreibweg und reiner kb_importer-Lesezugriff bestaetigt."
+    },
+    {
+      "command": "git diff --check -- supabase/migrations/20260812100000_create_kb_import_staging.sql src/test/existing-knowledge-import-pglite.test.ts",
+      "status": "passed"
+    }
+  ],
+  "operations": {
+    "live_database_reads_executed": false,
+    "live_database_writes_executed": false,
+    "migration_deployed": false,
+    "import_executed": false,
+    "public_or_patient_release": false
+  },
+  "next_action": "Im autorisierten Lovable-Projekt zuerst live pruefen, ob kb_import_batches weiterhin fehlt. Danach das korrigierte Staging-Schema kontrolliert anwenden, den Fehlbestand der vier Batch-IDs pruefen und nur fehlende admin_only/imported_unreviewed Kandidaten importieren."
+}

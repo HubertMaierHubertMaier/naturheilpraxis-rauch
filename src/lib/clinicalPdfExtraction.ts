@@ -27,6 +27,31 @@ export type DocumentExtractionDecision = {
   failedOcrPages: number[];
 };
 
+export type ClinicalPdfFailure = {
+  kind: "password" | "text" | "privacy" | "format" | "technical";
+  label: string;
+  message: string;
+};
+
+export function classifyClinicalPdfFailure(error: unknown): ClinicalPdfFailure {
+  const candidate = error as { name?: unknown; message?: unknown } | null;
+  const name = String(candidate?.name || "");
+  const message = String(candidate?.message || "");
+  if (name === "PasswordException" || /password|passwort|kennwort/i.test(message)) {
+    return { kind: "password", label: "Passwort", message: "Passwort fehlt, wurde abgebrochen oder ist falsch." };
+  }
+  if (/praktisch keinen auswertbaren text|kein auswertbarer dokumenttext|ocr|texterkennung/i.test(message)) {
+    return { kind: "text", label: "OCR/Text", message: "Die PDF enthält auch nach lokaler OCR keinen ausreichend lesbaren Text." };
+  }
+  if (/nur pdf|application\/pdf|dateiformat/i.test(message)) {
+    return { kind: "format", label: "Dateiformat", message: "Nur PDF-Dateien sind in diesem geschützten Import zugelassen." };
+  }
+  if (/datenschutz|identifikator|pseudonym/i.test(message)) {
+    return { kind: "privacy", label: "Datenschutz", message: "Direkte Identifikatoren konnten nicht zuverlässig entfernt werden; die Datei wurde nicht übernommen." };
+  }
+  return { kind: "technical", label: "Technischer Fehler", message: "Die PDF konnte lokal nicht verarbeitet werden. Bitte Datei und Browser prüfen." };
+}
+
 export type TerminableWorkerSession = {
   worker?: { terminate: () => Promise<unknown> };
 };

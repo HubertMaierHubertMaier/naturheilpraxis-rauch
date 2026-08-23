@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T22:08:00.000Z",
+  "publication": "unpublished_internal_preflight_audit",
+  "scope": "Check independent-source presence and explicit source statuses across all product-specific preflight reports.",
+  "form_population_reports": 9,
+  "interaction_safety_reports": 9,
+  "reports_checked": 18,
+  "reports_with_at_least_one_accessible_independent_source": 18,
+  "reports_with_missing_source_status": 0,
+  "findings": [],
+  "result": "All product-specific preflight reports contain accessible independent context and explicit source statuses. This does not close any product, population, interaction or safety gate.",
+  "database_writes": false,
+  "wiki_writes": false,
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

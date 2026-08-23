@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-08-15T15:30:41.469Z",
+  "revalidated_at": "2026-08-16T22:33:32.8238173+02:00",
+  "latest_revalidation": "docs/wiki-local-import-revalidation-2026-08-16.json",
+  "publication": "unpublished_internal_local_import_readiness",
+  "scope": "Wiki-Datensammlung und vorhandene naturheilkundliche Quellen lokal importfertig vorbereiten",
+  "source_access": {
+    "audit": "docs/source-access-recheck-2026-08-15.json",
+    "saved_urls": 12,
+    "reachable_urls": 12,
+    "access_errors": 0
+  },
+  "bundle": {
+    "generator": "scripts/build-existing-knowledge-import.mjs",
+    "json": "docs/existing-knowledge-import-batches-2026-08-12.json",
+    "sql": "supabase/migrations/20260812101000_import_existing_knowledge_candidates.sql",
+    "generator_verification": "passed",
+    "batches": 4,
+    "sources": 230,
+    "entities": 124,
+    "dosages": 119,
+    "safety": 92,
+    "candidates": 565,
+    "duplicate_ids": 0,
+    "duplicate_kind_candidate_keys": 0,
+    "duplicate_nonempty_source_urls": 0,
+    "duplicate_nonempty_canonical_entity_keys": 0
+  },
+  "retention_and_visibility": {
+    "original_source_content_retained": true,
+    "admin_only": true,
+    "candidate_status": "imported_unreviewed",
+    "patient_facing_allowed": false,
+    "database_writes": false,
+    "live_database_reads": true
+  },
+  "remaining_gate": {
+    "status": "requires_staging_schema_and_authorized_deployment",
+    "reason": "Der freigegebene Live-Leseversuch erreichte das richtige Supabase-Projekt. Dort fehlt kb_import_batches noch; deshalb konnte der deduplizierende Import nicht ausgefuehrt werden.",
+    "next_steps_after_permission": [
+      "Das gepruefte Staging-Schema ueber den vorhandenen Lovable-/GitHub-Deploymentweg anwenden.",
+      "565 lokale Kandidaten gegen Batch-ID, Quellenidentitaet, kanonische Schluessel und vorhandene Importzeilen abgleichen.",
+      "Nur den nach dem Live-Abgleich verbleibenden Fehlbestand admin_only und unreviewed importieren.",
+      "Anzahlen, Unveroeffentlicht-Status, Quellenerhalt und Dublettenfreiheit in der sichtbaren Admin-Oberflaeche pruefen."
+    ]
+  }
+}

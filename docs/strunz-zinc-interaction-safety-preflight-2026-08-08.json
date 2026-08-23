@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-08T21:36:00.000Z",
+  "publication": "unpublished_internal_preflight",
+  "product_source_id": "strunz-20260804-zink-caps",
+  "product_source": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "review_gate": "interaction_and_safety",
+  "status": "open_not_cleared_blocked_read_only",
+  "database_writes": false,
+  "wiki_writes": false,
+  "declared_product_warning_topics": ["avoid additional zinc supplements"],
+  "independent_sources_checked": [
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/others/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://www.nhs.uk/conditions/vitamins-and-minerals/vitamin-c/",
+      "status": "accessible_general_reference",
+      "product_specific_clearance": "not_established",
+      "page_last_reviewed": "2020-08-03"
+    },
+    {
+      "source_url": "https://ods.od.nih.gov/factsheets/Zinc-HealthProfessional/",
+      "status": "http_403_during_preflight",
+      "product_specific_clearance": "not_reviewed"
+    }
+  ],
+  "interaction_review": {
+    "status": "not_cleared",
+    "current_record": "The accessible NHS mineral guidance identifies zinc and copper balance as a safety topic, but it does not clear the declared zinc bisglycinate and zinc picolinate combination for an individual medication or supplement list.",
+    "topics_requiring_separate_review": [
+      "additional zinc products and total intake",
+      "copper intake, copper deficiency and laboratory context",
+      "antibiotics and mineral-binding or absorption timing questions",
+      "penicillamine and other medicines requiring mineral separation",
+      "iron, calcium and magnesium co-intake",
+      "vitamin-C and botanical-extract co-intake",
+      "herbal remedies and complementary medicines"
+    ],
+    "source_status_for_topics": "not_completed"
+  },
+  "safety_review": {
+    "status": "not_cleared",
+    "current_record": "The additional-zinc warning is a manufacturer triage input only. General NHS guidance does not establish product-specific safety or an individual exposure limit.",
+    "topics_requiring_separate_review": [
+      "children and adolescents",
+      "pregnancy and breastfeeding",
+      "copper balance and haematologic context",
+      "kidney and gastrointestinal context",
+      "duplicate intake from multinutrient products",
+      "source recency and current product formulation"
+    ]
+  },
+  "interpretation_limits": [
+    "General NHS mineral guidance is not product-specific interaction evidence.",
+    "No efficacy, individual suitability, interaction clearance, dose approval or patient-facing publication was performed.",
+    "All listed interaction topics remain questions for independent verification, not established product findings."
+  ],
+  "product_mapping": "not_performed",
+  "condition_mapping": "not_performed"
+}

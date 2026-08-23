@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-08-08T21:26:00.000Z",
+  "publication": "unpublished_internal_gap_matrix",
+  "scope": "Consolidate the still-open form, population, interaction and safety gates for all 9 unpublished product candidates.",
+  "source_product_file": "docs/strunz-public-product-fact-candidates-2026-08-04.json",
+  "source_coverage_audit": "docs/nutrient-reference-coverage-audit-2026-08-08.json",
+  "product_preflight": "docs/product-form-population-interaction-safety-preflight-2026-08-08.json",
+  "alternative_source_access_audit": "docs/uk-sacn-fsa-independent-source-access-audit-2026-08-08.json",
+  "alternative_source_gate_usage_preflight": "docs/uk-alternative-source-gate-usage-preflight-2026-08-08.json",
+  "source_recency_audit": "docs/source-recency-and-gate-status-audit-2026-08-08.json",
+  "release_block_safety_audit": "docs/release-block-safety-audit-2026-08-08.json",
+  "preflight_source_status_audit": "docs/preflight-source-status-audit-2026-08-08.json",
+  "claims_boundary_preflight": "docs/claims-boundary-preflight-2026-08-08.json",
+  "product_gate_source_summary": "docs/product-gate-source-summary-2026-08-08.json",
+  "products": [
+    {"source_id": "strunz-20260804-vitamin-d3-k2", "product": "Vitamin D3 + K2", "form_population_preflight": "4ce3885", "interaction_safety_preflight": "f9397d6"},
+    {"source_id": "strunz-20260804-magnesium-caps", "product": "Magnesium Caps", "form_population_preflight": "42e9005", "interaction_safety_preflight": "2f3da2c"},
+    {"source_id": "strunz-20260804-eisen-caps", "product": "Eisen Caps", "form_population_preflight": "06892b6", "interaction_safety_preflight": "8df45fc"},
+    {"source_id": "strunz-20260804-zink-caps", "product": "Zink Caps", "form_population_preflight": "29a85a3", "interaction_safety_preflight": "d4bf2cd"},
+    {"source_id": "strunz-20260804-selen-vitamin-c", "product": "Selen und Vitamin C", "form_population_preflight": "db19de1", "interaction_safety_preflight": "363d702"},
+    {"source_id": "strunz-20260804-jod", "product": "Jod", "form_population_preflight": "5ec79b6", "interaction_safety_preflight": "da1523f"},
+    {"source_id": "strunz-20260804-vitamin-b-komplex", "product": "Vitamin B Komplex", "form_population_preflight": "4fa00e7", "interaction_safety_preflight": "db7d0ee"},
+    {"source_id": "strunz-20260804-vitamin-c-komplex", "product": "Vitamin C Komplex", "form_population_preflight": "1ae95b5", "interaction_safety_preflight": "323dbad"},
+    {"source_id": "strunz-20260804-vitamineral-32-maracuja", "product": "Vitamineral 32 Maracuja", "form_population_preflight": "503f8e5", "interaction_safety_preflight": "bb1863e"}
+  ],
+  "common_open_gates": {
+    "form": ["identity and declared-form verification", "form equivalence", "bioavailability context", "source recency"],
+    "population": ["age and life-stage context", "pregnancy and breastfeeding where relevant", "medical-condition context", "duplicate intake"],
+    "interaction": ["individual medication list", "other supplements and fortified foods", "form-specific interaction evidence", "timing and absorption questions"],
+    "safety": ["ingredient-specific contraindications", "upper-limit and total-exposure context", "current formulation verification", "manual independent review"]
+  },
+  "source_access_gaps": [
+    "Twelve official UK SACN, COT, FSA, DHSC and UKHSA source URLs are now accessible, with one vitamin-E discussion paper explicitly not citable; usable routes remain general evidence or regulatory context only and establish no product or condition mapping.",
+    "NIH ODS professional fact-sheet URLs tested for D, K, magnesium, B6, B12, iron, zinc, selenium, iodine and vitamin C returned HTTP 403 during preflight.",
+    "Some general NHS pages are dated 2020-08-03; currentness must be rechecked before any later use.",
+    "No accessible source in this audit establishes product-specific form equivalence, efficacy, suitability, interaction clearance or safety."
+  ],
+  "overall_status": {
+    "product_cards": 9,
+    "form_population_gates": 9,
+    "interaction_safety_gates": 9,
+    "all_gates_open": true,
+    "product_mappings": 0,
+    "condition_mappings": 0,
+    "database_writes": false,
+    "wiki_writes": false,
+    "patient_facing_publication": false
+  },
+  "next_review_order": [
+    "resolve or document independent source-access gaps",
+    "verify product forms and current declarations",
+    "review populations and total exposure",
+    "review interactions and safety per product",
+    "only after manual review consider any later mapping; no automatic release"
+  ]
+}

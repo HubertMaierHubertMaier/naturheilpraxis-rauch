@@ -13,7 +13,11 @@ entfernt werden.
 - Dokumentationsabgleich: Commit `f47520e`
 - Neue Route: `/wikidatenbank`
 - Alte Route: `/wissensdatenbank`
-- Lokaler Staging-Einstieg: `http://127.0.0.1:4173/wiki-staging.html`
+- Historischer lokaler Staging-Einstieg: `http://127.0.0.1:4173/wiki-staging.html`
+- Seit 19.08.2026 liegt diese veraltete Neun-Kandidaten-Seite nur noch unter
+  `protected-content/internal/wiki-staging.html` und wird nicht mehr in den
+  Produktions-Build kopiert. Fuer die aktuelle Admin-Pruefung gilt
+  `/wikidatenbank`.
 - Produktionsbuild: bestanden
 - Beide lokalen Routen: HTTP 200
 
