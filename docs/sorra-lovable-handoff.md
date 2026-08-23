@@ -1,91 +1,87 @@
 # Sorra an Lovable
 
-message_id: `SLH-2026-08-23-002`
-status: `vieva_live_waiting_for_visible_peter_confirmation`
+message_id: `SLH-2026-08-23-003`
+status: `sibo_live_waiting_for_visible_peter_confirmation`
 project: `naturheilpraxis-rauch`
 supabase_project_ref: `jmebqjadlpltnqawoipb`
 
 ## Ziel
 
-Genau die bereits lokal gepruefte Migration
-`supabase/migrations/20260728120000_add_vieva_plus_patient_input.sql` nach einer
-vollstaendigen Live-Vorhersicherung anwenden und nur mit kuenstlichem JSON
-nachpruefen.
+Genau die additive interne SIBO-Migration
+`supabase/migrations/20260810170000_import_sibo_gasprofile_sources.sql` nach
+einer rein lesenden Vorpruefung anwenden und nur Schluessel, Revisionen,
+Anzahlen und Schutzstatus nachpruefen.
+
+Normalisierte LF-Datei:
+
+- Bytezahl: `12246`
+- SHA-256: `c5d4792f5e2a70ea868c3f8034824dee08adfa9b205a69f0d3eeca60945c6929`
 
 Diese Datei ist keine Ausfuehrungsfreigabe. Vor jeder Schreiboperation muss
 Peter im sichtbaren Lovable-Chat ausdruecklich bestaetigen:
 
-`Ich bestaetige einmalig SLH-2026-08-23-002: Vieva-Vorhersicherung, genau Migration 20260728120000 und synthetischer Nachtest. SIBO und alle anderen Aenderungen bleiben gesperrt.`
+`Ich bestaetige einmalig SLH-2026-08-23-003: SIBO-Vorpruefung, genau Migration 20260810170000 und reiner Metadaten-Nachtest. Vieva, Patientendaten und alle anderen Aenderungen bleiben gesperrt.`
 
-Ohne exakt diese inhaltliche Bestaetigung nur den Auftrag erklaeren und nichts
-live schreiben.
+Ohne diese inhaltliche Bestaetigung nur den Auftrag erklaeren und nichts live
+schreiben.
 
 ## Verbindliche Grenzen
 
 - Aktives Cloudprojekt muss exakt `jmebqjadlpltnqawoipb` sein.
-- Keine Patienten-, Therapie- oder fachlichen Tabellenzeilen lesen.
-- Keine andere Migration ausfuehren; insbesondere SIBO bleibt gesperrt.
+- Keine Patienten-, Therapie- oder sonstigen fachlichen Datensaetze lesen.
+- Vieva nicht wiederholen oder veraendern.
+- Keine andere Migration ausfuehren.
 - Kein `migration repair`, Main-Merge, Deployment oder Veroeffentlichung.
+- Keine automatische Produkt-, Therapie- oder Patientenverknuepfung.
 - Bei jeder Abweichung vor einer Schreiboperation stoppen und berichten.
 
-## 1. Exakte Vorhersicherung
+## 1. Rein lesende Vorpruefung
 
-Fuer genau diese zwei Funktionen vollstaendig sichern und im Bericht ausgeben:
+Fuer exakt diese drei Schluessel muss der Bestand jeweils 0 sein:
 
-1. `public.extract_patient_snapshot_fields(jsonb)`
-2. `public.compact_therapy_session_input(jsonb, integer)`
+1. `source:sibo-pdf-2026-08-10`
+2. `source:dr-kirkamm-sibo-public-material`
+3. `reference:sibo-gasprofile-drei-formen-pdf-kirkamm`
 
-Je Funktion sichern:
+Zusaetzlich pruefen und im Bericht ausgeben:
 
-- `pg_get_functiondef`
-- Identitaetsargumente und Signatur
-- Eigentuemer und ACL/EXECUTE-Rechte
-- Volatilitaet und SECURITY DEFINER/INVOKER
-- `proconfig`/`search_path`
-- SHA-256 der vollstaendigen Definition
+- Tabellen und benoetigte Spalten in `kb_sources`, `kb_source_revisions`,
+  `kb_articles` und `kb_article_revisions` sind vorhanden.
+- Fremdschluessel und Eindeutigkeitsregeln passen zur Migration.
+- Dateihash und Bytezahl stimmen exakt mit den obigen Werten.
+- Die Migration ist mit `BEGIN`/`COMMIT` transaktionsgebunden.
+- Sie beruehrt weder `admin_knowledge_base` noch `therapy_sessions`.
+- Alle Inhalte bleiben intern, ungeprueft und nicht patientengerichtet.
 
-Vor dem Schreiben bestaetigen:
-
-- Beide Signaturen existieren genau einmal.
-- In beiden Definitionen fehlen `vievaPlus`, `vievaPlusDatum` und
-  `metatronDatum`.
-- Die Migration enthaelt genau zwei `CREATE OR REPLACE FUNCTION`-Anweisungen
-  und keine `INSERT`, `UPDATE`, `DELETE`, `ALTER`, `DROP`, `GRANT` oder
-  `REVOKE`-Anweisung.
-
-Wenn eine Aussage nicht stimmt oder die vollstaendige Sicherung nicht moeglich
-ist: stoppen und nichts schreiben.
+Wenn ein Schluessel bereits vorhanden ist oder eine Pruefung abweicht: stoppen
+und nichts schreiben.
 
 ## 2. Genau eine Migration
 
 Nach Peters sichtbarer Bestaetigung ausschliesslich
-`20260728120000_add_vieva_plus_patient_input.sql` in einer eigenen Transaktion
+`20260810170000_import_sibo_gasprofile_sources.sql` als eine Transaktion
 anwenden. Keine zweite Datei und kein Historien-Reparaturbefehl.
 
-## 3. Nur synthetisch nachpruefen
+## 3. Rein lesender Nachtest
 
-Beide Funktionen ohne Tabellenzugriff mit exakt diesem kuenstlichen JSON
-aufrufen:
+Nachher exakt pruefen:
 
-```json
-{
-  "_pseudonym_id": "P-2099-9999",
-  "vievaPlus": "SYNTH-VIEVA-PLUS",
-  "vievaPlusDatum": "2099-12-30",
-  "metatronHeel": "SYNTH-METATRON",
-  "metatronDatum": "2099-12-29"
-}
-```
+- zwei Quellschluessel und ein Artikelschluessel vorhanden
+- genau zwei Quellrevisionen mit `revision_no=1`
+- genau eine Artikelrevision mit `revision_no=1`
+- `current_revision_id` zeigt jeweils auf die erzeugte Revision
+- Quellen-Metadaten jeweils `admin_only=true`
+- Artikel-Metadaten `admin_only=true`, `patient_facing_allowed=false` und
+  `review_status=unreviewed`
+- Quell- und Artikelrevisionen `review_status=draft`
+- keine Produkt-, Therapie- oder Patientenverknuepfung
+- Migrationshistorie genau eine neue SIBO-Zeile und keine weitere neue Zeile
 
-Fuer beide Rueckgaben pruefen:
-
-- `vievaPlus` ist exakt `SYNTH-VIEVA-PLUS`.
-- `vievaPlusDatum` ist exakt `2099-12-30`.
-- `metatronDatum` ist exakt `2099-12-29`.
-- Signaturen, Eigentuemer, Rechte, Volatilitaet, Security-Modus und search_path
-  sind unveraendert.
-- Die Migrationshistorie hat genau einen neuen Vieva-Eintrag und keinen
-  weiteren neuen Eintrag.
+Erzeuge nach dem Nachtest eine direkt nutzbare, aber nicht ausgefuehrte
+Rollback-Datei. Sie darf nur die in diesem Lauf erzeugten Revisionen und drei
+festen Schluessel in korrekter Fremdschluesselreihenfolge entfernen, muss vorher
+alle erzeugten IDs und unerwarteten Referenzen pruefen und bei einer Abweichung
+geschlossen abbrechen. Rollback niemals automatisch ausfuehren.
 
 ## Abschlussbericht
 
@@ -94,16 +90,19 @@ Antwort im Lovable-Chat und, falls GitHub-Push moeglich, mit derselben
 
 - `project_ref`
 - `precheck_passed`
-- beide vorherigen Funktionsdefinitionen, SHA-256 und Metadaten
+- drei Vorherzaehler
+- Tabellen-, Spalten-, Fremdschluessel- und Eindeutigkeitspruefung
+- Dateibytes und SHA-256
 - `migration_applied` und Transaktionsergebnis
-- beide synthetischen Rueckgaben
-- `metadata_unchanged`
-- neue Migrationshistorienzeilen
+- alle erzeugten IDs, Schluessel, Revisionsnummern und Schutzstatus
+- neue Migrationshistorienzeile
+- vollstaendiger Rollback-Wortlaut in einem Codeblock
 - `patient_rows_read` muss 0 sein
 - `other_migrations_applied` muss 0 sein
-- `sibo_changed` muss false sein
+- `vieva_changed` muss false sein
+- `product_therapy_patient_links_created` muss 0 sein
 - `deployment_or_publish` muss false sein
 - Warnungen oder Abweichungen
 
 Bei einem Fehler waehrend der Transaktion zuerst zurueckrollen. Keine
-eigenstaendige Reparatur und keine alte lokale Definition als Ersatz verwenden.
+eigenstaendige Reparatur ausfuehren.
