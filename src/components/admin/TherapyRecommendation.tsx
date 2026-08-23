@@ -1395,6 +1395,7 @@ export function TherapyRecommendation() {
   const PID_KEY = "therapy.currentPseudonymId.v1";
   const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
+  const [sessionPseudonymRestored, setSessionPseudonymRestored] = useState(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
     if (draftLoadedRef.current) return;
@@ -1411,6 +1412,7 @@ export function TherapyRecommendation() {
         setPseudonymId(savedPid);
       }
     } catch {}
+    setSessionPseudonymRestored(true);
   }, []);
   // Pseudonym-ID persistent in sessionStorage spiegeln (überlebt Tab-Wechsel).
   useEffect(() => {
@@ -2162,7 +2164,8 @@ export function TherapyRecommendation() {
     setHpCheckLoading(false);
   }, []);
 
-  const syntheticCaseLoadBlocked = !!pseudonymId.trim()
+  const syntheticCaseLoadBlocked = !sessionPseudonymRestored
+    || !!pseudonymId.trim()
     || !!hasMeaningfulInput
     || !!result.trim()
     || !!docAnalysisHtml.trim()
@@ -4284,7 +4287,7 @@ export function TherapyRecommendation() {
             variant="outline"
             onClick={handleLoadSyntheticTherapyCase}
             disabled={syntheticCaseLoadBlocked}
-            title={syntheticCaseLoadBlocked ? "Nur bei vollstaendig leerem Formular verfuegbar" : "Rein synthetischen Struktur-Prueffall laden"}
+            title={!sessionPseudonymRestored ? "Warte, bis ein vorhandener Patientenstand sicher erkannt wurde" : syntheticCaseLoadBlocked ? "Nur bei vollstaendig leerem Formular ohne Pseudonym verfuegbar" : "Rein synthetischen Struktur-Prueffall laden"}
             className="shrink-0 border-sky-400"
           >
             Synthetischen Prueffall laden
