@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
@@ -32,5 +34,14 @@ describe("direct Befund handoff", () => {
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {
     expect(() => prepareDirectBefundHandoffText("Test", "labor", "")).toThrow("Dokumentdatum");
     expect(() => prepareDirectBefundHandoffText("   ", "labor", "2026-08-15")).toThrow("Vorschau ist leer");
+  });
+
+  it("runs a second residual identifier scan before the confirmed batch handoff", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const handoff = source.match(/const handoffDirectBefundFiles = async \(\) => \{([\s\S]*?)const loadArchivedBefundDocument/)?.[1] || "";
+
+    expect(handoff).toContain("ready.flatMap((item) => directIdentifierCategories(item.previewText || \"\"))");
+    expect(handoff).toContain("Datenschutz-Sicherheitsstopp");
+    expect(handoff.indexOf("directIdentifierCategories")).toBeLessThan(handoff.indexOf("switch (documentType)"));
   });
 });
