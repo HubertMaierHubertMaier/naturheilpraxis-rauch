@@ -4,7 +4,7 @@ BEGIN;
 -- article and does not alter the legacy admin_knowledge_base table.
 DO $$
 DECLARE
-  article_id uuid;
+  v_article_id uuid;
   revision_id uuid;
   pdf_source_id uuid;
   pdf_source_revision_id uuid;
@@ -213,22 +213,22 @@ BEGIN
     )
   )
   ON CONFLICT (canonical_key) DO NOTHING
-  RETURNING id INTO article_id;
-  IF article_id IS NULL THEN
-    SELECT id INTO article_id FROM public.kb_articles
+  RETURNING id INTO v_article_id;
+  IF v_article_id IS NULL THEN
+    SELECT id INTO v_article_id FROM public.kb_articles
      WHERE canonical_key = 'reference:sibo-gasprofile-drei-formen-pdf-kirkamm';
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.kb_article_revisions AS existing_revision
-     WHERE existing_revision.article_id = article_id AND existing_revision.revision_no = 1
+     WHERE existing_revision.article_id = v_article_id AND existing_revision.revision_no = 1
   ) THEN
     INSERT INTO public.kb_article_revisions (
       article_id, revision_no, title, category_path, tags, content_markdown,
       review_status, origin_type, content_hash, metadata
     )
     VALUES (
-      article_id, 1,
+      v_article_id, 1,
       'SIBO-Gasprofile: Wasserstoff, Schwefelwasserstoff und Methan',
       'Infothek > Verdauung > SIBO',
       ARRAY['SIBO', 'Duenndarmfehlbesiedlung', 'Wasserstoff', 'H2', 'Schwefelwasserstoff', 'H2S', 'Methan', 'IMO', 'Dr. Kirkamm'],
@@ -245,7 +245,7 @@ BEGIN
 
     UPDATE public.kb_articles
        SET current_revision_id = revision_id
-     WHERE id = article_id;
+     WHERE id = v_article_id;
   END IF;
 END;
 $$;

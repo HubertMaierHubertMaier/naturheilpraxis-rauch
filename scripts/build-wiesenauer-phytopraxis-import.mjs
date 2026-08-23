@@ -119,7 +119,7 @@ const payload = {
 const payloadText = JSON.stringify(payload);
 if (payloadText.includes("$inventory$")) fail("reservierter SQL-Dollar-Tag im Inventar");
 
-const inventoryHash = createHash("sha256").update(inventoryText).digest("hex");
+const inventoryHash = createHash("sha256").update(inventoryText.replace(/\r\n/g, "\n")).digest("hex");
 const sql = `BEGIN;
 
 -- Additive, internal-only source-card import. The book statements remain
