@@ -40,8 +40,9 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
     expect(source).toContain("Datenschutzbereinigte Vorschau");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
-    expect(source).toContain('documentType: "" as const');
-    expect(source).toContain('title: "Dokumentart fehlt"');
+    expect(source).toContain("const inferredType = inferDirectBefundTarget(file.name)");
+    expect(source).toContain("if (!documentType) documentType = inferDirectBefundTarget(extracted.text)");
+    expect(source).toContain("Dokumentart konnte nicht sicher automatisch erkannt werden");
     expect(source).not.toContain('documentType: "sonstige" as const');
     expect(source).toContain('case "labor": append(setLaborKomplett, text)');
     expect(source).toContain('case "metatron": append(setMetatronHeel, text)');
@@ -50,7 +51,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
   });
 
-  it("keeps later findings in autosave and transfers the Vieva date", () => {
+  it("keeps later findings in autosave and transfers all routed document dates", () => {
     const source = readSource("src/components/admin/TherapyRecommendation.tsx");
     const autoSaveBlock = source.slice(
       source.indexOf("// ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----"),
@@ -59,8 +60,14 @@ describe("therapy workflow UI structure", () => {
 
     expect(autoSaveBlock).not.toContain('workflowStage === "finalized"');
     expect(autoSaveBlock).not.toContain("workflowStage, assertPayloadMatchesPseudonym");
-    expect(source).toContain('filter((item) => item.documentType === "vieva")');
+    expect(source).toContain('const latestLabDate = latestDateFor("labor")');
+    expect(source).toContain('const latestMetatronDate = latestDateFor("metatron")');
+    expect(source).toContain('const latestVievaDate = latestDateFor("vieva")');
+    expect(source).toContain('const latestDoctorDate = latestDateFor("arzt-anamnese")');
+    expect(source).toContain("if (latestLabDate) setLaborDatum(latestLabDate)");
+    expect(source).toContain("if (latestMetatronDate) setMetatronDatum(latestMetatronDate)");
     expect(source).toContain("if (latestVievaDate) setVievaPlusDatum(latestVievaDate)");
+    expect(source).toContain("if (latestDoctorDate) setArztberichtDatum(latestDoctorDate)");
   });
 
   it("blocks the synthetic case until a saved patient pseudonym has been restored", () => {

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
+  inferDirectBefundTarget,
   prepareDirectBefundHandoffText,
 } from "@/lib/directBefundHandoff";
 
@@ -29,6 +30,14 @@ describe("direct Befund handoff", () => {
       expect(prepared).toContain("Erstellt am: 2026-08-15");
       expect(prepared).toContain("Synthetischer Testwert: 42");
     }
+  });
+
+  it("recognizes common batch document types without sending document content away", () => {
+    expect(inferDirectBefundTarget("Vieva Pro Vitalanalyse.pdf")).toBe("vieva");
+    expect(inferDirectBefundTarget("Metatron NLS Auswertung.pdf")).toBe("metatron");
+    expect(inferDirectBefundTarget("Laborbefund Blutbild.pdf")).toBe("labor");
+    expect(inferDirectBefundTarget("Arztbrief und Anamnese.pdf")).toBe("arzt-anamnese");
+    expect(inferDirectBefundTarget("Unbekanntes Dokument.pdf")).toBe("");
   });
 
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {
