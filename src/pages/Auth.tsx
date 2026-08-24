@@ -161,12 +161,10 @@ const Auth: React.FC = () => {
       });
 
       if (isAdminData !== true) {
-        const { data: setting } = await supabase
-          .from('app_settings')
-          .select('value')
-          .eq('key', 'patient_login_enabled')
-          .maybeSingle();
-        const loginEnabled = (setting?.value as { enabled?: boolean } | null)?.enabled === true;
+        const { data: setting } = await supabase.rpc('get_public_app_setting', {
+          _key: 'patient_login_enabled',
+        });
+        const loginEnabled = (setting as { enabled?: boolean } | null)?.enabled === true;
 
         if (!loginEnabled) {
           await supabase.auth.signOut();
