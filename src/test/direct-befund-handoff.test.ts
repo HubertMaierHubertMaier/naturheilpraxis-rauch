@@ -37,6 +37,8 @@ describe("direct Befund handoff", () => {
     expect(inferDirectBefundTarget("Metatron NLS Auswertung.pdf")).toBe("metatron");
     expect(inferDirectBefundTarget("Laborbefund Blutbild.pdf")).toBe("labor");
     expect(inferDirectBefundTarget("Arztbrief und Anamnese.pdf")).toBe("arzt-anamnese");
+    expect(inferDirectBefundTarget("sorra-synth-labor.pdf")).toBe("labor");
+    expect(inferDirectBefundTarget("sorra-synth-arzt.pdf")).toBe("arzt-anamnese");
     expect(inferDirectBefundTarget("Unbekanntes Dokument.pdf")).toBe("");
   });
 
