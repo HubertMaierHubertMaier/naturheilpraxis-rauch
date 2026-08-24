@@ -24,6 +24,7 @@ import {
   type ExtractedPdfPage,
 } from "@/lib/clinicalPdfExtraction";
 import { addAnalysisDocumentMetadata, createNeutralDocumentId } from "@/lib/patientInputPersistence";
+import { RedactedTextPreview } from "./RedactedTextPreview";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -613,12 +614,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           <p className="text-xs text-muted-foreground">
             Bis zur Bestätigung bleibt dieser Text nur im Arbeitsspeicher des Browsers. Es wird noch nichts in Eingabefelder, Protokolle, Lovable oder eine KI übernommen.
           </p>
-          <textarea
-            readOnly
-            value={pendingReview.text}
-            spellCheck={false}
-            aria-label="Vollständiger bereinigter Dokumenttext"
-            className="min-h-[18rem] max-h-[32rem] w-full resize-y rounded-md border bg-background p-3 font-mono text-xs leading-relaxed"
+          <RedactedTextPreview
+            text={pendingReview.text}
+            className="min-h-[18rem] max-h-[32rem] w-full overflow-auto rounded-md border bg-background p-3 font-mono text-xs leading-relaxed"
           />
           <label className="flex items-start gap-2 text-sm">
             <input

@@ -33,7 +33,8 @@ const psa = (datum: string, wert: string, bewertung = "normal") => ({
 describe("laboratory trend analysis", () => {
   it("invalidates checkpoints created with the previous laboratory prompt", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v10"');
+    expect(source).toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v11"');
+    expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v10"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v9"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v8"');
     expect(source).not.toContain('ANALYSIS_PROMPT_VERSION = "befund-sensitive-lab-extraction-v7"');
@@ -44,6 +45,31 @@ describe("laboratory trend analysis", () => {
     expect(isPsaParameter("iPSA")).toBe(true);
     expect(isPsaParameter("Prostataspezifisches Antigen")).toBe(true);
     expect(parseLabNumber("< 0,10 ng/ml")).toBe(0.1);
+  });
+
+  it("keeps patient-friendly meaning and possible symptoms separate from the clinical interpretation", () => {
+    const [highlight] = buildClinicallyRelevantLabHighlights([{
+      datum: "2031-08-04",
+      parameter: "CRP",
+      wert: "18",
+      einheit: "mg/l",
+      referenz: "< 5",
+      bewertung: "↑",
+      bedeutung: "Ein allgemeiner Entzuendungsmarker.",
+      moeglicheSymptome: "Kann symptomlos sein; je nach Ursache sind zum Beispiel Abgeschlagenheit oder Fieber moeglich.",
+    }], {});
+
+    expect(highlight.patientMeaning).toBe("Ein allgemeiner Entzuendungsmarker.");
+    expect(highlight.possibleSymptoms).toContain("Kann symptomlos sein");
+    expect(highlight.significance).toContain("Keine Diagnose oder Therapieänderung");
+  });
+
+  it("requires patient meaning and non-diagnostic symptom context in laboratory reports", () => {
+    const source = readFileSync(resolve(process.cwd(), "supabase/functions/analyze-documents/index.ts"), "utf8");
+    expect(source).toContain('"bedeutung" und "moeglicheSymptome"');
+    expect(source).toContain('"Bedeutung für den Patienten"');
+    expect(source).toContain('"Allgemein mögliche Beschwerden"');
+    expect(source).toContain("darf nie unbelegte Beschwerden als beim Patienten vorhanden darstellen");
   });
 
   it("recognizes total testosterone aliases but excludes free and index values", () => {

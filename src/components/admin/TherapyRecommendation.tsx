@@ -28,6 +28,7 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
+import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import {
   downloadClinicalReportHtml,
@@ -83,6 +84,7 @@ import {
 import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
+  inferDirectBefundTarget,
   prepareDirectBefundHandoffText,
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
@@ -193,6 +195,7 @@ type PendingDirectBefundFile = {
   file: File;
   status: "queued" | "processing" | "ready" | "done" | "error";
   documentType: DirectBefundTarget | "";
+  documentTypeInferred?: boolean;
   documentDate: string;
   privacyReviewed: boolean;
   previewText?: string;
@@ -212,7 +215,7 @@ type ExtractedBefundInputs = {
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v10";
+const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v11";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -3235,14 +3238,18 @@ export function TherapyRecommendation() {
     const stamp = Date.now().toString(36);
     setPendingDirectBefundFiles((prev) => [
       ...prev,
-      ...files.map((file, index) => ({
-        id: `${stamp}-${index}-${file.name}`,
-        file,
-        status: "queued" as const,
-        documentType: "" as const,
-        documentDate: "",
-        privacyReviewed: false,
-      })),
+      ...files.map((file, index) => {
+        const inferredType = inferDirectBefundTarget(file.name);
+        return {
+          id: `${stamp}-${index}-${file.name}`,
+          file,
+          status: "queued" as const,
+          documentType: inferredType,
+          documentTypeInferred: !!inferredType,
+          documentDate: "",
+          privacyReviewed: false,
+        };
+      }),
     ]);
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
@@ -3257,11 +3264,6 @@ export function TherapyRecommendation() {
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
-    const missingType = queue.find((item) => !item.documentType);
-    if (missingType) {
-      toast({ title: "Dokumentart fehlt", description: "Bitte für jede Datei ausdrücklich Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.", variant: "destructive" });
-      return;
-    }
     const missingDate = queue.find((item) => !item.documentDate.trim());
     if (missingDate) {
       toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
@@ -3272,17 +3274,20 @@ export function TherapyRecommendation() {
       if (!scopeIsCurrent()) return;
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
-        const documentType = item.documentType;
-        if (!documentType) throw new Error("Bitte eine gültige Dokumentart auswählen.");
+        let documentType = item.documentType || inferDirectBefundTarget(item.file.name);
         const extracted = await extractClinicalDocumentText(item.file, "doctor", (message) => {
           if (scopeIsCurrent()) toast(message);
-        }, undefined, undefined, `${directBefundTargetLabel(documentType)}|${item.documentDate}`);
+        }, undefined, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`);
         if (!scopeIsCurrent()) return;
+        if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
+        if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
         const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate);
         successful += 1;
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
           ...row,
           status: "ready",
+          documentType,
+          documentTypeInferred: !item.documentType,
           previewText,
           privacyReviewed: false,
           removedIdentifierCategories: extracted.removedIdentifierCategories,
@@ -3346,13 +3351,20 @@ export function TherapyRecommendation() {
       }
       documentTypes.add(directBefundTargetLabel(documentType));
     }
-    const latestVievaDate = ready
-      .filter((item) => item.documentType === "vieva")
+    const latestDateFor = (documentType: DirectBefundTarget) => ready
+      .filter((item) => item.documentType === documentType)
       .map((item) => item.documentDate.trim())
       .filter(Boolean)
       .sort()
       .at(-1);
+    const latestLabDate = latestDateFor("labor");
+    const latestMetatronDate = latestDateFor("metatron");
+    const latestVievaDate = latestDateFor("vieva");
+    const latestDoctorDate = latestDateFor("arzt-anamnese");
+    if (latestLabDate) setLaborDatum(latestLabDate);
+    if (latestMetatronDate) setMetatronDatum(latestMetatronDate);
     if (latestVievaDate) setVievaPlusDatum(latestVievaDate);
+    if (latestDoctorDate) setArztberichtDatum(latestDoctorDate);
     const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
     await logTherapyEvent(pid, "documents_uploaded", {
       document_count: ready.length,
@@ -3367,7 +3379,7 @@ export function TherapyRecommendation() {
     if (!scopeIsCurrent()) return;
     const readyIds = new Set(ready.map((item) => item.id));
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
-    toast({ title: "Dokumente richtig zugeordnet", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen; Originale wurden nicht archiviert.` });
+    toast({ title: "Dokumente richtig zugeordnet", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen. Als Nächstes die ausgewählten Befunde auswerten und danach den Therapievorschlag starten; Originale wurden nicht archiviert.` });
     setHistoryRefresh((n) => n + 1);
   };
 
@@ -4362,7 +4374,7 @@ export function TherapyRecommendation() {
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
-                        onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value } : file))}
+                        onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value, documentTypeInferred: false } : file))}
                         disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
                       >
                         <SelectTrigger className="h-8 text-xs" aria-label="Dokumentart">
@@ -4381,10 +4393,13 @@ export function TherapyRecommendation() {
                         className="h-8 text-xs"
                       />
                     </div>
+                    {item.documentTypeInferred && item.documentType && item.status !== "done" && (
+                      <p className="text-[11px] text-sky-800 dark:text-sky-200">Automatisch erkannt: {directBefundTargetLabel(item.documentType)}. Bitte vor dem Auslesen kontrollieren.</p>
+                    )}
                     {item.status === "ready" && item.previewText && (
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
-                        <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words rounded bg-background p-2 text-[11px] leading-relaxed">{item.previewText}</pre>
+                        <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed" />
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"

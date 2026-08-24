@@ -4,6 +4,8 @@ export type LabHighlight = {
   item: LabValueRecord;
   direction: string;
   significance: string;
+  patientMeaning: string;
+  possibleSymptoms: string;
   derivedFromContext: boolean;
   ruleId?: string;
 };
@@ -64,6 +66,13 @@ const reportedAbnormal = (value: unknown) => {
   const assessment = String(value ?? "").trim();
   return assessment === "↑" || assessment === "↓" || /kritisch/i.test(assessment);
 };
+
+const patientLabExplanation = (item: LabValueRecord) => ({
+  patientMeaning: String(item.bedeutung ?? item.patientenBedeutung ?? "").trim()
+    || "Der Wert weicht laut Laborbewertung ab. Seine Bedeutung muss zusammen mit Referenzbereich, Verlauf und klinischem Gesamtbild beurteilt werden.",
+  possibleSymptoms: String(item.moeglicheSymptome ?? item.possibleSymptoms ?? "").trim()
+    || "Eine Laborabweichung kann ohne eindeutige Beschwerden bestehen. Moegliche Beschwerden haengen vom Parameter, Ausmass und Gesamtbild ab und duerfen nicht aus diesem Einzelwert beim Patienten angenommen werden.",
+});
 
 export const normalizeLabParameter = (value: unknown) => String(value ?? "")
   .normalize("NFKD")
@@ -521,12 +530,14 @@ export const buildClinicallyRelevantLabHighlights = (
     const diseaseRule = diseaseRuleFor(candidate.item, patientClinicalContext);
     const abnormal = reportedAbnormal(candidate.item.bewertung);
     if (!abnormal && !diseaseRule) continue;
+    const explanation = patientLabExplanation(candidate.item);
     highlights.set(key, {
       item: candidate.item,
       direction: abnormal ? String(candidate.item.bewertung ?? "auffällig") : "Verlauf",
       significance: diseaseRule
         ? `${abnormal ? "Auffälliger Laborwert laut dokumentierter Bewertung." : "Aktuell nicht als pathologisch bewerteter, im dokumentierten Erkrankungs- oder Therapiekontext jedoch verlaufsrelevanter Laborwert."} ${diseaseRule.action}`
         : "Auffälliger Laborwert laut dokumentierter Bewertung; Datum, Einheit, Referenzbereich und Verlauf prüfen und die Abweichung je nach Ausmaß ärztlich bestätigen. Keine Diagnose oder Therapieänderung allein aus diesem Einzelwert ableiten.",
+      ...explanation,
       derivedFromContext: !!diseaseRule,
       ruleId: diseaseRule?.id,
     });
@@ -564,6 +575,7 @@ export const buildClinicallyRelevantLabHighlights = (
         significance: postProstatectomy
           ? "Sensibler PSA-Verlauf bei dokumentiertem Zustand nach Prostatektomie; auch unterhalb des allgemeinen Laborreferenzbereichs zeitnah ärztlich beziehungsweise urologisch kontrollieren und im Verlauf bestätigen. Keine automatische Rezidivdiagnose."
           : "Dokumentierter PSA-Anstieg nach Behandlung eines Prostatakarzinoms; behandlungsspezifisch ärztlich beziehungsweise urologisch bewerten und im Verlauf bestätigen. Keine automatische Rezidivdiagnose.",
+        ...patientLabExplanation(latest.item),
         derivedFromContext: true,
       });
     }
@@ -606,6 +618,7 @@ export const buildClinicallyRelevantLabHighlights = (
           : androgenDeprivationPhase === "active"
             ? "Dokumentierter Testosteron-Anstieg bei als laufend erfasster Androgenentzugs-/Hormontherapie des Prostatakarzinoms; Messzeitpunkte, Therapiephase und Verlauf zusammen mit PSA zeitnah ärztlich beziehungsweise urologisch prüfen. Keine automatische Aussage über Erkrankungsaktivität."
             : "Dokumentierter Testosteron-Anstieg bei zugeordneter Androgenentzugs-/Hormontherapie des Prostatakarzinoms; Therapiephase und Messzeitpunkte sind nicht eindeutig und müssen zusammen mit PSA ärztlich beziehungsweise urologisch geklärt werden. Keine automatische Aussage über Erkrankungsaktivität.",
+        ...patientLabExplanation(latestTestosterone.item),
         derivedFromContext: true,
       });
     }
