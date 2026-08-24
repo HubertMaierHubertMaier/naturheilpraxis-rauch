@@ -14,7 +14,7 @@ const postTypeMigrationSources = [
   readFileSync("supabase/migrations/20260820120000_materialize_import_candidates_as_internal_drafts.sql", "utf8"),
 ];
 const infothekGatingGrantMigration = readFileSync(
-  "supabase/migrations/20260715170606_f314dfe0-f8d4-4689-bc4d-efdb61700575.sql",
+  "supabase/migrations/20260824140000_restrict_infothek_gating_and_importer.sql",
   "utf8"
 );
 const typedDatabaseTableNames = Array.from(
@@ -85,7 +85,6 @@ describe("Phase 4 security access matrix", () => {
     expect(publicReadTables.map((table) => table.name).sort()).toEqual([
       "app_settings",
       "faqs",
-      "infothek_gating",
       "practice_info",
       "practice_pricing",
     ]);
@@ -93,14 +92,17 @@ describe("Phase 4 security access matrix", () => {
     expect(publicReadTables.every((table) => table.publicReadRationale.length >= 24)).toBe(true);
   });
 
-  it("limits public Infothek gating reads to non-sensitive columns", () => {
+  it("limits public Infothek gating reads to explicitly requested routes", () => {
     expect(infothekGatingGrantMigration).toContain(
       "REVOKE SELECT ON public.infothek_gating FROM anon, authenticated"
     );
     expect(infothekGatingGrantMigration).toContain(
-      "GRANT SELECT (href, gated, visibility) ON public.infothek_gating TO anon, authenticated"
+      "get_infothek_gating_for_routes(_hrefs text[])"
     );
-    expect(infothekGatingGrantMigration).not.toMatch(/GRANT SELECT \([^)]*updated_by/);
+    expect(infothekGatingGrantMigration).toContain(
+      "cardinality(COALESCE(_hrefs, ARRAY[]::text[])) BETWEEN 1 AND 100"
+    );
+    expect(infothekGatingGrantMigration).not.toMatch(/GRANT SELECT[^;]+infothek_gating[^;]+anon/);
   });
 
   it("keeps route table references synchronized with the table/RLS matrix", () => {

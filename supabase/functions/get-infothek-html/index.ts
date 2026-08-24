@@ -174,17 +174,16 @@ Deno.serve(async (req) => {
   const publicClient = createClient(supabaseUrl, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  const { data: gatingRow, error: gatingError } = await publicClient
-    .from("infothek_gating")
-    .select("visibility")
-    .eq("href", route)
-    .maybeSingle();
+  const { data: gatingRows, error: gatingError } = await publicClient.rpc(
+    "get_infothek_gating_for_routes",
+    { _hrefs: [route] },
+  );
 
   if (gatingError) {
     return jsonResponse(req, { error: "Visibility could not be checked" }, 503);
   }
 
-  const visibility = effectiveVisibility(route, gatingRow?.visibility);
+  const visibility = effectiveVisibility(route, gatingRows?.[0]?.visibility);
   let authorized = visibility === "public";
 
   if (!authorized) {

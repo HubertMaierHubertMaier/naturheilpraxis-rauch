@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { infothekGroups } from "@/lib/infothekContent";
+import { staticInfothekRoutes } from "@/lib/staticInfothekRoutes";
 
 export type InfothekVisibility = "public" | "new_patient" | "patient";
+
+const knownInfothekHrefs = [
+  ...new Set([
+    ...infothekGroups.flatMap((group) => group.items.map((item) => item.href)),
+    ...staticInfothekRoutes.map((route) => route.path),
+  ]),
+];
 
 /**
  * Lädt die admin-konfigurierten Sichtbarkeits-Regeln aus `infothek_gating`.
@@ -19,16 +28,22 @@ export function useInfothekGating() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (cols: string) => Promise<{
-          data: Array<{ href: string; visibility: InfothekVisibility | null; gated: boolean | null }> | null;
-          error: unknown;
-        }>;
-      };
-    })
-      .from("infothek_gating")
-      .select("href,visibility,gated");
+    const client = supabase as unknown as {
+      rpc: (
+        name: "get_infothek_gating_for_routes",
+        args: { _hrefs: string[] },
+      ) => Promise<{
+        data: Array<{ href: string; visibility: InfothekVisibility | null; gated: boolean | null }> | null;
+        error: unknown;
+      }>;
+    };
+    if (typeof client.rpc !== "function") {
+      setLoading(false);
+      return;
+    }
+    const { data, error } = await client.rpc("get_infothek_gating_for_routes", {
+      _hrefs: knownInfothekHrefs,
+    });
 
     if (!error && data) {
       const map: Record<string, InfothekVisibility> = {};
