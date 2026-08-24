@@ -19,9 +19,9 @@ export const inferDirectBefundTarget = (...values: string[]): DirectBefundTarget
 
   if (/\b(?:vieva|pro vital|pro vitalanalyse|vitalanalyse|vital analyse)\b/.test(text)) return "vieva";
   if (/\b(?:metatron|metapathia|oberon|nls analyse|nls auswertung|nonlinear system)\b/.test(text)) return "metatron";
-  if (/\b(?:laborbefund|laborbericht|blutbild|referenzbereich|normbereich|klinische chemie|hamatologie)\b/.test(text)
+  if (/\b(?:labor|laborbefund|laborbericht|blutbild|referenzbereich|normbereich|klinische chemie|hamatologie)\b/.test(text)
     || /\b(?:mg\/dl|mmol\/l|ng\/ml|miu\/l)\b/.test(text)) return "labor";
-  if (/\b(?:arztbrief|arztbericht|entlassbrief|entlassungsbericht|anamnesebogen|anamnese)\b/.test(text)) return "arzt-anamnese";
+  if (/\b(?:arzt|arztbrief|arztbericht|entlassbrief|entlassungsbericht|anamnesebogen|anamnese)\b/.test(text)) return "arzt-anamnese";
   return "";
 };
 
