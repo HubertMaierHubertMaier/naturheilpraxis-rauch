@@ -288,6 +288,7 @@ type ClinicalLoadInfo = {
   symptomeChars: number;
   diagnoseCount: number;
   laborLines: number;
+  anamneseChars: number;
   arztChars: number;
   sonstigeChars: number;
   loadedAt: string;
@@ -507,6 +508,7 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
   addText("laborErhoeht", "Labor – erhöhte Werte", d.laborErhoeht);
   addText("laborErniedrigt", "Labor – erniedrigte Werte", d.laborErniedrigt);
   addText("stuhlbefund", "Stuhlbefund", d.stuhlbefund);
+  addText("anamnese", "Anamnese / Anamnesebogen", d.anamnese);
   addText("arztbericht", "Arztbericht", d.arztbericht);
   addText("metatronHeel", "Metatron Hospital / HEEL / NLS", d.metatronHeel);
   addText("sonstigeUntersuchungen", "Sonstige Untersuchungen / Dokumente", d.sonstigeUntersuchungen);
@@ -545,6 +547,7 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
     symptome_chars: countStringChars(d.symptome),
     diagnose_count: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
     labor_lines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+    anamnese_chars: countStringChars(d.anamnese),
     arzt_chars: countStringChars(d.arztbericht),
     sonstige_chars: countStringChars(d.sonstigeUntersuchungen),
     vieva_plus_chars: countStringChars(d.vievaPlus),
@@ -558,7 +561,7 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
 const countLoadedClinicalChars = (d: Record<string, unknown>) => [
   d.symptome, d.erkrankung, d.medikamente, d.bisherigeMittel, d.belastungen,
   d.laborKomplett, d.laborErhoeht, d.laborErniedrigt, d.stuhlbefund,
-  d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.vievaPlus, d.perplexityAnalyse,
+  d.anamnese, d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.vievaPlus, d.perplexityAnalyse,
   d.eigeneTherapieVorlage,
 ].reduce<number>((sum, value) => sum + countStringChars(value), 0);
 
@@ -569,6 +572,7 @@ const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], 
   symptomeChars: countStringChars(d.symptome),
   diagnoseCount: countDiagnoseEntries(d.manualDiagnosen) || countDiagnoseEntries(d.diagnosen),
   laborLines: countClinicalLines([d.laborKomplett, d.laborErhoeht, d.laborErniedrigt].filter(Boolean).join("\n")),
+  anamneseChars: countStringChars(d.anamnese),
   arztChars: countStringChars(d.arztbericht),
   sonstigeChars: countStringChars(d.sonstigeUntersuchungen),
   loadedAt: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
@@ -1190,6 +1194,8 @@ export function TherapyRecommendation() {
   const [laborKomplett, setLaborKomplett] = useState("");
   const [laborDatum, setLaborDatum] = useState("");
   const [stuhlbefund, setStuhlbefund] = useState("");
+  const [anamnese, setAnamnese] = useState("");
+  const [anamneseDatum, setAnamneseDatum] = useState("");
   const [arztbericht, setArztbericht] = useState("");
   const [arztberichtDatum, setArztberichtDatum] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
@@ -1354,6 +1360,8 @@ export function TherapyRecommendation() {
       laborKomplett,
       laborDatum,
       stuhlbefund,
+      anamnese,
+      anamneseDatum,
       arztbericht,
       arztberichtDatum,
       metatronHeel,
@@ -1376,7 +1384,7 @@ export function TherapyRecommendation() {
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1468,6 +1476,8 @@ export function TherapyRecommendation() {
     if (typeof data.laborKomplett === "string") setLaborKomplett(data.laborKomplett);
     if (typeof data.laborDatum === "string") setLaborDatum(data.laborDatum);
     if (typeof data.stuhlbefund === "string") setStuhlbefund(data.stuhlbefund);
+    if (typeof data.anamnese === "string") setAnamnese(data.anamnese);
+    if (typeof data.anamneseDatum === "string") setAnamneseDatum(data.anamneseDatum);
     if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
@@ -1635,10 +1645,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
+    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
     return textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -2114,6 +2124,8 @@ export function TherapyRecommendation() {
     setLaborKomplett("");
     setLaborDatum("");
     setStuhlbefund("");
+    setAnamnese("");
+    setAnamneseDatum("");
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
@@ -2346,6 +2358,8 @@ export function TherapyRecommendation() {
     setLaborKomplett(asText(d.laborKomplett));
     setLaborDatum(asText(d.laborDatum));
     setStuhlbefund(asText(d.stuhlbefund));
+    setAnamnese(asText(d.anamnese));
+    setAnamneseDatum(asText(d.anamneseDatum));
     setArztbericht(asText(d.arztbericht));
     setArztberichtDatum(asText(d.arztberichtDatum));
     setMetatronHeel(asText(d.metatronHeel));
@@ -3281,7 +3295,7 @@ export function TherapyRecommendation() {
         if (!scopeIsCurrent()) return;
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
-        const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate);
+        const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate, extracted.ocrPageConfidences);
         successful += 1;
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
           ...row,
@@ -3346,7 +3360,8 @@ export function TherapyRecommendation() {
         case "labor": append(setLaborKomplett, text); break;
         case "metatron": append(setMetatronHeel, text); break;
         case "vieva": append(setVievaPlus, text); break;
-        case "arzt-anamnese": append(setArztbericht, text); break;
+        case "anamnese": append(setAnamnese, text); break;
+        case "arzt": append(setArztbericht, text); break;
         case "sonstige": append(setSonstigeUntersuchungen, text); break;
       }
       documentTypes.add(directBefundTargetLabel(documentType));
@@ -3360,10 +3375,12 @@ export function TherapyRecommendation() {
     const latestLabDate = latestDateFor("labor");
     const latestMetatronDate = latestDateFor("metatron");
     const latestVievaDate = latestDateFor("vieva");
-    const latestDoctorDate = latestDateFor("arzt-anamnese");
+    const latestAnamneseDate = latestDateFor("anamnese");
+    const latestDoctorDate = latestDateFor("arzt");
     if (latestLabDate) setLaborDatum(latestLabDate);
     if (latestMetatronDate) setMetatronDatum(latestMetatronDate);
     if (latestVievaDate) setVievaPlusDatum(latestVievaDate);
+    if (latestAnamneseDate) setAnamneseDatum(latestAnamneseDate);
     if (latestDoctorDate) setArztberichtDatum(latestDoctorDate);
     const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
     await logTherapyEvent(pid, "documents_uploaded", {
@@ -3562,13 +3579,14 @@ export function TherapyRecommendation() {
       ...addSimple("laborErhoeht", "Labor – erhöhte Werte", laborErhoeht, "befund"),
       ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
       ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
+      ...splitMarkedDocumentSources("anamnese", anamneseDatum.trim() ? `Anamnese – ${anamneseDatum.trim()}` : "Anamnese / Anamnesebogen", anamnese),
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
       ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
       ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
-  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
+  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3850,6 +3868,8 @@ export function TherapyRecommendation() {
             laborKomplett: laborKomplett.trim() || undefined,
             laborDatum: laborDatum.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
+            anamnese: anamnese.trim() || undefined,
+            anamneseDatum: anamneseDatum.trim() || undefined,
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
@@ -4036,6 +4056,8 @@ export function TherapyRecommendation() {
     setLaborKomplett("");
     setLaborDatum("");
     setStuhlbefund("");
+    setAnamnese("");
+    setAnamneseDatum("");
     setArztbericht("");
     setArztberichtDatum("");
     setMetatronHeel("");
@@ -4312,13 +4334,16 @@ export function TherapyRecommendation() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2 flex-wrap">
             <ClipboardList className="h-4 w-4 text-primary" />
-            1. Befund-Quellen auswählen (PDFs / Labor / Arzt / Sonstige)
+            1. SAMMELEINGABE: mehrere Patientenunterlagen gemeinsam übernehmen
             <Badge variant="secondary" className="text-xs">
               {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <p className="rounded-md border border-primary/30 bg-background px-3 py-2 text-sm font-medium text-foreground">
+            Hier gemeinsam auswählen: Anamnese, Labor, Arztberichte, Vieva, Metatron und allgemeine Unterlagen. Jede Datei wird einzeln datenschutzbereinigt, geprüft und danach automatisch dem richtigen Befundbereich zugeordnet.
+          </p>
           <p className="text-xs text-muted-foreground">
             Standardmäßig sind nur neue oder geänderte Quellen ausgewählt. Unveränderte Quellen können manuell ergänzt werden; so verbrauchen sie nicht automatisch erneut Analyse-Credits.
           </p>
@@ -4338,7 +4363,7 @@ export function TherapyRecommendation() {
               <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                 <FileUp className="h-3.5 w-3.5" />
-                PDFs hier auswählen
+                Mehrere PDFs für Sammeleingabe auswählen
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => refreshDocumentInventory(true)} disabled={isRefreshingDocumentInventory || !isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} className="gap-1.5">
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
@@ -4407,7 +4432,7 @@ export function TherapyRecommendation() {
                             onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file))}
                             className="mt-0.5"
                           />
-                          Vorschau geprüft: keine Namen, Initialen, Geburtsdaten, Adressen, Dateinamen oder anderen direkten Identifikatoren im Text.
+                          Vorschau geprüft: keine Namen, Initialen, Geburtsdaten, Adressen, Dateinamen oder anderen direkten Identifikatoren im Text. Beim Anamnesebogen zusätzlich Handschrift, Markierungen, Fragezuordnung und alle Hinweise „manuell prüfen“ kontrolliert.
                         </label>
                       </div>
                     )}
@@ -4691,11 +4716,11 @@ export function TherapyRecommendation() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Befunde:</span>{" "}
-                  <strong>{clinicalLoadInfo.laborLines} Labor-Z. · {clinicalLoadInfo.arztChars.toLocaleString("de-DE")} Arzt-Z. · {clinicalLoadInfo.sonstigeChars.toLocaleString("de-DE")} sonstige Z.</strong>
+                  <strong>{clinicalLoadInfo.laborLines} Labor-Z. · {clinicalLoadInfo.anamneseChars.toLocaleString("de-DE")} Anamnese-Z. · {clinicalLoadInfo.arztChars.toLocaleString("de-DE")} Arzt-Z. · {clinicalLoadInfo.sonstigeChars.toLocaleString("de-DE")} sonstige Z.</strong>
                   <span className="text-muted-foreground"> · {clinicalLoadInfo.loadedAt}</span>
                 </div>
               </div>
-              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.arztChars === 0 && clinicalLoadInfo.sonstigeChars === 0 && (
+              {clinicalLoadInfo.laborLines === 0 && clinicalLoadInfo.anamneseChars === 0 && clinicalLoadInfo.arztChars === 0 && clinicalLoadInfo.sonstigeChars === 0 && (
                 <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-destructive">
                   Für diese Pseudonym-ID sind aktuell keine Labor-, Arztbrief- oder sonstigen Befunddaten geladen.
                 </div>
@@ -4758,8 +4783,8 @@ export function TherapyRecommendation() {
                 Patientenbefund
               </span>
               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/14 Felder
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, anamnese, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/15 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -4771,6 +4796,10 @@ export function TherapyRecommendation() {
                   <span className="text-[9px] opacity-70 font-mono">
                     {[symptome, erkrankung].filter((s) => s.trim()).length + pathogens.filter((p) => p.name.trim()).length}
                   </span>
+                </TabsTrigger>
+                <TabsTrigger value="anamnese" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-950/40">
+                  <span>📋 Anamnese</span>
+                  <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="labor" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🧪 Labor</span>
@@ -4837,6 +4866,45 @@ export function TherapyRecommendation() {
                     placeholder="z.B. Borreliose, Hashimoto, CFS..."
                     rows={3}
                   />
+                </div>
+              </TabsContent>
+
+              {/* ===== TAB: Anamnese ===== */}
+              <TabsContent value="anamnese" className="space-y-3 mt-4">
+                <div className="rounded-md border border-emerald-300/70 bg-gradient-to-br from-emerald-50/60 to-background p-3 dark:border-emerald-900/40 dark:from-emerald-950/15">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <label className="text-sm font-semibold">Anamnese / Anamnesebogen</label>
+                      <p className="text-xs text-muted-foreground">Aktuelle Beschwerden, Vorgeschichte, Operationen, Allergien, Medikamente, Lebensgewohnheiten, Familien- und Sozialanamnese. Handschriftliche Einträge werden ausschließlich lokal ausgelesen; sichere Zeilen werden sichtbaren Fragen zugeordnet und Unsicherheiten als „manuell prüfen“ markiert.</p>
+                    </div>
+                    <WorkloadBadge chars={anamnese.length} hint="Anamnese vollständig in Befundauswertung und Therapieplanung berücksichtigen" />
+                  </div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <label className="whitespace-nowrap text-xs font-medium">Anamnese erstellt am:</label>
+                    <Input type="date" value={anamneseDatum} onChange={(event) => setAnamneseDatum(event.target.value)} className="h-8 w-auto text-xs" />
+                    {anamneseDatum && <button type="button" onClick={() => setAnamneseDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>}
+                  </div>
+                  {!anamneseDatum && <p role="status" className="mb-3 text-xs font-medium text-amber-800 dark:text-amber-200">Vor dem PDF-Import zuerst das Anamnese-Datum eintragen.</p>}
+                  <MultiDocUpload
+                    pseudonymId={pseudonymId}
+                    ocrMode="doctor"
+                    label="Anamnesebogen-PDF aufnehmen"
+                    documentDate={anamneseDatum}
+                    documentType="Anamnese / Anamnesebogen"
+                    requireDocumentDate
+                    onExtracted={(text, sourcePseudonymId) => {
+                      if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
+                      setAnamnese((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
+                    }}
+                  />
+                  <Textarea
+                    value={anamnese}
+                    onChange={(event) => setAnamnese(event.target.value)}
+                    placeholder="Datenschutzbereinigte Anamnese hier einfügen oder oben als PDF sicher einlesen. Keine Namen, Initialen, Geburtsdaten, Adressen oder andere direkte Identifikatoren übernehmen."
+                    rows={12}
+                    className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">Die Anamnese wird als eigener Befundbereich gespeichert, ausgewertet und an die Therapieerzeugung übergeben. Eine automatische Zuordnung nach Name oder E-Mail erfolgt aus Datenschutzgründen nicht.</p>
                 </div>
               </TabsContent>
 

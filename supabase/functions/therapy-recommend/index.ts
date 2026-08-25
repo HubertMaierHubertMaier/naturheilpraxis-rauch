@@ -845,12 +845,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
     const manualDiagnosesText = Array.isArray(manualDiagnosen)
       ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
           .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
       : "";
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
+    const anamneseText: string = typeof anamnese === "string" ? anamnese.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
     const vievaPlusText: string = typeof vievaPlus === "string" ? vievaPlus.trim() : "";
     const befundAuswertungText: string = typeof befundAuswertung === "string" ? befundAuswertung.trim() : "";
@@ -863,14 +864,14 @@ serve(async (req) => {
         }).filter(Boolean).join("\n\n")
       : "";
     // Hinweis-Log für sehr große Patienten-Kontexte (KEIN Trimmen – Gemini-Pro-Modell hat 1M Token Kontext).
-    const totalPatientChars = (sonstigeUntersuchungenText.length + vievaPlusText.length + befundAuswertungText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
+    const totalPatientChars = (anamneseText.length + sonstigeUntersuchungenText.length + vievaPlusText.length + befundAuswertungText.length + perplexityAnalyseText.length + eigeneTherapieText.length + mannayanOrdersText.length + (typeof arztbericht === "string" ? arztbericht.length : 0) + (typeof laborKomplett === "string" ? laborKomplett.length : 0));
     if (totalPatientChars > 80_000) {
       console.warn(`[therapy-recommend] Großer Patienten-Kontext: ${totalPatientChars} Zeichen (sonstige=${sonstigeUntersuchungenText.length}, perplexity=${perplexityAnalyseText.length}). Verarbeitet vollständig${useProModel ? " (Pro-Modell aktiv)" : " — Pro-Modell empfohlen"}.`);
     }
 
     const isNachschlag = typeof nachschlag === "string" && nachschlag.trim().length > 0 && typeof previousResult === "string" && previousResult.trim().length > 0;
 
-    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !sonstigeUntersuchungenText && !vievaPlusText && !befundAuswertungText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
+    if (!belastungen && !symptome && !erkrankung && !manualDiagnosesText && !anamneseText && !sonstigeUntersuchungenText && !vievaPlusText && !befundAuswertungText && !perplexityAnalyseText && !eigeneTherapieText && !mannayanOrdersText && !isNachschlag) {
       throw new Error("Bitte geben Sie mindestens Belastungen, Symptome oder eine Erkrankung an.");
     }
 
@@ -941,7 +942,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, laborErhoeht, laborErniedrigt, befundAuswertungText, stuhlbefund, laborKomplett, arztbericht, metatronHeelText, vievaPlusText, sonstigeUntersuchungenText, bisherigeMittel, perplexityAnalyseText, eigeneTherapieText, mannayanOrdersText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, anamneseText, laborErhoeht, laborErniedrigt, befundAuswertungText, stuhlbefund, laborKomplett, arztbericht, metatronHeelText, vievaPlusText, sonstigeUntersuchungenText, bisherigeMittel, perplexityAnalyseText, eigeneTherapieText, mannayanOrdersText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -1172,6 +1173,7 @@ serve(async (req) => {
         queryTokenLimit: MAX_KNOWLEDGE_QUERY_TOKENS,
         symptomAxes: activeSymptomTargets.map((t) => t.label),
         metatronHeelInput: metatronHeelText || null,
+        anamneseChars: anamneseText.length,
         sonstigeUntersuchungenChars: sonstigeUntersuchungenText.length,
         vievaPlusChars: vievaPlusText.length,
         befundAuswertungChars: befundAuswertungText.length,
@@ -1211,6 +1213,7 @@ serve(async (req) => {
     if (laborErniedrigt) patientInfo.push(`Erniedrigte Laborwerte: ${laborErniedrigt}`);
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor${laborDatum ? ` (Befunddatum: ${laborDatum})` : ""}: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
+    if (anamneseText) patientInfo.push(`Anamnese/Anamnesebogen${anamneseDatum ? ` (erstellt am: ${anamneseDatum})` : ""}: ${anamneseText}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Metatron-Hospital-/NLS-Analyse${metatronDatum ? ` (erstellt am: ${metatronDatum})` : ""} (Resonanzhinweise getrennt von gesicherten Befunden bewerten): ${metatronHeelText}`);
     if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
@@ -1377,6 +1380,10 @@ SICHERHEITSREGELN (ZWINGEND BEACHTEN):
     - Falls Laborwerte angegeben: Beziehe diese in die Therapieempfehlung mit ein. Erkläre, welche Werte auffällig sind und welche Naturheilmittel oder Ernährungsmaßnahmen diese verbessern können. Bei vorhandenem komplettem Labor: nutze auch unauffällige Werte zur Mustererkennung (z.B. Subklinik, Verlaufstendenzen, Plausibilitätsprüfung) und nenne explizit, welche Werte unauffällig/normal sind. Berücksichtige das Befunddatum (alte Werte ggf. nicht mehr aktuell – Verlaufskontrolle empfehlen).
 
 6. **Stuhlbefund / Mikrobiom / Laborwerte**: ${stuhlbefund || "Nicht angegeben"}
+
+6a. **Anamnese / Anamnesebogen${anamneseDatum ? ` – erstellt am ${anamneseDatum}` : ""}**: ${anamneseText || "Nicht angegeben"}
+   - Falls vorhanden: Beschwerden, zeitlichen Verlauf, Vorerkrankungen/Operationen, Allergien, Medikamente, Lebensgewohnheiten, Familien- und Sozialanamnese vollständig berücksichtigen.
+   - Aussagen aus der Anamnese sind Patientenangaben und müssen sichtbar von gesicherten Arzt- und Laborbefunden getrennt bleiben.
 
 6b. **Arztbericht / Arztbrief / Facharzt-Befund (schulmedizinische Diagnostik & Therapie)${arztberichtDatum ? ` – Berichtsdatum: ${arztberichtDatum}` : ""}**: ${arztbericht || "Nicht angegeben"}
    - Falls vorhanden: Werte Diagnosen (inkl. ICD-10), Befunde (Bildgebung/Histologie/OP), ärztliche Beurteilung und bereits verordnete Schulmedizin-Therapie aus.
@@ -1645,6 +1652,7 @@ Erkrankung: ${erkrankung || "Nicht angegeben"}
 Manuell/aus Befund übernommene Diagnosen: ${manualDiagnosesText || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Anamnese/Anamnesebogen: ${anamneseText || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
@@ -1678,6 +1686,7 @@ Erkrankung: ${erkrankung || "Nicht angegeben"}
 Manuell/aus Befund übernommene Diagnosen: ${manualDiagnosesText || "Nicht angegeben"}
 Bisherige Naturheilmittel: ${bisherigeMittel || "Keine"}
 Stuhlbefund/Mikrobiom: ${stuhlbefund || "Nicht angegeben"}
+Anamnese/Anamnesebogen: ${anamneseText || "Nicht angegeben"}
 Arztbericht/Arztbrief: ${arztbericht || "Nicht angegeben"}
 Budget: ${budget ? budget + " Euro" : "Nicht angegeben"}
 
