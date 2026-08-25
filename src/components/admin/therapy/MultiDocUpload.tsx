@@ -24,6 +24,11 @@ import {
   type ExtractedPdfPage,
 } from "@/lib/clinicalPdfExtraction";
 import { addAnalysisDocumentMetadata, createNeutralDocumentId } from "@/lib/patientInputPersistence";
+import {
+  ANAMNESE_OCR_LOW_CONFIDENCE_THRESHOLD,
+  buildAnamneseQuestionReview,
+  type AnamneseOcrPageConfidence,
+} from "@/lib/anamneseOcrMapping";
 import { RedactedTextPreview } from "./RedactedTextPreview";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -47,6 +52,9 @@ type PendingFile = {
   chars?: number;
   ocrPages?: number;
   ocrFailedPages?: number[];
+  ocrPageConfidences?: AnamneseOcrPageConfidence[];
+  anamneseMappedAnswers?: number;
+  anamneseManualReviewItems?: number;
   progress?: string;
   error?: string;
   errorKind?: string;
@@ -63,6 +71,9 @@ type PendingPrivacyReview = {
   localOcrFailedPages: number;
   failedCount: number;
   identifierCategories: string[];
+  anamneseMappedAnswers: number;
+  anamneseManualReviewItems: number;
+  anamneseLowConfidencePages: number[];
 };
 
 export type PiiHit = { kind: string };
@@ -77,12 +88,13 @@ export type ClinicalDocumentExtractionResult = {
   chars: number;
   ocrPages?: number;
   ocrFailedPages?: number[];
+  ocrPageConfidences?: AnamneseOcrPageConfidence[];
   removedIdentifierCategories?: string[];
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
 type OcrWorker = {
-  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string } }>;
+  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string; confidence?: number } }>;
   terminate: () => Promise<unknown>;
 };
 type OcrExtractionSession = {
@@ -167,6 +179,7 @@ export async function extractClinicalDocumentText(
   const pages: ExtractedPdfPage[] = [];
   let ocrPageCount = 0;
   const failedOcrPages: number[] = [];
+  const ocrPageConfidences: AnamneseOcrPageConfidence[] = [];
   let currentOcrPage = 0;
   ocrSession.handleProgress = (progress) => {
     if (progress.status === "loading language traineddata") {
@@ -222,7 +235,12 @@ export async function extractClinicalDocumentText(
             const renderTask = page.render({ canvas, canvasContext, viewport, background: "rgb(255,255,255)" });
             await waitForPdfRender(renderTask, signal);
             throwIfAborted(signal);
-            extractedPage.ocrText = (await ocrSession.worker.recognize(canvas)).data.text;
+            const recognition = (await ocrSession.worker.recognize(canvas)).data;
+            extractedPage.ocrText = recognition.text;
+            if (Number.isFinite(recognition.confidence)) {
+              extractedPage.ocrConfidence = Number(recognition.confidence);
+              ocrPageConfidences.push({ pageNumber, confidence: Number(recognition.confidence) });
+            }
             ocrPageCount += 1;
           } catch (error) {
             throwIfAborted(signal);
@@ -284,6 +302,7 @@ export async function extractClinicalDocumentText(
     chars: text.length,
     ocrPages: ocrPageCount,
     ocrFailedPages: decision.failedOcrPages,
+    ocrPageConfidences,
     removedIdentifierCategories,
   };
 }
@@ -384,17 +403,24 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           });
           if (!scopeIsCurrent()) return;
           const piiHits = (extracted.removedIdentifierCategories || []).map((kind) => ({ kind }));
+          const anamneseReview = documentType === "Anamnese / Anamnesebogen"
+            ? buildAnamneseQuestionReview(extracted.text, extracted.ocrPageConfidences)
+            : undefined;
+          const reviewBody = anamneseReview?.text || extracted.text;
           const datedText = extractionDocumentDate
-            ? addAnalysisDocumentMetadata(extracted.text, extractionDocumentDate, documentType)
-            : extracted.text;
+            ? addAnalysisDocumentMetadata(reviewBody, extractionDocumentDate, documentType)
+            : reviewBody;
           combined = [combined, datedText].filter(Boolean).join("\n\n");
           updated[index] = {
             ...updated[index],
             status: "done",
-            chars: extracted.chars,
+            chars: datedText.length,
             pages: extracted.pages,
             ocrPages: extracted.ocrPages,
             ocrFailedPages: extracted.ocrFailedPages,
+            ocrPageConfidences: extracted.ocrPageConfidences,
+            anamneseMappedAnswers: anamneseReview?.mappedAnswerCount,
+            anamneseManualReviewItems: anamneseReview?.manualReviewCount,
             progress: undefined,
             piiHits,
           };
@@ -448,6 +474,11 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           localOcrFailedPages: successDocs.reduce((sum, item) => sum + Number(item.ocrFailedPages?.length || 0), 0),
           failedCount: failed.length,
           identifierCategories: Array.from(new Set(withPii.flatMap((item) => (item.piiHits || []).map((hit) => hit.kind)))),
+          anamneseMappedAnswers: successDocs.reduce((sum, item) => sum + Number(item.anamneseMappedAnswers || 0), 0),
+          anamneseManualReviewItems: successDocs.reduce((sum, item) => sum + Number(item.anamneseManualReviewItems || 0), 0),
+          anamneseLowConfidencePages: Array.from(new Set(successDocs.flatMap((item) => (item.ocrPageConfidences || [])
+            .filter((entry) => entry.confidence < ANAMNESE_OCR_LOW_CONFIDENCE_THRESHOLD)
+            .map((entry) => entry.pageNumber)))).sort((left, right) => left - right),
         });
         toast({
           title: "Datenschutzvorschau bereit",
@@ -600,7 +631,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             </div>
           ))}
           <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
-            Datenschutzmodus: PDF-Textebenen werden bevorzugt. Nur textarme Rasterseiten werden per OCR lokal im Browser erkannt. Beim ersten OCR-Lauf lädt der Browser OCR-Programm- und Sprachdaten (Deutsch/Englisch) aus dieser Anwendung; nur diese Programmdaten werden geladen. PDF-, Canvas- und Bilddaten bleiben im Browser und gehen an keinen OCR-Cloud-Dienst. Direkte Identifikatoren werden vor Analyse und Speicherung entfernt; Originaldateien werden nicht archiviert.
+            Datenschutzmodus: PDF-Textebenen werden bevorzugt. Textarme Rasterseiten und eingescannte Handschrift werden per OCR lokal im Browser gelesen. Beim ersten OCR-Lauf lädt der Browser OCR-Programm- und Sprachdaten (Deutsch/Englisch) aus dieser Anwendung; nur diese Programmdaten werden geladen. PDF-, Canvas- und Bilddaten bleiben im Browser und gehen an keinen OCR-Cloud-Dienst. Direkte Identifikatoren werden vor Analyse und Speicherung entfernt; Originaldateien werden nicht archiviert. Unsichere Handschrift wird nicht geraten, sondern sichtbar als „manuell prüfen“ gekennzeichnet.
           </p>
         </div>
       )}
@@ -614,6 +645,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           <p className="text-xs text-muted-foreground">
             Bis zur Bestätigung bleibt dieser Text nur im Arbeitsspeicher des Browsers. Es wird noch nichts in Eingabefelder, Protokolle, Lovable oder eine KI übernommen.
           </p>
+          {(pendingReview.anamneseMappedAnswers > 0 || pendingReview.anamneseManualReviewItems > 0) && (
+            <div className="rounded-md border border-sky-300 bg-sky-50 p-2 text-xs text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-100">
+              <strong>Handschrift-/Fragenprüfung:</strong> {pendingReview.anamneseMappedAnswers} Frage-Antwort-Zeile(n) erkannt; {pendingReview.anamneseManualReviewItems} Zeile(n) ohne sichere Zuordnung manuell prüfen.
+              {pendingReview.anamneseLowConfidencePages.length > 0 && ` Niedrige OCR-Sicherheit auf Seite(n) ${pendingReview.anamneseLowConfidencePages.join(", ")}.`}
+            </div>
+          )}
           <RedactedTextPreview
             text={pendingReview.text}
             className="min-h-[18rem] max-h-[32rem] w-full overflow-auto rounded-md border bg-background p-3 font-mono text-xs leading-relaxed"
@@ -626,7 +663,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
               disabled={reviewSubmitting}
               className="mt-1"
             />
-            <span>Ich habe den vollständigen Text geprüft. Namen, Anschriften, Geburtsdaten, Kontaktdaten, echte Patienten- und Leistungserbringer-Kennnummern sowie Praxis-/Labornamen, Stempel und Unterschriften sind entfernt; das erlaubte Pseudonym darf enthalten bleiben.</span>
+            <span>Ich habe den vollständigen Text geprüft. Namen, Anschriften, Geburtsdaten, Kontaktdaten, echte Patienten- und Leistungserbringer-Kennnummern sowie Praxis-/Labornamen, Stempel und Unterschriften sind entfernt; das erlaubte Pseudonym darf enthalten bleiben. Bei einem Anamnesebogen habe ich zusätzlich Handschrift, Markierungen, Fragezuordnung und alle Hinweise „manuell prüfen“ kontrolliert.</span>
           </label>
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={confirmPrivacyReview} disabled={!privacyConfirmed || reviewSubmitting}>

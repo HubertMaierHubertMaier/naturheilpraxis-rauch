@@ -21,7 +21,10 @@ describe("therapy workflow UI structure", () => {
       .toBeGreaterThan(source.indexOf("Befund-Auswertung {isAnalyzingDocs"));
     expect(source).toContain('TabsTrigger value="vieva-plus"');
     expect(source).toContain('TabsTrigger value="metatron"');
-    expect(count(source, "requireDocumentDate")).toBe(2);
+    expect(source).toContain('TabsTrigger value="anamnese"');
+    expect(source).toContain("1. SAMMELEINGABE: mehrere Patientenunterlagen gemeinsam übernehmen");
+    expect(source).toContain("Mehrere PDFs für Sammeleingabe auswählen");
+    expect(count(source, "requireDocumentDate")).toBe(3);
     expect(source).toContain("applyExtractedToInputs({ forPseudonymId: analysisPid");
     expect(source).toContain("if (docAbortRef.current)");
     expect(source).toContain("if (abortRef.current)");
@@ -47,7 +50,8 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('case "labor": append(setLaborKomplett, text)');
     expect(source).toContain('case "metatron": append(setMetatronHeel, text)');
     expect(source).toContain('case "vieva": append(setVievaPlus, text)');
-    expect(source).toContain('case "arzt-anamnese": append(setArztbericht, text)');
+    expect(source).toContain('case "anamnese": append(setAnamnese, text)');
+    expect(source).toContain('case "arzt": append(setArztbericht, text)');
     expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
   });
 
@@ -63,11 +67,25 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('const latestLabDate = latestDateFor("labor")');
     expect(source).toContain('const latestMetatronDate = latestDateFor("metatron")');
     expect(source).toContain('const latestVievaDate = latestDateFor("vieva")');
-    expect(source).toContain('const latestDoctorDate = latestDateFor("arzt-anamnese")');
+    expect(source).toContain('const latestAnamneseDate = latestDateFor("anamnese")');
+    expect(source).toContain('const latestDoctorDate = latestDateFor("arzt")');
     expect(source).toContain("if (latestLabDate) setLaborDatum(latestLabDate)");
     expect(source).toContain("if (latestMetatronDate) setMetatronDatum(latestMetatronDate)");
     expect(source).toContain("if (latestVievaDate) setVievaPlusDatum(latestVievaDate)");
+    expect(source).toContain("if (latestAnamneseDate) setAnamneseDatum(latestAnamneseDate)");
     expect(source).toContain("if (latestDoctorDate) setArztberichtDatum(latestDoctorDate)");
+  });
+
+  it("stores and forwards the anamnesis as its own clinical source", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+    const edgeSource = readSource("supabase/functions/therapy-recommend/index.ts");
+
+    expect(source).toContain('const [anamnese, setAnamnese] = useState("")');
+    expect(source).toContain("anamnese: anamnese.trim() || undefined");
+    expect(source).toContain('splitMarkedDocumentSources("anamnese"');
+    expect(edgeSource).toContain('const anamneseText: string = typeof anamnese === "string"');
+    expect(edgeSource).toContain("6a. **Anamnese / Anamnesebogen");
+    expect(edgeSource).toContain("Aussagen aus der Anamnese sind Patientenangaben");
   });
 
   it("blocks the synthetic case until a saved patient pseudonym has been restored", () => {
