@@ -14,7 +14,7 @@ export type LocalOcrProgress = {
 };
 
 export type LocalOcrWorker = {
-  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string } }>;
+  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string; confidence?: number } }>;
   terminate: () => Promise<void>;
 };
 
@@ -165,7 +165,7 @@ export async function createLocalBrowserOcrWorker(
   return {
     async recognize(canvas) {
       const image = await canvasToPngBytes(canvas, signal);
-      const data = await sendJob<{ text: string }>(
+      const data = await sendJob<{ text: string; confidence?: number }>(
         "recognize",
         { image, options: {}, output: { text: true } },
         OCR_RECOGNITION_TIMEOUT_MS,

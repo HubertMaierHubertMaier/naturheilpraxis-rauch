@@ -2814,6 +2814,14 @@ export type Database = {
         Returns: boolean
       }
       extract_patient_snapshot_fields: { Args: { _input: Json }; Returns: Json }
+      get_infothek_gating_for_routes: {
+        Args: { _hrefs: string[] }
+        Returns: {
+          gated: boolean
+          href: string
+          visibility: string
+        }[]
+      }
       get_my_patient_access: { Args: never; Returns: Json }
       get_public_app_setting: { Args: { _key: string }; Returns: Json }
       get_therapy_patient_safe_snapshot: {
