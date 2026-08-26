@@ -5,9 +5,12 @@ import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-
 import { useToast } from "@/hooks/use-toast";
 import { logTherapyEvent } from "./therapyEventLog";
 import {
+  collectLocalPrivacyFindings,
   deidentifyClinicalText,
   directIdentifierCategories,
+  quarantineResidualDirectIdentifierLines,
   removeResidualDirectIdentifierLines,
+  type LocalPrivacyFinding,
 } from "../../../../supabase/functions/_shared/clinicalDeidentification";
 import * as pdfjs from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -90,6 +93,7 @@ export type ClinicalDocumentExtractionResult = {
   ocrFailedPages?: number[];
   ocrPageConfidences?: AnamneseOcrPageConfidence[];
   removedIdentifierCategories?: string[];
+  localPrivacyFindings?: LocalPrivacyFinding[];
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
@@ -289,7 +293,10 @@ export async function extractClinicalDocumentText(
 
   const joined = assembleExtractedPdfPages(pages);
   const removedIdentifierCategories = directIdentifierCategories(joined);
-  const safeBody = removeResidualDirectIdentifierLines(deidentifyClinicalText(joined));
+  const localPrivacyFindings = collectLocalPrivacyFindings(joined);
+  const safeBody = quarantineResidualDirectIdentifierLines(
+    removeResidualDirectIdentifierLines(deidentifyClinicalText(joined)),
+  );
   const documentId = await createNeutralDocumentId(safeBody, identitySalt);
   const text = `=== 📄 Dokument-${documentId} (${totalPages} S.) ===\n${safeBody}`;
   const residualIdentifiers = directIdentifierCategories(text);
@@ -304,6 +311,7 @@ export async function extractClinicalDocumentText(
     ocrFailedPages: decision.failedOcrPages,
     ocrPageConfidences,
     removedIdentifierCategories,
+    localPrivacyFindings,
   };
 }
 

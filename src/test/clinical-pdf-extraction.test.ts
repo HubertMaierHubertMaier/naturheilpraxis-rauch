@@ -151,4 +151,14 @@ describe("clinical PDF extraction decisions", () => {
     expect(classifyClinicalPdfFailure(new Error("Im Datenschutzmodus sind nur PDFs erlaubt.")).kind).toBe("format");
     expect(classifyClinicalPdfFailure(new Error("unerwartet")).kind).toBe("technical");
   });
+
+  it("shows only the safe identifier category when a privacy failure remains", () => {
+    const failure = classifyClinicalPdfFailure(new Error(
+      "Datenschutz-Sicherheitsstopp: Name, Anschrift konnte nicht zuverlässig entfernt werden.",
+    ));
+
+    expect(failure.kind).toBe("privacy");
+    expect(failure.message).toContain("Erkannte Kategorie: Name, Anschrift");
+    expect(failure.message).not.toContain("Erika");
+  });
 });

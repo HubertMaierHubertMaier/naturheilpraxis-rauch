@@ -48,7 +48,14 @@ export function classifyClinicalPdfFailure(error: unknown): ClinicalPdfFailure {
     return { kind: "format", label: "Dateiformat", message: "Nur PDF-Dateien sind in diesem geschützten Import zugelassen." };
   }
   if (/datenschutz|identifikator|pseudonym/i.test(message)) {
-    return { kind: "privacy", label: "Datenschutz", message: "Direkte Identifikatoren konnten nicht zuverlässig entfernt werden; die Datei wurde nicht übernommen." };
+    const categories = /Datenschutz-Sicherheitsstopp:\s*(.+?)\s+konnte/iu.exec(message)?.[1];
+    return {
+      kind: "privacy",
+      label: "Datenschutz",
+      message: categories
+        ? `Erkannte Kategorie: ${categories}. Die betroffene Restzeile konnte nicht sicher entfernt werden; die Datei wurde nicht übernommen.`
+        : "Direkte Identifikatoren konnten nicht zuverlässig entfernt werden; die Datei wurde nicht übernommen.",
+    };
   }
   return { kind: "technical", label: "Technischer Fehler", message: "Die PDF konnte lokal nicht verarbeitet werden. Bitte Datei und Browser prüfen." };
 }

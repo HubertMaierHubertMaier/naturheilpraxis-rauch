@@ -27,6 +27,7 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
+import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import {
@@ -199,6 +200,8 @@ type PendingDirectBefundFile = {
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
+  localPrivacyFindings?: LocalPrivacyFinding[];
+  privacyFindingsRevealed?: boolean;
   chars?: number;
   pages?: number;
   error?: string;
@@ -3304,6 +3307,8 @@ export function TherapyRecommendation() {
           previewText,
           privacyReviewed: false,
           removedIdentifierCategories: extracted.removedIdentifierCategories,
+          localPrivacyFindings: extracted.localPrivacyFindings,
+          privacyFindingsRevealed: false,
           chars: extracted.chars,
           pages: extracted.pages,
         } : row));
@@ -4382,6 +4387,9 @@ export function TherapyRecommendation() {
             )}
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
+              Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
+            </p>
             <div className="flex flex-wrap items-center gap-2">
               <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
@@ -4448,6 +4456,31 @@ export function TherapyRecommendation() {
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
                         <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed" />
+                        {!!item.localPrivacyFindings?.length && (
+                          <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                            <div className="font-semibold">Lokal erkannte personenbezogene Stellen: {item.localPrivacyFindings.length}</div>
+                            <p className="mt-1">Die Originalausschnitte werden weder gespeichert noch versendet. Nur zur Datenschutzprüfung einblenden; nicht fotografieren, kopieren oder weitergeben.</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 h-7"
+                              onClick={() => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyFindingsRevealed: !file.privacyFindingsRevealed } : file))}
+                            >
+                              {item.privacyFindingsRevealed ? "Personenbezogene Volltexte wieder verbergen" : "Personenbezogene Stellen vollständig anzeigen"}
+                            </Button>
+                            {item.privacyFindingsRevealed && (
+                              <div className="mt-2 space-y-2">
+                                {item.localPrivacyFindings.map((finding, findingIndex) => (
+                                  <div key={`${finding.pageNumber}-${finding.lineNumber}-${findingIndex}`} className="rounded bg-background p-2">
+                                    <div className="font-semibold">Seite {finding.pageNumber}, Zeile {finding.lineNumber} · {finding.categories.join(", ")}</div>
+                                    <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[11px]">{finding.originalText}</pre>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"
@@ -4560,7 +4593,7 @@ export function TherapyRecommendation() {
             </div>
           ) : (
             <div className="rounded-md border border-dashed bg-background p-3 text-sm text-muted-foreground">
-              Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten" hochladen und „Datei(en) auslesen & einfügen" klicken — danach erscheinen sie hier zum Anhaken.
+              Noch keine auswählbaren Befunde vorhanden. PDF(s) oben auswählen, „Sicher auslesen und Vorschau erstellen“ anklicken, die Datenschutzvorschau prüfen und anschließend „Geprüfte Inhalte passend übernehmen“. Danach erscheinen die Befunde hier zum Anhaken.
             </div>
           )}
 

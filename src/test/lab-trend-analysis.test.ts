@@ -14,9 +14,11 @@ import {
   parseLabNumber,
 } from "../../supabase/functions/_shared/labTrendAnalysis";
 import {
+  collectLocalPrivacyFindings,
   deidentifyClinicalData,
   deidentifyClinicalText,
   directIdentifierCategories,
+  quarantineResidualDirectIdentifierLines,
   removeResidualDirectIdentifierLines,
 } from "../../supabase/functions/_shared/clinicalDeidentification";
 
@@ -420,6 +422,49 @@ describe("laboratory trend analysis", () => {
 
     expect(result).toContain("Erika Beispiel");
     expect(directIdentifierCategories(result)).toContain("Name");
+  });
+
+  it("quarantines an unresolved identifier line without weakening the final privacy check", () => {
+    const result = quarantineResidualDirectIdentifierLines([
+      "Name: Erika Beispiel Spezialwert 7 Score",
+      "Ferritin 42 ng/ml",
+    ].join("\n"));
+
+    expect(result).not.toContain("Erika Beispiel");
+    expect(result).toContain("Restzeile mit Name vollständig entfernt");
+    expect(result).toContain("manuell ohne Identifikatoren ergänzen");
+    expect(result).toContain("Ferritin 42 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("quarantines a split identifier field across adjacent OCR lines", () => {
+    const result = quarantineResidualDirectIdentifierLines([
+      "Patient:",
+      "Erika Beispiel",
+      "Vitamin D 42 ng/ml",
+    ].join("\n"));
+
+    expect(result).not.toContain("Erika Beispiel");
+    expect(result).toContain("Restzeile mit Name vollständig entfernt");
+    expect(result).toContain("Vitamin D 42 ng/ml");
+    expect(directIdentifierCategories(result)).toEqual([]);
+  });
+
+  it("keeps exact privacy findings local with page, line, category and full source text", () => {
+    const findings = collectLocalPrivacyFindings([
+      "--- Seite 1 ---",
+      "Ferritin 42 ng/ml",
+      "Name: Erika Beispiel",
+      "--- Seite 2 ---",
+      "Patient:",
+      "Max Muster",
+      "Vitamin D 42 ng/ml",
+    ].join("\n"));
+
+    expect(findings).toEqual([
+      { categories: ["Name"], pageNumber: 1, lineNumber: 2, originalText: "Name: Erika Beispiel" },
+      { categories: ["Name"], pageNumber: 2, lineNumber: 1, originalText: "Patient:\nMax Muster" },
+    ]);
   });
 
   it("keeps unambiguous report column headers without weakening name detection", () => {

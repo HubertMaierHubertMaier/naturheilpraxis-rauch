@@ -43,6 +43,11 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
     expect(source).toContain("Datenschutzbereinigte Vorschau");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
+    expect(source).toContain("Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm");
+    expect(source).not.toContain("PDF(s) erst im Tab „Großdaten\" hochladen");
+    expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
+    expect(source).toContain("Die Originalausschnitte werden weder gespeichert noch versendet");
+    expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
     expect(source).toContain("Für diesen Fall empfohlen: {recommendedAnalysisLabel}");
     expect(source).toContain("Empfehlung übernehmen");
     expect(source).toContain("⚡ Schnellprüfung");
