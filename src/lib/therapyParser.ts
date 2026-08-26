@@ -49,6 +49,7 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
   { match: /phytotherapie|tinktur/i, tone: "sage", emoji: "🌱", title: "Phytotherapie & Tinkturen" },
   { match: /heilpilze|mykotherapie/i, tone: "sage", emoji: "🍄", title: "Heilpilze (Mykotherapie)" },
   { match: /sanum|isopathie|enderlein/i, tone: "sage", emoji: "🧪", title: "Sanum-Therapie" },
+  { match: /metatron.*homöopath|homöopath.*metatron/i, tone: "mist", emoji: "🌌", title: "Metatron-Homöopathie" },
   { match: /pascoe|heel|komplexhom/i, tone: "mist", emoji: "💼", title: "Pascoe & Heel (Komplexhomöopathie)" },
   { match: /vitaplace/i, tone: "terracotta", emoji: "🧴", title: "Vitaplace-Apothekenprodukte" },
   { match: /homöopathie|komplexmittel/i, tone: "mist", emoji: "💧", title: "Homöopathie & Komplexmittel" },
@@ -61,6 +62,11 @@ const CATEGORY_DEFS: Array<{ match: RegExp; tone: CategoryGroup["tone"]; emoji: 
 
 const FREE_SECTION_DEFS: Array<{ match: RegExp; variant: FreeSection["variant"]; emoji: string; title: string; placement: "intro" | "outro" }> = [
   { match: /umfassende anamnese|anamnese/i, variant: "info", emoji: "🧾", title: "Umfassende Anamnese", placement: "intro" },
+  { match: /vieva.*auswertung|auswertung.*vieva/i, variant: "info", emoji: "📈", title: "Vieva-Auswertung", placement: "intro" },
+  { match: /metatron.*pathogen|pathogen.*metatron/i, variant: "warning", emoji: "🦠", title: "Metatron-Pathogene und Therapieprüfung", placement: "intro" },
+  { match: /metatron.*bakterienprotokoll|bakterienprotokoll.*metatron/i, variant: "warning", emoji: "🌿", title: "Metatron-Bakterienprotokoll", placement: "intro" },
+  { match: /allergien?.*unverträglichkeiten?|unverträglichkeiten?.*allergien?/i, variant: "warning", emoji: "🌾", title: "Allergien und Unverträglichkeiten", placement: "intro" },
+  { match: /psychoemotional.*metatron|metatron.*psychoemotional|bachblüten.*metatron|metatron.*bachblüten/i, variant: "info", emoji: "🌸", title: "Psychoemotionale Metatron-Auswertung & Bachblüten", placement: "intro" },
   { match: /priorisier.*therapieziele|therapieziele.*priorisier|therapieziele/i, variant: "success", emoji: "🎯", title: "Priorisierung & Therapieziele", placement: "intro" },
   { match: /folge.?termine|woche\s*4|evaluierung|anpassung|phase\s*2/i, variant: "info", emoji: "📅", title: "Phase 2: Folge-Termine", placement: "intro" },
   { match: /analyse.*belastung/i, variant: "info", emoji: "🔍", title: "Analyse der Belastungen", placement: "intro" },

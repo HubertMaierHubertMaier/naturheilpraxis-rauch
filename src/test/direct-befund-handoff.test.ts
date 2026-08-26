@@ -14,7 +14,8 @@ describe("direct Befund handoff", () => {
       { value: "labor", label: "Labor" },
       { value: "metatron", label: "Metatron" },
       { value: "vieva", label: "Vieva Pro" },
-      { value: "arzt-anamnese", label: "Arztbericht / Anamnese" },
+      { value: "anamnese", label: "Anamnese / Anamnesebogen" },
+      { value: "arzt", label: "Arztbericht / Arztbrief" },
       { value: "sonstige", label: "Allgemeine Unterlagen" },
     ]);
   });
@@ -28,7 +29,8 @@ describe("direct Befund handoff", () => {
       );
       expect(prepared).toContain(`Dokumenttyp: ${directBefundTargetLabel(target.value)}`);
       expect(prepared).toContain("Erstellt am: 2026-08-15");
-      expect(prepared).toContain("Synthetischer Testwert: 42");
+      expect(prepared).toContain("Synthetischer Testwert");
+      expect(prepared).toContain("42");
     }
   });
 
@@ -36,15 +38,40 @@ describe("direct Befund handoff", () => {
     expect(inferDirectBefundTarget("Vieva Pro Vitalanalyse.pdf")).toBe("vieva");
     expect(inferDirectBefundTarget("Metatron NLS Auswertung.pdf")).toBe("metatron");
     expect(inferDirectBefundTarget("Laborbefund Blutbild.pdf")).toBe("labor");
-    expect(inferDirectBefundTarget("Arztbrief und Anamnese.pdf")).toBe("arzt-anamnese");
+    expect(inferDirectBefundTarget("Anamnesebogen.pdf")).toBe("anamnese");
+    expect(inferDirectBefundTarget("Arztbrief.pdf")).toBe("arzt");
+    expect(inferDirectBefundTarget("Arztbrief und Anamnese.pdf")).toBe("");
     expect(inferDirectBefundTarget("sorra-synth-labor.pdf")).toBe("labor");
-    expect(inferDirectBefundTarget("sorra-synth-arzt.pdf")).toBe("arzt-anamnese");
+    expect(inferDirectBefundTarget("sorra-synth-arzt.pdf")).toBe("arzt");
     expect(inferDirectBefundTarget("Unbekanntes Dokument.pdf")).toBe("");
   });
 
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {
     expect(() => prepareDirectBefundHandoffText("Test", "labor", "")).toThrow("Dokumentdatum");
     expect(() => prepareDirectBefundHandoffText("   ", "labor", "2026-08-15")).toThrow("Vorschau ist leer");
+  });
+
+  it("structures only anamnesis text by recognized questions and preserves uncertain lines", () => {
+    const input = [
+      "=== Dokument-abcdef123456 (1 S.) ===",
+      "--- Seite 21 ---",
+      "XXI. Beschwerden",
+      "Hauptbeschwerde: synthetische Erschoepfung",
+      "unleserliche handschriftliche Testzeile",
+    ].join("\n");
+    const prepared = prepareDirectBefundHandoffText(input, "anamnese", "2026-08-25", [
+      { pageNumber: 21, confidence: 63 },
+    ]);
+
+    expect(prepared).toContain("Lokale Anamnese-Auswertung zur manuellen Pruefung");
+    expect(prepared).toContain("Frage/Feld: Hauptbeschwerde");
+    expect(prepared).toContain("Erkannte Antwort: synthetische Erschoepfung");
+    expect(prepared).toContain("Manuell pruefen");
+    expect(prepared).toContain("unleserliche handschriftliche Testzeile");
+    expect(prepared).toContain("Seite(n) 21 liegen unter 80 %");
+
+    const laboratory = prepareDirectBefundHandoffText("CRP: 4,2 mg/l", "labor", "2026-08-25");
+    expect(laboratory).not.toContain("Lokale Anamnese-Auswertung");
   });
 
   it("runs a second residual identifier scan before the confirmed batch handoff", () => {

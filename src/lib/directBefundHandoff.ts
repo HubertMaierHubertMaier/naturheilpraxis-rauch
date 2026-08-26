@@ -1,10 +1,12 @@
 import { addAnalysisDocumentMetadata } from "@/lib/patientInputPersistence";
+import { buildAnamneseQuestionReview, type AnamneseOcrPageConfidence } from "@/lib/anamneseOcrMapping";
 
 export const DIRECT_BEFUND_TARGETS = [
   { value: "labor", label: "Labor" },
   { value: "metatron", label: "Metatron" },
   { value: "vieva", label: "Vieva Pro" },
-  { value: "arzt-anamnese", label: "Arztbericht / Anamnese" },
+  { value: "anamnese", label: "Anamnese / Anamnesebogen" },
+  { value: "arzt", label: "Arztbericht / Arztbrief" },
   { value: "sonstige", label: "Allgemeine Unterlagen" },
 ] as const;
 
@@ -21,7 +23,10 @@ export const inferDirectBefundTarget = (...values: string[]): DirectBefundTarget
   if (/\b(?:metatron|metapathia|oberon|nls analyse|nls auswertung|nonlinear system)\b/.test(text)) return "metatron";
   if (/\b(?:labor|laborbefund|laborbericht|blutbild|referenzbereich|normbereich|klinische chemie|hamatologie)\b/.test(text)
     || /\b(?:mg\/dl|mmol\/l|ng\/ml|miu\/l)\b/.test(text)) return "labor";
-  if (/\b(?:arzt|arztbrief|arztbericht|entlassbrief|entlassungsbericht|anamnesebogen|anamnese)\b/.test(text)) return "arzt-anamnese";
+  const isAnamnese = /\b(?:anamnesebogen|anamnese|patientenfragebogen)\b/.test(text);
+  const isArztbericht = /\b(?:arzt|arztbrief|arztbericht|entlassbrief|entlassungsbericht)\b/.test(text);
+  if (isAnamnese && !isArztbericht) return "anamnese";
+  if (isArztbericht && !isAnamnese) return "arzt";
   return "";
 };
 
@@ -35,8 +40,12 @@ export const prepareDirectBefundHandoffText = (
   text: string,
   target: DirectBefundTarget,
   documentDate: string,
+  ocrPageConfidences: readonly AnamneseOcrPageConfidence[] = [],
 ): string => {
   if (!text.trim()) throw new Error("Die datenschutzbereinigte Vorschau ist leer.");
   if (!documentDate.trim()) throw new Error("Bitte für jede Datei das Dokumentdatum eintragen.");
-  return addAnalysisDocumentMetadata(text, documentDate.trim(), directBefundTargetLabel(target));
+  const reviewText = target === "anamnese"
+    ? buildAnamneseQuestionReview(text, ocrPageConfidences).text
+    : text;
+  return addAnalysisDocumentMetadata(reviewText, documentDate.trim(), directBefundTargetLabel(target));
 };

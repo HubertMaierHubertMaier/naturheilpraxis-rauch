@@ -8,6 +8,7 @@ export type ExtractedPdfPage = {
   pageNumber: number;
   textLayer: string;
   ocrText?: string;
+  ocrConfidence?: number;
 };
 
 export type PdfJsTextItemLike = {
