@@ -207,6 +207,10 @@ type PendingDirectBefundFile = {
   error?: string;
   errorKind?: string;
 };
+type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
+  "id" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages"
+>;
+const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
 type ExtractedBefundInputs = {
   forPseudonymId: string;
   diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1274,6 +1278,7 @@ export function TherapyRecommendation() {
   const docAbortRef = useRef<AbortController | null>(null);
   const docAnalysisRunIdRef = useRef(0);
   const patientScopeGenerationRef = useRef(0);
+  const pendingPreviewRestoreKeyRef = useRef("");
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1296,6 +1301,58 @@ export function TherapyRecommendation() {
     sourceRevision: null,
     sourceIds: new Set(),
   });
+
+  useEffect(() => {
+    if (!sessionPseudonymRestored) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    const key = pendingSafePreviewKey(pid);
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(key) || "[]") as PersistedSafeBefundPreview[];
+      const restored = parsed.filter((item) => item.previewText?.trim()
+        && item.documentType
+        && directIdentifierCategories(item.previewText).length === 0
+      ).map((item) => ({
+        ...item,
+        file: new File([], "Bereinigte-Vorschau.pdf", { type: "application/pdf" }),
+        status: "ready" as const,
+        privacyReviewed: false,
+        localPrivacyFindings: undefined,
+        privacyFindingsRevealed: false,
+      }));
+      if (restored.length) setPendingDirectBefundFiles((current) => current.length ? current : restored);
+    } catch {
+      sessionStorage.removeItem(key);
+    } finally {
+      pendingPreviewRestoreKeyRef.current = key;
+    }
+  }, [pseudonymId, sessionPseudonymRestored]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    const key = pendingSafePreviewKey(pid);
+    if (pendingPreviewRestoreKeyRef.current !== key) return;
+    const safePreviews: PersistedSafeBefundPreview[] = pendingDirectBefundFiles
+      .filter((item) => item.status === "ready"
+        && item.previewText?.trim()
+        && directIdentifierCategories(item.previewText).length === 0)
+      .map(({ id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages }) => ({
+        id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages,
+      }));
+    if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
+    else sessionStorage.removeItem(key);
+  }, [pendingDirectBefundFiles, pseudonymId]);
+
+  useEffect(() => {
+    if (!pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "error")) return;
+    const warnBeforeReload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeReload);
+    return () => window.removeEventListener("beforeunload", warnBeforeReload);
+  }, [pendingDirectBefundFiles]);
   const lastAutoSavedPayloadRef = useRef("");
   const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -4059,6 +4116,8 @@ export function TherapyRecommendation() {
 
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
+    const currentPid = normalizePseudonymId(pseudonymIdRef.current);
+    if (isPatientScopedStorageReady(currentPid)) sessionStorage.removeItem(pendingSafePreviewKey(currentPid));
     patientScopeGenerationRef.current += 1;
     abortRef.current?.abort();
     docAbortRef.current?.abort();

@@ -48,6 +48,10 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
     expect(source).toContain("Die Originalausschnitte werden weder gespeichert noch versendet");
     expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
+    expect(source).toContain("therapy.pendingSafePreviews.v1:");
+    expect(source).toContain('new File([], "Bereinigte-Vorschau.pdf"');
+    expect(source).toContain("directIdentifierCategories(item.previewText).length === 0");
+    expect(source).toContain('window.addEventListener("beforeunload", warnBeforeReload)');
     expect(source).toContain("Für diesen Fall empfohlen: {recommendedAnalysisLabel}");
     expect(source).toContain("Empfehlung übernehmen");
     expect(source).toContain("⚡ Schnellprüfung");
