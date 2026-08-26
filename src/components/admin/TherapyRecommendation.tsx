@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -3692,6 +3691,30 @@ export function TherapyRecommendation() {
     chars: selectedAnalysisSources.reduce((sum, source) => sum + source.chars, 0),
   }), [analysisSources.length, selectedAnalysisSources]);
   const nonContextAnalysisSources = analysisSources.filter((source) => source.group !== "kontext");
+  const selectedClinicalSourceCount = selectedAnalysisSources.filter((source) => source.group !== "kontext").length;
+  const enteredPathogenCount = pathogens.filter((entry) => entry.name.trim()).length
+    + pathogenBulkText.split(/\r?\n/).filter((line) => line.trim()).length;
+  const enteredDiagnosisCount = manualDiagnosen.filter((entry) => entry.diagnose.trim()).length
+    + (erkrankung.trim() ? 1 : 0);
+  const enteredMedicationCount = medikamente.split(/[\r\n;,]+/).filter((entry) => entry.trim()).length;
+  const patientAge = Number.parseInt(alter, 10);
+  const deepAnalysisReasons = [
+    analysisSourceTotals.chars >= 45_000 ? `großer Befundumfang (${Math.round(analysisSourceTotals.chars / 2500)} Seiten)` : "",
+    selectedClinicalSourceCount >= 5 ? `${selectedClinicalSourceCount} verschiedene Befundarten` : "",
+    enteredDiagnosisCount >= 4 ? `${enteredDiagnosisCount} Diagnosen` : "",
+    enteredPathogenCount >= 8 ? `${enteredPathogenCount} Pathogen-Hinweise` : "",
+    enteredMedicationCount >= 5 ? `${enteredMedicationCount} Medikamente` : "",
+    Number.isFinite(patientAge) && patientAge < 16 ? "Kind oder Jugendlicher" : "",
+    schwanger.trim() && schwanger !== "nein" ? "Schwangerschaft oder Stillzeit" : "",
+  ].filter(Boolean);
+  const recommendedUseProModel = deepAnalysisReasons.length > 0;
+  const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung" : "Vollständige Auswertung";
+  const selectedAnalysisLabel = !useMapReduce ? "Schnellprüfung" : useProModel ? "Tiefenprüfung" : "Vollständige Auswertung";
+  const recommendedAnalysisIsSelected = useMapReduce && useProModel === recommendedUseProModel;
+  const applyRecommendedAnalysis = () => {
+    setUseMapReduce(true);
+    setUseProModel(recommendedUseProModel);
+  };
   const hasEffectivelySelectedBefundSources = nonContextAnalysisSources.some((source) => {
     const sourceId = normalizeAnalysisSourceId(source.key);
     if (Object.prototype.hasOwnProperty.call(sourceSelectionRef.current.manualSelections, sourceId)) {
@@ -5583,37 +5606,82 @@ export function TherapyRecommendation() {
         mannayanOrders={mannayanOrders}
       />
 
-      {/* Map-Reduce-Schalter: KI bewertet ALLE 270 Einträge in Batches */}
-
-      <Card className="border-blue-300/50 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
+      <Card className="border-blue-300/60 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
         <CardContent className="pt-4 pb-4">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useMapReduce}
-              onChange={(e) => setUseMapReduce(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-blue-600"
-            />
-            <div className="flex-1">
-              <div className="font-medium text-sm flex items-center gap-2">
-                🚀 Vollständige KI-Auswertung aller Wiki-Einträge (Map-Reduce)
-                <Badge variant="outline" className="text-[10px] h-4">Empfohlen</Badge>
+          <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/25 p-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 flex items-center gap-2 flex-wrap">
+                  <Sparkles className="h-4 w-4" /> Für diesen Fall empfohlen: {recommendedAnalysisLabel}
+                  <Badge className={recommendedAnalysisIsSelected ? "bg-emerald-600" : "bg-amber-600"}>
+                    {recommendedAnalysisIsSelected ? "bereits ausgewählt" : "noch nicht ausgewählt"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">
+                  {recommendedUseProModel
+                    ? `Die Tiefenprüfung passt, weil erkannt wurde: ${deepAnalysisReasons.join(", ")}.`
+                    : "Die vollständige Auswertung passt: Der Fall hat derzeit einen normalen Umfang und keine erkannten Merkmale, die zwingend die langsamere Tiefenprüfung brauchen."}
+                </p>
+                {analysisSourceTotals.chars >= 80_000 && (
+                  <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-200">
+                    Sehr großer Umfang: Tiefenprüfung empfohlen, aber ein Zeitlimit ist möglich. Bei Abbruch die Unterlagen in zwei Befundläufen auswerten.
+                  </p>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <strong>{useMapReduce ? "AN" : "AUS"}:</strong> Stufe 1 = ein günstiges KI-Modell bewertet ALLE Einträge in Batches auf Relevanz.
-                Stufe 2 = die Top-{35} kommen in Volltext an die finale Empfehlungs-KI.
-                <br />
-                {useMapReduce
-                  ? "Die schnelle Wort-Treffer-Filterung ist deaktiviert, weil sie Symptom-/Mittel-Einträge übersehen kann."
-                  : "⚠️ AUS: schnelle Wort-Treffer-Filterung aktiv – kann Einträge übersehen, ist aber deutlich schneller/günstiger."}
-                <br />
-                ⏱️ <strong>Dauer:</strong> {useMapReduce ? "30–60 Sek." : "~10 Sek."} &nbsp;|&nbsp; 💰 {useMapReduce ? "~1–2 Cent extra" : "günstigste Variante"} pro Empfehlung
-              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={applyRecommendedAnalysis}
+                disabled={recommendedAnalysisIsSelected}
+                className="bg-emerald-700 hover:bg-emerald-800"
+              >
+                Empfehlung übernehmen
+              </Button>
             </div>
-          </label>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-sm font-semibold">Welche Auswertung soll durchgeführt werden?</div>
+            <p className="text-xs text-muted-foreground mt-0.5">Aktuell ausgewählt: <strong>{selectedAnalysisLabel}</strong></p>
+            <div className="grid gap-2 mt-2 md:grid-cols-3" role="radiogroup" aria-label="Auswertungsart">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!useMapReduce}
+                onClick={() => { setUseMapReduce(false); setUseProModel(false); }}
+                className={`rounded-lg border-2 p-3 text-left transition-colors ${!useMapReduce ? "border-sky-600 bg-sky-100 dark:bg-sky-950/40" : "border-border bg-background hover:border-sky-300"}`}
+              >
+                <div className="font-semibold text-sm">⚡ Schnellprüfung</div>
+                <p className="text-xs text-muted-foreground mt-1">Nur für kleine, eindeutige Nachträge. Am schnellsten, kann aber passende Wiki-Einträge übersehen.</p>
+                <Badge variant="outline" className="mt-2">ca. 10 Sek.</Badge>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={useMapReduce && !useProModel}
+                onClick={() => { setUseMapReduce(true); setUseProModel(false); }}
+                className={`rounded-lg border-2 p-3 text-left transition-colors ${useMapReduce && !useProModel ? "border-emerald-600 bg-emerald-100 dark:bg-emerald-950/40" : "border-border bg-background hover:border-emerald-300"}`}
+              >
+                <div className="font-semibold text-sm">✅ Vollständige Auswertung</div>
+                <p className="text-xs text-muted-foreground mt-1">Prüft alle Wiki-Einträge. Richtige Wahl für neue Patienten und die meisten normalen Fälle.</p>
+                <Badge variant="outline" className="mt-2">ca. 30–60 Sek.</Badge>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={useMapReduce && useProModel}
+                onClick={() => { setUseMapReduce(true); setUseProModel(true); }}
+                className={`rounded-lg border-2 p-3 text-left transition-colors ${useMapReduce && useProModel ? "border-amber-600 bg-amber-100 dark:bg-amber-950/40" : "border-border bg-background hover:border-amber-300"}`}
+              >
+                <div className="font-semibold text-sm">🧠 Tiefenprüfung</div>
+                <p className="text-xs text-muted-foreground mt-1">Für viele Diagnosen, Medikamente, Pathogene, Befundarten oder sehr umfangreiche Unterlagen.</p>
+                <Badge variant="outline" className="mt-2">ca. 60–120 Sek.</Badge>
+              </button>
+            </div>
+          </div>
 
           {/* Vergleich zur letzten Auswertung */}
-          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50 transition-colors mt-3">
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-violet-200 bg-violet-50/60 hover:bg-violet-50 transition-colors mt-3">
             <input
               type="checkbox"
               checked={addPreviousComparison}
@@ -5623,102 +5691,15 @@ export function TherapyRecommendation() {
             />
             <div className="flex-1">
               <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
-                🔁 Vergleich zur vorherigen Auswertung beilegen
-                <Badge variant="outline" className="text-[10px] h-4 border-emerald-400 text-emerald-700">Weg A – Standard</Badge>
+                🔁 Zusätzlich mit der vorherigen Auswertung vergleichen
+                <Badge variant="outline" className="text-[10px] h-4 border-violet-400 text-violet-700">nur bei Verlaufskontrolle</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                <strong>AN:</strong> Alle Quellen werden komplett neu ausgewertet. Zusätzlich bekommt die KI die aktuell angezeigte Auswertung als Vergleichsanker und markiert oben <em>was bestätigt, was geändert und was neu hinzugekommen</em> ist.
-                <br />
-                <strong>AUS:</strong> Reine Neubewertung ohne Bezug zur Vorversion.
+                <strong>Ausgewählt:</strong> Alle Quellen werden neu ausgewertet. Zusätzlich wird oben klar markiert, was bestätigt, geändert, neu oder widerlegt ist.
                 <br />
                 {(!result || result.trim().length <= 200)
-                  ? <span className="text-amber-700">Aktuell keine vorherige Auswertung im Fenster geladen – Vergleich nicht möglich.</span>
-                  : <span className="text-emerald-700">Vorherige Auswertung erkannt ({(result.length / 1000).toFixed(1)}k Zeichen) – wird beim nächsten Lauf als Vergleichsanker mitgegeben.</span>}
-              </p>
-            </div>
-          </label>
-
-
-          {/* Pro-Modell Schalter */}
-          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-md border border-amber-200 bg-amber-50/60 hover:bg-amber-50 transition-colors mt-3">
-            <input
-              type="checkbox"
-              checked={useProModel}
-              onChange={(e) => setUseProModel(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-amber-600"
-            />
-            <div className="flex-1">
-              <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
-                🧠 Tieferes Reasoning-Modell verwenden (Pro)
-                <Badge variant="outline" className="text-[10px] h-4 border-amber-400 text-amber-700">Optional</Badge>
-                <Popover>
-                  <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                      className="ml-auto inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-amber-300 bg-white hover:bg-amber-100 text-amber-800 transition-colors"
-                    >
-                      <Lightbulb className="h-3 w-3" />
-                      Welches Modell wann?
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[420px] text-xs"
-                    align="end"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="space-y-3">
-                      <div className="font-semibold text-sm flex items-center gap-2">
-                        <Lightbulb className="h-4 w-4 text-amber-600" />
-                        KI-Empfehlung pro Arbeitsschritt
-                      </div>
-
-                      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2">
-                        <div className="font-semibold text-emerald-800">Stufe 1 · Wiki-Sichtung (Map-Reduce)</div>
-                        <div className="text-emerald-900/80 mt-0.5">
-                          <strong>Gemini 2.5 Flash-Lite</strong> – bewertet alle 280 Wiki-Einträge in Batches.
-                          Schnell &amp; sehr günstig, fest verdrahtet (kein Schalter nötig).
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-sky-200 bg-sky-50 p-2">
-                        <div className="font-semibold text-sky-800">Stufe 2 · Standard-Empfehlung</div>
-                        <div className="text-sky-900/80 mt-0.5">
-                          <strong>Gemini 2.5 Flash</strong> (Pro-Schalter <em>aus</em>) – empfohlen für
-                          ~90% der Fälle: einfache bis mittlere Anamnesen, klare Pathogen-Liste, Standard-Symptome.
-                          <br />⏱ 20–40 Sek &nbsp;|&nbsp; 💰 Bruchteil eines Cents
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
-                        <div className="font-semibold text-amber-800">Stufe 2 · Pro-Empfehlung</div>
-                        <div className="text-amber-900/80 mt-0.5">
-                          <strong>Gemini 2.5 Pro</strong> (Pro-Schalter <em>an</em>) – empfohlen bei:
-                          <ul className="list-disc pl-4 mt-1 space-y-0.5">
-                            <li>multimorbiden Patienten (≥ 4 Diagnosen)</li>
-                            <li>vielen Pathogenen (&gt; 8) oder komplexer Stuhl-/Laborlage</li>
-                            <li>Schwangerschaft, Kindern, vielen Medikamenten (Interaktionen)</li>
-                            <li>widersprüchlichen Vorbefunden / Therapieversagen</li>
-                          </ul>
-                          ⏱ 60–120 Sek &nbsp;|&nbsp; 💰 ca. 5–10× teurer
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-muted bg-muted/40 p-2 text-muted-foreground">
-                        <strong className="text-foreground">Faustregel:</strong> Erst <em>Flash</em> probieren.
-                        Wenn die Empfehlung zu oberflächlich oder widersprüchlich wirkt → erneut mit <em>Pro</em>.
-                        <br />Vollständige Preisliste: Admin-Dashboard → Tab <strong>„KI-Modell &amp; Kosten"</strong>.
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <strong>Standard (aus):</strong> schnelles Modell – ca. 20–40 Sek., günstig (Bruchteil eines Cents pro Empfehlung).
-                <br />
-                <strong>Pro (an):</strong> tieferes Reasoning für komplexe Fälle – ca. 60–120 Sek., ungefähr 5–10× teurer pro Empfehlung. ⚠️ Bei sehr großem Kontext besteht Timeout-Risiko (150 s Edge-Limit).
-                <br />
-                Details &amp; aktuelle Preise: Admin-Dashboard → Tab <strong>„KI-Modell &amp; Kosten"</strong>.
+                  ? <span className="text-amber-700">Keine vorherige Auswertung geladen: Für einen Erstbefund ist kein Vergleich nötig.</span>
+                  : <span className="text-violet-700">Vorherige Auswertung erkannt ({(result.length / 1000).toFixed(1)}k Zeichen): Vergleich ist für diesen Verlauf möglich.</span>}
               </p>
             </div>
           </label>

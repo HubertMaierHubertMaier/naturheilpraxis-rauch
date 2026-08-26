@@ -1234,7 +1234,32 @@ REGELN:
 1. Nur fachlich passende Mittel als Kandidaten aufnehmen; keine automatische Pflichtaufnahme.
 2. Dosierung nur aus einem konkreten Wiki-/Produktbeleg übernehmen. Fehlt sie, schreibe "Dosierung nicht belegt – manuell prüfen" und erfinde keinen Erfahrungswert.
 3. Begründung mit "Resonanzhinweis – nicht alleinige Auswahlgrundlage" kennzeichnen.
-4. Bei Kontraindikation, Wechselwirkung, Schwangerschaft oder unklarer Sicherheit NICHT in die auswählbare Kernliste aufnehmen, sondern unter "Manuelle Sicherheitsprüfung" nennen.`
+4. Bei Kontraindikation, Wechselwirkung, Schwangerschaft oder unklarer Sicherheit NICHT in die auswählbare Kernliste aufnehmen, sondern unter "Manuelle Sicherheitsprüfung" nennen.
+5. Namentlich genannte Pathogene vollständig im Kapitel "Metatron-Pathogene und Therapieprüfung" erhalten. Sie bleiben Resonanzhinweise und sind kein Infektionsnachweis. NutraMedix nur bei einem passenden geprüften Wiki-Beleg und bestandener Sicherheitsprüfung als primäre Produktlinie prüfen.
+5a. Wenn der Metatron-Text ausdrücklich eine starke Bakterienbelastung nennt oder mindestens ein bakterieller Resonanzhinweis im hohen Bereich 0.000 bis 0.250 liegt, zusätzlich das Kapitel "Metatron-Bakterienprotokoll" erzeugen. Viren, Pilze und Parasiten allein lösen es nicht aus. Das aktuelle Praxisschema lautet: Tage 1 bis 10 Mannayan Oregano-Kapseln mit insgesamt 2 Kapseln pro Tag; Tage 11 bis 30 oregano-frei und Banderol mit insgesamt 20 Tropfen pro Tag; Tage 31 bis 40 erneut Oregano; Tage 41 bis 60 erneut Banderol; Tage 61 bis 70 erneut Oregano. Oregano und Banderol nicht gleichzeitig ansetzen. Quelle als [PETER_PRAXISSCHEMA:2026-08-26] kennzeichnen und getrennt von älteren Produktangaben erhalten.
+5b. Das Praxisschema ist ein interner, prüfpflichtiger Kandidat und kein Infektionsnachweis. Vor Aufnahme Produktidentität, Alter, Schwangerschaft/Stillzeit, Allergien, Leber-/Nierenfunktion, Medikation, Wechselwirkungen und klinische Bestätigung prüfen. Bei Kontraindikation oder unklarer Sicherheit das vollständige Schema nicht verwerfen, sondern unter "Manuelle Sicherheitsprüfung" mit Sperrgrund erhalten; notwendige ärztliche Diagnostik oder antiinfektive Behandlung niemals verzögern.
+5c. Wenn irgendwo im Befund Candida, Candida albicans, Candida krusei oder eine Candida-Belastung dokumentiert ist, im Kapitel "Metatron-Pathogene und Therapieprüfung" den Unterpunkt "Candida-Diät" erzeugen und [INFOTHEK:candida-diaet.html] sichtbar verknüpfen. Befundart klar trennen: Labor/Arztbefund, Anamnese oder Metatron-/NLS-Resonanzhinweis. Nur Metatron/NLS ist kein Infektionsnachweis.
+5d. Unter "Candida-Diät" Peters aktuelle Praxisangabe quellengetreu und kompakt in vier Listen erhalten: vollständig meiden, nur mäßig, erlaubt und Getränke. Vollständig meiden: jede Zuckerform, frisches/getrocknetes Obst, Konfitüre, Ahornsirup, Honig, Schokolade, Kokosblütenzucker, Agavendicksaft, zuckerhaltige Mehlspeisen/Gebäck, Saccharin, Aspartam, Xylit, Erythrit, Sorbit, Cyclamat, Obst-/Traubensäfte, Limonaden, Cola, Alkohol, helle Teigwaren, Weißmehl aus Weizen/Dinkel, Schweinefleisch und Paniertes. Nur mäßig: Knäckebrot, Vollkornbrot/-mehl, ungezuckertes Müsli und Reis. Erlaubt: Fisch, Eier, Milch, Käse, ungesüßte Sauermilchprodukte, Butter/Öle, Kartoffeln, Hülsenfrucht-Teigwaren, Wurzelgemüse, Rettich/Radieschen, Hülsenfrüchte, Kohlrabi, Gurken, Tomaten, Spinat, Sauerkraut, Zwiebeln, Knoblauch, Kräuter, Gewürze, Nüsse und Salz. Getränke: ungesüßter Tee/Kaffee und Wasser/Mineralwasser. Versteckte Zucker, z.B. in Cashews oder Ketchup, prüfen. Quelle [PETER_PRAXISSCHEMA:2026-08-26] und [INFOTHEK:candida-diaet.html].
+5e. Die Formulierung "Entfernung des Candida-Pilzes" als Quellenwortlaut erhalten, aber nicht als Heilversprechen übernehmen. Vor der restriktiven Diät Dauer, Energie- und Nährstoffversorgung, Alter, Schwangerschaft/Stillzeit, Diabetesmedikation, Essstörungen, Untergewicht, Allergien/Unverträglichkeiten sowie Leber-/Nierenfunktion prüfen und individuelle Begleitung verlangen.
+5f. "CAN (Candida-Chip)" nur nennen, wenn in den gelieferten Patientendaten ausdrücklich steht, dass der Patient einen Zapper besitzt. Als ergänzenden erfahrungsheilkundlichen Kandidaten im Pathogen-Unterpunkt ausgeben, nicht als Candida-Nachweis oder Ersatz für Diagnostik beziehungsweise antimykotische Behandlung. Geräte-/Programmidentität, Anleitung, Kontraindikationen und Sicherheit manuell prüfen; bei fehlender Zapper-Angabe CAN nicht nennen. Quelle [PETER_PRAXISSCHEMA:2026-08-26] und [INFOTHEK:zapper-diamond-shield.html].
+5g. Sobald Allergie oder Unverträglichkeit in Anamnese, Arztbefund, Labor oder Metatron/NLS genannt wird, ein eigenes Kapitel "Allergien und Unverträglichkeiten" erzeugen. Gesicherte/ärztliche Angaben, Patientenangaben und Metatron-/NLS-Resonanzhinweise getrennt ausweisen; aus Metatron keine Allergiediagnose ableiten. Immer [INFOTHEK:allergiebehandlung.html] nennen. Nur bei ausdrücklich dokumentiertem ASS-, Salicylat- oder Histaminbezug zusätzlich [INFOTHEK:ass-salicylat-histamin.html] nennen.
+5h. In diesem Kapitel die vorhandenen Vitaplace-Kandidaten gezielt prüfen: IAKU bei fachlich passendem Haut-, Nahrungsmittelunverträglichkeits- oder Insektenstich-Kontext; DHISTA bei passendem Allergie-/Histaminkontext; Biotik Sensitiv Pulver nur bei Nahrungsmittelunverträglichkeit mit dokumentiertem Darm-, Mikrobiom- oder Barrierebezug. Nicht pauschal alle drei ausgeben. Für IAKU bleibt die alte Praxisquellenangabe "akut 10 Globuli alle 15 Minuten; präventiv 3-mal 10 Globuli täglich" intern erhalten, darf aber nur bei aktuell verifiziertem Dosierungsstatus als Dosierung ausgegeben werden. Für DHISTA liegt keine konkrete Dosis vor: "Dosierung manuell prüfen". Biotik Sensitiv nur mit konkretem geprüftem Produkt-/Dosierungsbeleg. Inhaltsstoffe, Allergien, Medikation, Schwangerschaft/Stillzeit und Wechselwirkungen prüfen.
+6. Namentlich genannte homoeopathische Mittel ausschließlich unter "Metatron-Homöopathie" ausgeben. Jedes Mittel mit den dokumentierten Symptomen, Erkrankungen, der Anamnese und der Befund-Auswertung vergleichen und als passend, teilweise passend oder klinisch nicht bestätigt kennzeichnen. Metatron allein begründet keine Aufnahme.
+7. Psychoemotionale Angaben und Emotionen quellengetreu in einem eigenen Kapitel erhalten, aber niemals als psychische Diagnose darstellen. Bachblüten nur nennen, wenn sie in dieser Metatron-Auswertung ausdrücklich genannt sind; keine Bachblüte aus Modellwissen ergänzen. Für jede genannte Bachblüte Metatron-Bezug, dokumentierte Emotion, Quellenstatus, Unsicherheit und Sicherheit ausweisen.`
+      : "";
+
+    const vievaPriorityDirective = vievaPlusText
+      ? `\n\n🎯 VIEVA-AUSWERTUNG UND PRODUKTPRIORITÄT:
+Der folgende Text ist eine Vieva-Messung und muss als eigenes Kapitel ausgewertet werden:
+${vievaPlusDatum ? `Erstellt am: ${vievaPlusDatum}\n` : ""}
+${vievaPlusText}
+
+REGELN:
+1. Messangaben getrennt nach Vitaminen, Mineralstoffen/Spurenelementen, Aminosäuren/Eiweiß und sonstigen Vieva-Bereichen vollständig erhalten. Vieva-Werte nicht als gesicherte Diagnose darstellen.
+2. Jede Auffälligkeit gegen klassisches Labor, Symptome, Erkrankungen, Anamnese und Befund-Auswertung plausibilisieren. Widersprüche und fehlende Bestätigung sichtbar nennen.
+3. Für belegte Kandidaten in den Gruppen Vitamine, Spurenelemente/Mineralstoffe und Aminosäuren/Eiweiß zuerst fachlich passende, geprüfte Mannayan-Produkte aus dem gelieferten Wiki-/Produktkontext prüfen; danach vorhandene passende Vitaplace-Apothekenprodukte.
+4. Produktlinien-Priorität ersetzt weder Indikations-, Quellen- noch Sicherheitsprüfung. Fehlt ein passender Datenbankbeleg, die Lücke nennen und kein Produkt erfinden.
+5. Dasselbe Produkt nur einmal in seiner fachlich passenden Stoffgruppe ausgeben.`
       : "";
 
     const medicationGroups = recognizeMedicationGroups(medikamente).map((group) => group.label);
@@ -1317,6 +1342,7 @@ ${pinnedTitles.length > 0
   : "- Keine spezifischen Mittel gepinnt."}
 ${symptomDirective}
 ${metatronHeelDirective}
+${vievaPriorityDirective}
 
 
 SICHERHEITSREGELN (ZWINGEND BEACHTEN):
@@ -1451,9 +1477,12 @@ SYSTEMATISCHE ABLEITUNG (VERBINDLICH):
 4. Ordne passende Mannayan- und Vitaplace-Apothekenprodukte in die fachlich passende Stoff- oder Therapiegruppe ein und nenne die Produktlinie als Firma. Nutze einen eigenen Produktlinien-Abschnitt nur, wenn eine fachliche Gruppe nicht eindeutig ist. Dasselbe Produkt nie doppelt auffuehren.
 5. NutraMedix-Mittel bei Pathogenen nur bei einem konkret genannten Pathogen und passendem geprueften Wiki-Mittelbeleg. Laborbestaetigung und Metatron/NLS-Resonanzhinweis in der Begruendung strikt unterscheiden; ein Resonanzhinweis ist kein Infektionsnachweis.
 6. Bei allgemeinen Symptomen Homoeopathie und Komplexmittel als eigene Kandidatengruppe mitpruefen, aber nur bei konkretem Wiki-Beleg, passender Indikation und bestandener Sicherheitspruefung.
-7. Trenne die interne fachliche Begruendung vom einfachen Patiententext: Befundbezug nennt den konkreten Messwert, das Symptom oder die Diagnose plus Wiki-ID; Patientenerklaerung beantwortet ohne Fachjargon "Warum soll ich das einnehmen?". Keine Heilungszusage und keine unbelegte Wirksamkeitsbehauptung.
-8. Fuehre bei jedem Mittel Gefahren, Gegenanzeigen und relevante Wechselwirkungen auf. Beispiel: Suessholz bei dokumentiertem Bluthochdruck nicht als Kernkandidat ausgeben und den Blutdruckhinweis sichtbar nennen. Wenn im verwendeten Beleg keine konkrete Sicherheitsangabe steht, schreibe "Keine konkrete Angabe im verwendeten Beleg – individuell pruefen" statt "keine Gefahren".
-9. Ernaehrung immer aus einem konkreten Befundmuster ableiten. Beispiel: Nur bei dokumentiert erhoehtem HbA1c/Glukosemuster eine kohlenhydratreduzierte LOGI-orientierte Kost pruefen und die passende Quelle [INFOTHEK:logi-ernaehrung-mitochondrien.html] sichtbar nennen; fehlende Messwerte nicht erfinden.
+7. Metatron-genannte Homoeopathika getrennt von allgemeiner Homoeopathie unter "Metatron-Homöopathie" ausgeben und jedes Mittel mit den dokumentierten Symptomen vergleichen. Ohne konkreten Symptom-/Erkrankungsbezug keine Aufnahme in die Mittel-Kandidaten.
+8. Psychoemotionale Metatron-Angaben als Quellenhinweise und nicht als Diagnose behandeln. Bachblueten nur uebernehmen, wenn sie in der Metatron-Auswertung tatsaechlich genannt sind; keine Zuordnung aus allgemeinem Modellwissen erfinden.
+9. Bei vorhandener Vieva-Messung die Vieva-Auswertung als eigenes Kapitel ausgeben. In den Gruppen Vitamine, Mineralstoffe/Spurenelemente und Aminosaeuren/Eiweiss bei gleicher fachlicher Eignung und Beleglage zuerst passende Mannayan-Produkte, danach vorhandene Vitaplace-Produkte pruefen.
+10. Trenne die interne fachliche Begruendung vom einfachen Patiententext: Befundbezug nennt den konkreten Messwert, das Symptom oder die Diagnose plus Wiki-ID; Patientenerklaerung beantwortet ohne Fachjargon "Warum soll ich das einnehmen?". Keine Heilungszusage und keine unbelegte Wirksamkeitsbehauptung.
+11. Fuehre bei jedem Mittel Gefahren, Gegenanzeigen und relevante Wechselwirkungen auf. Beispiel: Suessholz bei dokumentiertem Bluthochdruck nicht als Kernkandidat ausgeben und den Blutdruckhinweis sichtbar nennen. Wenn im verwendeten Beleg keine konkrete Sicherheitsangabe steht, schreibe "Keine konkrete Angabe im verwendeten Beleg – individuell pruefen" statt "keine Gefahren".
+12. LOGI-orientierte Kost grundsätzlich als anpassbaren Praxis-Basisbaustein im Kapitel Ernährung prüfen und [INFOTHEK:logi-ernaehrung-mitochondrien.html] sichtbar nennen. Konkrete Ausgestaltung aus Befund, Gewicht, Energiebedarf, Medikation und Erkrankungen ableiten; bei Schwangerschaft/Stillzeit, Kindern, Untergewicht, Essstörung oder anderen Gegenanzeigen individuell anpassen oder mit Grund zurückstellen. Keine starre Gewichtsreduktion, Heilungszusage oder erfundene Messwerte.
 
 ## 🎯 Priorisierung & Therapieziele
 Nenne hoechstens drei Ziele in Reihenfolge 1 bis 3. Begruende die Reihenfolge mit gesicherten Diagnosen, Symptomen, Alter, Medikation sowie Labor-/Stuhlbefunden. Resonanzhinweise bleiben klar getrennt und duerfen die Reihenfolge nicht allein bestimmen.
@@ -1479,6 +1508,34 @@ Kurze Zusammenfassung der identifizierten Probleme.
 
 ## 🗂️ Voruntersuchungen – chronologische Auswertung
 (Nur falls "Sonstige Voruntersuchungen" angegeben) Chronologisch sortierte Liste ALLER aus dem Freitext extrahierten Untersuchungen mit Datum, Untersuchungstyp, Kernbefund, Therapierelevanz und Einordnung (a/b/c). Bei fehlendem Datum: "(Datum nicht im Text genannt)". KEINE Befunde überspringen.
+
+## 📈 Vieva-Auswertung
+(Nur falls eine Vieva-Messung vorliegt.) Messungen getrennt nach Vitaminen, Mineralstoffen/Spurenelementen, Aminosäuren/Eiweiß und weiteren Bereichen wiedergeben. Jede Auffälligkeit mit Labor, Symptomen, Erkrankungen, Anamnese und Befund-Auswertung abgleichen. Passende Produkte nur aus dem gelieferten Datenbankkontext ableiten: bei gleicher fachlicher Eignung zuerst Mannayan, danach Vitaplace. Quelle, Bestätigungsstatus, Unsicherheit und Sicherheitsbedarf sichtbar nennen.
+
+## 🦠 Metatron-Pathogene und Therapieprüfung
+(Nur falls die Metatron-Auswertung Pathogene namentlich nennt.) Jeden Namen, vorhandenen Index und Fundkontext quellengetreu aufführen und ausdrücklich als Metatron-/NLS-Resonanzhinweis, nicht als Infektionsnachweis kennzeichnen. Primär passende NutraMedix-Kandidaten nur bei konkretem geprüftem Wiki-Beleg und bestandener Sicherheitsprüfung nennen; fehlende Zuordnungen als Datenbanklücke ausweisen.
+
+## 🌾 Allergien und Unverträglichkeiten
+(Nur wenn Allergie oder Unverträglichkeit in einer gelieferten Quelle tatsächlich genannt wird.) Getrennt aufführen: ärztlich beziehungsweise diagnostisch bestätigt, anamnestisch als Patientenangabe dokumentiert und Metatron-/NLS-Resonanzhinweis. Keine Diagnose aus Metatron ableiten. Immer [INFOTHEK:allergiebehandlung.html] nennen; bei ausdrücklichem ASS-, Salicylat- oder Histaminbezug zusätzlich [INFOTHEK:ass-salicylat-histamin.html]. DHISTA, IAKU und Biotik Sensitiv Pulver nur entsprechend der oben definierten Indikations-, Quellen-, Dosierungs- und Sicherheitsgrenzen prüfen. Keine Provokation oder unbegleitete Selbsttestung empfehlen; Anaphylaxie- und Notfallhinweise sichtbar erhalten.
+
+### Candida: Ernährung und Zapper-Prüfung
+(Nur wenn Candida in Labor, Stuhl, klinischem Befund, Anamnese oder Metatron/NLS tatsächlich genannt wird.) Die Befundart zuerst sichtbar nennen. Metatron/NLS bleibt Resonanzhinweis und ist kein Pilz- oder Infektionsnachweis. Die Praxisangabe nicht als "Entfernung" oder gesicherte Eradikation formulieren, sondern als erfahrungsheilkundliche Ernährungsbegleitung kennzeichnen und auf [INFOTHEK:candida-diaet.html] verweisen.
+- **Komplett meiden laut Praxisangabe:** Zucker in jeder Form; frisches und getrocknetes Obst/Fruchtzucker; Konfitüre, Ahornsirup, Honig, Schokolade, Kokosblütenzucker, Agavendicksaft, zuckerhaltige Mehlspeisen und Gebäck; Saccharin, Aspartam, Xylit, Erythrit/Erythrol, Sorbit und Cyclamat; Obst- und Traubensäfte, Limonaden, Cola und Alkohol; helle Teigwaren und Weißmehlprodukte einschließlich Weizen und Dinkel; Schweinefleisch und Panierte Speisen.
+- **Nur mäßig laut Praxisangabe:** Knäckebrot, Vollkornbrot, Vollkornmehl, ungezuckertes Müsli und Reis.
+- **Erlaubt laut Praxisangabe:** Fisch, Eier, Milch, Käse, ungesüßte Sauermilchprodukte, Butter, Öle, Kartoffeln, Teigwaren aus Hülsenfrüchten, rohes und gekochtes Wurzelgemüse, Rettich, Radieschen, Hülsenfrüchte, Kohlrabi, Gurken, Tomaten, Spinat, rohes und gekochtes Sauerkraut, Zwiebeln, Knoblauch, Gartenkräuter, Gewürze, Nüsse und Salz; ungesüßter Tee oder Kaffee sowie Wasser oder Mineralwasser.
+- **Einkauf:** Versteckte Zucker und einfache Kohlenhydrate in Zutatenlisten prüfen, zum Beispiel in Cashews und Ketchup.
+- **Sicherheit:** Dauer, Energie- und Nährstoffversorgung sowie Kinder, Schwangerschaft/Stillzeit, Diabetesmedikation, Essstörungen, Untergewicht und relevante Erkrankungen individuell prüfen. Keine pauschale Langzeitfreigabe.
+- **CAN (Candida-Chip):** Nur wenn in den Eingaben ausdrücklich dokumentiert ist, dass die Person einen kompatiblen Zapper besitzt, als internen erfahrungsheilkundlichen Kandidaten nennen. Fehlt die Zapper-Angabe, CAN-Chip nicht empfehlen. Programm- und Gerätekompatibilität anhand eines konkreten Datenbank-/Herstellerbelegs prüfen; kein Heilversprechen und kein Ersatz für notwendige Diagnostik oder antimykotische Behandlung.
+- Quelle der Praxisangabe: [PETER_PRAXISSCHEMA:2026-08-26]. Inhalt, Evidenz, Sicherheit und Freigabestatus getrennt halten.
+
+### Candida-Diät
+(Sobald Candida in Labor, Arztbefund, Anamnese oder Metatron/NLS dokumentiert ist; die Befundart sichtbar trennen.) Die vollständige Candida-Praxisdiät kompakt unter "Vollständig meiden", "Nur mäßig", "Erlaubt" und "Getränke" ausgeben und auf [INFOTHEK:candida-diaet.html] verweisen. Nicht behaupten, die Diät entferne Candida sicher. Individuelle Dauer und Ernährungssicherheit prüfen. Wenn ausdrücklich ein eigener Zapper dokumentiert ist, zusätzlich "CAN (Candida-Chip)" als erfahrungsheilkundlichen Kandidaten mit [INFOTHEK:zapper-diamond-shield.html] und manueller Geräte-/Sicherheitsprüfung nennen; ohne dokumentierten Zapper niemals nennen.
+
+## 🌿 Metatron-Bakterienprotokoll
+(Nur bei ausdrücklich starker Bakterienbelastung im Metatron-Text oder mindestens einem bakteriellen Metatron-Index von 0.000 bis 0.250; nicht allein bei Viren, Pilzen oder Parasiten.) Zuerst "Metatron-/NLS-Resonanzhinweis – kein Infektionsnachweis" ausgeben und klinische beziehungsweise laborchemische Bestätigung nennen. Danach den vollständigen Phasenplan tabellarisch darstellen: Tage 1–10 Mannayan Oregano-Kapseln, insgesamt 2 Kapseln pro Tag; Tage 11–30 kein Oregano, stattdessen Banderol insgesamt 20 Tropfen pro Tag; Tage 31–40 Oregano wie zuvor; Tage 41–60 Banderol wie zuvor; Tage 61–70 Oregano wie zuvor. Oregano und Banderol niemals gleichzeitig ansetzen. Quelle: [PETER_PRAXISSCHEMA:2026-08-26]. Ältere abweichende Banderol-Produktangaben getrennt nennen, nicht vermischen. Produktidentität und patientenbezogene Sicherheit vor Anwendung prüfen. Bei Gegenanzeige oder unklarer Sicherheit das Schema ausschließlich unter "Manuelle Sicherheitsprüfung" ausgeben; dringliche ärztliche Diagnostik und Behandlung haben Vorrang.
+
+## 🌸 Psychoemotionale Metatron-Auswertung & Bachblüten
+(Nur falls die Metatron-Auswertung psychoemotionale Angaben, Emotionen oder Bachblüten enthält.) Genannte Emotionen quellengetreu aufführen, mit dokumentierten Symptomen/Anamnese abgleichen und niemals als psychische Diagnose darstellen. Bachblüten ausschließlich übernehmen, wenn sie in der Metatron-Auswertung ausdrücklich genannt sind. Je Bachblüte: Metatron-Bezug, dokumentierte Emotion, vorhandener Quellenbeleg, Unsicherheit und Sicherheitsprüfung. Keine zusätzliche Bachblüte aus Modellwissen ableiten.
 
 ## 🔎 Differentialdiagnostik (vertieft)
 (PFLICHT, sobald "Sonstige Voruntersuchungen" ODER "Perplexity-Recherche" Inhalte enthalten — sonst optional)
@@ -1560,6 +1617,9 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 
 ### 💧 Homöopathie & Komplexmittel
 (Bei allgemeinen Symptomen gezielt mitpruefen: Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; klassische Homöopathika; spagyrische Mittel. Nur belegte, passende Einzelkandidaten ausgeben.)
+
+### 🌌 Metatron-Homöopathie
+(Nur Mittel, die in der Metatron-Auswertung namentlich als homöopathische Mittel genannt sind und einen konkreten Abgleich mit den dokumentierten Symptomen/Erkrankungen erhalten. Im Befundbezug Metatron-Quelle und Abgleichstatus passend, teilweise passend oder klinisch nicht bestätigt nennen. Nur bei geprüftem Wiki-Beleg und bestandener Sicherheitsprüfung als Kandidat ausgeben.)
 
 ### 🧫 Probiotika, Präbiotika & Darmaufbau
 (Vitaplace **Biotik Sensitiv Pulver** und **Biotik Balance Kapseln** = Mehrstamm-Probiotika der Praxis-Eigenmarke mit *Bifidobacterium bifidum/infantis/lactis/longum* und *Lactobacillus acidophilus/casei/lactis/paracasei/plantarum* — bei Bifido-/Lacto-Mangel BEVORZUGT empfehlen; Symbioflor 1+2, Mutaflor, RMS-Biofrid, EM-Ferment, Flohsamen, Inulin)
