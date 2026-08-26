@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "createdAt": "2026-08-26",
+  "source": {
+    "author": "Peter Rauch",
+    "type": "practice_instruction",
+    "locator": "Peters OpenCode-Anweisung vom 26.08.2026",
+    "relatedInfothek": "website-content/infothek/candida-diaet.html"
+  },
+  "originalStatements": [
+    "Candida-Diät\n\nDie Candida-Diät zur Entfernung des Candida-Pilzes\n\nVerzichten Sie für die Dauer der Diät komplett auf jede Form von Zucker: Fruchtzucker - also jegliches Obst frisch oder getrocknet, Konfitüre, Ahornsirup, Honig, Scho­ko­lade, Kokos­blütenzucker, Agavendicksaft, zuckerhaltige Mehl­speisen und Gebäck, sowie auf zuckerfreie Süßungsmittel wie Saccharin, Aspartam, Xylit, Erythrol, Sorbit und Cyclamat. Nehmen Sie keine Obst- und Traubensäfte, Limonaden, Cola- oder alkoholische Getränke zu sich.\n\nDer Verzehr von hellen Teigwaren und Weißmehlprodukten ist ebenfalls nicht erlaubt (Weizen und auch Dinkel). Knäckebrot und Vollkornbrot, Vollkornmehl, ungezuckertes Müsli und Reis sollten Sie nur mäßig zu sich nehmen.\n\nAchten Sie beim Einkauf auf versteckte Zucker – die Inhaltsangaben zeigen den oft überraschenden Gehalt an einfachen Kohlehydraten der Nahrungsmittel (z. B. Cashews, Ketchup).\n\nVerzichten Sie beim Verzehr von Fleisch- und Wurstwaren auf Schweinefleisch und auf Paniertes.\n\nErlaubt sind Fisch und Eier ebenso wie Milch, Käse, ungesüßte Sauer­milchprodukte, Butter und Öle. Essen Sie Kartoffeln, Teigwaren aus Hülsenfrüchten (im „Glutenfrei-Sortiment“ der Supermärkte), rohes und gekochtes Wurzelgemüse, Rettich, Radieschen, Hülsen­früchte, Kohlrabi, Gurken, Tomaten, Spinat, rohes und ge­kochtes Sauerkraut, Zwiebeln, Knoblauch, Gartenkräuter, Ge­wür­ze, Nüsse, Salz. Beschränken Sie sich bei Ihrer Getränkewahl auf ungesüßten Tee oder Kaffee und Wasser oder Mineralwasser.\n\nwenn eine Candida belastung festgestellt wurde dann dies in die Therapievorshclag integrieren als unter punkt bei den Pathogenen\n\ndiesen therapievorschlag bei Candida in die Datenbank aufnehmen\nwenn Pat einen Zapper hat dann den Can (Candida chip) empfehlen\nDas auch in die Datenbank aufnehmen",
+    "https://diamondshieldzapper.com/diamond-shield-zapper-chipcards/\n\nsoweit ich meine hast du diese seite schon ausgelesen\nwenn jemand einen Zapper hat dann entsprechen der metatron auswertung oder der symptome oder erkrankungen die entsprechenen chip carten empfehlen wenn jemand keinen zapper hat stehen hier auch die mittel die bzgl der Pathogene symptom erkrankungen eingenommen werden können.\nSolltest du das noch nicht alles in der Datenbank haben dann bitte alles in unsere daten bank"
+  ],
+  "structuredSourceClaims": {
+    "trigger": "Dokumentierter Candida-Bezug aus Labor, klinischem Befund, Stuhl, Anamnese oder Metatron/NLS; die Befundart bleibt sichtbar.",
+    "diet": {
+      "title": "Candida-Diät",
+      "avoid": [
+        "Zucker in jeder Form",
+        "Obst frisch und getrocknet sowie Fruchtzucker",
+        "Konfitüre, Ahornsirup, Honig, Schokolade, Kokosblütenzucker und Agavendicksaft",
+        "zuckerhaltige Mehlspeisen und Gebäck",
+        "Saccharin, Aspartam, Xylit, Erythrit beziehungsweise Erythrol, Sorbit und Cyclamat",
+        "Obst- und Traubensäfte, Limonaden, Cola und alkoholische Getränke",
+        "helle Teigwaren und Weißmehlprodukte einschließlich Weizen und Dinkel",
+        "Schweinefleisch und Panierte Speisen"
+      ],
+      "moderate": [
+        "Knäckebrot",
+        "Vollkornbrot und Vollkornmehl",
+        "ungezuckertes Müsli",
+        "Reis"
+      ],
+      "allowed": [
+        "Fisch und Eier",
+        "Milch, Käse, ungesüßte Sauermilchprodukte, Butter und Öle",
+        "Kartoffeln und Teigwaren aus Hülsenfrüchten",
+        "rohes und gekochtes Wurzelgemüse",
+        "Rettich, Radieschen, Hülsenfrüchte, Kohlrabi, Gurken, Tomaten und Spinat",
+        "rohes und gekochtes Sauerkraut",
+        "Zwiebeln, Knoblauch, Gartenkräuter, Gewürze, Nüsse und Salz",
+        "ungesüßter Tee oder Kaffee sowie Wasser oder Mineralwasser"
+      ],
+      "shoppingNote": "Auf versteckte Zucker und einfache Kohlenhydrate in Zutatenlisten achten, zum Beispiel in Cashews und Ketchup."
+    },
+    "canChip": {
+      "displayName": "CAN (Candida-Chip)",
+      "condition": "Nur wenn ausdrücklich dokumentiert ist, dass die betroffene Person einen kompatiblen Zapper besitzt.",
+      "mapping": "Candida",
+      "manufacturerAndProgramIdentity": "offen"
+    }
+  },
+  "separateAssessment": {
+    "evidence": "Candida-Diät und Zapper-/ChipCard-Anwendung sind erfahrungsheilkundliche Praxisangaben. Eine sichere Candida-Diagnose und eine Eradikation werden dadurch nicht belegt.",
+    "diagnosticBoundary": "Metatron/NLS bleibt Resonanzhinweis. Labor, Klinik und ärztliche beziehungsweise heilpraktische Differentialdiagnostik werden getrennt genannt.",
+    "nutritionSafety": "Dauer, Energie- und Nährstoffversorgung sowie besondere Risiken bei Kindern, Schwangerschaft/Stillzeit, Diabetesmedikation, Essstörungen, Untergewicht und relevanten Erkrankungen individuell prüfen.",
+    "deviceSafety": "CAN-Chip nur bei dokumentiert vorhandenem kompatiblem Zapper und verifizierter Programmidentität als internen Kandidaten nennen. Kein Heilversprechen; notwendige Diagnostik oder antimykotische Behandlung nicht ersetzen oder verzögern.",
+    "reviewStatus": "unreviewed",
+    "visibility": "admin_only",
+    "patientFacingAllowed": false
+  }
+}

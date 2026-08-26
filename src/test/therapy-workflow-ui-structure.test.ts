@@ -43,6 +43,18 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
     expect(source).toContain("Datenschutzbereinigte Vorschau");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
+    expect(source).toContain("Für diesen Fall empfohlen: {recommendedAnalysisLabel}");
+    expect(source).toContain("Empfehlung übernehmen");
+    expect(source).toContain("⚡ Schnellprüfung");
+    expect(source).toContain("✅ Vollständige Auswertung");
+    expect(source).toContain("🧠 Tiefenprüfung");
+    expect(source).toContain("Welche Auswertung soll durchgeführt werden?");
+    expect(source).toContain("deepAnalysisReasons");
+    expect(source).toContain("selectedClinicalSourceCount >= 5");
+    expect(source).toContain("enteredDiagnosisCount >= 4");
+    expect(source).toContain("enteredPathogenCount >= 8");
+    expect(source).toContain("enteredMedicationCount >= 5");
+    expect(source).not.toContain("Welches Modell wann?");
     expect(source).toContain("const inferredType = inferDirectBefundTarget(file.name)");
     expect(source).toContain("if (!documentType) documentType = inferDirectBefundTarget(extracted.text)");
     expect(source).toContain("Dokumentart konnte nicht sicher automatisch erkannt werden");

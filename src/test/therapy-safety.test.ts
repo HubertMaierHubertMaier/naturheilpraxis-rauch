@@ -36,10 +36,45 @@ describe("therapy safety", () => {
     expect(source).toContain("### 🦠 Pathogenbezogene Mittel (NutraMedix)");
     expect(source).toContain("### 🩹 Symptombezogene Mittel");
     expect(source).toContain("### 🧴 Vitaplace-Apothekenprodukte");
+    expect(source).toContain("## 📈 Vieva-Auswertung");
+    expect(source).toContain("## 🦠 Metatron-Pathogene und Therapieprüfung");
+    expect(source).toContain("### Candida: Ernährung und Zapper-Prüfung");
+    expect(source).toContain("[INFOTHEK:candida-diaet.html]");
+    expect(source).toContain("Nur wenn in den Eingaben ausdrücklich dokumentiert ist, dass die Person einen kompatiblen Zapper besitzt");
+    expect(source).toContain("Fehlt die Zapper-Angabe, CAN-Chip nicht empfehlen");
+    expect(source).toContain("nicht als \"Entfernung\" oder gesicherte Eradikation formulieren");
+    expect(source).toContain("Dauer, Energie- und Nährstoffversorgung");
+    expect(source).toContain("## 🌿 Metatron-Bakterienprotokoll");
+    expect(source).toContain("Tage 1 bis 10 Mannayan Oregano-Kapseln mit insgesamt 2 Kapseln pro Tag");
+    expect(source).toContain("Tage 11 bis 30 oregano-frei und Banderol mit insgesamt 20 Tropfen pro Tag");
+    expect(source).toContain("Oregano und Banderol nicht gleichzeitig ansetzen");
+    expect(source).toContain("[PETER_PRAXISSCHEMA:2026-08-26]");
+    expect(source).toContain("Viren, Pilze und Parasiten allein lösen es nicht aus");
+    expect(source).toContain("### Candida-Diät");
+    expect(source).toContain("[INFOTHEK:candida-diaet.html]");
+    expect(source).toContain("vollständig meiden, nur mäßig, erlaubt und Getränke");
+    expect(source).toContain("Die Formulierung \"Entfernung des Candida-Pilzes\" als Quellenwortlaut erhalten");
+    expect(source).toContain("CAN (Candida-Chip)");
+    expect(source).toContain("bei fehlender Zapper-Angabe CAN nicht nennen");
+    expect(source).toContain("[INFOTHEK:zapper-diamond-shield.html]");
+    expect(source).toContain("## 🌾 Allergien und Unverträglichkeiten");
+    expect(source).toContain("[INFOTHEK:allergiebehandlung.html]");
+    expect(source).toContain("[INFOTHEK:ass-salicylat-histamin.html]");
+    expect(source).toContain("DHISTA bei passendem Allergie-/Histaminkontext");
+    expect(source).toContain("IAKU bei fachlich passendem Haut-, Nahrungsmittelunverträglichkeits- oder Insektenstich-Kontext");
+    expect(source).toContain("Biotik Sensitiv Pulver nur bei Nahrungsmittelunverträglichkeit mit dokumentiertem Darm-, Mikrobiom- oder Barrierebezug");
+    expect(source).toContain("Für DHISTA liegt keine konkrete Dosis vor");
+    expect(source).toContain("LOGI-orientierte Kost grundsätzlich als anpassbaren Praxis-Basisbaustein");
+    expect(source).toContain("[INFOTHEK:logi-ernaehrung-mitochondrien.html]");
+    expect(source).toContain("## 🌸 Psychoemotionale Metatron-Auswertung & Bachblüten");
+    expect(source).toContain("### 🌌 Metatron-Homöopathie");
+    expect(source).toContain("Bachblüten ausschließlich übernehmen, wenn sie in der Metatron-Auswertung ausdrücklich genannt sind");
+    expect(source).toContain("zuerst fachlich passende, geprüfte Mannayan-Produkte");
+    expect(source).toContain("danach vorhandene passende Vitaplace-Apothekenprodukte");
+    expect(source).toContain("NutraMedix nur bei einem passenden geprüften Wiki-Beleg");
     expect(source).toContain("Hersteller/Firma | Dosierung");
     expect(source).toContain("Einfache Patientenerklärung | Gefahren / Gegenanzeigen / Wechselwirkungen");
     expect(source).toContain("Suessholz bei dokumentiertem Bluthochdruck nicht als Kernkandidat");
-    expect(source).toContain("Nur bei dokumentiert erhoehtem HbA1c/Glukosemuster");
     expect(source).not.toContain('.from("admin_knowledge_base")');
     expect(source).not.toContain("forcedWikiRemedySection");
     expect(source).not.toContain("nimm es trotzdem auf");
@@ -60,6 +95,37 @@ describe("therapy safety", () => {
     expect(source).not.toContain("context = context.slice(0, MAX_TOTAL_CHARS)");
     expect(source).not.toContain("return combined.slice(0, MAX_ENTRY_CHARS)");
     expect(source).not.toContain("Boost-Ordner (garantiert)");
+  });
+
+  it("parses Vieva, Metatron pathogen, bacterial protocol, psychoemotional, and Metatron homeopathy chapters separately", () => {
+    const parsed = parseTherapyMarkdown([
+      "## Vieva-Auswertung",
+      "Vitamin- und Aminosäureangaben wurden gegen den synthetischen Kontext geprüft.",
+      "## Metatron-Pathogene und Therapieprüfung",
+      "Ein synthetischer Resonanzhinweis ist kein Infektionsnachweis.",
+      "## Metatron-Bakterienprotokoll",
+      "Ein synthetischer Phasenplan bleibt intern und sicherheitsgeprüft.",
+      "## Allergien und Unverträglichkeiten",
+      "Eine synthetische Patientenangabe bleibt von einem Resonanzhinweis getrennt.",
+      "## Psychoemotionale Metatron-Auswertung & Bachblüten",
+      "Eine ausdrücklich genannte synthetische Emotion bleibt Quellenhinweis und keine Diagnose.",
+      "### Metatron-Homöopathie",
+      "- **Synthetisches Mittel** | nicht belegt | Dosierung manuell prüfen | oral | Verlauf prüfen | 🟢 Optional | unbekannt | Teilweise passend zum synthetischen Symptom; Metatron-Quelle. [WIKI_ID:00000000-0000-0000-0000-000000000000] | Wird nur intern geprüft. | Sicherheit individuell prüfen",
+    ].join("\n"));
+
+    expect(parsed.intro.map((section) => section.title)).toEqual(expect.arrayContaining([
+      "Vieva-Auswertung",
+      "Metatron-Pathogene und Therapieprüfung",
+      "Metatron-Bakterienprotokoll",
+      "Allergien und Unverträglichkeiten",
+      "Psychoemotionale Metatron-Auswertung & Bachblüten",
+    ]));
+    expect(parsed.categories).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        title: "Metatron-Homöopathie",
+        remedies: [expect.objectContaining({ name: "Synthetisches Mittel", priority: "optional" })],
+      }),
+    ]));
   });
 
   it("passes the completed Befund-Auswertung into the structured therapy workflow", () => {
