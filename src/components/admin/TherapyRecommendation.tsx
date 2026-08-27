@@ -27,6 +27,7 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
+import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import {
@@ -199,11 +200,17 @@ type PendingDirectBefundFile = {
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
+  localPrivacyFindings?: LocalPrivacyFinding[];
+  privacyFindingsRevealed?: boolean;
   chars?: number;
   pages?: number;
   error?: string;
   errorKind?: string;
 };
+type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
+  "id" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages"
+>;
+const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
 type ExtractedBefundInputs = {
   forPseudonymId: string;
   diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
@@ -1271,6 +1278,7 @@ export function TherapyRecommendation() {
   const docAbortRef = useRef<AbortController | null>(null);
   const docAnalysisRunIdRef = useRef(0);
   const patientScopeGenerationRef = useRef(0);
+  const pendingPreviewRestoreKeyRef = useRef("");
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1280,6 +1288,7 @@ export function TherapyRecommendation() {
   const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
+  const nextBefundActionRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -1293,6 +1302,58 @@ export function TherapyRecommendation() {
     sourceRevision: null,
     sourceIds: new Set(),
   });
+
+  useEffect(() => {
+    if (!sessionPseudonymRestored) return;
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    const key = pendingSafePreviewKey(pid);
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(key) || "[]") as PersistedSafeBefundPreview[];
+      const restored = parsed.filter((item) => item.previewText?.trim()
+        && item.documentType
+        && directIdentifierCategories(item.previewText).length === 0
+      ).map((item) => ({
+        ...item,
+        file: new File([], "Bereinigte-Vorschau.pdf", { type: "application/pdf" }),
+        status: "ready" as const,
+        privacyReviewed: false,
+        localPrivacyFindings: undefined,
+        privacyFindingsRevealed: false,
+      }));
+      if (restored.length) setPendingDirectBefundFiles((current) => current.length ? current : restored);
+    } catch {
+      sessionStorage.removeItem(key);
+    } finally {
+      pendingPreviewRestoreKeyRef.current = key;
+    }
+  }, [pseudonymId, sessionPseudonymRestored]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    const key = pendingSafePreviewKey(pid);
+    if (pendingPreviewRestoreKeyRef.current !== key) return;
+    const safePreviews: PersistedSafeBefundPreview[] = pendingDirectBefundFiles
+      .filter((item) => item.status === "ready"
+        && item.previewText?.trim()
+        && directIdentifierCategories(item.previewText).length === 0)
+      .map(({ id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages }) => ({
+        id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages,
+      }));
+    if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
+    else sessionStorage.removeItem(key);
+  }, [pendingDirectBefundFiles, pseudonymId]);
+
+  useEffect(() => {
+    if (!pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "error")) return;
+    const warnBeforeReload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeReload);
+    return () => window.removeEventListener("beforeunload", warnBeforeReload);
+  }, [pendingDirectBefundFiles]);
   const lastAutoSavedPayloadRef = useRef("");
   const patientDataOwnerRef = useRef("");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -3304,6 +3365,8 @@ export function TherapyRecommendation() {
           previewText,
           privacyReviewed: false,
           removedIdentifierCategories: extracted.removedIdentifierCategories,
+          localPrivacyFindings: extracted.localPrivacyFindings,
+          privacyFindingsRevealed: false,
           chars: extracted.chars,
           pages: extracted.pages,
         } : row));
@@ -3397,6 +3460,10 @@ export function TherapyRecommendation() {
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
     toast({ title: "Dokumente richtig zugeordnet", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen. Als Nächstes die ausgewählten Befunde auswerten und danach den Therapievorschlag starten; Originale wurden nicht archiviert.` });
     setHistoryRefresh((n) => n + 1);
+    window.setTimeout(() => {
+      nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      nextBefundActionRef.current?.focus({ preventScroll: true });
+    }, 100);
   };
 
   const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
@@ -4054,6 +4121,8 @@ export function TherapyRecommendation() {
 
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
+    const currentPid = normalizePseudonymId(pseudonymIdRef.current);
+    if (isPatientScopedStorageReady(currentPid)) sessionStorage.removeItem(pendingSafePreviewKey(currentPid));
     patientScopeGenerationRef.current += 1;
     abortRef.current?.abort();
     docAbortRef.current?.abort();
@@ -4382,6 +4451,9 @@ export function TherapyRecommendation() {
             )}
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
+              Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
+            </p>
             <div className="flex flex-wrap items-center gap-2">
               <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
@@ -4448,6 +4520,31 @@ export function TherapyRecommendation() {
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
                         <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed" />
+                        {!!item.localPrivacyFindings?.length && (
+                          <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                            <div className="font-semibold">Lokal erkannte personenbezogene Stellen: {item.localPrivacyFindings.length}</div>
+                            <p className="mt-1">Die Originalausschnitte werden weder gespeichert noch versendet. Nur zur Datenschutzprüfung einblenden; nicht fotografieren, kopieren oder weitergeben.</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 h-7"
+                              onClick={() => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyFindingsRevealed: !file.privacyFindingsRevealed } : file))}
+                            >
+                              {item.privacyFindingsRevealed ? "Personenbezogene Volltexte wieder verbergen" : "Personenbezogene Stellen vollständig anzeigen"}
+                            </Button>
+                            {item.privacyFindingsRevealed && (
+                              <div className="mt-2 space-y-2">
+                                {item.localPrivacyFindings.map((finding, findingIndex) => (
+                                  <div key={`${finding.pageNumber}-${finding.lineNumber}-${findingIndex}`} className="rounded bg-background p-2">
+                                    <div className="font-semibold">Seite {finding.pageNumber}, Zeile {finding.lineNumber} · {finding.categories.join(", ")}</div>
+                                    <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[11px]">{finding.originalText}</pre>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"
@@ -4499,10 +4596,26 @@ export function TherapyRecommendation() {
             <Button type="button" size="sm" variant="ghost" onClick={() => applyManualAnalysisSelection([])} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Auswahl leeren
             </Button>
+          </div>
+          <div
+            ref={nextBefundActionRef}
+            tabIndex={-1}
+            className="flex flex-wrap items-center gap-3 rounded-md border-2 border-emerald-500 bg-emerald-50/80 p-3 outline-none focus:ring-2 focus:ring-emerald-600 dark:bg-emerald-950/25"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">2. Nächster Schritt: übernommene Befunde auswerten</div>
+              <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">
+                {analysisSourceTotals.selected > 0
+                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) sind ausgewählt.`
+                  : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
+              </p>
+            </div>
             <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})
             </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <details className="w-full rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Erweiterte Aktion</summary>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
@@ -4560,7 +4673,7 @@ export function TherapyRecommendation() {
             </div>
           ) : (
             <div className="rounded-md border border-dashed bg-background p-3 text-sm text-muted-foreground">
-              Noch keine auswählbaren Befunde vorhanden. PDF(s) erst im Tab „Großdaten" hochladen und „Datei(en) auslesen & einfügen" klicken — danach erscheinen sie hier zum Anhaken.
+              Noch keine auswählbaren Befunde vorhanden. PDF(s) oben auswählen, „Sicher auslesen und Vorschau erstellen“ anklicken, die Datenschutzvorschau prüfen und anschließend „Geprüfte Inhalte passend übernehmen“. Danach erscheinen die Befunde hier zum Anhaken.
             </div>
           )}
 
