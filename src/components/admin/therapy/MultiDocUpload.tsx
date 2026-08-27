@@ -62,6 +62,7 @@ type PendingFile = {
   error?: string;
   errorKind?: string;
   piiHits?: PiiHit[];
+  localPrivacyFindings?: LocalPrivacyFinding[];
 };
 
 type PendingPrivacyReview = {
@@ -77,7 +78,11 @@ type PendingPrivacyReview = {
   anamneseMappedAnswers: number;
   anamneseManualReviewItems: number;
   anamneseLowConfidencePages: number[];
+  localPrivacyFindings?: LocalPrivacyFinding[];
 };
+
+const pendingPrivacyReviewKey = (pseudonymId: string, documentType: string) =>
+  `therapy.pendingPrivacyReview.v1:${pseudonymId}:${documentType}`;
 
 export type PiiHit = { kind: string };
 
@@ -324,6 +329,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const [loading, setLoading] = useState(false);
   const [pendingReview, setPendingReview] = useState<PendingPrivacyReview>();
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
+  const [privacyFindingsRevealed, setPrivacyFindingsRevealed] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const { toast } = useToast();
   pseudonymIdRef.current = pseudonymId;
@@ -338,7 +344,22 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
     setLoading(false);
     setPendingReview(undefined);
     setPrivacyConfirmed(false);
+    setPrivacyFindingsRevealed(false);
     setReviewSubmitting(false);
+    const sourcePseudonymId = (pseudonymId || "").trim();
+    if (sourcePseudonymId) {
+      const key = pendingPrivacyReviewKey(sourcePseudonymId, documentType);
+      try {
+        const restored = JSON.parse(sessionStorage.getItem(key) || "null") as PendingPrivacyReview | null;
+        if (restored?.sourcePseudonymId === sourcePseudonymId
+          && restored.text?.trim()
+          && directIdentifierCategories(restored.text).length === 0) {
+          setPendingReview({ ...restored, localPrivacyFindings: undefined });
+        }
+      } catch {
+        sessionStorage.removeItem(key);
+      }
+    }
     return () => {
       extractionRunRef.current += 1;
       const activeOnCleanup = activeExtractionRef.current;
@@ -346,12 +367,27 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       activeOnCleanup?.controller.abort();
       if (activeOnCleanup) void terminateAndResetWorkerSession(activeOnCleanup.ocrSession);
     };
-  }, [pseudonymId]);
+  }, [pseudonymId, documentType]);
+
+  useEffect(() => {
+    const sourcePseudonymId = (pseudonymId || "").trim();
+    if (!sourcePseudonymId) return;
+    const key = pendingPrivacyReviewKey(sourcePseudonymId, documentType);
+    try {
+      if (pendingReview?.text?.trim() && directIdentifierCategories(pendingReview.text).length === 0) {
+        const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview;
+        sessionStorage.setItem(key, JSON.stringify(safeReview));
+      } else if (!pendingReview) {
+        sessionStorage.removeItem(key);
+      }
+    } catch {}
+  }, [documentType, pendingReview, pseudonymId]);
 
   const addFiles = (list: FileList | null) => {
     if (!list?.length) return;
     setPendingReview(undefined);
     setPrivacyConfirmed(false);
+    setPrivacyFindingsRevealed(false);
     setFiles((previous) => [
       ...previous,
       ...Array.from(list).map((file) => ({ file, status: "queued" as const })),
@@ -362,6 +398,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const removeAt = (index: number) => {
     setPendingReview(undefined);
     setPrivacyConfirmed(false);
+    setPrivacyFindingsRevealed(false);
     setFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
   };
 
@@ -431,6 +468,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             anamneseManualReviewItems: anamneseReview?.manualReviewCount,
             progress: undefined,
             piiHits,
+            localPrivacyFindings: extracted.localPrivacyFindings,
           };
         } catch (error) {
           if (!scopeIsCurrent()) return;
@@ -487,6 +525,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
           anamneseLowConfidencePages: Array.from(new Set(successDocs.flatMap((item) => (item.ocrPageConfidences || [])
             .filter((entry) => entry.confidence < ANAMNESE_OCR_LOW_CONFIDENCE_THRESHOLD)
             .map((entry) => entry.pageNumber)))).sort((left, right) => left - right),
+          localPrivacyFindings: successDocs.flatMap((item) => item.localPrivacyFindings || []),
         });
         toast({
           title: "Datenschutzvorschau bereit",
@@ -506,6 +545,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
   const discardPrivacyReview = () => {
     setPendingReview(undefined);
     setPrivacyConfirmed(false);
+    setPrivacyFindingsRevealed(false);
     setFiles([]);
   };
 
@@ -537,6 +577,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
       onExtracted(review.text, review.sourcePseudonymId);
       setPendingReview(undefined);
       setPrivacyConfirmed(false);
+      setPrivacyFindingsRevealed(false);
       setFiles([]);
       toast({
         title: "Inhalte datenschutzbereinigt übernommen",
@@ -657,6 +698,31 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
             <div className="rounded-md border border-sky-300 bg-sky-50 p-2 text-xs text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-100">
               <strong>Handschrift-/Fragenprüfung:</strong> {pendingReview.anamneseMappedAnswers} Frage-Antwort-Zeile(n) erkannt; {pendingReview.anamneseManualReviewItems} Zeile(n) ohne sichere Zuordnung manuell prüfen.
               {pendingReview.anamneseLowConfidencePages.length > 0 && ` Niedrige OCR-Sicherheit auf Seite(n) ${pendingReview.anamneseLowConfidencePages.join(", ")}.`}
+            </div>
+          )}
+          {!!pendingReview.localPrivacyFindings?.length && (
+            <div className="rounded-md border border-amber-400 bg-amber-100/70 p-2 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              <strong>Lokal als personenbezogen markierte Stellen: {pendingReview.localPrivacyFindings.length}</strong>
+              <p className="mt-1">Diese Originalausschnitte werden weder gespeichert noch versendet. Nur hier zur Datenschutzprüfung anzeigen; nicht kopieren, fotografieren oder weitergeben.</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-2 h-7"
+                onClick={() => setPrivacyFindingsRevealed((visible) => !visible)}
+              >
+                {privacyFindingsRevealed ? "Personenbezogene Volltexte wieder verbergen" : "Personenbezogene Stellen vollständig anzeigen"}
+              </Button>
+              {privacyFindingsRevealed && (
+                <div className="mt-2 space-y-2">
+                  {pendingReview.localPrivacyFindings.map((finding, findingIndex) => (
+                    <div key={`${finding.pageNumber}-${finding.lineNumber}-${findingIndex}`} className="rounded bg-background p-2">
+                      <div className="font-semibold">Seite {finding.pageNumber}, Zeile {finding.lineNumber} · {finding.categories.join(", ")}</div>
+                      <pre className="mt-1 max-h-28 overflow-auto whitespace-pre-wrap break-words text-[11px]">{finding.originalText}</pre>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           <RedactedTextPreview

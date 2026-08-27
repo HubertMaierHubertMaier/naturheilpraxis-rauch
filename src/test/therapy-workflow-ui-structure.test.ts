@@ -43,9 +43,17 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
     expect(source).toContain("Datenschutzbereinigte Vorschau");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
+    expect(source).toContain("2. Nächster Schritt: übernommene Befunde auswerten");
+    expect(source).toContain('nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })');
+    expect(source).toContain('nextBefundActionRef.current?.focus({ preventScroll: true })');
     expect(source).toContain("Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm");
     expect(source).not.toContain("PDF(s) erst im Tab „Großdaten\" hochladen");
     expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
+    const individualUploadSource = readSource("src/components/admin/therapy/MultiDocUpload.tsx");
+    expect(individualUploadSource).toContain("Personenbezogene Stellen vollständig anzeigen");
+    expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v1:");
+    expect(individualUploadSource).toContain("localPrivacyFindings: successDocs.flatMap");
+    expect(individualUploadSource).toContain("const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview");
     expect(source).toContain("Die Originalausschnitte werden weder gespeichert noch versendet");
     expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
     expect(source).toContain("therapy.pendingSafePreviews.v1:");

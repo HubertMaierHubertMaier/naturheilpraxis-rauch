@@ -1288,6 +1288,7 @@ export function TherapyRecommendation() {
   const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const docAnalysisRef = useRef<HTMLDivElement>(null);
+  const nextBefundActionRef = useRef<HTMLDivElement>(null);
   const manualAddonsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -3459,6 +3460,10 @@ export function TherapyRecommendation() {
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
     toast({ title: "Dokumente richtig zugeordnet", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen. Als Nächstes die ausgewählten Befunde auswerten und danach den Therapievorschlag starten; Originale wurden nicht archiviert.` });
     setHistoryRefresh((n) => n + 1);
+    window.setTimeout(() => {
+      nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      nextBefundActionRef.current?.focus({ preventScroll: true });
+    }, 100);
   };
 
   const loadArchivedBefundDocument = async (doc: DocumentInventoryItem) => {
@@ -4591,10 +4596,26 @@ export function TherapyRecommendation() {
             <Button type="button" size="sm" variant="ghost" onClick={() => applyManualAnalysisSelection([])} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Auswahl leeren
             </Button>
+          </div>
+          <div
+            ref={nextBefundActionRef}
+            tabIndex={-1}
+            className="flex flex-wrap items-center gap-3 rounded-md border-2 border-emerald-500 bg-emerald-50/80 p-3 outline-none focus:ring-2 focus:ring-emerald-600 dark:bg-emerald-950/25"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">2. Nächster Schritt: übernommene Befunde auswerten</div>
+              <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">
+                {analysisSourceTotals.selected > 0
+                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) sind ausgewählt.`
+                  : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
+              </p>
+            </div>
             <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})
             </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <details className="w-full rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Erweiterte Aktion</summary>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
