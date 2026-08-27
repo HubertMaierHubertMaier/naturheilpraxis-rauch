@@ -1280,6 +1280,7 @@ export function TherapyRecommendation() {
   const patientScopeGenerationRef = useRef(0);
   const pendingPreviewRestoreKeyRef = useRef("");
   const ownTherapyFileRef = useRef<HTMLInputElement>(null);
+  const [sessionPseudonymRestored, setSessionPseudonymRestored] = useState(false);
 
   useEffect(() => {
     // Das Vieva-PDF-Passwort bleibt ausschließlich für den aktuellen Patienten im flüchtigen Zustand.
@@ -1466,7 +1467,6 @@ export function TherapyRecommendation() {
   const PID_KEY = "therapy.currentPseudonymId.v1";
   const inputDraftKey = isPatientScopedStorageReady(pseudonymId) ? `therapy.inputs.draft.patientSafe.v4.${pseudonymId.trim()}` : "";
   const draftLoadedRef = useRef(false);
-  const [sessionPseudonymRestored, setSessionPseudonymRestored] = useState(false);
   const loadedInputDraftForPidRef = useRef("");
   useEffect(() => {
     if (draftLoadedRef.current) return;
