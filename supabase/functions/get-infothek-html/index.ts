@@ -171,7 +171,12 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { error: "Service unavailable" }, 503);
   }
 
-  const publicClient = createClient(supabaseUrl, anonKey, {
+  // Prefer the current public key already accepted by the gateway. This keeps
+  // the function working after publishable-key rotations without weakening
+  // the route, visibility, authentication, 2FA, or role checks below.
+  const requestApiKey = req.headers.get("apikey")?.trim();
+  const publicKey = requestApiKey && requestApiKey.length <= 512 ? requestApiKey : anonKey;
+  const publicClient = createClient(supabaseUrl, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   const { data: gatingRows, error: gatingError } = await publicClient.rpc(

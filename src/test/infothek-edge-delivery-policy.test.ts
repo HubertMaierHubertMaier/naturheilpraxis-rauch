@@ -157,6 +157,12 @@ describe("secure Infothek Edge delivery policy", () => {
     expect(getSource).toContain('"app.rauch-heilpraktiker.de"');
   });
 
+  it("uses the gateway-accepted public key for visibility checks after key rotation", () => {
+    expect(getSource).toContain('req.headers.get("apikey")?.trim()');
+    expect(getSource).toContain("requestApiKey.length <= 512 ? requestApiKey : anonKey");
+    expect(getSource).toContain("createClient(supabaseUrl, publicKey");
+  });
+
   it("removes gate/protection scripts, forces robots, localizes assets, and upserts HTML", () => {
     expect(migrateSource).toContain('path === "/infothek-gate.js"');
     expect(migrateSource).toContain('path === "/content-protection.js"');
