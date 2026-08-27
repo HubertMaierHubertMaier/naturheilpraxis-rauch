@@ -320,6 +320,48 @@ export const directIdentifierCategories = (value: unknown) => {
   return Array.from(categories);
 };
 
+export type LocalPrivacyFinding = {
+  categories: string[];
+  pageNumber: number;
+  lineNumber: number;
+  originalText: string;
+};
+
+const standalonePrivacyLabel = new RegExp(
+  String.raw`^\s*(?:${ocrNameLabel}|${addressFieldLabel}|${organizationFieldLabel}|${signatureFieldLabel}|${providerIdentifierFieldLabel})\s*(?::|=|-)?\s*$`,
+  "iu",
+);
+
+export const collectLocalPrivacyFindings = (input: string): LocalPrivacyFinding[] => {
+  const lines = input.replace(/\r\n?/g, "\n").split("\n");
+  const findings: LocalPrivacyFinding[] = [];
+  let pageNumber = 1;
+  let lineNumber = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const pageMarker = /^--- Seite (\d+) ---$/.exec(lines[index].trim());
+    if (pageMarker) {
+      pageNumber = Number(pageMarker[1]);
+      lineNumber = 0;
+      continue;
+    }
+    lineNumber += 1;
+    const lineCategories = directIdentifierCategories(lines[index]);
+    if (!lineCategories.length) continue;
+
+    let originalText = lines[index];
+    if (standalonePrivacyLabel.test(lines[index]) && index + 1 < lines.length) {
+      const pairCategories = directIdentifierCategories(`${lines[index]}\n${lines[index + 1]}`);
+      if (pairCategories.length) {
+        originalText = `${lines[index]}\n${lines[index + 1]}`;
+        index += 1;
+      }
+    }
+    findings.push({ categories: lineCategories, pageNumber, lineNumber, originalText });
+  }
+  return findings;
+};
+
 export const removeResidualDirectIdentifierLines = (value: unknown) => String(value ?? "")
   .replace(/\r\n?/g, "\n")
   .split("\n")
@@ -342,5 +384,45 @@ export const removeResidualDirectIdentifierLines = (value: unknown) => String(va
   .join("\n")
   .replace(/\n{3,}/g, "\n\n")
   .trim();
+
+const quarantinedIdentifierLine = (categories: string[]) => (
+  `[Datenschutz: Restzeile mit ${categories.join("/")} vollständig entfernt - Inhalt bei Bedarf manuell ohne Identifikatoren ergänzen]`
+);
+const identifierLabelOnlyPattern = new RegExp(
+  String.raw`^\s*(?:${ocrNameLabel}|${addressFieldLabel}|${organizationFieldLabel}|${signatureFieldLabel}|${providerIdentifierFieldLabel})\s*(?::|=|-)?\s*$`,
+  "iu",
+);
+
+export const quarantineResidualDirectIdentifierLines = (value: unknown) => {
+  const lines = removeResidualDirectIdentifierLines(value).replace(/\r\n?/g, "\n").split("\n");
+  const quarantine = new Map<number, Set<string>>();
+  const mark = (index: number, categories: string[]) => {
+    if (!categories.length) return;
+    const current = quarantine.get(index) || new Set<string>();
+    categories.forEach((category) => current.add(category));
+    quarantine.set(index, current);
+  };
+
+  lines.forEach((line, index) => mark(index, directIdentifierCategories(line)));
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const categories = directIdentifierCategories(`${lines[index]}\n${lines[index + 1]}`);
+    if (categories.length && !quarantine.has(index) && !quarantine.has(index + 1)) {
+      mark(index, categories);
+      mark(index + 1, categories);
+    } else if (categories.length && identifierLabelOnlyPattern.test(lines[index])) {
+      mark(index, categories);
+      mark(index + 1, categories);
+    }
+  }
+
+  return lines
+    .map((line, index) => quarantine.has(index)
+      ? quarantinedIdentifierLine(Array.from(quarantine.get(index) || []))
+      : line)
+    .filter((line, index, all) => line !== all[index - 1])
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+};
 
 export const redactEvidenceQuote = deidentifyClinicalText;
