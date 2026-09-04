@@ -1,0 +1,1 @@
+REVOKE SELECT, UPDATE ON public.kb_import_batches FROM sandbox_exec;
