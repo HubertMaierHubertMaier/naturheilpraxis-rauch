@@ -1,0 +1,1 @@
+GRANT SELECT, UPDATE ON public.kb_import_batches TO sandbox_exec;
