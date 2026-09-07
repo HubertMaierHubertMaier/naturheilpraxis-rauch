@@ -845,7 +845,17 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, analysisProfile, nachschlag, previousResult, previousResultForCompare } = requestBody;
+    if (analysisProfile) {
+      const expectedTherapyModel = useProModel === true ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+      const expectedWikiMode = useMapReduce === true ? "complete-map-reduce" : "targeted";
+      if (analysisProfile.therapyModel !== expectedTherapyModel || analysisProfile.wikiMode !== expectedWikiMode) {
+        return new Response(JSON.stringify({ error: "Analyseprofil passt nicht zum angeforderten Therapie-Modell oder Wiki-Modus" }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
     const manualDiagnosesText = Array.isArray(manualDiagnosen)
       ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
           .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
@@ -1169,6 +1179,7 @@ serve(async (req) => {
         contextLimit: MAX_TOTAL_CHARS,
         cacheHit,
         mapReduceUsed,
+        analysisProfile: analysisProfile || null,
         queryTokens: tokenizeQuery(queryText),
         queryTokenLimit: MAX_KNOWLEDGE_QUERY_TOKENS,
         symptomAxes: activeSymptomTargets.map((t) => t.label),
@@ -1472,11 +1483,11 @@ Ein vollstaendiger interner Therapieentwurf MUSS alle folgenden Abschnitte entha
 
 SYSTEMATISCHE ABLEITUNG (VERBINDLICH):
 1. Ordne jeden Kandidaten genau einem dokumentierten Befund, Laborwert, Pathogen, Symptom oder einer Diagnose zu. Ohne konkreten Bezug keine Aufnahme.
-2. Pruefe nacheinander Vitamine, Aminosaeuren, Spurenelemente/Mineralstoffe, Fettsaeuren, Pathogene, Symptome, Diagnosen, Darm/Mikrobiom, Pflanzenmittel und weitere passende Wiki-Kategorien. Diese Liste ist eine erweiterbare Grundstruktur: Zusaetzliche Datenbankkategorien duerfen als eigene fachlich benannte Gruppe erscheinen. Eine leere Kategorie wird nicht mit allgemeinen Standardmitteln gefuellt.
+2. Pruefe nacheinander Vitamine, Aminosaeuren/Eiweiss, Spurenelemente/Mineralstoffe, Fettsaeuren, Pathogene, Symptome, Diagnosen, Darm/Mikrobiom, Phytotherapie/Tinkturen, Homoeopathie, Heel/Homotoxikologie und weitere passende Wiki-Kategorien. Diese Liste ist eine erweiterbare Grundstruktur: Zusaetzliche Datenbankkategorien duerfen als eigene fachlich benannte Gruppe erscheinen. Eine leere Kategorie wird nicht mit allgemeinen Standardmitteln gefuellt.
 3. Gib Firma/Hersteller nur an, wenn sie im Wiki, im geprueften Produktlink oder im offiziellen Produktnamen belegt ist; sonst schreibe "nicht belegt".
 4. Ordne passende Mannayan- und Vitaplace-Apothekenprodukte in die fachlich passende Stoff- oder Therapiegruppe ein und nenne die Produktlinie als Firma. Nutze einen eigenen Produktlinien-Abschnitt nur, wenn eine fachliche Gruppe nicht eindeutig ist. Dasselbe Produkt nie doppelt auffuehren.
 5. NutraMedix-Mittel bei Pathogenen nur bei einem konkret genannten Pathogen und passendem geprueften Wiki-Mittelbeleg. Laborbestaetigung und Metatron/NLS-Resonanzhinweis in der Begruendung strikt unterscheiden; ein Resonanzhinweis ist kein Infektionsnachweis.
-6. Bei allgemeinen Symptomen Homoeopathie und Komplexmittel als eigene Kandidatengruppe mitpruefen, aber nur bei konkretem Wiki-Beleg, passender Indikation und bestandener Sicherheitspruefung.
+6. Bei allgemeinen Symptomen Homoeopathie, Heel/Homotoxikologie und weitere Komplexmittel als eigene Kandidatengruppe mitpruefen, aber nur bei konkretem Wiki-Beleg, passender Indikation und bestandener Sicherheitspruefung.
 7. Metatron-genannte Homoeopathika getrennt von allgemeiner Homoeopathie unter "Metatron-Homöopathie" ausgeben und jedes Mittel mit den dokumentierten Symptomen vergleichen. Ohne konkreten Symptom-/Erkrankungsbezug keine Aufnahme in die Mittel-Kandidaten.
 8. Psychoemotionale Metatron-Angaben als Quellenhinweise und nicht als Diagnose behandeln. Bachblueten nur uebernehmen, wenn sie in der Metatron-Auswertung tatsaechlich genannt sind; keine Zuordnung aus allgemeinem Modellwissen erfinden.
 9. Bei vorhandener Vieva-Messung die Vieva-Auswertung als eigenes Kapitel ausgeben. In den Gruppen Vitamine, Mineralstoffe/Spurenelemente und Aminosaeuren/Eiweiss bei gleicher fachlicher Eignung und Beleglage zuerst passende Mannayan-Produkte, danach vorhandene Vitaplace-Produkte pruefen.
@@ -1585,8 +1596,8 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 ### 🍋 Vitamine
 (Vitamin C, D, B-Komplex, A, E, K2 usw.)
 
-### 🧬 Aminosäuren
-(L-Carnitin, Taurin, Lysin, NAC, Glycin, Tryptophan usw.)
+### 🧬 Aminosäuren & Eiweiß
+(L-Carnitin, Taurin, Lysin, NAC, Glycin, Tryptophan sowie passende Eiweissprodukte usw.)
 
 ### 🧂 Spurenelemente & Mineralstoffe
 (Magnesium, Zink, Selen, Eisen, Jod, Kalium usw.)
@@ -1615,7 +1626,7 @@ WICHTIG: Gruppiere die empfohlenen Mittel ZWINGEND nach den folgenden Überschri
 ### 🧪 Sanum-Therapie (Isopathie nach Enderlein)
 (MUCOKEHL, NIGERSAN, NOTAKEHL, FORTAKEHL, PEFRAKEHL, ALBICANSAN, EXMYKEHL, SANUVIS, CITROKEHL, ACIDUM TARTARICUM, FORMASAN, ALKALA N, ZINKOKEHL, UTILIN, RECARCIN, LATENSIN, BOVISAN, LEPTUCIN, ARTHROKEHLAN, SANUKEHL-Haptene usw.)
 
-### 💧 Homöopathie & Komplexmittel
+### 💧 Homöopathie, Heel & Komplexmittel
 (Bei allgemeinen Symptomen gezielt mitpruefen: Heel-Präparate wie Mucosa comp., Lymphomyosot, Traumeel, Engystol; klassische Homöopathika; spagyrische Mittel. Nur belegte, passende Einzelkandidaten ausgeben.)
 
 ### 🌌 Metatron-Homöopathie

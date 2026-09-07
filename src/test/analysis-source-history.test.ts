@@ -8,6 +8,7 @@ import {
   compareSourcesWithHistory,
   parseSourceHistoryReport,
   reconcileSourceSelection,
+  selectCompleteSourceSetForAnalysis,
   setManualSourceSelection,
   sha256CanonicalAnalysisSourceText,
   type SourceHistoryReport,
@@ -115,6 +116,17 @@ describe("analysis source history", () => {
     expect(state.selectedSourceIds).toEqual([]);
   });
 
+  it("uses a changed source only as trigger and analyzes the complete current source set", () => {
+    const sources = [
+      { key: "laborKomplett", text: "Synthetisches Labor" },
+      { key: "anamnese", text: "Synthetische Anamnese" },
+    ];
+
+    expect(selectCompleteSourceSetForAnalysis(sources, ["laborKomplett"])).toEqual(sources);
+    expect(selectCompleteSourceSetForAnalysis(sources, [])).toEqual([]);
+    expect(selectCompleteSourceSetForAnalysis(sources, ["nicht-vorhanden"])).toEqual([]);
+  });
+
   it("keeps modern document identity across reordering and rejects duplicate identities", async () => {
     const first = await buildSourceManifest([
       { sourceId: "vievaPlus:doc:0:dokument-111111111111", group: "dokument", text: "Vitamin D" },
@@ -151,6 +163,9 @@ describe("analysis source history", () => {
     expect(recommendation).toContain('setSourceHistoryReports([])');
     expect(recommendation).toContain('patientScopeGenerationRef.current += 1');
     expect(recommendation).toContain("Standardmäßig sind nur neue oder geänderte Quellen ausgewählt");
+    expect(recommendation).toContain("selectCompleteSourceSetForAnalysis(analysisSources, selectedSourceIds)");
+    expect(recommendation).toContain("manifestFingerprint");
+    expect(recommendation).toContain("der neue Gesamtbericht enthält alle");
     expect(recommendation).toContain("Letzte fertige Auswertung:");
     expect(recommendation).toContain("Quellenstand:");
     expect(recommendation).toContain("GEÄNDERT* (Altbestand)");

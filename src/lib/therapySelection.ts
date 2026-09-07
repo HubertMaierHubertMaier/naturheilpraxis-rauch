@@ -122,7 +122,9 @@ export const assessRemedyWithWikiSafety = (
   const sourceIds = sourceIdsFrom(sourceText);
   const matches = matchingWikiEntries(remedyName, wikiEntries, sourceText, !requireSourceId);
   let verifiedMatches = matches;
-  if (requireSourceId && sourceIds.length !== 1) {
+  if (!requireSourceId && matches.length === 0) {
+    add(wikiWarning("wiki-remedy-unverified", "avoid", "Keine passende Wiki-Sicherheitsprüfung", `${String(remedyName)} ist keinem geprüften Mittel- oder Produkteintrag zugeordnet.`, "Nicht finalisieren; Mittel zuerst im Wiki zuordnen und Sicherheit, Dosierung und Freigabe fachlich prüfen."));
+  } else if (requireSourceId && sourceIds.length !== 1) {
     add(wikiWarning("wiki-source-id-missing", "avoid", "Wiki-Quelle fehlt oder ist mehrdeutig", "Der KI-Kandidat enthaelt keine genau eindeutige Wiki-ID.", "Nicht auswaehlen; Kandidat mit genau einer belegten Wiki-Quelle neu erzeugen."));
   } else if (requireSourceId && matches.length !== 1) {
     add(wikiWarning("wiki-source-unresolved", "avoid", "Wiki-Quelle nicht auflösbar", `Wiki-ID ${sourceIds[0] || "fehlt"} passt zu keinem eindeutigen Eintrag.`, "Nicht auswaehlen; Wiki-Verknuepfung korrigieren."));
@@ -176,6 +178,7 @@ export const patientOutputRestrictionsForRemedy = (remedyName: unknown, wikiEntr
   const matches = matchingWikiEntries(remedyName, wikiEntries, sourceText, !requireSourceId);
   const verifiedMatches = requireSourceId && (sourceIds.length !== 1 || matches.length !== 1 || !remedyBelongsToEntry(remedyName, matches[0])) ? [] : matches;
   if (requireSourceId && verifiedMatches.length !== 1) restrictions.push(`${String(remedyName)}: keine eindeutige passende Wiki-Quelle`);
+  if (!requireSourceId && verifiedMatches.length === 0) restrictions.push(`${String(remedyName)}: keine passende Wiki-Sicherheitsprüfung und keine Freigabe für Patientenausgabe`);
   verifiedMatches.forEach((entry) => {
     if (entry.dosageStatus !== "verified") restrictions.push(`${entry.title}: Dosierung nicht verifiziert`);
     if (entry.patientFacingAllowed !== true) restrictions.push(`${entry.title}: nicht für Patientenausgabe freigegeben`);
