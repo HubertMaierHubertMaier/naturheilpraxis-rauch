@@ -32,7 +32,10 @@ describe("therapy safety", () => {
     expect(source).toContain("## 🥗 Ernährung");
     expect(source).toContain("## 🚶 Verhalten & Alltag");
     expect(source).toContain("## 📈 Verlaufskontrolle");
-    expect(source).toContain("### 🧬 Aminosäuren");
+    expect(source).toContain("### 🧬 Aminosäuren & Eiweiß");
+    expect(source).toContain("### 🧂 Spurenelemente & Mineralstoffe");
+    expect(source).toContain("### 🌱 Phytotherapie & Tinkturen");
+    expect(source).toContain("### 💧 Homöopathie, Heel & Komplexmittel");
     expect(source).toContain("### 🦠 Pathogenbezogene Mittel (NutraMedix)");
     expect(source).toContain("### 🩹 Symptombezogene Mittel");
     expect(source).toContain("### 🧴 Vitaplace-Apothekenprodukte");
@@ -169,6 +172,52 @@ describe("therapy safety", () => {
     expect(historySource).toContain("KI-Rohentwurf · nicht finalisiert");
     expect(overviewEdgeSource).toContain('"therapy_candidate_draft"');
     expect(overviewEdgeSource).toContain("row.eingabe_daten?.autoSavedDraft");
+  });
+
+  it("does not save or open the workflow for an interrupted therapy stream", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const streamCompletion = source.slice(
+      source.indexOf("if (!completed && accumulated.trim())"),
+      source.indexOf("// Auto-Save nur bei vollständiger"),
+    );
+
+    expect(source).toContain("const [therapyGenerationComplete, setTherapyGenerationComplete] = useState(false)");
+    expect(streamCompletion).toContain("Unvollständige Übertragung blockiert");
+    expect(streamCompletion).toContain("return;");
+    expect(streamCompletion).toContain("if (!completed) return;");
+    expect(streamCompletion).toContain("setTherapyGenerationComplete(true)");
+    expect(source).toContain("result && !isStreaming && therapyGenerationComplete");
+    expect(source).toContain("Unvollständiger Therapie-Zwischenstand");
+  });
+
+  it("hard-blocks incomplete plans, empty selections, and cross-case parent versions", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const finalize = source.match(/const handleFinalize = async \(\) => \{([\s\S]*?)const finalMd =/)?.[1] || "";
+
+    expect(source).toContain("const [parentPseudonymId, setParentPseudonymId] = useState<string | null>(null)");
+    expect(source).toContain("setParentPseudonymId(normalizePseudonymId(session.pseudonym_id))");
+    expect(finalize).toContain("if (!therapyGenerationComplete)");
+    expect(finalize).toContain("if (parentSessionId && parentPseudonymId !== finalPid)");
+    expect(finalize).toContain('title: "Fremde Elternversion blockiert"');
+    expect(finalize).toContain("if (missingPlanSections.length)");
+    expect(finalize).toContain('title: "Pflichtabschnitte fehlen"');
+    expect(finalize).toContain("if (selectedPlanCount === 0 &&");
+    expect(finalize).toContain('title: "Kein Startmittel ausgewählt"');
+    expect(finalize).toContain("!noStartRemedyApproved || noStartRemedyReason.trim().length < 20");
+    expect(source).toContain("noStartRemedyDecision: selectedPlanCount === 0");
+    expect(source).toContain("reason: noStartRemedyReason.trim()");
+    expect(source).toContain("Eigener Ausgang: kein Startmittel freigegeben");
+    expect(source).toContain("if (currentPlanCount === 0 || (!noStartRemedyApproved && !noStartRemedyReason)) return");
+    expect(source).not.toContain("Der Startplan enthält bereits ${selectedPlanCount} Mittel.");
+    expect(source).not.toContain("Dadurch würden ${selectedPlanCount + newSafeSelections} Mittel");
+    expect(finalize).toContain("startPlanExceptionReason.trim().length < 20");
+    expect(finalize).toContain("startPlanPhaseAllocation.trim().length < 20");
+    expect(finalize).toContain('title: "Strukturierte Startplan-Ausnahme fehlt"');
+    expect(source).toContain("startPlanException: selectedPlanCount > MAX_START_PLAN_REMEDIES");
+    expect(source).toContain("phaseAllocation: startPlanPhaseAllocation.trim()");
+    expect(source).toContain("reviewedAt: new Date().toISOString()");
+    expect(finalize).not.toContain("Der Entwurf sollte normalerweise neu generiert werden");
+    expect(finalize).not.toContain("Internen Plan dennoch finalisieren?");
   });
 
   it("merges repeated category blocks and duplicate remedy names", () => {
@@ -371,6 +420,43 @@ describe("therapy safety", () => {
     )).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "wiki-product-do-not-combine", severity: "avoid" }),
     ]));
+  });
+
+  it("blocks a manually added remedy without a matching Wiki safety review", () => {
+    const warnings = assessRemedyWithWikiSafety(
+      "Synthetisches manuelles Mittel",
+      { medications: "keine Medikamente" },
+      [{ title: "Anderes Mittel", entryKind: "remedy", reviewStatus: "reviewed", dosageStatus: "verified" }],
+    );
+
+    expect(warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "wiki-remedy-unverified", severity: "avoid" }),
+    ]));
+    expect(patientOutputRestrictionsForRemedy(
+      "Synthetisches manuelles Mittel",
+      [],
+    )).toEqual([
+      "Synthetisches manuelles Mittel: keine passende Wiki-Sicherheitsprüfung und keine Freigabe für Patientenausgabe",
+    ]);
+  });
+
+  it("accepts a manually added remedy only when its Wiki entry is safety-ready", () => {
+    const wikiEntries = [{
+      title: "Synthetisches manuelles Mittel",
+      entryKind: "remedy",
+      reviewStatus: "reviewed",
+      evidenceLevel: "moderate",
+      dosageStatus: "verified",
+      patientFacingAllowed: true,
+      commercialClaimsReviewed: true,
+    }];
+
+    expect(assessRemedyWithWikiSafety(
+      "Synthetisches manuelles Mittel",
+      { medications: "keine Medikamente" },
+      wikiEntries,
+    )).toEqual([]);
+    expect(patientOutputRestrictionsForRemedy("Synthetisches manuelles Mittel", wikiEntries)).toEqual([]);
   });
 
   it("matches German remedy spelling variants and counts a repeated Wiki ID only once", () => {

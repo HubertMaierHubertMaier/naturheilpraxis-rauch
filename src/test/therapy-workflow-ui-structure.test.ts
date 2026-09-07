@@ -12,7 +12,7 @@ describe("therapy workflow UI structure", () => {
     expect(count(source, "onClick={handleAnalyzeDocuments}")).toBe(1);
     expect(count(source, "onClick={() => handleSubmit()}")).toBe(1);
     expect(count(source, "onClick={handleReAnalyzeAll}")).toBe(1);
-    expect(count(source, "Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})")).toBe(1);
+    expect(count(source, "Gesamtbericht aktualisieren ({analysisSourceTotals.selected} Änderung(en))")).toBe(1);
     expect(count(source, "Therapie-Empfehlung generieren")).toBe(1);
     expect(source).not.toContain("Start-Aktionen");
     expect(source).not.toContain("fixed bottom-4");
@@ -22,7 +22,11 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('TabsTrigger value="vieva-plus"');
     expect(source).toContain('TabsTrigger value="metatron"');
     expect(source).toContain('TabsTrigger value="anamnese"');
-    expect(source).toContain("1. SAMMELEINGABE: mehrere Patientenunterlagen gemeinsam übernehmen");
+    expect(source).toContain("1. SAMMELEINGABE: mehrere Unterlagen eines Patientenfalls übernehmen");
+    expect(source).toContain('htmlFor="batch-pseudonym-id"');
+    expect(source).toContain("0. Pseudonym-ID vor der Dateiauswahl festlegen");
+    expect(source.indexOf('htmlFor="batch-pseudonym-id"')).toBeLessThan(source.indexOf('ref={directBefundFileRef}'));
+    expect(source).toContain("für genau einen zuvor festgelegten Pseudonymfall");
     expect(source).toContain("Mehrere PDFs für Sammeleingabe auswählen");
     expect(count(source, "requireDocumentDate")).toBe(3);
     expect(source).toContain("applyExtractedToInputs({ forPseudonymId: analysisPid");
@@ -125,5 +129,47 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("const syntheticCaseLoadBlocked = !sessionPseudonymRestored");
     expect(source).toContain("|| !!pseudonymId.trim()");
     expect(source).toContain("Warte, bis ein vorhandener Patientenstand sicher erkannt wurde");
+  });
+
+  it("clears synthetic case A before synthetic case B or a new session", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+    const syntheticCaseA = "P-2099-0001";
+    const syntheticCaseB = "P-2099-0002";
+    const resetStart = source.indexOf("const clearPatientScopedState = useCallback");
+    const resetEnd = source.indexOf("}, []);", resetStart);
+    const resetBlock = source.slice(resetStart, resetEnd);
+    const pseudonymChangeStart = source.indexOf("const handlePseudonymChange");
+    const pseudonymChangeEnd = source.indexOf("// Mannayan", pseudonymChangeStart);
+    const pseudonymChangeBlock = source.slice(pseudonymChangeStart, pseudonymChangeEnd);
+    const newSessionStart = source.indexOf("const handleReset");
+    const newSessionEnd = source.indexOf("// Kombinierter Markdown", newSessionStart);
+    const newSessionBlock = source.slice(newSessionStart, newSessionEnd);
+
+    expect(syntheticCaseA).not.toBe(syntheticCaseB);
+    expect(resetStart).toBeGreaterThanOrEqual(0);
+    expect(resetEnd).toBeGreaterThan(resetStart);
+    [
+      'setPathogenBulkText("")',
+      "setUseMapReduce(true)",
+      "setUseProModel(false)",
+      'setErgaenzung("")',
+      "setIsNachschlag(false)",
+      "setParentSessionId(null)",
+      "setParentPseudonymId(null)",
+      "setParentVersionNumber(null)",
+      "setParentSnapshot(null)",
+      'setVersionLabel("")',
+      "setSelectedKeys(new Set())",
+      "setDiagnosen([])",
+      "setTherapyGenerationComplete(false)",
+      "setIsLoadingDiagnosen(false)",
+      "setLinkedOrderInfo(null)",
+    ].forEach((resetCall) => expect(resetBlock).toContain(resetCall));
+
+    expect(pseudonymChangeBlock).toMatch(/if \(previous !== next\) \{[\s\S]*?clearPatientScopedState\(\);/);
+    expect(pseudonymChangeBlock.indexOf("clearPatientScopedState();")).toBeLessThan(
+      pseudonymChangeBlock.indexOf("if (hasPatientScopedData && next)"),
+    );
+    expect(newSessionBlock).toContain("clearPatientScopedState();");
   });
 });

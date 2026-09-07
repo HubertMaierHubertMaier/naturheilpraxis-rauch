@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,11 +68,13 @@ import {
   normalizeAnalysisSourceId,
   parseSourceHistoryReport,
   reconcileSourceSelection,
+  selectCompleteSourceSetForAnalysis,
   setManualSourceSelection,
   type SourceHistoryReport,
   type SourceManifestEntry,
   type SourceSelectionState,
 } from "@/lib/analysisSourceHistory";
+import { buildAnalysisProfile, type AnalysisProfile } from "@/lib/analysisProfile";
 import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
@@ -193,6 +195,7 @@ type SelectableAnalysisSource = { key: string; label: string; text: string; grou
 type PendingDirectBefundFile = {
   id: string;
   file: File;
+  sourcePseudonymId: string;
   status: "queued" | "processing" | "ready" | "done" | "error";
   documentType: DirectBefundTarget | "";
   documentTypeInferred?: boolean;
@@ -208,7 +211,7 @@ type PendingDirectBefundFile = {
   errorKind?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
-  "id" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages"
+  "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages"
 >;
 const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
 type ExtractedBefundInputs = {
@@ -276,6 +279,7 @@ type AnalysisCheckpoint = {
   sourceSummary?: SourceManifestEntry[];
   sourceManifestV1?: SourceManifestEntry[];
   duplicateNotes?: string[];
+  analysisProfile?: AnalysisProfile & { startedAt: string };
   status?: "in_progress" | "paused" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
 };
@@ -1233,6 +1237,7 @@ export function TherapyRecommendation() {
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [therapyGenerationComplete, setTherapyGenerationComplete] = useState(false);
   const [isAnalyzingDocs, setIsAnalyzingDocs] = useState(false);
   const [docAnalysisProgress, setDocAnalysisProgress] = useState("");
   const [docAnalysisHtml, setDocAnalysisHtml] = useState("");
@@ -1260,6 +1265,7 @@ export function TherapyRecommendation() {
   const [therapieNotiz, setTherapieNotiz] = useState("");
   // Versionierung: beim Laden einer Vorversion gemerkt, beim nächsten Finalize als parent_session_id mitgespeichert
   const [parentSessionId, setParentSessionId] = useState<string | null>(null);
+  const [parentPseudonymId, setParentPseudonymId] = useState<string | null>(null);
   const [parentVersionNumber, setParentVersionNumber] = useState<number | null>(null);
   const [parentSnapshot, setParentSnapshot] = useState<Record<string, any> | null>(null);
   const [versionLabel, setVersionLabel] = useState("");
@@ -1269,6 +1275,12 @@ export function TherapyRecommendation() {
   // Manuelle Ergänzungen
   const [manualDiagnosen, setManualDiagnosen] = useState<DiagnoseEntry[]>([]);
   const [manualMittel, setManualMittel] = useState<ManualRemedyEntry[]>([]);
+  const [startPlanExceptionReason, setStartPlanExceptionReason] = useState("");
+  const [startPlanPhaseAllocation, setStartPlanPhaseAllocation] = useState("");
+  const [noStartRemedyApproved, setNoStartRemedyApproved] = useState(false);
+  const [noStartRemedyReason, setNoStartRemedyReason] = useState("");
+  const [therapyRunProfile, setTherapyRunProfile] = useState<(AnalysisProfile & { startedAt: string }) | null>(null);
+  const [befundRunProfile, setBefundRunProfile] = useState<(AnalysisProfile & { startedAt: string }) | null>(null);
   // 4-Stufen-Workflow: edit (KI-Auswahl) → addons (eigene Mittel) → preview (Kontrolle) → finalized (gespeichert, Druck)
   const [workflowStage, setWorkflowStage] = useState<"edit" | "addons" | "preview" | "finalized">("edit");
   // Wiki-Autocomplete für manuelle Mittel
@@ -1311,7 +1323,8 @@ export function TherapyRecommendation() {
     const key = pendingSafePreviewKey(pid);
     try {
       const parsed = JSON.parse(sessionStorage.getItem(key) || "[]") as PersistedSafeBefundPreview[];
-      const restored = parsed.filter((item) => item.previewText?.trim()
+      const restored = parsed.filter((item) => normalizePseudonymId(item.sourcePseudonymId) === pid
+        && item.previewText?.trim()
         && item.documentType
         && directIdentifierCategories(item.previewText).length === 0
       ).map((item) => ({
@@ -1339,8 +1352,8 @@ export function TherapyRecommendation() {
       .filter((item) => item.status === "ready"
         && item.previewText?.trim()
         && directIdentifierCategories(item.previewText).length === 0)
-      .map(({ id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages }) => ({
-        id, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages,
+      .map(({ id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages }) => ({
+        id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages,
       }));
     if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
     else sessionStorage.removeItem(key);
@@ -1441,11 +1454,16 @@ export function TherapyRecommendation() {
       pinnedMittel,
       manualDiagnosen,
       manualMittel,
+      startPlanExceptionReason,
+      startPlanPhaseAllocation,
+      noStartRemedyApproved,
+      noStartRemedyReason,
+      analysisProfile: therapyRunProfile,
       belastungen: formatPathogensForAI(inputPathogens),
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1556,6 +1574,11 @@ export function TherapyRecommendation() {
     if (Array.isArray(data.manualDiagnosen)) setManualDiagnosen(data.manualDiagnosen as DiagnoseEntry[]);
     else if (Array.isArray(data.diagnosen)) setManualDiagnosen(data.diagnosen as DiagnoseEntry[]);
     if (Array.isArray(data.manualMittel)) setManualMittel(data.manualMittel as ManualRemedyEntry[]);
+    if (typeof data.startPlanExceptionReason === "string") setStartPlanExceptionReason(data.startPlanExceptionReason);
+    if (typeof data.startPlanPhaseAllocation === "string") setStartPlanPhaseAllocation(data.startPlanPhaseAllocation);
+    if (typeof data.noStartRemedyApproved === "boolean") setNoStartRemedyApproved(data.noStartRemedyApproved);
+    if (typeof data.noStartRemedyReason === "string") setNoStartRemedyReason(data.noStartRemedyReason);
+    if (data.analysisProfile && typeof data.analysisProfile === "object") setTherapyRunProfile(data.analysisProfile as AnalysisProfile & { startedAt: string });
   }, [toast]);
 
   useEffect(() => {
@@ -1908,11 +1931,17 @@ export function TherapyRecommendation() {
       if (typeof d?.result === "string" && d.result.trim() && !result) {
         lastInitResultRef.current = d.result;
         setResult(d.result);
+        setTherapyGenerationComplete(true);
       }
       if (Array.isArray(d?.selectedKeys)) setSelectedKeys(new Set(d.selectedKeys));
       if (Array.isArray(d?.manualMittel)) setManualMittel(d.manualMittel);
       if (Array.isArray(d?.manualDiagnosen)) setManualDiagnosen(d.manualDiagnosen);
       if (typeof d?.therapieNotiz === "string") setTherapieNotiz(d.therapieNotiz);
+      if (typeof d?.startPlanExceptionReason === "string") setStartPlanExceptionReason(d.startPlanExceptionReason);
+      if (typeof d?.startPlanPhaseAllocation === "string") setStartPlanPhaseAllocation(d.startPlanPhaseAllocation);
+      if (typeof d?.noStartRemedyApproved === "boolean") setNoStartRemedyApproved(d.noStartRemedyApproved);
+      if (typeof d?.noStartRemedyReason === "string") setNoStartRemedyReason(d.noStartRemedyReason);
+      if (d?.analysisProfile && typeof d.analysisProfile === "object") setTherapyRunProfile(d.analysisProfile);
       if (typeof d?.workflowStage === "string") setWorkflowStage(d.workflowStage);
       toast({ title: "Entwurf wiederhergestellt", description: "Deine Bearbeitungen aus der letzten Sitzung wurden geladen." });
     } catch {}
@@ -1927,12 +1956,17 @@ export function TherapyRecommendation() {
         manualMittel,
         manualDiagnosen,
         therapieNotiz,
+        startPlanExceptionReason,
+        startPlanPhaseAllocation,
+        noStartRemedyApproved,
+        noStartRemedyReason,
+        analysisProfile: therapyRunProfile,
         workflowStage,
       });
       if (residualIdentifierCategories(safeDraft).length) return;
       localStorage.setItem(draftStageKey, JSON.stringify(safeDraft));
     } catch {}
-  }, [draftStageKey, selectedKeys, manualMittel, manualDiagnosen, therapieNotiz, workflowStage, result]);
+  }, [draftStageKey, selectedKeys, manualMittel, manualDiagnosen, therapieNotiz, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile, workflowStage, result]);
 
 
 
@@ -1948,12 +1982,6 @@ export function TherapyRecommendation() {
         ].join("\n"));
         if (!accepted) return;
       }
-      const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
-      if (selectedPlanCount >= MAX_START_PLAN_REMEDIES && !window.confirm([
-        `Der Startplan enthält bereits ${selectedPlanCount} Mittel.`,
-        "Für eine umsetzbare Therapie sollten weitere Kandidaten erst in einer späteren Phase eingesetzt werden.",
-        "Trotzdem zusätzlich als Startplan-Kandidat markieren?",
-      ].join("\n"))) return;
     }
     setSelectedKeys((prev) => {
       const next = new Set(prev);
@@ -1967,15 +1995,6 @@ export function TherapyRecommendation() {
     const skipped = selectAll
       ? remedyIndices.filter((ri) => safetyWarningsByKey.has(`${categoryIndex}|${ri}`)).length
       : 0;
-    const newSafeSelections = selectAll
-      ? remedyIndices.filter((ri) => !selectedKeys.has(`${categoryIndex}|${ri}`) && !safetyWarningsByKey.has(`${categoryIndex}|${ri}`)).length
-      : 0;
-    const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
-    if (selectAll && selectedPlanCount + newSafeSelections > MAX_START_PLAN_REMEDIES && !window.confirm([
-      `Dadurch würden ${selectedPlanCount + newSafeSelections} Mittel als Startplan-Kandidaten markiert.`,
-      `Der Richtwert sind höchstens ${MAX_START_PLAN_REMEDIES}; weitere passende Mittel bleiben besser für spätere Phasen reserviert.`,
-      "Trotzdem alle sicheren Kandidaten dieser Gruppe markieren?",
-    ].join("\n"))) return;
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       remedyIndices.forEach((ri) => {
@@ -2168,7 +2187,12 @@ export function TherapyRecommendation() {
     lastAutoSavedPayloadRef.current = "";
     loadedInputDraftForPidRef.current = "";
     draftStageLoadedRef.current = "";
+    patientDataOwnerRef.current = "";
+    pendingPreviewRestoreKeyRef.current = "";
+    lastInitResultRef.current = "";
+    autoSaveSuppressedRef.current = false;
     setPathogens([emptyEntry()]);
+    setPathogenBulkText("");
     setSymptome("");
     setErkrankung("");
     setAlter("");
@@ -2204,15 +2228,36 @@ export function TherapyRecommendation() {
     setBevorzugteLinie([]);
     setPinnedMittel([]);
     setUseMapReduce(true);
+    setUseProModel(false);
+    setErgaenzung("");
+    setIsNachschlag(false);
+    setParentSessionId(null);
+    setParentPseudonymId(null);
+    setParentVersionNumber(null);
+    setParentSnapshot(null);
+    setVersionLabel("");
     setResult("");
     setAuditInfo(null);
+    setTherapyGenerationComplete(false);
     setManualMittel([]);
     setManualDiagnosen([]);
+    setStartPlanExceptionReason("");
+    setStartPlanPhaseAllocation("");
+    setNoStartRemedyApproved(false);
+    setNoStartRemedyReason("");
+    setTherapyRunProfile(null);
+    setBefundRunProfile(null);
     setTherapieNotiz("");
     setClinicalLoadInfo(null);
     setWorkflowStage("edit");
     setAutoSaveStatus("idle");
+    setIsStreaming(false);
+    setIsAnalyzingDocs(false);
     setDiagnosen([]);
+    setSelectedKeys(new Set());
+    setIsLoadingDiagnosen(false);
+    setLinkedOrderInfo(null);
+    setPseudonymFormatWarning(null);
     setDocAnalysisHtml("");
     setDocAnalysisProgress("");
     setDocAnalysisStats(null);
@@ -2230,8 +2275,11 @@ export function TherapyRecommendation() {
     recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
     setPendingDirectBefundFiles([]);
     setLoadedDocumentInventory([]);
+    setIsRefreshingDocumentInventory(false);
     setLoadingArchiveDocumentPath(null);
     setDeletingArchiveDocumentPath(null);
+    setIsDocAnalysisPanelMinimized(false);
+    setIsDocAnalysisPanelFullscreen(false);
     setHpCheckHtml("");
     setHpCheckMarkdown("");
     setHpCheckModelLabel("");
@@ -2270,6 +2318,7 @@ export function TherapyRecommendation() {
     setMetatronHeel(SYNTHETIC_THERAPY_CASE.metatronHeel);
     setDocAnalysisHtml(SYNTHETIC_THERAPY_REPORT_HTML);
     setUseMapReduce(true);
+    setBefundRunProfile({ ...buildAnalysisProfile(true, false), startedAt: new Date().toISOString() });
     toast({
       title: "Synthetischer Prueffall geladen",
       description: "Nur Formularfelder wurden gefuellt. Es wurde nichts gespeichert, hochgeladen oder generiert.",
@@ -2288,59 +2337,38 @@ export function TherapyRecommendation() {
         warning = `Mehr als 4 Ziffern sind im Schema P-${new Date().getFullYear()}-NNNN nicht erlaubt – auf 4 Ziffern gekürzt.`;
       }
     }
-    setPseudonymFormatWarning(warning);
-
     const previous = normalizePseudonymId(patientDataOwnerRef.current || pseudonymId);
     const next = normalizePseudonymId(cleanValue);
+    const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
     if (previous !== next) {
       patientScopeGenerationRef.current += 1;
-      autoSaveRunIdRef.current += 1;
       archiveDeleteRunIdRef.current += 1;
       autoSaveSuppressedRef.current = false;
       abortRef.current?.abort();
       docAbortRef.current?.abort();
       abortRef.current = null;
       docAbortRef.current = null;
-      setIsStreaming(false);
-      setIsAnalyzingDocs(false);
-      setPendingDirectBefundFiles([]);
-      setLoadingArchiveDocumentPath(null);
-      setDeletingArchiveDocumentPath(null);
-      setIsRefreshingDocumentInventory(false);
-      setHpCheckLoading(false);
-      setAnalysisSourceManifest([]);
-      setManifestSourceRevision(null);
-      setSourceHistoryReports([]);
-      setSelectedAnalysisSourceKeys([]);
-      setIsSourceManifestLoading(true);
-      setIsSourceHistoryLoading(true);
-      setSourceManifestError("");
-      setSourceHistoryError("");
-      setDisplayedBefundSourceStand(null);
-      sourceSelectionRef.current = { selectedSourceIds: [], manualSelections: {} };
-      recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
-    }
-    const hasPatientScopedData = hasMeaningfulInput || !!result || !!docAnalysisHtml || manualDiagnosen.length > 0 || manualMittel.length > 0;
-    if (hasPatientScopedData && next && previous !== next) {
       clearPatientScopedState();
-      toast({
-        title: "Patient gewechselt – Formular geleert",
-        description: previous
-          ? `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`
-          : `Vorherige Eingaben wurden entfernt, damit keine Alt-Daten unter ${next} gespeichert werden.`,
-      });
-    } else if (hasPatientScopedData && !next) {
-      clearPatientScopedState();
-      try {
-        sessionStorage.removeItem(DRAFT_KEY);
-        if (previous) {
-          localStorage.removeItem(`therapy.inputs.draft.patientSafe.v4.${previous}`);
-          localStorage.removeItem(`therapy.workflow.draft.${previous}`);
-        }
-      } catch {}
+      if (hasPatientScopedData && next) {
+        toast({
+          title: "Patient gewechselt – Formular geleert",
+          description: previous
+            ? `Vorherige Eingaben wurden entfernt, damit nichts von ${previous} nach ${next} übernommen wird.`
+            : `Vorherige Eingaben wurden entfernt, damit keine Alt-Daten unter ${next} gespeichert werden.`,
+        });
+      } else if (hasPatientScopedData && !next) {
+        try {
+          sessionStorage.removeItem(DRAFT_KEY);
+          if (previous) {
+            localStorage.removeItem(`therapy.inputs.draft.patientSafe.v4.${previous}`);
+            localStorage.removeItem(`therapy.workflow.draft.${previous}`);
+          }
+        } catch {}
+      }
     }
     patientDataOwnerRef.current = next;
     pseudonymIdRef.current = next;
+    setPseudonymFormatWarning(warning);
     setPseudonymId(cleanValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
@@ -2382,6 +2410,7 @@ export function TherapyRecommendation() {
     // Versionierung: nicht-Draft-Sessions werden als Eltern-Version übernommen → nächster Save ist neue Version
     if (!isDraftSession) {
       setParentSessionId(session.id);
+      setParentPseudonymId(normalizePseudonymId(session.pseudonym_id));
       setParentVersionNumber((session as any).version_number ?? null);
       setParentSnapshot(d as any);
       setVersionLabel("");
@@ -2392,6 +2421,7 @@ export function TherapyRecommendation() {
       });
     } else {
       setParentSessionId(null);
+      setParentPseudonymId(null);
       setParentVersionNumber(null);
       setParentSnapshot(null);
     }
@@ -2441,6 +2471,7 @@ export function TherapyRecommendation() {
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel as PinnedRemedy[]);
     setUseMapReduce(d.useMapReduce !== false);
     setResult(session.empfehlung || "");
+    setTherapyGenerationComplete(Boolean(session.empfehlung?.trim()));
     setAuditInfo(null);
     setClinicalLoadInfo(buildClinicalLoadInfo(session.pseudonym_id, "session", d, 1));
     await logTherapyEvent(session.pseudonym_id, "patient_context_loaded", buildPatientLoadEventDetails("Verlaufssitzung übernommen", d, {
@@ -2468,6 +2499,12 @@ export function TherapyRecommendation() {
       return;
     }
     const meta = session.befund_meta || {};
+    const restoredProfile = meta.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
+    setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
+    if (restoredProfile?.version === 1) {
+      setUseMapReduce(restoredProfile.id !== "quick");
+      setUseProModel(restoredProfile.id === "deep-final");
+    }
     const sourceReport = parseSourceHistoryReport({ created_at: session.created_at, befund_meta: meta, eingabe_daten: session.eingabe_daten });
     setDocAnalysisHtml(html);
     setDisplayedBefundSourceStand({ createdAt: session.created_at, entries: sourceReport.entries });
@@ -2557,6 +2594,12 @@ export function TherapyRecommendation() {
       const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
       const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(cloudHtml);
+      const restoredProfile = cloudRow.befund_meta?.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
+      setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
+      if (restoredProfile?.version === 1) {
+        setUseMapReduce(restoredProfile.id !== "quick");
+        setUseProModel(restoredProfile.id === "deep-final");
+      }
       const cloudSourceReport = parseSourceHistoryReport({ created_at: cloudRow.created_at, befund_meta: cloudRow.befund_meta });
       setDisplayedBefundSourceStand({ createdAt: cloudRow.created_at, entries: cloudSourceReport.entries });
       setDocAnalysisProgress(progress);
@@ -2571,6 +2614,12 @@ export function TherapyRecommendation() {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(sanitizeFinalAnalysisHtml(localSnapshot.html));
+      const restoredProfile = localSnapshot.meta?.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
+      setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
+      if (restoredProfile?.version === 1) {
+        setUseMapReduce(restoredProfile.id !== "quick");
+        setUseProModel(restoredProfile.id === "deep-final");
+      }
       const localSourceReport = parseSourceHistoryReport({ created_at: localSnapshot.createdAt, befund_meta: localSnapshot.meta });
       setDisplayedBefundSourceStand({ createdAt: localSnapshot.createdAt || "", entries: localSourceReport.entries });
       setDocAnalysisProgress(progress);
@@ -2671,8 +2720,10 @@ export function TherapyRecommendation() {
       }
     };
     const clickedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const runProfile = { ...buildAnalysisProfile(useMapReduce, useProModel), startedAt: new Date().toISOString() };
     setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisHtml("");
+    setBefundRunProfile(null);
     setDocAnalysisStats(null);
     setLatestBefundLoadedFrom(null);
     setDisplayedBefundSourceStand(null);
@@ -2683,8 +2734,7 @@ export function TherapyRecommendation() {
       ? (options as { sourceIds: string[] }).sourceIds
       : null;
     const selectedSourceIds = requestedSourceIds ?? selectedAnalysisSourceKeys;
-    const selectedSourceSet = new Set(selectedSourceIds);
-    const selectedSources = analysisSources.filter((source) => selectedSourceSet.has(normalizeAnalysisSourceId(source.key)));
+    const selectedSources = selectCompleteSourceSetForAnalysis(analysisSources, selectedSourceIds);
     let sourceManifest: SourceManifestEntry[];
     try {
       sourceManifest = await createSourceManifest(selectedSources);
@@ -2726,7 +2776,8 @@ export function TherapyRecommendation() {
     }
     const totalChars = prepared.analyzedChars;
     const pathogensText = formatPathogensForAI(pathogens).trim();
-    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, analysisPid, selectedSourceIds.join("|"), pathogensText, metatronDatum, prepared.duplicateNotes.join("|")].join("|"));
+    const manifestFingerprint = sourceManifest.map((source) => `${source.sourceId}:${source.contentSha256}`).join("|");
+    const fingerprint = buildAnalysisFingerprint(chunks, [ANALYSIS_PROMPT_VERSION, alter, geschlecht, analysisPid, JSON.stringify(runProfile, (key, value) => key === "startedAt" ? undefined : value), manifestFingerprint, pathogensText, metatronDatum, prepared.duplicateNotes.join("|")].join("|"));
     const checkpointKey = getAnalysisCheckpointKey(analysisPid, fingerprint);
     let checkpoint = readAnalysisCheckpoint(checkpointKey, fingerprint, chunks.length, analysisPid);
     setDocAnalysisStats({ current: Math.min(checkpoint?.completedChunks ?? 0, chunks.length), total: chunks.length, label: checkpoint?.partials?.length ? "Fortsetzen aus Sicherung" : "Start" });
@@ -2753,6 +2804,7 @@ export function TherapyRecommendation() {
         source_summary: sourceSummary,
         source_manifest_v1: sourceManifest,
         source_manifest_version: 1,
+        analysis_profile: runProfile,
         note: `Befund-Lauf gestartet mit ${chunks.length} Teilpaket(en) / ${totalChars.toLocaleString("de-DE")} Zeichen.`,
       });
       if (!runIsCurrent()) return;
@@ -2813,6 +2865,7 @@ export function TherapyRecommendation() {
                 pathogensText: pathogensText || undefined,
                 metatronDatum: metatronDatum.trim() || undefined,
                 mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
+                analysisProfile: runProfile,
               }),
             });
             const responseText = await chunkResp.text().catch(() => "");
@@ -2848,7 +2901,7 @@ export function TherapyRecommendation() {
 
       const saveCheckpoint = async (checkpointData: AnalysisCheckpoint) => {
         if (!runIsCurrent()) return;
-        const safeCheckpoint = deidentifyClinicalData({ ...checkpointData, sourceSummary, sourceManifestV1: sourceManifest }) as AnalysisCheckpoint;
+        const safeCheckpoint = deidentifyClinicalData({ ...checkpointData, sourceSummary, sourceManifestV1: sourceManifest, analysisProfile: runProfile }) as AnalysisCheckpoint;
         const residualIdentifiers = residualIdentifierCategories(safeCheckpoint);
         if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp im Checkpoint: ${residualIdentifiers.join(", ")}`);
         writeAnalysisCheckpoint(checkpointKey, safeCheckpoint);
@@ -3038,6 +3091,7 @@ export function TherapyRecommendation() {
               pathogensText: pathogensText || undefined,
               metatronDatum: metatronDatum.trim() || undefined,
               useProModel: useProModel || undefined,
+              analysisProfile: runProfile,
               mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
               previousResultForCompare: addPreviousComparison && result && result.trim().length > 200
                 ? result.slice(0, 18000)
@@ -3065,7 +3119,7 @@ export function TherapyRecommendation() {
         full += decoder.decode();
       } catch (finalError) {
         if (docController.signal.aborted) throw finalError;
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, analysisProfile: runProfile, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
         throw new Error(`Alle ${chunks.length} Teilanalysen sind gespeichert, aber die finale HTML-Zusammenführung ist fehlgeschlagen: ${(finalError as Error).message}. Bitte erneut klicken – dann wird nur die finale Zusammenführung neu gestartet.`);
       }
       full = sanitizeFinalAnalysisHtml(full);
@@ -3092,7 +3146,7 @@ export function TherapyRecommendation() {
       const hasMeaningfulAnalysisContent = hasCoreAnalysisSections && extractedItemCount > 0 && visibleFinalText.length > 300 && !isFalseEmptyBefundHtml(full);
       const hasInlineErrorMarker = full.includes("❌ Fehler");
       if (!hasMeaningfulAnalysisContent || hasInlineErrorMarker) {
-        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
+        writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, analysisProfile: runProfile, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
         writeProgress(`⚠ Server-HTML ${hasInlineErrorMarker ? "enthielt eine Fehlermeldung" : "war leer/unvollständig"} – baue Befund lokal aus den ${partials.length} gespeicherten Teilanalysen auf…`);
         full = buildClientFallbackAnalysisHtml(partials, {
           pseudonymId: analysisPid || undefined,
@@ -3110,6 +3164,7 @@ export function TherapyRecommendation() {
       full = sanitizeFinalAnalysisHtml(full);
       if (!scopeIsCurrent()) return;
       setDocAnalysisHtml(full);
+      setBefundRunProfile(runProfile);
       writeProgress("✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.");
       {
         const finalProgress = `${docAnalysisProgress || "Start…"}\n✓ Befund-Auswertung vollständig fertig und direkt hier sichtbar.`;
@@ -3131,6 +3186,7 @@ export function TherapyRecommendation() {
             source_manifest_v1: sourceManifest,
             source_manifest_version: 1,
             strict_complete: true,
+            analysis_profile: runProfile,
           },
           createdAt: browserCompletedAt,
         });
@@ -3149,7 +3205,7 @@ export function TherapyRecommendation() {
               const { data: savedReport, error: saveErr } = await (supabase as any).from("therapy_sessions").insert({
                 pseudonym_id: pid,
                 kind: "befund_auswertung",
-                eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: sourceManifest.map((source) => source.label), sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1 },
+                 eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", sources: sourceManifest.map((source) => source.label), sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1, analysis_profile: runProfile },
                 empfehlung: "",
                 befund_html: full,
                 befund_meta: {
@@ -3163,7 +3219,8 @@ export function TherapyRecommendation() {
                    source_manifest_version: 1,
                    sources: sourceManifest.map((source) => source.label),
                    duplicate_notes: prepared.duplicateNotes,
-                   strict_complete: true,
+                    strict_complete: true,
+                    analysis_profile: runProfile,
                    lab_values_v1: structuredLabData.labValues,
                    lab_alerts_v1: structuredLabData.labAlerts,
                    lab_schema_version: 1,
@@ -3183,7 +3240,7 @@ export function TherapyRecommendation() {
                 writeLatestBefundDisplay(pid, {
                   html: full,
                   progress: finalProgress,
-                  meta: { source_summary: sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1, strict_complete: true, analysis_fingerprint: fingerprint },
+                  meta: { source_summary: sourceSummary, source_manifest_v1: sourceManifest, source_manifest_version: 1, strict_complete: true, analysis_fingerprint: fingerprint, analysis_profile: runProfile },
                   createdAt: canonicalCreatedAt,
                 });
                 try { localStorage.removeItem(checkpointKey); } catch { /* optional */ }
@@ -3288,26 +3345,21 @@ export function TherapyRecommendation() {
 
   const addDirectBefundFiles = (list: FileList | null) => {
     if (!list?.length) return;
-    // C) Cross-Pseudonym-Warnung: greift für ALLE P-JAHR-NNNN (2026, 2027, ...)
     const currentPid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(currentPid)) {
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auswählen.", variant: "destructive" });
+      if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+      return;
+    }
     const pidRe = /P-\d{4}-\d{4}/i;
     const files = Array.from(list);
-    if (currentPid) {
-      const foreign = files
-        .map((f) => ({ file: f, hit: (f.name.match(pidRe) || [""])[0].toUpperCase() }))
-        .filter((x) => x.hit && x.hit !== currentPid);
-      if (foreign.length) {
-        const details = foreign.map((x) => `• ${x.file.name}  →  ${x.hit}`).join("\n");
-        const ok = window.confirm(
-          `⚠ Warnung: Dateiname deutet auf einen ANDEREN Patienten hin.\n\n` +
-          `Aktuell geöffnet: ${currentPid}\n\nBetroffene Datei(en):\n${details}\n\n` +
-          `Trotzdem bei ${currentPid} hochladen?`,
-        );
-        if (!ok) {
-          if (directBefundFileRef.current) directBefundFileRef.current.value = "";
-          return;
-        }
-      }
+    const foreign = files
+      .map((f) => ({ file: f, hit: (f.name.match(pidRe) || [""])[0].toUpperCase() }))
+      .filter((x) => x.hit && x.hit !== currentPid);
+    if (foreign.length) {
+      toast({ title: "Fremdes Pseudonym blockiert", description: "Mindestens ein Dateiname gehört erkennbar zu einem anderen Fall. Bitte die Datei im richtigen Fall neu auswählen.", variant: "destructive" });
+      if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+      return;
     }
     const stamp = Date.now().toString(36);
     setPendingDirectBefundFiles((prev) => [
@@ -3317,6 +3369,7 @@ export function TherapyRecommendation() {
         return {
           id: `${stamp}-${index}-${file.name}`,
           file,
+          sourcePseudonymId: currentPid,
           status: "queued" as const,
           documentType: inferredType,
           documentTypeInferred: !!inferredType,
@@ -3338,6 +3391,10 @@ export function TherapyRecommendation() {
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
+    if (queue.some((item) => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
+      toast({ title: "Fallwechsel erkannt", description: "Die ausgewählten Dateien gehören nicht zur aktuellen Pseudonym-ID und werden nicht ausgelesen.", variant: "destructive" });
+      return;
+    }
     const missingDate = queue.find((item) => !item.documentDate.trim());
     if (missingDate) {
       toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
@@ -3390,6 +3447,10 @@ export function TherapyRecommendation() {
     }
     const ready = pendingDirectBefundFiles.filter((item) => item.status === "ready");
     if (!ready.length) return;
+    if (ready.some((item) => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
+      toast({ title: "Fallwechsel erkannt", description: "Die Vorschau gehört nicht zur aktuellen Pseudonym-ID und wird nicht übernommen.", variant: "destructive" });
+      return;
+    }
     if (ready.some((item) => !item.documentType)) {
       toast({ title: "Dokumentart fehlt", description: "Mindestens eine Vorschau hat keine bestätigte Dokumentart und wurde nicht übernommen.", variant: "destructive" });
       return;
@@ -3775,8 +3836,8 @@ export function TherapyRecommendation() {
     schwanger.trim() && schwanger !== "nein" ? "Schwangerschaft oder Stillzeit" : "",
   ].filter(Boolean);
   const recommendedUseProModel = deepAnalysisReasons.length > 0;
-  const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung" : "Vollständige Auswertung";
-  const selectedAnalysisLabel = !useMapReduce ? "Schnellprüfung" : useProModel ? "Tiefenprüfung" : "Vollständige Auswertung";
+  const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung (Pro für Befundabschluss und Therapie)" : "Vollständige Auswertung";
+  const selectedAnalysisLabel = buildAnalysisProfile(useMapReduce, useProModel).label;
   const recommendedAnalysisIsSelected = useMapReduce && useProModel === recommendedUseProModel;
   const applyRecommendedAnalysis = () => {
     setUseMapReduce(true);
@@ -3891,6 +3952,11 @@ export function TherapyRecommendation() {
       return;
     }
     const runId = ++therapyRunIdRef.current;
+    const runProfile = { ...buildAnalysisProfile(useMapReduce, useProModel), startedAt: new Date().toISOString() };
+    if (docAnalysisHtml && (!befundRunProfile || befundRunProfile.id !== runProfile.id)) {
+      toast({ title: "Analyseprofil stimmt nicht überein", description: "Der fertige Befund wurde mit einem anderen oder nicht dokumentierten Profil erstellt. Bitte den Befund mit dem jetzt gewählten Profil neu auswerten.", variant: "destructive" });
+      return;
+    }
     const controller = new AbortController();
     abortRef.current = controller;
     const ownsRun = () => scopeIsCurrent() && therapyRunIdRef.current === runId && abortRef.current === controller;
@@ -3902,6 +3968,8 @@ export function TherapyRecommendation() {
     }
     setIsNachschlag(isErweitern);
     setIsStreaming(true);
+    setTherapyGenerationComplete(false);
+    setTherapyRunProfile(null);
     const fullAnalysisStartedAt = Date.now();
     try {
       if (!isErweitern) {
@@ -3976,6 +4044,7 @@ export function TherapyRecommendation() {
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
             useMapReduce,
             useProModel: useProModel || undefined,
+            analysisProfile: runProfile,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
             previousResultForCompare: !isErweitern && addPreviousComparison && result && result.trim().length > 200
@@ -4063,10 +4132,15 @@ export function TherapyRecommendation() {
         if (!runIsCurrent()) return;
         setResult(accumulated);
         toast({
-          title: "Zwischenstand gesichert",
-          description: "Die Verbindung wurde unterbrochen, aber der bisherige Therapieplan bleibt zur Bearbeitung erhalten.",
+          title: "Unvollständige Übertragung blockiert",
+          description: "Der Zwischenstand bleibt sichtbar, wird aber nicht gespeichert oder zur Finalisierung freigegeben. Bitte die Generierung erneut starten.",
+          variant: "destructive",
         });
+        return;
       }
+      if (!completed) return;
+      setTherapyGenerationComplete(true);
+      setTherapyRunProfile(runProfile);
 
       // Auto-Save nur bei vollständiger, eindeutig patientengebundener Pseudonym-ID
       const resultPid = submitPid;
@@ -4074,7 +4148,7 @@ export function TherapyRecommendation() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!runIsCurrent()) return;
         if (user) {
-          const safeInput = buildInputData({ autoSavedDraft: false });
+          const safeInput = buildInputData({ autoSavedDraft: false, analysisProfile: runProfile });
           const safeRecommendation = deidentifyClinicalText(accumulated);
           const residualIdentifiers = residualIdentifierCategories({ safeInput, safeRecommendation });
           if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}`);
@@ -4128,76 +4202,10 @@ export function TherapyRecommendation() {
     docAbortRef.current?.abort();
     abortRef.current = null;
     docAbortRef.current = null;
-    setIsStreaming(false);
-    setIsAnalyzingDocs(false);
+    clearPatientScopedState();
     pseudonymIdRef.current = "";
-    setPseudonymId("");
-    setPathogens([emptyEntry()]);
-    setSymptome("");
-    setErkrankung("");
-    setAlter("");
-    setGeschlecht("");
-    setGroesseCm("");
-    setGewichtKg("");
-    setSchwanger("nein");
-    setMedikamente("");
-    setBisherigeMittel("");
-    setBudget("");
-    setLaborErhoeht("");
-    setLaborErniedrigt("");
-    setLaborKomplett("");
-    setLaborDatum("");
-    setStuhlbefund("");
-    setAnamnese("");
-    setAnamneseDatum("");
-    setArztbericht("");
-    setArztberichtDatum("");
-    setMetatronHeel("");
-    setMetatronDatum("");
-    setSonstigeUntersuchungen("");
-    setVievaPlus("");
-    setVievaPlusDatum("");
-    setPerplexityAnalyse("");
-    setEigeneTherapieVorlage("");
-    setApothekerRezept("");
-    setZusatzTherapie("");
-    setMannayanOrders([]);
-    setIsLoadingMannayanOrders(false);
-    setSelectedCategories([]);
-    setBevorzugteLinie([]);
-    setPinnedMittel([]);
-    setUseMapReduce(true);
-    setResult("");
-    setAuditInfo(null);
-    setDiagnosen([]);
-    setManualMittel([]);
-    setManualDiagnosen([]);
-    setTherapieNotiz("");
-    setSelectedAnalysisSourceKeys([]);
-    setAnalysisSourceManifest([]);
-    setManifestSourceRevision(null);
-    setSourceHistoryReports([]);
-    setIsSourceHistoryLoading(false);
-    setSourceManifestError("");
-    setSourceHistoryError("");
-    sourceSelectionRef.current = { selectedSourceIds: [], manualSelections: {} };
-    recentlyCompletedSourcesRef.current = { sourceRevision: null, sourceIds: new Set() };
-    setPendingDirectBefundFiles([]);
-    setLoadedDocumentInventory([]);
-    setDocAnalysisHtml("");
-    setDocAnalysisProgress("");
-    setDocAnalysisStats(null);
-    setLatestBefundLoadedFrom(null);
-    setDisplayedBefundSourceStand(null);
-    setHpCheckHtml("");
-    setHpCheckMarkdown("");
-    setHpCheckModelLabel("");
-    setHpCheckTimestamp("");
-    setWorkflowStage("edit");
-    autoSaveSessionIdRef.current = null;
-    checkpointSessionIdRef.current = null;
-    loadedInputDraftForPidRef.current = "";
     patientDataOwnerRef.current = "";
+    setPseudonymId("");
     try {
       sessionStorage.removeItem(DRAFT_KEY);
       sessionStorage.removeItem("therapy.draftInputs.v1");
@@ -4260,17 +4268,31 @@ export function TherapyRecommendation() {
       toast({ title: "Pseudonym-ID fehlt oder unklar", description: "Bitte oben eine vollständige Pseudonym-ID vergeben, damit keine Patientendaten vermischt werden.", variant: "destructive" });
       return;
     }
+    if (!therapyGenerationComplete) {
+      toast({ title: "Therapieentwurf unvollständig", description: "Bitte die Therapieempfehlung vollständig neu generieren, bevor sie finalisiert wird.", variant: "destructive" });
+      return;
+    }
+    if (!therapyRunProfile) {
+      toast({ title: "Analyseprofil fehlt", description: "Bitte die Therapieempfehlung neu generieren, damit das verwendete Profil unveränderlich dokumentiert ist.", variant: "destructive" });
+      return;
+    }
+    if (parentSessionId && parentPseudonymId !== finalPid) {
+      setParentSessionId(null);
+      setParentPseudonymId(null);
+      setParentVersionNumber(null);
+      setParentSnapshot(null);
+      toast({ title: "Fremde Elternversion blockiert", description: "Die geladene Vorversion gehört nicht zur aktuellen Pseudonym-ID. Der Elternbezug wurde entfernt; bitte den richtigen Verlauf neu laden.", variant: "destructive" });
+      return;
+    }
     const missingMedicationList = safetyContextWarnings.some((item) => item.id === "missing-medication-list");
     if (missingMedicationList) {
       toast({ title: "Medikationsliste fehlt", description: "Bitte aktuelle Arzneimittel eintragen oder ausdrücklich 'keine Medikamente' dokumentieren.", variant: "destructive" });
       return;
     }
-    if (missingPlanSections.length && !window.confirm([
-      "Der Entwurf enthält noch nicht alle Bausteine eines priorisierten Therapieplans:",
-      ...missingPlanSections.map((title) => `- ${title}`),
-      "",
-      "Der Entwurf sollte normalerweise neu generiert werden. Internen Plan dennoch nach eigener fachlicher Prüfung finalisieren?",
-    ].join("\n"))) return;
+    if (missingPlanSections.length) {
+      toast({ title: "Pflichtabschnitte fehlen", description: `${missingPlanSections.join(", ")}. Bitte den Entwurf vollständig neu generieren.`, variant: "destructive" });
+      return;
+    }
     const selectedWarnings = Array.from(safetyWarningsByKey.entries())
       .filter(([key]) => selectedKeys.has(key))
       .flatMap(([key, warnings]) => {
@@ -4305,11 +4327,14 @@ export function TherapyRecommendation() {
       .flatMap((item) => patientOutputRestrictionsForRemedy(item.name, wikiRemedies).map((reason) => ({ remedyName: item.name, reason })));
     const patientOutputRestrictions = [...selectedPatientRestrictions, ...manualPatientRestrictions];
     const selectedPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
-    if (selectedPlanCount > MAX_START_PLAN_REMEDIES && !window.confirm([
-      `Der Therapieplan enthält ${selectedPlanCount} Mittel.`,
-      `Für die erste Einnahmephase sind höchstens ${MAX_START_PLAN_REMEDIES} Mittel als Richtwert vorgesehen.`,
-      "Bitte sicherstellen, dass weitere Mittel als spätere Phase oder Reserve gekennzeichnet sind. Internen Plan dennoch finalisieren?",
-    ].join("\n"))) return;
+    if (selectedPlanCount === 0 && (!noStartRemedyApproved || noStartRemedyReason.trim().length < 20)) {
+      toast({ title: "Kein Startmittel ausgewählt", description: "Bitte mindestens ein fachlich geprüftes Mittel auswählen oder den eigenen Ausgang 'kein Startmittel freigegeben' mit mindestens 20 Zeichen begründen und ausdrücklich bestätigen.", variant: "destructive" });
+      return;
+    }
+    if (selectedPlanCount > MAX_START_PLAN_REMEDIES && (startPlanExceptionReason.trim().length < 20 || startPlanPhaseAllocation.trim().length < 20)) {
+      toast({ title: "Strukturierte Startplan-Ausnahme fehlt", description: "Bitte den fachlichen Ausnahmegrund und die konkrete Verteilung auf Start- und Folgephasen mit jeweils mindestens 20 Zeichen dokumentieren.", variant: "destructive" });
+      return;
+    }
     const blockingWarnings = finalWarnings.filter((item) => item.severity === "avoid");
     if (blockingWarnings.length) {
       toast({
@@ -4337,6 +4362,18 @@ export function TherapyRecommendation() {
       manualDiagnosen,
       finalized: true,
       autoSavedDraft: false,
+      analysisProfile: therapyRunProfile,
+      startPlanException: selectedPlanCount > MAX_START_PLAN_REMEDIES ? {
+        remedyCount: selectedPlanCount,
+        reason: startPlanExceptionReason.trim(),
+        phaseAllocation: startPlanPhaseAllocation.trim(),
+        reviewedAt: new Date().toISOString(),
+      } : null,
+      noStartRemedyDecision: selectedPlanCount === 0 ? {
+        approved: true,
+        reason: noStartRemedyReason.trim(),
+        reviewedAt: new Date().toISOString(),
+      } : null,
       safetyReview: {
         acknowledgedAt: new Date().toISOString(),
         warningIds: finalWarnings.map((item) => item.id),
@@ -4372,15 +4409,27 @@ export function TherapyRecommendation() {
     setWorkflowStage("finalized");
     setHistoryRefresh((n) => n + 1);
     setParentSessionId(null);
+    setParentPseudonymId(null);
     setParentVersionNumber(null);
     setParentSnapshot(null);
     setVersionLabel("");
+    setStartPlanExceptionReason("");
+    setStartPlanPhaseAllocation("");
+    setNoStartRemedyApproved(false);
+    setNoStartRemedyReason("");
     if (inputDraftKey) { try { localStorage.removeItem(inputDraftKey); } catch {} }
     if (draftStageKey) { try { localStorage.removeItem(draftStageKey); } catch {} }
     toast({ title: "✓ Therapieplan gespeichert", description: `Finalisiert für Pseudonym ${finalPid}. Druck jetzt verfügbar.` });
     await logTherapyEvent(finalPid, "patient_saved", { note: versionLabel.trim() ? `Versions-Label: ${versionLabel.trim()}` : "Therapieplan finalisiert" });
   };
 
+
+  const currentPlanCount = selectedKeys.size + manualMittel.filter((item) => item.name.trim()).length;
+  useEffect(() => {
+    if (currentPlanCount === 0 || (!noStartRemedyApproved && !noStartRemedyReason)) return;
+    setNoStartRemedyApproved(false);
+    setNoStartRemedyReason("");
+  }, [currentPlanCount, noStartRemedyApproved, noStartRemedyReason]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-28">
@@ -4426,7 +4475,7 @@ export function TherapyRecommendation() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2 flex-wrap">
             <ClipboardList className="h-4 w-4 text-primary" />
-            1. SAMMELEINGABE: mehrere Patientenunterlagen gemeinsam übernehmen
+            1. SAMMELEINGABE: mehrere Unterlagen eines Patientenfalls übernehmen
             <Badge variant="secondary" className="text-xs">
               {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
             </Badge>
@@ -4434,7 +4483,7 @@ export function TherapyRecommendation() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="rounded-md border border-primary/30 bg-background px-3 py-2 text-sm font-medium text-foreground">
-            Hier gemeinsam auswählen: Anamnese, Labor, Arztberichte, Vieva, Metatron und allgemeine Unterlagen. Jede Datei wird einzeln datenschutzbereinigt, geprüft und danach automatisch dem richtigen Befundbereich zugeordnet.
+            Hier gemeinsam für genau einen zuvor festgelegten Pseudonymfall auswählen: Anamnese, Labor, Arztberichte, Vieva, Metatron und allgemeine Unterlagen. Jede Datei wird einzeln datenschutzbereinigt, geprüft und danach automatisch dem richtigen Befundbereich zugeordnet.
           </p>
           <p className="text-xs text-muted-foreground">
             Standardmäßig sind nur neue oder geänderte Quellen ausgewählt. Unveränderte Quellen können manuell ergänzt werden; so verbrauchen sie nicht automatisch erneut Analyse-Credits.
@@ -4450,13 +4499,26 @@ export function TherapyRecommendation() {
               <span>Noch keine fertige Befundauswertung für dieses Pseudonym vorhanden.</span>
             )}
           </div>
+          <div className="rounded-md border border-primary/40 bg-background p-3">
+            <label htmlFor="batch-pseudonym-id" className="text-sm font-semibold">0. Pseudonym-ID vor der Dateiauswahl festlegen</label>
+            <Input
+              id="batch-pseudonym-id"
+              value={pseudonymId}
+              onChange={(event) => handlePseudonymChange(event.target.value)}
+              placeholder="z. B. P-2099-0001"
+              className="mt-2 font-mono"
+            />
+            <p className={`mt-1 text-xs ${pseudonymFormatWarning ? "text-destructive" : "text-muted-foreground"}`}>
+              {pseudonymFormatWarning || "Die vollständige Pseudonym-ID bindet alle ausgewählten PDFs unveränderlich an diesen einen Fall."}
+            </p>
+          </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
             <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
               Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => addDirectBefundFiles(e.target.files)} />
-              <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                 <FileUp className="h-3.5 w-3.5" />
                 Mehrere PDFs für Sammeleingabe auswählen
               </Button>
@@ -4597,6 +4659,29 @@ export function TherapyRecommendation() {
               Auswahl leeren
             </Button>
           </div>
+          <div className="rounded-md border bg-background p-3">
+            <label className="text-sm font-semibold" htmlFor="befund-analysis-profile">1. Analyseprofil vor Befundstart festlegen</label>
+            <select
+              id="befund-analysis-profile"
+              value={buildAnalysisProfile(useMapReduce, useProModel).id}
+              onChange={(event) => {
+                const profileId = event.target.value;
+                setUseMapReduce(profileId !== "quick");
+                setUseProModel(profileId === "deep-final");
+              }}
+              disabled={isAnalyzingDocs || isStreaming || Boolean(docAnalysisHtml)}
+              className="mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              <option value="quick">Schnellprüfung</option>
+              <option value="complete">Vollständige Auswertung</option>
+              <option value="deep-final">Tiefenprüfung: Pro für Befundabschluss und Therapie</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {docAnalysisHtml
+                ? `Für den sichtbaren Befund gesperrt: ${befundRunProfile?.label || "Altbericht ohne dokumentiertes Profil"}. Für einen Profilwechsel bitte einen neuen Befundlauf beginnen.`
+                : "Dieses Profil wird für Befund, Therapie-Kandidatenentwurf und finalen Plan unveränderlich protokolliert."}
+            </p>
+          </div>
           <div
             ref={nextBefundActionRef}
             tabIndex={-1}
@@ -4606,13 +4691,13 @@ export function TherapyRecommendation() {
               <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">2. Nächster Schritt: übernommene Befunde auswerten</div>
               <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">
                 {analysisSourceTotals.selected > 0
-                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) sind ausgewählt.`
+                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) lösen die Aktualisierung aus; der neue Gesamtbericht enthält alle ${analysisSources.length} aktuellen Quellen.`
                   : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
               </p>
             </div>
             <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
-              Ausgewählte Befunde auswerten ({analysisSourceTotals.selected})
+              Gesamtbericht aktualisieren ({analysisSourceTotals.selected} Änderung(en))
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -5732,12 +5817,12 @@ export function TherapyRecommendation() {
                 </div>
                 <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">
                   {recommendedUseProModel
-                    ? `Die Tiefenprüfung passt, weil erkannt wurde: ${deepAnalysisReasons.join(", ")}.`
+                    ? `Die Tiefenprüfung mit Pro für Befundabschluss und Therapie passt, weil erkannt wurde: ${deepAnalysisReasons.join(", ")}. Die Befund-Teilpakete werden weiterhin mit Flash extrahiert.`
                     : "Die vollständige Auswertung passt: Der Fall hat derzeit einen normalen Umfang und keine erkannten Merkmale, die zwingend die langsamere Tiefenprüfung brauchen."}
                 </p>
                 {analysisSourceTotals.chars >= 80_000 && (
                   <p className="mt-1 text-xs font-medium text-amber-800 dark:text-amber-200">
-                    Sehr großer Umfang: Tiefenprüfung empfohlen, aber ein Zeitlimit ist möglich. Bei Abbruch die Unterlagen in zwei Befundläufen auswerten.
+                    Sehr großer Umfang: Die Befund-Teilpakete werden vollständig mit Flash extrahiert; Pro wird im gewählten Tiefenprofil für Befundabschluss und Therapie verwendet. Ein Zeitlimit bleibt möglich.
                   </p>
                 )}
               </div>
@@ -5745,7 +5830,7 @@ export function TherapyRecommendation() {
                 type="button"
                 size="sm"
                 onClick={applyRecommendedAnalysis}
-                disabled={recommendedAnalysisIsSelected}
+                disabled={recommendedAnalysisIsSelected || isAnalyzingDocs || Boolean(docAnalysisHtml)}
                 className="bg-emerald-700 hover:bg-emerald-800"
               >
                 Empfehlung übernehmen
@@ -5762,6 +5847,7 @@ export function TherapyRecommendation() {
                 role="radio"
                 aria-checked={!useMapReduce}
                 onClick={() => { setUseMapReduce(false); setUseProModel(false); }}
+                disabled={isAnalyzingDocs || Boolean(docAnalysisHtml)}
                 className={`rounded-lg border-2 p-3 text-left transition-colors ${!useMapReduce ? "border-sky-600 bg-sky-100 dark:bg-sky-950/40" : "border-border bg-background hover:border-sky-300"}`}
               >
                 <div className="font-semibold text-sm">⚡ Schnellprüfung</div>
@@ -5773,6 +5859,7 @@ export function TherapyRecommendation() {
                 role="radio"
                 aria-checked={useMapReduce && !useProModel}
                 onClick={() => { setUseMapReduce(true); setUseProModel(false); }}
+                disabled={isAnalyzingDocs || Boolean(docAnalysisHtml)}
                 className={`rounded-lg border-2 p-3 text-left transition-colors ${useMapReduce && !useProModel ? "border-emerald-600 bg-emerald-100 dark:bg-emerald-950/40" : "border-border bg-background hover:border-emerald-300"}`}
               >
                 <div className="font-semibold text-sm">✅ Vollständige Auswertung</div>
@@ -5784,10 +5871,11 @@ export function TherapyRecommendation() {
                 role="radio"
                 aria-checked={useMapReduce && useProModel}
                 onClick={() => { setUseMapReduce(true); setUseProModel(true); }}
+                disabled={isAnalyzingDocs || Boolean(docAnalysisHtml)}
                 className={`rounded-lg border-2 p-3 text-left transition-colors ${useMapReduce && useProModel ? "border-amber-600 bg-amber-100 dark:bg-amber-950/40" : "border-border bg-background hover:border-amber-300"}`}
               >
-                <div className="font-semibold text-sm">🧠 Tiefenprüfung</div>
-                <p className="text-xs text-muted-foreground mt-1">Für viele Diagnosen, Medikamente, Pathogene, Befundarten oder sehr umfangreiche Unterlagen.</p>
+                <div className="font-semibold text-sm">🧠 Tiefenprüfung: Pro für Abschluss + Therapie</div>
+                <p className="text-xs text-muted-foreground mt-1">Alle Befund-Teilpakete werden mit Flash extrahiert; Pro wird für die Befund-Zusammenführung und die Therapie verwendet.</p>
                 <Badge variant="outline" className="mt-2">ca. 60–120 Sek.</Badge>
               </button>
             </div>
@@ -6059,7 +6147,7 @@ export function TherapyRecommendation() {
       </Card>
 
       {/* Workflow-Stage-Indikator */}
-      {result && !isStreaming && (
+      {result && !isStreaming && therapyGenerationComplete && (
         <WorkflowStepper stage={workflowStage} />
       )}
 
@@ -6079,8 +6167,19 @@ export function TherapyRecommendation() {
             laborErniedrigt={laborErniedrigt}
             stuhlbefund={stuhlbefund}
           />
+          {result && !isStreaming && !therapyGenerationComplete && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-destructive">Unvollständiger Therapie-Zwischenstand</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm">Die Übertragung endete ohne Abschlussmeldung. Dieser Text wird nicht gespeichert und kann nicht finalisiert werden. Bitte die Generierung erneut starten.</p>
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-3 text-xs">{result}</pre>
+              </CardContent>
+            </Card>
+          )}
           {auditInfo && <WikiAuditCard audit={auditInfo} />}
-          {result && !isStreaming && workflowStage !== "finalized" && (
+          {result && !isStreaming && therapyGenerationComplete && workflowStage !== "finalized" && (
             <Card className="border-primary/30 bg-primary/[0.02]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -6097,7 +6196,7 @@ export function TherapyRecommendation() {
           )}
 
           {/* 🔄 Nachschlag-Modus: nur in Stage 'edit' */}
-          {result && !isStreaming && workflowStage === "edit" && (
+          {result && !isStreaming && therapyGenerationComplete && workflowStage === "edit" && (
             <Card className="border-amber-500/40 bg-amber-50/50 dark:bg-amber-950/10">
               <CardContent className="pt-4 pb-4 space-y-3">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -6138,7 +6237,7 @@ export function TherapyRecommendation() {
           )}
 
           {/* ➕ Manuelle Diagnosen – nur in Stage 'addons' */}
-          {result && !isStreaming && workflowStage === "addons" && (
+          {result && !isStreaming && therapyGenerationComplete && workflowStage === "addons" && (
             <Card ref={manualAddonsRef} className="border-secondary/40 bg-secondary/[0.04] scroll-mt-24">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -6192,7 +6291,7 @@ export function TherapyRecommendation() {
           )}
 
           {/* ➕ Manuelle Mittel – nur in Stage 'addons' (mit Wiki-Autocomplete) */}
-          {result && !isStreaming && workflowStage === "addons" && (
+          {result && !isStreaming && therapyGenerationComplete && workflowStage === "addons" && (
             <Card className="border-accent/30 bg-accent/[0.03]">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1.5">
@@ -6233,7 +6332,7 @@ export function TherapyRecommendation() {
           )}
 
           {/* Stage 'edit' & 'addons': interaktive Empfehlungs-Liste mit Häkchen */}
-          {workflowStage !== "preview" && workflowStage !== "finalized" && (
+          {therapyGenerationComplete && workflowStage !== "preview" && workflowStage !== "finalized" && (
             <ParsedResultView
               result={result}
               isStreaming={isStreaming}
@@ -6249,19 +6348,68 @@ export function TherapyRecommendation() {
           )}
 
           {/* Stage 'preview': read-only kombinierte Vorschau */}
-          {workflowStage === "preview" && (
-            <TherapyPreview
-              result={result}
-              selectedKeys={selectedKeys}
-              manualMittel={manualMittel.filter((m) => m.name.trim())}
-              manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
-              therapieNotiz={therapieNotiz}
-              safetyWarningsByKey={safetyWarningsByKey}
-            />
+          {therapyGenerationComplete && workflowStage === "preview" && (
+            <>
+              <TherapyPreview
+                result={result}
+                selectedKeys={selectedKeys}
+                manualMittel={manualMittel.filter((m) => m.name.trim())}
+                manualDiagnosen={manualDiagnosen.filter((d) => d.diagnose.trim())}
+                therapieNotiz={therapieNotiz}
+                safetyWarningsByKey={safetyWarningsByKey}
+              />
+              {currentPlanCount === 0 && (
+                <Card className="border-amber-500/60 bg-amber-50/70 dark:bg-amber-950/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base text-amber-900 dark:text-amber-200">Eigener Ausgang: kein Startmittel freigegeben</CardTitle>
+                    <CardDescription>Dieser Plan kann nur ohne Mittel gespeichert werden, wenn die fachliche Entscheidung ausdrücklich bestätigt und begründet wird.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Textarea
+                      value={noStartRemedyReason}
+                      onChange={(event) => setNoStartRemedyReason(event.target.value)}
+                      placeholder="Fachliche Begründung, warum derzeit kein Mittel gestartet wird (mindestens 20 Zeichen)"
+                      rows={4}
+                    />
+                    <label className="flex items-start gap-2 text-sm font-medium">
+                      <input
+                        type="checkbox"
+                        checked={noStartRemedyApproved}
+                        onChange={(event) => setNoStartRemedyApproved(event.target.checked)}
+                        className="mt-1 h-4 w-4 accent-amber-700"
+                      />
+                      Ich bestätige ausdrücklich den fachlichen Ausgang „kein Startmittel freigegeben“.
+                    </label>
+                  </CardContent>
+                </Card>
+              )}
+              {currentPlanCount > MAX_START_PLAN_REMEDIES && (
+                <Card className="border-amber-500/60 bg-amber-50/70 dark:bg-amber-950/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base text-amber-900 dark:text-amber-200">Strukturierte Ausnahme für {currentPlanCount} Mittel</CardTitle>
+                    <CardDescription>Mehr als {MAX_START_PLAN_REMEDIES} gleichzeitig beginnende Mittel benötigen einen fachlichen Grund und eine konkrete Phasenverteilung. Beides wird im finalen Plan protokolliert.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Textarea
+                      value={startPlanExceptionReason}
+                      onChange={(event) => setStartPlanExceptionReason(event.target.value)}
+                      placeholder="Fachlicher Ausnahmegrund (mindestens 20 Zeichen)"
+                      rows={3}
+                    />
+                    <Textarea
+                      value={startPlanPhaseAllocation}
+                      onChange={(event) => setStartPlanPhaseAllocation(event.target.value)}
+                      placeholder="Konkrete Start- und Folgephasen mit Zuordnung der Mittel (mindestens 20 Zeichen)"
+                      rows={4}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
 
           {/* Stage 'finalized': Erfolg + read-only Vorschau */}
-          {workflowStage === "finalized" && (
+          {therapyGenerationComplete && workflowStage === "finalized" && (
             <>
               <Card className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
                 <CardContent className="pt-4 pb-4 flex items-center gap-3">
@@ -6284,7 +6432,7 @@ export function TherapyRecommendation() {
           )}
 
           {/* Stage-Navigation am Ende */}
-          {result && !isStreaming && (
+          {result && !isStreaming && therapyGenerationComplete && (
             <div className="sticky bottom-2 z-20 flex justify-between gap-3 bg-background/95 backdrop-blur border border-primary/30 rounded-lg p-3 shadow-elevated">
               {workflowStage === "edit" && (
                 <>

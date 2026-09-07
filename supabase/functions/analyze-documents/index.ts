@@ -59,7 +59,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Expose-Headers": "x-model, x-input-chars, x-analysis-mode, x-analysis-chunks",
+    "Access-Control-Expose-Headers": "x-model, x-input-chars, x-analysis-mode, x-analysis-chunks, x-analysis-profile",
     "Vary": "Origin",
   };
   if (isAllowedCorsOrigin(origin)) {
@@ -91,6 +91,13 @@ interface AnalyzeBody {
   geschlecht?: string;
   pseudonymId?: string;
   useProModel?: boolean;
+  analysisProfile?: {
+    version?: number;
+    id?: string;
+    befundChunkModel?: string;
+    befundFinalModel?: string;
+    startedAt?: string;
+  };
   previousResultForCompare?: string;
 }
 
@@ -990,6 +997,11 @@ serve(async (req) => {
     }
 
     if (body.analysisMode === "chunk") {
+      if (body.analysisProfile && body.analysisProfile.befundChunkModel !== "google/gemini-2.5-flash") {
+        return new Response(JSON.stringify({ error: "Analyseprofil passt nicht zum Befund-Teilmodell" }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const text = cleanText(body.chunk?.text);
       const label = cleanText(body.chunk?.label) || "Dokument-Teil";
       const rawIndex = Number.parseFloat(String(body.chunk?.index || "1"));
@@ -1035,6 +1047,7 @@ serve(async (req) => {
           "X-Input-Chars": String(text.length),
           "X-Analysis-Mode": "chunk",
           "X-Analysis-Chunks": String(total),
+          "X-Analysis-Profile": body.analysisProfile?.id || "legacy",
         },
       });
     }
@@ -1071,9 +1084,14 @@ serve(async (req) => {
         });
       }
       const totalChars = Number(body.totalChars || 0);
-      const model = body.useProModel || totalChars > 60_000
+      const model = body.useProModel
         ? "google/gemini-2.5-pro"
         : "google/gemini-2.5-flash";
+      if (body.analysisProfile && body.analysisProfile.befundFinalModel !== model) {
+        return new Response(JSON.stringify({ error: "Analyseprofil passt nicht zum Befund-Abschlussmodell" }), {
+          status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const htmlStream = await streamGatewayHtml(
         LOVABLE_API_KEY,
         model,
@@ -1088,6 +1106,7 @@ serve(async (req) => {
           "X-Input-Chars": String(totalChars),
           "X-Analysis-Mode": "client-chunked-final",
           "X-Analysis-Chunks": String(partials.length),
+          "X-Analysis-Profile": body.analysisProfile?.id || "legacy",
           "Cache-Control": "no-store",
         },
       });
@@ -1103,7 +1122,7 @@ serve(async (req) => {
     const totalChars = blocks.reduce((sum, block) => sum + block.text.length, 0);
     const chunks = chunkDocuments(blocks);
     const largeMode = chunks.length > 1 || totalChars > 24_000;
-    const model = body.useProModel || totalChars > 60_000
+    const model = body.useProModel
       ? "google/gemini-2.5-pro"
       : "google/gemini-2.5-flash";
 
@@ -1121,6 +1140,7 @@ serve(async (req) => {
         "X-Input-Chars": String(totalChars),
         "X-Analysis-Mode": largeMode ? "chunked-full" : "single-pass",
         "X-Analysis-Chunks": String(chunks.length),
+        "X-Analysis-Profile": body.analysisProfile?.id || "legacy",
         "Cache-Control": "no-store",
       },
     });

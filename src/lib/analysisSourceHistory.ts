@@ -257,6 +257,15 @@ export const setManualSourceSelection = (
   };
 };
 
+export const selectCompleteSourceSetForAnalysis = <T extends { key: string }>(
+  sources: T[],
+  requestedSourceIds: string[],
+): T[] => {
+  const available = new Set(sources.map((source) => normalizeAnalysisSourceId(source.key)));
+  const hasValidTrigger = requestedSourceIds.some((sourceId) => available.has(normalizeAnalysisSourceId(sourceId)));
+  return hasValidTrigger ? sources : [];
+};
+
 export const completeSuccessfulSourceAnalysis = (
   current: SourceSelectionState,
   completedSourceIds: string[],

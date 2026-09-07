@@ -82,4 +82,18 @@ describe("direct Befund handoff", () => {
     expect(handoff).toContain("Datenschutz-Sicherheitsstopp");
     expect(handoff.indexOf("directIdentifierCategories")).toBeLessThan(handoff.indexOf("switch (documentType)"));
   });
+
+  it("binds every batch file to one valid synthetic case and blocks foreign pseudonyms", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const addFiles = source.match(/const addDirectBefundFiles = \(list: FileList \| null\) => \{([\s\S]*?)const processDirectBefundFiles/)?.[1] || "";
+    const handoff = source.match(/const handoffDirectBefundFiles = async \(\) => \{([\s\S]*?)const loadArchivedBefundDocument/)?.[1] || "";
+
+    expect(source).toContain("sourcePseudonymId: string");
+    expect(addFiles).toContain("if (!isPatientScopedStorageReady(currentPid))");
+    expect(addFiles).toContain("sourcePseudonymId: currentPid");
+    expect(addFiles).toContain('title: "Fremdes Pseudonym blockiert"');
+    expect(addFiles).not.toContain("window.confirm");
+    expect(handoff).toContain("normalizePseudonymId(item.sourcePseudonymId) !== pid");
+    expect(source).toContain('disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))}');
+  });
 });
