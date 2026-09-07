@@ -74,7 +74,7 @@ import {
   type SourceManifestEntry,
   type SourceSelectionState,
 } from "@/lib/analysisSourceHistory";
-import { buildAnalysisProfile, type AnalysisProfile } from "@/lib/analysisProfile";
+import { buildAnalysisProfile, parseStartedAnalysisProfile, type StartedAnalysisProfile } from "@/lib/analysisProfile";
 import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
@@ -279,7 +279,7 @@ type AnalysisCheckpoint = {
   sourceSummary?: SourceManifestEntry[];
   sourceManifestV1?: SourceManifestEntry[];
   duplicateNotes?: string[];
-  analysisProfile?: AnalysisProfile & { startedAt: string };
+  analysisProfile?: StartedAnalysisProfile;
   status?: "in_progress" | "paused" | "all_chunks_complete" | "final_complete";
   updatedAt: string;
 };
@@ -1279,8 +1279,8 @@ export function TherapyRecommendation() {
   const [startPlanPhaseAllocation, setStartPlanPhaseAllocation] = useState("");
   const [noStartRemedyApproved, setNoStartRemedyApproved] = useState(false);
   const [noStartRemedyReason, setNoStartRemedyReason] = useState("");
-  const [therapyRunProfile, setTherapyRunProfile] = useState<(AnalysisProfile & { startedAt: string }) | null>(null);
-  const [befundRunProfile, setBefundRunProfile] = useState<(AnalysisProfile & { startedAt: string }) | null>(null);
+  const [therapyRunProfile, setTherapyRunProfile] = useState<StartedAnalysisProfile | null>(null);
+  const [befundRunProfile, setBefundRunProfile] = useState<StartedAnalysisProfile | null>(null);
   // 4-Stufen-Workflow: edit (KI-Auswahl) → addons (eigene Mittel) → preview (Kontrolle) → finalized (gespeichert, Druck)
   const [workflowStage, setWorkflowStage] = useState<"edit" | "addons" | "preview" | "finalized">("edit");
   // Wiki-Autocomplete für manuelle Mittel
@@ -1578,7 +1578,12 @@ export function TherapyRecommendation() {
     if (typeof data.startPlanPhaseAllocation === "string") setStartPlanPhaseAllocation(data.startPlanPhaseAllocation);
     if (typeof data.noStartRemedyApproved === "boolean") setNoStartRemedyApproved(data.noStartRemedyApproved);
     if (typeof data.noStartRemedyReason === "string") setNoStartRemedyReason(data.noStartRemedyReason);
-    if (data.analysisProfile && typeof data.analysisProfile === "object") setTherapyRunProfile(data.analysisProfile as AnalysisProfile & { startedAt: string });
+    const restoredProfile = parseStartedAnalysisProfile(data.analysisProfile);
+    setTherapyRunProfile(restoredProfile);
+    if (restoredProfile) {
+      setUseMapReduce(restoredProfile.id !== "quick");
+      setUseProModel(restoredProfile.id === "deep-final");
+    }
   }, [toast]);
 
   useEffect(() => {
@@ -1928,6 +1933,7 @@ export function TherapyRecommendation() {
       const raw = localStorage.getItem(draftStageKey);
       if (!raw) return;
       const d = JSON.parse(raw);
+      const restoredProfile = parseStartedAnalysisProfile(d?.analysisProfile);
       if (typeof d?.result === "string" && d.result.trim() && !result) {
         lastInitResultRef.current = d.result;
         setResult(d.result);
@@ -1941,7 +1947,11 @@ export function TherapyRecommendation() {
       if (typeof d?.startPlanPhaseAllocation === "string") setStartPlanPhaseAllocation(d.startPlanPhaseAllocation);
       if (typeof d?.noStartRemedyApproved === "boolean") setNoStartRemedyApproved(d.noStartRemedyApproved);
       if (typeof d?.noStartRemedyReason === "string") setNoStartRemedyReason(d.noStartRemedyReason);
-      if (d?.analysisProfile && typeof d.analysisProfile === "object") setTherapyRunProfile(d.analysisProfile);
+      setTherapyRunProfile(restoredProfile);
+      if (restoredProfile) {
+        setUseMapReduce(restoredProfile.id !== "quick");
+        setUseProModel(restoredProfile.id === "deep-final");
+      }
       if (typeof d?.workflowStage === "string") setWorkflowStage(d.workflowStage);
       toast({ title: "Entwurf wiederhergestellt", description: "Deine Bearbeitungen aus der letzten Sitzung wurden geladen." });
     } catch {}
@@ -2469,7 +2479,10 @@ export function TherapyRecommendation() {
     else if (Array.isArray(d.categories)) setSelectedCategories(d.categories as string[]);
     if (Array.isArray(d.bevorzugteLinie)) setBevorzugteLinie(d.bevorzugteLinie as string[]);
     if (Array.isArray(d.pinnedMittel)) setPinnedMittel(d.pinnedMittel as PinnedRemedy[]);
-    setUseMapReduce(d.useMapReduce !== false);
+    const restoredProfile = parseStartedAnalysisProfile(d.analysisProfile);
+    setTherapyRunProfile(restoredProfile);
+    setUseMapReduce(restoredProfile ? restoredProfile.id !== "quick" : d.useMapReduce !== false);
+    setUseProModel(restoredProfile ? restoredProfile.id === "deep-final" : d.useProModel === true);
     setResult(session.empfehlung || "");
     setTherapyGenerationComplete(Boolean(session.empfehlung?.trim()));
     setAuditInfo(null);
@@ -2499,9 +2512,9 @@ export function TherapyRecommendation() {
       return;
     }
     const meta = session.befund_meta || {};
-    const restoredProfile = meta.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
-    setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
-    if (restoredProfile?.version === 1) {
+    const restoredProfile = parseStartedAnalysisProfile(meta.analysis_profile);
+    setBefundRunProfile(restoredProfile);
+    if (restoredProfile) {
       setUseMapReduce(restoredProfile.id !== "quick");
       setUseProModel(restoredProfile.id === "deep-final");
     }
@@ -2594,9 +2607,9 @@ export function TherapyRecommendation() {
       const created = new Date(cloudRow.created_at).toLocaleString("de-DE");
       const progress = `Letzte gespeicherte Befund-Auswertung automatisch geladen.\nPseudonym: ${pid}\nErstellt: ${created}${cloudRow.befund_meta?.total_chars ? `\nUmfang: ${Number(cloudRow.befund_meta.total_chars).toLocaleString("de-DE")} Zeichen` : ""}${cloudRow.befund_meta?.analysis_mode ? `\nModus: ${cloudRow.befund_meta.analysis_mode}` : ""}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(cloudHtml);
-      const restoredProfile = cloudRow.befund_meta?.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
-      setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
-      if (restoredProfile?.version === 1) {
+      const restoredProfile = parseStartedAnalysisProfile(cloudRow.befund_meta?.analysis_profile);
+      setBefundRunProfile(restoredProfile);
+      if (restoredProfile) {
         setUseMapReduce(restoredProfile.id !== "quick");
         setUseProModel(restoredProfile.id === "deep-final");
       }
@@ -2614,9 +2627,9 @@ export function TherapyRecommendation() {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
       setDocAnalysisHtml(sanitizeFinalAnalysisHtml(localSnapshot.html));
-      const restoredProfile = localSnapshot.meta?.analysis_profile as (AnalysisProfile & { startedAt: string }) | undefined;
-      setBefundRunProfile(restoredProfile?.version === 1 ? restoredProfile : null);
-      if (restoredProfile?.version === 1) {
+      const restoredProfile = parseStartedAnalysisProfile(localSnapshot.meta?.analysis_profile);
+      setBefundRunProfile(restoredProfile);
+      if (restoredProfile) {
         setUseMapReduce(restoredProfile.id !== "quick");
         setUseProModel(restoredProfile.id === "deep-final");
       }

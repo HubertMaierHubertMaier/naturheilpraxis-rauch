@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAnalysisProfile } from "@/lib/analysisProfile";
+import { buildAnalysisProfile, parseStartedAnalysisProfile } from "@/lib/analysisProfile";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -45,5 +45,19 @@ describe("analysis profile", () => {
     expect(edge).toContain("analysisProfile.therapyModel !== expectedTherapyModel");
     expect(edge).toContain("analysisProfile.wikiMode !== expectedWikiMode");
     expect(edge).toContain("analysisProfile: analysisProfile || null");
+  });
+
+  it("restores only a complete matching profile and clears stale session state", () => {
+    const client = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
+    const valid = { ...buildAnalysisProfile(true, true), startedAt: "2026-09-07T12:00:00.000Z" };
+
+    expect(parseStartedAnalysisProfile(valid)).toEqual(valid);
+    expect(parseStartedAnalysisProfile({ ...valid, therapyModel: "google/gemini-2.5-flash" })).toBeNull();
+    expect(parseStartedAnalysisProfile({ ...valid, wikiMode: "targeted" })).toBeNull();
+    expect(parseStartedAnalysisProfile({ ...valid, startedAt: "kein-datum" })).toBeNull();
+    expect(parseStartedAnalysisProfile({ ...valid, id: "unbekannt" })).toBeNull();
+    expect(client).toContain("const restoredProfile = parseStartedAnalysisProfile(d.analysisProfile)");
+    expect(client).toContain("setTherapyRunProfile(restoredProfile)");
+    expect(client).toContain('setUseProModel(restoredProfile ? restoredProfile.id === "deep-final" : d.useProModel === true)');
   });
 });
