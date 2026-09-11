@@ -2663,6 +2663,87 @@ export function TherapyRecommendation() {
     restoreLatestBefundForPid(pseudonymId, { quiet: true });
   }, [pseudonymId, historyRefresh, restoreLatestBefundForPid]);
 
+  const handleRebuildCurrentAnamnesisView = async () => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) {
+      toast({ title: "Kein Pseudonym ausgewählt", description: "Bitte zuerst ein gültiges Pseudonym öffnen.", variant: "destructive" });
+      return;
+    }
+    if (isAnalyzingDocs) return;
+
+    setDocAnalysisProgress("Gespeicherte Teilanalysen werden ohne erneute KI-Auswertung in den neuen Anamneseaufbau überführt…");
+    try {
+      const { data: rows, error } = await (supabase as any)
+        .from("therapy_sessions")
+        .select("created_at, updated_at, eingabe_daten")
+        .eq("pseudonym_id", pid)
+        .eq("kind", "befund_checkpoint")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+
+      const saved = Array.isArray(rows) ? rows[0] : null;
+      const checkpoint = saved?.eingabe_daten?.checkpoint;
+      const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim()) : [];
+      const totalChunks = Number(checkpoint?.totalChunks || 0);
+      const completedChunks = Number(checkpoint?.completedChunks || 0);
+      if (!partials.length || !totalChunks || completedChunks < totalChunks || partials.length < totalChunks) {
+        throw new Error("Es gibt keinen vollständigen gespeicherten Zwischenstand. Bitte die Befund-Auswertung zuerst fortsetzen.");
+      }
+
+      const totalChars = Number(checkpoint?.totalChars || 0);
+      const duplicateNotes = Array.isArray(checkpoint?.duplicateNotes) ? checkpoint.duplicateNotes.filter((note: unknown): note is string => typeof note === "string") : [];
+      const sourceManifest = Array.isArray(checkpoint?.sourceManifestV1) ? checkpoint.sourceManifestV1 : [];
+      const rebuiltAt = new Date().toISOString();
+      const html = sanitizeFinalAnalysisHtml(buildClientFallbackAnalysisHtml(partials, {
+        pseudonymId: pid,
+        alter: alter.trim() || undefined,
+        geschlecht: geschlecht || undefined,
+        totalChars,
+        duplicateNotes,
+        mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
+      }));
+      const progress = `Auswertung im neuen Anamneseaufbau angezeigt.\nPseudonym: ${pid}\nErstellt aus ${partials.length}/${totalChunks} bereits gespeicherten Teilanalysen.\nKeine erneute KI-Auswertung und keine neuen KI-Credits.`;
+      const meta = {
+        analysis_mode: "client-rebuilt-current-anamnesis-view",
+        chunk_count: totalChunks,
+        total_chars: totalChars,
+        strict_complete: true,
+        rebuilt_from_checkpoint_at: saved?.updated_at || saved?.created_at || null,
+        source_manifest_v1: sourceManifest,
+        source_manifest_version: 1,
+      };
+
+      setDocAnalysisHtml(html);
+      setDocAnalysisProgress(progress);
+      setDisplayedBefundSourceStand({ createdAt: rebuiltAt, entries: sourceManifest });
+      setIsDocAnalysisPanelMinimized(false);
+      setLatestBefundLoadedFrom("local");
+      writeLatestBefundDisplay(pid, { html, progress, meta, createdAt: rebuiltAt });
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: saveError } = await (supabase as any).from("therapy_sessions").insert({
+          pseudonym_id: pid,
+          kind: "befund_auswertung",
+          eingabe_daten: { _pseudonym_id: pid, pseudonymId: pid, kind: "befund_auswertung", rebuilt_from_checkpoint: true, source_manifest_v1: sourceManifest },
+          empfehlung: "",
+          befund_html: html,
+          befund_meta: meta,
+          created_by: user.id,
+        });
+        if (saveError) throw saveError;
+      }
+      setHistoryRefresh((n) => n + 1);
+      window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      toast({ title: "Neuer Anamneseaufbau angezeigt", description: "Die gespeicherten Teilanalysen wurden ohne erneute KI-Auswertung neu dargestellt." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Der neue Anamneseaufbau konnte nicht erstellt werden.";
+      setDocAnalysisProgress(`⚠ ${message}`);
+      toast({ title: "Neuer Aufbau nicht möglich", description: message, variant: "destructive" });
+    }
+  };
+
   const handleReAnalyzeAll = async () => {
     const pid = pseudonymId.trim();
     if (!pid) {
@@ -5069,9 +5150,9 @@ export function TherapyRecommendation() {
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
                 Patientenbefund
               </span>
-              <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, anamnese, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/15 Felder
+               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0)}/15 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -5086,7 +5167,7 @@ export function TherapyRecommendation() {
                 </TabsTrigger>
                 <TabsTrigger value="anamnese" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-950/40">
                   <span>📋 Anamnese</span>
-                  <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() ? "1" : "0"}</span>
+                  <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="labor" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🧪 Labor</span>
@@ -6059,11 +6140,21 @@ export function TherapyRecommendation() {
                     : "Fertig — Vollbild · neuer Tab · oder minimieren."}
               </div>
             </div>
-            {docAnalysisHtml && (
-              <>
-                <Button
-                  size="sm"
+             {docAnalysisHtml && (
+               <>
+                 <Button
+                   size="sm"
                    variant="outline"
+                   onClick={handleRebuildCurrentAnamnesisView}
+                   disabled={isAnalyzingDocs}
+                   className="gap-1"
+                   title="Baut den Bericht aus den bereits gespeicherten Teilanalysen im neuen Anamneseaufbau auf. Keine erneute KI-Auswertung und keine neuen KI-Credits."
+                 >
+                   <RotateCcw className="h-3.5 w-3.5" /> Neuer Anamneseaufbau
+                 </Button>
+                 <Button
+                   size="sm"
+                    variant="outline"
                     onClick={() => openClinicalReportWindow(docAnalysisHtml, "Anamneseauswertung")}
                   className="gap-1"
                   title="HTML in neuem Browser-Tab öffnen (vergrößert, druckbar, separat scrollbar)"
