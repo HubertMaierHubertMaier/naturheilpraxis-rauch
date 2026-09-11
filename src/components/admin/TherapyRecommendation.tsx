@@ -218,7 +218,8 @@ type ExtractedBefundInputs = {
   forPseudonymId: string;
   diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
   symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
-  medications: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
+  medications: Array<{ name: string; kategorie?: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
+  noConventionalMedication?: boolean;
 };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
@@ -512,7 +513,12 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
   addText("erkrankung", "Erkrankungen / Diagnosen", d.erkrankung);
   addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", diagnosesValue);
   addText("pathogens", "Pathogene / NLS-EAV-Befunde", d.belastungen || formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []));
-  addText("medikamente", "Aktuelle Medikamente", d.medikamente);
+  addText("medikamente", "Aktuelle konventionell-medizinische Medikamente", d.medikamente);
+  addText("naturheilMittelHomoeopathie", "Aktuelle naturheilkundliche Mittel – Homöopathie", d.naturheilMittelHomoeopathie);
+  addText("naturheilMittelPflanzenheilkunde", "Aktuelle naturheilkundliche Mittel – Pflanzenheilkunde", d.naturheilMittelPflanzenheilkunde);
+  addText("naturheilMittelVitamine", "Aktuelle naturheilkundliche Mittel – Vitamine", d.naturheilMittelVitamine);
+  addText("naturheilMittelMineralstoffe", "Aktuelle naturheilkundliche Mittel – Mineralstoffe", d.naturheilMittelMineralstoffe);
+  addText("naturheilMittelSpurenelemente", "Aktuelle naturheilkundliche Mittel – Spurenelemente", d.naturheilMittelSpurenelemente);
   addText("bisherigeMittel", "Bisherige Mittel", d.bisherigeMittel);
   addText("laborKomplett", "Labor komplett", d.laborKomplett);
   addText("laborErhoeht", "Labor – erhöhte Werte", d.laborErhoeht);
@@ -1211,6 +1217,11 @@ export function TherapyRecommendation() {
   const [gewichtKg, setGewichtKg] = useState("");
   const [schwanger, setSchwanger] = useState("nein");
   const [medikamente, setMedikamente] = useState("");
+  const [naturheilMittelHomoeopathie, setNaturheilMittelHomoeopathie] = useState("");
+  const [naturheilMittelPflanzenheilkunde, setNaturheilMittelPflanzenheilkunde] = useState("");
+  const [naturheilMittelVitamine, setNaturheilMittelVitamine] = useState("");
+  const [naturheilMittelMineralstoffe, setNaturheilMittelMineralstoffe] = useState("");
+  const [naturheilMittelSpurenelemente, setNaturheilMittelSpurenelemente] = useState("");
   const [bisherigeMittel, setBisherigeMittel] = useState("");
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
@@ -1441,6 +1452,11 @@ export function TherapyRecommendation() {
       gewichtKg,
       schwanger,
       medikamente,
+      naturheilMittelHomoeopathie,
+      naturheilMittelPflanzenheilkunde,
+      naturheilMittelVitamine,
+      naturheilMittelMineralstoffe,
+      naturheilMittelSpurenelemente,
       bisherigeMittel,
       budget,
       laborErhoeht,
@@ -1477,7 +1493,7 @@ export function TherapyRecommendation() {
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1561,6 +1577,11 @@ export function TherapyRecommendation() {
     if (typeof data.gewichtKg === "string") setGewichtKg(data.gewichtKg);
     if (typeof data.schwanger === "string") setSchwanger(data.schwanger);
     if (typeof data.medikamente === "string") setMedikamente(data.medikamente);
+    if (typeof data.naturheilMittelHomoeopathie === "string") setNaturheilMittelHomoeopathie(data.naturheilMittelHomoeopathie);
+    if (typeof data.naturheilMittelPflanzenheilkunde === "string") setNaturheilMittelPflanzenheilkunde(data.naturheilMittelPflanzenheilkunde);
+    if (typeof data.naturheilMittelVitamine === "string") setNaturheilMittelVitamine(data.naturheilMittelVitamine);
+    if (typeof data.naturheilMittelMineralstoffe === "string") setNaturheilMittelMineralstoffe(data.naturheilMittelMineralstoffe);
+    if (typeof data.naturheilMittelSpurenelemente === "string") setNaturheilMittelSpurenelemente(data.naturheilMittelSpurenelemente);
     if (typeof data.bisherigeMittel === "string") setBisherigeMittel(data.bisherigeMittel);
     if (typeof data.budget === "string") setBudget(data.budget);
     if (typeof data.laborErhoeht === "string") setLaborErhoeht(data.laborErhoeht);
@@ -1747,10 +1768,10 @@ export function TherapyRecommendation() {
   // ---- Harte Auto-Sicherung in der Datenbank pro Pseudonym ----
   // Damit Labor/Arztbericht nicht verschwinden, auch wenn Tab/Browser/Session weg ist.
   const hasMeaningfulInput = useMemo(() => {
-    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
+    const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
     return textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
 
   useEffect(() => {
     const pid = pseudonymId.trim();
@@ -2225,6 +2246,11 @@ export function TherapyRecommendation() {
     setGewichtKg("");
     setSchwanger("nein");
     setMedikamente("");
+    setNaturheilMittelHomoeopathie("");
+    setNaturheilMittelPflanzenheilkunde("");
+    setNaturheilMittelVitamine("");
+    setNaturheilMittelMineralstoffe("");
+    setNaturheilMittelSpurenelemente("");
     setBisherigeMittel("");
     setBudget("");
     setLaborErhoeht("");
@@ -2465,6 +2491,11 @@ export function TherapyRecommendation() {
     }
     if (asText(d.schwanger).trim()) setSchwanger(asText(d.schwanger));
     setMedikamente(asText(d.medikamente));
+    setNaturheilMittelHomoeopathie(asText(d.naturheilMittelHomoeopathie));
+    setNaturheilMittelPflanzenheilkunde(asText(d.naturheilMittelPflanzenheilkunde));
+    setNaturheilMittelVitamine(asText(d.naturheilMittelVitamine));
+    setNaturheilMittelMineralstoffe(asText(d.naturheilMittelMineralstoffe));
+    setNaturheilMittelSpurenelemente(asText(d.naturheilMittelSpurenelemente));
     setBisherigeMittel(asText(d.bisherigeMittel));
     setBudget(asText(d.budget));
     setLaborErhoeht(asText(d.laborErhoeht));
@@ -2694,6 +2725,24 @@ export function TherapyRecommendation() {
       const totalChars = Number(checkpoint?.totalChars || 0);
       const duplicateNotes = Array.isArray(checkpoint?.duplicateNotes) ? checkpoint.duplicateNotes.filter((note: unknown): note is string => typeof note === "string") : [];
       const sourceManifest = Array.isArray(checkpoint?.sourceManifestV1) ? checkpoint.sourceManifestV1 : [];
+      const symptoms: ExtractedBefundInputs["symptoms"] = [];
+      const medications: ExtractedBefundInputs["medications"] = [];
+      let noConventionalMedication = false;
+      for (const partial of partials) {
+        try {
+          const extracted = parseLlmJson(partial);
+          for (const item of Array.isArray(extracted?.anamnese?.currentProblems) ? extracted.anamnese.currentProblems : []) {
+            const record = item && typeof item === "object" ? item : {};
+            const text = typeof item === "string" ? item : (record as any).text;
+            if (typeof text === "string" && text.trim()) symptoms.push({ text: text.trim(), quelle: (record as any)?.beleg?.quelle || "", zitat: (record as any)?.beleg?.zitat || "" });
+          }
+          for (const item of Array.isArray(extracted?.medicationsTherapies) ? extracted.medicationsTherapies : []) {
+            if (typeof item?.name !== "string" || !item.name.trim()) continue;
+            medications.push({ name: item.name.trim(), kategorie: item.kategorie || item.category || "", dosis: item.dosis || "", vonWem: item.vonWem || "", datum: item.datum || "", indikation: item.indikation || "", wirkmechanismus: item.wirkmechanismus || "", nebenwirkungen: item.nebenwirkungen || "", grundVerordnung: item.grundVerordnung || "", status: item.status || "", quelle: item?.beleg?.quelle || "", zitat: item?.beleg?.zitat || "" });
+          }
+          if (Array.isArray(extracted?.anamnese?.presentMedication) && extracted.anamnese.presentMedication.some((item: any) => /keine(?:rlei|\s+aktuellen?)?\s+(?:klassischen?|konventionell(?:en)?|arzt(?:lich(?:en)?)?)?\s*medikamente?/i.test(String(typeof item === "string" ? item : item?.text || "")))) noConventionalMedication = true;
+        } catch { /* Only valid saved partial analyses can update input fields. */ }
+      }
       const rebuiltAt = new Date().toISOString();
       const html = sanitizeFinalAnalysisHtml(buildClientFallbackAnalysisHtml(partials, {
         pseudonymId: pid,
@@ -2720,6 +2769,11 @@ export function TherapyRecommendation() {
       setIsDocAnalysisPanelMinimized(false);
       setLatestBefundLoadedFrom("local");
       writeLatestBefundDisplay(pid, { html, progress, meta, createdAt: rebuiltAt });
+      if (symptoms.length || medications.length || noConventionalMedication) {
+        const dedupSymptoms = Array.from(new Map(symptoms.map((item) => [item.text.toLowerCase(), item])).values());
+        const dedupMedications = Array.from(new Map(medications.map((item) => [`${item.name.toLowerCase()}|${(item.dosis || "").toLowerCase()}`, item])).values());
+        applyExtractedToInputs({ forPseudonymId: pid, diagnoses: [], symptoms: dedupSymptoms, medications: dedupMedications, noConventionalMedication });
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -3100,7 +3154,8 @@ export function TherapyRecommendation() {
       try {
         const extDiag: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }> = [];
         const extSym: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }> = [];
-        const extMed: Array<{ name: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }> = [];
+        const extMed: Array<{ name: string; kategorie?: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }> = [];
+        let noConventionalMedication = false;
         const stripFence = (s: string) => s.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
         for (const p of partials) {
           if (!p) continue;
@@ -3131,11 +3186,16 @@ export function TherapyRecommendation() {
                 });
               }
             }
+            const presentMedication = obj?.anamnese?.presentMedication;
+            if (Array.isArray(presentMedication) && presentMedication.some((item: any) => /keine(?:rlei|\s+aktuellen?)?\s+(?:klassischen?|konventionell(?:en)?|arzt(?:lich(?:en)?)?)?\s*medikamente?/i.test(String(typeof item === "string" ? item : item?.text || "")))) {
+              noConventionalMedication = true;
+            }
             if (Array.isArray(obj?.medicationsTherapies)) {
               for (const m of obj.medicationsTherapies) {
                 if (!m?.name) continue;
                 extMed.push({
                   name: String(m.name).trim(),
+                  kategorie: m.kategorie || m.category || "",
                   dosis: m.dosis || "",
                   vonWem: m.vonWem || "",
                   datum: m.datum || "",
@@ -3167,9 +3227,9 @@ export function TherapyRecommendation() {
         // Duplikate ausdünnen (case-insensitive)
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
-        const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}`, m])).values());
-        if (dedupDiag.length || dedupSym.length || dedupMed.length) {
-          applyExtractedToInputs({ forPseudonymId: analysisPid, diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed });
+        const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}|${(m.kategorie||"").toLowerCase()}`, m])).values());
+        if (dedupDiag.length || dedupSym.length || dedupMed.length || noConventionalMedication) {
+          applyExtractedToInputs({ forPseudonymId: analysisPid, diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed, noConventionalMedication });
         }
       } catch { /* nicht kritisch */ }
 
@@ -3408,7 +3468,7 @@ export function TherapyRecommendation() {
       toast({ title: "Sicherheitsstopp", description: "Extrahierte Befunddaten gehören zu einem anderen Pseudonym und wurden nicht übernommen.", variant: "destructive" });
       return;
     }
-    const { diagnoses, symptoms, medications } = extracted;
+    const { diagnoses, symptoms, medications, noConventionalMedication } = extracted;
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
       setErkrankung((existing) => mergeExtractedDiagnoses(existing, diagnoses));
@@ -3436,13 +3496,38 @@ export function TherapyRecommendation() {
     if (symptoms.length) {
       setSymptome((existing) => mergeExtractedSymptoms(existing, symptoms));
     }
-    // Medikamente → Textarea "medikamente" (mit Arzt/„unbekannt", Datum, Indikation, Wirkmech., NW)
-    if (medications.length) {
-      setMedikamente((existing) => mergeExtractedMedications(existing, medications));
-    }
+    // Mittel nur bei expliziter Anamnese-Kategorie in das passende Naturheilfeld
+    // übernehmen. Unklassifizierte Einträge bleiben bei der konventionellen Medikation,
+    // statt eine naturheilkundliche Kategorie zu erraten.
+    const categorizedMedications = medications.map((item) => {
+      const declared = String(item.kategorie || "").toLowerCase();
+      if (["homoeopathie", "pflanzenheilkunde", "vitamine", "mineralstoffe", "spurenelemente"].includes(declared)) return item;
+      const name = item.name.toLowerCase();
+      // Alte gespeicherte Teilanalysen hatten noch kein Kategorienfeld. Nur
+      // eindeutige Bezeichnungen werden nachträglich einsortiert.
+      if (/\bvit(?:amin)?\s*[a-z0-9]/i.test(name)) return { ...item, kategorie: "vitamine" };
+      if (/\b(?:zink|selen|jod|kupfer|chrom|mangan|molybdaen|molybdän)\b/i.test(name)) return { ...item, kategorie: "spurenelemente" };
+      if (/\b(?:magnesium|calcium|kalzium|kalium|natrium)\b/i.test(name)) return { ...item, kategorie: "mineralstoffe" };
+      return item;
+    });
+    const naturalGroups = {
+      homoeopathie: categorizedMedications.filter((item) => item.kategorie === "homoeopathie"),
+      pflanzenheilkunde: categorizedMedications.filter((item) => item.kategorie === "pflanzenheilkunde"),
+      vitamine: categorizedMedications.filter((item) => item.kategorie === "vitamine"),
+      mineralstoffe: categorizedMedications.filter((item) => item.kategorie === "mineralstoffe"),
+      spurenelemente: categorizedMedications.filter((item) => item.kategorie === "spurenelemente"),
+    };
+    const conventionalMedications = categorizedMedications.filter((item) => !Object.values(naturalGroups).some((group) => group.includes(item)));
+    if (conventionalMedications.length) setMedikamente((existing) => mergeExtractedMedications(existing, conventionalMedications));
+    else if (noConventionalMedication) setMedikamente((existing) => existing.trim() || "Keine aktuellen konventionell-medizinischen Medikamente laut Anamnese dokumentiert.");
+    if (naturalGroups.homoeopathie.length) setNaturheilMittelHomoeopathie((existing) => mergeExtractedMedications(existing, naturalGroups.homoeopathie));
+    if (naturalGroups.pflanzenheilkunde.length) setNaturheilMittelPflanzenheilkunde((existing) => mergeExtractedMedications(existing, naturalGroups.pflanzenheilkunde));
+    if (naturalGroups.vitamine.length) setNaturheilMittelVitamine((existing) => mergeExtractedMedications(existing, naturalGroups.vitamine));
+    if (naturalGroups.mineralstoffe.length) setNaturheilMittelMineralstoffe((existing) => mergeExtractedMedications(existing, naturalGroups.mineralstoffe));
+    if (naturalGroups.spurenelemente.length) setNaturheilMittelSpurenelemente((existing) => mergeExtractedMedications(existing, naturalGroups.spurenelemente));
     toast({
       title: "Befunddaten automatisch übernommen",
-      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${medications.length} Medikament(e) ergänzt — jeweils mit Quelle (Dokument), Datum (sonst „unbekannt") und wörtlichem Zitat.`,
+      description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${conventionalMedications.length} konventionell-medizinische und ${categorizedMedications.length - conventionalMedications.length} naturheilkundliche Mittel ergänzt — jeweils mit Quelle, Datum und wörtlichem Zitat.`,
     });
 
   };
@@ -3799,7 +3884,12 @@ export function TherapyRecommendation() {
       symptome.trim() && `Aktuelle Symptome / Beschwerden:\n${symptome.trim()}`,
       erkrankung.trim() && `Bekannte Erkrankungen / Diagnosen:\n${erkrankung.trim()}`,
       pathogenText && `Pathogene / NLS-EAV-Befunde:\n${pathogenText}`,
-      medikamente.trim() && `Aktuelle Medikamente / Supplemente:\n${medikamente.trim()}`,
+      medikamente.trim() && `Aktuelle konventionell-medizinische Medikamente:\n${medikamente.trim()}`,
+      naturheilMittelHomoeopathie.trim() && `Aktuelle naturheilkundliche Mittel – Homöopathie:\n${naturheilMittelHomoeopathie.trim()}`,
+      naturheilMittelPflanzenheilkunde.trim() && `Aktuelle naturheilkundliche Mittel – Pflanzenheilkunde:\n${naturheilMittelPflanzenheilkunde.trim()}`,
+      naturheilMittelVitamine.trim() && `Aktuelle naturheilkundliche Mittel – Vitamine:\n${naturheilMittelVitamine.trim()}`,
+      naturheilMittelMineralstoffe.trim() && `Aktuelle naturheilkundliche Mittel – Mineralstoffe:\n${naturheilMittelMineralstoffe.trim()}`,
+      naturheilMittelSpurenelemente.trim() && `Aktuelle naturheilkundliche Mittel – Spurenelemente:\n${naturheilMittelSpurenelemente.trim()}`,
       bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
     ].filter(Boolean).join("\n\n");
     const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
@@ -3821,7 +3911,7 @@ export function TherapyRecommendation() {
       ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
-  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
+  }, [pathogens, symptome, erkrankung, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -5151,8 +5241,8 @@ export function TherapyRecommendation() {
                 Patientenbefund
               </span>
                <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0)}/15 Felder
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0)}/20 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -5198,7 +5288,7 @@ export function TherapyRecommendation() {
                 <TabsTrigger value="mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>💊 Mittel</span>
                   <span className="text-[9px] opacity-70 font-mono">
-                    {bisherigeMittel.trim() ? "1" : "0"}
+                    {[naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel].filter((value) => value.trim()).length}
                   </span>
                 </TabsTrigger>
               </TabsList>
@@ -5897,18 +5987,29 @@ export function TherapyRecommendation() {
             {/* Block 3: Medikation */}
             <div className="rounded-lg border border-violet-300/60 bg-violet-50/60 dark:bg-violet-950/15 dark:border-violet-900/40 p-3 space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300 flex items-center gap-1.5">
-                <Pill className="h-3.5 w-3.5" /> Aktuelle Medikamente
+                <Pill className="h-3.5 w-3.5" /> Aktuelle konventionell-medizinische Medikamente
               </div>
               <Textarea
                 value={medikamente}
                 onChange={(e) => setMedikamente(e.target.value)}
-                placeholder="z.B. Marcumar, Metformin, L-Thyroxin, SSRI..."
+                placeholder="z.B. Marcumar, Metformin, L-Thyroxin, SSRI; bei keiner Einnahme: keine"
                 rows={3}
                 className="bg-background"
               />
               {medikamente.toLowerCase().match(/marcumar|warfarin|eliquis|xarelto|pradaxa|blutverdün/i) && (
                 <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Blutverdünner erkannt – strenge Einschränkungen!</p>
               )}
+              <div className="border-t border-violet-200/70 pt-3 space-y-2 dark:border-violet-900/50">
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Aktuelle naturheilkundliche Mittel</div>
+                <p className="text-xs text-muted-foreground">Nur tatsächlich aktuell eingenommene Mittel mit Dosis und Häufigkeit eintragen. Die fünf Kategorien werden getrennt gespeichert und ausgewertet.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Textarea value={naturheilMittelHomoeopathie} onChange={(e) => setNaturheilMittelHomoeopathie(e.target.value)} placeholder="Homöopathie, z.B. Mittel, Potenz, Dosis" rows={2} className="bg-background" />
+                  <Textarea value={naturheilMittelPflanzenheilkunde} onChange={(e) => setNaturheilMittelPflanzenheilkunde(e.target.value)} placeholder="Pflanzenheilkunde, z.B. Präparat, Dosis" rows={2} className="bg-background" />
+                  <Textarea value={naturheilMittelVitamine} onChange={(e) => setNaturheilMittelVitamine(e.target.value)} placeholder="Vitamine, z.B. Vitamin D, Dosis" rows={2} className="bg-background" />
+                  <Textarea value={naturheilMittelMineralstoffe} onChange={(e) => setNaturheilMittelMineralstoffe(e.target.value)} placeholder="Mineralstoffe, z.B. Magnesium, Dosis" rows={2} className="bg-background" />
+                  <Textarea value={naturheilMittelSpurenelemente} onChange={(e) => setNaturheilMittelSpurenelemente(e.target.value)} placeholder="Spurenelemente, z.B. Zink, Dosis" rows={2} className="bg-background sm:col-span-2" />
+                </div>
+              </div>
             </div>
 
             {/* Block 4: Budget */}
