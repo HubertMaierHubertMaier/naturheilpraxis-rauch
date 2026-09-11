@@ -28,6 +28,31 @@ function expectedOrderNumberForPseudonym(pseudonym: string, sequence: number) {
   return `B-${pseudonym.replace(/^P-/, "")}-${sequence}`;
 }
 
+function parseCSVLine(line: string, delimiter: string) {
+  const columns: string[] = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      columns.push(value.trim());
+      value = "";
+    } else {
+      value += character;
+    }
+  }
+  columns.push(value.trim());
+  return columns;
+}
+
 interface MannayanProduct {
   id: string;
   name: string;
@@ -194,7 +219,7 @@ export default function MannayanPriceManager() {
     const hasHeader = firstLower.includes("name") || firstLower.includes("preis") || firstLower.includes("price");
     const dataLines = hasHeader ? lines.slice(1) : lines;
     const items: Partial<MannayanProduct>[] = dataLines.map(line => {
-      const cols = line.split(delim).map(c => c.trim().replace(/^"|"$/g, ""));
+      const cols = parseCSVLine(line, delim);
       const priceStr = (cols[1] || "0").replace(",", ".").replace(/[^\d.]/g, "");
       return {
         name: cols[0] || "",
