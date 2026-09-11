@@ -116,6 +116,38 @@ export default function MannayanPriceManager() {
     },
   });
 
+  const clearPriceListMutation = useMutation({
+    mutationFn: async () => {
+      const { data: orders, error: ordersError } = await supabase.from("mannayan_orders" as any).select("items");
+      if (ordersError) throw ordersError;
+      const orderedItems = (orders as Array<{ items?: Array<{ product_id?: string; sku?: string; name?: string }> }> || [])
+        .flatMap(order => order.items || []);
+      const orderedProductIds = new Set(orderedItems.map(item => item.product_id).filter((id): id is string => Boolean(id)));
+      const orderedSkus = new Set(orderedItems.map(item => item.sku?.trim()).filter((sku): sku is string => Boolean(sku)));
+      const orderedNames = new Set(orderedItems.map(item => item.name?.trim()).filter((name): name is string => Boolean(name)));
+      const isOrderedProduct = (product: MannayanProduct) => orderedProductIds.has(product.id)
+        || Boolean(product.sku?.trim() && orderedSkus.has(product.sku.trim()))
+        || orderedNames.has(product.name.trim());
+      const protectedIds = products.filter(isOrderedProduct).map(product => product.id);
+      const deleteIds = products.filter(product => !isOrderedProduct(product)).map(product => product.id);
+
+      if (deleteIds.length) {
+        const { error } = await supabase.from("mannayan_products" as any).delete().in("id", deleteIds);
+        if (error) throw error;
+      }
+      if (protectedIds.length) {
+        const { error } = await supabase.from("mannayan_products" as any).update({ is_active: false }).in("id", protectedIds);
+        if (error) throw error;
+      }
+      return { deleted: deleteIds.length, retained: protectedIds.length };
+    },
+    onSuccess: ({ deleted, retained }) => {
+      queryClient.invalidateQueries({ queryKey: ["mannayan-products"] });
+      toast({ title: "Alte Mannayan-Preisliste bereinigt", description: `${deleted} Produkte gelöscht, ${retained} aus Bestellungen erhalten und deaktiviert.` });
+    },
+    onError: (e: any) => toast({ title: "Löschen fehlgeschlagen", description: e.message, variant: "destructive" }),
+  });
+
   const syncImportMutation = useMutation({
     mutationFn: async (items: Partial<MannayanProduct>[]) => {
       const importedSkus = new Set(items.map(item => item.sku?.trim()).filter(Boolean));
@@ -179,6 +211,12 @@ export default function MannayanPriceManager() {
     }
     if (!confirm(`${items.length} Produkte mit der bestehenden Preisliste abgleichen? Nicht in der CSV enthaltene Produkte werden deaktiviert, nicht gelöscht.`)) return;
     syncImportMutation.mutate(items);
+  };
+
+  const clearPriceList = () => {
+    if (!products.length) return;
+    if (!confirm(`Aktuelle Preisliste bereinigen? Produkte aus gespeicherten Bestellungen bleiben erhalten und werden nur deaktiviert. Danach bitte sofort die neue CSV importieren.`)) return;
+    clearPriceListMutation.mutate();
   };
 
   const filtered = useMemo(() => {
@@ -812,12 +850,15 @@ export default function MannayanPriceManager() {
                   <Upload className="h-4 w-4" />CSV abgleichen
                 </span>
               </label>
+              <Button size="sm" variant="destructive" onClick={clearPriceList} disabled={!products.length || clearPriceListMutation.isPending} className="gap-2">
+                <Trash2 className="h-4 w-4" />Alte Liste löschen
+              </Button>
               <Button size="sm" onClick={() => setIsAdding(true)} className="gap-2"><Plus className="h-4 w-4" />Neu</Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-muted-foreground">
-              CSV-Format: <code>Name;Preis;Einheit;Artikelnr.;Kategorie</code> (Semikolon oder Komma; Header optional). Gleiche Artikelnummern werden aktualisiert, neue ergänzt; nicht enthaltene Produkte werden deaktiviert, nicht gelöscht. Beispiel: <code>Vitamin D3;19,90;30 Kapseln;MN-D3;Vitamine</code>
+              CSV-Format: <code>Name;Preis;Einheit;Artikelnr.;Kategorie</code> (Semikolon oder Komma; Header optional). Für einen vollständigen Austausch zuerst „Alte Liste löschen“ wählen und danach die neue CSV hochladen. Produkte aus gespeicherten Bestellungen bleiben erhalten und werden nur deaktiviert. CSV abgleichen aktualisiert gleiche Artikelnummern und deaktiviert nicht enthaltene Produkte. Beispiel: <code>Vitamin D3;19,90;30 Kapseln;MN-D3;Vitamine</code>
             </p>
 
             {isAdding && (
