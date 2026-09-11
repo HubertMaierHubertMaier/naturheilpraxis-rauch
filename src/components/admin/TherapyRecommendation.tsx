@@ -3419,7 +3419,7 @@ export function TherapyRecommendation() {
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
         let documentType = item.documentType || inferDirectBefundTarget(item.file.name);
-        const extracted = await extractClinicalDocumentText(item.file, "doctor", (message) => {
+        const extracted = await extractClinicalDocumentText(item.file, documentType === "anamnese" ? "anamnese" : "doctor", (message) => {
           if (scopeIsCurrent()) toast(message);
         }, undefined, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`);
         if (!scopeIsCurrent()) return;

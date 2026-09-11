@@ -9,6 +9,7 @@ export type ExtractedPdfPage = {
   textLayer: string;
   ocrText?: string;
   ocrConfidence?: number;
+  includeOcrAlongsideTextLayer?: boolean;
 };
 
 export type PdfJsTextItemLike = {
@@ -125,18 +126,22 @@ export function countMeaningfulTextCharacters(text: string): number {
   return normalizeExtractedText(text).replace(/\s/g, "").length;
 }
 
-export function shouldRunLocalOcr({ containsRasterImage, textLayer }: {
+export function shouldRunLocalOcr({ containsRasterImage, textLayer, force = false }: {
   containsRasterImage: boolean;
   textLayer: string;
+  force?: boolean;
 }): boolean {
-  return containsRasterImage && countMeaningfulTextCharacters(textLayer) < MIN_TEXT_PER_PAGE;
+  return force || (containsRasterImage && countMeaningfulTextCharacters(textLayer) < MIN_TEXT_PER_PAGE);
 }
 
 export function selectPreferredPageText(page: ExtractedPdfPage): string {
   const textLayer = normalizeExtractedText(page.textLayer);
+  const ocrText = normalizeExtractedText(page.ocrText || "");
+  if (page.includeOcrAlongsideTextLayer && ocrText) {
+    return normalizeExtractedText([textLayer, ocrText].filter(Boolean).join("\n"));
+  }
   if (countMeaningfulTextCharacters(textLayer) >= MIN_TEXT_PER_PAGE) return textLayer;
 
-  const ocrText = normalizeExtractedText(page.ocrText || "");
   return countMeaningfulTextCharacters(ocrText) > countMeaningfulTextCharacters(textLayer)
     ? ocrText
     : textLayer;

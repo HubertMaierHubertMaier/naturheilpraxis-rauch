@@ -127,7 +127,7 @@ const rasterImageOperatorIds = new Set([
 
 export async function extractClinicalDocumentText(
   file: File,
-  _mode: "doctor" | "lab" = "doctor",
+  mode: "doctor" | "lab" | "anamnese" = "doctor",
   notify?: ToastFn,
   onProgress?: (status: string) => void,
   sharedOcrSession?: OcrExtractionSession,
@@ -207,9 +207,13 @@ export async function extractClinicalDocumentText(
         const containsRasterImage = operators.fnArray.some((operatorId) => rasterImageOperatorIds.has(operatorId));
         const content = await page.getTextContent();
         const pageText = reconstructPdfTextLines(content.items);
-        const extractedPage: ExtractedPdfPage = { pageNumber, textLayer: pageText };
+        const extractedPage: ExtractedPdfPage = {
+          pageNumber,
+          textLayer: pageText,
+          includeOcrAlongsideTextLayer: mode === "anamnese",
+        };
 
-        if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText })) {
+        if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })) {
           let canvas: HTMLCanvasElement | undefined;
           try {
             throwIfAborted(signal);
@@ -438,7 +442,8 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
         updated[index] = { ...updated[index], status: "processing", progress: "PDF-Textebene wird lokal geprüft...", error: undefined };
         setFiles([...updated]);
         try {
-          const extracted = await extractClinicalDocumentText(updated[index].file, ocrMode, scopedToast, (progress) => {
+          const extractionMode = documentType === "Anamnese / Anamnesebogen" ? "anamnese" : ocrMode;
+          const extracted = await extractClinicalDocumentText(updated[index].file, extractionMode, scopedToast, (progress) => {
             if (!scopeIsCurrent()) return;
             updated[index] = { ...updated[index], progress };
             setFiles([...updated]);
