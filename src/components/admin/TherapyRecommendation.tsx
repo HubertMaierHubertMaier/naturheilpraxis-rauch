@@ -1189,7 +1189,6 @@ export function TherapyRecommendation() {
   const [stuhlbefund, setStuhlbefund] = useState("");
   const [arztbericht, setArztbericht] = useState("");
   const [arztberichtDatum, setArztberichtDatum] = useState("");
-  const [anamnesebogen, setAnamnesebogen] = useState("");
   const [metatronHeel, setMetatronHeel] = useState("");
   const [metatronDatum, setMetatronDatum] = useState("");
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
@@ -1354,7 +1353,6 @@ export function TherapyRecommendation() {
       stuhlbefund,
       arztbericht,
       arztberichtDatum,
-      anamnesebogen,
       metatronHeel,
       metatronDatum,
       sonstigeUntersuchungen,
@@ -1375,7 +1373,7 @@ export function TherapyRecommendation() {
       ...extra,
     }) as Record<string, unknown>;
     return data;
-  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, anamnesebogen, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel]);
 
   const assertPayloadMatchesPseudonym = useCallback((pid: string, payload: Record<string, unknown>) => {
     const embedded = getEmbeddedPseudonymId(payload);
@@ -1467,7 +1465,6 @@ export function TherapyRecommendation() {
     if (typeof data.stuhlbefund === "string") setStuhlbefund(data.stuhlbefund);
     if (typeof data.arztbericht === "string") setArztbericht(data.arztbericht);
     if (typeof data.arztberichtDatum === "string") setArztberichtDatum(data.arztberichtDatum);
-    if (typeof data.anamnesebogen === "string") setAnamnesebogen(data.anamnesebogen);
     if (typeof data.metatronHeel === "string") setMetatronHeel(data.metatronHeel);
     if (typeof data.metatronDatum === "string") setMetatronDatum(data.metatronDatum);
     if (typeof data.sonstigeUntersuchungen === "string") setSonstigeUntersuchungen(data.sonstigeUntersuchungen);
@@ -3551,13 +3548,12 @@ export function TherapyRecommendation() {
       ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
       ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
-      ...splitMarkedDocumentSources("anamnesebogen", "Anamnesebogen", anamnesebogen),
       ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
       ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
-  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, anamnesebogen, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
+  }, [pathogens, symptome, erkrankung, medikamente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3841,7 +3837,6 @@ export function TherapyRecommendation() {
             stuhlbefund: stuhlbefund.trim() || undefined,
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
-            anamnesebogen: anamnesebogen.trim() || undefined,
             metatronHeel: metatronHeel.trim() || undefined,
             metatronDatum: metatronDatum.trim() || undefined,
             sonstigeUntersuchungen: sonstigeUntersuchungen.trim() || undefined,
@@ -4926,19 +4921,6 @@ export function TherapyRecommendation() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                    <label className="text-sm font-medium block">Anamnesebogen</label>
-                    <WorkloadBadge chars={anamnesebogen.length} hint="Anamnesebogen: Angaben werden nur für das ausgewählte Pseudonym gespeichert und in die Befundauswertung aufgenommen." />
-                  </div>
-                  <Textarea
-                    value={anamnesebogen}
-                    onChange={(e) => setAnamnesebogen(e.target.value)}
-                    placeholder="Anamnesebogen nach ausdrücklicher Zuordnung zu diesem Pseudonym hier übernehmen..."
-                    rows={6}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Getrennte Befundquelle für den ausdrücklich diesem Pseudonym zugeordneten Anamnesebogen. Sie erscheint danach unter den auswählbaren Quellen der Befundauswertung.</p>
                 </div>
               </TabsContent>
 
