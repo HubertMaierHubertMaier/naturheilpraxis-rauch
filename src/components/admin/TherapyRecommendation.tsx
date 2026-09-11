@@ -1008,10 +1008,10 @@ const buildClientFallbackAnalysisHtml = (
   const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
   const patientLine = [ctx.pseudonymId, ctx.alter ? `Alter ${ctx.alter}` : "", ctx.geschlecht || ""].filter(Boolean).join(" · ") || "—";
   return `<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Befund-Auswertung (lokaler Notfall-Aufbau)</title>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Anamneseauswertung (lokaler Notfall-Aufbau)</title>
 <style>@page{size:A4;margin:1.7cm}body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#263128;line-height:1.48;margin:0;padding:28px;background:#fff}h1{color:#4f744f;border-bottom:3px solid #6b8e6b;padding-bottom:10px;margin:0 0 12px}h2{color:#4f744f;border-left:5px solid #6b8e6b;padding-left:10px;margin-top:28px}h3{color:#52614f;margin:18px 0 8px}table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:.92rem}th,td{border:1px solid #d9e1d6;padding:7px 8px;vertical-align:top}th{background:#eef4eb;text-align:left;color:#394a37}.meta,.notice{background:#f7faf4;border:1px solid #d9e1d6;padding:10px 12px;margin:10px 0}.beleg{display:block;margin-top:4px;font-size:.84em;color:#5a6b5a;font-style:italic}.empty{color:#6f786c;font-style:italic}.red{color:#a33;font-weight:700}.warn{background:#fff5e6;border:1px solid #f3cf95;padding:10px 12px;margin:10px 0;color:#7a4e10}ul,ol{padding-left:1.25rem}</style>
 </head><body>
-<h1>Befund-Auswertung</h1>
+<h1>Anamneseauswertung</h1>
 <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientLine)} · <strong>Umfang:</strong> ${escapeHtml(ctx.totalChars.toLocaleString("de-DE"))} Zeichen / ${partials.length} Teilpaket(e)</div>
 <div class="warn"><strong>Hinweis:</strong> Diese Auswertung wurde aus den vollständig gespeicherten Teilanalysen <em>lokal im Browser</em> rekonstruiert, weil die KI-Zusammenführung im Server-Lauf unvollständig zurückkam. ${parsedCount}/${partials.length} Teile waren als JSON lesbar. Inhaltlich basieren die Tabellen ausschließlich auf den belegten Teil-Extraktionen — keine zusätzliche Interpretation, keine Therapie-Empfehlung.</div>
 
@@ -3821,6 +3821,19 @@ export function TherapyRecommendation() {
     setSelectedAnalysisSourceKeys(next.selectedSourceIds);
   }
 
+  const therapySourceStages = [
+    { label: "1. Anamnese", groups: [["anamnese"]], description: "Nur beantwortete Angaben aus dem Anamnesebogen" },
+    { label: "2. Anamnese + Metatron", groups: [["anamnese"], ["metatronHeel"]], description: "Anamnese mit Metatron-Auswertung" },
+    { label: "3. Anamnese + Vieva Pro", groups: [["anamnese"], ["vievaPlus"]], description: "Anamnese mit Vieva-Pro-Analyse" },
+    { label: "4. Anamnese + Labor", groups: [["anamnese"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese mit klassischem Labor" },
+    { label: "5. Anamnese + Metatron + Labor", groups: [["anamnese"], ["metatronHeel"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese, Metatron und klassisches Labor" },
+    { label: "6. Anamnese + Vieva Pro + Labor", groups: [["anamnese"], ["vievaPlus"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese, Vieva Pro und klassisches Labor" },
+    { label: "7. Alles Vorhandene", groups: [], description: "Alle vorhandenen Befundquellen" },
+  ];
+  const getTherapyStageSourceIds = (keys: string[]) => analysisSources
+    .filter((source) => keys.length === 0 || keys.some((key) => source.key === key || source.key.startsWith(`${key}::`)))
+    .map((source) => normalizeAnalysisSourceId(source.key));
+
   const selectedAnalysisSources = useMemo(() => {
     const selected = new Set(selectedAnalysisSourceKeys);
     return analysisSources.filter((source) => selected.has(normalizeAnalysisSourceId(source.key)));
@@ -4671,6 +4684,32 @@ export function TherapyRecommendation() {
             <Button type="button" size="sm" variant="ghost" onClick={() => applyManualAnalysisSelection([])} disabled={!analysisSources.length || isSourceComparisonLoading || !!sourceComparisonError}>
               Auswahl leeren
             </Button>
+          </div>
+          <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Therapie-Empfehlung stufenweise vorbereiten</div>
+            <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">Jede Stufe setzt nur die angegebenen Befundquellen zur Auswertung. Fehlende Quellen werden nicht ersetzt oder geschätzt.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {therapySourceStages.map((stage) => {
+                const stageKeys = stage.groups.flat();
+                const sourceIds = getTherapyStageSourceIds(stageKeys);
+                const isAvailable = stage.groups.length === 0
+                  ? sourceIds.length > 0
+                  : stage.groups.every((group) => getTherapyStageSourceIds(group).length > 0);
+                return (
+                  <Button
+                    key={stage.label}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!isAvailable || isAnalyzingDocs || isSourceComparisonLoading || !!sourceComparisonError}
+                    onClick={() => applyManualAnalysisSelection(sourceIds)}
+                    className="h-auto justify-start whitespace-normal border-emerald-500/60 bg-background px-3 py-2 text-left hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
+                  >
+                    <span><strong>{stage.label}</strong><span className="block text-[11px] font-normal text-muted-foreground">{stage.description}</span></span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
           <div className="rounded-md border bg-background p-3">
             <label className="text-sm font-semibold" htmlFor="befund-analysis-profile">1. Analyseprofil vor Befundstart festlegen</label>
@@ -5997,7 +6036,7 @@ export function TherapyRecommendation() {
           <div className="flex items-center gap-2 border-b bg-primary/10 px-4 py-3 flex-wrap">
             {isAnalyzingDocs ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <CheckCircle2 className="h-5 w-5 text-primary" />}
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-foreground">Hier ist die Befund-Auswertung</div>
+              <div className="font-semibold text-foreground">Hier ist die Anamneseauswertung</div>
               <div className="text-xs text-muted-foreground">
                 {isAnalyzingDocs
                   ? "Sie läuft gerade — das Protokoll aktualisiert sich live."
@@ -6011,7 +6050,7 @@ export function TherapyRecommendation() {
                 <Button
                   size="sm"
                    variant="outline"
-                   onClick={() => openClinicalReportWindow(docAnalysisHtml, "Befund-Auswertung")}
+                    onClick={() => openClinicalReportWindow(docAnalysisHtml, "Anamneseauswertung")}
                   className="gap-1"
                   title="HTML in neuem Browser-Tab öffnen (vergrößert, druckbar, separat scrollbar)"
                 >
@@ -6022,7 +6061,7 @@ export function TherapyRecommendation() {
                   variant="outline"
                    onClick={() => {
                      const dateStr = new Date().toISOString().slice(0, 10);
-                     const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                      const filename = `Anamneseauswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
                      openClinicalReportWindow(docAnalysisHtml, filename, true);
                   }}
                   className="gap-1"
@@ -6060,7 +6099,7 @@ export function TherapyRecommendation() {
                   </div>
                   <BefundSourceStand stand={displayedBefundSourceStand} />
                    <iframe
-                     title="Befund-Auswertung HTML direkt sichtbar"
+                      title="Anamneseauswertung HTML direkt sichtbar"
                      srcDoc={docAnalysisHtml}
                      sandbox=""
                      referrerPolicy="no-referrer"
@@ -6084,7 +6123,7 @@ export function TherapyRecommendation() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2">
                 {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
-                Befund-Auswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
+                Anamneseauswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
               </CardTitle>
               {docAnalysisHtml && (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -6093,7 +6132,7 @@ export function TherapyRecommendation() {
                     variant="default"
                      onClick={() => {
                        const dateStr = new Date().toISOString().slice(0, 10);
-                       const filename = `Befund-Auswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
+                        const filename = `Anamneseauswertung_${(pseudonymId || "patient").trim()}_${dateStr}`;
                        openClinicalReportWindow(docAnalysisHtml, filename, true);
                     }}
                     className="gap-1"
@@ -6104,7 +6143,7 @@ export function TherapyRecommendation() {
                   <Button
                     size="sm"
                      variant="outline"
-                     onClick={() => openClinicalReportWindow(docAnalysisHtml, "Befund-Auswertung")}
+                      onClick={() => openClinicalReportWindow(docAnalysisHtml, "Anamneseauswertung")}
                     className="gap-1"
                     title="HTML in neuem Browser-Tab öffnen"
                   >
@@ -6124,7 +6163,7 @@ export function TherapyRecommendation() {
               <>
                 <BefundSourceStand stand={displayedBefundSourceStand} />
                 <iframe
-                  title="Befund-Auswertung HTML"
+                  title="Anamneseauswertung HTML"
                   srcDoc={docAnalysisHtml}
                   sandbox=""
                   referrerPolicy="no-referrer"
