@@ -217,6 +217,13 @@ Wichtig:
 - Beginn, Auslöser, Häufigkeit und Qualität nur dann einer einzelnen Beschwerde zuordnen, wenn der Bogen das ausdrücklich tut. Andernfalls mit "Beschwerdeprofil zum Gesamtbeschwerdekomplex: ..." kennzeichnen; keine Einzelzuordnung erfinden.
 - "Operationen: ja" niemals als vollständigen Vorgeschichte-Eintrag ausgeben. Sind Art oder Zeitpunkt nicht dokumentiert, in openQuestions ausdrücklich "Welche Operation(en), wann und aus welchem Grund?" aufnehmen. Nur konkret benannte Operationen mit belegtem Jahr/Grund gehören in pastHistory.
 
+🩺 ANAMNESEBASIERTE VERDACHTSDIAGNOSEN:
+- Direkt im Anamnesebogen genannte Diagnosen, Vorerkrankungen und Zustände nach (Z.n.) gehören in diagnoses mit status "anamnestisch dokumentiert" und quelle "Anamnese – dokumentierte Angabe". Sie werden als vorliegende Patientenangabe dargestellt, nicht als neu abgeleitete Diagnose.
+- Hauptbeschwerden wie Müdigkeit, Vergesslichkeit, Kraftlosigkeit oder Tinnitus bleiben in currentProblems und werden nicht künstlich als Diagnose umbenannt.
+- Leite aus der Anamnese nur dann eine Verdachtsdiagnose ab, wenn mindestens zwei zusammenpassende, tatsächlich belegte Angaben vorliegen oder ein eindeutiger direkt dokumentierter Hinweis besteht.
+- Solche Einträge gehören in diagnoses mit status "Verdacht", quelle "Anamnese – Verdachtsdiagnose zur Prüfung" und einem wörtlichen Belegzitat. ICD-10 bleibt leer, sofern kein Code direkt im Dokument steht.
+- Eine einzelne unspezifische Beschwerde reicht nicht. Nie als gesicherte Diagnose ausgeben; fehlende Abklärungen als konkrete openQuestions ergänzen.
+
 📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
 - Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
 - ⚠️ KRITISCH: JEDER EINZELNE Laborwert / jede Einzel-Messung / jeder Einzel-Befund braucht ein Datum — NICHT NUR die übergeordnete Untersuchung. Beispiel: Wenn ein Stuhlbefund vom 26.05.2025 zehn Einzelparameter (Calprotectin, sIgA, Zonulin, Bakterienstämme, Pilze …) enthält, dann erhält JEDER dieser zehn Parameter "datum":"2025-05-26" — auch wenn das Datum nur EINMAL oben im Befund steht. NIEMALS Einzelwerte ohne Datum ausgeben.
@@ -259,7 +266,7 @@ Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt m
     "physicalExamination": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}],
     "additionalInvestigations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}]
   },
-  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","datum":"","status":"gesichert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "diagnoses": [{"icd10":"","diagnose":"","quelle":"","datum":"","status":"gesichert|anamnestisch dokumentiert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
   "medicationsTherapies": [{"name":"","dosis":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
   "labValues": [{"datum":"","parameter":"","wert":"","einheit":"","referenz":"","bewertung":"normal|↑|↓|kritisch|unklar","bedeutung":"allgemeine patientenverständliche Bedeutung, keine Diagnose","moeglicheSymptome":"allgemein mögliche Beschwerden; kann symptomlos sein; keine Behauptung über den Patienten","quelle":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "findings": [{"text":"","datum":"","beleg":{"quelle":"","teil":"","zitat":""}}],
@@ -700,7 +707,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
   ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
-  <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
+  <h2>4. Dokumentierte Diagnosen / Z.n. & anamnesebasierte Verdachtsdiagnosen</h2>
   <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
   <h2>5. Medikamente, Präparate & Therapien</h2>
