@@ -47,18 +47,28 @@ describe("clinical PDF extraction decisions", () => {
     expect(reconstructPdfTextLines(columnStreamItems)).toBe("CRP 4,2 mg/l\nFerritin 52 ng/ml");
   });
 
-  it("runs OCR only for raster pages with an insufficient text layer", () => {
+  it("runs OCR only for raster pages with an insufficient text layer unless an anamnesis form requires it", () => {
     const sufficientText = "A".repeat(MIN_TEXT_PER_PAGE);
 
     expect(shouldRunLocalOcr({ containsRasterImage: true, textLayer: "Logo" })).toBe(true);
     expect(shouldRunLocalOcr({ containsRasterImage: false, textLayer: "" })).toBe(false);
     expect(shouldRunLocalOcr({ containsRasterImage: true, textLayer: sufficientText })).toBe(false);
+    expect(shouldRunLocalOcr({ containsRasterImage: false, textLayer: sufficientText, force: true })).toBe(true);
   });
 
   it("prefers a sufficient existing text layer over OCR output", () => {
     const textLayer = "Vorhandene OCR-Textebene mit ausreichend vielen Laborwerten und Einheiten";
 
     expect(selectPreferredPageText({ pageNumber: 1, textLayer, ocrText: "Abweichende Nacherkennung" })).toBe(textLayer);
+  });
+
+  it("keeps local OCR answers alongside the printed anamnesis form", () => {
+    expect(selectPreferredPageText({
+      pageNumber: 1,
+      textLayer: "Frage: Bestehen Beschwerden?",
+      ocrText: "Ja, seit drei Wochen.",
+      includeOcrAlongsideTextLayer: true,
+    })).toBe("Frage: Bestehen Beschwerden?\nJa, seit drei Wochen.");
   });
 
   it("combines normal and locally recognized pages in page-number order", () => {
