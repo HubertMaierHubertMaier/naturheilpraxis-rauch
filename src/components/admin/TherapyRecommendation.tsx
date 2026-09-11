@@ -222,6 +222,47 @@ type ExtractedBefundInputs = {
   noConventionalMedication?: boolean;
 };
 
+const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs, "forPseudonymId"> => {
+  const diagnoses: ExtractedBefundInputs["diagnoses"] = [];
+  const symptoms: ExtractedBefundInputs["symptoms"] = [];
+  const medications: ExtractedBefundInputs["medications"] = [];
+  let noConventionalMedication = false;
+  const pairs = text.matchAll(/Frage\/Feld:\s*([^\n]+)\nErkannte Antwort:\s*([^\n]+)/gi);
+  for (const pair of pairs) {
+    const question = pair[1].trim();
+    const answer = pair[2].trim();
+    const normalizedQuestion = question.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const source = `Anamnesebogen – ${question}`;
+    if (/hauptbeschwerde|beschwerde|symptom/.test(normalizedQuestion)) {
+      symptoms.push({ text: `${question}: ${answer}`, quelle: source, zitat: answer });
+      continue;
+    }
+    if (/diagnose|erkrankung|vorerkrankung/.test(normalizedQuestion)) {
+      diagnoses.push({ diagnose: `${question}: ${answer}`, quelle: source, status: "anamnestisch dokumentiert", zitat: answer });
+      continue;
+    }
+    if (/medikament|arznei|vitamin|mineral|spurenelement|homoo?opath|pflanz|phyto/.test(normalizedQuestion)) {
+      if (/^(?:nein|keine?|keinerlei)\b/i.test(answer) && /medikament|arznei/.test(normalizedQuestion)) {
+        noConventionalMedication = true;
+        continue;
+      }
+      const kategorie = /vitamin/.test(normalizedQuestion)
+        ? "vitamine"
+        : /spurenelement/.test(normalizedQuestion)
+          ? "spurenelemente"
+          : /mineral/.test(normalizedQuestion)
+            ? "mineralstoffe"
+            : /homoo?opath/.test(normalizedQuestion)
+              ? "homoeopathie"
+              : /pflanz|phyto/.test(normalizedQuestion)
+                ? "pflanzenheilkunde"
+                : "konventionell";
+      medications.push({ name: answer, kategorie, quelle: source, zitat: answer, status: "laufend" });
+    }
+  }
+  return { diagnoses, symptoms, medications, noConventionalMedication };
+};
+
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
@@ -3672,6 +3713,7 @@ export function TherapyRecommendation() {
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const append = (setter: typeof setLaborKomplett, text: string) => setter((previous) => mergeExtractedBlockIntoField(previous, text));
+    const anamneseInputs: Omit<ExtractedBefundInputs, "forPseudonymId"> = { diagnoses: [], symptoms: [], medications: [], noConventionalMedication: false };
     const documentTypes = new Set<string>();
     for (const item of ready) {
       if (!scopeIsCurrent()) return;
@@ -3682,11 +3724,22 @@ export function TherapyRecommendation() {
         case "labor": append(setLaborKomplett, text); break;
         case "metatron": append(setMetatronHeel, text); break;
         case "vieva": append(setVievaPlus, text); break;
-        case "anamnese": append(setAnamnese, text); break;
+        case "anamnese": {
+          append(setAnamnese, text);
+          const extracted = extractExplicitAnamneseInputs(text);
+          anamneseInputs.diagnoses.push(...extracted.diagnoses);
+          anamneseInputs.symptoms.push(...extracted.symptoms);
+          anamneseInputs.medications.push(...extracted.medications);
+          anamneseInputs.noConventionalMedication ||= extracted.noConventionalMedication;
+          break;
+        }
         case "arzt": append(setArztbericht, text); break;
         case "sonstige": append(setSonstigeUntersuchungen, text); break;
       }
       documentTypes.add(directBefundTargetLabel(documentType));
+    }
+    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication) {
+      applyExtractedToInputs({ forPseudonymId: pid, ...anamneseInputs });
     }
     const latestDateFor = (documentType: DirectBefundTarget) => ready
       .filter((item) => item.documentType === documentType)
