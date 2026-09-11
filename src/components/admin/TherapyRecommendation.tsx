@@ -2725,12 +2725,17 @@ export function TherapyRecommendation() {
       const totalChars = Number(checkpoint?.totalChars || 0);
       const duplicateNotes = Array.isArray(checkpoint?.duplicateNotes) ? checkpoint.duplicateNotes.filter((note: unknown): note is string => typeof note === "string") : [];
       const sourceManifest = Array.isArray(checkpoint?.sourceManifestV1) ? checkpoint.sourceManifestV1 : [];
+      const diagnoses: ExtractedBefundInputs["diagnoses"] = [];
       const symptoms: ExtractedBefundInputs["symptoms"] = [];
       const medications: ExtractedBefundInputs["medications"] = [];
       let noConventionalMedication = false;
       for (const partial of partials) {
         try {
           const extracted = parseLlmJson(partial);
+          for (const item of Array.isArray(extracted?.diagnoses) ? extracted.diagnoses : []) {
+            if (typeof item?.diagnose !== "string" || !item.diagnose.trim()) continue;
+            diagnoses.push({ icd10: item.icd10 || "", diagnose: item.diagnose.trim(), quelle: item.quelle || item?.beleg?.quelle || "", status: item.status || "", datum: item.datum || "", zitat: item?.beleg?.zitat || "" });
+          }
           for (const item of Array.isArray(extracted?.anamnese?.currentProblems) ? extracted.anamnese.currentProblems : []) {
             const record = item && typeof item === "object" ? item : {};
             const text = typeof item === "string" ? item : (record as any).text;
@@ -2769,10 +2774,11 @@ export function TherapyRecommendation() {
       setIsDocAnalysisPanelMinimized(false);
       setLatestBefundLoadedFrom("local");
       writeLatestBefundDisplay(pid, { html, progress, meta, createdAt: rebuiltAt });
-      if (symptoms.length || medications.length || noConventionalMedication) {
+      if (diagnoses.length || symptoms.length || medications.length || noConventionalMedication) {
+        const dedupDiagnoses = Array.from(new Map(diagnoses.map((item) => [item.diagnose.toLowerCase(), item])).values());
         const dedupSymptoms = Array.from(new Map(symptoms.map((item) => [item.text.toLowerCase(), item])).values());
         const dedupMedications = Array.from(new Map(medications.map((item) => [`${item.name.toLowerCase()}|${(item.dosis || "").toLowerCase()}`, item])).values());
-        applyExtractedToInputs({ forPseudonymId: pid, diagnoses: [], symptoms: dedupSymptoms, medications: dedupMedications, noConventionalMedication });
+        applyExtractedToInputs({ forPseudonymId: pid, diagnoses: dedupDiagnoses, symptoms: dedupSymptoms, medications: dedupMedications, noConventionalMedication });
       }
 
       const { data: { user } } = await supabase.auth.getUser();
