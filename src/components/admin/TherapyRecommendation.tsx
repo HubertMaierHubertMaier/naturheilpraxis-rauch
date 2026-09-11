@@ -5150,9 +5150,9 @@ export function TherapyRecommendation() {
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
                 Patientenbefund
               </span>
-              <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, anamnese, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (mannayanOrders.length ? 1 : 0)}/15 Felder
+               <Badge variant="outline" className="ml-auto text-[10px] font-mono">
+                {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, bisherigeMittel, eigeneTherapieVorlage]
+                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0)}/15 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -5167,7 +5167,7 @@ export function TherapyRecommendation() {
                 </TabsTrigger>
                 <TabsTrigger value="anamnese" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-950/40">
                   <span>📋 Anamnese</span>
-                  <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() ? "1" : "0"}</span>
+                  <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="labor" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🧪 Labor</span>
