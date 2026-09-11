@@ -6159,18 +6159,7 @@ export function TherapyRecommendation() {
                 {docAnalysisProgress}
               </pre>
             )}
-            {docAnalysisHtml && (
-              <>
-                <BefundSourceStand stand={displayedBefundSourceStand} />
-                <iframe
-                  title="Anamneseauswertung HTML"
-                  srcDoc={docAnalysisHtml}
-                  sandbox=""
-                  referrerPolicy="no-referrer"
-                  className="h-[72vh] w-full rounded-md border bg-background"
-                />
-              </>
-            )}
+            {docAnalysisHtml && <p className="text-xs text-muted-foreground">Die Auswertung wird oben einmalig angezeigt.</p>}
           </CardContent>
         </Card>
 
