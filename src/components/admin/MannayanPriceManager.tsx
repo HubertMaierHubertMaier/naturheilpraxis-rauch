@@ -116,14 +116,36 @@ export default function MannayanPriceManager() {
     },
   });
 
-  const bulkInsertMutation = useMutation({
+  const syncImportMutation = useMutation({
     mutationFn: async (items: Partial<MannayanProduct>[]) => {
-      const { error } = await supabase.from("mannayan_products" as any).insert(items as any);
-      if (error) throw error;
+      const importedSkus = new Set(items.map(item => item.sku?.trim()).filter(Boolean));
+      const existingBySku = new Map(products.filter(product => product.sku?.trim()).map(product => [product.sku!.trim(), product]));
+      const updates = items.filter(item => item.sku && existingBySku.has(item.sku.trim()));
+      const inserts = items.filter(item => !item.sku || !existingBySku.has(item.sku.trim()));
+
+      await Promise.all(updates.map(item => {
+        const existing = existingBySku.get(item.sku!.trim())!;
+        return supabase.from("mannayan_products" as any).update(item).eq("id", existing.id).then(({ error }) => {
+          if (error) throw error;
+        });
+      }));
+
+      if (inserts.length) {
+        const { error } = await supabase.from("mannayan_products" as any).insert(inserts as any);
+        if (error) throw error;
+      }
+
+      const removedSkus = products
+        .filter(product => product.is_active && product.sku?.trim() && !importedSkus.has(product.sku.trim()))
+        .map(product => product.id);
+      if (removedSkus.length) {
+        const { error } = await supabase.from("mannayan_products" as any).update({ is_active: false }).in("id", removedSkus);
+        if (error) throw error;
+      }
     },
     onSuccess: (_, items) => {
       queryClient.invalidateQueries({ queryKey: ["mannayan-products"] });
-      toast({ title: `${items.length} Produkte importiert` });
+      toast({ title: `${items.length} Produkte abgeglichen` });
     },
     onError: (e: any) => toast({ title: "Import-Fehler", description: e.message, variant: "destructive" }),
   });
@@ -155,7 +177,8 @@ export default function MannayanPriceManager() {
       toast({ title: "Keine gültigen Zeilen gefunden", variant: "destructive" });
       return;
     }
-    bulkInsertMutation.mutate(items);
+    if (!confirm(`${items.length} Produkte mit der bestehenden Preisliste abgleichen? Nicht in der CSV enthaltene Produkte werden deaktiviert, nicht gelöscht.`)) return;
+    syncImportMutation.mutate(items);
   };
 
   const filtered = useMemo(() => {
@@ -779,14 +802,14 @@ export default function MannayanPriceManager() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="font-serif">Mannayan-Preisliste</CardTitle>
-              <CardDescription>{products.length} Produkte gespeichert</CardDescription>
+              <CardDescription>{products.length} Produkte gespeichert · Gültig ab: 29.07.2026</CardDescription>
             </div>
             <div className="flex gap-2">
               <label className="cursor-pointer">
                 <input type="file" accept=".csv,.txt" className="hidden"
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVUpload(f); e.target.value = ""; }} />
                 <span className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3">
-                  <Upload className="h-4 w-4" />CSV-Import
+                  <Upload className="h-4 w-4" />CSV abgleichen
                 </span>
               </label>
               <Button size="sm" onClick={() => setIsAdding(true)} className="gap-2"><Plus className="h-4 w-4" />Neu</Button>
@@ -794,7 +817,7 @@ export default function MannayanPriceManager() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-muted-foreground">
-              CSV-Format: <code>Name;Preis;Einheit;Artikelnr.;Kategorie</code> (Semikolon oder Komma; Header optional). Beispiel: <code>Vitamin D3;19,90;30 Kapseln;MN-D3;Vitamine</code>
+              CSV-Format: <code>Name;Preis;Einheit;Artikelnr.;Kategorie</code> (Semikolon oder Komma; Header optional). Gleiche Artikelnummern werden aktualisiert, neue ergänzt; nicht enthaltene Produkte werden deaktiviert, nicht gelöscht. Beispiel: <code>Vitamin D3;19,90;30 Kapseln;MN-D3;Vitamine</code>
             </p>
 
             {isAdding && (
