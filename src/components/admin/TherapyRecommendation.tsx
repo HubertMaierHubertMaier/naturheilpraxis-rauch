@@ -990,19 +990,31 @@ const buildClientFallbackAnalysisHtml = (
   const bullets = (items: any[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
     : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
-  const anamnesisTable = (title: string, key: string, options?: { system?: boolean; date?: boolean }) => {
+  const anamnesisTable = (title: string, key: string, options?: { system?: boolean; date?: boolean; items?: any[] }) => {
     const system = !!options?.system;
     const showDate = !!options?.date || system;
+    const items = options?.items || anamnese[key];
     const header = `${system ? "<th>System</th><th>Befund</th>" : "<th>Eintrag</th>"}${showDate ? "<th>Datum</th>" : ""}<th>Beleg</th>`;
     const colspan = (system ? 2 : 1) + (showDate ? 1 : 0) + 1;
     return `
     <h3>${escapeHtml(title)}</h3>
     <table><thead><tr>${header}</tr></thead><tbody>
-      ${rows(anamnese[key], (item: any) => system
+      ${rows(items, (item: any) => system
         ? `<td>${escapeHtml(item?.system || "—")}</td><td>${escapeHtml(item?.befund || item?.text || "—")}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`
         : `<td>${val(item)}</td>${showDate ? `<td>${escapeHtml(dateOf(item))}</td>` : ""}<td>${beleg(item)}</td>`, colspan)}
     </tbody></table>`;
   };
+  const itemText = (item: any) => String(typeof item === "string" ? item : item?.text || "").trim();
+  const mainComplaintItems = (anamnese.currentProblems || []).filter((item: any) => /^hauptbeschwerde[n]?:/i.test(itemText(item)));
+  const complaintProfileItems = (anamnese.currentProblems || []).filter((item: any) => !/^hauptbeschwerde[n]?:/i.test(itemText(item)));
+  const pastHistoryItems = (anamnese.pastHistory || []).map((item: any) => {
+    if (!/^operationen?\s*:?\s*ja\.?$/i.test(itemText(item))) return item;
+    return { ...item, text: "Operationen angegeben, aber Art und Zeitpunkt sind nicht dokumentiert – bitte konkretisieren." };
+  });
+  const complaintProfileTable = complaintProfileItems.length ? `
+    <h3>Beschwerdeprofil zum dokumentierten Hauptbeschwerdekomplex</h3>
+    <p class="notice">Die folgenden Angaben beziehen sich auf den im Bogen genannten Beschwerdekomplex. Eine getrennte Zuordnung zu einzelnen Beschwerden ist im Bogen nicht dokumentiert und muss bei Bedarf geklärt werden.</p>
+    ${anamnesisTable("Beginn, Auslöser, Häufigkeit und Qualität", "currentProblems", { items: complaintProfileItems })}` : "";
   const mannayanRows = parseMannayanRows(ctx.mannayanOrdersText);
   const pathogensText = String(ctx.pathogensText || "").trim();
   const today = new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
@@ -1024,8 +1036,10 @@ ${pathogensText ? `<h2>1a. Dokumentierte Pathogene / Belastungen</h2><div class=
 <table><thead><tr><th>Datum</th><th>Quelle</th><th>Untersuchung</th><th>Hauptbefund</th><th>Auffällig?</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.documents, (item: any) => `<td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.untersuchung || "—")}</td><td>${escapeHtml(item?.hauptbefund || "—")}</td><td>${escapeHtml(item?.auffaellig || "—")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
 <h2>3. Strukturierte Anamnese-Übersicht</h2>
-${anamnesisTable("Aktuelle Beschwerden", "currentProblems")}
-${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory")}
+    ${anamnesisTable("Hauptbeschwerden", "currentProblems", { items: mainComplaintItems })}
+    ${complaintProfileTable}
+    ${anamnesisTable("Weitere aktuelle Beschwerden", "currentProblems", { items: mainComplaintItems.length ? [] : complaintProfileItems })}
+    ${anamnesisTable("Vorerkrankungen / OPs / Z.n.", "pastHistory", { items: pastHistoryItems })}
 ${anamnesisTable("Allergien & Unverträglichkeiten", "allergies")}
 ${anamnesisTable("Aktuelle Medikation — Kurzliste", "presentMedication")}
 ${anamnesisTable("Genussmittel & Lebensgewohnheiten", "habits")}

@@ -212,6 +212,11 @@ Wichtig:
 - 🇩🇪 PFLICHT-DEUTSCH: ALLE extrahierten Textinhalte (Befund-Texte, Diagnose-Bezeichnungen, Parameter-Namen, Status, Untersuchungs-Bezeichnungen, Hauptbefunde, Wirkmechanismen, Indikationen, Nebenwirkungen, terms.plain) MÜSSEN auf Deutsch sein. Englische/französische/lateinische Originalbegriffe nur in Klammern beibehalten, z.B. "Leukozyten (WBC)", "Cholesterin gesamt (Total Cholesterol)", "Reizdarmsyndrom (IBS)", "Schilddrüsen-stimulierendes Hormon (TSH)", "Gelenkschmerzen (joint pain)". Niemals nur den englischen Originaltext stehen lassen — IMMER deutsch primär. Einheiten (mg/dl, mmol/l, ng/ml …) und Eigennamen (Markennamen, Personennamen) bleiben unverändert.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
+📝 ANAMNESE-STRUKTUR (PFLICHT):
+- In anamnese.currentProblems zuerst genau einen Eintrag "Hauptbeschwerden: ..." mit allen tatsächlich genannten Hauptbeschwerden ausgeben.
+- Beginn, Auslöser, Häufigkeit und Qualität nur dann einer einzelnen Beschwerde zuordnen, wenn der Bogen das ausdrücklich tut. Andernfalls mit "Beschwerdeprofil zum Gesamtbeschwerdekomplex: ..." kennzeichnen; keine Einzelzuordnung erfinden.
+- "Operationen: ja" niemals als vollständigen Vorgeschichte-Eintrag ausgeben. Sind Art oder Zeitpunkt nicht dokumentiert, in openQuestions ausdrücklich "Welche Operation(en), wann und aus welchem Grund?" aufnehmen. Nur konkret benannte Operationen mit belegtem Jahr/Grund gehören in pastHistory.
+
 📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
 - Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
 - ⚠️ KRITISCH: JEDER EINZELNE Laborwert / jede Einzel-Messung / jeder Einzel-Befund braucht ein Datum — NICHT NUR die übergeordnete Untersuchung. Beispiel: Wenn ein Stuhlbefund vom 26.05.2025 zehn Einzelparameter (Calprotectin, sIgA, Zonulin, Bakterienstämme, Pilze …) enthält, dann erhält JEDER dieser zehn Parameter "datum":"2025-05-26" — auch wenn das Datum nur EINMAL oben im Befund steht. NIEMALS Einzelwerte ohne Datum ausgeben.
