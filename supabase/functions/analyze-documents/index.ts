@@ -217,6 +217,11 @@ Wichtig:
 - Beginn, Auslöser, Häufigkeit und Qualität nur dann einer einzelnen Beschwerde zuordnen, wenn der Bogen das ausdrücklich tut. Andernfalls mit "Beschwerdeprofil zum Gesamtbeschwerdekomplex: ..." kennzeichnen; keine Einzelzuordnung erfinden.
 - "Operationen: ja" niemals als vollständigen Vorgeschichte-Eintrag ausgeben. Sind Art oder Zeitpunkt nicht dokumentiert, in openQuestions ausdrücklich "Welche Operation(en), wann und aus welchem Grund?" aufnehmen. Nur konkret benannte Operationen mit belegtem Jahr/Grund gehören in pastHistory.
 
+🩺 ANAMNESEBASIERTE VERDACHTSDIAGNOSEN:
+- Leite aus der Anamnese nur dann eine Verdachtsdiagnose ab, wenn mindestens zwei zusammenpassende, tatsächlich belegte Angaben vorliegen oder ein eindeutiger direkt dokumentierter Hinweis besteht.
+- Solche Einträge gehören in diagnoses mit status "Verdacht", quelle "Anamnese – Verdachtsdiagnose zur Prüfung" und einem wörtlichen Belegzitat. ICD-10 bleibt leer, sofern kein Code direkt im Dokument steht.
+- Eine einzelne unspezifische Beschwerde reicht nicht. Nie als gesicherte Diagnose ausgeben; fehlende Abklärungen als konkrete openQuestions ergänzen.
+
 📅 DATUMS-PFLICHT (zeitlicher Verlauf ist kritisch — STRENG!):
 - Bei JEDEM Eintrag in documents, diagnoses, medicationsTherapies, anamnese.recentExaminations, anamnese.additionalInvestigations, findings, labValues UNBEDINGT das Untersuchungs-/Befunddatum mitgeben (Feld "datum", Format ISO YYYY-MM-DD wenn möglich, sonst original wie "12.03.2025" oder "03/2025").
 - ⚠️ KRITISCH: JEDER EINZELNE Laborwert / jede Einzel-Messung / jeder Einzel-Befund braucht ein Datum — NICHT NUR die übergeordnete Untersuchung. Beispiel: Wenn ein Stuhlbefund vom 26.05.2025 zehn Einzelparameter (Calprotectin, sIgA, Zonulin, Bakterienstämme, Pilze …) enthält, dann erhält JEDER dieser zehn Parameter "datum":"2025-05-26" — auch wenn das Datum nur EINMAL oben im Befund steht. NIEMALS Einzelwerte ohne Datum ausgeben.
@@ -700,7 +705,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
   ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
-  <h2>4. Diagnosen & Verdachtsdiagnosen</h2>
+  <h2>4. Dokumentierte Diagnosen & anamnesebasierte Verdachtsdiagnosen</h2>
   <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
 
   <h2>5. Medikamente, Präparate & Therapien</h2>

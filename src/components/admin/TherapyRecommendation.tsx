@@ -1051,7 +1051,7 @@ ${anamnesisTable("Sozialanamnese", "socialStatus")}
 ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
 ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 
-<h2>4. Diagnosen & Verdachtsdiagnosen</h2>
+<h2>4. Dokumentierte Diagnosen & anamnesebasierte Verdachtsdiagnosen</h2>
 <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 6)}</tbody></table>
 
 <h2>5. Medikamente, Präparate &amp; Therapien</h2>
