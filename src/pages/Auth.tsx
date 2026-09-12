@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { normalizeEmail } from '@/lib/authEmail';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,6 @@ import { SpamFolderHint } from '@/components/auth/SpamFolderHint';
 const emailSchema = z.string().trim().email({ message: "Ungültige E-Mail-Adresse" }).max(255);
 const passwordSchema = z.string().min(8, { message: "Passwort muss mindestens 8 Zeichen lang sein" });
 
-const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const normalizePassword = (value: string) => value.normalize('NFC').trim();
 
 async function waitForAuthenticatedSession() {
