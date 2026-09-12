@@ -1299,6 +1299,9 @@ export function TherapyRecommendation() {
   const [addPreviousComparison, setAddPreviousComparison] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
+  // Wiederherstellbarer Ladefehler: Eingaben bleiben erhalten, Autosave pausiert.
+  const [patientContextLoadError, setPatientContextLoadError] = useState<{ pid: string; message: string } | null>(null);
+  const [isPatientContextLoading, setIsPatientContextLoading] = useState(false);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
@@ -1373,6 +1376,7 @@ export function TherapyRecommendation() {
   const autoSaveTimerRef = useRef<number | null>(null);
   const autoSaveRunIdRef = useRef(0);
   const autoSaveSuppressedRef = useRef(false);
+  const patientContextLoadingRef = useRef(false);
   const archiveDeleteRunIdRef = useRef(0);
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
@@ -1683,13 +1687,36 @@ export function TherapyRecommendation() {
     if (localData) applyDraftPayload(localData, pid);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
-    loadCloudDraft(pid, localData, localTs);
+    void loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId, toast, applyDraftPayload]);
+
+  const retryPatientContextLoad = useCallback(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    setPatientContextLoadError(null);
+    let localTs = 0;
+    let localData: any = null;
+    try {
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v4.${pid}`);
+      if (raw) {
+        localData = JSON.parse(raw);
+        const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
+        if (!embedded || embedded !== pid) localData = null;
+        localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
+      }
+    } catch {}
+    void loadCloudDraft(pid, localData, localTs);
+  }, [pseudonymId]);
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    // Autosave pausiert, solange geladen wird — sonst überschreibt ein halb geladener
+    // Zustand den bereits gespeicherten Patientenkontext.
+    patientContextLoadingRef.current = true;
+    setIsPatientContextLoading(true);
+    setPatientContextLoadError(null);
     let loadedFromCloud = false;
     let selectedBaseInput = normalizeTherapyInput(localData || {});
     try {
@@ -1773,9 +1800,18 @@ export function TherapyRecommendation() {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch (error: any) {
+      // Bereits geladene/eingegebene Daten bleiben unangetastet — nur Warnung + Retry.
       if (!scopeIsCurrent()) return;
-      if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-      else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
+      const message = error?.message || error?.error?.message || "Cloud-Daten konnten nicht geladen werden.";
+      setPatientContextLoadError({ pid, message });
+      loadedInputDraftForPidRef.current = "";
+      if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen. Cloud-Abgleich fehlgeschlagen.` });
+      else toast({ title: "Cloud-Daten nicht geladen", description: message, variant: "destructive" });
+    } finally {
+      if (scopeIsCurrent()) {
+        patientContextLoadingRef.current = false;
+        setIsPatientContextLoading(false);
+      }
     }
   }, [applyDraftPayload, toast]);
 
@@ -1816,7 +1852,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (autoSaveSuppressedRef.current || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput) return;
+    if (autoSaveSuppressedRef.current || patientContextLoadingRef.current || isPatientContextLoading || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput) return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
@@ -1838,7 +1874,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (autoSaveSuppressedRef.current || runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
+      if (autoSaveSuppressedRef.current || patientContextLoadingRef.current || runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1859,7 +1895,7 @@ export function TherapyRecommendation() {
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     };
-  }, [pseudonymId, hasMeaningfulInput, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
+  }, [pseudonymId, hasMeaningfulInput, isPatientContextLoading, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
   const manualDiagnosisContext = useMemo(() => manualDiagnosen
     .filter((entry) => entry.diagnose.trim())
@@ -2756,7 +2792,7 @@ export function TherapyRecommendation() {
 
       const saved = Array.isArray(rows) ? rows[0] : null;
       const checkpoint = saved?.eingabe_daten?.checkpoint;
-      const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim()) : [];
+      const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim().length > 0) : [];
       const totalChunks = Number(checkpoint?.totalChunks || 0);
       const completedChunks = Number(checkpoint?.completedChunks || 0);
       if (!partials.length || !totalChunks || completedChunks < totalChunks || partials.length < totalChunks) {
@@ -4021,13 +4057,20 @@ export function TherapyRecommendation() {
         if (error) throw error;
         if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
         const sessions = Array.isArray((data as { sessions?: unknown[] } | null)?.sessions) ? (data as { sessions: any[] }).sessions : [];
-        setSourceHistoryReports(sessions
-          .filter((session) => session?.kind === "befund_auswertung" && session?.has_befund_html === true)
-          .map(parseSourceHistoryReport));
+        const reports: SourceHistoryReport[] = [];
+        for (const session of sessions) {
+          if (session?.kind !== "befund_auswertung" || session?.has_befund_html !== true) continue;
+          try {
+            reports.push(parseSourceHistoryReport(session));
+          } catch {
+            // Eine unlesbare Altsitzung darf den Quellenvergleich nicht abbrechen.
+          }
+        }
+        setSourceHistoryReports(reports);
       } catch (error) {
         if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
-        setSourceHistoryReports([]);
-        setSourceHistoryError((error as Error).message || "Frühere Befundauswertungen konnten nicht geladen werden.");
+        // Vorhandene Vergleichsdaten bewusst behalten — nur Warnung setzen.
+        setSourceHistoryError((error as any)?.message || "Frühere Befundauswertungen konnten nicht geladen werden.");
       } finally {
         if (!cancelled && scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid) setIsSourceHistoryLoading(false);
       }
@@ -5217,6 +5260,29 @@ export function TherapyRecommendation() {
                 }}
               >
                 {docAnalysisHtml ? "Ergebnis anzeigen" : "Letztes Ergebnis laden"}
+              </Button>
+            </div>
+          )}
+          {(patientContextLoadError?.pid === pseudonymId.trim() || (sourceHistoryError && isPatientScopedStorageReady(pseudonymId))) && (
+            <div className="flex flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <strong className="block">Cloud-Abgleich unvollständig – deine Eingaben bleiben erhalten.</strong>
+                <span className="text-muted-foreground">
+                  {patientContextLoadError?.message || sourceHistoryError} Die automatische Sicherung pausiert, bis der Abgleich erfolgreich war.
+                </span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSourceHistoryError("");
+                  retryPatientContextLoad();
+                  setHistoryRefresh((n) => n + 1);
+                }}
+                disabled={isPatientContextLoading}
+              >
+                {isPatientContextLoading ? "Lädt …" : "Erneut laden"}
               </Button>
             </div>
           )}
