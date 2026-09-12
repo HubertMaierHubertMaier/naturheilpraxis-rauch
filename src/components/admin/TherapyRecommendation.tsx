@@ -622,6 +622,14 @@ const countLoadedClinicalChars = (d: Record<string, unknown>) => [
   d.eigeneTherapieVorlage,
 ].reduce<number>((sum, value) => sum + countStringChars(value), 0);
 
+const hasRestorableClinicalData = (d: Record<string, unknown>) => (
+  countLoadedClinicalChars(d) > 0
+  || countDiagnoseEntries(d.manualDiagnosen) > 0
+  || countDiagnoseEntries(d.diagnosen) > 0
+  || countArrayEntries(d.pathogens) > 0
+  || [d.alter, d.geschlecht, d.groesseCm, d.gewichtKg, d.schwanger].some((value) => typeof value === "string" && value.trim())
+);
+
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
   pid,
   source,
@@ -1595,7 +1603,9 @@ export function TherapyRecommendation() {
         return;
       }
       const draftPayload = buildInputData({ sessionDraftVersion: 5, useProModel });
-      if (residualIdentifierCategories(draftPayload).length) return;
+      // A freshly mounted form is empty until its saved patient context arrives.
+      // Never let that empty state replace the only browser-side recovery copy.
+      if (residualIdentifierCategories(draftPayload).length || !hasRestorableClinicalData(normalizeTherapyInput(draftPayload))) return;
       if (isPatientScopedStorageReady(currentPid)) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
       if (inputDraftKey) localStorage.setItem(inputDraftKey, JSON.stringify({ ...draftPayload, savedAt: new Date().toISOString() }));
     } catch {}
@@ -1684,6 +1694,7 @@ export function TherapyRecommendation() {
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
+    if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null;
     if (localData) applyDraftPayload(localData, pid);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
@@ -1705,6 +1716,7 @@ export function TherapyRecommendation() {
         localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
       }
     } catch {}
+    if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null;
     void loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId]);
 
@@ -1735,11 +1747,7 @@ export function TherapyRecommendation() {
       const draftDocumentInventory = normalizeDocumentInventory((draftData as any)?.document_inventory || draftRow?.document_inventory);
       setLoadedDocumentInventory((current) => mergeDocumentInventory(draftDocumentInventory, current));
       const draftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
-      const hasDraftClinicalData = countLoadedClinicalChars(draftInput) > 0
-        || countDiagnoseEntries(draftInput.manualDiagnosen) > 0
-        || countDiagnoseEntries(draftInput.diagnosen) > 0
-        || countArrayEntries(draftInput.pathogens) > 0
-        || [draftInput.alter, draftInput.geschlecht, draftInput.groesseCm, draftInput.gewichtKg, draftInput.schwanger].some((value) => typeof value === "string" && value.trim());
+      const hasDraftClinicalData = hasRestorableClinicalData(draftInput);
       if (hasDraftClinicalData && shouldApplyCloudDraft(localTs, draftRow?.updated_at)) {
         applyDraftPayload(draftInput, pid);
         selectedBaseInput = draftInput;
@@ -1771,8 +1779,8 @@ export function TherapyRecommendation() {
         pinnedMittel: Array.isArray(draftInput.pinnedMittel) ? draftInput.pinnedMittel : snapshot.pinnedMittel,
       } : snapshot;
       const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
-      const hasSnapshotData = Object.keys(snapshotWithDraftAdmin).some((key) => !["_pseudonym_id", "pseudonymId", "loadedAt", "snapshotUpdatedAt"].includes(key));
-      if (!loadedFromCloud && hasSnapshotData && (!localData || !localTs || cloudTs >= localTs)) {
+      const hasSnapshotClinicalData = hasRestorableClinicalData(snapshotWithDraftAdmin);
+      if (!loadedFromCloud && hasSnapshotClinicalData && (!localData || !localTs || cloudTs >= localTs)) {
         applyDraftPayload(snapshotWithDraftAdmin, pid);
         selectedBaseInput = snapshotWithDraftAdmin;
         setClinicalLoadInfo(buildClinicalLoadInfo(pid, "cloud", snapshotWithDraftAdmin, 1));
