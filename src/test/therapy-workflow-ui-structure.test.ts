@@ -130,6 +130,8 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null");
     expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(snapshotWithDraftAdmin)");
     expect(source).not.toContain("const hasSnapshotData = Object.keys(snapshotWithDraftAdmin)");
+    const recoveryCheck = source.slice(source.indexOf("const hasRestorableClinicalData"), source.indexOf("const buildClinicalLoadInfo"));
+    expect(recoveryCheck).not.toContain("d.alter");
   });
 
   it("blocks the synthetic case until a saved patient pseudonym has been restored", () => {
