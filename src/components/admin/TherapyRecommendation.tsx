@@ -1874,7 +1874,7 @@ export function TherapyRecommendation() {
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (autoSaveSuppressedRef.current || runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
+      if (autoSaveSuppressedRef.current || patientContextLoadingRef.current || runId !== autoSaveRunIdRef.current || pseudonymIdRef.current !== pid) return;
       setAutoSaveStatus("saving");
       try {
         const { data: { user } } = await supabase.auth.getUser();
