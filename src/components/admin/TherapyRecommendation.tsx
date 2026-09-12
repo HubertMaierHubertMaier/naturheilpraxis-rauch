@@ -1376,6 +1376,7 @@ export function TherapyRecommendation() {
   const autoSaveTimerRef = useRef<number | null>(null);
   const autoSaveRunIdRef = useRef(0);
   const autoSaveSuppressedRef = useRef(false);
+  const patientContextLoadingRef = useRef(false);
   const archiveDeleteRunIdRef = useRef(0);
   const autoSaveSessionIdRef = useRef<string | null>(null);
   const checkpointSessionIdRef = useRef<string | null>(null);
