@@ -2759,7 +2759,7 @@ export function TherapyRecommendation() {
 
       const saved = Array.isArray(rows) ? rows[0] : null;
       const checkpoint = saved?.eingabe_daten?.checkpoint;
-      const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim()) : [];
+      const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim().length > 0) : [];
       const totalChunks = Number(checkpoint?.totalChunks || 0);
       const completedChunks = Number(checkpoint?.completedChunks || 0);
       if (!partials.length || !totalChunks || completedChunks < totalChunks || partials.length < totalChunks) {
