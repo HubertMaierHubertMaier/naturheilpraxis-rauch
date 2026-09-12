@@ -1299,6 +1299,9 @@ export function TherapyRecommendation() {
   const [addPreviousComparison, setAddPreviousComparison] = useState(true);
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [clinicalLoadInfo, setClinicalLoadInfo] = useState<ClinicalLoadInfo | null>(null);
+  // Wiederherstellbarer Ladefehler: Eingaben bleiben erhalten, Autosave pausiert.
+  const [patientContextLoadError, setPatientContextLoadError] = useState<{ pid: string; message: string } | null>(null);
+  const [isPatientContextLoading, setIsPatientContextLoading] = useState(false);
 
   const [result, setResult] = useState("");
   const [auditInfo, setAuditInfo] = useState<WikiAuditInfo | null>(null);
