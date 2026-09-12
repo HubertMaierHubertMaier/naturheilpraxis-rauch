@@ -5263,6 +5263,29 @@ export function TherapyRecommendation() {
               </Button>
             </div>
           )}
+          {(patientContextLoadError?.pid === pseudonymId.trim() || (sourceHistoryError && isPatientScopedStorageReady(pseudonymId))) && (
+            <div className="flex flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <strong className="block">Cloud-Abgleich unvollständig – deine Eingaben bleiben erhalten.</strong>
+                <span className="text-muted-foreground">
+                  {patientContextLoadError?.message || sourceHistoryError} Die automatische Sicherung pausiert, bis der Abgleich erfolgreich war.
+                </span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSourceHistoryError("");
+                  retryPatientContextLoad();
+                  setHistoryRefresh((n) => n + 1);
+                }}
+                disabled={isPatientContextLoading}
+              >
+                {isPatientContextLoading ? "Lädt …" : "Erneut laden"}
+              </Button>
+            </div>
+          )}
           {clinicalLoadInfo?.pid === pseudonymId.trim() && (
             <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
               <div className="grid gap-2 sm:grid-cols-3">
