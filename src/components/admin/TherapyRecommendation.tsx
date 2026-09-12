@@ -1686,13 +1686,36 @@ export function TherapyRecommendation() {
     if (localData) applyDraftPayload(localData, pid);
 
     // 2) Cloud-Sicherung (DB) prüfen — funktioniert für ALLE Patienten/Geräte
-    loadCloudDraft(pid, localData, localTs);
+    void loadCloudDraft(pid, localData, localTs);
   }, [pseudonymId, toast, applyDraftPayload]);
+
+  const retryPatientContextLoad = useCallback(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!isPatientScopedStorageReady(pid)) return;
+    setPatientContextLoadError(null);
+    let localTs = 0;
+    let localData: any = null;
+    try {
+      const raw = localStorage.getItem(`therapy.inputs.draft.patientSafe.v4.${pid}`);
+      if (raw) {
+        localData = JSON.parse(raw);
+        const embedded = normalizePseudonymId(String(localData?._pseudonym_id || localData?.pseudonymId || ""));
+        if (!embedded || embedded !== pid) localData = null;
+        localTs = localData?.savedAt ? new Date(localData.savedAt).getTime() : 0;
+      }
+    } catch {}
+    void loadCloudDraft(pid, localData, localTs);
+  }, [pseudonymId]);
 
   const loadCloudDraft = useCallback(async (pid: string, localData: any = null, localTs = 0) => {
     if (!isPatientScopedStorageReady(pid)) return;
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    // Autosave pausiert, solange geladen wird — sonst überschreibt ein halb geladener
+    // Zustand den bereits gespeicherten Patientenkontext.
+    patientContextLoadingRef.current = true;
+    setIsPatientContextLoading(true);
+    setPatientContextLoadError(null);
     let loadedFromCloud = false;
     let selectedBaseInput = normalizeTherapyInput(localData || {});
     try {
