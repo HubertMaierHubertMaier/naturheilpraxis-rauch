@@ -1895,7 +1895,7 @@ export function TherapyRecommendation() {
     return () => {
       if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     };
-  }, [pseudonymId, hasMeaningfulInput, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
+  }, [pseudonymId, hasMeaningfulInput, isPatientContextLoading, buildInputData, assertPayloadMatchesPseudonym, upsertAutoSaveDraft]);
 
   const manualDiagnosisContext = useMemo(() => manualDiagnosen
     .filter((entry) => entry.diagnose.trim())
