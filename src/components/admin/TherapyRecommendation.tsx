@@ -1800,9 +1800,18 @@ export function TherapyRecommendation() {
         toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
       }
     } catch (error: any) {
+      // Bereits geladene/eingegebene Daten bleiben unangetastet — nur Warnung + Retry.
       if (!scopeIsCurrent()) return;
-      if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen.` });
-      else toast({ title: "Cloud-Daten nicht geladen", description: error?.message || "Bitte Verlauf manuell öffnen.", variant: "destructive" });
+      const message = error?.message || error?.error?.message || "Cloud-Daten konnten nicht geladen werden.";
+      setPatientContextLoadError({ pid, message });
+      loadedInputDraftForPidRef.current = "";
+      if (localData) toast({ title: "Eingaben wiederhergestellt", description: `Lokale Sicherung für ${pid} geladen. Cloud-Abgleich fehlgeschlagen.` });
+      else toast({ title: "Cloud-Daten nicht geladen", description: message, variant: "destructive" });
+    } finally {
+      if (scopeIsCurrent()) {
+        patientContextLoadingRef.current = false;
+        setIsPatientContextLoading(false);
+      }
     }
   }, [applyDraftPayload, toast]);
 
