@@ -627,7 +627,6 @@ const hasRestorableClinicalData = (d: Record<string, unknown>) => (
   || countDiagnoseEntries(d.manualDiagnosen) > 0
   || countDiagnoseEntries(d.diagnosen) > 0
   || countArrayEntries(d.pathogens) > 0
-  || [d.alter, d.geschlecht, d.groesseCm, d.gewichtKg, d.schwanger].some((value) => typeof value === "string" && value.trim())
 );
 
 const buildClinicalLoadInfo = (pid: string, source: ClinicalLoadInfo["source"], d: Record<string, unknown>, sessionCount = 1): ClinicalLoadInfo => ({
