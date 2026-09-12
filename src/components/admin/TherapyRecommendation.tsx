@@ -4057,13 +4057,20 @@ export function TherapyRecommendation() {
         if (error) throw error;
         if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
         const sessions = Array.isArray((data as { sessions?: unknown[] } | null)?.sessions) ? (data as { sessions: any[] }).sessions : [];
-        setSourceHistoryReports(sessions
-          .filter((session) => session?.kind === "befund_auswertung" && session?.has_befund_html === true)
-          .map(parseSourceHistoryReport));
+        const reports: SourceHistoryReport[] = [];
+        for (const session of sessions) {
+          if (session?.kind !== "befund_auswertung" || session?.has_befund_html !== true) continue;
+          try {
+            reports.push(parseSourceHistoryReport(session));
+          } catch {
+            // Eine unlesbare Altsitzung darf den Quellenvergleich nicht abbrechen.
+          }
+        }
+        setSourceHistoryReports(reports);
       } catch (error) {
         if (cancelled || scopeGeneration !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid) return;
-        setSourceHistoryReports([]);
-        setSourceHistoryError((error as Error).message || "Frühere Befundauswertungen konnten nicht geladen werden.");
+        // Vorhandene Vergleichsdaten bewusst behalten — nur Warnung setzen.
+        setSourceHistoryError((error as any)?.message || "Frühere Befundauswertungen konnten nicht geladen werden.");
       } finally {
         if (!cancelled && scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid) setIsSourceHistoryLoading(false);
       }
