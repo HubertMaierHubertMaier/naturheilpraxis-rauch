@@ -1852,7 +1852,7 @@ export function TherapyRecommendation() {
 
   useEffect(() => {
     const pid = pseudonymId.trim();
-    if (autoSaveSuppressedRef.current || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput) return;
+    if (autoSaveSuppressedRef.current || patientContextLoadingRef.current || isPatientContextLoading || !isPatientScopedStorageReady(pid) || !hasMeaningfulInput) return;
     const runId = autoSaveRunIdRef.current + 1;
     autoSaveRunIdRef.current = runId;
 
