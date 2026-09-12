@@ -83,7 +83,8 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('case "labor": append(setLaborKomplett, text)');
     expect(source).toContain('case "metatron": append(setMetatronHeel, text)');
     expect(source).toContain('case "vieva": append(setVievaPlus, text)');
-    expect(source).toContain('case "anamnese": append(setAnamnese, text)');
+    expect(source).toContain('case "anamnese": {');
+    expect(source).toContain("append(setAnamnese, text)");
     expect(source).toContain('case "arzt": append(setArztbericht, text)');
     expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
   });
@@ -119,6 +120,16 @@ describe("therapy workflow UI structure", () => {
     expect(edgeSource).toContain('const anamneseText: string = typeof anamnese === "string"');
     expect(edgeSource).toContain("6a. **Anamnese / Anamnesebogen");
     expect(edgeSource).toContain("Aussagen aus der Anamnese sind Patientenangaben");
+  });
+
+  it("never replaces a patient recovery copy with an empty form during reload", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+
+    expect(source).toContain("const hasRestorableClinicalData");
+    expect(source).toContain("!hasRestorableClinicalData(normalizeTherapyInput(draftPayload))");
+    expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null");
+    expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(snapshotWithDraftAdmin)");
+    expect(source).not.toContain("const hasSnapshotData = Object.keys(snapshotWithDraftAdmin)");
   });
 
   it("blocks the synthetic case until a saved patient pseudonym has been restored", () => {
