@@ -58,7 +58,7 @@ describe("therapy workflow UI structure", () => {
     expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v1:");
     expect(individualUploadSource).toContain("localPrivacyFindings: successDocs.flatMap");
     expect(individualUploadSource).toContain("const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview");
-    expect(source).toContain("Die Originalausschnitte werden weder gespeichert noch versendet");
+    expect(source.includes("Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet.")).toBe(true);
     expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
     expect(source).toContain("therapy.pendingSafePreviews.v1:");
     expect(source).toContain('new File([], "Bereinigte-Vorschau.pdf"');
@@ -127,8 +127,8 @@ describe("therapy workflow UI structure", () => {
 
     expect(source).toContain("const hasRestorableClinicalData");
     expect(source).toContain("!hasRestorableClinicalData(normalizeTherapyInput(draftPayload))");
-    expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null");
-    expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(snapshotWithDraftAdmin)");
+    expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) { localData = null; localTs = 0; }");
+    expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(rawSnapshotWithDraftAdmin)");
     expect(source).not.toContain("const hasSnapshotData = Object.keys(snapshotWithDraftAdmin)");
     const recoveryCheck = source.slice(source.indexOf("const hasRestorableClinicalData"), source.indexOf("const buildClinicalLoadInfo"));
     expect(recoveryCheck).not.toContain("d.alter");

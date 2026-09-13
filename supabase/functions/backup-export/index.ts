@@ -2,13 +2,16 @@
 // Modi:
 //   ?mode=stats  -> JSON mit Übersicht (Tabellen, Buckets, Secrets)
 //   ?mode=db     -> ZIP mit allen Tabellen als CSV+JSON + MANIFEST
-//   ?mode=full   -> ZIP wie db, zusätzlich alle Storage-Dateien
+//   ?mode=table-page|auth-page|storage-list -> bounded exports for BackupCenter
+// Voll-Backup: BackupCenter assembles database, auth and storage in the browser.
+// There is no server-side mode=full; mode=db alone never includes Storage.
 //   ?mode=github-code&repo=owner/repo&branch=main -> GitHub-Code-ZIP mit Praxis-Dateiname
 //
 // Auth: Nur Admin (per JWT + has_role).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
+import { OWNER_TRANSPORT_TABLE, readOwnerTransportPage } from "../_shared/backupOwnerTransport.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -87,6 +90,7 @@ const REQUIRED_KB_IMPORT_TABLES = [
 // Im Normalfall ermitteln wir alle Tabellen und Buckets dynamisch zur Laufzeit,
 // damit neue Tabellen/Buckets automatisch mitgesichert werden.
 const FALLBACK_TABLES = [...new Set([
+  OWNER_TRANSPORT_TABLE,
   "admin_knowledge_base",
   "anamnesis_submissions",
   "app_settings",
@@ -107,6 +111,7 @@ const FALLBACK_TABLES = [...new Set([
   "practice_pricing",
   "profiles",
   "therapy_sessions",
+  "therapy_anamnesis_versions",
   "two_factor_pending_bindings",
   "two_factor_verified_sessions",
   "user_roles",
@@ -119,7 +124,7 @@ const FALLBACK_BUCKETS = ["anamnesis-pdfs", "patient-library", "therapy-document
 // Hier nur die serverseitig relevanten Felder (Tabellen + Buckets).
 type AreaDef = { tables: string[]; buckets: string[] };
 const AREA_MAP: Record<string, AreaDef> = {
-  "anamnesebogen":       { tables: ["anamnesis_submissions"], buckets: ["anamnesis-pdfs"] },
+  "anamnesebogen":       { tables: ["anamnesis_submissions", "therapy_anamnesis_versions"], buckets: ["anamnesis-pdfs"] },
   "vertrag-datenschutz": { tables: [], buckets: [] },
   "wiki": {
     tables: [
@@ -137,7 +142,7 @@ const AREA_MAP: Record<string, AreaDef> = {
   "infothek":            { tables: ["infothek_gating"], buckets: [] },
   "hypnose":             { tables: [], buckets: [] },
   "patient-library":     { tables: ["patient_resources", "patient_access"], buckets: ["patient-library"] },
-  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "patient_snapshot", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
+  "iaa-icd10":           { tables: ["iaa_submissions", "therapy_sessions", "therapy_anamnesis_versions", "patient_snapshot", "mannayan_orders", "mannayan_products"], buckets: ["therapy-documents"] },
   "auth-2fa":            { tables: ["profiles", "user_roles", "verification_codes", "audit_log", "app_settings", "two_factor_pending_bindings", "two_factor_verified_sessions"], buckets: [] },
   "edge-mail":           { tables: [], buckets: [] },
 };
@@ -168,7 +173,9 @@ async function discoverTables(): Promise<{ tables: string[]; source: "openapi" |
     }
     const filtered = [...names].filter((n) => !TABLE_BLOCKLIST.has(n) && !n.startsWith("rpc/"));
     if (filtered.length === 0) return { tables: FALLBACK_TABLES, source: "fallback" };
-    return { tables: [...new Set(filtered)].sort(), source: "openapi" };
+    // This existing owner-only table can be absent from the role's OpenAPI schema.
+    // Its narrowly granted RPC is still mandatory for a complete export.
+    return { tables: [...new Set([...filtered, OWNER_TRANSPORT_TABLE])].sort(), source: "openapi" };
   } catch (err) {
     console.warn("[backup-export] discoverTables fallback:", (err as Error)?.message);
     return { tables: FALLBACK_TABLES, source: "fallback" };
@@ -261,10 +268,9 @@ async function fetchTableAll(
   let from = 0;
   const all: Record<string, unknown>[] = [];
   while (true) {
-    const { data, error } = await client
-      .from(table)
-      .select("*")
-      .range(from, from + pageSize - 1);
+    const { data, error } = table === OWNER_TRANSPORT_TABLE
+      ? await readOwnerTransportPage(client, from, pageSize)
+      : await client.from(table).select("*").range(from, from + pageSize - 1);
     if (error) {
       console.error(`[backup-export] Tabelle ${table}:`, error.message);
       throw new Error(`Tabelle ${table}: ${error.message}`);
@@ -283,7 +289,9 @@ async function gatherStats(client: ReturnType<typeof createClient>) {
 
   const tables: Array<{ name: string; rows: number }> = [];
   for (const t of tableNames) {
-    const { count, error } = await client.from(t).select("*", { count: "exact", head: true });
+    const { count, error } = t === OWNER_TRANSPORT_TABLE
+      ? await readOwnerTransportPage(client, 0, 0)
+      : await client.from(t).select("*", { count: "exact", head: true });
     tables.push({ name: t, rows: error ? -1 : count ?? 0 });
   }
 
@@ -651,10 +659,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { data, error, count } = await adminClient
-        .from(table)
-        .select("*", { count: "exact" })
-        .range(from, from + limit - 1);
+      const { data, error, count } = table === OWNER_TRANSPORT_TABLE
+        ? await readOwnerTransportPage(adminClient, from, limit)
+        : await adminClient.from(table).select("*", { count: "exact" }).range(from, from + limit - 1);
       if (error) {
         return new Response(JSON.stringify({ error: "table_export_failed", table, message: error.message }), {
           status: 500,
@@ -853,6 +860,12 @@ Deno.serve(async (req) => {
     const zip = new JSZip();
     const stats = await gatherStats(adminClient);
 
+    if (stats.discovery.tableSource !== "openapi") {
+      return new Response(JSON.stringify({ error: "database_discovery_unconfirmed" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const tableNamesForDb = stats.tables.map((t) => t.name);
     const tableErrors: Array<{ table: string; message: string }> = [];
     for (const table of tableNamesForDb) {
@@ -901,7 +914,9 @@ Deno.serve(async (req) => {
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      zip.file("auth/ERROR.txt", `Auth-User-Export fehlgeschlagen: ${msg}`);
+      return new Response(JSON.stringify({ error: "auth_export_failed", message: msg }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     zip.file("BACKUP-MANIFEST.md", buildManifest(stats, "db"));

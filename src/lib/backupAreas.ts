@@ -27,7 +27,7 @@ export const BACKUP_AREAS: BackupArea[] = [
     label: "Anamnesebogen",
     description:
       "Online-Anamnesebogen, PDF-Vorlage (mehrfach gesichert), eingereichte Patienten-Anamnesen + PDFs.",
-    tables: ["anamnesis_submissions"],
+    tables: ["anamnesis_submissions", "therapy_anamnesis_versions"],
     buckets: ["anamnesis-pdfs"],
     publicAssets: [
       "anamnesebogen-blanko.pdf",
@@ -213,6 +213,7 @@ export const BACKUP_AREAS: BackupArea[] = [
     tables: [
       "iaa_submissions",
       "therapy_sessions",
+      "therapy_anamnesis_versions",
       "patient_snapshot",
       "mannayan_orders",
       "mannayan_products",

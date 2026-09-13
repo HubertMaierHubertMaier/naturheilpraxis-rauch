@@ -1,4 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizePatientPseudonym } from "../_shared/patientPseudonym.ts";
+import { listCompleteStoragePrefix } from "../_shared/storageInventoryPaging.ts";
+import { patientOriginalArchivePath } from "../_shared/patientOriginalReference.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -204,14 +207,11 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
   const existingArchivePaths = new Set<string>();
   const existingNormNames = new Set<string>();
   try {
-    const { data: dateDirs } = await adminClient.storage
-      .from("therapy-documents")
-      .list(pseudonymId, { limit: 100, sortBy: { column: "name", order: "desc" } });
+    const archive = adminClient.storage.from("therapy-documents");
+    const dateDirs = await listCompleteStoragePrefix(archive, pseudonymId);
     for (const dir of Array.isArray(dateDirs) ? dateDirs : []) {
       if (!dir?.name) continue;
-      const { data: files } = await adminClient.storage
-        .from("therapy-documents")
-        .list(`${pseudonymId}/${dir.name}`, { limit: 200 });
+      const files = await listCompleteStoragePrefix(archive, `${pseudonymId}/${dir.name}`);
       for (const f of Array.isArray(files) ? files : []) {
         if (!f?.name) continue;
         existingArchivePaths.add(`${pseudonymId}/${dir.name}/${f.name}`);
@@ -222,15 +222,15 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     }
   } catch (e) {
     console.warn("[get-therapy-sessions] pre-scan storage failed:", getErrorMessage(e));
+    throw new Error("Das Originalarchiv konnte nicht vollständig geprüft werden. Bitte den Fall erneut laden.");
   }
 
   const isDeleted = (name?: string, archivePath?: string) => {
     if (archivePath) {
-      if (deletedPaths.has(archivePath)) return true;
       // Cross-Pseudonym-Referenz (Datei gehört zu anderem Patienten) → nie anzeigen
       if (!archivePath.startsWith(`${pseudonymId}/`)) return true;
-      // Pfad zeigt auf diesen Patienten, existiert aber physisch nicht mehr im Bucket
-      if (existingArchivePaths.size > 0 && !existingArchivePaths.has(archivePath)) return true;
+      // A deliberately re-uploaded original must not be hidden by an older deletion event.
+      return !existingArchivePaths.has(archivePath);
     }
     const n = normalizeDocName(String(name || ""));
     if (!n) return false;
@@ -242,6 +242,15 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
 
 
   const items: DocumentInventoryItem[] = [];
+  for (const link of Array.isArray(draftInput.originalArchiveReceiptsV1) ? draftInput.originalArchiveReceiptsV1 : []) {
+    const archivePath = patientOriginalArchivePath(link, pseudonymId);
+    if (!archivePath || isDeleted(undefined, archivePath)) continue;
+    items.push({ name: `Original ${link.documentKind} · ${String(link.sha256).slice(0, 8)}.${link.extension}`,
+      datum: link.documentDate === "undatiert" ? undefined : link.documentDate,
+      archivePath, chars: typeof link.bytes === "number" ? link.bytes : undefined,
+      source: "Bestätigter Originalnachweis aus der Eingabe", kindLabel: "Privat archivierte Originaldatei",
+      location: "event_log", note: "Bei der Übernahme unverändert zurückgelesen und per SHA-256 geprüft." });
+  }
   for (const key of Object.keys(FIELD_LABELS)) {
     items.push(...extractDocumentInventoryFromText(draftInput[key], key, "Aktueller Auto-Entwurf", "current_draft").filter((it) => !isDeleted(it.name, it.archivePath)));
   }
@@ -333,14 +342,11 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
 
   // Storage-Fallback: alles, was tatsächlich im Bucket liegt — fängt fehlende Upload-Events ab
   try {
-    const { data: dateDirs } = await adminClient.storage
-      .from("therapy-documents")
-      .list(pseudonymId, { limit: 100, sortBy: { column: "name", order: "desc" } });
+    const archive = adminClient.storage.from("therapy-documents");
+    const dateDirs = await listCompleteStoragePrefix(archive, pseudonymId);
     for (const dir of Array.isArray(dateDirs) ? dateDirs : []) {
       if (!dir?.name) continue;
-      const { data: files } = await adminClient.storage
-        .from("therapy-documents")
-        .list(`${pseudonymId}/${dir.name}`, { limit: 200 });
+      const files = await listCompleteStoragePrefix(archive, `${pseudonymId}/${dir.name}`);
       for (const f of Array.isArray(files) ? files : []) {
         if (!f?.name) continue;
         const cleanName = f.name.replace(/^\d+-[a-z0-9]+-/i, "");
@@ -364,6 +370,7 @@ async function buildDocumentInventory(adminClient: any, pseudonymId: string, dra
     }
   } catch (e) {
     console.warn("[get-therapy-sessions] storage inventory failed:", getErrorMessage(e));
+    throw new Error("Das Originalarchiv konnte nicht vollständig geladen werden. Bitte den Fall erneut laden.");
   }
 
   return dedupeDocumentInventory(items);
@@ -421,9 +428,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
-    const draftPseudonymId = (body?.draft_pseudonym_id ?? "").toString().trim();
-    const snapshotPseudonymId = (body?.snapshot_pseudonym_id ?? "").toString().trim();
+    const pseudonymId = normalizePatientPseudonym(body?.pseudonym_id);
+    const draftPseudonymId = normalizePatientPseudonym(body?.draft_pseudonym_id);
+    const snapshotPseudonymId = normalizePatientPseudonym(body?.snapshot_pseudonym_id);
     const sessionId = (body?.session_id ?? "").toString().trim();
 
     // ----- Mode B: single-row safe fetch (lazy load on expand / Befund / Empfehlung) -----
@@ -447,7 +454,7 @@ Deno.serve(async (req) => {
     if (draftPseudonymId) {
       const { data: draft, error } = await adminClient
         .from("therapy_sessions")
-        .select("id,pseudonym_id,eingabe_daten,created_at,updated_at,kind,notiz")
+        .select("id,pseudonym_id,eingabe_daten,created_at,updated_at,kind,notiz,draft_revision")
         .eq("pseudonym_id", draftPseudonymId)
         .eq("notiz", "Auto-Sicherung der Eingaben")
         .eq("empfehlung", "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.")
@@ -456,10 +463,21 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) throw error;
 
-      const draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      let draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      let recoveredAnamnesisVersion: string | null = null;
+      if (draft && !(typeof draftInput.anamnese === "string" && draftInput.anamnese.trim())) {
+        const { data: version, error: versionError } = await adminClient.from("therapy_anamnesis_versions")
+          .select("id,anamnese,anamnese_datum").eq("pseudonym_id", draftPseudonymId)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (versionError && !["42P01", "PGRST205"].includes(versionError.code || "")) throw versionError;
+        if (version?.anamnese) {
+          draftInput = { ...draftInput, anamnese: version.anamnese, anamneseDatum: version.anamnese_datum || "" };
+          recoveredAnamnesisVersion = version.id;
+        }
+      }
       const documentInventory = await buildDocumentInventory(adminClient, draftPseudonymId, draftInput);
 
-      return new Response(JSON.stringify({ draft: draft ? { ...draft, document_inventory: documentInventory } : null, document_inventory: documentInventory }), {
+      return new Response(JSON.stringify({ draft: draft ? { ...draft, eingabe_daten: draftInput, document_inventory: documentInventory } : null, document_inventory: documentInventory, recovered_anamnesis_version: recoveredAnamnesisVersion }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

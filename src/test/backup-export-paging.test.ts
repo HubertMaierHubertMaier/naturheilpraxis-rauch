@@ -22,8 +22,8 @@ describe("backup-export bounded paging", () => {
     expect(source).toContain("perPage > 1000");
   });
 
-  it("uses the discovered live schema without injecting undeployed tables", () => {
-    expect(source).toContain('return { tables: [...new Set(filtered)].sort(), source: "openapi" };');
+  it("uses the live schema plus the existing owner-only transport, without injecting future version tables", () => {
+    expect(source).toContain('return { tables: [...new Set([...filtered, OWNER_TRANSPORT_TABLE])].sort(), source: "openapi" };');
   });
 
   it("fails the storage listing if any signed URL is missing", () => {
