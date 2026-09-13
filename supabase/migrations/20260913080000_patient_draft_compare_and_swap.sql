@@ -83,13 +83,5 @@ $$;
 REVOKE ALL ON FUNCTION public.upsert_therapy_autosave_draft_checked(text, jsonb, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.upsert_therapy_autosave_draft_checked(text, jsonb, uuid) TO authenticated, service_role;
 
--- Older browser versions must refresh rather than bypass revision checks.
-CREATE OR REPLACE FUNCTION public.upsert_therapy_autosave_draft(
-  _pseudonym_id text, _eingabe_daten jsonb,
-  _empfehlung text DEFAULT 'Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.',
-  _notiz text DEFAULT 'Auto-Sicherung der Eingaben'
-) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RAISE EXCEPTION 'PATIENT_DRAFT_REVISION_REQUIRED: reload the application before saving' USING ERRCODE = '40001';
-END;
-$$;
+-- Expand phase: retain the legacy RPC until the updated UI has been verified and published.
+-- 20260913110000_require_patient_draft_revisions.sql is the separate cutover step.

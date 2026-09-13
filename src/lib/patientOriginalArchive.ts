@@ -83,7 +83,7 @@ export async function archivePatientOriginal(
   return { pseudonymId: pid, archivePath: expectedPath, sha256: digest, bytes: file.size, reused: plan.exists || Boolean(uploadError) };
 }
 
-export async function verifyArchivedPatientOriginal(client: OriginalArchiveClient, pseudonymId: string, receipt: OriginalArchiveReceipt): Promise<OriginalArchiveReceipt> {
+export async function verifyArchivedPatientOriginal(client: OriginalArchiveClient, pseudonymId: string, receipt: OriginalArchiveReceipt, providedOriginal?: Blob): Promise<OriginalArchiveReceipt> {
   const pid = normalizePatientPseudonym(pseudonymId);
   const parts = typeof receipt?.archivePath === "string" ? receipt.archivePath.split("/") : [];
   const name = parts[2]?.match(/^(anamnese|labor|arzt|metatron|vieva|sonstige|dokument)-([0-9a-f]{64})\.([a-z0-9]+)$/);
@@ -100,7 +100,9 @@ export async function verifyArchivedPatientOriginal(client: OriginalArchiveClien
     || plan.pseudonym_id !== pid || plan.sha256 !== receipt.sha256 || Number(plan.bytes) !== receipt.bytes) {
     throw new Error("Das private Originalarchiv konnte nicht bestätigt werden.");
   }
-  const { data: original, error: readError } = await client.storage.from("therapy-documents").download(receipt.archivePath);
+  const { data: original, error: readError } = providedOriginal
+    ? { data: providedOriginal, error: null }
+    : await client.storage.from("therapy-documents").download(receipt.archivePath);
   if (readError || !original || original.size !== receipt.bytes || await sha256(await original.arrayBuffer()) !== receipt.sha256) {
     throw new Error("Das bereits archivierte Original konnte nicht unverändert bestätigt werden. Bitte die Originaldatei erneut auswählen.");
   }

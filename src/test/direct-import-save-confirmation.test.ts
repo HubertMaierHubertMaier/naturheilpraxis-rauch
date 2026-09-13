@@ -45,7 +45,8 @@ function setup() {
     latestBuildInputDataRef: { current: (extra: Record<string, unknown>) => ({ ...data, ...extra }) },
     assertPayloadMatchesPseudonym: vi.fn(), patientDraftSaveQueue: { run: (_pid: string, fn: () => unknown) => fn() },
     persistVerifiedPatientInput, upsertAutoSaveDraft: vi.fn((_pid: string, payload: Record<string, unknown>) => { submitted = payload; return save.promise; }),
-    draftRevisionTrackerRef: { current: { capture: vi.fn(), revision: () => "00000000-0000-4000-8000-000000000001" } },
+    draftRevisionTrackerRef: { current: { capture: vi.fn(), load: vi.fn(), revision: () => "00000000-0000-4000-8000-000000000001" } },
+    setDraftSaveIssue: vi.fn(),
     archivePatientOriginal: vi.fn(async () => ({ pseudonymId: pid, archivePath: `${pid}/2099-01-01/labor-${"a".repeat(64)}.pdf`, sha256: "a".repeat(64), bytes: 42, reused: false })),
     verifyArchivedPatientOriginal: vi.fn(), originalArchiveInputPatch, applyDraftPayload: vi.fn(), writeConfirmedPatientDraftCopies,
     sessionStorage: { setItem: vi.fn() }, localStorage: { getItem: () => null, setItem: vi.fn() }, draftWriterId: "synthetic-window",
@@ -64,6 +65,13 @@ function setup() {
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("rolls back provisional field changes if original archiving fails", async () => {
+    const t = setup(); t.env.archivePatientOriginal.mockRejectedValueOnce(new Error("synthetic failed archive"));
+    await t.run();
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+    expect(t.env.applyDraftPayload).toHaveBeenLastCalledWith(expect.objectContaining({ laborKomplett: "synthetic prior input" }), pid);
+    expect(t.previews()[0].status).toBe("ready");
+  });
   it("does not save a field import until its originals have been archived", async () => {
     const t = setup(); const archive = deferred<unknown[]>();
     const done = t.importField("synthetic new field text", pid, "laborKomplett", () => archive.promise);
@@ -105,6 +113,8 @@ describe("direct import confirmation follows the database receipt", () => {
     t.read.resolve({ data: row, error: null }); await done;
     expect(t.previews()[0].status).toBe("ready");
     expect(t.env.setAutoSaveStatus).toHaveBeenLastCalledWith("error");
+    expect(t.env.applyDraftPayload).toHaveBeenLastCalledWith(expect.objectContaining({ laborKomplett: "synthetic prior input" }), pid);
+    expect(t.env.draftRevisionTrackerRef.current.load).toHaveBeenCalledWith(pid, undefined);
   });
   it("does not confirm an old preview in a different patient scope", async () => {
     const t = setup(); const done = t.run();

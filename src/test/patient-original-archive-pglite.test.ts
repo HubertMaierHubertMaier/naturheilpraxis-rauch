@@ -61,4 +61,11 @@ describe("private patient original archive policy", () => {
     expect((await db.query("select id from storage.objects where bucket_id='therapy-documents'")).rows).toHaveLength(0);
     await db.exec("reset role; set test.admin = 'on'");
   });
+  it("does not let an authenticated admin overwrite or move an existing original", async () => {
+    await db.exec("set role authenticated; set test.admin = 'on'");
+    expect((await db.query("update storage.objects set name='overwritten.pdf' where bucket_id='therapy-documents' returning id")).rows).toHaveLength(0);
+    expect((await db.query("select name from storage.objects where bucket_id='therapy-documents'")).rows).toEqual([{ name: "synthetic-existing.pdf" }]);
+    await expect(db.query("update storage.objects set bucket_id='therapy-documents' where bucket_id='other-bucket'")).rejects.toThrow(/row-level security/);
+    await db.exec("reset role");
+  });
 });

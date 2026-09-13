@@ -4,6 +4,12 @@ FOR ALL TO public
 USING (bucket_id <> 'therapy-documents' OR public.has_role(auth.uid(), 'admin'))
 WITH CHECK (bucket_id <> 'therapy-documents' OR public.has_role(auth.uid(), 'admin'));
 
+-- Even another authenticated admin client must not overwrite or move an existing original.
+CREATE POLICY therapy_documents_no_client_overwrite ON storage.objects AS RESTRICTIVE
+FOR UPDATE TO public
+USING (bucket_id <> 'therapy-documents')
+WITH CHECK (bucket_id <> 'therapy-documents');
+
 CREATE POLICY therapy_documents_archive_admin_access ON storage.objects
 FOR ALL TO authenticated
 USING (bucket_id = 'therapy-documents' AND public.has_role(auth.uid(), 'admin'))

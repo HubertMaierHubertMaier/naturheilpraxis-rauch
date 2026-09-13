@@ -34,6 +34,20 @@ async function submit(onExtracted: () => Promise<void>) {
 }
 
 describe("confirmed source import", () => {
+  it("keeps a restored preview until replacement originals have actually been chosen", async () => {
+    const onExtracted = vi.fn(async () => undefined);
+    await act(async () => root.render(<MultiDocUpload pseudonymId={pid} documentType="Anamnese" onExtracted={onExtracted} />));
+    const choose = Array.from(host.querySelectorAll("button")).find(button => button.textContent?.includes("Originale erneut auswählen"))!;
+    expect(choose.disabled).toBe(false);
+    await act(async () => choose.click());
+    expect(host.textContent).toContain("Vollständige Datenschutzvorschau");
+    const input = host.querySelector<HTMLInputElement>("input[data-original-replacement]")!;
+    Object.defineProperty(input, "files", { configurable: true, value: [new File(["synthetic replacement"], "synthetic.pdf", { type: "application/pdf" })] });
+    await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); });
+    expect(host.textContent).not.toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).toContain("synthetic.pdf");
+    expect(onExtracted).not.toHaveBeenCalled();
+  });
   it("keeps the preview if the original archive cannot be verified", async () => {
     mocks.verify.mockRejectedValueOnce(new Error("synthetic original unavailable"));
     await submit(async () => undefined);

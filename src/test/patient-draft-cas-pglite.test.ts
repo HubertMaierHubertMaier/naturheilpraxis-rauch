@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 
 let db: PGlite;
+let legacyWorkedDuringExpansion = false;
 const pid = "P-2099-0201";
 const input = (text: string) => ({ _pseudonym_id: pid, pseudonymId: pid, anamnese: text, laborKomplett: text });
 const sql = (name: string) => readFileSync(resolve(process.cwd(), "supabase/migrations", name), "utf8");
@@ -24,10 +25,21 @@ beforeAll(async () => {
   await db.exec(sql("20260612170738_3ccbf7f3-9e57-4c45-b022-8422d15a2729.sql"));
   await db.exec(sql("20260913070000_preserve_anamnesis_draft_versions.sql"));
   await db.exec(sql("20260913080000_patient_draft_compare_and_swap.sql"));
+  await db.exec("begin");
+  try {
+    const trial = "P-2099-0299";
+    const result = await db.query<{ id: string }>("select upsert_therapy_autosave_draft($1,$2::jsonb) as id",
+      [trial, JSON.stringify({ _pseudonym_id: trial, pseudonymId: trial, anamnese: "synthetic expansion compatibility" })]);
+    legacyWorkedDuringExpansion = typeof result.rows[0]?.id === "string";
+  } finally { await db.exec("rollback"); }
+  await db.exec(sql("20260913110000_require_patient_draft_revisions.sql"));
 }, 20000);
 afterAll(async () => { await db?.close(); });
 
 describe("database-enforced patient draft revisions (serial regression, not a multi-connection race test)", () => {
+  it("keeps the old client working during expansion before the separate cutover", () => {
+    expect(legacyWorkedDuringExpansion).toBe(true);
+  });
   it("rejects stale updates and a later first-save attempt without overwriting", async () => {
     const first = await save(input("synthetic original"), null);
     const second = await save(input("synthetic newer"), first.revision);

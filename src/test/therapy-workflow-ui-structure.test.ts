@@ -58,7 +58,7 @@ describe("therapy workflow UI structure", () => {
     expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v1:");
     expect(individualUploadSource).toContain("localPrivacyFindings: successDocs.flatMap");
     expect(individualUploadSource).toContain("const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview");
-    expect(source).toContain("Die Originalausschnitte werden weder gespeichert noch versendet");
+    expect(source.includes("Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet.")).toBe(true);
     expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
     expect(source).toContain("therapy.pendingSafePreviews.v1:");
     expect(source).toContain('new File([], "Bereinigte-Vorschau.pdf"');

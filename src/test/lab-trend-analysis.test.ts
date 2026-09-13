@@ -970,14 +970,19 @@ describe("laboratory trend analysis", () => {
     expect(recommendationSource).toContain("Manuell/aus Befund übernommene Diagnosen");
   });
 
-  it("does not archive original analysis documents or send scans to external OCR", () => {
+  it("keeps extraction local and archives originals only through the confirmed private storage path", () => {
     const uploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/MultiDocUpload.tsx"), "utf8");
     const ocrSource = readFileSync(resolve(process.cwd(), "src/lib/localBrowserOcr.ts"), "utf8");
     const imageUploadSource = readFileSync(resolve(process.cwd(), "src/components/admin/therapy/LabImageUpload.tsx"), "utf8");
     const clientSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
     const persistenceSource = readFileSync(resolve(process.cwd(), "src/lib/patientInputPersistence.ts"), "utf8");
     const cleanupMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260716091513_26f2af2b-0701-4c0b-afce-73f1006c6b8e.sql"), "utf8");
-    expect(uploadSource).not.toContain("archiveClinicalDocumentOriginal");
+    const archiveSource = readFileSync(resolve(process.cwd(), "src/lib/patientOriginalArchive.ts"), "utf8");
+    expect(uploadSource).toContain("archivePatientOriginal");
+    expect(uploadSource).toContain("ensureOriginalsArchived");
+    expect(archiveSource).toContain('client.rpc("prepare_therapy_document_archive"');
+    expect(archiveSource).toContain("upsert: false");
+    expect(archiveSource).toContain("storage.download(expectedPath)");
     expect(uploadSource).not.toContain("extract-lab-image");
     expect(uploadSource).not.toContain('from("therapy-documents")');
     expect(uploadSource).not.toContain("fetch(");
@@ -985,7 +990,7 @@ describe("laboratory trend analysis", () => {
     expect(ocrSource).not.toContain("fetch(");
     expect(ocrSource).not.toContain("supabase");
     expect(uploadSource).toContain("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet");
-    expect(uploadSource).toContain("shouldRunLocalOcr({ containsRasterImage, textLayer: pageText })");
+    expect(uploadSource).toContain('shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })');
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
     expect(uploadSource).toContain('await import("@/lib/localBrowserOcr")');
     expect(ocrSource).toContain("const nativeWorker = new Worker(workerUrl)");
@@ -1009,14 +1014,17 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("setPendingReview({");
     expect(uploadSource).toContain("const confirmPrivacyReview = async () =>");
     expect(uploadSource).toContain("const residualIdentifiers = directIdentifierCategories(review.text)");
-    expect(uploadSource).toContain("onExtracted(review.text, review.sourcePseudonymId)");
+    expect(uploadSource).toContain("await onExtracted(review.text, review.sourcePseudonymId, ensureOriginalsArchived)");
     expect(uploadSource).toContain("Vollständige Datenschutzvorschau");
     expect(uploadSource).toContain("disabled={!privacyConfirmed || reviewSubmitting}");
-    expect(uploadSource.indexOf("setPendingReview({")).toBeLessThan(uploadSource.indexOf("onExtracted(review.text, review.sourcePseudonymId)"));
+    expect(uploadSource.indexOf("setPendingReview({")).toBeLessThan(uploadSource.indexOf("onExtracted(review.text, review.sourcePseudonymId, ensureOriginalsArchived)"));
     expect(uploadSource).not.toContain('trim().toUpperCase()');
     expect(uploadSource).toContain("if (scopeIsCurrent()) toast(message)");
     expect(clientSource).toContain("directIdentifierCategories");
-    expect(clientSource).toContain("normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current");
+    const importHandler = clientSource.slice(clientSource.indexOf("const persistImportedDocumentText"), clientSource.indexOf("const handoffDirectBefundFiles"));
+    expect(importHandler).toContain("pid !== pseudonymIdRef.current || patientDataOwnerRef.current !== pid");
+    expect(importHandler).toContain("await archiveOriginals()");
+    expect(importHandler).toContain("persistVerifiedPatientInput");
     expect(clientSource).toContain("insertedDocumentMarker = extractMarkerName(extracted.text)");
     expect(clientSource).toContain("_filename: insertedDocumentMarker");
     expect(clientSource).toContain("Die Archivdatei wurde nicht gelöscht");
@@ -1028,7 +1036,7 @@ describe("laboratory trend analysis", () => {
     expect(cleanupMigration).toContain("prevent_deleted_document_replay_in_snapshot");
     expect(cleanupMigration).toContain("prevent_deleted_document_replay_in_therapy_session");
     expect(cleanupMigration).toContain("REVOKE EXECUTE ON FUNCTION public.strip_recently_deleted_document_markers(text,jsonb) FROM PUBLIC, anon, authenticated");
-    expect(clientSource).toContain("original_archived: false");
+    expect(clientSource).toContain("original_archived: true");
     expect(clientSource).not.toContain("await archiveClinicalDocumentOriginal(item.file, pid)");
     expect(clientSource).not.toContain("sonst reiner Scan → manuell eintippen");
     expect(clientSource).toContain("textarme Scan-Seiten werden lokal im Browser nacherkannt");
@@ -1043,8 +1051,8 @@ describe("laboratory trend analysis", () => {
     expect(laboratoryTab).toContain("<MultiDocUpload");
     expect(laboratoryTab).toContain('ocrMode="lab"');
     expect(laboratoryTab).toContain('label="📄 Vollständige Labor-PDF einlesen"');
-    expect(laboratoryTab).toContain("normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current");
-    expect(laboratoryTab).toContain("setLaborKomplett((previous) => previous ?");
+    expect(laboratoryTab).toContain('persistImportedDocumentText(text, pid, "laborKomplett", archive)');
+    expect(laboratoryTab).toContain('archiveKind="labor"');
     expect(clientSource).toContain("upsertAutoSaveDraft(pid");
     expect(laboratoryTab).not.toContain("Fotos/Scans hochladen");
   });

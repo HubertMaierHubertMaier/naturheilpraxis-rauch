@@ -26,6 +26,7 @@ describe("private original-file receipts", () => {
     expect((await verifyArchivedPatientOriginal(t.client, pid, receipt)).reused).toBe(true);
     expect(t.upload).toHaveBeenCalledOnce();
     await expect(verifyArchivedPatientOriginal(t.client, "P-2099-0602", receipt)).rejects.toThrow(/aktuellen Fall/);
+    await expect(verifyArchivedPatientOriginal(t.client, pid, receipt, new Blob(["synthetic changed bytes"]))).rejects.toThrow(/unverändert/);
     expect(t.download).toHaveBeenCalledTimes(2);
   });
   it("keeps byte-proof links intact through text deidentification and deduplicates only the same field link", async () => {

@@ -36,12 +36,15 @@ import { RedactedTextPreview } from "./RedactedTextPreview";
 import { supabase } from "@/integrations/supabase/client";
 import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
+import mammoth from "mammoth";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 interface Props {
   onExtracted: (text: string, sourcePseudonymId: string, archiveOriginals: ArchiveOriginals) => void | Promise<void>;
   archiveKind?: OriginalArchiveKind;
+  accept?: string;
+  extractText?: typeof extractClinicalDocumentText;
   pseudonymId?: string;
   ocrMode?: "doctor" | "lab";
   label?: string;
@@ -331,8 +334,35 @@ export async function extractClinicalDocumentText(
   };
 }
 
-export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokument", ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
+export const extractTherapyTemplateDocument: typeof extractClinicalDocumentText = async (
+  file, mode, notify, onProgress, session, identitySalt = "", pdfPassword = "", onPasswordCaptured,
+) => {
+  const lower = file.name.toLowerCase();
+  if (!lower.endsWith(".docx") && (file.type === "application/pdf" || lower.endsWith(".pdf"))) {
+    return extractClinicalDocumentText(file, mode, notify, onProgress, session, identitySalt, pdfPassword, onPasswordCaptured);
+  }
+  throwIfAborted(session?.signal);
+  onProgress?.("Word-/Text-Dokument wird lokal gelesen...");
+  let raw: string;
+  if (lower.endsWith(".docx")) raw = (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+  else if (lower.endsWith(".txt") || lower.endsWith(".md") || file.type === "text/plain") raw = await file.text();
+  else throw new Error("Bitte PDF, Word (.docx) oder Text (.txt/.md) auswählen.");
+  throwIfAborted(session?.signal);
+  if (!raw.trim()) throw new Error("Das Dokument enthält keinen auslesbaren Text. Das Original wurde nicht verändert.");
+  const removedIdentifierCategories = directIdentifierCategories(raw);
+  const localPrivacyFindings = collectLocalPrivacyFindings(raw);
+  const safeBody = quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(deidentifyClinicalText(raw)));
+  if (!safeBody.trim()) throw new Error("Nach der Datenschutzbereinigung bleibt kein auswertbarer Text. Das Original wurde nicht verändert.");
+  const documentId = await createNeutralDocumentId(safeBody, identitySalt);
+  throwIfAborted(session?.signal);
+  const text = `=== 📄 Dokument-${documentId} ===\n${safeBody}`;
+  if (directIdentifierCategories(text).length) throw new Error("Die Datenschutzbereinigung konnte nicht vollständig bestätigt werden.");
+  return { text, chars: text.length, removedIdentifierCategories, localPrivacyFindings };
+};
+
+export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokument", accept = "application/pdf", extractText = extractClinicalDocumentText, ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const replacementInputRef = useRef<HTMLInputElement>(null);
   const pseudonymIdRef = useRef(pseudonymId);
   const extractionRunRef = useRef(0);
   const activeExtractionRef = useRef<{ controller: AbortController; ocrSession: OcrExtractionSession }>();
@@ -459,7 +489,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
         setFiles([...updated]);
         try {
           const extractionMode = documentType === "Anamnese / Anamnesebogen" ? "anamnese" : ocrMode;
-          const extracted = await extractClinicalDocumentText(updated[index].file, extractionMode, scopedToast, (progress) => {
+          const extracted = await extractText(updated[index].file, extractionMode, scopedToast, (progress) => {
             if (!scopeIsCurrent()) return;
             updated[index] = { ...updated[index], progress };
             setFiles([...updated]);
@@ -673,6 +703,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
 
   return (
     <div className="space-y-2">
+      {extractText === extractTherapyTemplateDocument && <p className="text-xs text-muted-foreground">PDF, Word (.docx) und Text (.txt/.md) werden lokal gelesen. Bei Word wird auslesbarer Text übernommen; eingebettete Bilder bleiben im vollständigen Original, werden hier aber nicht als Text erkannt.</p>}
       {onPdfPasswordChange && (
         <div className="rounded-md border border-amber-300/70 bg-amber-50/60 dark:bg-amber-950/15 dark:border-amber-900/40 p-2.5 space-y-1.5">
           <label className="text-xs font-medium block" htmlFor="protected-pdf-password">Vieva-Pro-PDF-Passwort</label>
@@ -692,7 +723,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
         <input
           ref={inputRef}
           type="file"
-          accept="application/pdf"
+          accept={accept}
           multiple
           className="hidden"
           onChange={(event) => addFiles(event.target.files)}
@@ -806,6 +837,17 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             <span>Ich habe den vollständigen bereinigten Text geprüft. Direkte Identifikatoren sind entfernt; das erlaubte Pseudonym darf enthalten bleiben. Bei einem Anamnesebogen habe ich Handschrift, Markierungen, Fragezuordnung und alle Hinweise „manuell prüfen“ kontrolliert. Die Originaldateien sollen unverändert und ausschließlich im privaten Praxisarchiv gespeichert werden.</span>
           </label>
           <div className="flex flex-wrap gap-2">
+            <input ref={replacementInputRef} type="file" accept={accept} multiple className="hidden" data-original-replacement
+              onChange={(event) => {
+                const selected = Array.from(event.target.files || []);
+                if (!selected.length) return;
+                setFiles(selected.map(file => ({ file, status: "queued" as const })));
+                setPendingReview(undefined); setPrivacyConfirmed(false); setPrivacyFindingsRevealed(false);
+                event.currentTarget.value = "";
+              }} />
+            <Button type="button" variant="outline" size="sm" disabled={reviewSubmitting || loading} onClick={() => replacementInputRef.current?.click()}>
+              Originale erneut auswählen
+            </Button>
             <Button type="button" size="sm" onClick={confirmPrivacyReview} disabled={!privacyConfirmed || reviewSubmitting}>
               {reviewSubmitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               Bereinigten Text übernehmen
