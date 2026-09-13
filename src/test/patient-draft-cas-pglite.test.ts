@@ -62,4 +62,13 @@ describe("database-enforced patient draft revisions (serial regression, not a mu
     expect(receipt.eingabe_daten._pseudonym_id).toBe(pid);
     expect((await db.query("select id from therapy_sessions")).rows).toHaveLength(1);
   });
+  it("preserves server-held inventory evidence and fields omitted by an older client", async () => {
+    const row = (await db.query<{ draft_revision: string }>("select draft_revision from therapy_sessions")).rows[0];
+    const inventory = [{ archivePath: "synthetic-historical-reference" }];
+    const first = await save({ ...input("metadata baseline"), document_inventory: inventory, futureField: "synthetic retained value" }, row.draft_revision);
+    const next = await save(input("new explicit text"), first.revision);
+    expect(next.eingabe_daten.document_inventory).toEqual(inventory);
+    expect(next.eingabe_daten.futureField).toBe("synthetic retained value");
+    expect(next.eingabe_daten.anamnese).toBe("new explicit text");
+  });
 });

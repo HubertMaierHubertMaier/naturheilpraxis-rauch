@@ -58,6 +58,12 @@ BEGIN
     IF saved.draft_revision IS DISTINCT FROM _expected_revision THEN
       RAISE EXCEPTION 'PATIENT_DRAFT_CONFLICT: newer saved input exists' USING ERRCODE = '40001';
     END IF;
+    IF saved.eingabe_daten IS NOT NULL AND jsonb_typeof(saved.eingabe_daten) IS DISTINCT FROM 'object' THEN
+      RAISE EXCEPTION 'Patient safety block: historical input structure requires review';
+    END IF;
+    -- Preserve fields not managed by this client, including historical inventory evidence.
+    -- Explicit empty values remain explicit edits; omission must not erase an unknown field.
+    payload := coalesce(saved.eingabe_daten, '{}'::jsonb) || payload;
     UPDATE public.therapy_sessions SET eingabe_daten = payload, updated_at = now(), created_by = actor,
       kind = coalesce(kind, 'empfehlung') WHERE id = saved.id RETURNING * INTO saved;
   ELSE

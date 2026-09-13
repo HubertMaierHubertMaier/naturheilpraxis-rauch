@@ -1,12 +1,29 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision } from "@/lib/patientDraftRevision";
+import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 
 const pid = "P-2099-0301";
 const oldRevision = "00000000-0000-4000-8000-000000000001";
 const newRevision = "00000000-0000-4000-8000-000000000002";
 
 describe("browser revision provenance", () => {
+  it("writes the confirmed imported contents and revision to both owned recovery copies", () => {
+    const key = `therapy.inputs.draft.patientSafe.v4.${pid}`;
+    const makeStorage = () => { const values = new Map<string, string>(); return {
+      getItem: (name: string) => values.get(name) ?? null,
+      setItem: (name: string, value: string) => { values.set(name, value); },
+    }; };
+    const own = makeStorage(); const shared = makeStorage();
+    const stale = { _pseudonym_id: pid, pseudonymId: pid, anamnese: "synthetic old", _draftWriterId: "window-a", _draftBaseRevision: oldRevision };
+    own.setItem(key, JSON.stringify(stale)); shared.setItem(key, JSON.stringify(stale));
+    const confirmed = { _pseudonym_id: pid, pseudonymId: pid, anamnese: "synthetic confirmed import" };
+    expect(writeConfirmedPatientDraftCopies(own, shared, pid, confirmed, newRevision, "window-a", "2099-01-01")).toEqual({ windowSaved: true, sharedSaved: true });
+    for (const storage of [own, shared]) expect(JSON.parse(storage.getItem(key)!)).toEqual({ ...confirmed,
+      savedAt: "2099-01-01", _draftWriterId: "window-a", _draftBaseRevision: newRevision });
+    const other = { ...stale, _draftWriterId: "window-b" }; shared.setItem(key, JSON.stringify(other));
+    expect(writeConfirmedPatientDraftCopies(own, shared, pid, confirmed, newRevision, "window-a", "2099-01-02").sharedSaved).toBe(false);
+    expect(JSON.parse(shared.getItem(key)!)).toEqual(other);
+  });
   it("does not grant a stale local draft the revision of a newer cloud draft", () => {
     expect(selectLoadedDraftRevision({ hasCloudRow: true, cloudRevision: newRevision, usedLocal: true,
       localInput: { _draftBaseRevision: oldRevision } })).toBe(oldRevision);

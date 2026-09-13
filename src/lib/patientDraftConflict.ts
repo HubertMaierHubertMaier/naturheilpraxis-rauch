@@ -11,6 +11,8 @@ export function draftConflictFields(local: Record<string, unknown>, remote: Reco
 
 export function mergeReviewedDraft(local: Record<string, unknown>, remote: Record<string, unknown>, choices: Record<string, "local" | "remote">) {
   const entries = new Map(Object.entries({ ...remote, ...local }));
+  // The server-derived inventory is displayed separately; it is not clinical input to rewrite.
+  entries.delete("document_inventory");
   for (const key of draftConflictFields(local, remote)) {
     const choice = choices[key];
     if (choice !== "local" && choice !== "remote") throw new Error("Bitte für jedes unterschiedliche Feld eine Fassung auswählen.");

@@ -5,6 +5,8 @@ import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
 import { createPatientSaveQueue } from "@/lib/patientSaveQueue";
 import { appendReviewedAnamnesis, persistVerifiedAnamnesis } from "@/lib/anamnesisRecovery";
+import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
+import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
 
 const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
 const deferred = <T,>() => {
@@ -51,9 +53,13 @@ function fixture() {
     normalizePseudonymId: (value: string) => value, isPatientScopedStorageReady: () => true,
     residualIdentifierCategories: () => [], assertPayloadMatchesPseudonym: vi.fn(), PATIENT_DATA_MISMATCH_ERROR: "owner mismatch",
     appendReviewedAnamnesis, persistVerifiedAnamnesis, anamnesisVersionHash: async () => "synthetic-hash",
+    writeConfirmedPatientDraftCopies, draftWriterId: "synthetic-window",
+    draftRevisionTrackerRef: { current: { capture: vi.fn(), revision: () => "00000000-0000-4000-8000-000000000001" } },
+    originalArchiveInputPatch, applyDraftPayload: vi.fn(),
     buildInputData: (extra: Record<string, unknown>) => ({ ...stored, _pseudonym_id: pid, pseudonymId: pid, ...extra }),
     setIsImportingAnamnesis: vi.fn(), setAnamnese: vi.fn(), setAutoSaveStatus: vi.fn(), setHistoryRefresh: vi.fn(), logTherapyEvent: vi.fn(),
-    localStorage: { setItem: vi.fn() }, window: { setTimeout: (fn: () => Promise<void>) => { timers.push(fn); return timers.length; }, clearTimeout: vi.fn() },
+    sessionStorage: { setItem: vi.fn() }, localStorage: { getItem: vi.fn(() => null), setItem: vi.fn() }, toast: vi.fn(),
+    window: { setTimeout: (fn: () => Promise<void>) => { timers.push(fn); return timers.length; }, clearTimeout: vi.fn() },
     upsertAutoSaveDraft: vi.fn(async (_pid: string, input: Record<string, unknown>) => { stored = input; writes.push(String(input.anamnese)); return "draft-id"; }),
     supabase: {
       auth: { getUser: vi.fn(async () => ({ data: { user: {} } })) },
@@ -84,6 +90,9 @@ describe("confirmed import and real autosave callback ordering", () => {
     expect(f.writes).toHaveLength(2);
     expect(f.stored().anamnese).toContain("Geprüfte synthetische PDF-Quelle");
     expect(f.env.setAnamnese).toHaveBeenCalledWith(f.stored().anamnese);
+    const restored = JSON.parse(f.env.sessionStorage.setItem.mock.calls[0][1]);
+    expect(restored.anamnese).toBe(f.stored().anamnese);
+    expect(restored._draftBaseRevision).toBe("00000000-0000-4000-8000-000000000001");
     expect(f.env.anamnesisImportPendingRef.current).toBe(false);
   });
 

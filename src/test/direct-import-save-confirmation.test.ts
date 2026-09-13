@@ -5,6 +5,8 @@ import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
 import { persistVerifiedPatientInput } from "@/lib/verifiedPatientInput";
 import { normalizePatientPseudonym } from "../../supabase/functions/_shared/patientPseudonym";
+import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
+import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -21,14 +23,16 @@ function setup() {
   const js = ts.transpileModule(source.slice(start, end), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const data: Record<string, unknown> = { _pseudonym_id: pid, pseudonymId: pid, laborKomplett: "synthetic prior input" };
   const save = deferred<string>(); const read = deferred<any>();
+  let submitted: Record<string, unknown> | undefined;
   let previews = [{ id: "synthetic-document", status: "ready", sourcePseudonymId: pid, documentType: "labor",
-    privacyReviewed: true, previewText: "synthetic reviewed laboratory input", documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
+    privacyReviewed: true, file: { size: 42 }, previewText: "synthetic reviewed laboratory input", documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
   const setter = (field: string) => (value: unknown) => { data[field] = typeof value === "function" ? value(data[field] || "") : value; };
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
     isAnalyzingDocs: false, isStreaming: false, isLoadingDiagnosen: false, isLoadingMannayanOrders: false,
-    pendingDirectBefundFiles: previews, patientScopeGenerationRef: { current: 0 }, pseudonymIdRef: { current: pid },
+    pendingDirectBefundFiles: previews, patientScopeGenerationRef: { current: 0 }, pseudonymIdRef: { current: pid }, patientDataOwnerRef: { current: pid },
+    asText: (value: unknown) => String(value || ""),
     autoSaveRunIdRef: { current: 0 }, autoSaveTimerRef: { current: null }, autoSaveSessionIdRef: { current: null }, lastAutoSavedPayloadRef: { current: "" },
     window: { clearTimeout: vi.fn(), setTimeout: vi.fn() }, flushSync: (fn: () => void) => fn(), setIsImportingAnamnesis: vi.fn(),
     directIdentifierCategories: () => [], residualIdentifierCategories: () => [],
@@ -40,20 +44,46 @@ function setup() {
     directBefundTargetLabel: (value: string) => value, extractExplicitAnamneseInputs: vi.fn(), applyExtractedToInputs: vi.fn(),
     latestBuildInputDataRef: { current: (extra: Record<string, unknown>) => ({ ...data, ...extra }) },
     assertPayloadMatchesPseudonym: vi.fn(), patientDraftSaveQueue: { run: (_pid: string, fn: () => unknown) => fn() },
-    persistVerifiedPatientInput, upsertAutoSaveDraft: vi.fn(() => save.promise),
+    persistVerifiedPatientInput, upsertAutoSaveDraft: vi.fn((_pid: string, payload: Record<string, unknown>) => { submitted = payload; return save.promise; }),
+    draftRevisionTrackerRef: { current: { capture: vi.fn(), revision: () => "00000000-0000-4000-8000-000000000001" } },
+    archivePatientOriginal: vi.fn(async () => ({ pseudonymId: pid, archivePath: `${pid}/2099-01-01/labor-${"a".repeat(64)}.pdf`, sha256: "a".repeat(64), bytes: 42, reused: false })),
+    verifyArchivedPatientOriginal: vi.fn(), originalArchiveInputPatch, applyDraftPayload: vi.fn(), writeConfirmedPatientDraftCopies,
+    sessionStorage: { setItem: vi.fn() }, localStorage: { getItem: () => null, setItem: vi.fn() }, draftWriterId: "synthetic-window",
     supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => read.promise }) }) }) },
     setAutoSaveStatus: vi.fn(), logTherapyEvent: vi.fn(async () => undefined),
     setPendingDirectBefundFiles: (fn: (items: typeof previews) => typeof previews) => { previews = fn(previews); },
     toast: vi.fn(), setHistoryRefresh: vi.fn(), nextBefundActionRef: { current: null },
   };
   const run = new Function(...Object.keys(env), `${js}; return handoffDirectBefundFiles;`)(...Object.values(env));
-  return { env, run, save, read, previews: () => previews, stored: () => ({ id: "synthetic-row", pseudonym_id: pid,
-    eingabe_daten: { ...data, autoSavedDraft: true, finalized: false } as Record<string, unknown> }) };
+  const fieldStart = source.indexOf("const persistImportedDocumentText = async (");
+  expect(fieldStart).toBeGreaterThan(-1);
+  const fieldJs = ts.transpileModule(source.slice(fieldStart, start), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const importField = new Function(...Object.keys(env), `${fieldJs}; return persistImportedDocumentText;`)(...Object.values(env));
+  return { env, run, importField, save, read, previews: () => previews, stored: () => ({ id: "synthetic-row", pseudonym_id: pid,
+    eingabe_daten: { ...(submitted || data), autoSavedDraft: true, finalized: false } as Record<string, unknown> }) };
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("does not save a field import until its originals have been archived", async () => {
+    const t = setup(); const archive = deferred<unknown[]>();
+    const done = t.importField("synthetic new field text", pid, "laborKomplett", () => archive.promise);
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+    archive.resolve([]);
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    expect(t.env.upsertAutoSaveDraft).toHaveBeenCalledWith(pid, expect.objectContaining({ laborKomplett: "synthetic prior input\n\nsynthetic new field text" }));
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.env.applyDraftPayload).toHaveBeenCalledWith(expect.objectContaining({ laborKomplett: "synthetic prior input\n\nsynthetic new field text" }), pid);
+  });
+  it("keeps existing fields untouched when original archiving fails", async () => {
+    const t = setup();
+    await expect(t.importField("synthetic new text", pid, "laborKomplett", async () => { throw new Error("synthetic archive unavailable"); })).rejects.toThrow(/archive unavailable/);
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+    expect(t.env.applyDraftPayload).not.toHaveBeenCalled();
+    expect(t.env.anamnesisImportPendingRef.current).toBe(false);
+  });
   it("keeps the preview until saving AND complete readback finish", async () => {
     const t = setup(); const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
     expect(t.env.upsertAutoSaveDraft).toHaveBeenCalledWith(pid, expect.objectContaining({ laborDatum: "2099-01-01" }));
     expect(t.previews()[0].status).toBe("ready");
     t.save.resolve("synthetic-row"); await Promise.resolve();
@@ -77,7 +107,9 @@ describe("direct import confirmation follows the database receipt", () => {
     expect(t.env.setAutoSaveStatus).toHaveBeenLastCalledWith("error");
   });
   it("does not confirm an old preview in a different patient scope", async () => {
-    const t = setup(); const done = t.run(); t.env.patientScopeGenerationRef.current++;
+    const t = setup(); const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    t.env.patientScopeGenerationRef.current++;
     t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
     expect(t.previews()[0].status).toBe("ready");
     expect(t.env.logTherapyEvent).not.toHaveBeenCalled();

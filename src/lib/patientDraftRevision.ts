@@ -76,9 +76,35 @@ export function stampOwnedDraftRevision(
     if (!draft || draft._draftWriterId !== writerId
       || normalizePatientPseudonym(draft._pseudonym_id) !== normalizePatientPseudonym(pid)
       || normalizePatientPseudonym(draft.pseudonymId) !== normalizePatientPseudonym(pid)) return false;
-    const controlFields = new Set(["autoSavedDraft", "finalized", "lastAutoSaveAt"]);
+    const controlFields = new Set(["autoSavedDraft", "finalized", "lastAutoSaveAt", "document_inventory"]);
     if (Object.keys(savedPayload).some(field => !controlFields.has(field) && !equalPatientInputValue(draft[field], savedPayload[field]))) return false;
     storage.setItem(key, JSON.stringify({ ...draft, _draftBaseRevision: revision }));
     return true;
   } catch { return false; }
+}
+
+export function writeConfirmedPatientDraftCopies(
+  windowStorage: Pick<Storage, "setItem">,
+  sharedStorage: Pick<Storage, "getItem" | "setItem">,
+  pseudonymId: string,
+  payload: Record<string, unknown>,
+  revision: DraftRevision,
+  writerId: string,
+  savedAt: string,
+) {
+  const pid = normalizePatientPseudonym(pseudonymId);
+  if (!pid || !isDraftRevision(revision) || normalizePatientPseudonym(payload._pseudonym_id) !== pid
+    || normalizePatientPseudonym(payload.pseudonymId) !== pid) throw new Error("Die bestätigte Wiederherstellungskopie ist nicht eindeutig gebunden.");
+  const key = `therapy.inputs.draft.patientSafe.v4.${pid}`;
+  const encoded = JSON.stringify({ ...payload, savedAt, _draftBaseRevision: revision, _draftWriterId: writerId });
+  let windowSaved = false;
+  let sharedSaved = false;
+  try { windowStorage.setItem(key, encoded); windowSaved = true; } catch { /* Cloud receipt remains authoritative. */ }
+  try {
+    const previous = sharedStorage.getItem(key);
+    if (!previous || JSON.parse(previous)?._draftWriterId === writerId) {
+      sharedStorage.setItem(key, encoded); sharedSaved = true;
+    }
+  } catch { /* Preserve an unknown or malformed shared copy instead of overwriting it. */ }
+  return { windowSaved, sharedSaved };
 }

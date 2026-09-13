@@ -24,7 +24,6 @@ import { VersionDiffCard } from "./therapy/VersionDiffCard";
 import { PreferredRemediesCard, type PinnedRemedy } from "./therapy/PreferredRemediesCard";
 import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
-import { LabImageUpload } from "./therapy/LabImageUpload";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, MultiDocUpload } from "./therapy/MultiDocUpload";
 import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
@@ -88,9 +87,10 @@ import { patientDraftSaveQueue } from "@/lib/patientSaveQueue";
 import { flushSync } from "react-dom";
 import { equalPatientInputValue, persistVerifiedPatientInput } from "@/lib/verifiedPatientInput";
 import { PatientDraftConflictReview } from "@/components/admin/therapy/PatientDraftConflictReview";
+import { archivePatientOriginal, verifyArchivedPatientOriginal, originalArchiveInputPatch, type ArchiveOriginals, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
-import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, isDraftRevision } from "@/lib/patientDraftRevision";
+import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
@@ -203,6 +203,7 @@ type SelectableAnalysisSource = { key: string; label: string; text: string; grou
 type PendingDirectBefundFile = {
   id: string;
   file: File;
+  archiveReceipt?: OriginalArchiveReceipt;
   sourcePseudonymId: string;
   status: "queued" | "processing" | "ready" | "done" | "error";
   documentType: DirectBefundTarget | "";
@@ -219,7 +220,7 @@ type PendingDirectBefundFile = {
   errorKind?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
-  "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages"
+  "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
 const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
 type ExtractedBefundInputs = {
@@ -402,6 +403,7 @@ const extractMarkerName = (block: string): string => {
 const mergeExtractedBlockIntoField = (previous: string, newBlock: string): string => {
   const cleanNew = newBlock.trim();
   if (!cleanNew) return previous;
+  if (previous.includes(cleanNew)) return previous;
   const newName = normalizeDocumentName(extractMarkerName(cleanNew));
   const prevTrim = previous.trim();
   if (!prevTrim) return cleanNew;
@@ -1446,8 +1448,8 @@ export function TherapyRecommendation() {
       .filter((item) => item.status === "ready"
         && item.previewText?.trim()
         && directIdentifierCategories(item.previewText).length === 0)
-      .map(({ id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages }) => ({
-        id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages,
+      .map(({ id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages, archiveReceipt }) => ({
+        id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages, archiveReceipt,
       }));
     if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
     else sessionStorage.removeItem(key);
@@ -1571,7 +1573,8 @@ export function TherapyRecommendation() {
       ...extra,
     }) as Record<string, unknown>;
     for (const key of Object.keys(data)) {
-      if (key.startsWith("_draft") || key === "savedAt" || key === "sessionDraftVersion") delete data[key];
+      if (key.startsWith("_draft") || key === "savedAt" || key === "document_inventory"
+        || (key === "sessionDraftVersion" && !("sessionDraftVersion" in extra))) delete data[key];
     }
     return data;
   }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile]);
@@ -3798,6 +3801,53 @@ export function TherapyRecommendation() {
     }
   };
 
+  const persistImportedDocumentText = async (
+    text: string, sourcePseudonymId: string,
+    field: "laborKomplett" | "arztbericht" | "metatronHeel" | "vievaPlus" | "sonstigeUntersuchungen" | "apothekerRezept",
+    archiveOriginals: ArchiveOriginals,
+  ) => {
+    const pid = normalizePseudonymId(sourcePseudonymId);
+    if (pid !== pseudonymIdRef.current || patientDataOwnerRef.current !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
+    if (anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
+      || isAnalyzingDocs || isStreaming || isLoadingDiagnosen || isLoadingMannayanOrders) throw new Error("Bitte den laufenden Lade-, Speicher- oder Auswertungsschritt abwarten. Die Vorschau bleibt erhalten.");
+    draftRevisionTrackerRef.current.capture(pid);
+    const scope = patientScopeGenerationRef.current;
+    const isCurrent = () => scope === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    anamnesisImportPendingRef.current = true;
+    setIsImportingAnamnesis(true);
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    try {
+      const receipt = await patientDraftSaveQueue.run(pid, async () => {
+        if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
+        const originals = await archiveOriginals();
+        if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
+        const base = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
+        const previous = asText(base[field]);
+        const combined = previous.includes(text) ? previous : [previous.trim(), text].filter(Boolean).join("\n\n");
+        const payload = latestBuildInputDataRef.current({ [field]: combined,
+          ...originalArchiveInputPatch(base, originals, field), autoSavedDraft: true, finalized: false });
+        if (residualIdentifierCategories(payload).length) throw new Error("Bitte die Datenschutzprüfung der Eingaben vornehmen.");
+        return persistVerifiedPatientInput(pid, payload, upsertAutoSaveDraft, async (id) => {
+          const { data, error } = await supabase.from("therapy_sessions").select("id,pseudonym_id,eingabe_daten").eq("id", id).maybeSingle();
+          if (error) throw error;
+          return data as any;
+        });
+      });
+      if (!isCurrent()) throw new Error("Die Inhalte sind im ursprünglichen Fall gespeichert. Die aktuelle Anzeige bleibt unverändert.");
+      applyDraftPayload(receipt.stored.eingabe_daten, pid);
+      writeConfirmedPatientDraftCopies(sessionStorage, localStorage, pid, receipt.stored.eingabe_daten,
+        draftRevisionTrackerRef.current.revision(pid), draftWriterId, new Date().toISOString());
+      autoSaveSessionIdRef.current = receipt.id;
+      lastAutoSavedPayloadRef.current = JSON.stringify(receipt.stored.eingabe_daten);
+      setAutoSaveStatus("saved");
+      setHistoryRefresh(value => value + 1);
+    } finally {
+      anamnesisImportPendingRef.current = false;
+      setIsImportingAnamnesis(false);
+    }
+  };
+
   const handoffDirectBefundFiles = async () => {
     const pid = normalizePseudonymId(pseudonymId);
     if (anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
@@ -3890,11 +3940,23 @@ export function TherapyRecommendation() {
     if (latestAnamneseDate) setAnamneseDatum(latestAnamneseDate);
     if (latestDoctorDate) setArztberichtDatum(latestDoctorDate);
     });
-    const payload = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
+    let payload = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
     assertPayloadMatchesPseudonym(pid, payload);
     if (residualIdentifierCategories(payload).length) throw new Error("Die Datenschutzprüfung der gesamten Eingabe ist noch erforderlich. Die Vorschau bleibt erhalten.");
     const receipt = await patientDraftSaveQueue.run(pid, async () => {
       if (!scopeIsCurrent()) throw new Error("Der Fall wurde gewechselt. Die Vorschau wurde nicht als gespeichert bestätigt.");
+      draftRevisionTrackerRef.current.capture(pid);
+      for (const item of ready) {
+        if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
+        if (!item.archiveReceipt && !item.file.size) throw new Error("Bitte die Originaldatei erneut auswählen. Eine reine Textvorschau ist noch kein gesichertes Original.");
+        const original = item.archiveReceipt
+          ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
+          : await archivePatientOriginal(supabase as any, pid, item.file, item.documentType || "dokument", item.documentDate);
+        const inputFields = { labor: "laborKomplett", metatron: "metatronHeel", vieva: "vievaPlus", anamnese: "anamnese", arzt: "arztbericht", sonstige: "sonstigeUntersuchungen" };
+        payload = { ...payload, ...originalArchiveInputPatch(payload, [original], inputFields[item.documentType]) };
+        if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id ? { ...candidate, archiveReceipt: original } : candidate));
+      }
+      if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
       return persistVerifiedPatientInput(pid, payload, upsertAutoSaveDraft, async (id) => {
         const { data, error } = await supabase.from("therapy_sessions")
           .select("id,pseudonym_id,eingabe_daten").eq("id", id).maybeSingle();
@@ -3904,6 +3966,9 @@ export function TherapyRecommendation() {
     });
     if (!scopeIsCurrent()) return;
     autoSaveSessionIdRef.current = receipt.id;
+    applyDraftPayload(receipt.stored.eingabe_daten, pid);
+    writeConfirmedPatientDraftCopies(sessionStorage, localStorage, pid, receipt.stored.eingabe_daten,
+      draftRevisionTrackerRef.current.revision(pid), draftWriterId, new Date().toISOString());
     lastAutoSavedPayloadRef.current = JSON.stringify(payload);
     setAutoSaveStatus("saved");
     const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
@@ -3914,13 +3979,13 @@ export function TherapyRecommendation() {
       identifier_categories: identifierCategories,
       document_types: Array.from(documentTypes),
       privacy_preview_confirmed: true,
-      original_archived: false,
+      original_archived: true,
       privacy_mode: "local-deidentification",
     });
     if (!scopeIsCurrent()) return;
     const readyIds = new Set(ready.map((item) => item.id));
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
-    toast({ title: "Dokumentinhalte gespeichert und geprüft", description: `${ready.length} geprüfte Datei(en) wurden nach Dokumentart und Datum übernommen und vollständig zurückgelesen. Als Nächstes die ausgewählten Befunde auswerten; Originale wurden auf diesem Importweg noch nicht archiviert.` });
+    toast({ title: "Originale und Inhalte gespeichert und geprüft", description: `${ready.length} geprüfte Datei(en) wurden unverändert privat archiviert. Zugeordnete Inhalte und Originaldateien wurden vollständig zurückgelesen. Als Nächstes die ausgewählten Befunde auswerten.` });
     setHistoryRefresh((n) => n + 1);
     window.setTimeout(() => {
       nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -4892,7 +4957,8 @@ export function TherapyRecommendation() {
       if (draft && (normalizePseudonymId(draft.pseudonym_id) !== pid || !isDraftRevision(draft.draft_revision))) {
         throw new Error("Die gespeicherte Fassung ist nicht eindeutig bestätigt. Bitte den gespeicherten Fall erneut prüfen.");
       }
-      const remote = normalizeTherapyInput(draft?.eingabe_daten || {});
+      const remote = normalizeTherapyInput({ ...(draft?.eingabe_daten || {}),
+        document_inventory: normalizeDocumentInventory(data?.document_inventory || draft?.document_inventory) });
       assertPayloadMatchesPseudonym(pid, remote);
       setDraftConflictReview({ pid, scope, local, remote, revision: draft?.draft_revision || null });
     } catch (error: any) {
@@ -4926,6 +4992,9 @@ export function TherapyRecommendation() {
       });
       if (!isCurrent()) return;
       applyDraftPayload(receipt.stored.eingabe_daten, review.pid);
+      setLoadedDocumentInventory(normalizeDocumentInventory(review.remote.document_inventory));
+      writeConfirmedPatientDraftCopies(sessionStorage, localStorage, review.pid, receipt.stored.eingabe_daten,
+        draftRevisionTrackerRef.current.revision(review.pid), draftWriterId, new Date().toISOString());
       autoSaveSessionIdRef.current = receipt.id;
       lastAutoSavedPayloadRef.current = JSON.stringify(payload);
       setAutoSaveStatus("saved");
@@ -5675,18 +5744,20 @@ export function TherapyRecommendation() {
                   {!anamneseDatum && <p role="status" className="mb-3 text-xs font-medium text-amber-800 dark:text-amber-200">Vor dem PDF-Import zuerst das Anamnese-Datum eintragen.</p>}
                   <MultiDocUpload
                     pseudonymId={pseudonymId}
+                    archiveKind="anamnese"
                     ocrMode="doctor"
                     label="Anamnesebogen-PDF aufnehmen"
                     documentDate={anamneseDatum}
                     documentType="Anamnese / Anamnesebogen"
                     requireDocumentDate
-                    onExtracted={async (text, sourcePseudonymId) => {
+                    onExtracted={async (text, sourcePseudonymId, archiveOriginals: ArchiveOriginals = async () => []) => {
                       const pid = normalizePseudonymId(sourcePseudonymId);
                       if (pid !== pseudonymIdRef.current || patientDataOwnerRef.current !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
                       if (patientContextLoadingRef.current || patientContextLoadError?.pid === pid) throw new Error("Bitte zuerst den gespeicherten Fall vollständig und fehlerfrei laden. Die Importvorschau bleibt erhalten.");
                       if (anamnesisImportPendingRef.current) throw new Error("Eine Anamnese wird noch gespeichert. Bitte die Bestätigung abwarten.");
+                      draftRevisionTrackerRef.current.capture(pid);
                       const generation = patientScopeGenerationRef.current;
-                      const payload = buildInputData({ anamnese: appendReviewedAnamnesis(anamnese, text), autoSavedDraft: true, lastAutoSaveAt: new Date().toISOString() });
+                      let payload = buildInputData({ anamnese: appendReviewedAnamnesis(anamnese, text), autoSavedDraft: true, lastAutoSaveAt: new Date().toISOString() });
                       if (residualIdentifierCategories(payload).length) throw new Error("Datenschutzprüfung erforderlich; die Anamnese wurde noch nicht gespeichert.");
                       anamnesisImportPendingRef.current = true;
                       setIsImportingAnamnesis(true);
@@ -5695,6 +5766,9 @@ export function TherapyRecommendation() {
                       try {
                         const { stored } = await patientDraftSaveQueue.run(pid, async () => {
                           if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current || patientContextLoadingRef.current) throw new Error("Der Fall wurde inzwischen gewechselt oder neu geladen. Die Übernahme wurde nicht begonnen.");
+                          const originals = await archiveOriginals();
+                          if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
+                          payload = { ...payload, ...originalArchiveInputPatch(payload, originals, "anamnese") };
                           return persistVerifiedAnamnesis(pid, payload, upsertAutoSaveDraft, async (id) => {
                             const { data, error } = await (supabase as any).from("therapy_sessions").select("pseudonym_id,eingabe_daten,updated_at").eq("id", id).maybeSingle();
                             if (error) throw error;
@@ -5706,8 +5780,11 @@ export function TherapyRecommendation() {
                         });
                         if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current) throw new Error("Der Fall wurde inzwischen gewechselt. Die Anamnese ist im ursprünglichen Fall gespeichert; die aktuelle Anzeige bleibt unverändert.");
                         setAnamnese(String(payload.anamnese));
-                        try { localStorage.setItem(`therapy.inputs.draft.patientSafe.v4.${pid}`, JSON.stringify({ ...payload, savedAt: stored.updated_at || new Date().toISOString() })); } catch { /* database persistence has already been verified */ }
-                        await logTherapyEvent(pid, "documents_saved", { source: "Anamnesetext", total_chars: String(payload.anamnese).length, input_persisted: true, original_archived: false });
+                        applyDraftPayload(stored.eingabe_daten, pid);
+                        const recovery = writeConfirmedPatientDraftCopies(sessionStorage, localStorage, pid, stored.eingabe_daten,
+                          draftRevisionTrackerRef.current.revision(pid), draftWriterId, stored.updated_at || new Date().toISOString());
+                        if (!recovery.windowSaved) toast({ title: "Cloud-Speicherung bestätigt", description: "Die Browser-Wiederherstellungskopie konnte nicht geschrieben werden. Bitte vor dem Schließen den gespeicherten Fall erneut prüfen.", variant: "destructive" });
+                        await logTherapyEvent(pid, "documents_saved", { source: "Anamnesetext", total_chars: String(payload.anamnese).length, input_persisted: true, original_archived: Array.isArray(payload.originalArchiveReceiptsV1) && payload.originalArchiveReceiptsV1.length > 0 });
                       } finally {
                         anamnesisImportPendingRef.current = false;
                         setIsImportingAnamnesis(false);
@@ -5722,7 +5799,7 @@ export function TherapyRecommendation() {
                     rows={12}
                     className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
                   />
-                  <p className="mt-2 text-xs text-muted-foreground">Der geprüfte Anamnesetext wird vor Abschluss der Übernahme gespeichert und zurückgelesen. Frühere Textfassungen bleiben als interne Versionen erhalten. Die Original-PDF wird bei diesem Textimport nicht archiviert. Eine Zuordnung nach Name oder E-Mail erfolgt nicht.</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Der geprüfte Anamnesetext und die unveränderten Original-PDFs werden vor Bestätigung der Übernahme privat gespeichert und zurückgelesen. Frühere Textfassungen bleiben als interne Versionen erhalten. Die Zuordnung erfolgt über die Fallnummer.</p>
                 </div>
               </TabsContent>
 
@@ -5756,10 +5833,8 @@ export function TherapyRecommendation() {
                       pseudonymId={pseudonymId}
                       ocrMode="lab"
                       label="📄 Vollständige Labor-PDF einlesen"
-                      onExtracted={(text, sourcePseudonymId) => {
-                        if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                        setLaborKomplett((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
-                      }}
+                      archiveKind="labor" documentDate={laborDatum} documentType="Labor"
+                      onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "laborKomplett", archive)}
                     />
                   </div>
                   <Textarea
@@ -5801,9 +5876,8 @@ export function TherapyRecommendation() {
                     <label className="text-sm font-medium block">📄 Arztbericht / Arztbrief / Facharzt-Befund</label>
                     <div className="flex items-center gap-2 ml-auto">
                       <WorkloadBadge chars={arztbericht.length} hint="Arztbrief: Diagnosen, Anamnese, Beurteilung, Therapie verstehen" />
-                      <LabImageUpload mode="doctor" onExtracted={(t) => {
-                        setArztbericht((previous) => previous ? `${previous.trim()}\n\n${t}` : t);
-                      }} />
+                      <MultiDocUpload pseudonymId={pseudonymId} archiveKind="arzt" documentType="Arztbericht" documentDate={arztberichtDatum}
+                        label="Arztbericht als PDF einlesen" onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "arztbericht", archive)} />
                     </div>
                   </div>
                   <Textarea
@@ -5824,7 +5898,7 @@ export function TherapyRecommendation() {
                       <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. Manuell eintragen oder Fotos/Scans hochladen (KI extrahiert strukturiert in Diagnosen, Anamnese, Befund, Beurteilung, Therapie).</p>
+                  <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. PDFs werden lokal ausgelesen, der bereinigte Text wird geprüft und das unveränderte Original wird privat archiviert.</p>
                 </div>
               </TabsContent>
 
@@ -5849,11 +5923,9 @@ export function TherapyRecommendation() {
                     label="Metatron-Hospital-PDF aufnehmen"
                     documentDate={metatronDatum}
                     documentType="Metatron Hospital"
+                    archiveKind="metatron"
                     requireDocumentDate
-                    onExtracted={(text, sourcePseudonymId) => {
-                      if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                      setMetatronHeel((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
-                    }}
+                    onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "metatronHeel", archive)}
                   />
                   <Textarea
                     value={metatronHeel}
@@ -5883,7 +5955,7 @@ export function TherapyRecommendation() {
                   </div>
                   {!vievaPlusDatum && <p role="status" className="mb-3 text-xs font-medium text-amber-800 dark:text-amber-200">Vor dem PDF-Import zuerst das Analyse-Datum eintragen.</p>}
                   <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-100">
-                    <strong>Datenschutz- und Sicherheitsprüfung:</strong> Vor dem Einlesen Namen, Geburtsdatum, Adresse, Dateiname und weitere Identifikatoren kontrollieren. Nur den zum aktuellen Pseudonym gehörenden Befund verwenden. Das PDF-Passwort wird nicht gespeichert; das Original wird nicht archiviert. Die Vieva-Auswertung ist eine Befundquelle und ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung.
+                    <strong>Datenschutz- und Sicherheitsprüfung:</strong> Vor dem Einlesen Namen, Geburtsdatum, Adresse, Dateiname und weitere Identifikatoren kontrollieren. Nur den zum aktuellen Pseudonym gehörenden Befund verwenden. Das PDF-Passwort wird nicht gespeichert; das unveränderte Original wird nach Bestätigung privat archiviert. Die Vieva-Auswertung ist eine Befundquelle und ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung.
                   </div>
                   <MultiDocUpload
                     pseudonymId={pseudonymId}
@@ -5891,13 +5963,11 @@ export function TherapyRecommendation() {
                     label="Vieva-Plus-PDF aufnehmen"
                     documentDate={vievaPlusDatum}
                     documentType="Vieva Plus"
+                    archiveKind="vieva"
                     requireDocumentDate
                     pdfPassword={vievaPlusPdfPassword}
                     onPdfPasswordChange={setVievaPlusPdfPassword}
-                    onExtracted={(text, sourcePseudonymId) => {
-                      if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                      setVievaPlus((previous) => previous ? `${previous.trim()}\n\n${text}` : text);
-                    }}
+                    onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "vievaPlus", archive)}
                   />
                   <Textarea
                     value={vievaPlus}
@@ -5906,7 +5976,7 @@ export function TherapyRecommendation() {
                     rows={12}
                     className="mt-3 font-sans text-[13px] leading-relaxed resize-y max-h-[60vh]"
                   />
-                   <p className="text-xs text-muted-foreground mt-2">Die PDF wird lokal im Browser gelesen und bei Bedarf lokal per OCR erkannt. Direkte Identifikatoren werden vor Speicherung und Analyse entfernt; das Original wird nicht archiviert. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen. Die Recherche- und Preisprüfung in Sorra Control ist davon getrennt.</p>
+                   <p className="text-xs text-muted-foreground mt-2">Die PDF wird lokal im Browser gelesen und bei Bedarf lokal per OCR erkannt. Der bereinigte Text und das unveränderte private Original werden getrennt gespeichert und geprüft. Für Analysen mit einem anderen Datum bitte das Datum ändern und die nächste PDF separat einlesen.</p>
                 </div>
               </TabsContent>
 
@@ -5942,10 +6012,9 @@ export function TherapyRecommendation() {
                       pseudonymId={pseudonymId}
                       ocrMode="doctor"
                       label="📂 Textlesbare PDFs sicher einlesen"
-                      onExtracted={(t, sourcePseudonymId) => {
-                        if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                        setSonstigeUntersuchungen((previous) => previous ? `${previous.trim()}\n\n${t}` : t);
-                      }}
+                      archiveKind="sonstige"
+                      documentType="Sonstige Voruntersuchungen"
+                      onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "sonstigeUntersuchungen", archive)}
                     />
                   </div>
                   <Textarea
@@ -6119,15 +6188,12 @@ export function TherapyRecommendation() {
                           pseudonymId={pseudonymId}
                           ocrMode="doctor"
                           label="Apotheker-Rezept als textlesbare PDF"
-                          onExtracted={(text, sourcePseudonymId) => {
-                            if (normalizePseudonymId(sourcePseudonymId) !== pseudonymIdRef.current) return;
-                            setApothekerRezept((prev) => (prev ? `${prev}\n\n${text}` : text).trim());
-                            toast({ title: "✓ Apotheker-Rezept übernommen", description: "Text extrahiert und ins Feld eingefügt." });
-                          }}
+                          documentType="Apotheker-Rezept"
+                          onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "apothekerRezept", archive)}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. Die PDF wird lokal ausgelesen, datenschutzbereinigt und nicht als Original archiviert.
+                        Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. Der Text wird lokal ausgelesen und bereinigt; das unveränderte Original wird privat archiviert.
                         {" "}
                         <span className={apothekerRezept.trim().length >= 5 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>
                           {apothekerRezept.trim().length >= 5

@@ -9,6 +9,13 @@ const local = { anamnese: "synthetic local source", laborKomplett: "synthetic lo
 const remote = { anamnese: "synthetic saved source", laborKomplett: "synthetic saved laboratory", futureField: "retained extra" };
 
 describe("explicit conflict choices", () => {
+  it("uses the server inventory instead of an invisible stale local inventory", () => {
+    const oldInventory = [{ archivePath: "synthetic-old" }];
+    const currentInventory = [{ archivePath: "synthetic-current" }];
+    expect(mergeReviewedDraft({ document_inventory: oldInventory }, { document_inventory: currentInventory }, {}))
+      .toEqual({});
+    expect(mergeReviewedDraft({ document_inventory: oldInventory }, {}, {})).not.toHaveProperty("document_inventory");
+  });
   it("requires every changed field and retains unknown server fields", () => {
     expect(draftConflictFields(local, remote)).toEqual(["anamnese", "laborKomplett"]);
     expect(() => mergeReviewedDraft(local, remote, { anamnese: "local" })).toThrow(/jedes/);
