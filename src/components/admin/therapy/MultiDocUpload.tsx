@@ -37,7 +37,7 @@ import { RedactedTextPreview } from "./RedactedTextPreview";
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 interface Props {
-  onExtracted: (text: string, sourcePseudonymId: string) => void;
+  onExtracted: (text: string, sourcePseudonymId: string) => void | Promise<void>;
   pseudonymId?: string;
   ocrMode?: "doctor" | "lab";
   label?: string;
@@ -579,7 +579,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
 
     setReviewSubmitting(true);
     try {
-      onExtracted(review.text, review.sourcePseudonymId);
+      await onExtracted(review.text, review.sourcePseudonymId);
       setPendingReview(undefined);
       setPrivacyConfirmed(false);
       setPrivacyFindingsRevealed(false);
@@ -604,6 +604,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, ocrMode = "doctor", l
         local_ocr_pages: review.localOcrPages,
         local_ocr_failed_pages: review.localOcrFailedPages,
         failed_count: review.failedCount,
+      });
+    } catch (error) {
+      toast({
+        title: "Übernahme nicht bestätigt",
+        description: error instanceof Error ? error.message : "Speicherung fehlgeschlagen. Die Importvorschau bleibt erhalten.",
+        variant: "destructive",
       });
     } finally {
       setReviewSubmitting(false);

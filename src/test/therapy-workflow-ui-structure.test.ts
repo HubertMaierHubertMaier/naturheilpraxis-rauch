@@ -127,8 +127,8 @@ describe("therapy workflow UI structure", () => {
 
     expect(source).toContain("const hasRestorableClinicalData");
     expect(source).toContain("!hasRestorableClinicalData(normalizeTherapyInput(draftPayload))");
-    expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) localData = null");
-    expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(snapshotWithDraftAdmin)");
+    expect(source).toContain("if (localData && !hasRestorableClinicalData(normalizeTherapyInput(localData))) { localData = null; localTs = 0; }");
+    expect(source).toContain("const hasSnapshotClinicalData = hasRestorableClinicalData(rawSnapshotWithDraftAdmin)");
     expect(source).not.toContain("const hasSnapshotData = Object.keys(snapshotWithDraftAdmin)");
     const recoveryCheck = source.slice(source.indexOf("const hasRestorableClinicalData"), source.indexOf("const buildClinicalLoadInfo"));
     expect(recoveryCheck).not.toContain("d.alter");

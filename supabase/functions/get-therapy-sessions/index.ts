@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizePatientPseudonym } from "../_shared/patientPseudonym.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -421,9 +422,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const pseudonymId = (body?.pseudonym_id ?? "").toString().trim();
-    const draftPseudonymId = (body?.draft_pseudonym_id ?? "").toString().trim();
-    const snapshotPseudonymId = (body?.snapshot_pseudonym_id ?? "").toString().trim();
+    const pseudonymId = normalizePatientPseudonym(body?.pseudonym_id);
+    const draftPseudonymId = normalizePatientPseudonym(body?.draft_pseudonym_id);
+    const snapshotPseudonymId = normalizePatientPseudonym(body?.snapshot_pseudonym_id);
     const sessionId = (body?.session_id ?? "").toString().trim();
 
     // ----- Mode B: single-row safe fetch (lazy load on expand / Befund / Empfehlung) -----
@@ -447,7 +448,7 @@ Deno.serve(async (req) => {
     if (draftPseudonymId) {
       const { data: draft, error } = await adminClient
         .from("therapy_sessions")
-        .select("id,pseudonym_id,eingabe_daten,created_at,updated_at,kind,notiz")
+        .select("id,pseudonym_id,eingabe_daten,created_at,updated_at,kind,notiz,draft_revision")
         .eq("pseudonym_id", draftPseudonymId)
         .eq("notiz", "Auto-Sicherung der Eingaben")
         .eq("empfehlung", "Automatische Eingabe-Sicherung – noch keine finale KI-Empfehlung.")
@@ -456,10 +457,21 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) throw error;
 
-      const draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      let draftInput = draft?.eingabe_daten && typeof draft.eingabe_daten === "object" ? draft.eingabe_daten as Record<string, unknown> : {};
+      let recoveredAnamnesisVersion: string | null = null;
+      if (draft && !(typeof draftInput.anamnese === "string" && draftInput.anamnese.trim())) {
+        const { data: version, error: versionError } = await adminClient.from("therapy_anamnesis_versions")
+          .select("id,anamnese,anamnese_datum").eq("pseudonym_id", draftPseudonymId)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (versionError && !["42P01", "PGRST205"].includes(versionError.code || "")) throw versionError;
+        if (version?.anamnese) {
+          draftInput = { ...draftInput, anamnese: version.anamnese, anamneseDatum: version.anamnese_datum || "" };
+          recoveredAnamnesisVersion = version.id;
+        }
+      }
       const documentInventory = await buildDocumentInventory(adminClient, draftPseudonymId, draftInput);
 
-      return new Response(JSON.stringify({ draft: draft ? { ...draft, document_inventory: documentInventory } : null, document_inventory: documentInventory }), {
+      return new Response(JSON.stringify({ draft: draft ? { ...draft, eingabe_daten: draftInput, document_inventory: documentInventory } : null, document_inventory: documentInventory, recovered_anamnesis_version: recoveredAnamnesisVersion }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
