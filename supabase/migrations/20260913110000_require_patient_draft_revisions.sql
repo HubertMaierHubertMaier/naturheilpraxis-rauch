@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.upsert_therapy_autosave_draft(
   _notiz text DEFAULT 'Auto-Sicherung der Eingaben'
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  RAISE EXCEPTION 'PATIENT_DRAFT_REVISION_REQUIRED: reload the application before saving' USING ERRCODE = '40001';
+  RAISE EXCEPTION 'PATIENT_DRAFT_REVISION_REQUIRED: reload the application before saving' USING ERRCODE = 'PT409';
 END;
 $$;
 REVOKE ALL ON FUNCTION public.upsert_therapy_autosave_draft(text, jsonb, text, text) FROM PUBLIC, anon;

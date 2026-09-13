@@ -1603,7 +1603,7 @@ export function TherapyRecommendation() {
       return data.id;
     } catch (error: any) {
       if (pseudonymIdRef.current === pid) {
-        const conflict = error?.code === "40001" || error?.code === "PATIENT_DRAFT_BASE_UNKNOWN";
+        const conflict = error?.code === "PT409" || error?.code === "40001" || error?.code === "PATIENT_DRAFT_BASE_UNKNOWN";
         setDraftSaveIssue({ pid, message: conflict
           ? "Ein anderer oder unbekannter Speicherstand liegt vor. Ihre Eingaben bleiben hier erhalten; ein neuerer Stand wurde nicht überschrieben. Die Fassungen müssen vor erneutem Speichern abgeglichen werden."
           : "Die Eingaben konnten nicht bestätigt gespeichert werden. Die lokale Wiederherstellungskopie und eine offene Importvorschau bleiben erhalten." });
@@ -5013,7 +5013,7 @@ export function TherapyRecommendation() {
         setAutoSaveStatus("error");
         setDraftSaveIssue({ pid: review.pid, message: "Der Fassungsabgleich ist nicht vollständig bestätigt. Bitte den Vergleich erneut laden; automatische Folgeänderungen bleiben gesperrt." });
       }
-      if (error?.code === "40001") throw new Error("Der gespeicherte Stand wurde erneut geändert. Bitte den Vergleich schließen und die Fassungen erneut laden.");
+      if (error?.code === "PT409" || error?.code === "40001") throw new Error("Der gespeicherte Stand wurde erneut geändert. Bitte den Vergleich schließen und die Fassungen erneut laden.");
       throw error;
     }
   };

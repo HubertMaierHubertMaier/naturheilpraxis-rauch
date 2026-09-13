@@ -8,7 +8,7 @@ let db: PGlite;
 let legacyWorkedDuringExpansion = false;
 const pid = "P-2099-0201";
 const input = (text: string) => ({ _pseudonym_id: pid, pseudonymId: pid, anamnese: text, laborKomplett: text });
-const sql = (name: string) => readFileSync(resolve(process.cwd(), "supabase/migrations", name), "utf8");
+const sql = (name: string) => readFileSync(resolve(process.cwd(), "supabase/migrations", name), "utf8").replace(/\r\n/g, "\n");
 const save = async (data: unknown, revision: string | null, patient = pid) =>
   (await db.query<{ receipt: { id: string; revision: string; eingabe_daten: Record<string, unknown> } }>(
     "select public.upsert_therapy_autosave_draft_checked($1, $2::jsonb, $3::uuid) as receipt",
@@ -32,6 +32,10 @@ beforeAll(async () => {
       [trial, JSON.stringify({ _pseudonym_id: trial, pseudonymId: trial, anamnese: "synthetic expansion compatibility" })]);
     legacyWorkedDuringExpansion = typeof result.rows[0]?.id === "string";
   } finally { await db.exec("rollback"); }
+  await db.exec("create schema supabase_migrations; create table supabase_migrations.schema_migrations(version text primary key, statements text[])");
+  await db.query("insert into supabase_migrations.schema_migrations values ($1, ARRAY[$2]::text[])",
+    ["20260913080000", sql("20260913080000_patient_draft_compare_and_swap.sql")]);
+  await db.exec(sql("20260913100000_patient_conflicts_without_transaction_retry.sql"));
   await db.exec(sql("20260913110000_require_patient_draft_revisions.sql"));
 }, 20000);
 afterAll(async () => { await db?.close(); });
@@ -46,6 +50,7 @@ describe("database-enforced patient draft revisions (serial regression, not a mu
     expect(second.id).toBe(first.id); expect(second.revision).not.toBe(first.revision);
     await expect(save(input("stale window"), first.revision)).rejects.toThrow(/PATIENT_DRAFT_CONFLICT/);
     await expect(save(input("second new window"), null)).rejects.toThrow(/PATIENT_DRAFT_CONFLICT/);
+    await expect(save(input("business conflict without retry"), null)).rejects.toMatchObject({ code: "PT409" });
     const rows = (await db.query<{ eingabe_daten: unknown }>("select eingabe_daten from therapy_sessions")).rows;
     expect(rows).toHaveLength(1); expect(rows[0].eingabe_daten).toEqual(input("synthetic newer"));
     expect((await db.query("select id from therapy_anamnesis_versions")).rows).toHaveLength(2);
