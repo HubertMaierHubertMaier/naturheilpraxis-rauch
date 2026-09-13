@@ -1,4 +1,5 @@
 -- Cutover phase: apply after the revision-aware UI has been verified and is available to users.
+-- Intentionally outside automatic migrations: deploy the new UI before this explicit operation.
 -- Old tabs must refresh rather than silently bypassing the new comparison-and-swap contract.
 CREATE OR REPLACE FUNCTION public.upsert_therapy_autosave_draft(
   _pseudonym_id text, _eingabe_daten jsonb,

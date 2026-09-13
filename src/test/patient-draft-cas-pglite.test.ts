@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 
@@ -36,11 +36,14 @@ beforeAll(async () => {
   await db.query("insert into supabase_migrations.schema_migrations values ($1, ARRAY[$2]::text[])",
     ["20260913080000", sql("20260913080000_patient_draft_compare_and_swap.sql")]);
   await db.exec(sql("20260913100000_patient_conflicts_without_transaction_retry.sql"));
-  await db.exec(sql("20260913110000_require_patient_draft_revisions.sql"));
+  await db.exec(readFileSync(resolve(process.cwd(), "supabase/manual-migrations/20260913110000_require_patient_draft_revisions.sql"), "utf8"));
 }, 20000);
 afterAll(async () => { await db?.close(); });
 
 describe("database-enforced patient draft revisions (serial regression, not a multi-connection race test)", () => {
+  it("keeps the legacy-client cutover outside automatic deployment migrations", () => {
+    expect(existsSync(resolve(process.cwd(), "supabase/migrations/20260913110000_require_patient_draft_revisions.sql"))).toBe(false);
+  });
   it("keeps the old client working during expansion before the separate cutover", () => {
     expect(legacyWorkedDuringExpansion).toBe(true);
   });
