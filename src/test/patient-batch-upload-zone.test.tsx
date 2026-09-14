@@ -4,6 +4,40 @@ import { PatientBatchUploadZone } from "../components/admin/therapy/PatientBatch
 
 afterEach(cleanup);
 
+it("rejects a multiple-file drop in single mode without silently taking the first file", () => {
+  const onFiles = vi.fn();
+  render(<PatientBatchUploadZone mode="single" disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={vi.fn()} />);
+  const files = [new File(["one"], "one.pdf"), new File(["two"], "two.pdf")];
+  fireEvent.drop(screen.getByRole("button", { name: /hineinziehen/ }), { dataTransfer: { files, items: [] } });
+  expect(onFiles).not.toHaveBeenCalled();
+  expect(screen.getByRole("status")).toHaveTextContent("keine Datei übernommen");
+  expect(screen.queryByLabelText("Lokalen Ordner mit PDFs auswählen")).not.toBeInTheDocument();
+});
+
+it("accepts a single PDF and routes a folder drop to the visible batch-mode choice", () => {
+  const onFiles = vi.fn(); const onModeChange = vi.fn();
+  render(<PatientBatchUploadZone mode="single" disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={vi.fn()} onModeChange={onModeChange} />);
+  const pdf = new File(["one"], "one.pdf");
+  const zone = screen.getByRole("button", { name: /hineinziehen/ });
+  fireEvent.drop(zone, { dataTransfer: { files: [pdf], items: [] } });
+  expect(onFiles).toHaveBeenCalledWith([pdf]);
+  fireEvent.drop(zone, { dataTransfer: { files: [], items: [{ webkitGetAsEntry: () => ({ isDirectory: true }) }] } });
+  expect(screen.getByRole("status")).toHaveTextContent("zuerst die Sammeleingabe wählen");
+  fireEvent.click(screen.getByRole("radio", { name: /Sammeleingabe/ }));
+  expect(onModeChange).toHaveBeenCalledWith("batch");
+  expect(onFiles).toHaveBeenCalledTimes(1);
+});
+
+it("preserves an existing selection by locking both entry-mode controls", () => {
+  const onModeChange = vi.fn();
+  render(<PatientBatchUploadZone mode="single" selectionLocked disabled={false} disabledReason="" onFiles={vi.fn()} onSelectFiles={vi.fn()} onModeChange={onModeChange} />);
+  for (const radio of screen.getAllByRole("radio")) {
+    expect(radio).toBeDisabled();
+    fireEvent.click(radio);
+  }
+  expect(onModeChange).not.toHaveBeenCalled();
+});
+
 it("accepts several dropped PDFs and explicitly reports unsupported files", () => {
   const onFiles = vi.fn();
   render(<PatientBatchUploadZone disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={vi.fn()} />);

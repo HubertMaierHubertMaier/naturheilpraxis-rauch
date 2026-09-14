@@ -1,3 +1,5 @@
+import { parseTherapySourceScope, type TherapySourceScope } from "../../supabase/functions/_shared/therapySourceScope";
+
 export type AnalysisProfileId = "quick" | "complete" | "deep-final";
 
 export type AnalysisProfile = {
@@ -10,7 +12,7 @@ export type AnalysisProfile = {
   wikiMode: "targeted" | "complete-map-reduce";
 };
 
-export type StartedAnalysisProfile = AnalysisProfile & { startedAt: string };
+export type StartedAnalysisProfile = AnalysisProfile & { startedAt: string; sourceScope?: TherapySourceScope };
 
 export const buildAnalysisProfile = (useMapReduce: boolean, useProModel: boolean): AnalysisProfile => {
   const isDeep = useMapReduce && useProModel;
@@ -46,5 +48,7 @@ export const parseStartedAnalysisProfile = (value: unknown): StartedAnalysisProf
     || candidate.befundFinalModel !== expected.befundFinalModel
     || candidate.therapyModel !== expected.therapyModel
     || candidate.wikiMode !== expected.wikiMode) return null;
-  return { ...expected, startedAt: candidate.startedAt };
+  const sourceScope = candidate.sourceScope === undefined ? undefined : parseTherapySourceScope(candidate.sourceScope);
+  if (sourceScope === null) return null;
+  return { ...expected, startedAt: candidate.startedAt, ...(sourceScope ? { sourceScope } : {}) };
 };

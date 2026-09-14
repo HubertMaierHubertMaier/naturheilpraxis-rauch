@@ -18,7 +18,7 @@ import { PatientContextBar } from "./therapy/PatientContextBar";
 import { PatientBatchUploadZone } from "./therapy/PatientBatchUploadZone";
 import { PatientIntakeWorkflow, PatientWorkflowLayout } from "./therapy/PatientIntakeWorkflow";
 import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAdditionalAnamnesis } from "./therapy/AnamnesisAdditionalFields";
-import { buildAnamnesisIntake, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
+import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
@@ -78,6 +78,7 @@ import {
   type SourceSelectionState,
 } from "@/lib/analysisSourceHistory";
 import { buildAnalysisProfile, parseStartedAnalysisProfile, type StartedAnalysisProfile } from "@/lib/analysisProfile";
+import { THERAPY_SOURCE_STAGES, buildTherapySourceScope, parseTherapySourceStageId, sameTherapySourceScope, sourceField, stageIncludesSource } from "../../../supabase/functions/_shared/therapySourceScope";
 import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
@@ -232,6 +233,7 @@ type ExtractedBefundInputs = {
   medications: Array<Partial<IntakeMedication> & { name: string }>;
   intake?: AnamnesisIntake;
   noConventionalMedication?: boolean;
+  pregnancyStatus?: "schwanger" | "nein" | "stillend";
 };
 
 const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs, "forPseudonymId"> => {
@@ -239,7 +241,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
   const symptoms: ExtractedBefundInputs["symptoms"] = [];
   const medications: ExtractedBefundInputs["medications"] = [];
   let noConventionalMedication = false;
-  const pairs = text.matchAll(/Frage\/Feld:\s*([^\n]+)\nErkannte Antwort:\s*([^\n]+)/gi);
+  const pairs = text.matchAll(/Frage\/Feld:[ \t]*([^\n]+)\nErkannte Antwort:[ \t]*([^\r\n]+)/gi);
   for (const pair of pairs) {
     const question = pair[1].trim();
     const answer = pair[2].trim();
@@ -251,7 +253,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
       continue;
     }
     if (/diagnose|erkrankung|vorerkrankung/.test(normalizedQuestion)) {
-      diagnoses.push({ diagnose: `${question}: ${answer}`, quelle: source, status: "anamnestisch dokumentiert", zitat: answer, polarity });
+      diagnoses.push({ diagnose: `${question}: ${answer}`, quelle: source, status: "anamnestisch dokumentiert", sourceQuestionType: /diagnose/.test(normalizedQuestion) ? "diagnosis" : "illness", zitat: answer, polarity });
       continue;
     }
     if (/medikament|arznei|vitamin|mineral|spurenelement|homoo?opath|pflanz|phyto/.test(normalizedQuestion)) {
@@ -273,7 +275,10 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
       medications.push({ name: answer, kategorie, quelle: source, zitat: answer, status: "laufend", polarity });
     }
   }
-  return { diagnoses, symptoms, medications, noConventionalMedication };
+  const profile = extractAnamnesisProfileAnswers(text);
+  const intake = buildAnamnesisIntake([{ diagnoses, medicationsTherapies: medications, anamnese: { currentProblems: symptoms } }]);
+  intake.additional = { ...intake.additional, ...profile.additional };
+  return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus };
 };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
@@ -1254,7 +1259,7 @@ export function TherapyRecommendation() {
   const [geschlecht, setGeschlecht] = useState("");
   const [groesseCm, setGroesseCm] = useState("");
   const [gewichtKg, setGewichtKg] = useState("");
-  const [schwanger, setSchwanger] = useState("nein");
+  const [schwanger, setSchwanger] = useState("");
   const [medikamente, setMedikamente] = useState("");
   const [naturheilMittelHomoeopathie, setNaturheilMittelHomoeopathie] = useState("");
   const [naturheilMittelPflanzenheilkunde, setNaturheilMittelPflanzenheilkunde] = useState("");
@@ -1263,6 +1268,7 @@ export function TherapyRecommendation() {
   const [naturheilMittelSpurenelemente, setNaturheilMittelSpurenelemente] = useState("");
   const [anamneseZusatz, setAnamneseZusatz] = useState<Record<string, string>>({});
   const [clinicalInputTab, setClinicalInputTab] = useState("befund");
+  const [documentEntryMode, setDocumentEntryMode] = useState<"single" | "batch">("single");
   const [anamnesisIntakeV1, setAnamnesisIntakeV1] = useState<AnamnesisIntake | null>(null);
   const [bisherigeMittel, setBisherigeMittel] = useState("");
   const [budget, setBudget] = useState("");
@@ -1920,7 +1926,7 @@ export function TherapyRecommendation() {
   const hasMeaningfulInput = useMemo(() => {
     const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
-    return Object.values(anamneseZusatz).some(value => value.trim()) || textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
+    return Object.values(anamneseZusatz).some(value => value.trim()) || textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger.trim() || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
   }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders, anamneseZusatz]);
 
   useEffect(() => {
@@ -2401,7 +2407,7 @@ export function TherapyRecommendation() {
     setGeschlecht("");
     setGroesseCm("");
     setGewichtKg("");
-    setSchwanger("nein");
+    setSchwanger("");
     setMedikamente("");
     setNaturheilMittelHomoeopathie("");
     setNaturheilMittelPflanzenheilkunde("");
@@ -3067,7 +3073,7 @@ export function TherapyRecommendation() {
       }
     };
     const clickedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const runProfile = { ...buildAnalysisProfile(useMapReduce, useProModel), startedAt: new Date().toISOString() };
+    const runProfile: StartedAnalysisProfile = { ...buildAnalysisProfile(useMapReduce, useProModel), startedAt: new Date().toISOString() };
     setIsDocAnalysisPanelMinimized(false);
     setDocAnalysisHtml("");
     setBefundRunProfile(null);
@@ -3081,10 +3087,14 @@ export function TherapyRecommendation() {
       ? (options as { sourceIds: string[] }).sourceIds
       : null;
     const selectedSourceIds = requestedSourceIds ?? selectedAnalysisSourceKeys;
-    const selectedSources = selectCompleteSourceSetForAnalysis(analysisSources, selectedSourceIds);
+    const sourceStageId = parseTherapySourceStageId(anamneseZusatz.therapySourceStageId);
+    const selectedSources = sourceStageId
+      ? analysisSources.filter(source => stageIncludesSource(sourceStageId, source.key))
+      : selectCompleteSourceSetForAnalysis(analysisSources, selectedSourceIds);
     let sourceManifest: SourceManifestEntry[];
     try {
       sourceManifest = await createSourceManifest(selectedSources);
+      if (sourceStageId) runProfile.sourceScope = buildTherapySourceScope(sourceStageId, sourceManifest);
       if (!runIsCurrent()) {
         releaseRun();
         return;
@@ -3655,6 +3665,8 @@ export function TherapyRecommendation() {
     }
     const intake = extracted.intake || buildAnamnesisIntake([{ diagnoses: extracted.diagnoses, medicationsTherapies: extracted.medications, anamnese: { currentProblems: extracted.symptoms } }]);
     const { diagnoses, symptoms, medications } = intake;
+    const routedDiagnoses = partitionIntakeDiagnoses(diagnoses);
+    if (extracted.pregnancyStatus) setSchwanger(existing => existing.trim() ? existing : extracted.pregnancyStatus!);
     const noConventionalMedication = (extracted.noConventionalMedication || intake.noConventionalMedication) && !intake.uncertainMedications.length;
     setAnamnesisIntakeV1(previous => mergeAnamnesisIntakes(previous, intake));
     setAnamneseZusatz(previous => {
@@ -3663,15 +3675,17 @@ export function TherapyRecommendation() {
       for (const [key, items] of Object.entries(groups)) {
         if (items.length) next[key] = mergeIntakeText(next[key] || "", items.map(formatIntakeFact));
       }
+      if (routedDiagnoses.diagnoses.length) next.diagnoses = mergeIntakeText(next.diagnoses || "", routedDiagnoses.diagnoses.map(formatIntakeFact));
       return next;
     });
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
-      setErkrankung((existing) => mergeIntakeText(existing, diagnoses.map(formatIntakeFact)));
+      const reportedIllnesses = routedDiagnoses.illnesses;
+      if (reportedIllnesses.length) setErkrankung((existing) => mergeIntakeText(existing, reportedIllnesses.map(formatIntakeFact)));
       setManualDiagnosen((existing) => {
         const known = new Set(existing.map((d) => d.diagnose.trim().toLowerCase()));
         const additions: DiagnoseEntry[] = [];
-        for (const d of diagnoses) {
+        for (const d of routedDiagnoses.diagnoses) {
           const key = d.diagnose.trim().toLowerCase();
           if (known.has(key)) continue;
           known.add(key);
@@ -3751,12 +3765,12 @@ export function TherapyRecommendation() {
     }
   }
 
-  useEffect(() => {
-    if (geschlecht === "maennlich" && schwanger !== "nein") setSchwanger("nein");
-  }, [geschlecht, schwanger]);
-
   const addDirectBefundFiles = (list: FileList | File[] | null) => {
     if (!list?.length) return;
+    if (documentEntryMode === "single" && (list.length > 1 || pendingDirectBefundFiles.length > 0)) {
+      toast({ title: "Bitte Sammeleingabe wählen", description: "In der Einzeleingabe wird genau ein Dokument ausgewählt. Die bestehende Auswahl bleibt erhalten." });
+      return;
+    }
     if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
       toast({ title: "Verarbeitung läuft", description: "Bitte die laufende Übernahme abwarten. Die bisherige Dateiliste bleibt erhalten." });
       return;
@@ -3777,7 +3791,7 @@ export function TherapyRecommendation() {
       return;
     }
     const stamp = Date.now().toString(36);
-    setPendingDirectBefundFiles((prev) => [
+    setPendingDirectBefundFiles((prev) => documentEntryMode === "single" && prev.length ? prev : [
       ...prev,
       ...files.map((file, index) => {
         const inferredType = inferDirectBefundTarget(file.name);
@@ -3968,7 +3982,7 @@ export function TherapyRecommendation() {
     flushSync(() => {
     setIsImportingAnamnesis(true);
     const append = (setter: typeof setLaborKomplett, text: string) => setter((previous) => mergeExtractedBlockIntoField(previous, text));
-    const anamneseInputs: Omit<ExtractedBefundInputs, "forPseudonymId"> = { diagnoses: [], symptoms: [], medications: [], noConventionalMedication: false };
+    const anamneseInputs = extractExplicitAnamneseInputs(ready.filter(item => item.documentType === "anamnese").map(item => item.previewText || "").join("\n\n"));
     for (const item of ready) {
       if (!scopeIsCurrent()) return;
       const documentType = item.documentType;
@@ -3980,11 +3994,6 @@ export function TherapyRecommendation() {
         case "vieva": append(setVievaPlus, text); break;
         case "anamnese": {
           append(setAnamnese, text);
-          const extracted = extractExplicitAnamneseInputs(text);
-          anamneseInputs.diagnoses.push(...extracted.diagnoses);
-          anamneseInputs.symptoms.push(...extracted.symptoms);
-          anamneseInputs.medications.push(...extracted.medications);
-          anamneseInputs.noConventionalMedication ||= extracted.noConventionalMedication;
           break;
         }
         case "arzt": append(setArztbericht, text); break;
@@ -3992,7 +4001,7 @@ export function TherapyRecommendation() {
       }
       documentTypes.add(directBefundTargetLabel(documentType));
     }
-    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication) {
+    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length)) {
       applyExtractedToInputs({ forPseudonymId: pid, ...anamneseInputs });
     }
     const latestDateFor = (documentType: DirectBefundTarget) => ready
@@ -4353,22 +4362,16 @@ export function TherapyRecommendation() {
   }, [isSourceHistoryLoading]);
 
   const applyManualAnalysisSelection = (sourceIds: string[], affectedSourceIds?: string[]) => {
+    if (isStreaming) return;
+    setAnamneseZusatz(previous => { const next = { ...previous }; delete next.therapySourceStageId; return next; });
     const next = setManualSourceSelection(sourceSelectionRef.current, analysisSourceComparisons, sourceIds, affectedSourceIds);
     sourceSelectionRef.current = next;
     setSelectedAnalysisSourceKeys(next.selectedSourceIds);
   }
 
-  const therapySourceStages = [
-    { label: "1. Anamnese", groups: [["anamnese"]], description: "Nur beantwortete Angaben aus dem Anamnesebogen" },
-    { label: "2. Anamnese + Metatron", groups: [["anamnese"], ["metatronHeel"]], description: "Anamnese mit Metatron-Auswertung" },
-    { label: "3. Anamnese + Vieva Pro", groups: [["anamnese"], ["vievaPlus"]], description: "Anamnese mit Vieva-Pro-Analyse" },
-    { label: "4. Anamnese + Labor", groups: [["anamnese"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese mit klassischem Labor" },
-    { label: "5. Anamnese + Metatron + Labor", groups: [["anamnese"], ["metatronHeel"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese, Metatron und klassisches Labor" },
-    { label: "6. Anamnese + Vieva Pro + Labor", groups: [["anamnese"], ["vievaPlus"], ["laborKomplett", "laborErhoeht", "laborErniedrigt"]], description: "Anamnese, Vieva Pro und klassisches Labor" },
-    { label: "7. Alles Vorhandene", groups: [], description: "Alle vorhandenen Befundquellen" },
-  ];
-  const getTherapyStageSourceIds = (keys: string[]) => analysisSources
-    .filter((source) => keys.length === 0 || keys.some((key) => source.key === key || source.key.startsWith(`${key}::`)))
+  const therapySourceStages = THERAPY_SOURCE_STAGES;
+  const getTherapyStageSourceIds = (keys: readonly string[]) => analysisSources
+    .filter((source) => source.group !== "kontext" && (keys.length === 0 || keys.includes(sourceField(source.key))))
     .map((source) => normalizeAnalysisSourceId(source.key));
 
   const selectedAnalysisSources = useMemo(() => {
@@ -4396,7 +4399,7 @@ export function TherapyRecommendation() {
     enteredPathogenCount >= 8 ? `${enteredPathogenCount} Pathogen-Hinweise` : "",
     enteredMedicationCount >= 5 ? `${enteredMedicationCount} Medikamente` : "",
     Number.isFinite(patientAge) && patientAge < 16 ? "Kind oder Jugendlicher" : "",
-    schwanger.trim() && schwanger !== "nein" ? "Schwangerschaft oder Stillzeit" : "",
+    schwanger.trim() && !["nein", "unbekannt"].includes(schwanger) ? "Schwangerschaft, Stillzeit oder Kinderwunsch" : "",
   ].filter(Boolean);
   const recommendedUseProModel = deepAnalysisReasons.length > 0;
   const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung (Pro für Befundabschluss und Therapie)" : "Vollständige Auswertung";
@@ -4431,7 +4434,7 @@ export function TherapyRecommendation() {
     && medikamente === SYNTHETIC_THERAPY_CASE.medikamente
     && metatronHeel === SYNTHETIC_THERAPY_CASE.metatronHeel
     && ![alter, geschlecht, groesseCm, gewichtKg, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborDatum, stuhlbefund, arztbericht, arztberichtDatum, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie].some((value) => value.trim())
-    && schwanger === "nein"
+    && schwanger === ""
     && !pathogenBulkText.trim()
     && !pathogens.some((entry) => entry.name.trim() || entry.organe.trim() || entry.index.trim())
     && selectedCategories.length === 0
@@ -4516,6 +4519,14 @@ export function TherapyRecommendation() {
     }
     const runId = ++therapyRunIdRef.current;
     const runProfile = { ...buildAnalysisProfile(useMapReduce, useProModel), startedAt: new Date().toISOString() };
+    const sourceStageId = parseTherapySourceStageId(anamneseZusatz.therapySourceStageId);
+    const boundSourceScope = befundRunProfile?.sourceScope;
+    if ((sourceStageId || boundSourceScope) && (!docAnalysisHtml || !boundSourceScope || boundSourceScope.stageId !== sourceStageId)) {
+      toast({ title: "Quellenstufe passt nicht zum Befund", description: "Bitte für die gewählte Stufe zuerst einen neuen Befund erstellen. Der vorhandene Bericht bleibt im Verlauf erhalten.", variant: "destructive" });
+      return;
+    }
+    const scopedRunProfile: StartedAnalysisProfile = { ...runProfile, ...(boundSourceScope ? { sourceScope: boundSourceScope } : {}) };
+    const submittedInputData = buildInputData({ autoSavedDraft: false, analysisProfile: scopedRunProfile });
     if (docAnalysisHtml && (!befundRunProfile || befundRunProfile.id !== runProfile.id)) {
       toast({ title: "Analyseprofil stimmt nicht überein", description: "Der fertige Befund wurde mit einem anderen oder nicht dokumentierten Profil erstellt. Bitte den Befund mit dem jetzt gewählten Profil neu auswerten.", variant: "destructive" });
       return;
@@ -4535,6 +4546,11 @@ export function TherapyRecommendation() {
     setTherapyRunProfile(null);
     const fullAnalysisStartedAt = Date.now();
     try {
+      if (sourceStageId && boundSourceScope) {
+        const currentManifest = await createSourceManifest(analysisSources.filter(source => stageIncludesSource(sourceStageId, source.key)));
+        if (!runIsCurrent()) return;
+        if (!sameTherapySourceScope(boundSourceScope, buildTherapySourceScope(sourceStageId, currentManifest))) throw new Error("Die Quellen dieser Stufe wurden seit dem Befund verändert. Bitte den Befund neu auswerten.");
+      }
       if (!isErweitern) {
         await logTherapyEvent(submitPid, "full_analysis_started", { note: "Alles neu auswerten – gestartet" });
         if (!runIsCurrent()) return;
@@ -4580,7 +4596,7 @@ export function TherapyRecommendation() {
             gewichtKg: gewichtKg.trim() || undefined,
             bmi: bmiInfo ? bmiInfo.bmi : undefined,
             bmiKategorie: bmiInfo ? bmiInfo.kategorie : undefined,
-            schwanger: schwanger !== "nein" ? schwanger : undefined,
+            schwanger: schwanger.trim() || undefined,
             bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
             naturheilMittelHomoeopathie: naturheilMittelHomoeopathie.trim() || undefined,
@@ -4613,7 +4629,9 @@ export function TherapyRecommendation() {
             pinnedMittel: pinnedMittel.length > 0 ? pinnedMittel : undefined,
             useMapReduce,
             useProModel: useProModel || undefined,
-            analysisProfile: runProfile,
+            analysisProfile: scopedRunProfile,
+            therapySourceStageId: sourceStageId || undefined,
+            therapySourceDocuments: sourceStageId ? analysisSources.filter(source => stageIncludesSource(sourceStageId, source.key)).map(source => ({ sourceId: normalizeAnalysisSourceId(source.key), text: source.text })) : undefined,
             nachschlag: isErweitern ? opts!.nachschlag : undefined,
             previousResult: isErweitern ? opts!.previousResult : undefined,
             previousResultForCompare: !isErweitern && addPreviousComparison && result && result.trim().length > 200
@@ -4709,7 +4727,7 @@ export function TherapyRecommendation() {
       }
       if (!completed) return;
       setTherapyGenerationComplete(true);
-      setTherapyRunProfile(runProfile);
+      setTherapyRunProfile(scopedRunProfile);
 
       // Auto-Save nur bei vollständiger, eindeutig patientengebundener Pseudonym-ID
       const resultPid = submitPid;
@@ -4717,7 +4735,7 @@ export function TherapyRecommendation() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!runIsCurrent()) return;
         if (user) {
-          const safeInput = buildInputData({ autoSavedDraft: false, analysisProfile: runProfile });
+          const safeInput = submittedInputData;
           const safeRecommendation = deidentifyClinicalText(accumulated);
           const residualIdentifiers = residualIdentifierCategories({ safeInput, safeRecommendation });
           if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}`);
@@ -4833,6 +4851,8 @@ export function TherapyRecommendation() {
 
   const handleFinalize = async () => {
     const finalPid = normalizePseudonymId(pseudonymId);
+    const finalGeneration = patientScopeGenerationRef.current;
+    const finalScopeIsCurrent = () => finalGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === finalPid && patientDataOwnerRef.current === finalPid;
     if (!isPatientScopedStorageReady(finalPid) || patientDataOwnerRef.current !== finalPid) {
       toast({ title: "Pseudonym-ID fehlt oder unklar", description: "Bitte oben eine vollständige Pseudonym-ID vergeben, damit keine Patientendaten vermischt werden.", variant: "destructive" });
       return;
@@ -4922,9 +4942,22 @@ export function TherapyRecommendation() {
     ].join("\n"))) return;
     const finalMd = deidentifyClinicalText(buildFinalMarkdown());
     const { data: { user } } = await supabase.auth.getUser();
+    if (!finalScopeIsCurrent()) return;
     if (!user) {
       toast({ title: "Nicht angemeldet", variant: "destructive" });
       return;
+    }
+    if (therapyRunProfile.sourceScope) {
+      try {
+        const selectedStage = parseTherapySourceStageId(anamneseZusatz.therapySourceStageId);
+        if (selectedStage !== therapyRunProfile.sourceScope.stageId) throw new Error("Quellenstufe wurde geändert.");
+        const currentManifest = await createSourceManifest(analysisSources.filter(source => stageIncludesSource(selectedStage, source.key)));
+        if (!finalScopeIsCurrent()) return;
+        if (!sameTherapySourceScope(therapyRunProfile.sourceScope, buildTherapySourceScope(selectedStage, currentManifest))) throw new Error("Befundquellen wurden seit dem Therapieentwurf geändert.");
+      } catch (error) {
+        toast({ title: "Quellenstand vor Finalisierung prüfen", description: `${(error as Error).message} Bitte Befund und Therapie dieser Stufe neu erstellen. Der bisherige Entwurf bleibt erhalten.`, variant: "destructive" });
+        return;
+      }
     }
     const safeInput = buildInputData({
       manualMittel,
@@ -4971,6 +5004,7 @@ export function TherapyRecommendation() {
       parent_session_id: parentSessionId,
       version_label: versionLabel.trim() || null,
     });
+    if (!finalScopeIsCurrent()) return;
     if (error) {
       toast({ title: "Speichern fehlgeschlagen", description: error.message, variant: "destructive" });
       return;
@@ -5193,6 +5227,9 @@ export function TherapyRecommendation() {
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
             <PatientBatchUploadZone
+              mode={documentEntryMode}
+              onModeChange={setDocumentEntryMode}
+              selectionLocked={pendingDirectBefundFiles.some(file => file.status !== "done")}
               disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(file => file.status === "processing")}
               disabledReason={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) ? "Zuerst oben einen Patientenfall auswählen oder eine Fall-ID anlegen. Danach wird die Dateiauswahl freigeschaltet." : "Bitte die laufende Verarbeitung abwarten."}
               onSelectFiles={() => directBefundFileRef.current?.click()}
@@ -5202,10 +5239,10 @@ export function TherapyRecommendation() {
               Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple={documentEntryMode === "batch"} className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                 <FileUp className="h-3.5 w-3.5" />
-                Mehrere PDFs für Sammeleingabe auswählen
+                {documentEntryMode === "single" ? "Eine PDF für Einzeleingabe auswählen" : "Mehrere PDFs für Sammeleingabe auswählen"}
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => refreshDocumentInventory(true)} disabled={isRefreshingDocumentInventory || !isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} className="gap-1.5">
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
@@ -5362,11 +5399,12 @@ export function TherapyRecommendation() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    disabled={!isAvailable || isAnalyzingDocs || isSourceComparisonLoading || !!sourceComparisonError}
-                    onClick={() => applyManualAnalysisSelection(sourceIds)}
+                    disabled={!isAvailable || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError}
+                    onClick={() => { applyManualAnalysisSelection(sourceIds); setAnamneseZusatz(previous => ({ ...previous, therapySourceStageId: stage.id })); }}
+                    aria-pressed={anamneseZusatz.therapySourceStageId === stage.id}
                     className="h-auto justify-start whitespace-normal border-emerald-500/60 bg-background px-3 py-2 text-left hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
                   >
-                    <span><strong>{stage.label}</strong><span className="block text-[11px] font-normal text-muted-foreground">{stage.description}</span></span>
+                    <span><strong>{stage.label}</strong><span className="block text-[11px] font-normal text-muted-foreground">Befund und nachfolgende Therapie an diese Quellen binden</span></span>
                   </Button>
                 );
               })}
@@ -5753,7 +5791,7 @@ export function TherapyRecommendation() {
           </CardHeader>
           <CardContent className="p-3 sm:p-4">
             <Tabs value={clinicalInputTab} onValueChange={setClinicalInputTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1 bg-muted/60">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 h-auto gap-1 bg-muted/60">
                 <TabsTrigger value="befund" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🩺 Befund</span>
                   <span className="text-[9px] opacity-70 font-mono">
@@ -5791,10 +5829,14 @@ export function TherapyRecommendation() {
                   <span className="text-[9px] opacity-70 font-mono">{metatronHeel.trim() ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
-                  <span>💊 Mittel</span>
+                  <span>Naturheilkundliche Mittel</span>
                   <span className="text-[9px] opacity-70 font-mono">
                     {[naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel].filter((value) => value.trim()).length}
                   </span>
+                </TabsTrigger>
+                <TabsTrigger value="aerztliche-mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
+                  <span>Ärztliche Mittel</span>
+                  <span className="text-[9px] opacity-70">{medikamente.trim() ? "Einnahmeangaben erfasst" : "0"}</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -5803,7 +5845,7 @@ export function TherapyRecommendation() {
                 <div>
                   <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
                     <AlertTriangle className="h-3.5 w-3.5 text-accent" />
-                    Belastungen / Pathogene
+                    Metatron-Pathogene / Resonanzhinweise
                   </label>
                   <PathogenInput
                     entries={pathogens}
@@ -5811,6 +5853,11 @@ export function TherapyRecommendation() {
                     bulkText={pathogenBulkText}
                     onBulkTextChange={setPathogenBulkText}
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block" htmlFor="labor-pathogene">Labor-Pathogene</label>
+                  <Textarea id="labor-pathogene" value={anamneseZusatz.labPathogens || ""} onChange={event => setAnamneseZusatz(previous => ({ ...previous, labPathogens: event.target.value }))} placeholder="Erreger, Untersuchungsmethode, Ergebnis/Wert, Einheit, Datum und Quelle – nur soweit dokumentiert" rows={3} />
+                  <p className="mt-1 text-xs text-muted-foreground">Laborbefunde bleiben getrennt von Metatron-Hinweisen. Negative Ergebnisse und die Art des Nachweises erhalten.</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Symptome</label>
@@ -5822,13 +5869,17 @@ export function TherapyRecommendation() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Erkrankung / Diagnose</label>
+                  <label className="text-sm font-medium mb-1 block">Erkrankungen</label>
                   <Textarea
                     value={erkrankung}
                     onChange={(e) => setErkrankung(e.target.value)}
                     placeholder="z.B. Borreliose, Hashimoto, CFS..."
                     rows={3}
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block" htmlFor="patient-diagnoses">Diagnosen</label>
+                  <Textarea id="patient-diagnoses" value={anamneseZusatz.diagnoses || ""} onChange={event => setAnamneseZusatz(previous => ({ ...previous, diagnoses: event.target.value }))} placeholder="Dokumentierte Diagnosen mit Status, Datum und Quelle; Verdacht ausdrücklich kennzeichnen" rows={3} />
                 </div>
                 <AnamnesisAdditionalFields values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
               </TabsContent>
@@ -6189,7 +6240,26 @@ export function TherapyRecommendation() {
               </TabsContent>
 
               {/* ===== TAB: Mittel ===== */}
+              <TabsContent value="aerztliche-mittel" className="space-y-3 mt-4">
+                <section className="space-y-3 rounded-xl border bg-background p-3">
+                  <h3 className="text-sm font-semibold">Ärztliche Mittel / aktuelle Medikamente</h3>
+                  <p className="text-xs text-muted-foreground">Tatsächlich aktuelle Einnahmen mit Dosis, Häufigkeit und Quelle. Abgesetzte oder ungeklärte Mittel bleiben gesondert gekennzeichnet.</p>
+                  <Textarea value={medikamente} onChange={event => setMedikamente(event.target.value)} rows={8} placeholder="Medikament, Wirkstoff soweit bekannt, Dosis, Einnahme und Quelle" />
+                  {medikamente.toLowerCase().match(/marcumar|warfarin|eliquis|xarelto|pradaxa|blutverdün/i) && <p className="text-xs text-amber-800 dark:text-amber-200">Hinweis auf gerinnungshemmende Medikation: bei der Kombinationsprüfung berücksichtigen.</p>}
+                </section>
+              </TabsContent>
               <TabsContent value="mittel" className="space-y-3 mt-4">
+                <section className="space-y-3 rounded-xl border bg-background p-3">
+                  <h3 className="text-sm font-semibold">Aktuelle naturheilkundliche Mittel</h3>
+                  <p className="text-xs text-muted-foreground">Fünf getrennte Kategorien. Tatsächliche Einnahme, Dosis und Häufigkeit aus der Anamnese prüfen.</p>
+                  {[
+                    ["Homöopathie", naturheilMittelHomoeopathie, setNaturheilMittelHomoeopathie],
+                    ["Pflanzenheilkunde", naturheilMittelPflanzenheilkunde, setNaturheilMittelPflanzenheilkunde],
+                    ["Vitamine", naturheilMittelVitamine, setNaturheilMittelVitamine],
+                    ["Mineralstoffe", naturheilMittelMineralstoffe, setNaturheilMittelMineralstoffe],
+                    ["Spurenelemente", naturheilMittelSpurenelemente, setNaturheilMittelSpurenelemente],
+                  ].map(([label, value, setter]) => <label key={label as string} className="block space-y-1 text-sm"><span className="font-medium">{label as string}</span><Textarea value={value as string} onChange={event => (setter as (value: string) => void)(event.target.value)} rows={3} placeholder="Mittel, Dosis, Häufigkeit und Quelle" /></label>)}
+                </section>
                 <div>
                   <label className="text-sm font-medium flex items-center gap-1.5 mb-1">
                     <Pill className="h-3.5 w-3.5 text-emerald-600" />
@@ -6503,49 +6573,34 @@ export function TherapyRecommendation() {
               <div className="text-xs font-semibold uppercase tracking-wider text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
                 <Heart className="h-3.5 w-3.5" /> Schwangerschaft / Stillzeit
               </div>
-              <Select value={schwanger} onValueChange={setSchwanger} disabled={geschlecht === "maennlich"}>
+              <Select value={schwanger} onValueChange={setSchwanger}>
                 <SelectTrigger className="bg-background">
-                  <SelectValue />
+                  <SelectValue placeholder="Noch keine Angabe aus der Anamnese" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="unbekannt">Unbekannt / bitte klären</SelectItem>
                   <SelectItem value="nein">Nein / nicht relevant</SelectItem>
                   <SelectItem value="schwanger">Schwanger</SelectItem>
                   <SelectItem value="stillend">Stillend</SelectItem>
                   <SelectItem value="kinderwunsch">Kinderwunsch</SelectItem>
                 </SelectContent>
               </Select>
-              {geschlecht === "maennlich" && <p className="text-xs text-muted-foreground">Für diesen männlichen Patienten als „Nein / nicht relevant“ hinterlegt.</p>}
-              {schwanger !== "nein" && (
-                <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Viele Naturheilmittel sind kontraindiziert!</p>
+              {schwanger && !["nein", "unbekannt"].includes(schwanger) && (
+                <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">Diese Angabe bei der Prüfung aller Präparate berücksichtigen.</p>
               )}
+              <label className="block space-y-1 text-sm"><span className="font-medium">Kinderzahl / Angaben zu Kindern</span><Textarea value={anamneseZusatz.children || ""} onChange={event => setAnamneseZusatz(previous => ({ ...previous, children: event.target.value }))} rows={2} placeholder="Noch nicht angegeben – nicht automatisch 0" /></label>
+              <label className="block space-y-1 text-sm"><span className="font-medium">Menopause / Zyklus</span><Textarea value={anamneseZusatz.menopause || ""} onChange={event => setAnamneseZusatz(previous => ({ ...previous, menopause: event.target.value }))} rows={2} placeholder="Status, Beginn und Beschwerden laut Anamnese; Unbekanntes offen lassen" /></label>
             </div>
 
             {/* Block 3: Medikation */}
-            <div className="rounded-lg border border-violet-300/60 bg-violet-50/60 dark:bg-violet-950/15 dark:border-violet-900/40 p-3 space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300 flex items-center gap-1.5">
-                <Pill className="h-3.5 w-3.5" /> Aktuelle konventionell-medizinische Medikamente
-              </div>
-              <Textarea
-                value={medikamente}
-                onChange={(e) => setMedikamente(e.target.value)}
-                placeholder="z.B. Marcumar, Metformin, L-Thyroxin, SSRI; bei keiner Einnahme: keine"
-                rows={3}
-                className="bg-background"
-              />
-              {medikamente.toLowerCase().match(/marcumar|warfarin|eliquis|xarelto|pradaxa|blutverdün/i) && (
-                <p className="text-xs text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/30 rounded px-2 py-1">⚠️ Blutverdünner erkannt – strenge Einschränkungen!</p>
-              )}
-              <div className="border-t border-violet-200/70 pt-3 space-y-2 dark:border-violet-900/50">
-                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Aktuelle naturheilkundliche Mittel</div>
-                <p className="text-xs text-muted-foreground">Nur tatsächlich aktuell eingenommene Mittel mit Dosis und Häufigkeit eintragen. Die fünf Kategorien werden getrennt gespeichert und ausgewertet.</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Textarea value={naturheilMittelHomoeopathie} onChange={(e) => setNaturheilMittelHomoeopathie(e.target.value)} placeholder="Homöopathie, z.B. Mittel, Potenz, Dosis" rows={2} className="bg-background" />
-                  <Textarea value={naturheilMittelPflanzenheilkunde} onChange={(e) => setNaturheilMittelPflanzenheilkunde(e.target.value)} placeholder="Pflanzenheilkunde, z.B. Präparat, Dosis" rows={2} className="bg-background" />
-                  <Textarea value={naturheilMittelVitamine} onChange={(e) => setNaturheilMittelVitamine(e.target.value)} placeholder="Vitamine, z.B. Vitamin D, Dosis" rows={2} className="bg-background" />
-                  <Textarea value={naturheilMittelMineralstoffe} onChange={(e) => setNaturheilMittelMineralstoffe(e.target.value)} placeholder="Mineralstoffe, z.B. Magnesium, Dosis" rows={2} className="bg-background" />
-                  <Textarea value={naturheilMittelSpurenelemente} onChange={(e) => setNaturheilMittelSpurenelemente(e.target.value)} placeholder="Spurenelemente, z.B. Zink, Dosis" rows={2} className="bg-background sm:col-span-2" />
-                </div>
-              </div>
+            <div className="rounded-xl border bg-background p-3 space-y-3">
+              <h3 className="text-sm font-semibold">Mittel – getrennt erfassen und prüfen</h3>
+              <Button type="button" variant="outline" className="w-full justify-between" onClick={() => { setClinicalInputTab("mittel"); document.getElementById("patient-intake-facts")?.scrollIntoView({ behavior: "smooth" }); }}>
+                Naturheilkundliche Mittel <span>{[naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente].filter(value => value.trim()).length}/5 Kategorien</span>
+              </Button>
+              <Button type="button" variant="outline" className="w-full justify-between" onClick={() => { setClinicalInputTab("aerztliche-mittel"); document.getElementById("patient-intake-facts")?.scrollIntoView({ behavior: "smooth" }); }}>
+                Ärztliche Mittel <span>{medikamente.trim() ? "erfasst" : "offen"}</span>
+              </Button>
             </div>
 
             {/* Block 4: Budget */}

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
 import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
 import { formatCurrentNaturalIntake } from "../_shared/currentIntakeContext.ts";
+import { parseTherapySourceScope, parseTherapySourceStageId, verifiedSourceLimitedTherapyInput } from "../_shared/therapySourceScope.ts";
 import {
   INFOTHEK_KNOWLEDGE_FILES,
   buildInfothekKnowledgeContext,
@@ -838,13 +839,26 @@ serve(async (req) => {
     }
 
     // Patientenkontext vor jeder externen KI-Verarbeitung deterministisch bereinigen.
-    const requestBody = deidentifyClinicalData(await req.json()) as Record<string, any>;
+    let requestBody = deidentifyClinicalData(await req.json()) as Record<string, any>;
     const residualIdentifiers = directIdentifierCategories(JSON.stringify(requestBody));
     if (residualIdentifiers.length) {
       return new Response(JSON.stringify({ error: `Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+    const sourceStageId = parseTherapySourceStageId(requestBody.therapySourceStageId);
+    const boundSourceScope = parseTherapySourceScope(requestBody.analysisProfile?.sourceScope);
+    let separateSafetyContext = "";
+    if (requestBody.therapySourceStageId || requestBody.analysisProfile?.sourceScope) {
+      if (!sourceStageId || !boundSourceScope || boundSourceScope.stageId !== sourceStageId || !String(requestBody.befundAuswertung || "").trim() || requestBody.nachschlag) {
+        return new Response(JSON.stringify({ error: "Quellenstufe und Befundbeleg passen nicht zusammen. Neue Zusatzangaben bitte zuerst im Befund dieser Stufe auswerten." }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const safetyFields = ["belastungen", "symptome", "erkrankung", "manualDiagnosen", "alter", "geschlecht", "schwanger", "medikamente", "bisherigeMittel", "anamnese", "anamneseZusatzText", "laborKomplett", "laborErhoeht", "laborErniedrigt", "laborDatum", "stuhlbefund", "arztbericht", "metatronHeel", "sonstigeUntersuchungen", "vievaPlus", "naturheilMittelHomoeopathie", "naturheilMittelPflanzenheilkunde", "naturheilMittelVitamine", "naturheilMittelMineralstoffe", "naturheilMittelSpurenelemente", "mannayanOrders"];
+      const safetyInput = Object.fromEntries(safetyFields.filter(key => requestBody[key] !== undefined).map(key => [key, requestBody[key]]));
+      separateSafetyContext = `\n\nQUELLENSTUFE: ${sourceStageId}. Befund und diagnostische Priorisierung ausschließlich aus den Quellen des gebundenen Befunds ableiten.\nGESONDERTER VOLLSTÄNDIGER SICHERHEITSKONTEXT: Die folgenden Angaben zusätzlich für Gegenanzeigen, Wechselwirkungen, Schwangerschaft/Stillzeit, Allergien und Warnhinweise prüfen. Sie erweitern NICHT die diagnostische Quellenstufe. Sicherheitsbefunde mit ihrer abweichenden Quelle separat ausweisen; daraus keine zusätzliche gesicherte Diagnose ableiten.\n${JSON.stringify(safetyInput)}\n`;
+      try { requestBody = await verifiedSourceLimitedTherapyInput(requestBody, boundSourceScope); }
+      catch { return new Response(JSON.stringify({ error: "Die Quellentexte passen nicht zum gespeicherten Befundstand. Bitte den Befund dieser Stufe erneut auswerten." }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
     }
     const { belastungen, symptome, erkrankung, manualDiagnosen, alter, geschlecht, groesseCm, gewichtKg, bmi, bmiKategorie, schwanger, medikamente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, befundAuswertung, perplexityAnalyse, eigeneTherapieVorlage, mannayanOrders, categories, bevorzugteLinie, pinnedMittel, useMapReduce, useProModel, analysisProfile, nachschlag, previousResult, previousResultForCompare } = requestBody;
     if (analysisProfile) {
@@ -1712,9 +1726,9 @@ WICHTIG:
 - Bei jedem Mittel erklären, warum es als interner Kandidat geprüft wird; keine Wirksamkeit als gesichert darstellen, wenn die Evidenzmetadaten dies nicht tragen.
 - Schreibe KOMPAKT: pro Mittel max. 1 Begründungssatz, keine doppelten Erklärungen.`;
 
-    const befundContext = befundAuswertungText
+    const befundContext = separateSafetyContext + (befundAuswertungText
       ? `\n\nVORHANDENE BEFUND-AUSWERTUNG – PRIMÄRER ZUSAMMENFASSENDER KONTEXT:\n${befundAuswertungText}\n\nVerwende diese bereits erstellte Befund-Auswertung als zentrale Grundlage für die Priorisierung. Prüfe sie gegen die darunter gelieferten Rohfelder, aber baue die Befundauswertung nicht erneut und ersetze keine vorhandenen Befunde durch Vermutungen. Übernimm alle für die Therapie relevanten Diagnosen, Symptome, Labor-/Messwertmuster, Zeitbezüge, Warnhinweise und offenen Fragen.\n`
-      : "";
+      : "");
 
     const userMessage = isNachschlag
       ? `Patientendaten:

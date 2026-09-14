@@ -7,7 +7,7 @@ export type IntakeFact = {
   sourceQuoteVerified?: boolean;
   belege?: Record<string, unknown>[];
 };
-export type IntakeDiagnosis = IntakeFact & { diagnose: string; icd10: string };
+export type IntakeDiagnosis = IntakeFact & { diagnose: string; icd10: string; sourceQuestionType?: "illness" | "diagnosis" };
 export type IntakeMedication = IntakeFact & {
   name: string; kategorie: string; dosis: string; haeufigkeit: string; dauer: string;
   einnahme: string; wirkstoff: string; vonWem: string; indikation: string;
@@ -21,11 +21,55 @@ export type AnamnesisIntake = {
   additional: Record<string, IntakeFact[]>; noConventionalMedication: boolean;
 };
 
+export function partitionIntakeDiagnoses(items: IntakeDiagnosis[]) {
+  const isIllness = (item: IntakeDiagnosis) => item.sourceQuestionType === "illness"
+    || (!item.sourceQuestionType && item.status.trim().toLowerCase() === "anamnestisch dokumentiert");
+  return { illnesses: items.filter(isIllness), diagnoses: items.filter(item => !isIllness(item)) };
+}
+
 const text = (value: unknown): string => typeof value === "string" ? value.trim() : typeof value === "number" ? String(value) : "";
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const normalized = (value: unknown) => text(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const list = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const distinct = deduplicateClinicalFacts;
+
+/** Preserve explicit questionnaire answers; never infer reproductive status from age or sex. */
+export function extractAnamnesisProfileAnswers(input: string): {
+  additional: Record<string, IntakeFact[]>;
+  pregnancyStatus?: "schwanger" | "nein" | "stillend";
+} {
+  const additional: Record<string, IntakeFact[]> = {};
+  const pregnancy = new Set<boolean>();
+  const breastfeeding = new Set<boolean>();
+  for (const match of input.matchAll(/Frage\/Feld:[ \t]*([^\n]+)\nErkannte Antwort:[ \t]*([^\r\n]+)/gi)) {
+    const question = match[1].trim(); const answer = match[2].trim();
+    const key = normalized(question);
+    const field = /kinder\s*(?:anzahl|zahl)|wie viele kinder|anzahl (?:der )?kinder/.test(key) ? "children"
+      : /menopause|zyklus|regelblutung|menstruation|periode/.test(key) ? "menopause"
+      : /schwanger|stillzeit|stillend|stillen sie/.test(key) ? "pregnancy" : null;
+    if (!field || !answer) continue;
+    const unknown = /^(?:[-–—?]+|nicht angegeben|nicht beantwortet|unbeantwortet|unbekannt|unklar|unleserlich|keine angabe)\b/i.test(answer)
+      || /^[\s?–—-]+$/.test(answer);
+    const entry = fact({ text: `${question}: ${answer}`, quelle: `Anamnesebogen – ${question}`, zitat: answer,
+      polarity: unknown ? "not-stated" : /^(?:nein|keine?)\b/i.test(answer) ? "negated" : "affirmed" });
+    (additional[field] ||= []).push(entry);
+    if (unknown) continue;
+    // Counts of earlier pregnancies and questions about plans are not current pregnancy.
+    if (/^(?:sind sie (?:derzeit |aktuell )?schwanger\??|(?:aktuelle )?schwangerschaft\??)$/.test(key)) {
+      if (/^ja[.!]?$/.test(normalized(answer))) pregnancy.add(true);
+      if (/^nein[.!]?$/.test(normalized(answer))) pregnancy.add(false);
+    }
+    if (/^(?:stillen sie(?: derzeit| aktuell)?\??|stillzeit\??)$/.test(key)) {
+      if (/^ja[.!]?$/.test(normalized(answer))) breastfeeding.add(true);
+      if (/^nein[.!]?$/.test(normalized(answer))) breastfeeding.add(false);
+    }
+  }
+  if (pregnancy.size > 1 || breastfeeding.size > 1 || (pregnancy.has(true) && breastfeeding.has(true))) return { additional };
+  if (pregnancy.has(true)) return { additional, pregnancyStatus: "schwanger" };
+  if (breastfeeding.has(true)) return { additional, pregnancyStatus: "stillend" };
+  // The combined field means neither pregnancy nor breastfeeding; one missing answer is not a No.
+  return { additional, ...(pregnancy.has(false) && breastfeeding.has(false) ? { pregnancyStatus: "nein" as const } : {}) };
+}
 
 function polarity(item: Record<string, unknown>, value: string): IntakePolarity {
   const explicit = normalized(item.polarity || item.assertionState || item.aussagestatus);
@@ -84,7 +128,7 @@ export function buildAnamnesisIntake(partials: unknown[]): AnamnesisIntake {
     for (const raw of list(source.diagnoses)) {
       const item = record(raw); const base = fact(raw);
       if (!base.text) continue;
-      const diagnosis: IntakeDiagnosis = { ...base, diagnose: text(item.diagnose) || base.text, icd10: text(item.icd10) };
+      const diagnosis: IntakeDiagnosis = { ...base, diagnose: text(item.diagnose) || base.text, icd10: text(item.icd10), ...(item.sourceQuestionType === "illness" || item.sourceQuestionType === "diagnosis" ? { sourceQuestionType: item.sourceQuestionType } : {}) };
       const established = /^(gesichert|anamnestisch dokumentiert|z\.?\s*n\.?)$/.test(normalized(base.status));
       if (base.polarity === "negated" || base.polarity === "not-stated") output.negativeOrUncertainFindings.push(diagnosis);
       else if (established && base.polarity === "affirmed" && base.quelle && base.zitat && base.sourceQuoteVerified !== false) output.diagnoses.push(diagnosis);

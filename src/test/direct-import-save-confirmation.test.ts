@@ -7,6 +7,7 @@ import { persistVerifiedPatientInput } from "@/lib/verifiedPatientInput";
 import { normalizePatientPseudonym } from "../../supabase/functions/_shared/patientPseudonym";
 import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
 import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
+import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses } from "@/lib/anamnesisIntakeFields";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -15,18 +16,22 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function setup() {
+function setup(documentType = "labor", previewText = "synthetic reviewed laboratory input") {
   const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
   const start = source.indexOf("const handoffDirectBefundFiles = async () => {");
   const end = source.indexOf("  const loadArchivedBefundDocument", start);
   expect(start).toBeGreaterThan(-1); expect(end).toBeGreaterThan(start);
   const js = ts.transpileModule(source.slice(start, end), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  const data: Record<string, unknown> = { _pseudonym_id: pid, pseudonymId: pid, laborKomplett: "synthetic prior input" };
+  const data: Record<string, unknown> = { _pseudonym_id: pid, pseudonymId: pid, laborKomplett: "synthetic prior input", manualDiagnosen: [] };
   const save = deferred<string>(); const read = deferred<any>();
   let submitted: Record<string, unknown> | undefined;
-  let previews = [{ id: "synthetic-document", status: "ready", sourcePseudonymId: pid, documentType: "labor",
-    privacyReviewed: true, file: { size: 42 }, previewText: "synthetic reviewed laboratory input", documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
+  let previews = [{ id: "synthetic-document", status: "ready", sourcePseudonymId: pid, documentType,
+    privacyReviewed: true, file: { size: 42 }, previewText, documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
   const setter = (field: string) => (value: unknown) => { data[field] = typeof value === "function" ? value(data[field] || "") : value; };
+  const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
+  const extractEnd = source.indexOf("const ANALYSIS_CHUNK_MAX_CHARS", extractStart);
+  const extractJs = ts.transpileModule(source.slice(extractStart, extractEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers);
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
@@ -41,7 +46,12 @@ function setup() {
     setAnamnese: setter("anamnese"), setArztbericht: setter("arztbericht"), setSonstigeUntersuchungen: setter("sonstigeUntersuchungen"),
     setLaborDatum: setter("laborDatum"), setMetatronDatum: setter("metatronDatum"), setVievaPlusDatum: setter("vievaPlusDatum"),
     setAnamneseDatum: setter("anamneseDatum"), setArztberichtDatum: setter("arztberichtDatum"),
-    directBefundTargetLabel: (value: string) => value, extractExplicitAnamneseInputs: vi.fn(), applyExtractedToInputs: vi.fn(),
+    directBefundTargetLabel: (value: string) => value, extractExplicitAnamneseInputs: vi.fn(extract), applyExtractedToInputs: vi.fn(),
+    buildAnamnesisIntake, partitionIntakeDiagnoses, mergeAnamnesisIntakes, mergeIntakeText, formatIntakeFact,
+    setSchwanger: setter("schwanger"), setAnamnesisIntakeV1: setter("anamnesisIntakeV1"), setAnamneseZusatz: setter("anamneseZusatz"),
+    setErkrankung: setter("erkrankung"), setManualDiagnosen: setter("manualDiagnosen"), setSymptome: setter("symptome"), setMedikamente: setter("medikamente"),
+    setNaturheilMittelHomoeopathie: setter("naturheilMittelHomoeopathie"), setNaturheilMittelPflanzenheilkunde: setter("naturheilMittelPflanzenheilkunde"),
+    setNaturheilMittelVitamine: setter("naturheilMittelVitamine"), setNaturheilMittelMineralstoffe: setter("naturheilMittelMineralstoffe"), setNaturheilMittelSpurenelemente: setter("naturheilMittelSpurenelemente"),
     latestBuildInputDataRef: { current: (extra: Record<string, unknown>) => ({ ...data, ...extra }) },
     assertPayloadMatchesPseudonym: vi.fn(), patientDraftSaveQueue: { run: (_pid: string, fn: () => unknown) => fn() },
     persistVerifiedPatientInput, upsertAutoSaveDraft: vi.fn((_pid: string, payload: Record<string, unknown>) => { submitted = payload; return save.promise; }),
@@ -55,6 +65,10 @@ function setup() {
     setPendingDirectBefundFiles: (fn: (items: typeof previews) => typeof previews) => { previews = fn(previews); },
     toast: vi.fn(), setHistoryRefresh: vi.fn(), nextBefundActionRef: { current: null },
   };
+  const applyStart = source.indexOf("function applyExtractedToInputs(");
+  const applyEnd = source.indexOf("async function applyAndPersistExtractedInputs(", applyStart);
+  const applyJs = ts.transpileModule(source.slice(applyStart, applyEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  env.applyExtractedToInputs.mockImplementation(new Function(...Object.keys(env), `${applyJs}; return applyExtractedToInputs;`)(...Object.values(env)));
   const run = new Function(...Object.keys(env), `${js}; return handoffDirectBefundFiles;`)(...Object.values(env));
   const fieldStart = source.indexOf("const persistImportedDocumentText = async (");
   expect(fieldStart).toBeGreaterThan(-1);
@@ -65,6 +79,25 @@ function setup() {
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("saves reproductive-only answers through the real batch extraction and field handoff", async () => {
+    const t = setup("anamnese", "Frage/Feld: Sind Sie aktuell schwanger?\nErkannte Antwort: Ja\nFrage/Feld: Kinderzahl\nErkannte Antwort: 2");
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    expect(t.env.upsertAutoSaveDraft).toHaveBeenCalledWith(pid, expect.objectContaining({ schwanger: "schwanger", anamneseZusatz: expect.objectContaining({ children: expect.stringContaining("2"), pregnancy: expect.stringContaining("Ja") }) }));
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
+  it("keeps explicitly reported illness and diagnosis answers in their respective fields", async () => {
+    const t = setup("anamnese", "Frage/Feld: Vorerkrankung\nErkannte Antwort: Synthetische Erkrankung A\nFrage/Feld: Diagnose\nErkannte Antwort: Synthetische Diagnose B");
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    const data = t.stored().eingabe_daten;
+    expect(data.erkrankung).toContain("Erkrankung A"); expect(data.erkrankung).not.toContain("Diagnose B");
+    expect((data.anamneseZusatz as Record<string, string>).diagnoses).toContain("Diagnose B");
+    expect(data.manualDiagnosen).toEqual([expect.objectContaining({ diagnose: expect.stringContaining("Diagnose B") })]);
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
   it("rolls back provisional field changes if original archiving fails", async () => {
     const t = setup(); t.env.archivePatientOriginal.mockRejectedValueOnce(new Error("synthetic failed archive"));
     await t.run();

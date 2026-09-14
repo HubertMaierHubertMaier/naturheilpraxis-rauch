@@ -1,6 +1,11 @@
 import { Textarea } from "@/components/ui/textarea";
 
 export const ADDITIONAL_ANAMNESIS_FIELDS = [
+  ["diagnoses", "Dokumentierte Diagnosen"],
+  ["labPathogens", "Labor-Pathogene"],
+  ["children", "Kinderzahl und Angaben zu Kindern"],
+  ["menopause", "Menopause und Zyklus"],
+  ["pregnancy", "Schwangerschaft und Stillzeit laut Anamnese"],
   ["allergies", "Allergien und Unverträglichkeiten"],
   ["pastHistory", "Vorgeschichte und Operationen"],
   ["hypotheses", "Diagnosevorschläge und ungeklärte Diagnosen"],
@@ -35,7 +40,7 @@ export function AnamnesisAdditionalFields({ values, onChange, disabled }: {
       <summary className="cursor-pointer text-sm font-semibold">Weitere Anamneseangaben · {count} Bereiche erfasst</summary>
       <p className="mt-2 text-xs text-muted-foreground">Diese Einzelangaben ergänzen die vorhandenen Felder. Der vollständige Anamnesebogen und seine Gesamtauswertung bleiben erhalten. Nicht angegeben, verneint und unsicher sind unterschiedliche Angaben.</p>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
-        {ADDITIONAL_ANAMNESIS_FIELDS.map(([key, label]) => (
+        {ADDITIONAL_ANAMNESIS_FIELDS.filter(([key]) => !["diagnoses", "labPathogens", "children", "menopause"].includes(key)).map(([key, label]) => (
           <div key={key} className="space-y-1.5">
             <label htmlFor={`anamnesis-extra-${key}`} className="text-sm font-medium">{label}</label>
             <Textarea id={`anamnesis-extra-${key}`} value={values[key] || ""} disabled={disabled}

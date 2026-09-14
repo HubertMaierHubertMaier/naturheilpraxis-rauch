@@ -37,8 +37,8 @@ describe("analysis profile", () => {
     const edge = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
 
     expect(client).toContain("const [therapyRunProfile, setTherapyRunProfile]");
-    expect(client).toContain("setTherapyRunProfile(runProfile)");
-    expect(client).toContain("buildInputData({ autoSavedDraft: false, analysisProfile: runProfile })");
+    expect(client).toContain("setTherapyRunProfile(scopedRunProfile)");
+    expect(client).toContain("buildInputData({ autoSavedDraft: false, analysisProfile: scopedRunProfile })");
     expect(client).toContain("analysisProfile: therapyRunProfile");
     expect(client).toContain('title: "Analyseprofil fehlt"');
     expect(client).toContain('title: "Analyseprofil stimmt nicht überein"');
@@ -52,6 +52,9 @@ describe("analysis profile", () => {
     const valid = { ...buildAnalysisProfile(true, true), startedAt: "2026-09-07T12:00:00.000Z" };
 
     expect(parseStartedAnalysisProfile(valid)).toEqual(valid);
+    const scoped = { ...valid, sourceScope: { version: 1, stageId: "anamnese", sources: [{ sourceId: "anamnese:doc:abcdef012345", contentSha256: "a".repeat(64) }] } };
+    expect(parseStartedAnalysisProfile(scoped)).toEqual(scoped);
+    expect(parseStartedAnalysisProfile({ ...scoped, sourceScope: { ...scoped.sourceScope, stageId: "anamnese-labor" } })).toBeNull();
     expect(parseStartedAnalysisProfile({ ...valid, therapyModel: "google/gemini-2.5-flash" })).toBeNull();
     expect(parseStartedAnalysisProfile({ ...valid, wikiMode: "targeted" })).toBeNull();
     expect(parseStartedAnalysisProfile({ ...valid, startedAt: "kein-datum" })).toBeNull();
