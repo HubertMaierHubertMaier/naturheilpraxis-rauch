@@ -2595,6 +2595,39 @@ export type Database = {
         }
         Relationships: []
       }
+      therapy_anamnesis_versions: {
+        Row: {
+          anamnese: string
+          anamnese_datum: string | null
+          content_sha256: string
+          created_at: string
+          created_by: string | null
+          id: string
+          pseudonym_id: string
+          source_session_id: string | null
+        }
+        Insert: {
+          anamnese: string
+          anamnese_datum?: string | null
+          content_sha256: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pseudonym_id: string
+          source_session_id?: string | null
+        }
+        Update: {
+          anamnese?: string
+          anamnese_datum?: string | null
+          content_sha256?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pseudonym_id?: string
+          source_session_id?: string | null
+        }
+        Relationships: []
+      }
       therapy_deleted_document_markers: {
         Row: {
           deleted_at: string
@@ -2622,6 +2655,7 @@ export type Database = {
           befund_meta: Json | null
           created_at: string
           created_by: string
+          draft_revision: string
           eingabe_daten: Json
           empfehlung: string | null
           id: string
@@ -2638,6 +2672,7 @@ export type Database = {
           befund_meta?: Json | null
           created_at?: string
           created_by: string
+          draft_revision?: string
           eingabe_daten?: Json
           empfehlung?: string | null
           id?: string
@@ -2654,6 +2689,7 @@ export type Database = {
           befund_meta?: Json | null
           created_at?: string
           created_by?: string
+          draft_revision?: string
           eingabe_daten?: Json
           empfehlung?: string | null
           id?: string
@@ -2666,6 +2702,13 @@ export type Database = {
           version_number?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "therapy_sessions_parent_session_id_fkey"
+            columns: ["parent_session_id"]
+            isOneToOne: false
+            referencedRelation: "therapy_anamnesis_review_holds"
+            referencedColumns: ["source_session_id"]
+          },
           {
             foreignKeyName: "therapy_sessions_parent_session_id_fkey"
             columns: ["parent_session_id"]
@@ -2785,7 +2828,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      therapy_anamnesis_review_holds: {
+        Row: {
+          alternate_owner: string | null
+          embedded_owner: string | null
+          pseudonym_id: string | null
+          review_reason: string | null
+          source_session_id: string | null
+        }
+        Insert: {
+          alternate_owner?: never
+          embedded_owner?: never
+          pseudonym_id?: string | null
+          review_reason?: never
+          source_session_id?: string | null
+        }
+        Update: {
+          alternate_owner?: never
+          embedded_owner?: never
+          pseudonym_id?: string | null
+          review_reason?: never
+          source_session_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _kb_materialize_import_candidates_as_internal_drafts: {
@@ -2802,6 +2868,10 @@ export type Database = {
           _filename: string
           _pseudonym_id: string
         }
+        Returns: Json
+      }
+      backup_owner_transport_page: {
+        Args: { _limit?: number; _offset?: number }
         Returns: Json
       }
       clear_current_two_factor_session: { Args: never; Returns: undefined }
@@ -2922,6 +2992,21 @@ export type Database = {
         Args: { _pseudonym: string }
         Returns: string
       }
+      prepare_therapy_document_archive: {
+        Args: {
+          _document_date?: string
+          _document_type: string
+          _extension: string
+          _pseudonym_id: string
+          _sha256: string
+          _size_bytes: number
+        }
+        Returns: Json
+      }
+      record_anamnesis_version: {
+        Args: { _author: string; _input: Json; _pid: string; _session: string }
+        Returns: undefined
+      }
       redact_therapy_pii_jsonb: {
         Args: { _parent_key?: string; _value: Json }
         Returns: Json
@@ -2939,6 +3024,14 @@ export type Database = {
           _pseudonym_id: string
         }
         Returns: string
+      }
+      upsert_therapy_autosave_draft_checked: {
+        Args: {
+          _eingabe_daten: Json
+          _expected_revision: string
+          _pseudonym_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
