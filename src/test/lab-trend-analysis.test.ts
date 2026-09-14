@@ -918,7 +918,7 @@ describe("laboratory trend analysis", () => {
     expect(source).toContain("normalizePartialAnalysisJson(partial, { label, text }");
     expect(source).toContain("deidentifyClinicalData(normalized)");
     expect(source).toContain("deidentifyClinicalData(JSON.parse(raw))");
-    expect(source).toContain("deidentifyClinicalText(finalHtml)");
+    expect(source).toContain("deidentifyClinicalReportHtml(finalHtml, expectedPseudonymId)");
     expect(source).toContain("normalizeLabUnit(item.einheit)");
   });
 

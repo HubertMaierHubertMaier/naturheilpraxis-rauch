@@ -33,7 +33,7 @@ import {
   downloadClinicalReportHtml,
   openClinicalReportWindow,
   sanitizeClinicalReportFragment,
-  sanitizeClinicalReportHtml,
+  prepareClinicalReportHtml,
 } from "@/lib/clinicalReportHtml";
 import {
   buildClinicallyRelevantLabHighlights,
@@ -43,7 +43,7 @@ import {
   type LabHighlight,
   type LabValueRecord,
 } from "../../../supabase/functions/_shared/labTrendAnalysis";
-import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDeidentification";
+import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, isBlockedClinicalReportHtml } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import {
   buildSafetyContextWarnings,
   severityLabel,
@@ -685,9 +685,10 @@ const writeLatestBefundDisplay = (pseudonymId: string, snapshot: Omit<LatestBefu
   try {
     const pid = normalizePseudonymId(pseudonymId);
     if (!pid || !snapshot.html.trim()) return;
-    const safeSnapshot = deidentifyClinicalData({ ...snapshot, reportKind: "befund_auswertung", html: deidentifyClinicalText(snapshot.html), pseudonymId: pid });
+    const html = prepareClinicalReportHtml(snapshot.html, pid);
+    const safeSnapshot = deidentifyClinicalData({ ...snapshot, html: undefined, reportKind: "befund_auswertung", pseudonymId: pid }) as Record<string, unknown>;
     if (residualIdentifierCategories(safeSnapshot).length) return;
-    localStorage.setItem(getLatestBefundDisplayKey(pid), JSON.stringify(safeSnapshot));
+    localStorage.setItem(getLatestBefundDisplayKey(pid), JSON.stringify({ ...safeSnapshot, html }));
   } catch { /* lokale Anzeige-Sicherung optional */ }
 };
 
@@ -702,7 +703,7 @@ const readLatestBefundDisplay = (pseudonymId: string): LatestBefundDisplay | nul
       localStorage.removeItem(getLatestBefundDisplayKey(pid));
       return null;
     }
-    const html = deidentifyClinicalText(parsed?.html || "");
+    const html = prepareClinicalReportHtml(parsed?.html || "", pid);
     if (!html) return null;
     return { html, progress: String(parsed?.progress || ""), reportKind: "befund_auswertung", meta: parsed?.meta, createdAt: parsed?.createdAt };
   } catch {
@@ -758,11 +759,7 @@ const readAnalysisError = async (resp: Response) => {
 
 const stripAnalysisFence = (value: string) => value.replace(/^\s*```(?:json|html)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
-const sanitizeFinalAnalysisHtml = (value: string) => {
-  const safeHtml = deidentifyClinicalText(stripAnalysisFence(value));
-  if (!residualIdentifierCategories(safeHtml).length) return sanitizeClinicalReportHtml(safeHtml);
-  return sanitizeClinicalReportHtml("<h1>Datenschutz-Sicherheitsstopp</h1><p>Diese Ausgabe wurde nicht angezeigt oder gespeichert, weil direkte Identifikatoren nicht zuverlässig entfernt werden konnten.</p>");
-};
+const sanitizeFinalAnalysisHtml = (value: string, expectedPseudonymId = "") => prepareClinicalReportHtml(stripAnalysisFence(value), expectedPseudonymId);
 
 const extractJsonSubstring = (value: string) => {
   const cleaned = stripAnalysisFence(value);
@@ -958,6 +955,7 @@ const collectStructuredLabData = (partials: string[]): { labValues: LabValueReco
 };
 
 const isFalseEmptyBefundHtml = (html: string) => {
+  if (isBlockedClinicalReportHtml(html)) return true;
   const visible = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   return /Automatisch ergänzt aus den Teilanalysen/i.test(visible)
     && /Keine pathologischen Laborabweichungen/i.test(visible)
@@ -2706,7 +2704,12 @@ export function TherapyRecommendation() {
       toast({ title: "Sicherheitsstopp", description: "Diese Auswertung gehört nicht zur aktuell gewählten Pseudonym-ID.", variant: "destructive" });
       return;
     }
-    const html = sanitizeFinalAnalysisHtml(String(session.befund_html || ""));
+    let html: string;
+    try { html = sanitizeFinalAnalysisHtml(String(session.befund_html || ""), pseudonymId); }
+    catch (error) {
+      toast({ title: "Auswertung nicht freigegeben", description: error instanceof Error ? error.message : "Bitte den gespeicherten Zwischenstand prüfen.", variant: "destructive" });
+      return;
+    }
     if (!html) {
       toast({ title: "Keine Auswertung gefunden", description: "In dieser Sitzung ist kein HTML-Ergebnis gespeichert.", variant: "destructive" });
       return;
@@ -2768,7 +2771,9 @@ export function TherapyRecommendation() {
     if (!scopeIsCurrent()) return false;
 
     let cloudTs = cloudRow?.created_at ? Date.parse(cloudRow.created_at) : 0;
-    let cloudHtml = sanitizeFinalAnalysisHtml(String(cloudRow?.befund_html || ""));
+    let cloudHtml = "";
+    try { cloudHtml = sanitizeFinalAnalysisHtml(String(cloudRow?.befund_html || ""), pid); }
+    catch { cloudRow = null; cloudTs = 0; }
     const checkpointTs = latestCheckpoint?.updated_at ? Date.parse(latestCheckpoint.updated_at) : 0;
     if (cloudHtml && isFalseEmptyBefundHtml(cloudHtml)) {
       cloudRow = null;
@@ -2830,7 +2835,7 @@ export function TherapyRecommendation() {
     if (localSnapshot) {
       const created = localSnapshot.createdAt ? `\nGesichert: ${new Date(localSnapshot.createdAt).toLocaleString("de-DE")}` : "";
       const progress = `${localSnapshot.progress || `Letzte Befund-Auswertung automatisch wiederhergestellt.\nPseudonym: ${pid}${created}`}${unfinishedCheckpointNotice}`;
-      setDocAnalysisHtml(sanitizeFinalAnalysisHtml(localSnapshot.html));
+      setDocAnalysisHtml(localSnapshot.html);
       const restoredProfile = parseStartedAnalysisProfile(localSnapshot.meta?.analysis_profile);
       setBefundRunProfile(restoredProfile);
       if (restoredProfile) {
@@ -2861,6 +2866,8 @@ export function TherapyRecommendation() {
     }
     if (isAnalyzingDocs) return;
 
+    const rebuildGeneration = patientScopeGenerationRef.current;
+    const rebuildScopeIsCurrent = () => rebuildGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     setDocAnalysisProgress("Gespeicherte Teilanalysen werden ohne erneute KI-Auswertung in den neuen Anamneseaufbau überführt…");
     try {
       const { data: rows, error } = await (supabase as any)
@@ -2873,6 +2880,7 @@ export function TherapyRecommendation() {
       if (error) throw error;
 
       const saved = Array.isArray(rows) ? rows[0] : null;
+      if (!rebuildScopeIsCurrent()) return;
       const checkpoint = saved?.eingabe_daten?.checkpoint;
       const partials = Array.isArray(checkpoint?.partials) ? checkpoint.partials.filter((partial: unknown): partial is string => typeof partial === "string" && partial.trim().length > 0) : [];
       const totalChunks = Number(checkpoint?.totalChunks || 0);
@@ -2880,6 +2888,8 @@ export function TherapyRecommendation() {
       if (!partials.length || !totalChunks || completedChunks < totalChunks || partials.length < totalChunks) {
         throw new Error("Es gibt keinen vollständigen gespeicherten Zwischenstand. Bitte die Befund-Auswertung zuerst fortsetzen.");
       }
+      if (checkpoint?.pseudonymId && normalizePseudonymId(checkpoint.pseudonymId) !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
+      partials.forEach(assertStrictPartialAnalysis);
 
       const totalChars = Number(checkpoint?.totalChars || 0);
       const duplicateNotes = Array.isArray(checkpoint?.duplicateNotes) ? checkpoint.duplicateNotes.filter((note: unknown): note is string => typeof note === "string") : [];
@@ -2915,13 +2925,14 @@ export function TherapyRecommendation() {
         totalChars,
         duplicateNotes,
         mannayanOrdersText: mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : undefined,
-      }));
+      }), pid);
       const progress = `Auswertung im neuen Anamneseaufbau angezeigt.\nPseudonym: ${pid}\nErstellt aus ${partials.length}/${totalChunks} bereits gespeicherten Teilanalysen.\nKeine erneute KI-Auswertung und keine neuen KI-Credits.`;
       const meta = {
         analysis_mode: "client-rebuilt-current-anamnesis-view",
+        analysis_profile: parseStartedAnalysisProfile(checkpoint.analysisProfile) || undefined,
         chunk_count: totalChunks,
         total_chars: totalChars,
-        strict_complete: true,
+        strict_complete: sourceManifest.length > 0 && sourceManifest.every((entry: SourceManifestEntry) => /^[a-f0-9]{64}$/i.test(entry.contentSha256)),
         rebuilt_from_checkpoint_at: saved?.updated_at || saved?.created_at || null,
         source_manifest_v1: sourceManifest,
         source_manifest_version: 1,
@@ -2929,6 +2940,7 @@ export function TherapyRecommendation() {
 
       setDocAnalysisHtml(html);
       setDocAnalysisProgress(progress);
+      setBefundRunProfile(parseStartedAnalysisProfile(checkpoint.analysisProfile));
       setDisplayedBefundSourceStand({ createdAt: rebuiltAt, entries: sourceManifest });
       setIsDocAnalysisPanelMinimized(false);
       setLatestBefundLoadedFrom("local");
@@ -2941,6 +2953,7 @@ export function TherapyRecommendation() {
       }
 
       const { data: { user } } = await supabase.auth.getUser();
+      if (!rebuildScopeIsCurrent()) return;
       if (user) {
         const { error: saveError } = await (supabase as any).from("therapy_sessions").insert({
           pseudonym_id: pid,
@@ -2953,10 +2966,12 @@ export function TherapyRecommendation() {
         });
         if (saveError) throw saveError;
       }
+      if (!rebuildScopeIsCurrent()) return;
       setHistoryRefresh((n) => n + 1);
       window.setTimeout(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
       toast({ title: "Neuer Anamneseaufbau angezeigt", description: "Die gespeicherten Teilanalysen wurden ohne erneute KI-Auswertung neu dargestellt." });
     } catch (error) {
+      if (!rebuildScopeIsCurrent()) return;
       const message = error instanceof Error ? error.message : "Der neue Anamneseaufbau konnte nicht erstellt werden.";
       setDocAnalysisProgress(`⚠ ${message}`);
       toast({ title: "Neuer Aufbau nicht möglich", description: message, variant: "destructive" });
@@ -3455,7 +3470,7 @@ export function TherapyRecommendation() {
         writeAnalysisCheckpoint(checkpointKey, { version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: chunks.length, partials, sourceSummary, sourceManifestV1: sourceManifest, duplicateNotes: prepared.duplicateNotes, analysisProfile: runProfile, status: "all_chunks_complete", updatedAt: new Date().toISOString() });
         throw new Error(`Alle ${chunks.length} Teilanalysen sind gespeichert, aber die finale HTML-Zusammenführung ist fehlgeschlagen: ${(finalError as Error).message}. Bitte erneut klicken – dann wird nur die finale Zusammenführung neu gestartet.`);
       }
-      full = sanitizeFinalAnalysisHtml(full);
+      full = sanitizeFinalAnalysisHtml(full, analysisPid);
       // Fehlende oder kontextuell unvollständige Quintessenz deterministisch ergänzen.
       const quintessenceSection = extractLabQuintessenceSection(full);
       const contextualAppendix = buildLabQuintessenzAppendix(partials, true);
@@ -3494,7 +3509,7 @@ export function TherapyRecommendation() {
         toast({ title: "Befund-Auswertung lokal rekonstruiert", description: "KI-Zusammenführung lieferte kein vollständiges HTML — Tabellen wurden direkt aus den gespeicherten Teilanalysen aufgebaut.", variant: "default" as any });
       }
 
-      full = sanitizeFinalAnalysisHtml(full);
+      full = sanitizeFinalAnalysisHtml(full, analysisPid);
       if (!scopeIsCurrent()) return;
       setDocAnalysisHtml(full);
       setBefundRunProfile(runProfile);
@@ -6729,6 +6744,9 @@ export function TherapyRecommendation() {
                 </Button>
               </>
             )}
+            {!docAnalysisHtml && docAnalysisProgress && <Button size="sm" variant="outline" onClick={handleRebuildCurrentAnamnesisView} disabled={isAnalyzingDocs}>
+              Aus gespeicherten Teilen aufbauen
+            </Button>}
             <Button size="sm" variant="outline" onClick={() => setIsDocAnalysisPanelMinimized((value) => !value)}>
               {isDocAnalysisPanelMinimized ? "anzeigen" : "minimieren"}
             </Button>

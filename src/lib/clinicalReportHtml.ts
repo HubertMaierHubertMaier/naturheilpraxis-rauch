@@ -1,4 +1,5 @@
 import DOMPurify from "dompurify";
+import { deidentifyClinicalReportHtml } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 const ALLOWED_TAGS = [
   "article", "section", "header", "footer", "main", "div", "span", "p", "br", "hr",
@@ -42,6 +43,12 @@ export function sanitizeClinicalReportFragment(value: string): string {
 export function sanitizeClinicalReportHtml(value: string): string {
   const content = sanitizeClinicalReportFragment(value);
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Befund-Auswertung</title><style>${REPORT_STYLES}</style></head><body>${content}</body></html>`;
+}
+
+export function prepareClinicalReportHtml(value: string, expectedPseudonymId = ""): string {
+  if (!value.trim()) return "";
+  const safeFragment = sanitizeClinicalReportFragment(value);
+  return sanitizeClinicalReportHtml(deidentifyClinicalReportHtml(safeFragment, expectedPseudonymId));
 }
 
 export function openClinicalReportWindow(value: string, title: string, print = false): Window | null {
