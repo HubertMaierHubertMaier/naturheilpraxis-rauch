@@ -17,7 +17,7 @@ export async function downloadAnamneseBlankoPdf() {
 
   const link = document.createElement("a");
   link.href = data.signedUrl;
-  link.download = "anamnesebogen-blanko.pdf";
+  link.download = "patientenpaket-anamnese-iaa-vertrag-datenschutz.pdf";
   link.rel = "noopener noreferrer";
   document.body.appendChild(link);
   link.click();
