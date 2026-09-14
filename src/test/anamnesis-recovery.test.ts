@@ -46,4 +46,9 @@ describe("anamnesis input recovery", () => {
     for (const value of cases) await expect(persistVerifiedAnamnesis(pid, current, async () => "id", async () => value)).rejects.toThrow(/zurückgelesen/);
     await expect(persistVerifiedAnamnesis(pid, current, async () => null, async () => null)).rejects.toThrow(/nicht bestätigt/);
   });
+  it("requires IAA ratings and notes to survive the individual anamnesis import readback", async () => {
+    const payload = { ...current, anamneseZusatz: { "iaa.1.1": "6", "iaaNote.1.1": "Synthetic original note" } };
+    await expect(persistVerifiedAnamnesis(pid, payload, async () => "id", async () => ({ pseudonym_id: pid, eingabe_daten: current, versionVerified: true }))).rejects.toThrow(/zurückgelesen/);
+    await expect(persistVerifiedAnamnesis(pid, payload, async () => "id", async () => ({ pseudonym_id: pid, eingabe_daten: payload, versionVerified: true }))).resolves.toMatchObject({ stored: { eingabe_daten: payload } });
+  });
 });

@@ -1,3 +1,5 @@
+import { escapeIAAFormMarkers } from "./iaaAssessment";
+
 export const MIN_TEXT_PER_PAGE = 40;
 export const MAX_OCR_PAGE_PIXELS = 10_000_000;
 export const TARGET_OCR_RENDER_SCALE = 2.5;
@@ -7,6 +9,7 @@ export const PDF_RENDER_TIMEOUT_MS = 30_000;
 export type ExtractedPdfPage = {
   pageNumber: number;
   textLayer: string;
+  formText?: string;
   ocrText?: string;
   ocrConfidence?: number;
   includeOcrAlongsideTextLayer?: boolean;
@@ -173,16 +176,17 @@ export function shouldRunLocalOcr({ containsRasterImage, textLayer, force = fals
 }
 
 export function selectPreferredPageText(page: ExtractedPdfPage): string {
-  const textLayer = normalizeExtractedText(page.textLayer);
-  const ocrText = normalizeExtractedText(page.ocrText || "");
+  const textLayer = normalizeExtractedText(escapeIAAFormMarkers(page.textLayer));
+  const ocrText = normalizeExtractedText(escapeIAAFormMarkers(page.ocrText || ""));
   if (page.includeOcrAlongsideTextLayer && ocrText) {
-    return normalizeExtractedText([textLayer, ocrText].filter(Boolean).join("\n"));
+    return normalizeExtractedText([textLayer, ocrText, page.formText].filter(Boolean).join("\n"));
   }
-  if (countMeaningfulTextCharacters(textLayer) >= MIN_TEXT_PER_PAGE) return textLayer;
+  if (countMeaningfulTextCharacters(textLayer) >= MIN_TEXT_PER_PAGE) return normalizeExtractedText([textLayer, page.formText].filter(Boolean).join("\n"));
 
-  return countMeaningfulTextCharacters(ocrText) > countMeaningfulTextCharacters(textLayer)
+  const preferred = countMeaningfulTextCharacters(ocrText) > countMeaningfulTextCharacters(textLayer)
     ? ocrText
     : textLayer;
+  return normalizeExtractedText([preferred, page.formText].filter(Boolean).join("\n"));
 }
 
 export function hasPracticalDocumentText(pages: ExtractedPdfPage[]): boolean {

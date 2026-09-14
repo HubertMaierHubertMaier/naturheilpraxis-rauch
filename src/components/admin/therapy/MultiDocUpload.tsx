@@ -34,6 +34,7 @@ import {
   type AnamneseOcrPageConfidence,
 } from "@/lib/anamneseOcrMapping";
 import { RedactedTextPreview } from "./RedactedTextPreview";
+import { iaaCaptureStatusText, iaaFormValuesText } from "@/lib/iaaAssessment";
 import { supabase } from "@/integrations/supabase/client";
 import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
@@ -201,6 +202,8 @@ export async function extractClinicalDocumentText(
   const failedOcrPages: number[] = [];
   const ocrPageConfidences: AnamneseOcrPageConfidence[] = [];
   let currentOcrPage = 0;
+  let nativeIAAFieldsFound = false;
+  let imageOnlyPageFound = false;
   ocrSession.handleProgress = (progress) => {
     if (progress.status === "loading language traineddata") {
       onProgress?.("Lokale OCR: deutsche und englische Sprachdaten werden geladen...");
@@ -218,9 +221,13 @@ export async function extractClinicalDocumentText(
         const containsRasterImage = operators.fnArray.some((operatorId) => rasterImageOperatorIds.has(operatorId));
         const content = await page.getTextContent();
         const pageText = reconstructPdfTextLines(content.items);
+        const formAnnotations = mode === "anamnese" ? await page.getAnnotations() : [];
+        nativeIAAFieldsFound ||= formAnnotations.some(item => item.checkBox === true && /^iaa_.+?_\d+(?:_\d+)*_lvl[1-6]$/.test(String(item.fieldName || "")));
+        imageOnlyPageFound ||= shouldRunLocalOcr({ containsRasterImage, textLayer: pageText });
         const extractedPage: ExtractedPdfPage = {
           pageNumber,
           textLayer: pageText,
+          formText: mode === "anamnese" ? iaaFormValuesText(formAnnotations, pageNumber) : undefined,
           includeOcrAlongsideTextLayer: mode === "anamnese",
         };
 
@@ -312,7 +319,7 @@ export async function extractClinicalDocumentText(
     });
   }
 
-  const joined = assembleExtractedPdfPages(pages);
+  const joined = [assembleExtractedPdfPages(pages), mode === "anamnese" ? iaaCaptureStatusText(nativeIAAFieldsFound, imageOnlyPageFound) : ""].filter(Boolean).join("\n\n");
   const removedIdentifierCategories = directIdentifierCategories(joined);
   const localPrivacyFindings = collectLocalPrivacyFindings(joined);
   const safeBody = quarantineResidualDirectIdentifierLines(
@@ -828,6 +835,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           <RedactedTextPreview
             text={pendingReview.text}
             className="min-h-[18rem] max-h-[32rem] w-full overflow-auto rounded-md border bg-background p-3 font-mono text-xs leading-relaxed"
+            disabled={reviewSubmitting || loading}
+            onChange={text => {
+              if (reviewSubmitting || loading || (pseudonymIdRef.current || "").trim() !== pendingReview.sourcePseudonymId) return;
+              setPendingReview(current => current?.sourcePseudonymId === pendingReview.sourcePseudonymId ? { ...current, text, totalChars: text.length } : current);
+              setPrivacyConfirmed(false);
+            }}
           />
           <label className="flex items-start gap-2 text-sm">
             <input

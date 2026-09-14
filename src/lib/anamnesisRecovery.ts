@@ -1,4 +1,5 @@
 import { normalizePatientPseudonym } from "../../supabase/functions/_shared/patientPseudonym";
+import { equalPatientInputValue } from "./verifiedPatientInput";
 
 export type RecoveryInput = Record<string, unknown>;
 
@@ -50,6 +51,7 @@ export async function persistVerifiedAnamnesis(
   if (!stored || normalizePatientPseudonym(stored.pseudonym_id) !== pid || stored.eingabe_daten?.anamnese !== payload.anamnese
     || owners(stored.eingabe_daten).some((owner) => owner !== pid)
     || (typeof payload.anamneseDatum === "string" && stored.eingabe_daten.anamneseDatum !== payload.anamneseDatum)
+    || (payload.anamneseZusatz !== undefined && !equalPatientInputValue(payload.anamneseZusatz, stored.eingabe_daten.anamneseZusatz))
     || stored.versionVerified !== true) {
     throw new Error("Die Anamnese konnte nicht vollständig zurückgelesen werden. Die Importvorschau bleibt erhalten.");
   }

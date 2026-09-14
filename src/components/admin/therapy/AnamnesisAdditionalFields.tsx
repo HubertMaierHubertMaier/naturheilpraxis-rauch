@@ -1,4 +1,5 @@
 import { Textarea } from "@/components/ui/textarea";
+import { formatIAAAssessment } from "@/lib/iaaAssessment";
 
 export const ADDITIONAL_ANAMNESIS_FIELDS = [
   ["diagnoses", "Dokumentierte Diagnosen"],
@@ -28,7 +29,7 @@ export function normalizeAdditionalAnamnesis(input: unknown): Record<string, str
 }
 
 export function formatAdditionalAnamnesis(values: Record<string, string>): string {
-  return ADDITIONAL_ANAMNESIS_FIELDS.flatMap(([key, label]) => values[key]?.trim() ? [`${label}:\n${values[key]}`] : []).join("\n\n");
+  return [...ADDITIONAL_ANAMNESIS_FIELDS.flatMap(([key, label]) => values[key]?.trim() ? [`${label}:\n${values[key]}`] : []), formatIAAAssessment(values)].filter(Boolean).join("\n\n");
 }
 
 export function AnamnesisAdditionalFields({ values, onChange, disabled }: {

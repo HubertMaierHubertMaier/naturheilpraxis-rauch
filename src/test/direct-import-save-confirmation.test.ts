@@ -8,6 +8,7 @@ import { normalizePatientPseudonym } from "../../supabase/functions/_shared/pati
 import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
 import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses } from "@/lib/anamnesisIntakeFields";
+import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -31,7 +32,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
   const extractEnd = source.indexOf("const ANALYSIS_CHUNK_MAX_CHARS", extractStart);
   const extractJs = ts.transpileModule(source.slice(extractStart, extractEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers);
+  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields);
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
@@ -47,7 +48,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
     setLaborDatum: setter("laborDatum"), setMetatronDatum: setter("metatronDatum"), setVievaPlusDatum: setter("vievaPlusDatum"),
     setAnamneseDatum: setter("anamneseDatum"), setArztberichtDatum: setter("arztberichtDatum"),
     directBefundTargetLabel: (value: string) => value, extractExplicitAnamneseInputs: vi.fn(extract), applyExtractedToInputs: vi.fn(),
-    buildAnamnesisIntake, partitionIntakeDiagnoses, mergeAnamnesisIntakes, mergeIntakeText, formatIntakeFact,
+    buildAnamnesisIntake, partitionIntakeDiagnoses, mergeAnamnesisIntakes, mergeIntakeText, formatIntakeFact, mergeIAAFields,
     setSchwanger: setter("schwanger"), setAnamnesisIntakeV1: setter("anamnesisIntakeV1"), setAnamneseZusatz: setter("anamneseZusatz"),
     setErkrankung: setter("erkrankung"), setManualDiagnosen: setter("manualDiagnosen"), setSymptome: setter("symptome"), setMedikamente: setter("medikamente"),
     setNaturheilMittelHomoeopathie: setter("naturheilMittelHomoeopathie"), setNaturheilMittelPflanzenheilkunde: setter("naturheilMittelPflanzenheilkunde"),
@@ -79,6 +80,14 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("saves IAA-only form values and notes through the real parent handoff", async () => {
+    const t = setup("anamnese", "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]\nSynthetisch: besser durch Bewegung\n[/IAA_FORMULAR]");
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    expect(t.env.upsertAutoSaveDraft).toHaveBeenCalledWith(pid, expect.objectContaining({ anamneseZusatz: expect.objectContaining({ "iaa.1.1": "6", "iaaNote.1.1": "Synthetisch: besser durch Bewegung" }) }));
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
   it("saves reproductive-only answers through the real batch extraction and field handoff", async () => {
     const t = setup("anamnese", "Frage/Feld: Sind Sie aktuell schwanger?\nErkannte Antwort: Ja\nFrage/Feld: Kinderzahl\nErkannte Antwort: 2");
     const done = t.run();

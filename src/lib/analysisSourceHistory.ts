@@ -73,6 +73,7 @@ export const normalizeAnalysisSourceId = (key: string): string => {
 
 export const neutralAnalysisSourceLabel = (sourceId: string, group: AnalysisSourceGroup): string => {
   const fixedLabels: Record<string, string> = {
+    "anamnese:iaa": "IAA – Trikombin-Fragebogen",
     patientenkontext: "Aktueller Patientenkontext",
     mannayan: "Mannayan-Bestellungen",
     laborKomplett: "Labor komplett",

@@ -68,9 +68,25 @@ export function buildAnamneseQuestionReview(
   let manualReviewCount = 0;
   let currentPage = 0;
   let currentSection = "Nicht eindeutig erkannt";
+  let inIAAFormBlock = false;
 
   for (const rawLine of input.replace(/\r\n?/g, "\n").split("\n")) {
     const line = rawLine.replace(/[\t\f\v ]+/g, " ").trim();
+    if (inIAAFormBlock) {
+      body.push(rawLine);
+      if (line === "[/IAA_FORMULAR]") inIAAFormBlock = false;
+      continue;
+    }
+    if (/^\[IAA_ERFASSUNG:(?:NATIVE_FELDER|MANUELL_PRUEFEN)\]$/.test(line)) {
+      body.push("", line);
+      continue;
+    }
+    if (/^\[IAA_FORMULAR:\d+(?:\.\d+)*;SEITE:\d+;MARKIERT:[1-6,]*\]$/.test(line)) {
+      body.push("", line);
+      inIAAFormBlock = true;
+      mappedAnswerCount += 1;
+      continue;
+    }
     if (!line) continue;
 
     const pageMatch = line.match(pageMarkerPattern);
@@ -116,6 +132,10 @@ export function buildAnamneseQuestionReview(
     body.push(`Manuell pruefen (keine sichere Frage-Antwort-Zuordnung, ${currentSection}, Seite ${currentPage || "nicht erkannt"}): ${line}`);
   }
 
+  if (inIAAFormBlock) {
+    manualReviewCount += 1;
+    body.push("IAA-Formularblock unvollständig – Original und Zuordnung manuell prüfen.");
+  }
   const header = [
     "=== Lokale Anamnese-Auswertung zur manuellen Pruefung ===",
     "Handschrift und Markierungen werden nur lokal gelesen. Unleserliche Inhalte werden nicht geraten.",

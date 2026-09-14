@@ -18,6 +18,8 @@ import { PatientContextBar } from "./therapy/PatientContextBar";
 import { PatientBatchUploadZone } from "./therapy/PatientBatchUploadZone";
 import { PatientIntakeWorkflow, PatientWorkflowLayout } from "./therapy/PatientIntakeWorkflow";
 import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAdditionalAnamnesis } from "./therapy/AnamnesisAdditionalFields";
+import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
+import { explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
@@ -234,6 +236,7 @@ type ExtractedBefundInputs = {
   intake?: AnamnesisIntake;
   noConventionalMedication?: boolean;
   pregnancyStatus?: "schwanger" | "nein" | "stillend";
+  iaaFields?: Record<string, string>;
 };
 
 const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs, "forPseudonymId"> => {
@@ -278,7 +281,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
   const profile = extractAnamnesisProfileAnswers(text);
   const intake = buildAnamnesisIntake([{ diagnoses, medicationsTherapies: medications, anamnese: { currentProblems: symptoms } }]);
   intake.additional = { ...intake.additional, ...profile.additional };
-  return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus };
+  return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus, iaaFields: explicitIAAFields(text) };
 };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
@@ -3670,7 +3673,7 @@ export function TherapyRecommendation() {
     const noConventionalMedication = (extracted.noConventionalMedication || intake.noConventionalMedication) && !intake.uncertainMedications.length;
     setAnamnesisIntakeV1(previous => mergeAnamnesisIntakes(previous, intake));
     setAnamneseZusatz(previous => {
-      const next = { ...previous };
+      const next = mergeIAAFields(previous, extracted.iaaFields || {});
       const groups = { ...intake.additional, hypotheses: intake.hypotheses, negativeOrUncertainFindings: intake.negativeOrUncertainFindings, historicalMedications: intake.historicalMedications, uncertainMedications: intake.uncertainMedications };
       for (const [key, items] of Object.entries(groups)) {
         if (items.length) next[key] = mergeIntakeText(next[key] || "", items.map(formatIntakeFact));
@@ -4001,7 +4004,7 @@ export function TherapyRecommendation() {
       }
       documentTypes.add(directBefundTargetLabel(documentType));
     }
-    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length)) {
+    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length) || Object.keys(anamneseInputs.iaaFields || {}).length) {
       applyExtractedToInputs({ forPseudonymId: pid, ...anamneseInputs });
     }
     const latestDateFor = (documentType: DirectBefundTarget) => ready
@@ -4259,6 +4262,7 @@ export function TherapyRecommendation() {
       ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
       ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
       ...splitMarkedDocumentSources("anamnese", anamneseDatum.trim() ? `Anamnese – ${anamneseDatum.trim()}` : "Anamnese / Anamnesebogen", anamnese),
+      ...addSimple("anamnese:iaa", "IAA – angekreuzte Fragen für Trikombin", formatIAAAssessment(anamneseZusatz), "befund"),
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
       ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
@@ -5305,7 +5309,12 @@ export function TherapyRecommendation() {
                     {item.status === "ready" && item.previewText && (
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
-                        <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed" />
+                        <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed"
+                          disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming}
+                          onChange={text => {
+                            if (isImportingAnamnesis || isAnalyzingDocs || isStreaming || normalizePseudonymId(item.sourcePseudonymId) !== pseudonymIdRef.current) return;
+                            setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id && candidate.sourcePseudonymId === item.sourcePseudonymId && candidate.status === "ready" ? { ...candidate, previewText: text, chars: text.length, privacyReviewed: false } : candidate));
+                          }} />
                         {!!item.localPrivacyFindings?.length && (
                           <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
                             <div className="font-semibold">Lokal erkannte personenbezogene Stellen: {item.localPrivacyFindings.length}</div>
@@ -5915,7 +5924,7 @@ export function TherapyRecommendation() {
                       if (anamnesisImportPendingRef.current) throw new Error("Eine Anamnese wird noch gespeichert. Bitte die Bestätigung abwarten.");
                       draftRevisionTrackerRef.current.capture(pid);
                       const generation = patientScopeGenerationRef.current;
-                      let payload = buildInputData({ anamnese: appendReviewedAnamnesis(anamnese, text), autoSavedDraft: true, lastAutoSaveAt: new Date().toISOString() });
+                      let payload = buildInputData({ anamnese: appendReviewedAnamnesis(anamnese, text), anamneseZusatz: mergeIAAFields(anamneseZusatz, explicitIAAFields(text)), autoSavedDraft: true, lastAutoSaveAt: new Date().toISOString() });
                       if (residualIdentifierCategories(payload).length) throw new Error("Datenschutzprüfung erforderlich; die Anamnese wurde noch nicht gespeichert.");
                       anamnesisImportPendingRef.current = true;
                       setIsImportingAnamnesis(true);
@@ -6645,6 +6654,17 @@ export function TherapyRecommendation() {
 
       <Card id="patient-intake-analysis" className="scroll-mt-64 border-primary/30 bg-background shadow-sm">
         <CardContent className="pt-4 pb-4">
+          <IAAAssessmentPanel
+            key={normalizePseudonymId(pseudonymId)}
+            pseudonymId={normalizePseudonymId(pseudonymId)}
+            values={patientDataOwnerRef.current === normalizePseudonymId(pseudonymId) ? anamneseZusatz : {}}
+            hasUnstructuredIAA={/\bIAA\b/i.test(anamnese)}
+            disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isImportingAnamnesis || isAnalyzingDocs || isStreaming}
+            onChange={values => {
+              const owner = normalizePseudonymId(pseudonymId);
+              if (pseudonymIdRef.current === owner && patientDataOwnerRef.current === owner && isPatientScopedStorageReady(owner)) setAnamneseZusatz(values);
+            }}
+          />
           <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/25 p-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">

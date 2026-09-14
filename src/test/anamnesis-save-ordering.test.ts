@@ -7,6 +7,7 @@ import { createPatientSaveQueue } from "@/lib/patientSaveQueue";
 import { appendReviewedAnamnesis, persistVerifiedAnamnesis } from "@/lib/anamnesisRecovery";
 import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
+import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
 
 const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
 const deferred = <T,>() => {
@@ -40,7 +41,8 @@ function startAutosave(environment: Record<string, unknown>) {
 
 function fixture() {
   const pid = "P-2099-0101";
-  let stored: Record<string, unknown> = { anamnese: "Synthetischer Ausgangstext", anamneseDatum: "2026-09-13" };
+  const anamneseZusatz = { "iaa.1.1": "6", "iaaNote.1.1": "Synthetic existing IAA note" };
+  let stored: Record<string, unknown> = { anamnese: "Synthetischer Ausgangstext", anamneseDatum: "2026-09-13", anamneseZusatz };
   const writes: string[] = [];
   const timers: Array<() => Promise<void>> = [];
   const env = {
@@ -52,7 +54,7 @@ function fixture() {
     anamnese: String(stored.anamnese), patientDraftSaveQueue: createPatientSaveQueue(),
     normalizePseudonymId: (value: string) => value, isPatientScopedStorageReady: () => true,
     residualIdentifierCategories: () => [], assertPayloadMatchesPseudonym: vi.fn(), PATIENT_DATA_MISMATCH_ERROR: "owner mismatch",
-    appendReviewedAnamnesis, persistVerifiedAnamnesis, anamnesisVersionHash: async () => "synthetic-hash",
+    appendReviewedAnamnesis, persistVerifiedAnamnesis, anamnesisVersionHash: async () => "synthetic-hash", anamneseZusatz, explicitIAAFields, mergeIAAFields,
     writeConfirmedPatientDraftCopies, draftWriterId: "synthetic-window",
     draftRevisionTrackerRef: { current: { capture: vi.fn(), load: vi.fn(), revision: () => "00000000-0000-4000-8000-000000000001" } },
     setDraftSaveIssue: vi.fn(),
@@ -77,6 +79,13 @@ function fixture() {
 }
 
 describe("confirmed import and real autosave callback ordering", () => {
+  it("retains existing IAA answers and adds native values through the individual import callback", async () => {
+    const f = fixture();
+    await f.importText("[IAA_FORMULAR:6.1;SEITE:39;MARKIERT:5]\nSynthetic imported IAA note\n[/IAA_FORMULAR]", f.env.pseudonymId);
+    expect(f.stored().anamneseZusatz).toMatchObject({ "iaa.1.1": "6", "iaaNote.1.1": "Synthetic existing IAA note", "iaa.6.1": "5", "iaaNote.6.1": "Synthetic imported IAA note" });
+    const copy = JSON.parse(f.env.sessionStorage.setItem.mock.calls[0][1]);
+    expect(copy.anamneseZusatz).toEqual(f.stored().anamneseZusatz);
+  });
   it("waits for an already-writing nonempty autosave before committing and confirming the import", async () => {
     const f = fixture();
     const gate = deferred<void>();
