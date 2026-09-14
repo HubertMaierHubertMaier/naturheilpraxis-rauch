@@ -367,6 +367,17 @@ export const tableAccessMatrix: TableAccessMatrixEntry[] = [
     riskNote: "Profile data can identify patients/users; never expose as public read.",
   },
   {
+    name: "therapy_anamnesis_versions",
+    audience: "admin",
+    rlsEnabled: true,
+    publicRead: false,
+    publicReadRationale: "",
+    containsPatientData: true,
+    frontendConsumers: ["TherapyRecommendation"],
+    policySummary: "Authenticated admins may select preserved versions; security-definer recording and service-role access handle writes. No direct authenticated client writes.",
+    riskNote: "Contains complete historical anamnesis text. Keep private, preserve source ownership, and never publish through patient or public routes.",
+  },
+  {
     name: "therapy_deleted_document_markers",
     audience: "service-role",
     rlsEnabled: true,

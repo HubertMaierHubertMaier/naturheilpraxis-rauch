@@ -1628,7 +1628,7 @@ export function TherapyRecommendation() {
     try {
       sessionStorage.removeItem(DRAFT_KEY);
       const savedPid = normalizePseudonymId(sessionStorage.getItem(PID_KEY));
-      if (savedPid && /^P-\d{4}-\d{1,4}$/.test(savedPid)) {
+      if (isPatientScopedStorageReady(savedPid)) {
         pseudonymIdRef.current = savedPid;
         patientDataOwnerRef.current = savedPid;
         setPseudonymId(savedPid);
@@ -1638,12 +1638,13 @@ export function TherapyRecommendation() {
   }, []);
   // Pseudonym-ID persistent in sessionStorage spiegeln (überlebt Tab-Wechsel).
   useEffect(() => {
+    if (!sessionPseudonymRestored) return;
     try {
       const pid = normalizePseudonymId(pseudonymId);
       if (pid) sessionStorage.setItem(PID_KEY, pid);
       else sessionStorage.removeItem(PID_KEY);
     } catch {}
-  }, [pseudonymId]);
+  }, [pseudonymId, sessionPseudonymRestored]);
   useEffect(() => {
     if (!draftLoadedRef.current) return;
     if (patientContextLoadingRef.current) return;

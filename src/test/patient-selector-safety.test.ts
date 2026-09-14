@@ -41,3 +41,45 @@ describe("patient selector preserves identity and recovery data", () => {
     expect(env.setPseudonymId).toHaveBeenCalledWith("P-2099-0101");
   });
 });
+
+describe("patient selection restoration on remount", () => {
+  function mount(saved: string) {
+    const start = source.indexOf("  useEffect(() => {\n    if (draftLoadedRef.current) return;");
+    const end = source.indexOf("  useEffect(() => {\n    if (!draftLoadedRef.current) return;", start);
+    const readyStart = source.indexOf("const isPatientScopedStorageReady =");
+    const readyEnd = source.indexOf("const getEmbeddedPseudonymId", readyStart);
+    expect(start).toBeGreaterThan(-1); expect(end).toBeGreaterThan(start);
+    const js = ts.transpileModule(source.slice(readyStart, readyEnd) + source.slice(start, end),
+      { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+    const values = new Map([["selected", saved], ["recovery", "synthetic recovery retained"]]);
+    const state = { pid: "", restored: false };
+    const refs = { draftLoadedRef: { current: false }, pseudonymIdRef: { current: "" }, patientDataOwnerRef: { current: "" } };
+    const render = () => {
+      const effects: Array<() => void> = [];
+      const env = { ...refs, pseudonymId: state.pid, sessionPseudonymRestored: state.restored,
+        normalizePseudonymId: normalizePatientPseudonym, STANDARD_PSEUDONYM_PATTERN: STANDARD_PATIENT_PSEUDONYM,
+        PID_KEY: "selected", DRAFT_KEY: "unscoped",
+        sessionStorage: { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) },
+        setPseudonymId: (pid: string) => { state.pid = pid; }, setSessionPseudonymRestored: (value: boolean) => { state.restored = value; },
+        useEffect: (effect: () => void) => effects.push(effect),
+      };
+      new Function(...Object.keys(env), js)(...Object.values(env));
+      return effects;
+    };
+    const effects = render(); effects.forEach(effect => effect());
+    const afterInitialEffects = values.get("selected");
+    // Strict-mode effect replay must not erase the stored selection either.
+    effects.forEach(effect => effect()); render().forEach(effect => effect());
+    return { state, values, afterInitialEffects };
+  }
+  it.each(["P-2099-0101", "SYNTH-UI-74ced0ea-17bf-4540-92b8-cfd1e914d8ea"])("restores %s without the initial empty mirror deleting it", saved => {
+    const result = mount(saved);
+    expect(result.state.pid).toBe(saved); expect(result.afterInitialEffects).toBe(saved);
+    expect(result.values.get("selected")).toBe(saved); expect(result.values.get("recovery")).toBe("synthetic recovery retained");
+  });
+  it("does not restore an incomplete standard identifier", () => {
+    const result = mount("P-2099-01");
+    expect(result.state.pid).toBe(""); expect(result.values.has("selected")).toBe(false);
+    expect(result.values.get("recovery")).toBe("synthetic recovery retained");
+  });
+});
