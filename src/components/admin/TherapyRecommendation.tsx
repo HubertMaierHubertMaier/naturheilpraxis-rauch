@@ -535,11 +535,11 @@ const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => 
 const mergeDocumentInventory = (...groups: DocumentInventoryItem[][]): DocumentInventoryItem[] => {
   const seen = new Set<string>();
   return groups.flat().filter((item) => {
-    const key = normalizeDocumentName(item.name) || (item.archivePath || "").toLowerCase();
+    const key = item.archivePath ? `archive:${item.archivePath}` : `text:${normalizeDocumentName(item.name)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 80);
+  });
 };
 
 const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourceSummary[] => {
