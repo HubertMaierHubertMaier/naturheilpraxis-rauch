@@ -2,6 +2,7 @@ export type TherapySafetySeverity = "avoid" | "review" | "monitor";
 
 export type TherapySafetyContext = {
   medications?: unknown;
+  currentNaturalPreparations?: unknown;
   conditions?: unknown;
   symptoms?: unknown;
   pregnancy?: unknown;
@@ -87,7 +88,7 @@ export const assessRemedySafety = (
 ): TherapySafetyWarning[] => {
   const remedy = normalize(remedyName);
   if (!remedy.trim()) return [];
-  const medications = recognizeMedicationGroups(context.medications);
+  const medications = recognizeMedicationGroups([context.medications, context.currentNaturalPreparations].filter(Boolean).join("\n"));
   const clinicalText = normalize(`${String(context.conditions ?? "")} ${String(context.symptoms ?? "")}`);
   const warnings: TherapySafetyWarning[] = [];
   const add = (item: TherapySafetyWarning) => {

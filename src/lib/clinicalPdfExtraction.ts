@@ -29,6 +29,41 @@ export type DocumentExtractionDecision = {
   failedOcrPages: number[];
 };
 
+export type PdfPageCoverage = {
+  pageNumber: number;
+  status: "text-present" | "ocr-failed" | "no-text" | "low-confidence";
+  textCharacters: number;
+};
+
+/** Text presence does not prove that every clinical statement was recognized correctly. */
+export function inspectPdfPageCoverage(pages: ExtractedPdfPage[], failedOcrPages: number[] = []): PdfPageCoverage[] {
+  const failed = new Set(failedOcrPages);
+  return [...pages].sort((a, b) => a.pageNumber - b.pageNumber).map(page => {
+    const textCharacters = countMeaningfulTextCharacters(selectPreferredPageText(page));
+    return {
+      pageNumber: page.pageNumber,
+      textCharacters,
+      status: failed.has(page.pageNumber) ? "ocr-failed"
+        : textCharacters === 0 ? "no-text"
+        : typeof page.ocrConfidence === "number" && page.ocrConfidence < 80 ? "low-confidence"
+        : "text-present",
+    };
+  });
+}
+
+export function assertCompleteAnamnesisPageCapture(pages: ExtractedPdfPage[], expectedPages: number, failedOcrPages: number[] = []): void {
+  const coverage = inspectPdfPageCoverage(pages, failedOcrPages);
+  const seen = new Set(coverage.map(page => page.pageNumber));
+  if (!Number.isInteger(expectedPages) || expectedPages < 1 || seen.size !== coverage.length || coverage.some(page => !Number.isInteger(page.pageNumber) || page.pageNumber < 1 || page.pageNumber > expectedPages)) {
+    throw new Error("Anamnese-Seitenprüfung: Die Seitenzuordnung ist unvollständig oder widersprüchlich. Das Original bleibt unverändert; bitte erneut auslesen.");
+  }
+  const missing = Array.from({ length: expectedPages }, (_, index) => index + 1).filter(page => !seen.has(page));
+  const unresolved = [...new Set([...missing, ...coverage.filter(page => page.status === "ocr-failed" || page.status === "no-text").map(page => page.pageNumber)])].sort((a, b) => a - b);
+  if (unresolved.length) {
+    throw new Error(`Anamnese-Seitenprüfung: Seite(n) ${unresolved.join(", ")} von ${expectedPages} sind nicht vollständig erfasst. Das Original bleibt unverändert; bitte diese Seiten auf Lesbarkeit oder Leerseiten prüfen und fehlende Angaben vor einer vollständigen Auswertung manuell erfassen.`);
+  }
+}
+
 export type ClinicalPdfFailure = {
   kind: "password" | "text" | "privacy" | "format" | "technical";
   label: string;
@@ -39,6 +74,9 @@ export function classifyClinicalPdfFailure(error: unknown): ClinicalPdfFailure {
   const candidate = error as { name?: unknown; message?: unknown } | null;
   const name = String(candidate?.name || "");
   const message = String(candidate?.message || "");
+  if (message.startsWith("Anamnese-Seitenprüfung:")) {
+    return { kind: "text", label: "Seitenprüfung offen", message };
+  }
   if (name === "PasswordException" || /password|passwort|kennwort/i.test(message)) {
     return { kind: "password", label: "Passwort", message: "Passwort fehlt, wurde abgebrochen oder ist falsch." };
   }

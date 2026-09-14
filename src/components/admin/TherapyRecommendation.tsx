@@ -15,6 +15,10 @@ import type { DiagnoseEntry } from "./therapy/printRecipe";
 import { CategoryCard } from "./therapy/CategoryCard";
 import { FreeSectionCard } from "./therapy/FreeSectionCard";
 import { PatientContextBar } from "./therapy/PatientContextBar";
+import { PatientBatchUploadZone } from "./therapy/PatientBatchUploadZone";
+import { PatientIntakeWorkflow, PatientWorkflowLayout } from "./therapy/PatientIntakeWorkflow";
+import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAdditionalAnamnesis } from "./therapy/AnamnesisAdditionalFields";
+import { buildAnamnesisIntake, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
 import { CategoryFilter } from "./therapy/CategoryFilter";
@@ -99,6 +103,9 @@ import {
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
 import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
+import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
+import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
+import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
 
 const SYNTHETIC_THERAPY_CASE = {
   id: "SYNTH-THERAPY-STRUCTURE-001",
@@ -212,6 +219,7 @@ type PendingDirectBefundFile = {
   pages?: number;
   error?: string;
   errorKind?: string;
+  progress?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
@@ -219,9 +227,10 @@ type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
 const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
 type ExtractedBefundInputs = {
   forPseudonymId: string;
-  diagnoses: Array<{ icd10?: string; diagnose: string; quelle?: string; status?: string; datum?: string; zitat?: string }>;
-  symptoms: Array<{ text: string; quelle?: string; datum?: string; zitat?: string }>;
-  medications: Array<{ name: string; kategorie?: string; dosis?: string; vonWem?: string; datum?: string; indikation?: string; wirkmechanismus?: string; nebenwirkungen?: string; grundVerordnung?: string; status?: string; quelle?: string; zitat?: string }>;
+  diagnoses: Array<Partial<IntakeDiagnosis> & { diagnose: string }>;
+  symptoms: Array<Partial<IntakeFact> & { text: string }>;
+  medications: Array<Partial<IntakeMedication> & { name: string }>;
+  intake?: AnamnesisIntake;
   noConventionalMedication?: boolean;
 };
 
@@ -236,12 +245,13 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
     const answer = pair[2].trim();
     const normalizedQuestion = question.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const source = `Anamnesebogen – ${question}`;
+    const polarity = /^(?:nein|keine?|verneint)\b/i.test(answer) ? "negated" as const : /unleserlich|unklar|verdacht/i.test(answer) ? "uncertain" as const : "affirmed" as const;
     if (/hauptbeschwerde|beschwerde|symptom/.test(normalizedQuestion)) {
-      symptoms.push({ text: `${question}: ${answer}`, quelle: source, zitat: answer });
+      symptoms.push({ text: `${question}: ${answer}`, quelle: source, zitat: answer, polarity });
       continue;
     }
     if (/diagnose|erkrankung|vorerkrankung/.test(normalizedQuestion)) {
-      diagnoses.push({ diagnose: `${question}: ${answer}`, quelle: source, status: "anamnestisch dokumentiert", zitat: answer });
+      diagnoses.push({ diagnose: `${question}: ${answer}`, quelle: source, status: "anamnestisch dokumentiert", zitat: answer, polarity });
       continue;
     }
     if (/medikament|arznei|vitamin|mineral|spurenelement|homoo?opath|pflanz|phyto/.test(normalizedQuestion)) {
@@ -259,8 +269,8 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
               ? "homoeopathie"
               : /pflanz|phyto/.test(normalizedQuestion)
                 ? "pflanzenheilkunde"
-                : "konventionell";
-      medications.push({ name: answer, kategorie, quelle: source, zitat: answer, status: "laufend" });
+                : "unklar";
+      medications.push({ name: answer, kategorie, quelle: source, zitat: answer, status: "laufend", polarity });
     }
   }
   return { diagnoses, symptoms, medications, noConventionalMedication };
@@ -269,7 +279,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-deidentified-sensitive-labs-v11";
+const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-intake-v12";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -280,35 +290,7 @@ const countAnalysisObjectItems = (source: Record<string, unknown>) => {
 };
 
 const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHUNK_MAX_CHARS): AnalysisDocChunk[] => {
-  const text = value.trim();
-  if (!text) return [];
-  if (text.length <= maxChars) return [{ label, text }];
-  const chunks: AnalysisDocChunk[] = [];
-  const paragraphs = text.replace(/\r\n/g, "\n").split(/\n{2,}/);
-  let current = "";
-  let index = 1;
-  const flush = () => {
-    if (!current.trim()) return;
-    chunks.push({ label: `${label} – Teil ${index}`, text: current.trim() });
-    current = "";
-    index += 1;
-  };
-  for (const paragraph of paragraphs) {
-    const part = paragraph.trim();
-    if (!part) continue;
-    if (part.length > maxChars) {
-      flush();
-      for (let i = 0; i < part.length; i += maxChars) {
-        chunks.push({ label: `${label} – Teil ${index}`, text: part.slice(i, i + maxChars).trim() });
-        index += 1;
-      }
-      continue;
-    }
-    if ((current + "\n\n" + part).length > maxChars) flush();
-    current = current ? `${current}\n\n${part}` : part;
-  }
-  flush();
-  return chunks;
+  return splitPageAwareClinicalText(label, value, maxChars);
 };
 
 const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig|inhaltlose Teilanalyse|keine extrahierten Daten/i.test(message);
@@ -621,6 +603,8 @@ const buildPatientLoadEventDetails = (source: string, d: Record<string, unknown>
 
 const countLoadedClinicalChars = (d: Record<string, unknown>) => [
   d.symptome, d.erkrankung, d.medikamente, d.bisherigeMittel, d.belastungen,
+  d.naturheilMittelHomoeopathie, d.naturheilMittelPflanzenheilkunde, d.naturheilMittelVitamine, d.naturheilMittelMineralstoffe, d.naturheilMittelSpurenelemente,
+  ...Object.values(d.anamneseZusatz && typeof d.anamneseZusatz === "object" ? d.anamneseZusatz : {}),
   d.laborKomplett, d.laborErhoeht, d.laborErniedrigt, d.stuhlbefund,
   d.anamnese, d.arztbericht, d.metatronHeel, d.sonstigeUntersuchungen, d.vievaPlus, d.perplexityAnalyse,
   d.eigeneTherapieVorlage,
@@ -890,7 +874,7 @@ const parseLlmJson = (raw: string): any => {
 const normalizePartialAnalysisJson = (raw: string) => {
   const parsed = parseLlmJson(raw);
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
-  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, unknown> | undefined;
+  const source = (candidates.find(hasCompletePartialCollections) || candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate))) as Record<string, unknown> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
   if (!ANALYSIS_REQUIRED_ARRAY_KEYS.every((key) => Array.isArray(source[key]))) throw new Error("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
   if (!source.anamnese || typeof source.anamnese !== "object" || Array.isArray(source.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
@@ -899,6 +883,7 @@ const normalizePartialAnalysisJson = (raw: string) => {
   const normalized: Record<string, unknown> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
+  if (source.source_coverage_v1 && typeof source.source_coverage_v1 === "object") normalized.source_coverage_v1 = source.source_coverage_v1;
   const serialized = JSON.stringify(deidentifyClinicalData(normalized));
   const residualIdentifiers = residualIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
@@ -1028,6 +1013,8 @@ const buildClientFallbackAnalysisHtml = (
       for (const key of anamneseKeys) if (Array.isArray(obj?.anamnese?.[key])) anamnese[key].push(...obj.anamnese[key]);
     } catch { /* unparsbarer Teil bleibt in den Rohdaten erhalten */ }
   }
+  for (const key of Object.keys(aggregate)) aggregate[key] = deduplicateClinicalFacts(aggregate[key]);
+  for (const key of anamneseKeys) anamnese[key] = deduplicateClinicalFacts(anamnese[key]);
   const labHighlights = buildClinicallyRelevantLabHighlights(aggregate.labValues, {
     documents: aggregate.documents,
     diagnoses: aggregate.diagnoses,
@@ -1038,7 +1025,7 @@ const buildClientFallbackAnalysisHtml = (
   });
   const beleg = (item: any) => {
     const b = item?.beleg || {};
-    const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}"` : ""].filter(Boolean).join(" · ");
+    const parts = clinicalEvidenceText(item);
     return parts ? `<span class="beleg">📄 ${escapeHtml(parts)}</span>` : `<span class="beleg">Kein Einzelbeleg ausgewiesen.</span>`;
   };
   const rows = (items: any[], cells: (item: any) => string, colspan = 6) => items.length
@@ -1274,6 +1261,9 @@ export function TherapyRecommendation() {
   const [naturheilMittelVitamine, setNaturheilMittelVitamine] = useState("");
   const [naturheilMittelMineralstoffe, setNaturheilMittelMineralstoffe] = useState("");
   const [naturheilMittelSpurenelemente, setNaturheilMittelSpurenelemente] = useState("");
+  const [anamneseZusatz, setAnamneseZusatz] = useState<Record<string, string>>({});
+  const [clinicalInputTab, setClinicalInputTab] = useState("befund");
+  const [anamnesisIntakeV1, setAnamnesisIntakeV1] = useState<AnamnesisIntake | null>(null);
   const [bisherigeMittel, setBisherigeMittel] = useState("");
   const [budget, setBudget] = useState("");
   const [laborErhoeht, setLaborErhoeht] = useState("");
@@ -1530,6 +1520,8 @@ export function TherapyRecommendation() {
       naturheilMittelVitamine,
       naturheilMittelMineralstoffe,
       naturheilMittelSpurenelemente,
+      anamneseZusatz,
+      anamnesisIntakeV1,
       bisherigeMittel,
       budget,
       laborErhoeht,
@@ -1570,7 +1562,7 @@ export function TherapyRecommendation() {
         || (key === "sessionDraftVersion" && !("sessionDraftVersion" in extra))) delete data[key];
     }
     return data;
-  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile]);
+  }, [pseudonymId, pathogens, pathogenBulkText, symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, eigeneTherapieVorlage, apothekerRezept, zusatzTherapie, mannayanOrders, selectedCategories, useMapReduce, bevorzugteLinie, pinnedMittel, manualDiagnosen, manualMittel, startPlanExceptionReason, startPlanPhaseAllocation, noStartRemedyApproved, noStartRemedyReason, therapyRunProfile, anamneseZusatz, anamnesisIntakeV1]);
 
   const latestBuildInputDataRef = useRef(buildInputData);
   latestBuildInputDataRef.current = buildInputData;
@@ -1671,6 +1663,7 @@ export function TherapyRecommendation() {
 
   const applyDraftPayload = useCallback((d: any, expectedPid?: string) => {
     const data = normalizeTherapyInput(d);
+    assertUntruncatedPatientInput(data);
     if (!Object.keys(data).length) return;
     if (expectedPid) {
       const owners = [d?._pseudonym_id, d?.pseudonymId, data._pseudonym_id, data.pseudonymId].filter(owner => owner !== undefined && owner !== null);
@@ -1698,6 +1691,8 @@ export function TherapyRecommendation() {
     if (typeof data.naturheilMittelVitamine === "string") setNaturheilMittelVitamine(data.naturheilMittelVitamine);
     if (typeof data.naturheilMittelMineralstoffe === "string") setNaturheilMittelMineralstoffe(data.naturheilMittelMineralstoffe);
     if (typeof data.naturheilMittelSpurenelemente === "string") setNaturheilMittelSpurenelemente(data.naturheilMittelSpurenelemente);
+    if (data.anamneseZusatz && typeof data.anamneseZusatz === "object") setAnamneseZusatz(normalizeAdditionalAnamnesis(data.anamneseZusatz));
+    if (data.anamnesisIntakeV1 && typeof data.anamnesisIntakeV1 === "object") setAnamnesisIntakeV1(mergeAnamnesisIntakes(data.anamnesisIntakeV1, buildAnamnesisIntake([])));
     if (typeof data.bisherigeMittel === "string") setBisherigeMittel(data.bisherigeMittel);
     if (typeof data.budget === "string") setBudget(data.budget);
     if (typeof data.laborErhoeht === "string") setLaborErhoeht(data.laborErhoeht);
@@ -1925,8 +1920,8 @@ export function TherapyRecommendation() {
   const hasMeaningfulInput = useMemo(() => {
     const textFields = [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage];
 
-    return textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
-  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders]);
+    return Object.values(anamneseZusatz).some(value => value.trim()) || textFields.some((v) => v.trim()) || pathogenBulkText.trim() || schwanger !== "nein" || pathogens.some((p) => p.name.trim() || p.organe.trim() || p.index.trim()) || selectedCategories.length > 0 || bevorzugteLinie.length > 0 || pinnedMittel.length > 0 || mannayanOrders.length > 0;
+  }, [symptome, erkrankung, alter, geschlecht, groesseCm, gewichtKg, schwanger, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, budget, laborErhoeht, laborErniedrigt, laborKomplett, laborDatum, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, eigeneTherapieVorlage, pathogens, pathogenBulkText, selectedCategories, bevorzugteLinie, pinnedMittel, mannayanOrders, anamneseZusatz]);
 
   useEffect(() => {
     const pid = normalizePseudonymId(pseudonymId);
@@ -1987,11 +1982,12 @@ export function TherapyRecommendation() {
     .join("\n"), [manualDiagnosen]);
   const therapySafetyContext = useMemo<TherapySafetyContext>(() => ({
     medications: medikamente,
+    currentNaturalPreparations: formatCurrentNaturalIntake({ naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente }),
     conditions: [erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett].filter(Boolean).join("\n"),
     symptoms: [symptome, metatronHeel].filter(Boolean).join("\n"),
     pregnancy: schwanger,
     age: alter,
-  }), [medikamente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett, symptome, schwanger, alter]);
+  }), [medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, erkrankung, manualDiagnosisContext, arztbericht, stuhlbefund, metatronHeel, sonstigeUntersuchungen, vievaPlus, laborErhoeht, laborErniedrigt, laborKomplett, symptome, schwanger, alter]);
   const parsedTherapyResult = useMemo(() => parseTherapyMarkdown(result), [result]);
   const missingPlanSections = useMemo(() => {
     const available = new Set([
@@ -2412,6 +2408,8 @@ export function TherapyRecommendation() {
     setNaturheilMittelVitamine("");
     setNaturheilMittelMineralstoffe("");
     setNaturheilMittelSpurenelemente("");
+    setAnamneseZusatz({});
+    setAnamnesisIntakeV1(null);
     setBisherigeMittel("");
     setBudget("");
     setLaborErhoeht("");
@@ -2608,6 +2606,11 @@ export function TherapyRecommendation() {
       return;
     }
     const d = normalizeTherapyInput(session.eingabe_daten || {});
+    try { assertUntruncatedPatientInput(d); }
+    catch (error) {
+      toast({ title: "Vollständige Sitzung erforderlich", description: (error as Error).message, variant: "destructive" });
+      return;
+    }
     const isDraftSession = Boolean(d.autoSavedDraft) || session.kind === "therapy_candidate_draft";
     patientDataOwnerRef.current = normalizePseudonymId(session.pseudonym_id);
     setDiagnosen([]);
@@ -2653,6 +2656,8 @@ export function TherapyRecommendation() {
     setNaturheilMittelVitamine(asText(d.naturheilMittelVitamine));
     setNaturheilMittelMineralstoffe(asText(d.naturheilMittelMineralstoffe));
     setNaturheilMittelSpurenelemente(asText(d.naturheilMittelSpurenelemente));
+    setAnamneseZusatz(normalizeAdditionalAnamnesis(d.anamneseZusatz));
+    setAnamnesisIntakeV1(d.anamnesisIntakeV1 ? mergeAnamnesisIntakes(d.anamnesisIntakeV1, buildAnamnesisIntake([])) : null);
     setBisherigeMittel(asText(d.bisherigeMittel));
     setBudget(asText(d.budget));
     setLaborErhoeht(asText(d.laborErhoeht));
@@ -2945,11 +2950,11 @@ export function TherapyRecommendation() {
       setIsDocAnalysisPanelMinimized(false);
       setLatestBefundLoadedFrom("local");
       writeLatestBefundDisplay(pid, { html, progress, meta, createdAt: rebuiltAt });
-      if (diagnoses.length || symptoms.length || medications.length || noConventionalMedication) {
+      if (partials.length) {
         const dedupDiagnoses = Array.from(new Map(diagnoses.map((item) => [item.diagnose.toLowerCase(), item])).values());
         const dedupSymptoms = Array.from(new Map(symptoms.map((item) => [item.text.toLowerCase(), item])).values());
         const dedupMedications = Array.from(new Map(medications.map((item) => [`${item.name.toLowerCase()}|${(item.dosis || "").toLowerCase()}`, item])).values());
-        applyExtractedToInputs({ forPseudonymId: pid, diagnoses: dedupDiagnoses, symptoms: dedupSymptoms, medications: dedupMedications, noConventionalMedication });
+        await applyAndPersistExtractedInputs({ forPseudonymId: pid, diagnoses: dedupDiagnoses, symptoms: dedupSymptoms, medications: dedupMedications, noConventionalMedication, intake: buildAnamnesisIntake(partials.map(parseLlmJson)) });
       }
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -3408,10 +3413,10 @@ export function TherapyRecommendation() {
         const dedupDiag = Array.from(new Map(extDiag.map((d) => [d.diagnose.toLowerCase(), d])).values());
         const dedupSym = Array.from(new Map(extSym.map((s) => [s.text.toLowerCase(), s])).values());
         const dedupMed = Array.from(new Map(extMed.map((m) => [`${m.name.toLowerCase()}|${(m.dosis||"").toLowerCase()}|${(m.kategorie||"").toLowerCase()}`, m])).values());
-        if (dedupDiag.length || dedupSym.length || dedupMed.length || noConventionalMedication) {
-          applyExtractedToInputs({ forPseudonymId: analysisPid, diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed, noConventionalMedication });
+        if (partials.length) {
+          await applyAndPersistExtractedInputs({ forPseudonymId: analysisPid, diagnoses: dedupDiag, symptoms: dedupSym, medications: dedupMed, noConventionalMedication, intake: buildAnamnesisIntake(partials.map(parseLlmJson)) });
         }
-      } catch { /* nicht kritisch */ }
+      } catch (error) { throw new Error(`Einzelwerte konnten nicht bestätigt übernommen werden: ${(error as Error).message}`); }
 
       const structuredLabData = collectStructuredLabData(partials);
       let full = "";
@@ -3648,10 +3653,21 @@ export function TherapyRecommendation() {
       toast({ title: "Sicherheitsstopp", description: "Extrahierte Befunddaten gehören zu einem anderen Pseudonym und wurden nicht übernommen.", variant: "destructive" });
       return;
     }
-    const { diagnoses, symptoms, medications, noConventionalMedication } = extracted;
+    const intake = extracted.intake || buildAnamnesisIntake([{ diagnoses: extracted.diagnoses, medicationsTherapies: extracted.medications, anamnese: { currentProblems: extracted.symptoms } }]);
+    const { diagnoses, symptoms, medications } = intake;
+    const noConventionalMedication = (extracted.noConventionalMedication || intake.noConventionalMedication) && !intake.uncertainMedications.length;
+    setAnamnesisIntakeV1(previous => mergeAnamnesisIntakes(previous, intake));
+    setAnamneseZusatz(previous => {
+      const next = { ...previous };
+      const groups = { ...intake.additional, hypotheses: intake.hypotheses, negativeOrUncertainFindings: intake.negativeOrUncertainFindings, historicalMedications: intake.historicalMedications, uncertainMedications: intake.uncertainMedications };
+      for (const [key, items] of Object.entries(groups)) {
+        if (items.length) next[key] = mergeIntakeText(next[key] || "", items.map(formatIntakeFact));
+      }
+      return next;
+    });
     // Diagnosen → manualDiagnosen (Duplikate vermeiden anhand diagnose-Text)
     if (diagnoses.length) {
-      setErkrankung((existing) => mergeExtractedDiagnoses(existing, diagnoses));
+      setErkrankung((existing) => mergeIntakeText(existing, diagnoses.map(formatIntakeFact)));
       setManualDiagnosen((existing) => {
         const known = new Set(existing.map((d) => d.diagnose.trim().toLowerCase()));
         const additions: DiagnoseEntry[] = [];
@@ -3674,22 +3690,12 @@ export function TherapyRecommendation() {
     }
     // Symptome → Textarea (mit Quelle/Datum) — vorhandenen Text bewahren
     if (symptoms.length) {
-      setSymptome((existing) => mergeExtractedSymptoms(existing, symptoms));
+      setSymptome((existing) => mergeIntakeText(existing, symptoms.map(formatIntakeFact)));
     }
     // Mittel nur bei expliziter Anamnese-Kategorie in das passende Naturheilfeld
     // übernehmen. Unklassifizierte Einträge bleiben bei der konventionellen Medikation,
     // statt eine naturheilkundliche Kategorie zu erraten.
-    const categorizedMedications = medications.map((item) => {
-      const declared = String(item.kategorie || "").toLowerCase();
-      if (["homoeopathie", "pflanzenheilkunde", "vitamine", "mineralstoffe", "spurenelemente"].includes(declared)) return item;
-      const name = item.name.toLowerCase();
-      // Alte gespeicherte Teilanalysen hatten noch kein Kategorienfeld. Nur
-      // eindeutige Bezeichnungen werden nachträglich einsortiert.
-      if (/\bvit(?:amin)?\s*[a-z0-9]/i.test(name)) return { ...item, kategorie: "vitamine" };
-      if (/\b(?:zink|selen|jod|kupfer|chrom|mangan|molybdaen|molybdän)\b/i.test(name)) return { ...item, kategorie: "spurenelemente" };
-      if (/\b(?:magnesium|calcium|kalzium|kalium|natrium)\b/i.test(name)) return { ...item, kategorie: "mineralstoffe" };
-      return item;
-    });
+    const categorizedMedications = medications;
     const naturalGroups = {
       homoeopathie: categorizedMedications.filter((item) => item.kategorie === "homoeopathie"),
       pflanzenheilkunde: categorizedMedications.filter((item) => item.kategorie === "pflanzenheilkunde"),
@@ -3698,37 +3704,73 @@ export function TherapyRecommendation() {
       spurenelemente: categorizedMedications.filter((item) => item.kategorie === "spurenelemente"),
     };
     const conventionalMedications = categorizedMedications.filter((item) => !Object.values(naturalGroups).some((group) => group.includes(item)));
-    if (conventionalMedications.length) setMedikamente((existing) => mergeExtractedMedications(existing, conventionalMedications));
+    if (conventionalMedications.length) setMedikamente((existing) => mergeIntakeText(existing, conventionalMedications.map(formatIntakeFact)));
     else if (noConventionalMedication) setMedikamente((existing) => existing.trim() || "Keine aktuellen konventionell-medizinischen Medikamente laut Anamnese dokumentiert.");
-    if (naturalGroups.homoeopathie.length) setNaturheilMittelHomoeopathie((existing) => mergeExtractedMedications(existing, naturalGroups.homoeopathie));
-    if (naturalGroups.pflanzenheilkunde.length) setNaturheilMittelPflanzenheilkunde((existing) => mergeExtractedMedications(existing, naturalGroups.pflanzenheilkunde));
-    if (naturalGroups.vitamine.length) setNaturheilMittelVitamine((existing) => mergeExtractedMedications(existing, naturalGroups.vitamine));
-    if (naturalGroups.mineralstoffe.length) setNaturheilMittelMineralstoffe((existing) => mergeExtractedMedications(existing, naturalGroups.mineralstoffe));
-    if (naturalGroups.spurenelemente.length) setNaturheilMittelSpurenelemente((existing) => mergeExtractedMedications(existing, naturalGroups.spurenelemente));
+    if (naturalGroups.homoeopathie.length) setNaturheilMittelHomoeopathie((existing) => mergeIntakeText(existing, naturalGroups.homoeopathie.map(formatIntakeFact)));
+    if (naturalGroups.pflanzenheilkunde.length) setNaturheilMittelPflanzenheilkunde((existing) => mergeIntakeText(existing, naturalGroups.pflanzenheilkunde.map(formatIntakeFact)));
+    if (naturalGroups.vitamine.length) setNaturheilMittelVitamine((existing) => mergeIntakeText(existing, naturalGroups.vitamine.map(formatIntakeFact)));
+    if (naturalGroups.mineralstoffe.length) setNaturheilMittelMineralstoffe((existing) => mergeIntakeText(existing, naturalGroups.mineralstoffe.map(formatIntakeFact)));
+    if (naturalGroups.spurenelemente.length) setNaturheilMittelSpurenelemente((existing) => mergeIntakeText(existing, naturalGroups.spurenelemente.map(formatIntakeFact)));
     toast({
-      title: "Befunddaten automatisch übernommen",
+      title: "Einzelwerte zur Prüfung ergänzt",
       description: `${diagnoses.length} Diagnose(n), ${symptoms.length} Symptom(e), ${conventionalMedications.length} konventionell-medizinische und ${categorizedMedications.length - conventionalMedications.length} naturheilkundliche Mittel ergänzt — jeweils mit Quelle, Datum und wörtlichem Zitat.`,
     });
 
   };
 
+  async function applyAndPersistExtractedInputs(extracted: ExtractedBefundInputs) {
+    const pid = normalizePseudonymId(extracted.forPseudonymId);
+    const generation = patientScopeGenerationRef.current;
+    const isCurrent = () => generation === patientScopeGenerationRef.current && pseudonymIdRef.current === pid && patientDataOwnerRef.current === pid;
+    if (!isCurrent() || anamnesisImportPendingRef.current || patientContextLoadingRef.current) throw new Error("Der Fall wird gerade gewechselt oder eine Übernahme läuft.");
+    anamnesisImportPendingRef.current = true;
+    autoSaveRunIdRef.current += 1;
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    try {
+      flushSync(() => { setIsImportingAnamnesis(true); applyExtractedToInputs(extracted); });
+      const payload = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
+      assertPayloadMatchesPseudonym(pid, payload);
+      if (residualIdentifierCategories(payload).length) throw new Error("Die Datenschutzprüfung der Einzelwerte ist noch erforderlich.");
+      const receipt = await patientDraftSaveQueue.run(pid, async () => {
+        if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
+        return persistVerifiedPatientInput(pid, payload, upsertAutoSaveDraft, async id => {
+          const { data, error } = await supabase.from("therapy_sessions").select("id,pseudonym_id,eingabe_daten").eq("id", id).maybeSingle();
+          if (error) throw error;
+          return data as any;
+        });
+      });
+      if (!isCurrent()) return;
+      applyDraftPayload(receipt.stored.eingabe_daten, pid);
+      writeConfirmedPatientDraftCopies(sessionStorage, localStorage, pid, receipt.stored.eingabe_daten, draftRevisionTrackerRef.current.revision(pid), draftWriterId, new Date().toISOString());
+      autoSaveSessionIdRef.current = receipt.id;
+      lastAutoSavedPayloadRef.current = JSON.stringify(payload);
+      setAutoSaveStatus("saved");
+    } finally {
+      anamnesisImportPendingRef.current = false;
+      setIsImportingAnamnesis(false);
+    }
+  }
+
   useEffect(() => {
     if (geschlecht === "maennlich" && schwanger !== "nein") setSchwanger("nein");
   }, [geschlecht, schwanger]);
 
-  const addDirectBefundFiles = (list: FileList | null) => {
+  const addDirectBefundFiles = (list: FileList | File[] | null) => {
     if (!list?.length) return;
+    if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
+      toast({ title: "Verarbeitung läuft", description: "Bitte die laufende Übernahme abwarten. Die bisherige Dateiliste bleibt erhalten." });
+      return;
+    }
     const currentPid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(currentPid)) {
       toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auswählen.", variant: "destructive" });
       if (directBefundFileRef.current) directBefundFileRef.current.value = "";
       return;
     }
-    const pidRe = /P-\d{4}-\d{4}/i;
+    const pidRe = /P-\d{4}-\d{4}/gi;
     const files = Array.from(list);
     const foreign = files
-      .map((f) => ({ file: f, hit: (f.name.match(pidRe) || [""])[0].toUpperCase() }))
-      .filter((x) => x.hit && x.hit !== currentPid);
+      .filter(file => ((file.webkitRelativePath || file.name).match(pidRe) || []).some(hit => hit.toUpperCase() !== currentPid));
     if (foreign.length) {
       toast({ title: "Fremdes Pseudonym blockiert", description: "Mindestens ein Dateiname gehört erkennbar zu einem anderen Fall. Bitte die Datei im richtigen Fall neu auswählen.", variant: "destructive" });
       if (directBefundFileRef.current) directBefundFileRef.current.value = "";
@@ -3781,7 +3823,9 @@ export function TherapyRecommendation() {
         let documentType = item.documentType || inferDirectBefundTarget(item.file.name);
         const extracted = await extractClinicalDocumentText(item.file, documentType === "anamnese" ? "anamnese" : "doctor", (message) => {
           if (scopeIsCurrent()) toast(message);
-        }, undefined, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`);
+        }, (progress) => {
+          if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
+        }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`);
         if (!scopeIsCurrent()) return;
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
@@ -3790,6 +3834,7 @@ export function TherapyRecommendation() {
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
           ...row,
           status: "ready",
+          progress: undefined,
           documentType,
           documentTypeInferred: !item.documentType,
           previewText,
@@ -4190,6 +4235,7 @@ export function TherapyRecommendation() {
       naturheilMittelMineralstoffe.trim() && `Aktuelle naturheilkundliche Mittel – Mineralstoffe:\n${naturheilMittelMineralstoffe.trim()}`,
       naturheilMittelSpurenelemente.trim() && `Aktuelle naturheilkundliche Mittel – Spurenelemente:\n${naturheilMittelSpurenelemente.trim()}`,
       bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
+      formatAdditionalAnamnesis(anamneseZusatz),
     ].filter(Boolean).join("\n\n");
     const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
     const addSimple = (key: string, label: string, text: string, group: SelectableAnalysisSource["group"]): SelectableAnalysisSource[] => {
@@ -4210,7 +4256,7 @@ export function TherapyRecommendation() {
       ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
-  }, [pathogens, symptome, erkrankung, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse]);
+  }, [pathogens, symptome, erkrankung, medikamente, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, mannayanOrders, laborKomplett, laborDatum, laborErhoeht, laborErniedrigt, stuhlbefund, anamnese, anamneseDatum, arztbericht, arztberichtDatum, metatronHeel, metatronDatum, sonstigeUntersuchungen, vievaPlus, vievaPlusDatum, perplexityAnalyse, anamneseZusatz]);
 
   useEffect(() => {
     let cancelled = false;
@@ -4537,6 +4583,11 @@ export function TherapyRecommendation() {
             schwanger: schwanger !== "nein" ? schwanger : undefined,
             bisherigeMittel: bisherigeMittel.trim() || undefined,
             medikamente: medikamente.trim() || undefined,
+            naturheilMittelHomoeopathie: naturheilMittelHomoeopathie.trim() || undefined,
+            naturheilMittelPflanzenheilkunde: naturheilMittelPflanzenheilkunde.trim() || undefined,
+            naturheilMittelVitamine: naturheilMittelVitamine.trim() || undefined,
+            naturheilMittelMineralstoffe: naturheilMittelMineralstoffe.trim() || undefined,
+            naturheilMittelSpurenelemente: naturheilMittelSpurenelemente.trim() || undefined,
             budget: budget.trim() || undefined,
             laborErhoeht: laborErhoeht.trim() || undefined,
             laborErniedrigt: laborErniedrigt.trim() || undefined,
@@ -4544,6 +4595,7 @@ export function TherapyRecommendation() {
             laborDatum: laborDatum.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             anamnese: anamnese.trim() || undefined,
+            anamneseZusatzText: formatAdditionalAnamnesis(anamneseZusatz) || undefined,
             anamneseDatum: anamneseDatum.trim() || undefined,
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
@@ -5040,7 +5092,8 @@ export function TherapyRecommendation() {
     <>
     {draftConflictReview && <PatientDraftConflictReview local={draftConflictReview.local} remote={draftConflictReview.remote}
       onResolve={resolveDraftConflict} onCancel={closeDraftConflictReview} />}
-    <fieldset disabled={isPatientContextLoading || isImportingAnamnesis} className="min-w-0 max-w-5xl mx-auto space-y-6 pb-28">
+    <fieldset disabled={isPatientContextLoading || isImportingAnamnesis} className="min-w-0 max-w-6xl mx-auto pb-28 font-sans">
+      <PatientWorkflowLayout>
       {/* Header */}
       {draftSaveIssue?.pid === normalizePseudonymId(pseudonymId) && (
         <div role="alert" className="rounded-lg border border-amber-500 bg-amber-50 p-4 text-amber-950">
@@ -5051,7 +5104,7 @@ export function TherapyRecommendation() {
       )}
       <div className="flex items-center gap-3">
         <Stethoscope className="h-7 w-7 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Interne Therapie-Kandidaten</h1>
+        <h1 className="text-2xl font-bold text-foreground">Patientenaufnahme &amp; Auswertung</h1>
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
 
@@ -5059,7 +5112,23 @@ export function TherapyRecommendation() {
             Erfassen Sie Befunde, Symptome und Diagnosen. Die Wissensdatenbank erzeugt daraus einen strukturierten internen Therapieentwurf mit getrennten Stoffgruppen, Firmenangabe, Dosierung, verständlichem Warum, Ernährung, Verlauf und Sicherheitsprüfung.
       </p>
 
-      <Card className="border-sky-300 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/20">
+      <PatientIntakeWorkflow pseudonymId={pseudonymId} caseReady={isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} saveStatus={autoSaveStatus}
+        hasSources={analysisSources.some(source => source.group !== "kontext")} hasReport={Boolean(docAnalysisHtml) && !therapyStartBlockedByBefund}
+        onNavigate={id => {
+          if (id === "patient-intake-facts") setClinicalInputTab("befund");
+          if (id === "patient-intake-analysis" && (docAnalysisHtml || docAnalysisProgress)) {
+            setIsDocAnalysisPanelMinimized(false);
+            requestAnimationFrame(() => docAnalysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+            return;
+          }
+          const target = document.getElementById(id);
+          if (target instanceof HTMLDetailsElement) target.open = true;
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (id === "patient-intake-case") document.getElementById("batch-pseudonym-id")?.focus({ preventScroll: true });
+        }} />
+      <details data-workflow-order={4} className="rounded-xl border bg-muted/20 p-4">
+        <summary className="cursor-pointer text-sm font-medium">Technischer Prüffall – optional</summary>
+      <Card className="mt-3 border-sky-300 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/20">
         <CardContent className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 font-semibold text-sky-950 dark:text-sky-100">
@@ -5085,12 +5154,13 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
-      {/* ⬇️ Datei-/Quellen-Auswahl ganz oben sichtbar */}
-      <Card className="border-primary/60 bg-primary/[0.06] shadow-md ring-2 ring-primary/30">
+      </details>
+      {/* Unterlagen folgen im sichtbaren und im Tastaturablauf auf die Fallauswahl. */}
+      <Card id="patient-intake-documents" data-workflow-order={2} className="scroll-mt-64 border-primary/30 bg-background shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2 flex-wrap">
             <ClipboardList className="h-4 w-4 text-primary" />
-            1. SAMMELEINGABE: mehrere Unterlagen eines Patientenfalls übernehmen
+            2. Unterlagen eines Patientenfalls übernehmen
             <Badge variant="secondary" className="text-xs">
               {analysisSourceTotals.selected}/{analysisSourceTotals.all} gewählt · {(analysisSourceTotals.chars / 1000).toFixed(1)}k Zeichen
             </Badge>
@@ -5115,19 +5185,19 @@ export function TherapyRecommendation() {
             )}
           </div>
           <div className="rounded-md border border-primary/40 bg-background p-3">
-            <label htmlFor="batch-pseudonym-id" className="text-sm font-semibold">0. Pseudonym-ID vor der Dateiauswahl festlegen</label>
-            <Input
-              id="batch-pseudonym-id"
-              value={pseudonymId}
-              onChange={(event) => handlePseudonymChange(event.target.value)}
-              placeholder="z. B. P-2099-0001"
-              className="mt-2 font-mono"
-            />
+            <p className="text-sm font-semibold">Zuordnung: <span className="font-mono">{pseudonymId || "noch kein Fall ausgewählt"}</span></p>
+            <Button type="button" variant="link" className="h-auto px-0 py-1" onClick={() => { document.getElementById("patient-intake-case")?.scrollIntoView({ behavior: "smooth" }); document.getElementById("batch-pseudonym-id")?.focus({ preventScroll: true }); }}>Fall oben auswählen oder ändern</Button>
             <p className={`mt-1 text-xs ${pseudonymFormatWarning ? "text-destructive" : "text-muted-foreground"}`}>
               {pseudonymFormatWarning || "Die vollständige Pseudonym-ID bindet alle ausgewählten PDFs unveränderlich an diesen einen Fall."}
             </p>
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <PatientBatchUploadZone
+              disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(file => file.status === "processing")}
+              disabledReason={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) ? "Zuerst oben einen Patientenfall auswählen oder eine Fall-ID anlegen. Danach wird die Dateiauswahl freigeschaltet." : "Bitte die laufende Verarbeitung abwarten."}
+              onSelectFiles={() => directBefundFileRef.current?.click()}
+              onFiles={addDirectBefundFiles}
+            />
             <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
               Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
             </p>
@@ -5165,9 +5235,11 @@ export function TherapyRecommendation() {
                       {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
                       {item.status === "ready" && <Badge variant="outline" className="text-[10px]">Vorschau</Badge>}
                       {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-                      {item.status === "error" && <span className="max-w-[280px] truncate text-destructive" title={item.error}>Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
+                      {item.status === "error" && <span className="text-destructive">Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
                       {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
                     </div>
+                    {item.status === "processing" && <p role="status" className="text-sm font-medium text-primary">{item.progress || "Datei wird lokal ausgelesen …"}</p>}
+                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
@@ -5444,11 +5516,11 @@ export function TherapyRecommendation() {
 
 
       {/* Pseudonym & DSGVO-Hinweis */}
-      <Card className="border-primary/30 bg-primary/5">
+      <Card id="patient-intake-case" data-workflow-order={1} className="scroll-mt-64 border-primary/30 bg-primary/5">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-primary" />
-            Pseudonym-ID
+            1. Patientenfall wählen oder anlegen
             <span className="text-xs font-normal text-muted-foreground">(zur Wiedererkennung des Patienten)</span>
           </CardTitle>
         </CardHeader>
@@ -5456,6 +5528,8 @@ export function TherapyRecommendation() {
           <div className="flex gap-2 items-end">
             <div className="flex-1">
               <Input
+                id="batch-pseudonym-id"
+                aria-label="Patientenfall / Pseudonym-ID"
                 value={pseudonymId}
                 onChange={(e) => handlePseudonymChange(e.target.value)}
                 placeholder="z. B. P-2026-0042 oder eigener Code"
@@ -5485,7 +5559,7 @@ export function TherapyRecommendation() {
               Daten neu laden
             </Button>
           </div>
-          {nextFreePseudonym && (
+          {nextFreePseudonym && !pseudonymId.trim() && (
             <div className="flex flex-wrap items-center gap-2 text-xs rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900/40 px-3 py-2">
               <Sparkles className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
               <span className="text-emerald-900 dark:text-emerald-200">Nächste freie Pseudonym-ID (kleinste Lücke):</span>
@@ -5615,6 +5689,7 @@ export function TherapyRecommendation() {
         </CardContent>
       </Card>
 
+      <div data-workflow-order={3} className="space-y-6">
       {/* Verlauf bei vorhandenem Pseudonym */}
       {isPatientScopedStorageReady(pseudonymId) && (
         <PseudonymHistory
@@ -5634,7 +5709,9 @@ export function TherapyRecommendation() {
         />
       )}
 
-      <Card>
+      <details id="patient-intake-therapy-options" className="scroll-mt-64 rounded-xl border bg-muted/20 p-4">
+        <summary className="cursor-pointer text-base font-semibold">5. Therapie vorbereiten – optionale Vorgaben und Hausapotheke</summary>
+      <Card className="mt-4">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             ⭐ Schwerpunkt-Ordner
@@ -5656,16 +5733,17 @@ export function TherapyRecommendation() {
         pinnedMittel={pinnedMittel}
         onPinnedMittelChange={setPinnedMittel}
       />
+      </details>
 
       {/* Input Form */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div id="patient-intake-facts" className="scroll-mt-64 grid gap-5 lg:grid-cols-2">
         {/* Left: Main inputs */}
         <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-accent/5">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ClipboardList className="h-4 w-4 text-primary" />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">
-                Patientenbefund
+                3. Erkannte Angaben und Patientenbefund
               </span>
                <Badge variant="outline" className="ml-auto text-[10px] font-mono">
                 {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, eigeneTherapieVorlage]
@@ -5674,7 +5752,7 @@ export function TherapyRecommendation() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-4">
-            <Tabs defaultValue="befund" className="w-full">
+            <Tabs value={clinicalInputTab} onValueChange={setClinicalInputTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1 bg-muted/60">
                 <TabsTrigger value="befund" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🩺 Befund</span>
@@ -5752,6 +5830,7 @@ export function TherapyRecommendation() {
                     rows={3}
                   />
                 </div>
+                <AnamnesisAdditionalFields values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
               </TabsContent>
 
               {/* ===== TAB: Anamnese ===== */}
@@ -6509,7 +6588,7 @@ export function TherapyRecommendation() {
         mannayanOrders={mannayanOrders}
       />
 
-      <Card className="border-blue-300/60 bg-blue-50/40 dark:bg-blue-950/10 dark:border-blue-900/40">
+      <Card id="patient-intake-analysis" className="scroll-mt-64 border-primary/30 bg-background shadow-sm">
         <CardContent className="pt-4 pb-4">
           <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/25 p-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -6557,7 +6636,7 @@ export function TherapyRecommendation() {
               >
                 <div className="font-semibold text-sm">⚡ Schnellprüfung</div>
                 <p className="text-xs text-muted-foreground mt-1">Nur für kleine, eindeutige Nachträge. Am schnellsten, kann aber passende Wiki-Einträge übersehen.</p>
-                <Badge variant="outline" className="mt-2">ca. 10 Sek.</Badge>
+                <Badge variant="outline" className="mt-2">Für kleine Nachträge</Badge>
               </button>
               <button
                 type="button"
@@ -6569,7 +6648,7 @@ export function TherapyRecommendation() {
               >
                 <div className="font-semibold text-sm">✅ Vollständige Auswertung</div>
                 <p className="text-xs text-muted-foreground mt-1">Prüft alle Wiki-Einträge. Richtige Wahl für neue Patienten und die meisten normalen Fälle.</p>
-                <Badge variant="outline" className="mt-2">ca. 30–60 Sek.</Badge>
+                <Badge variant="outline" className="mt-2">Dauer abhängig vom Quellenumfang</Badge>
               </button>
               <button
                 type="button"
@@ -6581,7 +6660,7 @@ export function TherapyRecommendation() {
               >
                 <div className="font-semibold text-sm">🧠 Tiefenprüfung: Pro für Abschluss + Therapie</div>
                 <p className="text-xs text-muted-foreground mt-1">Alle Befund-Teilpakete werden mit Flash extrahiert; Pro wird für die Befund-Zusammenführung und die Therapie verwendet.</p>
-                <Badge variant="outline" className="mt-2">ca. 60–120 Sek.</Badge>
+                <Badge variant="outline" className="mt-2">Zusätzliche Rechenzeit</Badge>
               </button>
             </div>
           </div>
@@ -6680,6 +6759,8 @@ export function TherapyRecommendation() {
 
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
         <div
+          ref={docAnalysisRef}
+          id="patient-intake-report"
           className={
             isDocAnalysisPanelFullscreen
               ? "fixed inset-2 z-[60] rounded-md border border-primary/50 bg-background shadow-2xl flex flex-col"
@@ -6687,7 +6768,7 @@ export function TherapyRecommendation() {
           }
         >
           <div className="flex items-center gap-2 border-b bg-primary/10 px-4 py-3 flex-wrap">
-            {isAnalyzingDocs ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <CheckCircle2 className="h-5 w-5 text-primary" />}
+            {isAnalyzingDocs ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : docAnalysisHtml ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <AlertTriangle className="h-5 w-5 text-amber-700" />}
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground">Hier ist die Anamneseauswertung</div>
               <div className="text-xs text-muted-foreground">
@@ -6695,7 +6776,7 @@ export function TherapyRecommendation() {
                   ? "Sie läuft gerade — das Protokoll aktualisiert sich live."
                   : isDocAnalysisPanelMinimized
                     ? 'Minimiert — auf „anzeigen" klicken, um das Ergebnis einzublenden.'
-                    : "Fertig — Vollbild · neuer Tab · oder minimieren."}
+                    : docAnalysisHtml ? "Auswertung geladen — Vollbild · neuer Tab · oder minimieren." : "Noch keine vollständige Auswertung vorhanden. Bitte den Arbeitsstand oder Fehler unten prüfen."}
               </div>
             </div>
              {docAnalysisHtml && (
@@ -6784,12 +6865,14 @@ export function TherapyRecommendation() {
 
 
       {(isAnalyzingDocs || docAnalysisProgress || docAnalysisHtml) && (
-        <Card ref={docAnalysisRef} className="border-primary/40 bg-primary/[0.03] shadow-sm scroll-mt-24">
+        <details className="rounded-xl border bg-muted/20 p-3">
+          <summary className="cursor-pointer text-sm font-medium">Verarbeitungsprotokoll und weitere Exportaktionen</summary>
+        <Card className="mt-3 border-primary/20 bg-background shadow-none">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-base flex items-center gap-2">
                 {isAnalyzingDocs ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <ClipboardList className="h-4 w-4 text-primary" />}
-                Anamneseauswertung {isAnalyzingDocs ? "läuft live" : "fertig"}
+                Anamneseauswertung {isAnalyzingDocs ? "läuft live" : docAnalysisHtml ? "geladen" : "noch offen"}
               </CardTitle>
               {docAnalysisHtml && (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -6828,16 +6911,17 @@ export function TherapyRecommendation() {
             {docAnalysisHtml && <p className="text-xs text-muted-foreground">Die Auswertung wird oben einmalig angezeigt.</p>}
           </CardContent>
         </Card>
-
+        </details>
       )}
 
-      <Card className="border-emerald-400/50 bg-gradient-to-r from-emerald-50/70 via-background to-primary/5 dark:from-emerald-950/20">
+      <Card id="patient-intake-therapy" className="scroll-mt-64 border-primary/30 bg-primary/5">
         <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Nächster Schritt: Therapie aus dem vollständigen Befund ableiten</div>
             <p className="text-xs text-muted-foreground mt-0.5">
               Erst alle Quellen prüfen und die Befund-Auswertung abschließen. Danach werden Symptome, Diagnosen, Medikamente und Sicherheitsangaben in die Therapieempfehlung einbezogen.
             </p>
+            <Button type="button" variant="link" className="h-auto px-0 py-1 text-xs" onClick={() => { const options = document.getElementById("patient-intake-therapy-options"); if (options instanceof HTMLDetailsElement) options.open = true; options?.scrollIntoView({ behavior: "smooth" }); }}>Optionale Therapie-Vorgaben und Hausapotheke anzeigen</Button>
           </div>
           <Button
             onClick={() => handleSubmit()}
@@ -6862,6 +6946,7 @@ export function TherapyRecommendation() {
       {(result || isStreaming) && (
         <div ref={resultRef} className="space-y-4">
           <PatientContextBar
+            sticky={false}
             alter={alter}
             geschlecht={geschlecht}
             bmi={bmiInfo?.bmi}
@@ -7194,6 +7279,8 @@ export function TherapyRecommendation() {
           )}
         </div>
       )}
+      </div>
+      </PatientWorkflowLayout>
     </fieldset>
     </>
   );

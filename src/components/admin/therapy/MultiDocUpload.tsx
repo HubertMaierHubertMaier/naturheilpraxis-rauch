@@ -15,6 +15,7 @@ import {
 import * as pdfjs from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
+  assertCompleteAnamnesisPageCapture,
   assessDocumentExtraction,
   assembleExtractedPdfPages,
   calculateOcrRenderScale,
@@ -292,6 +293,7 @@ export async function extractClinicalDocumentText(
     }
   }
 
+  if (mode === "anamnese") assertCompleteAnamnesisPageCapture(pages, totalPages, failedOcrPages);
   const decision = assessDocumentExtraction(pages, failedOcrPages);
   if (decision.status === "reject") {
     notify?.({

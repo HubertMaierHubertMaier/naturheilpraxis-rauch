@@ -85,7 +85,7 @@ describe("direct Befund handoff", () => {
 
   it("binds every batch file to one valid synthetic case and blocks foreign pseudonyms", () => {
     const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8");
-    const addFiles = source.match(/const addDirectBefundFiles = \(list: FileList \| null\) => \{([\s\S]*?)const processDirectBefundFiles/)?.[1] || "";
+    const addFiles = source.match(/const addDirectBefundFiles = \([^)]*\) => \{([\s\S]*?)const processDirectBefundFiles/)?.[1] || "";
     const handoff = source.match(/const handoffDirectBefundFiles = async \(\) => \{([\s\S]*?)const loadArchivedBefundDocument/)?.[1] || "";
 
     expect(source).toContain("sourcePseudonymId: string");
