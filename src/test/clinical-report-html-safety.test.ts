@@ -46,7 +46,9 @@ describe("clinical report HTML safety", () => {
   });
 
   it("sandboxes report previews and sanitizes every report opening path", () => {
-    expect(therapySource.match(/sandbox=""/g)).toHaveLength(2);
+    const previews = therapySource.match(/<iframe\b[\s\S]*?\/>/g) || [];
+    expect(previews.length).toBeGreaterThan(0);
+    expect(previews.every(preview => preview.includes('sandbox=""'))).toBe(true);
     expect(therapySource).toContain("openClinicalReportWindow(docAnalysisHtml");
     expect(therapySource).toContain("sanitizeClinicalReportFragment(hpCheckHtml)");
     expect(therapySource).not.toMatch(/docAnalysisHtml\.replace\([\s\S]{0,300}<script>/);

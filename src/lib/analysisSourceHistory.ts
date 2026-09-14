@@ -165,6 +165,7 @@ const firstNonEmptyParsedEntries = (legacy: boolean, ...values: unknown[]): Sour
 
 export const parseSourceHistoryReport = (row: ReportRow): SourceHistoryReport => {
   const meta = asRecord(row.befund_meta);
+  if (meta.analysis_validation_status === "blocked") return { createdAt: String(row.created_at || ""), entries: [], strict: false, legacy: true };
   const input = asRecord(row.eingabe_daten);
   const manifestEntries = firstNonEmptyParsedEntries(false, meta.source_manifest_v1, input.source_manifest_v1, input.sourceManifestV1);
   const hasManifest = manifestEntries.length > 0;

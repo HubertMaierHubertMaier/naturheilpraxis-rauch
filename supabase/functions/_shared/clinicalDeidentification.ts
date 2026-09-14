@@ -426,3 +426,69 @@ export const quarantineResidualDirectIdentifierLines = (value: unknown) => {
 };
 
 export const redactEvidenceQuote = deidentifyClinicalText;
+
+export const isBlockedClinicalReportHtml = (value: unknown) => Array.from(String(value ?? "").matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/giu))
+  .some(match => /^Datenschutz[-\s]+Sicherheitsstopp$/iu.test(match[1].replace(/<[^>]*>/g, "").trim()));
+
+/** Only the exact selected canonical pseudonym stays visible; free codes are neutralized. */
+export const deidentifyClinicalReportHtml = (value: unknown, expectedPseudonymId = ""): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (isBlockedClinicalReportHtml(raw)) throw new Error("Datenschutz-Sicherheitsstopp: Ein gesperrter Platzhalter ist keine vollständige Auswertung.");
+  const supplied = expectedPseudonymId.trim();
+  const standard = /^P-\d{4}-\d{4}$/iu.test(supplied);
+  const pid = standard ? supplied.toUpperCase() : supplied;
+  const placeholders = new Map<string, string>();
+  const replacementTokens = new Map<string, string>();
+  const originalUpper = raw.toUpperCase();
+  let nextPlaceholder = 0;
+  const protect = (replacement: string) => {
+    const existing = replacementTokens.get(replacement);
+    if (existing) return existing;
+    while (nextPlaceholder < 10000) {
+      const candidate = `P-9999-${String(nextPlaceholder++).padStart(4, "0")}`;
+      if (!originalUpper.includes(candidate)) {
+        placeholders.set(candidate, replacement);
+        replacementTokens.set(replacement, candidate);
+        return candidate;
+      }
+    }
+    throw new Error("Datenschutz-Sicherheitsstopp: Kein eindeutiger Prüfplatzhalter verfügbar.");
+  };
+  const boundary = `[\\p{L}\\p{N}_.-]`;
+  let protectedHtml = raw;
+  if (!standard && /^[A-Za-z0-9][A-Za-z0-9_.-]{5,99}$/.test(pid)) {
+    protectedHtml = protectedHtml.replace(new RegExp(`(?<!${boundary})${escapeRegExp(pid)}(?!${boundary})`, "gu"), REDACTED);
+  }
+  // Do not let the general text deidentifier restore foreign standard patient codes.
+  protectedHtml = protectedHtml.replace(/\bP-\d{4}-[A-Za-z0-9_.-]+\b/giu, match => standard && match.toUpperCase() === pid ? match : REDACTED);
+  // Already redacted values stay redacted and must not make HTML labels consume adjacent cells.
+  protectedHtml = protectedHtml.replace(/\[(?:personenbezogene Angabe|Name) entfernt\]/giu, marker => protect(marker));
+  if (standard) protectedHtml = protectedHtml.replace(new RegExp(`(?<!${boundary})${escapeRegExp(pid)}(?!${boundary})`, "giu"), () => protect(pid));
+  const deidentified = deidentifyClinicalText(protectedHtml);
+  const residual = directIdentifierCategories(deidentified);
+  if (residual.length) throw new Error(`Datenschutz-Sicherheitsstopp: ${residual.join(", ")} konnte nicht zuverlässig entfernt werden. Kein vollständiger Bericht gespeichert.`);
+  const restored = Array.from(placeholders).reduce((html, [placeholder, replacement]) => html.split(placeholder).join(replacement), deidentified);
+  const inspection = restored.replace(/<(?:style|script)\b[^>]*>[\s\S]*?<\/(?:style|script)>/giu, "")
+    .replace(/[·|;]\s*(?=<(?:strong|b|span)\b[^>]*>\s*(?:Datum|Patient|Name|Alter|Geschlecht|Umfang|Quelle)\s*:)/giu, "\n")
+    .replace(/<\/?(?:p|div|td|th|dd|dt|tr|li|h[1-6])\b[^>]*>/giu, "\n")
+    .replace(/<[^>]*>/g, "").replace(/&nbsp;|&#160;/giu, " ")
+    .replace(new RegExp(String.raw`(^|\n)\s*(${ocrNameLabel})\s*:?[^\S\r\n]*\n+\s*`, "giu"), "$1$2: ");
+  for (const line of inspection.split("\n")) {
+    const field = new RegExp(String.raw`\b(${ocrNameLabel})\b\s*(?::\s*|[^\S\r\n]+)(.+)`, "iu").exec(line);
+    if (!field) continue;
+    const value = field[2].trim();
+    const marked = /^\[(?:personenbezogene Angabe|Name) entfernt\]/iu.test(value);
+    const expected = standard && new RegExp(`^${escapeRegExp(pid)}(?!${boundary})`, "iu").test(value);
+    if (!marked && !expected) {
+      if (new RegExp(`^${escapeRegExp(field[1])}\\s*:`, "iu").test(field[0]) && directIdentifierCategories(`${field[1]}: ${value}`).length) {
+        throw new Error("Datenschutz-Sicherheitsstopp: Ein sichtbares Identifikatorfeld enthält ungeklärte Angaben.");
+      }
+      continue;
+    }
+    const remainder = (expected ? value.replace(new RegExp(`^${escapeRegExp(pid)}`, "iu"), REDACTED) : value)
+      .replace(/\bAlter\s+\d{1,3}(?:\s+Jahre)?\b|\b(?:männlich|maennlich|weiblich|divers)\b/giu, "");
+    if (directIdentifierCategories(`${field[1]}: ${remainder}`).length) throw new Error("Datenschutz-Sicherheitsstopp: Restangaben hinter einer Kennung oder Schwärzung müssen geprüft werden.");
+  }
+  return restored;
+};

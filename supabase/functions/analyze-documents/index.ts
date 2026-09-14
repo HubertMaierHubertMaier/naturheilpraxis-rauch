@@ -12,7 +12,7 @@ import {
   normalizeLabParameter,
   normalizeLabUnit,
 } from "../_shared/labTrendAnalysis.ts";
-import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
+import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 180;
@@ -814,7 +814,7 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
 }
 
 
-async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string): Promise<ReadableStream<Uint8Array>> {
+async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string, expectedPseudonymId = ""): Promise<ReadableStream<Uint8Array>> {
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -870,12 +870,11 @@ async function streamGatewayHtml(apiKey: string, model: string, prompt: string, 
           if (!/^<!DOCTYPE/i.test(finalHtml) && !/^<html/i.test(finalHtml)) {
             finalHtml = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Befund-Auswertung</title></head><body>${finalHtml}</body></html>`;
           }
-          let safeFinalHtml = deidentifyClinicalText(finalHtml);
-          if (directIdentifierCategories(safeFinalHtml).length) {
-            const safeFallback = deidentifyClinicalText(deterministicFallbackHtml || "");
-            safeFinalHtml = safeFallback && !directIdentifierCategories(safeFallback).length
-              ? safeFallback
-              : "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"utf-8\"><title>Datenschutz-Sicherheitsstopp</title></head><body><h1>Datenschutz-Sicherheitsstopp</h1><p>Die Ausgabe wurde nicht übernommen, weil direkte Identifikatoren nicht zuverlässig entfernt werden konnten.</p></body></html>";
+          let safeFinalHtml: string;
+          try { safeFinalHtml = deidentifyClinicalReportHtml(finalHtml, expectedPseudonymId); }
+          catch (privacyError) {
+            if (!deterministicFallbackHtml) throw privacyError;
+            safeFinalHtml = deidentifyClinicalReportHtml(deterministicFallbackHtml, expectedPseudonymId);
           }
           controller.enqueue(encoder.encode(safeFinalHtml));
           controller.close();
@@ -925,7 +924,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         if (countPartialExtractionItems(partials) === 0) throw new Error("Die KI hat keine verwertbaren Befunddaten extrahiert; es wird kein leerer Bericht erzeugt.");
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
-        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length));
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length), String(b.pseudonymId || ""));
         const reader = htmlStream.getReader();
         while (true) {
           const { value, done } = await reader.read();
@@ -1110,6 +1109,7 @@ serve(async (req) => {
         model,
         buildFinalPrompt(partials, body, totalChars, partials.length),
         buildDeterministicFinalHtml(partials, body, totalChars, partials.length),
+        String(body.pseudonymId || ""),
       );
       return new Response(htmlStream, {
         headers: {
@@ -1143,7 +1143,7 @@ serve(async (req) => {
       ? progressStream(chunks, body, LOVABLE_API_KEY, model, totalChars)
         : await streamGatewayHtml(LOVABLE_API_KEY, model, buildFinalPrompt([
           JSON.stringify({ rawDocument: blocks.map((block) => `### ${block.label}\n${block.text}`).join("\n\n") }),
-        ], body, totalChars, 1));
+        ], body, totalChars, 1), undefined, String(body.pseudonymId || ""));
 
     return new Response(stream, {
       headers: {
