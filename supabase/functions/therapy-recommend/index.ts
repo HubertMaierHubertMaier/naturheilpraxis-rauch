@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
 import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
+import { formatCurrentNaturalIntake } from "../_shared/currentIntakeContext.ts";
 import {
   INFOTHEK_KNOWLEDGE_FILES,
   buildInfothekKnowledgeContext,
@@ -860,6 +861,8 @@ serve(async (req) => {
       ? manualDiagnosen.map((entry: any) => [entry?.icd10, entry?.diagnose, entry?.begruendung]
           .map((value) => String(value || "").trim()).filter(Boolean).join(" | ")).filter(Boolean).join("\n")
       : "";
+    const currentNaturalIntakeText = formatCurrentNaturalIntake(requestBody);
+    const additionalAnamnesisText = typeof requestBody.anamneseZusatzText === "string" ? requestBody.anamneseZusatzText.trim() : "";
     const metatronHeelText: string = typeof metatronHeel === "string" ? metatronHeel.trim() : "";
     const anamneseText: string = typeof anamnese === "string" ? anamnese.trim() : "";
     const sonstigeUntersuchungenText: string = typeof sonstigeUntersuchungen === "string" ? sonstigeUntersuchungen.trim() : "";
@@ -952,7 +955,7 @@ serve(async (req) => {
       ? bevorzugteLinie.filter((l: unknown) => typeof l === "string" && (l as string).trim().length > 0)
       : [];
 
-    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, anamneseText, laborErhoeht, laborErniedrigt, befundAuswertungText, stuhlbefund, laborKomplett, arztbericht, metatronHeelText, vievaPlusText, sonstigeUntersuchungenText, bisherigeMittel, perplexityAnalyseText, eigeneTherapieText, mannayanOrdersText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
+    const queryText = [belastungen, symptome, erkrankung, manualDiagnosesText, anamneseText, additionalAnamnesisText, laborErhoeht, laborErniedrigt, befundAuswertungText, stuhlbefund, laborKomplett, arztbericht, metatronHeelText, vievaPlusText, sonstigeUntersuchungenText, currentNaturalIntakeText, bisherigeMittel, perplexityAnalyseText, eigeneTherapieText, mannayanOrdersText, isNachschlag ? nachschlag : "", preferredLines.join(" "), pinnedTitles.join(" "), selectedCats.join(" ")]
       .filter(Boolean)
       .join(" ");
     const activeSymptomTargets = getActiveSymptomTargets(queryText);
@@ -1217,6 +1220,7 @@ serve(async (req) => {
     if (gewichtKg) patientInfo.push(`Körpergewicht: ${gewichtKg} kg`);
     if (typeof bmi === "number") patientInfo.push(`BMI: ${bmi}${bmiKategorie ? ` (${bmiKategorie})` : ""}`);
     if (schwanger) patientInfo.push(`Schwangerschaft/Stillzeit: ${schwanger}`);
+    if (currentNaturalIntakeText) patientInfo.push(`AKTUELLE EINNAHME — keine Therapie-Vorschläge:\n${currentNaturalIntakeText}\nBei Wirkungen, Nebenwirkungen, Doppeldosierungen und Kombinationen mit allen anderen aktuellen Präparaten berücksichtigen. Fehlende Wirkstoffe, Dosen oder Belegquellen ausdrücklich als ungeklärt markieren; keine Unbedenklichkeit aus fehlenden Daten ableiten.`);
     if (medikamente) patientInfo.push(`Aktuelle Medikamente: ${medikamente}`);
     if (bisherigeMittel) patientInfo.push(`Bisherige Naturheilmittel: ${bisherigeMittel}`);
     if (budget) patientInfo.push(`Maximales Budget: ${budget} Euro`);
@@ -1225,6 +1229,7 @@ serve(async (req) => {
     if (laborKomplett) patientInfo.push(`Komplettes klassisches Labor${laborDatum ? ` (Befunddatum: ${laborDatum})` : ""}: ${laborKomplett}`);
     if (stuhlbefund) patientInfo.push(`Stuhlbefund/Mikrobiom: ${stuhlbefund}`);
     if (anamneseText) patientInfo.push(`Anamnese/Anamnesebogen${anamneseDatum ? ` (erstellt am: ${anamneseDatum})` : ""}: ${anamneseText}`);
+    if (additionalAnamnesisText) patientInfo.push(`ZUSÄTZLICHE ANAMNESEFELDER — Quellen, Negationen und Unsicherheiten erhalten. Diagnosevorschläge sind keine gesicherten Diagnosen; frühere oder ungeklärte Präparate sind keine bestätigte aktuelle Einnahme:\n${additionalAnamnesisText}`);
     if (arztbericht) patientInfo.push(`Arztbericht/Arztbrief${arztberichtDatum ? ` (Berichtsdatum: ${arztberichtDatum})` : ""} (schulmedizinische Diagnostik & Therapie): ${arztbericht}`);
     if (metatronHeelText) patientInfo.push(`Metatron-Hospital-/NLS-Analyse${metatronDatum ? ` (erstellt am: ${metatronDatum})` : ""} (Resonanzhinweise getrennt von gesicherten Befunden bewerten): ${metatronHeelText}`);
     if (sonstigeUntersuchungenText) patientInfo.push(`Sonstige / unsortierte Voruntersuchungen (gemischte Befunde – Bildgebung/Funktionstests/EAV/NLS/Selbstmessungen/Fremdberichte, ${sonstigeUntersuchungenText.length} Zeichen): ${sonstigeUntersuchungenText}`);
@@ -1273,7 +1278,7 @@ REGELN:
 5. Dasselbe Produkt nur einmal in seiner fachlich passenden Stoffgruppe ausgeben.`
       : "";
 
-    const medicationGroups = recognizeMedicationGroups(medikamente).map((group) => group.label);
+    const medicationGroups = recognizeMedicationGroups([medikamente, currentNaturalIntakeText].filter(Boolean).join("\n")).map((group) => group.label);
     const systemPrompt = `Du erstellst eine INTERNE naturheilkundliche KANDIDATENLISTE zur fachlichen Prüfung durch den behandelnden Heilpraktiker. Du triffst keine endgültige Therapieentscheidung und gibst nichts direkt an Patienten aus.
 
 🛡️ SICHERHEIT UND ESKALATION:

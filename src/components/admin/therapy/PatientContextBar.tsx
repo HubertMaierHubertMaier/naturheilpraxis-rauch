@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { User, Pill, Heart, Wallet, FlaskConical, Baby, FlaskRound, Scale } from "lucide-react";
 
 interface Props {
+  sticky?: boolean;
   alter?: string;
   geschlecht?: string;
   bmi?: number;
@@ -15,7 +16,7 @@ interface Props {
   stuhlbefund?: string;
 }
 
-export function PatientContextBar({ alter, geschlecht, bmi, bmiKategorie, bmiTone, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
+export function PatientContextBar({ sticky = true, alter, geschlecht, bmi, bmiKategorie, bmiTone, schwanger, medikamente, budget, laborErhoeht, laborErniedrigt, stuhlbefund }: Props) {
   const items: Array<{ icon: React.ReactNode; label: string; value: string; tone?: "warn" | "danger" | "ok" }> = [];
 
   if (alter) {
@@ -75,7 +76,7 @@ export function PatientContextBar({ alter, geschlecht, bmi, bmiKategorie, bmiTon
   };
 
   return (
-    <div className="sticky top-28 z-20 -mx-1 px-1 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-y border-border">
+    <div className={`${sticky ? "sticky top-28 z-20" : "relative"} -mx-1 px-1 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-y border-border`}>
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium mr-1">Patient</span>
         {items.map((it, i) => (

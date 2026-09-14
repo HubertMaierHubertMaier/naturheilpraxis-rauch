@@ -13,6 +13,7 @@ import {
   normalizeLabUnit,
 } from "../_shared/labTrendAnalysis.ts";
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
+import { assertCompletePartialCollections, attachClinicalSourceEvidence, hasCompletePartialCollections, combineClinicalPartials, deduplicateClinicalFacts, clinicalEvidenceText } from "../_shared/clinicalSourceEvidence.ts";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 180;
@@ -210,6 +211,9 @@ Wichtig:
 - ALLE tatsächlich dokumentierten Medikamente, Präparate, Supplemente, Infusionen, Injektionen, OPs, Bestrahlungen, Physio-/Manual-Therapien, Heilpraktiker-Mittel in "medicationsTherapies" listen — inkl. Wirkstoff/Handelsname, Dosis falls genannt, verschreibender Arzt/Therapeut, Datum, Indikation, Status. Für JEDES Medikament zusätzlich: Wirkmechanismus (kurz, laienverständlich), häufigste Nebenwirkungen, Grund der Verordnung. Leere Medikamenten-Tabellenzeilen aus Anamnesebögen NICHT übernehmen.
 - Für jedes Mittel ist "kategorie" PFLICHT: exakt "konventionell", "homoeopathie", "pflanzenheilkunde", "vitamine", "mineralstoffe", "spurenelemente" oder "unklar". Nur bei eindeutig dokumentierter Zuordnung eine Naturheil-Kategorie nutzen; nicht raten. Vitamin D gehört bei dokumentierter Einnahme zu "vitamine". Eintrag "keine Medikamente" ist kein Mittel und bleibt als belegte Negativangabe nur in anamnese.presentMedication.
 - Extrahiere nur, was im Text steht (Anamnese-Inhalte). Pharmakologisches Wissen (Wirkmechanismus/Nebenwirkungen) darfst du aus allgemeinem medizinischem Wissen ergänzen, klar als "Pharmakologie" markiert.
+- Einnahmeangaben getrennt erfassen: wirkstoff, dosis, haeufigkeit, einnahme (z.B. morgens/abends/bei Bedarf), dauer. Nur tatsächlich dokumentierte Angaben; unbekannte Wirkstoffe, unleserliche Dosen und fehlende Dauer nicht ergänzen.
+- Quelle der Einnahme ist NICHT automatisch Quelle einer pharmakologischen Erklärung. Wirkung und Nebenwirkungen aus allgemeinem Wissen als "allgemeine Einordnung – nicht anhand einer Fachquelle verifiziert" kennzeichnen. Keine Fachinformation, Studie, URL oder Textstelle erfinden. Kombinationen bei unbekannten Wirkstoffen niemals als unbedenklich bestätigen.
+- Jeder klinische Eintrag erhält polarity: "affirmed", "negated", "uncertain" oder "not-stated". Verneinte und unsichere tatsächliche Antworten erhalten, nicht als bejahte Symptome umdeuten. Unbeantwortete gedruckte Formularoptionen bleiben unbeantwortet und werden nicht als negative Patientenangabe erfunden.
 - 🇩🇪 PFLICHT-DEUTSCH: ALLE extrahierten Textinhalte (Befund-Texte, Diagnose-Bezeichnungen, Parameter-Namen, Status, Untersuchungs-Bezeichnungen, Hauptbefunde, Wirkmechanismen, Indikationen, Nebenwirkungen, terms.plain) MÜSSEN auf Deutsch sein. Englische/französische/lateinische Originalbegriffe nur in Klammern beibehalten, z.B. "Leukozyten (WBC)", "Cholesterin gesamt (Total Cholesterol)", "Reizdarmsyndrom (IBS)", "Schilddrüsen-stimulierendes Hormon (TSH)", "Gelenkschmerzen (joint pain)". Niemals nur den englischen Originaltext stehen lassen — IMMER deutsch primär. Einheiten (mg/dl, mmol/l, ng/ml …) und Eigennamen (Markennamen, Personennamen) bleiben unverändert.
 - Anonymisierung respektieren. Heilpraktiker oder Arzt gleichrangig nennen.
 
@@ -246,6 +250,7 @@ Wichtig:
 - Zu JEDEM Eintrag in documents, anamnese.*, diagnoses, medicationsTherapies, findings, redFlags, systemsPatterns ein Objekt "beleg":
   * quelle = das Dokumentblock-Label (s.u.),
   * teil = "${index}/${total}",
+  * seite = tatsächliche Seitennummer aus der nächstgelegenen Markierung "--- Seite N ---"; bei nicht vorhandener Seitenangabe leer lassen, keine Nummer raten,
   * zitat = WÖRTLICHES Kurzzitat (max. 220 Zeichen) aus dem Originaltext — KEINE Umformulierung. Wählt das prägnanteste Zitat.
 - 🚫 HALLUZINATIONSVERBOT: Was nicht im Text steht, NICHT erfinden, NICHT aus anderen Befunden schließen, KEINE Untersuchungen oder Symptome ergänzen, die nicht explizit dokumentiert sind. Lieber [] lassen. Vor dem Antworten selbst prüfen: "Steht das wörtlich/sinngemäß im Text? Wenn nein → entfernen."
 - DATENSCHUTZ AUCH IM BELEGZITAT: Patientennamen, Initialen, Anschriften, Geburtsdaten, Telefon, E-Mail, Versicherungsnummern sowie Bar-/QR-Codes niemals in "zitat" übernehmen. Solche Stellen im Zitat durch "[personenbezogene Angabe entfernt]" ersetzen; medizinischen Inhalt, Messwert und Datum erhalten.
@@ -268,7 +273,7 @@ Gib ausschließlich kompaktes JSON zurück (jeder Listeneintrag ist ein Objekt m
     "additionalInvestigations": [{"text":"","beleg":{"quelle":"","teil":"","zitat":""}}]
   },
   "diagnoses": [{"icd10":"","diagnose":"","quelle":"","datum":"","status":"gesichert|anamnestisch dokumentiert|Verdacht|Z.n.|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
-  "medicationsTherapies": [{"name":"","kategorie":"konventionell|homoeopathie|pflanzenheilkunde|vitamine|mineralstoffe|spurenelemente|unklar","dosis":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","beleg":{"quelle":"","teil":"","zitat":""}}],
+  "medicationsTherapies": [{"name":"","kategorie":"konventionell|homoeopathie|pflanzenheilkunde|vitamine|mineralstoffe|spurenelemente|unklar","wirkstoff":"","dosis":"","haeufigkeit":"","einnahme":"","dauer":"","vonWem":"","datum":"","indikation":"","wirkmechanismus":"","nebenwirkungen":"","grundVerordnung":"","status":"laufend|abgesetzt|unklar","polarity":"affirmed|negated|uncertain|not-stated","beleg":{"quelle":"","teil":"","seite":"","zitat":""}}],
   "labValues": [{"datum":"","parameter":"","wert":"","einheit":"","referenz":"","bewertung":"normal|↑|↓|kritisch|unklar","bedeutung":"allgemeine patientenverständliche Bedeutung, keine Diagnose","moeglicheSymptome":"allgemein mögliche Beschwerden; kann symptomlos sein; keine Behauptung über den Patienten","quelle":"","beleg":{"quelle":"","teil":"","zitat":""}}],
   "findings": [{"text":"","datum":"","beleg":{"quelle":"","teil":"","zitat":""}}],
 
@@ -292,6 +297,8 @@ ${block.text}
 
 
 function buildFinalPrompt(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number): string {
+  // Keep the original stored partials, but present overlap facts only once with all citations.
+  const consolidatedPartials = JSON.stringify(combineClinicalPartials(partials.map(parseLlmJson)));
   const duplicateNotes = Array.isArray(b.duplicateNotes) ? b.duplicateNotes.filter((x) => typeof x === "string" && x.trim()) : [];
   const prevCompareRaw = typeof b.previousResultForCompare === "string" ? b.previousResultForCompare.trim() : "";
   const prevCompare = prevCompareRaw ? prevCompareRaw.slice(0, 18000) : "";
@@ -324,6 +331,8 @@ VERBINDLICHE OUTPUT-STRUKTUR:
 🔎 BELEG-PFLICHT IM HTML:
 - Jeder Eintrag in Sektion 3, 4, 5, 6, 7, 11 bekommt eine zusätzliche Spalte/Zeile "Beleg" mit Quelle + Teilpaket + wörtlichem Kurzzitat (aus den Teilanalysen übernehmen, NICHT umformulieren). Format z. B.: <span class="beleg">📄 Arztbericht 12.03.2025, Teil 4/12: „…wörtliches Zitat…"</span>.
 - Wenn ein Eintrag in mehreren Teilpaketen vorkommt: mehrere Belege auflisten.
+- Vorhandene Seitennummern und pruefstatus aus den Belegen mit anzeigen. "quellenzitat_nicht_bestaetigt" bedeutet: Das Zitat wurde im übergebenen Quelltext nicht bestätigt; ausdrücklich als "Quellenprüfung offen" anzeigen, nicht als gesicherten Beleg ausgeben. Eine bestätigte wörtliche Fundstelle beweist allein noch nicht die fachliche Richtigkeit einer Interpretation.
+- Dokumentierte Erkrankungen, Diagnosehypothesen, verneinte Angaben sowie aktuelle, abgesetzte und unklare Einnahmen getrennt halten. Häufigkeit, Dauer und Einnahmezeit vollständig aus den Teilanalysen übernehmen.
 - Folgende identische Textabschnitte wurden vorab als Duplikate erkannt und nur einmal analysiert. Im HTML in Sektion 2 kurz transparent dokumentieren, aber NICHT als fehlende Daten werten:
 ${duplicateNotes.length ? duplicateNotes.map((note) => `  * ${note}`).join("\n") : "  * Keine vorab erkannten identischen Duplikate."}
 
@@ -365,7 +374,9 @@ Pflicht-Sektionen in Reihenfolge:
 ZUSATZPFLICHT FÜR SEKTION 13: Die Tabelle muss nach "Richtung" drei getrennte Spalten enthalten: "Bedeutung für den Patienten", "Allgemein mögliche Beschwerden" und "Fachliche Einordnung". "Allgemein mögliche Beschwerden" muss ausdrücklich sagen, dass die Abweichung symptomlos sein kann und darf nie unbelegte Beschwerden als beim Patienten vorhanden darstellen.
 
 TEILANALYSEN (JSON/Notizen):
-${partials.map((p, i) => `\n--- TEILANALYSE ${i + 1} ---\n${p}`).join("\n")}`;
+--- ZUSAMMENGEFÜHRTE TEILANALYSEN ---
+Identische Überlappungs-Einträge erscheinen einmal; ihre ursprünglichen Quellen und Teilpaket-Belege bleiben in beleg/belege erhalten. Mehrere Belege derselben Einnahme sind keine zusätzliche Einnahme.
+${consolidatedPartials}`;
 }
 
 function extractJsonish(text: string) {
@@ -505,11 +516,10 @@ function mergeRecoveredSensitiveLabs(existing: unknown[], recovered: Record<stri
 function normalizePartialAnalysisJson(raw: string, block?: DocBlock, part = "") {
   const parsed = parseLlmJson(raw);
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
-  const source = candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate)) as Record<string, any> | undefined;
+  const source = (candidates.find(hasCompletePartialCollections) || candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate))) as Record<string, any> | undefined;
   if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
-  // Hinweis: leere Teilanalysen sind erlaubt (z.B. Deckblatt/Whitespace-Chunk).
-  // Wir normalisieren zu einem leeren Objekt statt einen Fehler zu werfen,
-  // damit ein einzelnes „inhaltloses" Teilpaket nicht die gesamte Analyse killt.
+  // Explicit empty arrays are valid; an omitted category is not a verified empty category.
+  assertCompletePartialCollections(source);
   const normalized: Record<string, any> = {};
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   if (block) {
@@ -520,7 +530,8 @@ function normalizePartialAnalysisJson(raw: string, block?: DocBlock, part = "") 
   }
   const sourceAnamnese = source.anamnese && typeof source.anamnese === "object" ? source.anamnese : {};
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
-  const serialized = JSON.stringify(deidentifyClinicalData(normalized));
+  const withEvidence = block ? attachClinicalSourceEvidence(normalized, block.text, block.label, part) : normalized;
+  const serialized = JSON.stringify(deidentifyClinicalData(withEvidence));
   const residualIdentifiers = directIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
   return serialized;
@@ -600,6 +611,9 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     }
   }
 
+  for (const key of Object.keys(aggregate)) aggregate[key] = deduplicateClinicalFacts(aggregate[key]);
+  for (const key of anamneseKeys) anamnese[key] = deduplicateClinicalFacts(anamnese[key]);
+
   const labHighlights = buildClinicallyRelevantLabHighlights(
     aggregate.labValues as Record<string, unknown>[],
     {
@@ -614,7 +628,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 
   const beleg = (item: any) => {
     const b = item?.beleg || {};
-    const parts = [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.zitat ? `„${b.zitat}“` : ""].filter(Boolean).join(" · ");
+    const parts = clinicalEvidenceText(item);
     return parts ? `<span class="beleg">📄 ${escapeHtml(parts)}</span>` : `<span class="beleg">Kein Einzelbeleg in der Teilanalyse ausgewiesen.</span>`;
   };
   const dateOf = (item: any) => String(

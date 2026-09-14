@@ -3,6 +3,7 @@ import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
 import { prepareClinicalReportHtml } from "@/lib/clinicalReportHtml";
 import { buildAnalysisProfile, parseStartedAnalysisProfile } from "@/lib/analysisProfile";
+import { buildAnamnesisIntake } from "@/lib/anamnesisIntakeFields";
 
 const source = readFileSync("src/components/admin/TherapyRecommendation.tsx", "utf8").replace(/\r\n/g, "\n");
 const start = source.indexOf("  const handleRebuildCurrentAnamnesisView =");
@@ -23,7 +24,7 @@ function setup(html: string, queryResult: Promise<unknown> = Promise.resolve({ d
     assertStrictPartialAnalysis: vi.fn(), parseLlmJson: JSON.parse, alter: "", geschlecht: "", mannayanOrders: [],
     buildClientFallbackAnalysisHtml: () => html, sanitizeFinalAnalysisHtml: prepareClinicalReportHtml, parseStartedAnalysisProfile,
     setDocAnalysisHtml: vi.fn(), setBefundRunProfile: vi.fn(), setDisplayedBefundSourceStand: vi.fn(), setIsDocAnalysisPanelMinimized: vi.fn(),
-    setLatestBefundLoadedFrom: vi.fn(), writeLatestBefundDisplay: vi.fn(), applyExtractedToInputs: vi.fn(), setHistoryRefresh: vi.fn(),
+    setLatestBefundLoadedFrom: vi.fn(), writeLatestBefundDisplay: vi.fn(), applyExtractedToInputs: vi.fn(), applyAndPersistExtractedInputs: vi.fn(async () => {}), buildAnamnesisIntake, setHistoryRefresh: vi.fn(),
     window: { setTimeout: vi.fn() }, docAnalysisRef: { current: null },
   };
   const rebuild = new Function(...Object.keys(env), `${js}; return handleRebuildCurrentAnamnesisView;`)(...Object.values(env));
@@ -48,5 +49,6 @@ describe("checkpoint rebuild respects privacy, ownership and analysis profile", 
     const test = setup(`<h2>Strukturierte Anamnese</h2><p>Patient: ${pid}</p>`); await test.rebuild();
     expect(test.insert).toHaveBeenCalledWith(expect.objectContaining({ befund_meta: expect.objectContaining({ analysis_profile: profile, strict_complete: true }) }));
     expect(test.env.setBefundRunProfile).toHaveBeenCalledWith(profile);
+    expect(test.env.applyAndPersistExtractedInputs).toHaveBeenCalledWith(expect.objectContaining({ forPseudonymId: pid }));
   });
 });
