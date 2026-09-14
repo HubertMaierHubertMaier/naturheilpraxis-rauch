@@ -78,10 +78,12 @@ Deno.serve(async (req) => {
       return json({ error: "Unbekanntes Dokument." }, 400);
     }
 
+    // Aktuelles Patientenpaket (49 Seiten, Original vom 14.09.2026):
+    // Anamnese + IAA 1-44, Patientenvertrag 45-46, Datenschutz 47-48, Paketbestätigung 49.
     const { data: signed, error: signedError } = await adminClient.storage
       .from("anamnesis-pdfs")
-      .createSignedUrl("blanko/anamnesebogen-blanko.pdf", 300, {
-        download: "anamnesebogen-blanko.pdf",
+      .createSignedUrl("blanko/patientenpaket-20260914-6aadf64c4a55.pdf", 300, {
+        download: "patientenpaket-anamnese-iaa-vertrag-datenschutz.pdf",
       });
 
     if (signedError || !signed?.signedUrl) {
