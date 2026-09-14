@@ -428,12 +428,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
 
   const addFiles = (list: FileList | null) => {
     if (!list?.length) return;
+    const selectedFiles = Array.from(list);
     setPendingReview(undefined);
     setPrivacyConfirmed(false);
     setPrivacyFindingsRevealed(false);
     setFiles((previous) => [
       ...previous,
-      ...Array.from(list).map((file) => ({ file, status: "queued" as const })),
+      ...selectedFiles.map((file) => ({ file, status: "queued" as const })),
     ]);
     if (inputRef.current) inputRef.current.value = "";
   };
