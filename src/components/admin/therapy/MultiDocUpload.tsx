@@ -164,7 +164,7 @@ export async function extractClinicalDocumentText(
     const safeBody = quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(deidentifyClinicalText(raw)));
     if (!safeBody.trim() || directIdentifierCategories(safeBody).length) throw new Error("Datenschutzprüfung der Office-Datei erforderlich; noch keine Übernahme.");
     const documentId = await createNeutralDocumentId(safeBody, identitySalt);
-    const text = `=== 📄 Dokument-${documentId} (${office.format === "docx" ? "Word; Absatzangaben" : "Excel; Blatt- und Zellangaben"}) ===\n${safeBody}`;
+    const text = `=== KLINISCHES DOKUMENT ${documentId} ===\nDokumentformat: ${office.format === "docx" ? "Word; Absatzangaben" : "Excel; Blatt- und Zellangaben"}\n${safeBody}`;
     return { text, chars: text.length, pages: 0, ocrPages: 0, ocrFailedPages: [], ocrPageConfidences: [], removedIdentifierCategories, localPrivacyFindings };
   }
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
@@ -392,7 +392,7 @@ export const extractTherapyTemplateDocument: typeof extractClinicalDocumentText 
   if (!safeBody.trim()) throw new Error("Nach der Datenschutzbereinigung bleibt kein auswertbarer Text. Das Original wurde nicht verändert.");
   const documentId = await createNeutralDocumentId(safeBody, identitySalt);
   throwIfAborted(session?.signal);
-  const text = `=== 📄 Dokument-${documentId} ===\n${safeBody}`;
+  const text = `=== KLINISCHES DOKUMENT ${documentId} ===\n${safeBody}`;
   if (directIdentifierCategories(text).length) throw new Error("Die Datenschutzbereinigung konnte nicht vollständig bestätigt werden.");
   return { text, chars: text.length, removedIdentifierCategories, localPrivacyFindings };
 };
