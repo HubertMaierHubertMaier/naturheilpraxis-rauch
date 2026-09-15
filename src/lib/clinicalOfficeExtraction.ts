@@ -51,7 +51,7 @@ export async function extractClinicalOfficeText(file: Blob & { name: string }): 
       visited.add(id); const style = styleMap.get(id); if (!style) return;
       if (enabled(style, "vanish") || enabled(style, "webHidden") || enabled(style, "specVanish")
         || elements(style, "highlight").some(e => attr(e, "val") === "black")
-        || elements(style, "shd").some(e => attr(e, "fill").toUpperCase() === "000000")
+        || elements(style, "shd").some(e => attr(e, "fill").toUpperCase() === "000000" || !!attr(e, "themeFill") || (attr(e, "val") && !["clear", "nil"].includes(attr(e, "val"))))
         || elements(style, "color").some(e => attr(e, "val").toUpperCase() === "FFFFFF" || !!attr(e, "themeColor"))) {
         throw new Error("Eine Word-Formatvorlage kann Inhalte verdecken. Bitte die sichtbare Originalfassung prüfen; verdeckte Angaben werden nicht wiederhergestellt.");
       }
@@ -103,7 +103,9 @@ export async function extractClinicalOfficeText(file: Blob & { name: string }): 
             if (parent.localName === "del") hidden = true;
             const propertyName = ({ r: "rPr", p: "pPr", tc: "tcPr", tbl: "tblPr" } as Record<string, string>)[parent.localName];
             const properties = Array.from(parent.children).find(e => e.localName === propertyName);
-            const fill = properties ? attr(elements(properties, "shd")[0], "fill").toUpperCase() : "";
+            const shading = properties ? elements(properties, "shd")[0] : undefined;
+            if (attr(shading, "themeFill") || (attr(shading, "val") && !["clear", "nil"].includes(attr(shading, "val")))) throw new Error("Word-Designschattierung oder Schattierungsmuster kann Text verdecken; bitte die sichtbare Originalfassung prüfen.");
+            const fill = attr(shading, "val") === "nil" ? "" : attr(shading, "fill").toUpperCase();
             if (!background && /^[A-F0-9]{6}$/.test(fill)) background = fill;
           }
           hidden ||= (color || "000000") === (background || "FFFFFF");
@@ -181,6 +183,7 @@ export async function extractClinicalOfficeText(file: Blob & { name: string }): 
           let value = type === "s" ? shared[Number(raw)] || "" : type === "inlineStr" ? elements(cell, "t").map(e => e.textContent || "").join("") : raw;
           if (!value.trim()) continue;
           const xf = xfs[Number(attr(cell, "s") || 0)]; const fill = fills[Number(attr(xf, "fillId") || 0)];
+          if (fill && elements(fill, "gradientFill").length) throw new Error("Excel-Farbverläufe können Text verdecken; keine ungeprüfte Klartextübernahme.");
           const pattern = fill ? elements(fill, "patternFill")[0] : undefined; const patternType = attr(pattern, "patternType") || "none";
           if (!["none", "solid"].includes(patternType)) throw new Error("Gemusterte Excel-Zellen müssen am Original auf verdeckte Angaben geprüft werden.");
           const rgb = patternType === "solid" ? resolveColor(pattern ? elements(pattern, "fgColor")[0] : undefined, "FFFFFF") : "";

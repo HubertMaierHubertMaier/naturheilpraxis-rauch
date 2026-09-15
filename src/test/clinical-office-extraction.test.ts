@@ -94,3 +94,13 @@ it("bounds highly compressed XML before parsing, even with a dishonest declared 
   }
   await expect(extractClinicalOfficeText({ ...source, arrayBuffer: async () => modified.buffer } as File)).rejects.toThrow(/Speichergrenze/);
 });
+
+it("rejects unresolved Word theme shading and solid pattern concealment", async () => {
+  for (const attributes of ['w:themeFill="dark1"', 'w:val="solid" w:color="000000" w:fill="FFFFFF"']) {
+    await expect(extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": word(`<w:p><w:r><w:rPr><w:shd ${attributes}/></w:rPr><w:t>CONCEALED_SHADING</w:t></w:r></w:p>`) }))).rejects.toThrow(/Schattierung/);
+  }
+});
+it("does not treat an Excel gradient fill as an empty background", async () => {
+  const styles = `<styleSheet><fonts><font><color rgb="FF000000"/></font></fonts><fills><fill><gradientFill><stop position="0"><color rgb="FF000000"/></stop><stop position="1"><color rgb="FF000000"/></stop></gradientFill></fill></fills><cellXfs><xf fontId="0" fillId="0" numFmtId="0"/></cellXfs></styleSheet>`;
+  await expect(extractClinicalOfficeText(await excel(`<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>2</v></c></row></sheetData></worksheet>`, { "xl/styles.xml": styles }))).rejects.toThrow(/Farbverläufe/);
+});
