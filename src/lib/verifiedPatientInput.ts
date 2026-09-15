@@ -1,10 +1,14 @@
 import { normalizePatientPseudonym } from "../../supabase/functions/_shared/patientPseudonym";
 
-function stableJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
-  if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key =>
-    `${JSON.stringify(key)}:${stableJson((value as Record<string, unknown>)[key])}`).join(",")}}`;
-  return JSON.stringify(value);
+function stableJson(value: unknown): string | undefined {
+  // Compare the JSON representation sent to the database: unset object properties
+  // disappear on the wire. Keep explicit null/false/zero and array order intact.
+  return JSON.stringify(value, (_key, item) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      return Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]]));
+    }
+    return item;
+  });
 }
 
 export const equalPatientInputValue = (left: unknown, right: unknown) => stableJson(left) === stableJson(right);
