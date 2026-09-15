@@ -4247,7 +4247,7 @@ export function TherapyRecommendation() {
       naturheilMittelMineralstoffe.trim() && `Aktuelle naturheilkundliche Mittel – Mineralstoffe:\n${naturheilMittelMineralstoffe.trim()}`,
       naturheilMittelSpurenelemente.trim() && `Aktuelle naturheilkundliche Mittel – Spurenelemente:\n${naturheilMittelSpurenelemente.trim()}`,
       bisherigeMittel.trim() && `Bisherige naturheilkundliche Mittel:\n${bisherigeMittel.trim()}`,
-      formatAdditionalAnamnesis(anamneseZusatz),
+      formatAdditionalAnamnesis({ ...anamneseZusatz, petExaminations: "" }),
     ].filter(Boolean).join("\n\n");
     const mannayanContext = mannayanOrders.length ? formatMannayanOrders(mannayanOrders) : "";
     const addSimple = (key: string, label: string, text: string, group: SelectableAnalysisSource["group"]): SelectableAnalysisSource[] => {
@@ -4266,6 +4266,7 @@ export function TherapyRecommendation() {
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
       ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
+      ...addSimple("sonstigeUntersuchungen:pet", "PET-Untersuchungen – Datum und untersuchter Bereich", anamneseZusatz.petExaminations || "", "befund"),
       ...splitMarkedDocumentSources("vievaPlus", "Vieva Plus", includeStandaloneAnalysisDate(vievaPlus, vievaPlusDatum, "Vieva Plus")),
       ...addSimple("perplexityAnalyse", "Externe Recherche / Perplexity", perplexityAnalyse, "recherche"),
     ];
@@ -4615,7 +4616,7 @@ export function TherapyRecommendation() {
             laborDatum: laborDatum.trim() || undefined,
             stuhlbefund: stuhlbefund.trim() || undefined,
             anamnese: anamnese.trim() || undefined,
-            anamneseZusatzText: formatAdditionalAnamnesis(anamneseZusatz) || undefined,
+            anamneseZusatzText: formatAdditionalAnamnesis({ ...anamneseZusatz, petExaminations: "" }) || undefined,
             anamneseDatum: anamneseDatum.trim() || undefined,
             arztbericht: arztbericht.trim() || undefined,
             arztberichtDatum: arztberichtDatum.trim() || undefined,
@@ -5889,6 +5890,15 @@ export function TherapyRecommendation() {
                 <div>
                   <label className="text-sm font-medium mb-1 block" htmlFor="patient-diagnoses">Diagnosen</label>
                   <Textarea id="patient-diagnoses" value={anamneseZusatz.diagnoses || ""} onChange={event => setAnamneseZusatz(previous => ({ ...previous, diagnoses: event.target.value }))} placeholder="Dokumentierte Diagnosen mit Status, Datum und Quelle; Verdacht ausdrücklich kennzeichnen" rows={3} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block" htmlFor="patient-pet-examinations">PET-Untersuchungen</label>
+                  <Textarea id="patient-pet-examinations" value={anamneseZusatz.petExaminations || ""}
+                    onChange={event => setAnamneseZusatz(previous => ({ ...previous, petExaminations: event.target.value }))}
+                    disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming}
+                    aria-describedby="patient-pet-examinations-hint"
+                    placeholder={"TT.MM.JJJJ – untersuchter Bereich / Fragestellung\nTT.MM.JJJJ – weitere PET-Untersuchung: Bereich / Fragestellung"} rows={4} />
+                  <p id="patient-pet-examinations-hint" className="mt-1 text-xs text-muted-foreground">Jede PET-Untersuchung in einer eigenen Zeile mit Datum und Angabe, was untersucht wurde. Mehrere Untersuchungen vollständig aufführen; fehlendes Datum ausdrücklich als unbekannt kennzeichnen.</p>
                 </div>
                 <AnamnesisAdditionalFields values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
               </TabsContent>
