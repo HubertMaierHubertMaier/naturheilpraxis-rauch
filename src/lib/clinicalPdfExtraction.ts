@@ -227,6 +227,7 @@ export async function waitForPdfRender(
   renderTask: { promise: Promise<unknown>; cancel: () => void },
   signal?: AbortSignal,
   timeoutMs = PDF_RENDER_TIMEOUT_MS,
+  onVisibilityChange?: (hidden: boolean) => void,
 ): Promise<void> {
   if (signal?.aborted) {
     renderTask.cancel();
@@ -235,10 +236,15 @@ export async function waitForPdfRender(
 
   await new Promise<void>((resolve, reject) => {
     let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let remainingMs = timeoutMs;
+    let runningSince: number | undefined;
+    const visibilityDocument = typeof document === "undefined" ? undefined : document;
     const finish = (callback: () => void) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
+      visibilityDocument?.removeEventListener("visibilitychange", updateVisibility);
       signal?.removeEventListener("abort", onAbort);
       callback();
     };
@@ -246,11 +252,26 @@ export async function waitForPdfRender(
       renderTask.cancel();
       finish(() => reject(new DOMException("PDF-Rendering wurde abgebrochen.", "AbortError")));
     };
-    const timeout = setTimeout(() => {
-      renderTask.cancel();
-      finish(() => reject(new Error("Zeitüberschreitung beim lokalen Rendern der PDF-Seite.")));
-    }, timeoutMs);
+    // PDF.js display rendering pauses requestAnimationFrame in hidden tabs.
+    // Preserve the remaining visible-time budget across tab switches.
+    const updateVisibility = () => {
+      if (settled) return;
+      if (runningSince !== undefined) remainingMs -= performance.now() - runningSince;
+      runningSince = undefined;
+      clearTimeout(timeout);
+      const hidden = visibilityDocument?.visibilityState === "hidden";
+      onVisibilityChange?.(hidden);
+      if (hidden) return;
+      runningSince = performance.now();
+      timeout = setTimeout(() => {
+        if (visibilityDocument?.visibilityState === "hidden") { updateVisibility(); return; }
+        renderTask.cancel();
+        finish(() => reject(new Error("Zeitüberschreitung beim lokalen Rendern der PDF-Seite.")));
+      }, Math.max(0, remainingMs));
+    };
+    visibilityDocument?.addEventListener("visibilitychange", updateVisibility);
     signal?.addEventListener("abort", onAbort, { once: true });
+    updateVisibility();
     renderTask.promise.then(
       () => finish(resolve),
       (error) => finish(() => reject(error)),

@@ -284,7 +284,11 @@ export async function extractClinicalDocumentText(
             const canvasContext = canvas.getContext("2d", { alpha: false });
             if (!canvasContext) throw new Error("Lokale OCR konnte keine sichere Canvas-Arbeitsfläche anlegen.");
             const renderTask = page.render({ canvas, canvasContext, viewport, background: "rgb(255,255,255)" });
-            await waitForPdfRender(renderTask, signal);
+            await waitForPdfRender(renderTask, signal, undefined, (hidden) => {
+              onProgress?.(hidden
+                ? `Lokale OCR pausiert: Bitte dieses Browserfenster sichtbar öffnen. Seite ${pageNumber} von ${totalPages} bleibt erhalten.`
+                : `Lokale OCR: Seite ${pageNumber} von ${totalPages} wird lokal erkannt...`);
+            });
             throwIfAborted(signal);
             ocrStage = "recognition";
             const recognition = (await ocrSession.worker.recognize(canvas)).data;

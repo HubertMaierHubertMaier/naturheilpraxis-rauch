@@ -154,6 +154,53 @@ describe("clinical PDF extraction decisions", () => {
     expect(calculateOcrRenderScale(595, 842)).toBe(2.5);
   });
 
+  it("preserves the remaining render budget while the browser is hidden", async () => {
+    vi.useFakeTimers();
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    const cancel = vi.fn();
+    const progress = vi.fn();
+    const remove = vi.spyOn(document, "removeEventListener");
+    try {
+      const pending = waitForPdfRender({ promise: new Promise(() => undefined), cancel }, undefined, 100, progress);
+      const rejected = expect(pending).rejects.toThrow(/Zeitüberschreitung/);
+      await vi.advanceTimersByTimeAsync(40);
+      visibility.mockReturnValue("hidden"); document.dispatchEvent(new Event("visibilitychange"));
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(cancel).not.toHaveBeenCalled();
+      visibility.mockReturnValue("visible"); document.dispatchEvent(new Event("visibilitychange"));
+      await vi.advanceTimersByTimeAsync(59);
+      expect(cancel).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      await rejected;
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(progress.mock.calls.map(call => call[0])).toEqual([false, true, false]);
+      expect(remove).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+    } finally { visibility.mockRestore(); remove.mockRestore(); vi.useRealTimers(); }
+  });
+
+  it("can cancel a hidden render without waiting for the tab to become visible", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const controller = new AbortController();
+    const cancel = vi.fn();
+    try {
+      const pending = waitForPdfRender({ promise: new Promise(() => undefined), cancel }, controller.signal);
+      controller.abort();
+      await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+      expect(cancel).toHaveBeenCalledOnce();
+    } finally { visibility.mockRestore(); }
+  });
+
+  it("accepts a render that finishes while hidden and removes its visibility listener", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const progress = vi.fn(); const cancel = vi.fn();
+    try {
+      await expect(waitForPdfRender({ promise: Promise.resolve(), cancel }, undefined, 10, progress)).resolves.toBeUndefined();
+      document.dispatchEvent(new Event("visibilitychange"));
+      expect(progress).toHaveBeenCalledOnce();
+      expect(cancel).not.toHaveBeenCalled();
+    } finally { visibility.mockRestore(); }
+  });
+
   it("separates password, OCR, privacy, format and technical PDF failures", () => {
     expect(classifyClinicalPdfFailure({ name: "PasswordException" }).kind).toBe("password");
     expect(classifyClinicalPdfFailure(new Error("praktisch keinen auswertbaren Text nach OCR")).kind).toBe("text");
