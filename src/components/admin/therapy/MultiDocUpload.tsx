@@ -35,6 +35,7 @@ import {
 } from "@/lib/anamneseOcrMapping";
 import { RedactedTextPreview } from "./RedactedTextPreview";
 import { iaaCaptureStatusText, iaaFormValuesText } from "@/lib/iaaAssessment";
+import { anamnesisProfileFormValuesText } from "@/lib/anamnesisProfileForm";
 import { supabase } from "@/integrations/supabase/client";
 import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
@@ -227,7 +228,7 @@ export async function extractClinicalDocumentText(
         const extractedPage: ExtractedPdfPage = {
           pageNumber,
           textLayer: pageText,
-          formText: mode === "anamnese" ? iaaFormValuesText(formAnnotations, pageNumber) : undefined,
+          formText: mode === "anamnese" ? [iaaFormValuesText(formAnnotations, pageNumber), anamnesisProfileFormValuesText(formAnnotations, pageNumber)].filter(Boolean).join("\n\n") : undefined,
           includeOcrAlongsideTextLayer: mode === "anamnese",
         };
 

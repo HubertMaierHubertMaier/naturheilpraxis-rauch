@@ -44,13 +44,14 @@ export function extractAnamnesisProfileAnswers(input: string): {
   for (const match of input.matchAll(/Frage\/Feld:[ \t]*([^\n]+)\nErkannte Antwort:[ \t]*([^\r\n]+)/gi)) {
     const question = match[1].trim(); const answer = match[2].trim();
     const key = normalized(question);
-    const field = /kinder\s*(?:anzahl|zahl)|wie viele kinder|anzahl (?:der )?kinder/.test(key) ? "children"
+    const field = /kinder\s*(?:anzahl|zahl|alter)|alter (?:der )?kinder|wie viele kinder|anzahl (?:der )?kinder/.test(key) ? "children"
       : /menopause|zyklus|regelblutung|menstruation|periode/.test(key) ? "menopause"
       : /schwanger|stillzeit|stillend|stillen sie/.test(key) ? "pregnancy" : null;
     if (!field || !answer) continue;
     const unknown = /^(?:[-–—?]+|nicht angegeben|nicht beantwortet|unbeantwortet|unbekannt|unklar|unleserlich|keine angabe)\b/i.test(answer)
       || /^[\s?–—-]+$/.test(answer);
     const entry = fact({ text: `${question}: ${answer}`, quelle: `Anamnesebogen – ${question}`, zitat: answer,
+      seite: question.match(/\bSeite\s+(\d+)\b/i)?.[1] || "",
       polarity: unknown ? "not-stated" : /^(?:nein|keine?)\b/i.test(answer) ? "negated" : "affirmed" });
     (additional[field] ||= []).push(entry);
     if (unknown) continue;
