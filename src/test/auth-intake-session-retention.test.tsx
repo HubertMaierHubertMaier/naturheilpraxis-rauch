@@ -7,9 +7,9 @@ import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import TherapieKandidaten from "../pages/TherapieKandidaten";
 import { sameAuthenticatedSession } from "../lib/authSessionIdentity";
 
-const mocks = vi.hoisted(() => ({ getSession: vi.fn(), rpc: vi.fn(), signOut: vi.fn(), listener: null as null | ((event: string, session: any) => void) }));
+const mocks = vi.hoisted(() => ({ getSession: vi.fn(), rpc: vi.fn(), signOut: vi.fn(), headers: [] as Array<{ rpc: string; name: string; value: string }>, listener: null as null | ((event: string, session: any) => void) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...args: any[]) => {
-  const result = mocks.rpc(...args); return Object.assign(result, { setHeader: () => result });
+  const result = mocks.rpc(...args); return Object.assign(result, { setHeader: (name: string, value: string) => { mocks.headers.push({ rpc: args[0], name, value }); return result; } });
 }, auth: {
   getSession: mocks.getSession, signOut: mocks.signOut,
   onAuthStateChange: (callback: typeof mocks.listener) => { mocks.listener = callback; return { data: { subscription: { unsubscribe: () => {} } } }; },
@@ -29,7 +29,7 @@ function mount() { render(<AuthProvider><StateProbe /><MemoryRouter initialEntri
 const state = () => JSON.parse(screen.getByTestId("auth-state").textContent || "{}");
 async function ready() { await waitFor(() => expect(state()).toMatchObject({ admin: true, roleChecked: true, twoFactor: true })); const input = screen.getByLabelText("Testdatei"); fireEvent.change(input, { target: { files: [new File(["synthetic"], "probe.pdf")] } }); expect(screen.getByTestId("file-count").textContent).toBe("1"); return input; }
 async function emit(event: string, next: any) { await act(async () => { mocks.listener?.(event, next); await new Promise(resolve => setTimeout(resolve, 0)); }); }
-beforeEach(() => { mocks.getSession.mockReset().mockResolvedValue({ data: { session: session() } }); mocks.rpc.mockReset().mockResolvedValue({ data: true, error: null }); mocks.signOut.mockReset().mockResolvedValue({ error: null }); mocks.listener = null; });
+beforeEach(() => { mocks.getSession.mockReset().mockResolvedValue({ data: { session: session() } }); mocks.rpc.mockReset().mockResolvedValue({ data: true, error: null }); mocks.signOut.mockReset().mockResolvedValue({ error: null }); mocks.headers.length = 0; mocks.listener = null; });
 afterEach(() => cleanup());
 
 it("compares session identity without treating another user/session as a refresh", () => {
@@ -96,6 +96,7 @@ it("does not clear or sign out a replacement session after an old audit request 
   await act(async () => { audit.resolve({ data: true, error: null }); await pending; });
   expect(mocks.rpc.mock.calls.some(([name]) => name === "clear_current_two_factor_session")).toBe(false);
   expect(mocks.signOut).not.toHaveBeenCalled(); expect(state()).toMatchObject({ user: "user-b", admin: true });
+  expect(mocks.headers).toEqual([{ rpc: "insert_audit_log", name: "Authorization", value: `Bearer ${session().access_token}` }]);
 });
 it("does not sign out a replacement session after an old 2FA-clear request resolves", async () => {
   mount(); await ready(); const clear = deferred();
@@ -105,6 +106,10 @@ it("does not sign out a replacement session after an old 2FA-clear request resol
   await emit("SIGNED_IN", session("user-b", "session-b"));
   await act(async () => { clear.resolve({ data: true, error: null }); await pending; });
   expect(mocks.signOut).not.toHaveBeenCalled(); expect(state()).toMatchObject({ user: "user-b", admin: true });
+  expect(mocks.headers).toEqual([
+    { rpc: "insert_audit_log", name: "Authorization", value: `Bearer ${session().access_token}` },
+    { rpc: "clear_current_two_factor_session", name: "Authorization", value: `Bearer ${session().access_token}` },
+  ]);
 });
 it("still completes a normal explicit sign-out", async () => {
   mount(); await ready();

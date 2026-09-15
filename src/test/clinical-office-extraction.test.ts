@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it } from "vitest";
 import JSZip from "jszip";
-import { extractClinicalOfficeText } from "../lib/clinicalOfficeExtraction";
+import { extractClinicalOfficeText, MAX_OFFICE_XML_BYTES } from "../lib/clinicalOfficeExtraction";
 import { explicitIAAFields } from "../lib/iaaAssessment";
 
 async function file(name: string, entries: Record<string, string>) {
@@ -50,7 +50,11 @@ it("stops on non-text Word structures instead of claiming complete reading", asy
 
 it("stops on header drawings and style-based hidden Word text", async () => {
   const body = word(`<w:p><w:r><w:t>Visible test</w:t></w:r></w:p>`);
-  await expect(extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": body, "word/header1.xml": word(`<w:p><w:r><w:drawing/></w:r></w:p>`) }))).rejects.toThrow(/Kopfzeilen/);
+  const referencedBody = word(`<w:p><w:r><w:t>Visible test</w:t></w:r></w:p><w:sectPr><w:headerReference xmlns:r="urn:relationships" r:id="h1" w:type="default"/></w:sectPr>`);
+  const relation = `<Relationships><Relationship Id="h1" Type="urn:word/header" Target="header1.xml"/></Relationships>`;
+  await expect(extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": referencedBody, "word/_rels/document.xml.rels": relation, "word/header1.xml": word(`<w:p><w:r><w:drawing/></w:r></w:p>`) }))).rejects.toThrow(/Kopfzeilen/);
+  const unreferenced = await extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": body, "word/header1.xml": word(`<w:p><w:r><w:t>HIDDEN_HEADER</w:t></w:r></w:p>`) }));
+  expect(unreferenced.text).not.toContain("HIDDEN_HEADER");
   await expect(extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": word(`<w:p><w:pPr><w:pStyle w:val="HiddenStyle"/></w:pPr><w:r><w:t>NOT_FOR_RESTORATION</w:t></w:r></w:p>`), "word/styles.xml": `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:styleId="HiddenStyle"><w:rPr><w:vanish/></w:rPr></w:style></w:styles>` }))).rejects.toThrow(/Formatvorlage/);
 });
 it("does not reveal values hidden by an Excel display format or conditional styling", async () => {
@@ -63,4 +67,30 @@ it("resolves theme-based black fills without recovering their hidden cell value"
   const styles = `<styleSheet><fonts><font><color theme="1"/></font></fonts><fills><fill><patternFill patternType="solid"><fgColor theme="1"/></patternFill></fill></fills><cellXfs><xf fontId="0" fillId="0" numFmtId="0"/></cellXfs></styleSheet>`;
   const result = await extractClinicalOfficeText(await excel(`<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>2</v></c></row></sheetData></worksheet>`, { "xl/styles.xml": styles }));
   expect(result.text).not.toContain("HIDDEN_VALUE"); expect(result.text).toContain("geschwärzt");
+});
+
+it("honors specVanish and stops on unresolved Word theme foregrounds", async () => {
+  const result = await extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": word(`<w:p><w:r><w:rPr><w:specVanish/></w:rPr><w:t>HIDDEN_SPECIAL</w:t></w:r><w:r><w:t>Visible test</w:t></w:r></w:p>`) }));
+  expect(result.text).not.toContain("HIDDEN_SPECIAL"); expect(result.text).toContain("Visible test");
+  await expect(extractClinicalOfficeText(await file("synthetic.docx", { "word/document.xml": word(`<w:p><w:r><w:rPr><w:color w:themeColor="background1"/></w:rPr><w:t>HIDDEN_THEME</w:t></w:r></w:p>`) }))).rejects.toThrow(/Designfarben/);
+});
+it("respects boolean true on hidden spreadsheet rows and columns", async () => {
+  const result = await extractClinicalOfficeText(await excel(`<worksheet><cols><col min="2" max="2" hidden="true"/></cols><sheetData><row r="1"><c r="A1" t="s"><v>1</v></c><c r="B1" t="s"><v>2</v></c></row><row r="2" hidden="true"><c r="A2" t="s"><v>0</v></c></row></sheetData></worksheet>`));
+  expect(result.text).toContain("Test-Allergen"); expect(result.text).not.toContain("HIDDEN_VALUE"); expect(result.text).not.toContain("UNUSED_PRIVATE_VALUE");
+});
+it("does not expose data concealed by a display-format color directive", async () => {
+  const styles = `<styleSheet><numFmts><numFmt numFmtId="164" formatCode="[White]0"/></numFmts><fonts><font/></fonts><fills><fill><patternFill patternType="none"/></fill></fills><cellXfs><xf fontId="0" fillId="0" numFmtId="164"/></cellXfs></styleSheet>`;
+  await expect(extractClinicalOfficeText(await excel(`<worksheet><sheetData><row r="1"><c r="A1"><v>987654321</v></c></row></sheetData></worksheet>`, { "xl/styles.xml": styles }))).rejects.toThrow(/Textfarbe/);
+});
+it("bounds highly compressed XML before parsing, even with a dishonest declared size", async () => {
+  const zip = new JSZip(); zip.file("word/document.xml", "x".repeat(MAX_OFFICE_XML_BYTES + 1));
+  const data = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+  const source = { name: "compressed.docx", size: data.length, arrayBuffer: async () => data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) } as File;
+  await expect(extractClinicalOfficeText(source)).rejects.toThrow(/XML-Teil.*groß/);
+  const modified = data.slice(); const view = new DataView(modified.buffer);
+  for (let i = 0; i + 28 < modified.length; i++) {
+    if (view.getUint32(i, true) === 0x04034b50) view.setUint32(i + 22, 1, true);
+    if (view.getUint32(i, true) === 0x02014b50) view.setUint32(i + 24, 1, true);
+  }
+  await expect(extractClinicalOfficeText({ ...source, arrayBuffer: async () => modified.buffer } as File)).rejects.toThrow(/Speichergrenze/);
 });
