@@ -13,15 +13,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { extractUniquePatientPseudonym } from "@/lib/mannayanPatientOrders";
 import { Badge } from "@/components/ui/badge";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, Table as DocxTable, TableRow as DocxRow, TableCell as DocxCell, AlignmentType, WidthType, BorderStyle, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
 
-const PSEUDONYM_RE = /P-\d{4}-\d{4}/;
+// Complete, unambiguous patient identifiers only; never truncate longer identifiers.
 
 function extractPseudonym(value: string | null | undefined): string | null {
-  return value?.match(PSEUDONYM_RE)?.[0] ?? null;
+  return extractUniquePatientPseudonym(value);
 }
 
 function expectedOrderNumberForPseudonym(pseudonym: string, sequence: number) {

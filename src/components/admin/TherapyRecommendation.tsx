@@ -33,6 +33,7 @@ import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, extractTherapyTemplateDocument, MultiDocUpload } from "./therapy/MultiDocUpload";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
+import { loadPatientMannayanOrders, orderNumberOrMissing } from "@/lib/mannayanPatientOrders";
 import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
@@ -2441,7 +2442,7 @@ export function TherapyRecommendation() {
     setEigeneTherapieVorlage("");
     setApothekerRezept("");
     setZusatzTherapie("");
-    setMannayanOrders([]);
+    setMannayanOrders([]); setLinkedOrderInfo(null);
     setIsLoadingMannayanOrders(false);
     setSelectedCategories([]);
     setBevorzugteLinie([]);
@@ -2587,28 +2588,7 @@ export function TherapyRecommendation() {
     setPseudonymId(STANDARD_PSEUDONYM_PATTERN.test(next) ? next : cleanValue);
   }, [pseudonymId, hasMeaningfulInput, result, docAnalysisHtml, manualDiagnosen.length, manualMittel.length, clearPatientScopedState, toast]);
 
-  // Mannayan-Bestellungen für aktuelles Pseudonym laden
-  useEffect(() => {
-    const pid = normalizePseudonymId(pseudonymId);
-    if (!/^P-\d{4}-\d{4}$/.test(pid)) {
-      setLinkedOrderInfo(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("mannayan_orders")
-        .select("order_number, created_at")
-        .eq("pseudonym_id", pid)
-        .order("created_at", { ascending: false });
-      if (cancelled || error) return;
-      setLinkedOrderInfo({
-        count: data?.length ?? 0,
-        numbers: (data ?? []).map((o: any) => o.order_number).filter(Boolean),
-      });
-    })();
-    return () => { cancelled = true; };
-  }, [pseudonymId]);
+  // The complete patient-bound loader also updates the order summary.
 
   const handleLoadSession = async (session: TherapySession) => {
     if (normalizePseudonymId(session.pseudonym_id) !== normalizePseudonymId(pseudonymId)) {
@@ -4231,8 +4211,8 @@ export function TherapyRecommendation() {
 
   const formatMannayanOrders = (orders: MannayanOrderContext[]) => orders.map((order) => {
     const day = order.createdAt ? new Date(order.createdAt).toLocaleDateString("de-DE") : "Datum unbekannt";
-    const items = order.items.map((it) => `- ${it.quantity ? `${it.quantity}× ` : ""}${it.name}${it.unit ? ` (${it.unit})` : ""}${it.sku ? ` · Art.-Nr. ${it.sku}` : ""}`).join("\n");
-    return `Bestellung ${order.orderNumber} vom ${day}${order.notes ? ` · Notiz: ${order.notes}` : ""}\n${items}`;
+    const items = order.items.map((it) => `- ${it.quantity !== undefined ? `${it.quantity}× ` : ""}${it.name}${it.unit ? ` (${it.unit})` : ""}${it.sku ? ` · Art.-Nr. ${it.sku}` : ""}`).join("\n");
+    return `Bestellung ${order.orderNumber} vom ${day}${order.notes ? ` · Notiz: ${order.notes}` : ""}\n${items || "Keine Bestellpositionen dokumentiert."}`;
   }).join("\n\n");
 
   const analysisSources = useMemo<SelectableAnalysisSource[]>(() => {
@@ -4461,13 +4441,7 @@ export function TherapyRecommendation() {
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     setIsLoadingMannayanOrders(true);
     try {
-      const { data, error } = await (supabase as any)
-        .from("mannayan_orders")
-        .select("order_number, created_at, items, notes, patient_label")
-        .ilike("patient_label", `%${pid}%`)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
+      const data = await loadPatientMannayanOrders(supabase as any, pid, scopeIsCurrent);
       if (!scopeIsCurrent()) return;
       const orders = ((data || []) as any[]).map((row) => ({
         orderNumber: row.order_number || "—",
@@ -4475,16 +4449,18 @@ export function TherapyRecommendation() {
         notes: row.notes || "",
         items: Array.isArray(row.items) ? row.items.map((it: any) => ({
           name: String(it?.name || "").trim(),
-          quantity: Number(it?.quantity) || undefined,
+          quantity: orderNumberOrMissing(it?.quantity),
           unit: it?.unit || "",
           sku: it?.sku || "",
-          price_eur: Number(it?.price_eur) || undefined,
+          price_eur: orderNumberOrMissing(it?.price_eur),
         })).filter((it: any) => it.name) : [],
-      })).filter((order) => order.items.length > 0);
+      }));
       setMannayanOrders(orders);
+      setLinkedOrderInfo({ count: data.length, numbers: data.map(order => order.order_number).filter(Boolean) });
       if (orders.length) toast({ title: "Mannayan-Bestellungen geladen", description: `${orders.length} Bestellung(en) für ${pid} werden in der Therapieprüfung berücksichtigt.` });
     } catch (error: any) {
       if (!scopeIsCurrent()) return;
+      setMannayanOrders([]); setLinkedOrderInfo(null);
       toast({ title: "Mannayan-Bestellungen nicht geladen", description: error?.message || "Bitte später erneut versuchen.", variant: "destructive" });
     } finally {
       if (scopeIsCurrent()) setIsLoadingMannayanOrders(false);
@@ -4494,7 +4470,7 @@ export function TherapyRecommendation() {
   useEffect(() => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) {
-      setMannayanOrders([]);
+      setMannayanOrders([]); setLinkedOrderInfo(null);
       return;
     }
     loadMannayanOrdersForCurrentPatient();
@@ -6475,13 +6451,14 @@ export function TherapyRecommendation() {
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <label className="text-sm font-medium flex items-center gap-1.5">
                       <ShoppingCart className="h-3.5 w-3.5 text-amber-700" />
-                      Mannayan-Bestellungen für dieses Pseudonym
+                      Mannayan – zugeordnete Bestellungen und Mittel
                     </label>
                     <Button type="button" size="sm" variant="outline" onClick={loadMannayanOrdersForCurrentPatient} disabled={!isPatientScopedStorageReady(pseudonymId) || isLoadingMannayanOrders} className="gap-1.5">
                       {isLoadingMannayanOrders ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                       neu laden
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">Dokumentierte Bestellungen für diesen Fall. Lieferung und aktuelle Einnahme sind daraus allein nicht bestätigt.</p>
                   {mannayanOrders.length > 0 ? (
                     <pre className="text-xs whitespace-pre-wrap font-sans bg-background/70 p-2 rounded max-h-48 overflow-y-auto">{formatMannayanOrders(mannayanOrders)}</pre>
                   ) : (
