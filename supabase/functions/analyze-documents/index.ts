@@ -14,7 +14,7 @@ import {
 } from "../_shared/labTrendAnalysis.ts";
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
 import { assertCompletePartialCollections, attachClinicalSourceEvidence, hasCompletePartialCollections, combineClinicalPartials, deduplicateClinicalFacts, clinicalEvidenceText } from "../_shared/clinicalSourceEvidence.ts";
-import { hasUnconfirmedFormStatements, isQuestionnaireSource } from "../_shared/questionnaireEvidence.ts";
+import { requiresVerifiedFormReport, isQuestionnaireSource } from "../_shared/questionnaireEvidence.ts";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 180;
@@ -592,6 +592,7 @@ function isCompleteFinalHtml(html: string) {
 }
 
 function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalChars: number, chunkCount: number) {
+  const verifiedFormReport = requiresVerifiedFormReport(partials.map(parseLlmJson));
   const aggregate: Record<string, unknown[]> = {
     documents: [], diagnoses: [], medicationsTherapies: [], labValues: [], findings: [], terms: [], redFlags: [], systemsPatterns: [], openQuestions: [], missingReports: [],
   };
@@ -705,7 +706,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 <body>
   <h1>Befund-Auswertung</h1>
   <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientContext(b))} · <strong>Umfang:</strong> ${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen / ${escapeHtml(chunkCount)} Teilpaket(e)</div>
-  <div class="notice"><strong>Hinweis:</strong> ${unconfirmedFormStatements.length ? "Diese Ausgabe wurde regelgebunden aus den Teilanalysen erstellt. Unbestätigte Formular- und OCR-Zuordnungen stehen getrennt im Prüfanhang und wurden nicht als Patientenangaben übernommen." : "Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde."} Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
+  <div class="notice"><strong>Hinweis:</strong> ${verifiedFormReport ? "Diese Ausgabe wurde regelgebunden aus den Teilanalysen erstellt. Unbestätigte Formular- und OCR-Zuordnungen werden, soweit vorhanden, getrennt im Prüfanhang geführt und nicht als Patientenangaben übernommen." : "Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde."} Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
 
   <h2>1. Übersicht der eingereichten Unterlagen</h2>
   <table><tbody><tr><th>Teilpakete</th><td>${escapeHtml(chunkCount)}</td></tr><tr><th>Verarbeiteter Umfang</th><td>${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen</td></tr><tr><th>Duplikate</th><td>${duplicateNotes.length ? duplicateNotes.map(escapeHtml).join("<br>") : "Keine vorab erkannten identischen Duplikate."}</td></tr></tbody></table>
@@ -951,7 +952,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         if (countPartialExtractionItems(partials) === 0) throw new Error("Die KI hat keine verwertbaren Befunddaten extrahiert; es wird kein leerer Bericht erzeugt.");
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
-        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length), String(b.pseudonymId || ""), hasUnconfirmedFormStatements(partials.map(parseLlmJson)));
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length), String(b.pseudonymId || ""), requiresVerifiedFormReport(partials.map(parseLlmJson)));
         const reader = htmlStream.getReader();
         while (true) {
           const { value, done } = await reader.read();
@@ -1137,7 +1138,7 @@ serve(async (req) => {
         buildFinalPrompt(partials, body, totalChars, partials.length),
         buildDeterministicFinalHtml(partials, body, totalChars, partials.length),
         String(body.pseudonymId || ""),
-        hasUnconfirmedFormStatements(partials.map(parseLlmJson)),
+        requiresVerifiedFormReport(partials.map(parseLlmJson)),
       );
       return new Response(htmlStream, {
         headers: {

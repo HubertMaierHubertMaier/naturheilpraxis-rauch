@@ -1,4 +1,4 @@
-import { createQuestionnaireEvidenceValidator } from "./questionnaireEvidence.ts";
+import { createQuestionnaireEvidenceValidator, isQuestionnaireSource } from "./questionnaireEvidence.ts";
 
 export const PARTIAL_ANALYSIS_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 export const PARTIAL_ANAMNESIS_ARRAY_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
@@ -47,6 +47,7 @@ export function combineClinicalPartials(partials: Record<string, any>[]): Record
   result.source_coverage_v1 = {
     parts: partials.map(partial => partial.source_coverage_v1).filter(Boolean),
     answerValidationVersion: partials.length > 0 && partials.every(partial => partial.source_coverage_v1?.answerValidationVersion === 1) ? 1 : 0,
+    questionnaireSource: partials.some(partial => partial.source_coverage_v1?.questionnaireSource === true),
   };
   return result;
 }
@@ -118,9 +119,10 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
   };
   for (const key of ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "redFlags", "systemsPatterns"]) source[key] = (source[key] || []).map((item: unknown) => annotate(item, key)).filter(Boolean);
   source.anamnese = Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, (source.anamnese?.[key] || []).map((item: unknown) => annotate(item, key)).filter(Boolean)]));
-  source.openQuestions = [...(source.openQuestions || []), ...unconfirmed];
+  const originalQuestions = (source.openQuestions || []).map((item: unknown) => annotate(item, "openQuestions")).filter(Boolean);
+  source.openQuestions = [...originalQuestions, ...unconfirmed];
   source.source_coverage_v1 = {
-    sourceId, sourceLabel, part, verifiedQuotes: verified, unverifiedQuotes: unverified, unconfirmedFormStatements: unconfirmed.length, answerValidationVersion: 1,
+    sourceId, sourceLabel, part, verifiedQuotes: verified, unverifiedQuotes: unverified, unconfirmedFormStatements: unconfirmed.length, answerValidationVersion: 1, questionnaireSource: isQuestionnaireSource(sourceText),
     pages: [...pageCounts].map(([page, matchedFacts]) => ({ page, matchedFacts, status: matchedFacts ? "quoted_facts_present" : "no_verified_fact_quote" })),
     scope: "Quotation matching and page attribution only; not proof that every clinical statement was interpreted correctly.",
   };

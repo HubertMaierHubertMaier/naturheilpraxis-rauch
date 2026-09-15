@@ -75,6 +75,10 @@ export function hasUnconfirmedFormStatements(partials: readonly Record<string, a
     && partial.openQuestions.some((item: any) => item?.sourceAssertionStatus === "unconfirmed_form"));
 }
 
+export function requiresVerifiedFormReport(partials: readonly Record<string, any>[]): boolean {
+  return hasUnconfirmedFormStatements(partials) || partials.some(partial => partial.source_coverage_v1?.questionnaireSource === true);
+}
+
 export function assertQuestionnaireValidationContract(partial: Record<string, any>, sourceText: string): void {
   if (isQuestionnaireSource(sourceText) && partial.source_coverage_v1?.answerValidationVersion !== 1) {
     throw new Error("Die serverseitige Formular-Antwort-Prüfung ist noch nicht bereitgestellt. Bitte den Analyse-Dienst aktualisieren.");

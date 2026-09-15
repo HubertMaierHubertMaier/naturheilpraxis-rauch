@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { PARTIAL_ANALYSIS_ARRAY_KEYS, PARTIAL_ANAMNESIS_ARRAY_KEYS, assertCompletePartialCollections, attachClinicalSourceEvidence, splitPageAwareClinicalText, combineClinicalPartials, clinicalEvidenceText } from "../../supabase/functions/_shared/clinicalSourceEvidence";
 import { buildAnamnesisIntake, formatIntakeFact, mergeIntakeText } from "../lib/anamnesisIntakeFields";
-import { assertQuestionnaireValidationContract } from "../../supabase/functions/_shared/questionnaireEvidence";
+import { assertQuestionnaireValidationContract, requiresVerifiedFormReport } from "../../supabase/functions/_shared/questionnaireEvidence";
 
 const empty = (): Record<string, any> => ({ ...Object.fromEntries(PARTIAL_ANALYSIS_ARRAY_KEYS.map(key => [key, []])), anamnese: Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, []])) });
 describe("clinical source evidence", () => {
@@ -15,6 +15,16 @@ describe("clinical source evidence", () => {
     const checked = attachClinicalSourceEvidence(empty(), "Anamnesebogen", "Quelle", "1/1");
     expect(() => assertQuestionnaireValidationContract(combineClinicalPartials([checked, checked]), "Anamnesebogen")).not.toThrow();
     expect(() => assertQuestionnaireValidationContract(combineClinicalPartials([checked, empty()]), "Anamnesebogen")).toThrow(/noch nicht bereitgestellt/);
+  });
+  it("keeps questionnaire final rendering deterministic even when the model emitted only open questions", () => {
+    const partial = empty(); partial.openQuestions = [{ text: "Unklare Formularauswahl", beleg: { zitat: "[_] Auswahl" } }];
+    const checked = attachClinicalSourceEvidence(partial, "Anamnesebogen\n[_] Auswahl", "Quelle", "1/1");
+    expect(checked.openQuestions[0].sourceAssertionStatus).toBe("unconfirmed_form");
+    expect(checked.openQuestions[0].unconfirmedSourceStatement.text).toBe("Unklare Formularauswahl");
+    expect(requiresVerifiedFormReport([checked])).toBe(true);
+    expect(requiresVerifiedFormReport([attachClinicalSourceEvidence(empty(), "Anamnesebogen", "Quelle", "1/1")])).toBe(true);
+    expect(requiresVerifiedFormReport([combineClinicalPartials([checked])])).toBe(true);
+    expect(requiresVerifiedFormReport([attachClinicalSourceEvidence(empty(), "Arztbericht", "Quelle", "1/1")])).toBe(false);
   });
   it("distinguishes an explicit empty category from a silently missing category", () => {
     const complete = empty(); expect(() => assertCompletePartialCollections(complete)).not.toThrow();
