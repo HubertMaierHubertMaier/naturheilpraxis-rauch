@@ -28,7 +28,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('id="patient-intake-case" data-workflow-order={1}');
     expect(source).toContain('id="patient-intake-documents" data-workflow-order={2}');
     expect(source).toContain("für genau einen zuvor festgelegten Pseudonymfall");
-    expect(source).toContain("Mehrere PDFs für Sammeleingabe auswählen");
+    expect(source).toContain("Mehrere Dateien (PDF/Word/Excel) auswählen");
     expect(count(source, "requireDocumentDate")).toBe(3);
     expect(source).toContain("await applyAndPersistExtractedInputs({ forPseudonymId: analysisPid");
     expect(source).toContain("if (docAbortRef.current)");
@@ -51,7 +51,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("2. Nächster Schritt: übernommene Befunde auswerten");
     expect(source).toContain('nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })');
     expect(source).toContain('nextBefundActionRef.current?.focus({ preventScroll: true })');
-    expect(source).toContain("Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm");
+    expect(source).toContain("Ausgewählte Dateien bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm");
     expect(source).not.toContain("PDF(s) erst im Tab „Großdaten\" hochladen");
     expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
     const individualUploadSource = readSource("src/components/admin/therapy/MultiDocUpload.tsx");
