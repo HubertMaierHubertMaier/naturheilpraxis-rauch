@@ -993,7 +993,7 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet");
     expect(uploadSource).toContain('shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })');
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
-    expect(uploadSource).toContain('await import("@/lib/localBrowserOcr")');
+    expect(uploadSource).toContain('from "@/lib/localBrowserOcr"');
     expect(ocrSource).toContain("const nativeWorker = new Worker(workerUrl)");
     expect(ocrSource).toContain("OCR_INITIALIZATION_TIMEOUT_MS");
     expect(ocrSource).toContain("nativeWorker.terminate()");
@@ -1016,7 +1016,7 @@ describe("laboratory trend analysis", () => {
     expect(uploadSource).toContain("const confirmPrivacyReview = async () =>");
     expect(uploadSource).toContain("const residualIdentifiers = directIdentifierCategories(review.text)");
     expect(uploadSource).toContain("await onExtracted(review.text, review.sourcePseudonymId, ensureOriginalsArchived)");
-    expect(uploadSource).toContain("Vollständige Datenschutzvorschau");
+    expect(uploadSource).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(uploadSource).toContain("disabled={!privacyConfirmed || reviewSubmitting}");
     expect(uploadSource.indexOf("setPendingReview({")).toBeLessThan(uploadSource.indexOf("onExtracted(review.text, review.sourcePseudonymId, ensureOriginalsArchived)"));
     expect(uploadSource).not.toContain('trim().toUpperCase()');

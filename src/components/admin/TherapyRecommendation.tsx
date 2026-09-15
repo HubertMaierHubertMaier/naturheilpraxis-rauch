@@ -5286,7 +5286,10 @@ export function TherapyRecommendation() {
                     )}
                     {item.status === "ready" && item.previewText && (
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-                        <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Datenschutzbereinigte Vorschau</div>
+                        <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Ausgelesener Text – vor der Übernahme prüfen</div>
+                        <p className="mb-2 text-xs">Dieser Text wurde aus der Datei ausgelesen und automatisch geschwärzt. Schwarze Stellen bleiben verdeckt und müssen nicht nachgelesen werden.</p>
+                        <p className="mb-1 text-xs"><strong>Schwärzung prüfen:</strong> Sind im noch sichtbaren Text persönliche Angaben übrig geblieben? Bei Bedarf „Manuell nachschwärzen“ verwenden.</p>
+                        {item.documentType === "anamnese" && <p className="mb-2 text-xs"><strong>Texterkennung prüfen:</strong> Antworten, Handschrift und Markierungen mit dem vorliegenden Original abgleichen. „Manuell prüfen“ bedeutet, dass die Zuordnung noch unsicher ist.</p>}
                         <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed"
                           disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming}
                           onChange={text => {

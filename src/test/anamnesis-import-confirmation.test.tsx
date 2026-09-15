@@ -40,18 +40,18 @@ describe("confirmed source import", () => {
     const choose = Array.from(host.querySelectorAll("button")).find(button => button.textContent?.includes("Originale erneut auswählen"))!;
     expect(choose.disabled).toBe(false);
     await act(async () => choose.click());
-    expect(host.textContent).toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     const input = host.querySelector<HTMLInputElement>("input[data-original-replacement]")!;
     Object.defineProperty(input, "files", { configurable: true, value: [new File(["synthetic replacement"], "synthetic.pdf", { type: "application/pdf" })] });
     await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); });
-    expect(host.textContent).not.toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).not.toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(host.textContent).toContain("synthetic.pdf");
     expect(onExtracted).not.toHaveBeenCalled();
   });
   it("keeps the preview if the original archive cannot be verified", async () => {
     mocks.verify.mockRejectedValueOnce(new Error("synthetic original unavailable"));
     await submit(async () => undefined);
-    expect(host.textContent).toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(sessionStorage.getItem(key)).not.toBeNull();
     expect(mocks.event).not.toHaveBeenCalled();
     expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Übernahme nicht bestätigt" }));
@@ -63,7 +63,7 @@ describe("confirmed source import", () => {
     expect(sessionStorage.getItem(key)).not.toBeNull();
     expect(mocks.event).not.toHaveBeenCalled();
     await act(async () => { reject(new Error("Speicherung abgebrochen")); });
-    expect(host.textContent).toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(sessionStorage.getItem(key)).not.toBeNull();
     expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Übernahme nicht bestätigt" }));
     expect(mocks.event).not.toHaveBeenCalled();
@@ -71,9 +71,9 @@ describe("confirmed source import", () => {
   it("clears the pending preview only after persistence has been confirmed", async () => {
     let finish!: () => void;
     await submit(() => new Promise((yes) => { finish = yes; }));
-    expect(host.textContent).toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     await act(async () => { finish(); });
-    expect(host.textContent).not.toContain("Vollständige Datenschutzvorschau");
+    expect(host.textContent).not.toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(sessionStorage.getItem(key)).toBeNull();
     expect(mocks.event).toHaveBeenCalledWith(pid, "documents_uploaded", expect.objectContaining({ original_archived: true }));
   });

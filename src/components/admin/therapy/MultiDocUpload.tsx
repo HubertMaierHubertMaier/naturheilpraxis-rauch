@@ -824,7 +824,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
         <div className="space-y-3 rounded-md border-2 border-amber-500 bg-amber-50/70 p-3 dark:bg-amber-950/20">
           <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-100">
             <ShieldAlert className="h-4 w-4" />
-            Vollständige Datenschutzvorschau
+            Ausgelesener Text – vor der Übernahme prüfen
           </div>
           <p className="text-xs text-muted-foreground">
             Bis zur Bestätigung bleibt dieser Text nur im Arbeitsspeicher des Browsers. Es wird noch nichts in Eingabefelder, Protokolle, Lovable oder eine KI übernommen.

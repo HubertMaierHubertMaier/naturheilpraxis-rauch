@@ -7,6 +7,21 @@ import {
 } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 describe("local anamnesis question review", () => {
+  it("preserves printed instructions with colons without turning them into patient answers", () => {
+    const instructions = [
+      "Zähne sind nach internationalem FDI-System nummeriert. Reihenfolge wie beim Blick in den Mund: Diagramm beachten.",
+      "Hinweis: Bitte zutreffende Felder markieren.",
+      "Beispiel: rein synthetischer Beispieltext",
+    ];
+    const review = buildAnamneseQuestionReview(["--- Seite 24 ---", "XVII. Zahngesundheit", ...instructions, "Beschwerden: synthetische Angabe"].join("\n"));
+    expect(review.mappedAnswerCount).toBe(1);
+    expect(review.manualReviewCount).toBe(3);
+    for (const line of instructions) expect(review.text).toContain(line);
+    expect(review.text).not.toContain("Erkannte Antwort: Diagramm beachten.");
+    expect(review.text).not.toContain("Erkannte Antwort: Bitte zutreffende Felder markieren.");
+    expect(review.text).toContain("Erkannte Antwort: synthetische Angabe");
+    expect(review.text).toContain("Formularhinweis (keine zugeordnete Patientenantwort, XVII. Zahngesundheit, Seite 24)");
+  });
   it("maps explicit question-answer lines to the recognized form section", () => {
     const review = buildAnamneseQuestionReview([
       "=== Dokument-123456abcdef (2 S.) ===",

@@ -46,7 +46,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Nur den zum aktuellen Pseudonym gehörenden Befund verwenden.");
     expect(source).toContain("ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung");
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
-    expect(source).toContain("Datenschutzbereinigte Vorschau");
+    expect(source).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
     expect(source).toContain("2. Nächster Schritt: übernommene Befunde auswerten");
     expect(source).toContain('nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })');

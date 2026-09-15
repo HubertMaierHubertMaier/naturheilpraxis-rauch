@@ -54,6 +54,9 @@ const findSectionTitle = (line: string): string | undefined => {
 const pageMarkerPattern = /^---\s*Seite\s+(\d+)\s*---$/i;
 const documentMarkerPattern = /^===\s*.+\s*===$/;
 
+// Printed instructions can contain colons too; preserve them without inventing answers.
+const printedInstructionPattern = /^(?:(?:Hinweis|Ausfüllhinweis|Anleitung|Legende|Beispiel)\s*:|Zähne sind nach (?:dem )?international(?:em|en) FDI-System nummeriert\b|Reihenfolge wie beim Blick in den Mund\b)/i;
+
 export function buildAnamneseQuestionReview(
   input: string,
   pageConfidences: readonly AnamneseOcrPageConfidence[] = [],
@@ -117,6 +120,11 @@ export function buildAnamneseQuestionReview(
     if (ignoredFormLines.has(normalized) || /^seite\s+\d+\s+(?:von|\/|of)\s+\d+$/i.test(line)) continue;
 
     const pair = line.match(/^(.{2,120}?):\s*(.+)$/);
+    if (printedInstructionPattern.test(line)) {
+      manualReviewCount += 1;
+      body.push(`Formularhinweis (keine zugeordnete Patientenantwort, ${currentSection}, Seite ${currentPage || "nicht erkannt"}): ${line}`);
+      continue;
+    }
     if (pair && /\p{L}/u.test(pair[1]) && pair[2].trim() && pair[2].trim() !== "-") {
       mappedAnswerCount += 1;
       body.push(
