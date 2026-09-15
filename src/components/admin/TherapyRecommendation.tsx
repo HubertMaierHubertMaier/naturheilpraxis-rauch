@@ -32,6 +32,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, extractTherapyTemplateDocument, MultiDocUpload } from "./therapy/MultiDocUpload";
+import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
 import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
@@ -3780,7 +3781,7 @@ export function TherapyRecommendation() {
     }
     const currentPid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(currentPid)) {
-      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auswählen.", variant: "destructive" });
+      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDF-, Word- oder Excel-Dateien auswählen.", variant: "destructive" });
       if (directBefundFileRef.current) directBefundFileRef.current.value = "";
       return;
     }
@@ -4115,13 +4116,13 @@ export function TherapyRecommendation() {
       const parts = doc.archivePath.split("/");
       const filename = parts.at(-1) || "";
       const extension = filename.split(".").at(-1)?.toLowerCase() || "pdf";
-      const canonical = filename.match(/^(anamnese|labor|arzt|metatron|vieva|sonstige|dokument)-([0-9a-f]{64})\.(pdf|docx|txt|md|html|htm|csv|json)$/);
+      const canonical = filename.match(/^(anamnese|labor|arzt|metatron|vieva|sonstige|dokument)-([0-9a-f]{64})\.(pdf|docx|xlsx|txt|md|html|htm|csv|json)$/);
       if (canonical && parts.length === 3) {
         await verifyArchivedPatientOriginal(supabase as any, pid,
           { pseudonymId: pid, archivePath: doc.archivePath, sha256: canonical[2], bytes: blob.size, reused: true }, blob);
       }
       if (!scopeIsCurrent()) return;
-      if (extension !== "pdf") {
+      if (!["pdf", "docx", "xlsx"].includes(extension)) {
         if (!["docx", "txt", "md", "html", "htm", "csv", "json", "png", "jpg", "jpeg"].includes(extension)) {
           throw new Error("Dieser Archiv-Dateityp benötigt eine gesonderte Prüfung. Das Original wurde nicht verändert.");
         }
@@ -4134,7 +4135,7 @@ export function TherapyRecommendation() {
       }
       const knownType = canonical && canonical[1] !== "dokument" ? canonical[1] as DirectBefundTarget : "";
       setPendingDirectBefundFiles(current => [...current, {
-        id: crypto.randomUUID(), file: new File([blob], "Original-Archivdokument.pdf", { type: "application/pdf" }),
+        id: crypto.randomUUID(), file: new File([blob], `Original-Archivdokument.${extension}`, { type: extension === "pdf" ? "application/pdf" : "application/octet-stream" }),
         sourcePseudonymId: pid, status: "queued", documentType: knownType,
         documentTypeInferred: Boolean(knownType), documentDate: canonical && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? parts[1] : "",
         privacyReviewed: false,
@@ -5241,13 +5242,13 @@ export function TherapyRecommendation() {
               onFiles={addDirectBefundFiles}
             />
             <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
-              Wichtig: Ausgewählte PDFs bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
+              Wichtig: Ausgewählte Dateien bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <input ref={directBefundFileRef} type="file" accept="application/pdf" multiple={documentEntryMode === "batch"} className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
+              <input ref={directBefundFileRef} type="file" accept={CLINICAL_DOCUMENT_ACCEPT} multiple={documentEntryMode === "batch"} className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
               <Button type="button" size="sm" variant="outline" onClick={() => directBefundFileRef.current?.click()} disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                 <FileUp className="h-3.5 w-3.5" />
-                {documentEntryMode === "single" ? "Eine PDF für Einzeleingabe auswählen" : "Mehrere PDFs für Sammeleingabe auswählen"}
+                {documentEntryMode === "single" ? "Eine Datei (PDF/Word/Excel) auswählen" : "Mehrere Dateien (PDF/Word/Excel) auswählen"}
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => refreshDocumentInventory(true)} disabled={isRefreshingDocumentInventory || !isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} className="gap-1.5">
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
@@ -5366,7 +5367,7 @@ export function TherapyRecommendation() {
                     {doc.note ? <span className="hidden sm:inline text-muted-foreground whitespace-nowrap">{doc.note}</span> : null}
                     <Button type="button" size="sm" variant="outline" onClick={() => loadArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5">
                       {loadingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                      {doc.archivePath?.toLowerCase().endsWith(".pdf") ? "Zur Prüfung laden" : "Original herunterladen"}
+                      {/\.(pdf|docx|xlsx)$/i.test(doc.archivePath || "") ? "Zur Prüfung laden" : "Original herunterladen"}
                     </Button>
                     <Button type="button" size="sm" variant="ghost" onClick={() => deleteArchivedBefundDocument(doc)} disabled={loadingArchiveDocumentPath === doc.archivePath || deletingArchiveDocumentPath === doc.archivePath} className="h-7 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" title="Archiv-PDF löschen (unwiderruflich)">
                       {deletingArchiveDocumentPath === doc.archivePath ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -6298,8 +6299,8 @@ export function TherapyRecommendation() {
                       🌿 Meine Therapie (Heilpraktiker) – KI-Sinnhaftigkeits-Check
                     </label>
                     <div className="flex gap-2 flex-wrap">
-                      <MultiDocUpload pseudonymId={pseudonymId} label="PDF/Word/Text einlesen"
-                        documentType="Eigene Therapievorgabe" accept="application/pdf,.pdf,.docx,text/plain,.txt,.md"
+                      <MultiDocUpload pseudonymId={pseudonymId} label="PDF/Word/Excel/Text einlesen"
+                        documentType="Eigene Therapievorgabe" accept={`${CLINICAL_DOCUMENT_ACCEPT},text/plain,.txt,.md`}
                         extractText={extractTherapyTemplateDocument}
                         onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "eigeneTherapieVorlage", archive)} />
                       <Button

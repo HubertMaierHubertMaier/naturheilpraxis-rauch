@@ -22,10 +22,21 @@ beforeAll(async () => {
     create policy legacy_broad_access on storage.objects for all to public using (true) with check (true);
     insert into storage.buckets(id) values ('therapy-documents'), ('other-bucket');`);
   await db.exec(readFileSync(resolve(process.cwd(), "supabase/migrations/20260913090000_private_patient_original_archive.sql"), "utf8"));
+  const officeMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260915100000_allow_xlsx_patient_original_archive.sql"), "utf8");
+  await db.exec(officeMigration);
+  await db.exec(officeMigration);
 }, 20000);
 afterAll(async () => { await db?.close(); });
 
 describe("private patient original archive policy", () => {
+  it("accepts native Excel originals without allowing macros or anonymous preparation", async () => {
+    await db.exec("set role authenticated; set test.admin = 'on'");
+    const query = "select prepare_therapy_document_archive('P-2099-0701',$1,42,'sonstige',$2,null) as receipt";
+    const result = await db.query<{ receipt: any }>(query, [digest, "xlsx"]);
+    expect(result.rows[0].receipt.path).toBe(`P-2099-0701/undatiert/sonstige-${digest}.xlsx`);
+    await expect(db.query(query, [digest, "xlsm"])).rejects.toThrow(/Unsupported/);
+    await db.exec("reset role");
+  });
   it("prepares a canonical, filename-free destination only for an admin", async () => {
     await db.exec("set role authenticated; set test.admin = 'on'");
     const receipt = await prepare("p-2099-0701");

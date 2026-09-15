@@ -39,7 +39,8 @@ import { anamnesisProfileFormValuesText } from "@/lib/anamnesisProfileForm";
 import { supabase } from "@/integrations/supabase/client";
 import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
-import mammoth from "mammoth";
+import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
+import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -151,8 +152,22 @@ export async function extractClinicalDocumentText(
   if (file.type.startsWith("image/")) {
     throw new Error("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet. Bitte den sicheren PDF-Import verwenden.");
   }
+  if (/\.(docx|xlsx)$/i.test(file.name)) {
+    throwIfAborted(sharedOcrSession?.signal);
+    onProgress?.("Word-/Excel-Inhalte werden lokal gelesen und datenschutzbereinigt...");
+    const office = await extractClinicalOfficeText(file);
+    throwIfAborted(sharedOcrSession?.signal);
+    const raw = [office.text, ...office.warnings.map(warning => `Lokaler Prüfhinweis: ${warning}`), mode === "anamnese" ? iaaCaptureStatusText(false, false) : ""].filter(Boolean).join("\n\n");
+    const removedIdentifierCategories = directIdentifierCategories(raw);
+    const localPrivacyFindings = collectLocalPrivacyFindings(raw);
+    const safeBody = quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(deidentifyClinicalText(raw)));
+    if (!safeBody.trim() || directIdentifierCategories(safeBody).length) throw new Error("Datenschutzprüfung der Office-Datei erforderlich; noch keine Übernahme.");
+    const documentId = await createNeutralDocumentId(safeBody, identitySalt);
+    const text = `=== 📄 Dokument-${documentId} (${office.format === "docx" ? "Word; Absatzangaben" : "Excel; Blatt- und Zellangaben"}) ===\n${safeBody}`;
+    return { text, chars: text.length, pages: 0, ocrPages: 0, ocrFailedPages: [], ocrPageConfidences: [], removedIdentifierCategories, localPrivacyFindings };
+  }
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    throw new Error("Im Datenschutzmodus sind in diesem Import nur PDFs erlaubt.");
+    throw new Error("Bitte PDF, Word (.docx) oder Excel (.xlsx) auswählen. Die Dateien werden lokal geprüft.");
   }
 
   const ocrSession = sharedOcrSession || {};
@@ -348,15 +363,14 @@ export const extractTherapyTemplateDocument: typeof extractClinicalDocumentText 
   file, mode, notify, onProgress, session, identitySalt = "", pdfPassword = "", onPasswordCaptured,
 ) => {
   const lower = file.name.toLowerCase();
-  if (!lower.endsWith(".docx") && (file.type === "application/pdf" || lower.endsWith(".pdf"))) {
+  if (/\.(docx|xlsx)$/.test(lower) || file.type === "application/pdf" || lower.endsWith(".pdf")) {
     return extractClinicalDocumentText(file, mode, notify, onProgress, session, identitySalt, pdfPassword, onPasswordCaptured);
   }
   throwIfAborted(session?.signal);
   onProgress?.("Word-/Text-Dokument wird lokal gelesen...");
   let raw: string;
-  if (lower.endsWith(".docx")) raw = (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
-  else if (lower.endsWith(".txt") || lower.endsWith(".md") || file.type === "text/plain") raw = await file.text();
-  else throw new Error("Bitte PDF, Word (.docx) oder Text (.txt/.md) auswählen.");
+  if (lower.endsWith(".txt") || lower.endsWith(".md") || file.type === "text/plain") raw = await file.text();
+  else throw new Error("Bitte PDF, Word (.docx), Excel (.xlsx) oder Text (.txt/.md) auswählen.");
   throwIfAborted(session?.signal);
   if (!raw.trim()) throw new Error("Das Dokument enthält keinen auslesbaren Text. Das Original wurde nicht verändert.");
   const removedIdentifierCategories = directIdentifierCategories(raw);
@@ -370,7 +384,7 @@ export const extractTherapyTemplateDocument: typeof extractClinicalDocumentText 
   return { text, chars: text.length, removedIdentifierCategories, localPrivacyFindings };
 };
 
-export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokument", accept = "application/pdf", extractText = extractClinicalDocumentText, ocrMode = "doctor", label = "PDF hochladen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
+export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokument", accept = CLINICAL_DOCUMENT_ACCEPT, extractText = extractClinicalDocumentText, ocrMode = "doctor", label = "Dokument auswählen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const replacementInputRef = useRef<HTMLInputElement>(null);
   const pseudonymIdRef = useRef(pseudonymId);
@@ -714,7 +728,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
 
   return (
     <div className="space-y-2">
-      {extractText === extractTherapyTemplateDocument && <p className="text-xs text-muted-foreground">PDF, Word (.docx) und Text (.txt/.md) werden lokal gelesen. Bei Word wird auslesbarer Text übernommen; eingebettete Bilder bleiben im vollständigen Original, werden hier aber nicht als Text erkannt.</p>}
+      {extractText === extractTherapyTemplateDocument && <p className="text-xs text-muted-foreground">PDF, Word (.docx), Excel (.xlsx) und Text (.txt/.md) werden lokal gelesen. Absatz-, Blatt- und Zellangaben bleiben erhalten. Besondere Inhalte oder Formatierungen werden zur Originalprüfung gekennzeichnet.</p>}
       {onPdfPasswordChange && (
         <div className="rounded-md border border-amber-300/70 bg-amber-50/60 dark:bg-amber-950/15 dark:border-amber-900/40 p-2.5 space-y-1.5">
           <label className="text-xs font-medium block" htmlFor="protected-pdf-password">Vieva-Pro-PDF-Passwort</label>

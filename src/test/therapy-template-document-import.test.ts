@@ -1,14 +1,15 @@
 // @vitest-environment node
 import JSZip from "jszip";
 import { webcrypto } from "node:crypto";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, afterAll, describe, expect, it, vi } from "vitest";
+import { JSDOM } from "jsdom";
 import { extractTherapyTemplateDocument } from "@/components/admin/therapy/MultiDocUpload";
 
 vi.mock("pdfjs-dist", () => ({ GlobalWorkerOptions: {}, OPS: {}, getDocument: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
-// Exercise Mammoth's real browser API: the Node entry expects Buffer instead of ArrayBuffer.
-vi.mock("mammoth", async () => ({ default: (await import("mammoth/mammoth.browser.js")).default }));
-beforeEach(() => vi.stubGlobal("crypto", webcrypto));
+const dom = new JSDOM("");
+beforeEach(() => { vi.stubGlobal("crypto", webcrypto); vi.stubGlobal("DOMParser", dom.window.DOMParser); });
+afterAll(() => dom.window.close());
 afterEach(() => vi.unstubAllGlobals());
 
 describe("reviewed local therapy-template documents", () => {
@@ -18,7 +19,7 @@ describe("reviewed local therapy-template documents", () => {
     zip.file("_rels/.rels", '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
     zip.file("word/document.xml", '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Synthetischer Therapieplan zur Überprüfung.</w:t></w:r></w:p></w:body></w:document>');
     const bytes = await zip.generateAsync({ type: "arraybuffer" });
-    const file = { name: "private-synthetic-source.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", arrayBuffer: async () => bytes } as File;
+    const file = { name: "private-synthetic-source.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: bytes.byteLength, arrayBuffer: async () => bytes } as File;
     const result = await extractTherapyTemplateDocument(file);
     expect(result.text).toContain("Synthetischer Therapieplan zur Überprüfung.");
     expect(result.text).toMatch(/Dokument-[a-f0-9]{12}/);

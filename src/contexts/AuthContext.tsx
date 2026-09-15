@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { clearDevAdminBypass, isDevAdminBypassActive } from '@/lib/devAdminBypass';
 import { getSimulatedPreset, onSimulatedRoleChange } from '@/lib/roleSimulator';
+import { sameAuthenticatedSession } from '@/lib/authSessionIdentity';
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sessionRef = useRef<Session | null>(null);
   const nullSessionRecheckRef = useRef<number | null>(null);
   const intentionalSignOutRef = useRef(false);
+  const signOutRequestVersionRef = useRef(0);
 
   const devBypass = isDevAdminBypassActive();
   
@@ -47,14 +49,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let isMounted = true;
+    let securityCheckVersion = 0;
+    let authEventVersion = 0;
 
     const applySession = (nextSession: Session | null) => {
+      if (!sameAuthenticatedSession(sessionRef.current, nextSession)) {
+        signOutRequestVersionRef.current += 1;
+        intentionalSignOutRef.current = false;
+      }
       sessionRef.current = nextSession;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
     };
 
     const clearSession = () => {
+      securityCheckVersion += 1;
       sessionRef.current = null;
       setSession(null);
       setUser(null);
@@ -65,31 +74,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const confirmMissingSession = () => {
+      const requestedVersion = authEventVersion;
       if (nullSessionRecheckRef.current) window.clearTimeout(nullSessionRecheckRef.current);
-      setLoading(true);
+      if (!sessionRef.current) setLoading(true);
       nullSessionRecheckRef.current = window.setTimeout(async () => {
         try {
           const { data: { session: confirmedSession } } = await supabase.auth.getSession();
-          if (!isMounted) return;
+          if (!isMounted || requestedVersion !== authEventVersion) return;
 
           if (confirmedSession?.user) {
+            const unchangedSession = sameAuthenticatedSession(sessionRef.current, confirmedSession);
             applySession(confirmedSession);
-            setRoleChecked(false);
-            setTwoFactorChecked(false);
+            if (!unchangedSession) {
+              if (!devBypass) { setIsAdmin(false); setTwoFactorVerified(false); }
+              setRoleChecked(false);
+              setTwoFactorChecked(false);
+            }
             await checkSessionSecurity(confirmedSession.user.id);
           } else {
             clearSession();
           }
         } finally {
-          if (isMounted) setLoading(false);
+          if (isMounted && requestedVersion === authEventVersion) setLoading(false);
         }
       }, 400);
     };
 
     const checkSessionSecurity = async (userId: string) => {
+      const version = ++securityCheckVersion;
+      const checkedSession = sessionRef.current;
+      const isCurrent = () => isMounted && version === securityCheckVersion
+        && checkedSession?.user.id === userId && sameAuthenticatedSession(checkedSession, sessionRef.current);
       // In preview/dev mode, keep admin bypass active even if token/role RPC fails.
       if (devBypass) {
-        if (isMounted) {
+        if (isCurrent()) {
           setIsAdmin(true);
           setTwoFactorVerified(true);
           setTwoFactorChecked(true);
@@ -105,20 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           _role: 'admin'
         });
         admin = !error && data === true;
-        if (isMounted) setIsAdmin(admin);
+        if (isCurrent()) setIsAdmin(admin);
       } catch (e) {
-        if (isMounted) setIsAdmin(false);
+        if (isCurrent()) setIsAdmin(false);
       } finally {
-        if (isMounted) setRoleChecked(true);
+        if (isCurrent()) setRoleChecked(true);
       }
 
       try {
+        if (!isCurrent()) return;
         const { data, error } = await supabase.rpc('is_current_session_two_factor_completed');
-        if (isMounted) setTwoFactorVerified(!error && data === true);
+        if (isCurrent()) setTwoFactorVerified(!error && data === true);
       } catch {
-        if (isMounted) setTwoFactorVerified(false);
+        if (isCurrent()) setTwoFactorVerified(false);
       } finally {
-        if (isMounted) setTwoFactorChecked(true);
+        if (isCurrent()) setTwoFactorChecked(true);
       }
     };
 
@@ -126,17 +145,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, nextSession) => {
         if (!isMounted) return;
+        authEventVersion += 1;
         if (nullSessionRecheckRef.current) {
           window.clearTimeout(nullSessionRecheckRef.current);
           nullSessionRecheckRef.current = null;
         }
 
         if (nextSession?.user) {
+          const unchangedSession = sameAuthenticatedSession(sessionRef.current, nextSession);
+          securityCheckVersion += 1;
           applySession(nextSession);
           setLoading(false);
-          setRoleChecked(false);
-          setTwoFactorChecked(false);
-          setTimeout(() => checkSessionSecurity(nextSession.user.id), 0);
+          // Retain queued Files while the unchanged session is rechecked normally.
+          if (!unchangedSession) {
+            if (!devBypass) { setIsAdmin(false); setTwoFactorVerified(false); }
+            setRoleChecked(false);
+            setTwoFactorChecked(false);
+          }
+          setTimeout(() => {
+            if (sameAuthenticatedSession(sessionRef.current, nextSession)) void checkSessionSecurity(nextSession.user.id);
+          }, 0);
 
            // Log sign-in events for DSGVO audit trail
            if (event === 'SIGNED_IN') {
@@ -164,9 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // INITIAL load (controls loading state)
     const initializeAuth = async () => {
+      const requestedVersion = authEventVersion;
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!isMounted) return;
+        if (!isMounted || requestedVersion !== authEventVersion) return;
 
         if (session?.user) {
           applySession(session);
@@ -177,7 +206,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           clearSession();
         }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted && requestedVersion === authEventVersion) setLoading(false);
       }
     };
 
@@ -191,16 +220,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
-    // Log sign-out for DSGVO audit trail
-    if (user?.id) {
+    const requestedSession = sessionRef.current;
+    const requestVersion = ++signOutRequestVersionRef.current;
+    const stillRequested = () => requestVersion === signOutRequestVersionRef.current
+      && (requestedSession ? sameAuthenticatedSession(requestedSession, sessionRef.current) : !sessionRef.current);
+    // Bind ancillary requests to the session whose logout was requested.
+    if (requestedSession?.user.id) {
       await supabase.rpc('insert_audit_log', {
         _action: 'logout',
         _details: {},
-      }).then(() => {}, () => {});
-      await supabase.rpc('clear_current_two_factor_session' as never).then(() => {}, () => {});
+      }).setHeader('Authorization', `Bearer ${requestedSession.access_token}`).then(() => {}, () => {});
+      if (!stillRequested()) return;
+      await supabase.rpc('clear_current_two_factor_session' as never)
+        .setHeader('Authorization', `Bearer ${requestedSession.access_token}`).then(() => {}, () => {});
     }
+    if (!stillRequested()) return;
     intentionalSignOutRef.current = true;
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      if (requestVersion === signOutRequestVersionRef.current) intentionalSignOutRef.current = false;
+      throw error;
+    }
+    if (requestVersion !== signOutRequestVersionRef.current
+      || (sessionRef.current && !sameAuthenticatedSession(requestedSession, sessionRef.current))) return;
+    intentionalSignOutRef.current = false;
     sessionRef.current = null;
     setUser(null);
     setSession(null);

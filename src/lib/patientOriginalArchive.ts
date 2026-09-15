@@ -35,7 +35,7 @@ export type OriginalArchiveClient = {
     download: (path: string) => PromiseLike<{ data: Blob | null; error: any }>;
   } };
 };
-const extensions = new Set(["pdf", "docx", "txt", "md", "html", "htm", "csv", "json"]);
+const extensions = new Set(["pdf", "docx", "xlsx", "txt", "md", "html", "htm", "csv", "json"]);
 const sha256 = async (value: ArrayBuffer) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", value)))
   .map(byte => byte.toString(16).padStart(2, "0")).join("");
 

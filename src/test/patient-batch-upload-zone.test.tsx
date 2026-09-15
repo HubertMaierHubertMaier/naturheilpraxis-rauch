@@ -11,7 +11,7 @@ it("rejects a multiple-file drop in single mode without silently taking the firs
   fireEvent.drop(screen.getByRole("button", { name: /hineinziehen/ }), { dataTransfer: { files, items: [] } });
   expect(onFiles).not.toHaveBeenCalled();
   expect(screen.getByRole("status")).toHaveTextContent("keine Datei übernommen");
-  expect(screen.queryByLabelText("Lokalen Ordner mit PDFs auswählen")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Lokalen Ordner mit Dokumenten auswählen")).not.toBeInTheDocument();
 });
 
 it("accepts a single PDF and routes a folder drop to the visible batch-mode choice", () => {
@@ -43,9 +43,11 @@ it("accepts several dropped PDFs and explicitly reports unsupported files", () =
   render(<PatientBatchUploadZone disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={vi.fn()} />);
   const pdf = new File(["%PDF-test"], "synthetic.pdf", { type: "application/pdf" });
   const other = new File(["text"], "synthetic.txt", { type: "text/plain" });
-  fireEvent.drop(screen.getByRole("button", { name: /hineinziehen/ }), { dataTransfer: { files: [pdf, other], items: [] } });
-  expect(onFiles).toHaveBeenCalledWith([pdf]);
-  expect(screen.getByRole("status").textContent).toContain("1 andere Datei(en)");
+  const word = new File(["word"], "synthetic.docx");
+  const excel = new File(["excel"], "synthetic.xlsx");
+  fireEvent.drop(screen.getByRole("button", { name: /hineinziehen/ }), { dataTransfer: { files: [pdf, word, excel, other], items: [] } });
+  expect(onFiles).toHaveBeenCalledWith([pdf, word, excel]);
+  expect(screen.getByRole("status").textContent).toContain("1 nicht unterstützte Datei(en)");
 });
 
 it("does not queue files until the patient context is ready", () => {
@@ -64,7 +66,7 @@ it("supports keyboard file selection and snapshots folder files before resetting
   render(<PatientBatchUploadZone disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={onSelectFiles} />);
   fireEvent.keyDown(screen.getByRole("button", { name: /hineinziehen/ }), { key: "Enter" });
   expect(onSelectFiles).toHaveBeenCalledOnce();
-  const input = screen.getByLabelText("Lokalen Ordner mit PDFs auswählen");
+  const input = screen.getByLabelText("Lokalen Ordner mit Dokumenten auswählen");
   expect(input).toHaveAttribute("webkitdirectory");
   const files = [new File(["one"], "one.pdf"), new File(["two"], "two.pdf")];
   fireEvent.change(input, { target: { files } });
@@ -76,5 +78,5 @@ it("explains the folder picker instead of pretending a dropped directory was imp
   render(<PatientBatchUploadZone disabled={false} disabledReason="" onFiles={onFiles} onSelectFiles={vi.fn()} />);
   fireEvent.drop(screen.getByRole("button", { name: /hineinziehen/ }), { dataTransfer: { files: [], items: [{ webkitGetAsEntry: () => ({ isDirectory: true }) }] } });
   expect(onFiles).not.toHaveBeenCalled();
-  expect(screen.getByRole("status").textContent).toContain("Ordner mit PDFs auswählen");
+  expect(screen.getByRole("status").textContent).toContain("Ordner mit Dokumenten auswählen");
 });
