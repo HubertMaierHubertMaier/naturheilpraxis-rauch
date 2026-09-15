@@ -14,6 +14,7 @@ import {
 } from "../_shared/labTrendAnalysis.ts";
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
 import { assertCompletePartialCollections, attachClinicalSourceEvidence, hasCompletePartialCollections, combineClinicalPartials, deduplicateClinicalFacts, clinicalEvidenceText } from "../_shared/clinicalSourceEvidence.ts";
+import { hasUnconfirmedFormStatements, isQuestionnaireSource } from "../_shared/questionnaireEvidence.ts";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 180;
@@ -188,9 +189,11 @@ Patientenkontext: ${patientContext(b)}
 Wichtig:
 - Es ist eine reine Befund-Auswertung, KEINE eigene Therapie-Empfehlung und KEINE neuen Mittel-Vorschläge.
 - 📝 FORMULAR-REGEL (kritisch, gilt insbesondere für ausgefüllte Anamnesebögen, Fragebögen, Checklisten, IAA-Bögen — inkl. des Praxis-Anamnesebogens Peter Rauch / Naturheilpraxis Rauch mit den römisch nummerierten Sektionen I.–XXV. wie "I. Patientendaten", "II. Aktuelle Beschwerden", "III. Allergien & Unverträglichkeiten", "IV. Kopf/Sinne/Nervensystem", "V. Herz & Kreislauf", "VI. Lunge & Atmung", "VII. Magen & Darm" usw.):
-  * Es dürfen NUR Einträge extrahiert werden, bei denen der Patient tatsächlich etwas ausgefüllt oder angekreuzt hat — also freier Text, eine handschriftliche Notiz, ein sichtbares Kreuz/Häkchen (X, ✓, ☑, "ja", ausgefüllter Kreis ●, geschwärztes Kästchen ■) oder eine numerische Skalen-Antwort > 1 (die "1" ist bei IAA/Trikombin die Default-Grundausprägung "nicht/kaum" und zählt NICHT als bejahtes Symptom).
+  * Patientenangaben nur aus tatsächlich ausgefüllten Antworten ableiten. IAA-Werte 1 bis 6 sind ausschließlich bei eindeutig dokumentierter Auswahl gültig; die 1 ist NICHT automatisch eine Vorgabe, Nichtangabe oder Verneinung. Strukturierte IAA_FORMULAR-Blöcke und explizite Angaben "Bewertung: N/6" mit Fragekennung sind maßgeblich, nicht die daneben ausgelesenen gedruckten Skalen.
   * Leere Checkbox-Symbole (☐, □, ○, "[ ]", "( )") und gedruckte Diagnose-Listen ohne Kreuz sind UNBEANTWORTET → nicht übernehmen. Nur die tatsächlich markierten Zeilen extrahieren.
-  * Gedruckte Formular-Labels, Beispiel-Platzhalter ("(unleserlich)", "(Datum)", "(Jahr)", "seit …", "________", "ICD-10: …" ohne Patient-Kreuz), leere Tabellenzeilen (z.B. leere Medikamenten-Tabelle mit nur Spaltenköpfen "Name | Dosis | seit wann | wegen"), Sektions-Überschriften ohne Patient-Antwort und ganze Kataloge angebotener Diagnosen ohne Kreuz werden STILL VERWORFEN. Niemals als leere Bullet-Punkte, "Keine Angabe"-Zeilen oder "[Datum entfernt]"-Zeilen ausgeben.
+  * Gedruckte Formular-Labels, Beispiel-Platzhalter und leere Tabellenzeilen sind keine Patientenangaben. Der vollständige Quelltext bleibt erhalten; solche Stellen nicht als Beschwerden, Diagnosen, aktuelle Mittel oder Verneinungen einordnen. Unsichere Zuordnungen bei Bedarf nur in openQuestions mit dem Originalzitat zur Prüfung festhalten.
+  * Zeichenfolgen wie oooooo, 000000, OooOogooo, aaa, N], EN!, [_], [7] oder [m] sind KEIN Nachweis einer Auswahl oder numerischen Bewertung. Niemals Kreise, Striche oder Kästchen abzählen und daraus eine IAA-Stärke erzeugen. Auch eine schwarze Schwärzung ist kein bestätigtes Antwortkreuz.
+  * "Manuell pruefen (keine sichere Frage-Antwort-Zuordnung...)" und "Formularhinweis (keine zugeordnete Patientenantwort...)" kennzeichnen unbestätigte Quellenstellen. Sie gehören nicht in die Listen bestätigter Patientenangaben; bei Bedarf als offene Quellenfrage erhalten.
   * Wenn eine ganze Sektion vom Patienten leer gelassen wurde: die Sektion komplett weglassen (leeres Array zurückgeben). Nicht die Frage/Label/den Diagnosen-Katalog als vermeintlichen Befund übernehmen.
   * KEINE Datum-Platzhalter erfinden: wenn im Formularabschnitt kein echtes Datum steht, "datum":"" lassen. Niemals "[Datum entfernt]", "[Datum nicht erkennbar]", "(Datum folgt aus …)" o.ä. produzieren.
   * KEINE ICD-10-Codes aus einem gedruckten Diagnose-Katalog übernehmen, wenn der Patient die Zeile NICHT angekreuzt hat — auch wenn Code + Bezeichnung sauber im Formular stehen.
@@ -250,8 +253,9 @@ Wichtig:
 - Zu JEDEM Eintrag in documents, anamnese.*, diagnoses, medicationsTherapies, findings, redFlags, systemsPatterns ein Objekt "beleg":
   * quelle = das Dokumentblock-Label (s.u.),
   * teil = "${index}/${total}",
-  * seite = tatsächliche Seitennummer aus der nächstgelegenen Markierung "--- Seite N ---"; bei nicht vorhandener Seitenangabe leer lassen, keine Nummer raten,
+  * seite = tatsächliche Seitennummer aus der nächstgelegenen Markierung "--- Seite N ---" oder "--- Seite N | OCR-Qualität ---"; bei nicht vorhandener Seitenangabe leer lassen, keine Nummer raten,
   * zitat = WÖRTLICHES Kurzzitat (max. 220 Zeichen) aus dem Originaltext — KEINE Umformulierung. Wählt das prägnanteste Zitat.
+  * Bei strukturierten Frage/Feld-Zeilen ein zusammenhängendes Frage-Antwort-Paar zitieren. Nicht voneinander entfernte Textstücke zu einem vermeintlich wörtlichen Zitat zusammensetzen; eine bloße Fragebezeichnung beweist keine Antwort.
 - 🚫 HALLUZINATIONSVERBOT: Was nicht im Text steht, NICHT erfinden, NICHT aus anderen Befunden schließen, KEINE Untersuchungen oder Symptome ergänzen, die nicht explizit dokumentiert sind. Lieber [] lassen. Vor dem Antworten selbst prüfen: "Steht das wörtlich/sinngemäß im Text? Wenn nein → entfernen."
 - DATENSCHUTZ AUCH IM BELEGZITAT: Patientennamen, Initialen, Anschriften, Geburtsdaten, Telefon, E-Mail, Versicherungsnummern sowie Bar-/QR-Codes niemals in "zitat" übernehmen. Solche Stellen im Zitat durch "[personenbezogene Angabe entfernt]" ersetzen; medizinischen Inhalt, Messwert und Datum erhalten.
 
@@ -613,6 +617,8 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 
   for (const key of Object.keys(aggregate)) aggregate[key] = deduplicateClinicalFacts(aggregate[key]);
   for (const key of anamneseKeys) anamnese[key] = deduplicateClinicalFacts(anamnese[key]);
+  const unconfirmedFormStatements = aggregate.openQuestions.filter((item: any) => item?.sourceAssertionStatus === "unconfirmed_form");
+  aggregate.openQuestions = aggregate.openQuestions.filter((item: any) => item?.sourceAssertionStatus !== "unconfirmed_form");
 
   const labHighlights = buildClinicallyRelevantLabHighlights(
     aggregate.labValues as Record<string, unknown>[],
@@ -699,7 +705,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 <body>
   <h1>Befund-Auswertung</h1>
   <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientContext(b))} · <strong>Umfang:</strong> ${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen / ${escapeHtml(chunkCount)} Teilpaket(e)</div>
-  <div class="notice"><strong>Hinweis:</strong> Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde. Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
+  <div class="notice"><strong>Hinweis:</strong> ${unconfirmedFormStatements.length ? "Diese Ausgabe wurde regelgebunden aus den Teilanalysen erstellt. Unbestätigte Formular- und OCR-Zuordnungen stehen getrennt im Prüfanhang und wurden nicht als Patientenangaben übernommen." : "Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde."} Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
 
   <h2>1. Übersicht der eingereichten Unterlagen</h2>
   <table><tbody><tr><th>Teilpakete</th><td>${escapeHtml(chunkCount)}</td></tr><tr><th>Verarbeiteter Umfang</th><td>${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen</td></tr><tr><th>Duplikate</th><td>${duplicateNotes.length ? duplicateNotes.map(escapeHtml).join("<br>") : "Keine vorab erkannten identischen Duplikate."}</td></tr></tbody></table>
@@ -765,6 +771,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   <h2>8. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
   <h2>9. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>
   <h2>10. Empfohlenes Vorgehen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+  ${unconfirmedFormStatements.length ? `<h2>10a. Unbestätigte Formular-/OCR-Stellen – Prüfanhang</h2><p>${unconfirmedFormStatements.length} mögliche Zuordnung(en) sind keine bestätigten Patientenangaben. Gedruckte Auswahlfelder und undeutliche Zeichen ergeben weder eine Auswahl noch eine Bewertung. Originalstellen und ursprüngliche Modellinterpretationen bleiben erhalten.</p>${unconfirmedFormStatements.map((item: any) => `<div class="notice"><p>${val(item)}</p>${beleg(item)}<details><summary>Erhaltene ursprüngliche Zuordnung anzeigen</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(JSON.stringify(item.unconfirmedSourceStatement, null, 2))}</pre></details></div>`).join("")}` : ""}
   <h2>11. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
   <h2>12. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
 </body>
@@ -828,7 +835,13 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
 }
 
 
-async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string, expectedPseudonymId = ""): Promise<ReadableStream<Uint8Array>> {
+async function streamGatewayHtml(apiKey: string, model: string, prompt: string, deterministicFallbackHtml?: string, expectedPseudonymId = "", preserveFormReviewPartition = false): Promise<ReadableStream<Uint8Array>> {
+  if (preserveFormReviewPartition) {
+    if (!deterministicFallbackHtml) throw new Error("Der regelgebundene Bericht für ungeprüfte Formularstellen fehlt.");
+    const safeHtml = deidentifyClinicalReportHtml(deterministicFallbackHtml, expectedPseudonymId);
+    if (!isCompleteFinalHtml(safeHtml)) throw new Error("Der regelgebundene Formularbericht ist unvollständig.");
+    return new ReadableStream({ start(controller) { controller.enqueue(encoder.encode(safeHtml)); controller.close(); } });
+  }
   const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -938,7 +951,7 @@ function progressStream(chunks: DocBlock[], b: AnalyzeBody, apiKey: string, mode
         if (countPartialExtractionItems(partials) === 0) throw new Error("Die KI hat keine verwertbaren Befunddaten extrahiert; es wird kein leerer Bericht erzeugt.");
         send(`</ul><p><strong>Zusammenführung läuft…</strong></p></main>`);
         const finalPrompt = buildFinalPrompt(partials, b, totalChars, chunks.length);
-        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length), String(b.pseudonymId || ""));
+        const htmlStream = await streamGatewayHtml(apiKey, model, finalPrompt, buildDeterministicFinalHtml(partials, b, totalChars, chunks.length), String(b.pseudonymId || ""), hasUnconfirmedFormStatements(partials.map(parseLlmJson)));
         const reader = htmlStream.getReader();
         while (true) {
           const { value, done } = await reader.read();
@@ -1124,6 +1137,7 @@ serve(async (req) => {
         buildFinalPrompt(partials, body, totalChars, partials.length),
         buildDeterministicFinalHtml(partials, body, totalChars, partials.length),
         String(body.pseudonymId || ""),
+        hasUnconfirmedFormStatements(partials.map(parseLlmJson)),
       );
       return new Response(htmlStream, {
         headers: {
@@ -1148,7 +1162,7 @@ serve(async (req) => {
 
     const totalChars = blocks.reduce((sum, block) => sum + block.text.length, 0);
     const chunks = chunkDocuments(blocks);
-    const largeMode = chunks.length > 1 || totalChars > 24_000;
+    const largeMode = chunks.length > 1 || totalChars > 24_000 || blocks.some(block => isQuestionnaireSource(block.text));
     const model = body.useProModel
       ? "google/gemini-2.5-pro"
       : "google/gemini-2.5-flash";

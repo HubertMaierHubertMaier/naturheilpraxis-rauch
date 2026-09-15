@@ -1,3 +1,5 @@
+import { createQuestionnaireEvidenceValidator } from "./questionnaireEvidence.ts";
+
 export const PARTIAL_ANALYSIS_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 export const PARTIAL_ANAMNESIS_ARRAY_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const object = (value: unknown): Record<string, any> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
@@ -42,7 +44,10 @@ export function combineClinicalPartials(partials: Record<string, any>[]): Record
   }
   for (const key of PARTIAL_ANALYSIS_ARRAY_KEYS) result[key] = deduplicateClinicalFacts(result[key]);
   for (const key of PARTIAL_ANAMNESIS_ARRAY_KEYS) result.anamnese[key] = deduplicateClinicalFacts(result.anamnese[key]);
-  result.source_coverage_v1 = { parts: partials.map(partial => partial.source_coverage_v1).filter(Boolean) };
+  result.source_coverage_v1 = {
+    parts: partials.map(partial => partial.source_coverage_v1).filter(Boolean),
+    answerValidationVersion: partials.length > 0 && partials.every(partial => partial.source_coverage_v1?.answerValidationVersion === 1) ? 1 : 0,
+  };
   return result;
 }
 
@@ -51,7 +56,7 @@ export function clinicalEvidenceText(value: unknown): string {
   const refs = Array.isArray(item.belege) && item.belege.length ? item.belege : [item.beleg];
   return refs.map((raw: unknown) => {
     const b = object(raw);
-    return [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.seite ? `Seite ${b.seite}` : "", b.zitat ? `„${b.zitat}“` : "", b.pruefstatus === "quellenzitat_nicht_bestaetigt" ? "Zitat nicht automatisch bestätigt – prüfen" : ""].filter(Boolean).join(" · ");
+    return [b.quelle, b.teil ? `Teil ${b.teil}` : "", b.seite ? `Seite ${b.seite}` : "", b.zitat ? `„${b.zitat}“` : "", b.pruefstatus === "formularstelle_unbestaetigt" ? "Unbestätigte Formular-/OCR-Stelle – keine gesicherte Patientenangabe" : b.pruefstatus === "quellenzitat_nicht_bestaetigt" ? "Zitat nicht automatisch bestätigt – prüfen" : ""].filter(Boolean).join(" · ");
   }).filter(Boolean).join(" | ");
 }
 
@@ -65,8 +70,9 @@ export function assertCompletePartialCollections(value: unknown): void {
 }
 
 type SourcePage = { page: number; text: string };
+const pageMarkers = (text: string) => [...text.matchAll(/---[ \t]*Seite[ \t]+(\d+)(?:[ \t]*\|[^\r\n]*?)?[ \t]*---/gi)];
 function sourcePages(text: string): SourcePage[] {
-  const markers = [...text.matchAll(/---\s*Seite\s+(\d+)\s*---/gi)];
+  const markers = pageMarkers(text);
   return markers.map((match, index) => ({ page: Number(match[1]), text: text.slice((match.index || 0) + match[0].length, markers[index + 1]?.index ?? text.length) }));
 }
 
@@ -75,8 +81,10 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
   const source = structuredClone(value);
   const pages = sourcePages(sourceText);
   const fullText = normalize(sourceText);
+  const isUnconfirmedQuestionnaireEvidence = createQuestionnaireEvidenceValidator(sourceText);
   const sourceId = sourceText.match(/(?:Dokument-|KLINISCHES\s+DOKUMENT\s+)([a-f0-9]{12})/i)?.[1] || stableSourceLabel(sourceLabel);
   let verified = 0; let unverified = 0;
+  const unconfirmed: Record<string, any>[] = [];
   const pageCounts = new Map(pages.map(page => [page.page, 0]));
   const annotate = (raw: unknown, group: string) => {
     const item = typeof raw === "string" ? { [group === "diagnoses" ? "diagnose" : group === "medicationsTherapies" ? "name" : "text"]: raw } : { ...object(raw) };
@@ -86,6 +94,7 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
     const beleg = { ...object(item.beleg) };
     const quote = normalize(beleg.zitat || item.zitat);
     const matches = quote.length > 0 && fullText.includes(quote);
+    const unconfirmedForm = isUnconfirmedQuestionnaireEvidence(quote, [item.text, item.befund, item.diagnose, item.name].filter(value => typeof value === "string").join(" "));
     const matchingPages = matches ? [...new Set(pages.filter(page => normalize(page.text).includes(quote)).map(page => page.page))] : [];
     if (matches) verified++; else unverified++;
     for (const page of matchingPages) pageCounts.set(page, (pageCounts.get(page) || 0) + 1);
@@ -94,14 +103,24 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
     item.beleg = {
       ...beleg, quelle: sourceLabel, sourceId, teil: part,
       seite: matchedPage || "", zitat: typeof beleg.zitat === "string" ? beleg.zitat : typeof item.zitat === "string" ? item.zitat : "",
-      pruefstatus: matches ? "quellenzitat_bestaetigt" : "quellenzitat_nicht_bestaetigt",
+      pruefstatus: unconfirmedForm ? "formularstelle_unbestaetigt" : matches ? "quellenzitat_bestaetigt" : "quellenzitat_nicht_bestaetigt",
+      quoteMatched: matches,
     };
+    if (unconfirmedForm) {
+      unconfirmed.push({
+        text: `Unbestätigte Formular-/OCR-Zuordnung – am Original prüfen: ${String(item.text || item.befund || item.diagnose || item.name || "Angabe ohne eindeutige Antwort")}`,
+        sourceAssertionStatus: "unconfirmed_form", polarity: "not-stated", beleg: item.beleg,
+        originalCollection: group, unconfirmedSourceStatement: item,
+      });
+      return null;
+    }
     return item;
   };
-  for (const key of ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "redFlags", "systemsPatterns"]) source[key] = (source[key] || []).map((item: unknown) => annotate(item, key));
-  source.anamnese = Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, (source.anamnese?.[key] || []).map((item: unknown) => annotate(item, key))]));
+  for (const key of ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "redFlags", "systemsPatterns"]) source[key] = (source[key] || []).map((item: unknown) => annotate(item, key)).filter(Boolean);
+  source.anamnese = Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, (source.anamnese?.[key] || []).map((item: unknown) => annotate(item, key)).filter(Boolean)]));
+  source.openQuestions = [...(source.openQuestions || []), ...unconfirmed];
   source.source_coverage_v1 = {
-    sourceId, sourceLabel, part, verifiedQuotes: verified, unverifiedQuotes: unverified,
+    sourceId, sourceLabel, part, verifiedQuotes: verified, unverifiedQuotes: unverified, unconfirmedFormStatements: unconfirmed.length, answerValidationVersion: 1,
     pages: [...pageCounts].map(([page, matchedFacts]) => ({ page, matchedFacts, status: matchedFacts ? "quoted_facts_present" : "no_verified_fact_quote" })),
     scope: "Quotation matching and page attribution only; not proof that every clinical statement was interpreted correctly.",
   };
@@ -113,15 +132,16 @@ export function splitPageAwareClinicalText(label: string, value: string, maxChar
   const text = value.trim(); if (!text) return [];
   if (text.length <= maxChars) return [{ label, text }];
   if (!Number.isInteger(maxChars) || maxChars < 512) throw new Error("Ungültige Größe eines klinischen Teilpakets.");
-  const markers = [...text.matchAll(/---\s*Seite\s+(\d+)\s*---/gi)];
+  const markers = pageMarkers(text);
   const prologue = markers.length ? text.slice(0, markers[0].index).trim() : "";
   const header = prologue.length < Math.floor(maxChars / 3) ? prologue : "";
-  const sections = markers.length ? markers.map((match, index) => ({ page: Number(match[1]), text: text.slice((match.index || 0) + match[0].length, markers[index + 1]?.index ?? text.length).trim() })) : [{ page: 0, text }];
-  if (prologue && !header) sections.unshift({ page: 0, text: prologue });
+  const sections = markers.length ? markers.map((match, index) => ({ page: Number(match[1]), marker: match[0], text: text.slice((match.index || 0) + match[0].length, markers[index + 1]?.index ?? text.length).trim() })) : [{ page: 0, marker: "", text }];
+  if (prologue && !header) sections.unshift({ page: 0, marker: "", text: prologue });
   const result: Array<{ label: string; text: string }> = [];
   for (const section of sections) {
-    const prefix = [section.page ? header : "", section.page ? `--- Seite ${section.page} ---` : ""].filter(Boolean).join("\n");
+    const prefix = [section.page ? header : "", section.marker].filter(Boolean).join("\n");
     const budget = maxChars - prefix.length - 2;
+    if (budget < 64) throw new Error("Der Quellen-Seitenkopf ist zu lang für die gewählte Teilpaketgröße.");
     if (!section.text) { result.push({ label: `${label} – Seite ${section.page}`, text: prefix }); continue; }
     let position = 0;
     while (position < section.text.length) {

@@ -9,6 +9,7 @@ import { originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
 import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses } from "@/lib/anamnesisIntakeFields";
 import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
+import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -32,7 +33,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
   const extractEnd = source.indexOf("const ANALYSIS_CHUNK_MAX_CHARS", extractStart);
   const extractJs = ts.transpileModule(source.slice(extractStart, extractEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields);
+  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", "createQuestionnaireEvidenceValidator", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields, createQuestionnaireEvidenceValidator);
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
@@ -80,6 +81,19 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("keeps ambiguous printed selections out of symptom and profile fields even before AI analysis", async () => {
+    const t = setup("anamnese", "Frage/Feld: Symptome\nErkannte Antwort: [_] Kopfschmerzen [] Müdigkeit\nFrage/Feld: Menopause\nErkannte Antwort: [7] Ja [ ] Nein");
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    const data = t.stored().eingabe_daten;
+    expect(data.symptome || "").toBe("");
+    const extra = data.anamneseZusatz as Record<string, string>;
+    expect(extra.menopause).toBeUndefined();
+    expect(extra.unconfirmedFormSources).toContain("Kopfschmerzen");
+    expect(extra.unconfirmedFormSources).toContain("Unbestätigte Formular-/OCR-Zuordnung");
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
   it("saves IAA-only form values and notes through the real parent handoff", async () => {
     const t = setup("anamnese", "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]\nSynthetisch: besser durch Bewegung\n[/IAA_FORMULAR]");
     const done = t.run();

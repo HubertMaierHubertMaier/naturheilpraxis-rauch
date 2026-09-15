@@ -12,6 +12,7 @@ export const ADDITIONAL_ANAMNESIS_FIELDS = [
   ["pastHistory", "Vorgeschichte und Operationen"],
   ["hypotheses", "Diagnosevorschläge und ungeklärte Diagnosen"],
   ["negativeOrUncertainFindings", "Verneinte, unsichere oder ungeklärte Angaben"],
+  ["unconfirmedFormSources", "Formular-/OCR-Stellen ohne bestätigte Patientenantwort"],
   ["familyHistory", "Familienanamnese"],
   ["habits", "Lebensgewohnheiten, Schlaf und Ernährung"],
   ["socialStatus", "Sozialanamnese und Belastungen"],

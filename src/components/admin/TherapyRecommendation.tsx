@@ -111,6 +111,7 @@ import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
 import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
 import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
+import { assertQuestionnaireValidationContract, createQuestionnaireEvidenceValidator } from "../../../supabase/functions/_shared/questionnaireEvidence";
 
 const SYNTHETIC_THERAPY_CASE = {
   id: "SYNTH-THERAPY-STRUCTURE-001",
@@ -245,6 +246,8 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
   const diagnoses: ExtractedBefundInputs["diagnoses"] = [];
   const symptoms: ExtractedBefundInputs["symptoms"] = [];
   const medications: ExtractedBefundInputs["medications"] = [];
+  const openQuestions: Record<string, unknown>[] = [];
+  const unconfirmedEvidence = createQuestionnaireEvidenceValidator(text);
   let noConventionalMedication = false;
   const pairs = text.matchAll(/Frage\/Feld:[ \t]*([^\n]+)\nErkannte Antwort:[ \t]*([^\r\n]+)/gi);
   for (const pair of pairs) {
@@ -252,6 +255,13 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
     const answer = pair[2].trim();
     const normalizedQuestion = question.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const source = `Anamnesebogen – ${question}`;
+    if (unconfirmedEvidence(pair[0])) {
+      openQuestions.push({ text: `Unbestätigte Formular-/OCR-Zuordnung – am Original prüfen: ${question}: ${answer}`,
+        sourceAssertionStatus: "unconfirmed_form", originalCollection: "directQuestionAnswer",
+        beleg: { quelle: source, zitat: pair[0], pruefstatus: "formularstelle_unbestaetigt" },
+        unconfirmedSourceStatement: { text: `${question}: ${answer}` } });
+      continue;
+    }
     const polarity = /^(?:nein|keine?|verneint)\b/i.test(answer) ? "negated" as const : /unleserlich|unklar|verdacht/i.test(answer) ? "uncertain" as const : "affirmed" as const;
     if (/hauptbeschwerde|beschwerde|symptom/.test(normalizedQuestion)) {
       symptoms.push({ text: `${question}: ${answer}`, quelle: source, zitat: answer, polarity });
@@ -281,7 +291,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
     }
   }
   const profile = extractAnamnesisProfileAnswers(text);
-  const intake = buildAnamnesisIntake([{ diagnoses, medicationsTherapies: medications, anamnese: { currentProblems: symptoms } }]);
+  const intake = buildAnamnesisIntake([{ diagnoses, medicationsTherapies: medications, anamnese: { currentProblems: symptoms }, openQuestions }]);
   intake.additional = { ...intake.additional, ...profile.additional };
   return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus, iaaFields: explicitIAAFields(text) };
 };
@@ -289,7 +299,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-intake-v12";
+const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-form-answers-v13";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -1025,6 +1035,8 @@ const buildClientFallbackAnalysisHtml = (
   }
   for (const key of Object.keys(aggregate)) aggregate[key] = deduplicateClinicalFacts(aggregate[key]);
   for (const key of anamneseKeys) anamnese[key] = deduplicateClinicalFacts(anamnese[key]);
+  const unconfirmedFormStatements = aggregate.openQuestions.filter(item => item?.sourceAssertionStatus === "unconfirmed_form");
+  aggregate.openQuestions = aggregate.openQuestions.filter(item => item?.sourceAssertionStatus !== "unconfirmed_form");
   const labHighlights = buildClinicallyRelevantLabHighlights(aggregate.labValues, {
     documents: aggregate.documents,
     diagnoses: aggregate.diagnoses,
@@ -1135,6 +1147,7 @@ ${ctx.mannayanOrdersText && ctx.mannayanOrdersText.trim()
 
 <h2>7. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`, 2)}</tbody></table>
 <h2>8. Offene Fragen für das Erstgespräch</h2>${bullets([...aggregate.openQuestions, ...aggregate.missingReports])}
+${unconfirmedFormStatements.length ? `<h2>8a. Unbestätigte Formular-/OCR-Stellen – Prüfanhang</h2><p>${unconfirmedFormStatements.length} mögliche Zuordnung(en) sind keine bestätigten Patientenangaben. Die Originalstellen und ursprünglichen Modellinterpretationen bleiben zur Prüfung erhalten.</p>${unconfirmedFormStatements.map(item => `<div class="notice"><p>${val(item)}</p>${beleg(item)}<details><summary>Erhaltene ursprüngliche Zuordnung anzeigen</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(JSON.stringify(item.unconfirmedSourceStatement, null, 2))}</pre></details></div>`).join("")}` : ""}
 <h2>9. Sicherheitshinweise / Red Flags</h2><div class="red">${bullets(aggregate.redFlags)}</div>
 <h2>10. Dokumentationshinweis</h2><p>Heilpraktiker oder Arzt sollten fehlende Originalbefunde bei Bedarf nachfordern. Diese Befund-Auswertung ersetzt keine persönliche Untersuchung.</p>
 </body></html>`;
@@ -3227,7 +3240,9 @@ export function TherapyRecommendation() {
             }
             const partial = String(chunkJson.partial || "").trim();
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
-            return normalizePartialAnalysisJson(partial);
+            const normalized = normalizePartialAnalysisJson(partial);
+            assertQuestionnaireValidationContract(JSON.parse(normalized), chunk.text);
+            return normalized;
           } catch (err) {
             lastError = (err as Error).message || String(err);
             if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);

@@ -10,12 +10,14 @@ const fn = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.na
 if (!fn) throw new Error("Actual final-stream implementation missing");
 const js = ts.transpileModule(fn.getText(ast), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
 const pid = "SYNTH-REPORT-991";
-async function stream(html: string, fallback?: string) {
+async function stream(html: string, fallback?: string, preserveFormPartition = false) {
   const sse = `data: ${JSON.stringify({ choices: [{ delta: { content: html }, finish_reason: "stop" }] })}\n\ndata: [DONE]\n\n`;
   const env = { fetch: vi.fn(async () => new Response(sse)), encoder: new TextEncoder(), stripHtmlFence: (value: string) => value.trim(),
     isCompleteFinalHtml: () => true, deidentifyClinicalReportHtml, callGatewayText: vi.fn(), escapeHtml: (value: string) => value };
   const create = new Function(...Object.keys(env), `${js}; return streamGatewayHtml;`)(...Object.values(env));
-  return create("synthetic-key", "synthetic-model", "synthetic-prompt", fallback, pid) as Promise<ReadableStream<Uint8Array>>;
+  const result = await create("synthetic-key", "synthetic-model", "synthetic-prompt", fallback, pid, preserveFormPartition) as ReadableStream<Uint8Array>;
+  if (preserveFormPartition) expect(env.fetch).not.toHaveBeenCalled();
+  return result;
 }
 
 describe("final analysis stream cannot emit a privacy stop as a completed report", () => {
@@ -35,5 +37,14 @@ describe("final analysis stream cannot emit a privacy stop as a completed report
     const output = await new Response(await stream("<html><body><p>Patient: OTHER-991</p></body></html>",
       `<html><body><p>Patient: ${pid}</p><h2>Gespeicherte Teilanalysen</h2></body></html>`)).text();
     expect(output).toContain("Gespeicherte Teilanalysen"); expect(output).not.toContain("OTHER-991");
+  });
+  it("does not ask the model to turn unconfirmed template statements back into patient facts", async () => {
+    const output = await new Response(await stream("Erfundene bestätigte Diagnose",
+      "<html><body><h2>Unbestätigte Formularstellen</h2><p>Keine bestätigte Patientenangabe.</p></body></html>", true)).text();
+    expect(output).toContain("Unbestätigte Formularstellen");
+    expect(output).not.toContain("Erfundene bestätigte Diagnose");
+  });
+  it("fails closed when a guarded form report has no deterministic representation", async () => {
+    await expect(stream("untrusted", undefined, true)).rejects.toThrow(/regelgebundene Bericht/);
   });
 });

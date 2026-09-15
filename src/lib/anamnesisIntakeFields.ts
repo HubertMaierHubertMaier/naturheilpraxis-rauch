@@ -1,4 +1,5 @@
 import { deduplicateClinicalFacts } from "../../supabase/functions/_shared/clinicalSourceEvidence";
+import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
 
 export type IntakePolarity = "affirmed" | "negated" | "uncertain" | "not-stated";
 export type IntakeFact = {
@@ -41,7 +42,9 @@ export function extractAnamnesisProfileAnswers(input: string): {
   const additional: Record<string, IntakeFact[]> = {};
   const pregnancy = new Set<boolean>();
   const breastfeeding = new Set<boolean>();
+  const unconfirmedEvidence = createQuestionnaireEvidenceValidator(input);
   for (const match of input.matchAll(/Frage\/Feld:[ \t]*([^\n]+)\nErkannte Antwort:[ \t]*([^\r\n]+)/gi)) {
+    if (unconfirmedEvidence(match[0])) continue;
     const question = match[1].trim(); const answer = match[2].trim();
     const key = normalized(question);
     const field = /kinder\s*(?:anzahl|zahl|alter)|alter (?:der )?kinder|wie viele kinder|anzahl (?:der )?kinder/.test(key) ? "children"
@@ -156,6 +159,19 @@ export function buildAnamnesisIntake(partials: unknown[]): AnamnesisIntake {
       else if (!procedure && /^(laufend|aktuell)$/.test(status) && item.polarity === "affirmed" && item.kategorie !== "unklar" && item.quelle && item.zitat && item.sourceQuoteVerified !== false) output.medications.push(item);
       else output.uncertainMedications.push(item);
     }
+    for (const raw of list(source.openQuestions)) {
+      const pending = record(raw);
+      if (pending.sourceAssertionStatus !== "unconfirmed_form") continue;
+      const original = record(pending.unconfirmedSourceStatement);
+      const review = { ...original, beleg: record(pending.beleg), status: "Unbestätigte Formular-/OCR-Zuordnung", polarity: "uncertain" };
+      if (pending.originalCollection === "medicationsTherapies") {
+        const item = medication(review);
+        if (item.name) output.uncertainMedications.push(item);
+      } else {
+        const item = fact({ ...review, text: text(pending.text) });
+        if (item.text) (output.additional.unconfirmedFormSources ||= []).push(item);
+      }
+    }
   }
   for (const key of ["diagnoses", "hypotheses", "symptoms", "medications", "historicalMedications", "uncertainMedications", "negativeOrUncertainFindings"] as const) {
     (output[key] as IntakeFact[]) = distinct(output[key] as IntakeFact[]);
@@ -170,7 +186,7 @@ export function formatIntakeFact(item: IntakeFact | IntakeDiagnosis | IntakeMedi
   const diagnosis = item as Partial<IntakeDiagnosis>;
   const content = [diagnosis.icd10 ? `${diagnosis.icd10}: ${item.text}` : item.text, ...details].join(" · ");
   const assertion = { affirmed: "bejaht", negated: "verneint", uncertain: "unsicher", "not-stated": "nicht angegeben" }[item.polarity];
-  const evidence = [item.quelle, item.seite ? `Seite ${item.seite}` : "", item.datum, item.status ? `Status: ${item.status}` : "", item.polarity !== "affirmed" ? `Aussage: ${assertion}` : "", item.zitat ? `„${item.zitat}“` : "Belegzitat fehlt – prüfen", item.sourceQuoteVerified === false ? "Zitat nicht im Quelltext bestätigt – prüfen" : ""].filter(Boolean).join(" · ");
+  const evidence = [item.quelle, item.seite ? `Seite ${item.seite}` : "", item.datum, item.status ? `Status: ${item.status}` : "", item.polarity !== "affirmed" ? `Aussage: ${assertion}` : "", item.zitat ? `„${item.zitat}“` : "Belegzitat fehlt – prüfen", item.beleg?.pruefstatus === "formularstelle_unbestaetigt" ? "Formular-/OCR-Stelle – keine bestätigte Patientenantwort" : item.sourceQuoteVerified === false ? "Zitat nicht im Quelltext bestätigt – prüfen" : ""].filter(Boolean).join(" · ");
   const pharmacology = [medicine.wirkmechanismus ? `Wirkung: ${medicine.wirkmechanismus}` : "", medicine.nebenwirkungen ? `Nebenwirkungen: ${medicine.nebenwirkungen}` : ""].filter(Boolean).join(" · ");
   const additionalEvidence = item.belege && item.belege.length > 1 ? `\n  Weitere Belege: ${item.belege.map(ref => [text(ref.quelle), text(ref.teil) ? `Teil ${text(ref.teil)}` : "", text(ref.seite) ? `Seite ${text(ref.seite)}` : "", text(ref.zitat) ? `„${text(ref.zitat)}“` : ""].filter(Boolean).join(" · ")).join(" | ")}` : "";
   return `${content}\n  Quelle der Angabe: ${evidence}${additionalEvidence}${pharmacology ? `\n  Gesonderte pharmakologische Einordnung – Fachquelle prüfen: ${pharmacology}` : ""}`;
