@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PathogenIndex } from "@/components/admin/PathogenIndex";
+import { WikiSourceContent, readableWikiStatus } from "@/components/wiki/WikiSourceContent";
 import { useToast } from "@/hooks/use-toast";
 import {
   buildInternalKnowledgeIlikeFilter,
@@ -832,24 +833,24 @@ export default function WikiDatenbank() {
               {filteredEntries.map((entry) => {
                 const sources = sourceCitations(entry.source_citations);
                 return (
-                  <Card key={entry.id}>
-                    <CardContent className="p-5 md:p-6">
+                  <Card key={entry.id} className="min-w-0">
+                    <CardContent className="min-w-0 p-5 md:p-6">
                       <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{entry.category || "Allgemein"}</p>
-                          <h2 className="mt-1 text-xl font-semibold text-foreground">{entry.title}</h2>
+                          <h2 className="mt-1 break-words text-xl font-semibold text-foreground">{entry.title}</h2>
                         </div>
                         <Badge variant="secondary">Aktualisiert {formatDate(entry.updated_at)}</Badge>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge variant="outline">Art: {entry.entry_kind || "unbekannt"}</Badge>
-                        <Badge variant="outline">Pruefung: {entry.review_status || "unbekannt"}</Badge>
-                        <Badge variant="outline">Evidenz: {entry.evidence_level || "unbewertet"}</Badge>
-                        <Badge variant="outline">Dosis: {entry.dosage_status || "unbekannt"}</Badge>
+                        <Badge variant="outline">Art: {readableWikiStatus(entry.entry_kind)}</Badge>
+                        <Badge variant="outline">Prüfung: {readableWikiStatus(entry.review_status)}</Badge>
+                        <Badge variant="outline">Evidenz: {readableWikiStatus(entry.evidence_level)}</Badge>
+                        <Badge variant="outline">Dosis: {readableWikiStatus(entry.dosage_status)}</Badge>
                         <Badge variant="outline">Rechte: {entry.rights_status || "unbekannt"}</Badge>
                         {entry.patient_facing_allowed === false && <Badge variant="outline">Nicht patientengerichtet</Badge>}
                       </div>
-                      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{entry.content}</p>
+                      <div className="mt-4 min-w-0"><WikiSourceContent content={entry.content || ""} /></div>
                       {(entry.tags || []).length > 0 && <div className="mt-4 flex flex-wrap gap-2">{entry.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
                       {(entry.therapeutic_topics || []).length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Themen</p><div className="mt-2 flex flex-wrap gap-2">{entry.therapeutic_topics.map((topic) => <Badge key={topic} variant="outline">{topic}</Badge>)}</div></div>}
                       {sources.length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quellen</p><div className="mt-2 flex flex-wrap gap-3 text-sm">{sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">{source.label}<ExternalLink className="h-3.5 w-3.5" /></a>)}</div></div>}
