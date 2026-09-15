@@ -1,4 +1,5 @@
 import workerUrl from "tesseract.js/dist/worker.min.js?url";
+import { loadLocalOcrLanguageAsset } from "./localOcrAssets";
 import coreLstmUrl from "tesseract.js-core/tesseract-core-lstm.wasm.js?url";
 import coreSimdLstmUrl from "tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url";
 import coreRelaxedSimdLstmUrl from "tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js?url";
@@ -71,9 +72,9 @@ export async function createLocalBrowserOcrWorker(
 ): Promise<LocalOcrWorker> {
   const coreAssets = [coreLstmUrl, coreSimdLstmUrl, coreRelaxedSimdLstmUrl];
   const corePath = assetDirectory(coreAssets[0]);
-  const deuModelDirectory = assetDirectory(deuModelUrl);
-  const engModelDirectory = assetDirectory(engModelUrl);
-  const langPath = deuModelDirectory === engModelDirectory ? deuModelDirectory : "/assets/local-ocr";
+
+
+
   if (!coreAssets.every((url) => assetDirectory(url) === corePath)) {
     throw new Error("Lokale OCR-Programmdateien konnten nicht eindeutig aufgelöst werden.");
   }
@@ -147,9 +148,11 @@ export async function createLocalBrowserOcrWorker(
   const initializationTimeout = setTimeout(() => shutdown(new Error("Zeitüberschreitung beim Start der lokalen OCR.")), OCR_INITIALIZATION_TIMEOUT_MS);
   try {
     await sendJob("load", { options: { lstmOnly: true, corePath, logging: false } });
+    onProgress?.({ status: "loading language traineddata", progress: 0 });
+    const [deuData, engData] = await Promise.all([loadLocalOcrLanguageAsset(deuModelUrl, signal), loadLocalOcrLanguageAsset(engModelUrl, signal)]);
     await sendJob("loadLanguage", {
-      langs: ["deu", "eng"],
-      options: { langPath, cachePath: "local-ocr-v1", cacheMethod: "write", gzip: true, lstmOnly: true },
+      langs: [{ code: "deu", data: deuData }, { code: "eng", data: engData }],
+      options: { cachePath: "local-ocr-v1", cacheMethod: "write", gzip: true, lstmOnly: true },
     });
     await sendJob("initialize", { langs: ["deu", "eng"], oem: 1, config: {} });
     await sendJob("setParameters", {

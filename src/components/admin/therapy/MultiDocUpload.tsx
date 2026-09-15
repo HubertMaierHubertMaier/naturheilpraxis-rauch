@@ -41,6 +41,7 @@ import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOrig
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
 import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
+import { createLocalBrowserOcrWorker } from "@/lib/localBrowserOcr";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -216,6 +217,7 @@ export async function extractClinicalDocumentText(
   const pages: ExtractedPdfPage[] = [];
   let ocrPageCount = 0;
   const failedOcrPages: number[] = [];
+  let firstOcrFailureStage: "initialization" | "rendering" | "recognition" | undefined;
   const ocrPageConfidences: AnamneseOcrPageConfidence[] = [];
   let currentOcrPage = 0;
   let nativeIAAFieldsFound = false;
@@ -249,6 +251,7 @@ export async function extractClinicalDocumentText(
 
         if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })) {
           let canvas: HTMLCanvasElement | undefined;
+          let ocrStage: "initialization" | "rendering" | "recognition" = ocrSession.worker ? "rendering" : "initialization";
           try {
             throwIfAborted(signal);
             if (!ocrSession.worker) {
@@ -262,13 +265,14 @@ export async function extractClinicalDocumentText(
                 title: "Lokale Browser-OCR gestartet",
                 description: "Nur OCR-Programm- und Sprachdaten werden aus dieser Anwendung geladen. PDF- und Bilddaten bleiben im Browser und gehen an keinen OCR-Cloud-Dienst.",
               });
-              const { createLocalBrowserOcrWorker } = await import("@/lib/localBrowserOcr");
+              // Loaded with the intake module: a failed lazy import must not remain cached for this page.
               ocrSession.worker = await createLocalBrowserOcrWorker(
                 (progress) => ocrSession.handleProgress?.(progress),
                 signal,
               );
             }
 
+            ocrStage = "rendering";
             currentOcrPage = pageNumber;
             onProgress?.(`Lokale OCR: Seite ${pageNumber} von ${totalPages} wird lokal erkannt...`);
             const viewportAtScaleOne = page.getViewport({ scale: 1 });
@@ -282,6 +286,7 @@ export async function extractClinicalDocumentText(
             const renderTask = page.render({ canvas, canvasContext, viewport, background: "rgb(255,255,255)" });
             await waitForPdfRender(renderTask, signal);
             throwIfAborted(signal);
+            ocrStage = "recognition";
             const recognition = (await ocrSession.worker.recognize(canvas)).data;
             extractedPage.ocrText = recognition.text;
             if (Number.isFinite(recognition.confidence)) {
@@ -291,6 +296,7 @@ export async function extractClinicalDocumentText(
             ocrPageCount += 1;
           } catch (error) {
             throwIfAborted(signal);
+            firstOcrFailureStage ||= ocrStage;
             failedOcrPages.push(pageNumber);
             await terminateAndResetWorkerSession(ocrSession);
           } finally {
@@ -316,6 +322,9 @@ export async function extractClinicalDocumentText(
     }
   }
 
+  if (mode === "anamnese" && firstOcrFailureStage === "initialization") {
+    throw new Error("Die lokale Texterkennung konnte nicht gestartet werden. Bitte die Bereitstellung der OCR-Programm- und Sprachdateien prüfen. Dies ist kein Nachweis einer unlesbaren Originaldatei; es wurde noch nichts vollständig übernommen.");
+  }
   if (mode === "anamnese") assertCompleteAnamnesisPageCapture(pages, totalPages, failedOcrPages);
   const decision = assessDocumentExtraction(pages, failedOcrPages);
   if (decision.status === "reject") {
