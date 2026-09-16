@@ -37,12 +37,12 @@ describe("checkpoint rebuild respects privacy, ownership and analysis profile", 
     const saved = structuredClone(row);
     saved.eingabe_daten.checkpoint.partials = [JSON.stringify({ findings: [], openQuestions: [], anamnese: {
       currentProblems: [{ text: "Invented back complaint", beleg: {
-        zitat: "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]", quoteMatched: true, pruefstatus: "quellenzitat_bestaetigt",
+        quelle: "Synthetic source", zitat: "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]", quoteMatched: true, pruefstatus: "quellenzitat_bestaetigt",
       } }],
     } })];
     const test = setup(`<h2>Strukturierte Anamnese</h2><p>Patient: ${pid}</p>`, Promise.resolve({ data: [saved], error: null }));
     await test.rebuild();
-    expect(test.env.applyAndPersistExtractedInputs).toHaveBeenCalledWith(expect.objectContaining({ symptoms: [] }));
+    expect(test.env.applyAndPersistExtractedInputs).toHaveBeenCalledWith(expect.objectContaining({ symptoms: [], intake: expect.objectContaining({ symptoms: [] }) }));
     expect(test.insert).toHaveBeenCalled();
   });
   it("does not display or insert a success record after privacy rejection", async () => {

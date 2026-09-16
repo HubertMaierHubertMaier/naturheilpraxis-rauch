@@ -1,5 +1,6 @@
 import { deduplicateClinicalFacts } from "../../supabase/functions/_shared/clinicalSourceEvidence";
 import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
+import { normalizeNativeIaaClaims } from "../../supabase/functions/_shared/nativeIaaEvidence";
 
 export type IntakePolarity = "affirmed" | "negated" | "uncertain" | "not-stated";
 export type IntakeFact = {
@@ -127,7 +128,7 @@ function medication(raw: unknown): IntakeMedication {
 export function buildAnamnesisIntake(partials: unknown[]): AnamnesisIntake {
   const output: AnamnesisIntake = { diagnoses: [], hypotheses: [], symptoms: [], medications: [], historicalMedications: [], uncertainMedications: [], negativeOrUncertainFindings: [], additional: {}, noConventionalMedication: false };
   for (const partial of partials) {
-    const source = record(partial);
+    const source = normalizeNativeIaaClaims(record(partial));
     const anamnesis = record(source.anamnese);
     for (const raw of list(source.diagnoses)) {
       const item = record(raw); const base = fact(raw);
