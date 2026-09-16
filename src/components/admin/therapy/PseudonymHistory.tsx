@@ -403,7 +403,7 @@ export function PseudonymHistory({ pseudonymId, onLoadSession, onShowBefund }: P
                       <div className="mt-2 rounded-md border border-amber-300/50 bg-amber-50/60 dark:bg-amber-950/15 p-2">
                         <p className="text-[11px] font-medium text-foreground">Großdateien / Dokumente im Patientenbestand</p>
                         <p className="text-[10px] text-muted-foreground italic mt-0.5">
-                          „Hochgeladene Originaldatei" = PDF/Doku, die du eingelesen hast. „Eingefügter Befundtext" = Inhalt, der in einem Befund-Feld liegt (z. B. Sonstige Untersuchungen). „Befund-Auswertungs-PDF" = von der KI erzeugter Auswertungs-Druck.
+                          „Archivierte PDF-Kopie" = geprüfte anonymisierte PDF-Kopie eines eingelesenen Dokuments. „Eingefügter Befundtext" = Inhalt, der in einem Befund-Feld liegt (z. B. Sonstige Untersuchungen). „Befund-Auswertungs-PDF" = von der KI erzeugter Auswertungs-Druck. Lokale Originaldateien werden nicht hochgeladen.
                         </p>
                         <ul className="mt-1 ml-4 list-disc text-muted-foreground space-y-1">
                           {documentInventory.map((doc, i) => (

@@ -40,7 +40,9 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("metatronDatum: metatronDatum.trim() || undefined");
     expect(source).toContain("metatronDatum={metatronDatum}");
     expect(source).toContain("pdfPassword={vievaPlusPdfPassword}");
-    expect(source).toContain("onPdfPasswordChange={setVievaPlusPdfPassword}");
+    expect(source).toContain("const updateVievaPlusPdfPassword = (value: string) =>");
+    expect(source).toContain("rememberVievaPdfPassword(value)");
+    expect(source).toContain("onPdfPasswordChange={updateVievaPlusPdfPassword}");
     expect(source).toContain("Vor dem PDF-Import zuerst das Analyse-Datum eintragen.");
     expect(source).toContain("Datenschutz- und Sicherheitsprüfung:");
     expect(source).toContain("Nur den zum aktuellen Pseudonym gehörenden Befund verwenden.");
@@ -59,7 +61,7 @@ describe("therapy workflow UI structure", () => {
     expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v1:");
     expect(individualUploadSource).toContain("localPrivacyFindings: successDocs.flatMap");
     expect(individualUploadSource).toContain("const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview");
-    expect(source.includes("Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet.")).toBe(true);
+    expect(individualUploadSource.includes("Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet.")).toBe(true);
     expect(source).toContain("Seite {finding.pageNumber}, Zeile {finding.lineNumber}");
     expect(source).toContain("therapy.pendingSafePreviews.v1:");
     expect(source).toContain('new File([], "Bereinigte-Vorschau.pdf"');
@@ -88,6 +90,16 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("append(setAnamnese, text)");
     expect(source).toContain('case "arzt": append(setArztbericht, text)');
     expect(source).toContain('case "sonstige": append(setSonstigeUntersuchungen, text)');
+    expect(source).toContain('if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked)');
+    expect(source).toContain('if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,false)');
+    expect(source).toContain("archiveCopy: archiveCopyAfterPreviewTextEdit(candidate.file, candidate.archiveCopy)");
+    expect(source).toContain("disabled={isPdfClinicalDocument(item.file) && !item.archiveCopy}");
+    expect(individualUploadSource).toContain("assertCompletePdfArchiveCopies(files)");
+    expect(individualUploadSource).toContain("archiveCopy: archiveCopyAfterPreviewTextEdit(item.file, item.archiveCopy)");
+    expect(source).toContain("const archiveCopy = isPdfClinicalDocument(item.file)");
+    expect(source).toContain('if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.")');
+    expect(source).toContain("Bereinigten Word-/Excel-Text geprüft");
+    expect(source).not.toContain("disabled={!item.archiveCopy}");
   });
 
   it("keeps later findings in autosave and transfers all routed document dates", () => {

@@ -63,7 +63,7 @@ export function Header() {
         { label: "Admin", href: withDevParam("/admin"), icon: Shield },
         { label: "Wiki", href: withDevParam("/wissensdatenbank"), icon: BookOpen },
         { label: "WikiDatenbank", href: withDevParam("/wikidatenbank"), icon: Database },
-        { label: "Therapie-Kandidaten", href: withDevParam("/therapie-kandidaten"), icon: Stethoscope },
+        { label: "Therapieplanung", href: withDevParam("/therapie-kandidaten"), icon: Stethoscope },
         { label: "Bibliothek", href: withDevParam("/patienten-bibliothek"), icon: Library },
       ]
     : [];
@@ -217,7 +217,7 @@ export function Header() {
                     <DropdownMenuItem asChild>
                       <Link to={withDevParam("/therapie-kandidaten")} className="flex items-center gap-2 cursor-pointer">
                         <Stethoscope className="h-4 w-4" />
-                        Interne Therapie-Kandidaten
+                        Interne Therapieplanung
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

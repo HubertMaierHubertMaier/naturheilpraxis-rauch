@@ -14,8 +14,12 @@ export type LocalOcrProgress = {
   progress: number;
 };
 
+export type LocalOcrResultData = {
+    text: string; confidence?: number;
+    blocks?: Array<{paragraphs?:Array<{lines?:Array<{text?:string;bbox?:{x0:number;y0:number;x1:number;y1:number}}>}>}>;
+};
 export type LocalOcrWorker = {
-  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string; confidence?: number } }>;
+  recognize: (image: HTMLCanvasElement, options?: { includeLayout?: boolean }) => Promise<{ data: LocalOcrResultData }>;
   terminate: () => Promise<void>;
 };
 
@@ -39,7 +43,7 @@ function abortError(): DOMException {
   return new DOMException("Lokale OCR wurde abgebrochen.", "AbortError");
 }
 
-async function canvasToPngBytes(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<Uint8Array> {
+export async function canvasToPngBytes(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<Uint8Array> {
   if (signal?.aborted) throw abortError();
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -166,11 +170,11 @@ export async function createLocalBrowserOcrWorker(
   }
 
   return {
-    async recognize(canvas) {
+    async recognize(canvas, options) {
       const image = await canvasToPngBytes(canvas, signal);
-      const data = await sendJob<{ text: string; confidence?: number }>(
+      const data = await sendJob<Awaited<ReturnType<LocalOcrWorker["recognize"]>>["data"]>(
         "recognize",
-        { image, options: {}, output: { text: true } },
+        { image, options: {}, output: { text: true, ...(options?.includeLayout ? { blocks: true } : {}) } },
         OCR_RECOGNITION_TIMEOUT_MS,
         [image.buffer],
       );

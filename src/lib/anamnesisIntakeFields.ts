@@ -155,10 +155,31 @@ export function buildAnamnesisIntake(partials: unknown[]): AnamnesisIntake {
     for (const raw of list(source.medicationsTherapies)) {
       const item = medication(raw); if (!item.name) continue;
       const status = normalized(item.status);
+      const sourceRole = normalized(record(raw).sourceRole);
+      // Recommendations and glossary entries remain in the original partials;
+      // they must never become a claim that the patient is already taking a remedy.
+      if(sourceRole === "general_information")continue;
+      if(sourceRole === "lab_recommendation" || sourceRole === "device_suggestion" || /empfehlung|empfohlen|vorschlag/.test(status)) {
+        const group=sourceRole === "lab_recommendation" || /labor/.test(status) ? "labTherapyRecommendations" : "externalTherapySuggestions";
+        const detail=[item.name,item.wirkstoff && `Wirkstoff: ${item.wirkstoff}`,item.dosis && `Dosis: ${item.dosis}`,item.haeufigkeit && `Häufigkeit: ${item.haeufigkeit}`,item.einnahme && `Einnahme: ${item.einnahme}`,item.dauer && `Dauer: ${item.dauer}`,item.indikation && `Begründung der Quelle: ${item.indikation}`,item.vonWem && `Urheber: ${item.vonWem}`].filter(Boolean).join(" · ");
+        const entry={...fact(raw),text:detail,status:"Externer Vorschlag; Einnahme nicht bestätigt"};
+        if(item.quelle && item.zitat && item.sourceQuoteVerified !== false)(output.additional[group] ||= []).push(entry);
+        else output.negativeOrUncertainFindings.push({...entry,status:"Externer Vorschlag; Quellenprüfung offen",polarity:"uncertain"});
+        continue;
+      }
       const procedure = /\b(?:operation|physiotherapie|manualtherapie|bestrahlung|rehabilitation)\b/i.test(item.name);
       if (/^(?:abgesetzt|beendet|fruher|pausiert|historisch)\b/.test(status) && !/laufend|aktuell/.test(status)) output.historicalMedications.push(item);
       else if (!procedure && /^(laufend|aktuell)$/.test(status) && item.polarity === "affirmed" && item.kategorie !== "unklar" && item.quelle && item.zitat && item.sourceQuoteVerified !== false) output.medications.push(item);
       else output.uncertainMedications.push(item);
+    }
+    for(const raw of list(source.findings)) {
+      const kind=normalized(record(raw).findingType);
+      const key=kind === "hrv_measurement" ? "hrvSummary" : kind === "hrv_source_interpretation" ? "hrvSourceInterpretation" : kind === "hrv_clinical_interpretation" ? "hrvClinicalInterpretation" : "";
+      if(!key)continue;
+      const entry=fact(raw);
+      if(!entry.text)continue;
+      if(entry.quelle && entry.zitat && entry.sourceQuoteVerified !== false)(output.additional[key] ||= []).push({...entry,status:kind === "hrv_clinical_interpretation" ? "Zusätzliche fachliche Einordnung, nicht Aussage der Quelle" : entry.status});
+      else output.negativeOrUncertainFindings.push({...entry,status:"HRV-Angabe; Quellenprüfung offen",polarity:"uncertain"});
     }
     for (const raw of list(source.openQuestions)) {
       const pending = record(raw);

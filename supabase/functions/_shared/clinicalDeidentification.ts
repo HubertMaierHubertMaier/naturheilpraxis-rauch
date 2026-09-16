@@ -25,7 +25,10 @@ const explicitSensitiveMetadataFields: Array<[string, RegExp]> = [
 ];
 const reportColumnHeaderPattern = /^Name(?:[\s|;,-]+(?:Messwert|Wert|Ergebnis|Einheit|Referenz(?:bereich)?|Norm(?:bereich)?|Status|Bewertung|Hinweis|Beschreibung|Bedeutung|Optimalbereich|Istwert|Sollwert)){3,}[\s|;,-]*$/iu;
 
-const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim());
+// Unitless device-result rows (including foods) are not street addresses merely
+// because an uppercase label ends in "RING" followed by a decimal measurement.
+const deviceMeasurementRow = /^[\p{Lu}][\p{Lu}\p{N}\s()[\].,'’/–—-]*\s\d{1,2}[,.]\d{3}$/u;
+const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim()) || deviceMeasurementRow.test(line.trim());
 
 const findClinicalMeasurementStart = (line: string, fromIndex = 0) => {
   clinicalMeasurementPattern.lastIndex = fromIndex;
@@ -321,12 +324,13 @@ export const directIdentifierCategories = (value: unknown) => {
   if (collectLikelyPersonNames(identifierText).length) categories.add("Name");
   for (const [category, pattern] of checks) if (pattern.test(identifierText)) categories.add(category);
   for (const line of lines) {
+    if (isReportColumnHeader(line)) continue;
     const category = unredactedSensitiveMetadataCategory(line);
     if (category) categories.add(category);
   }
   if (lines.some((line) => !isReportColumnHeader(line) && hasUnredactedExplicitNameField(line))) categories.add("Name");
   if (lines.some(hasUnredactedExplicitAddressField)) categories.add("Anschrift");
-  if (lines.some(hasBarePostalCity)) categories.add("Anschrift");
+  if (lines.some(line => !isReportColumnHeader(line) && hasBarePostalCity(line))) categories.add("Anschrift");
   return Array.from(categories);
 };
 

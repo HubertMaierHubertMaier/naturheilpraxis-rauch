@@ -1,14 +1,17 @@
 // @vitest-environment node
 import { webcrypto } from "node:crypto";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { archivePatientOriginal, verifyArchivedPatientOriginal, originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
+import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, assertCompletePdfArchiveCopies, verifyArchivedPatientOriginal, originalArchiveInputPatch } from "@/lib/patientOriginalArchive";
 import { deidentifyClinicalData, directIdentifierCategories } from "../../supabase/functions/_shared/clinicalDeidentification";
 import { patientOriginalArchivePath } from "../../supabase/functions/_shared/patientOriginalReference";
+import { registerPreparedPdfArchiveCopy, setPdfArchiveCopyReviewed } from "../lib/pdfArchiveCopyRegistry";
 
 beforeEach(() => vi.stubGlobal("crypto", webcrypto));
 afterEach(() => vi.unstubAllGlobals());
 const pid = "P-2099-0601";
-const file = () => Object.assign(new Blob(["%PDF-1.7\nsynthetic original bytes\n"], { type: "application/pdf" }), { name: "synthetic-private-filename.pdf" });
+const rawFile = () => Object.assign(new Blob(["%PDF-1.7\nsynthetic copy bytes\n"], { type: "application/pdf" }), { name: "synthetic-private-filename.pdf" });
+// Archive contract fixture only; actual PDF generation is tested separately.
+const file = () => { const copy=rawFile();registerPreparedPdfArchiveCopy(copy);setPdfArchiveCopyReviewed(copy,true);return copy; };
 function setup() {
   const objects = new Map<string, Blob>();
   const upload = vi.fn(async (path: string, body: Blob, _options: unknown) => { objects.set(path, body); return { error: null }; });
@@ -20,7 +23,27 @@ function setup() {
   });
   return { objects, upload, download, rpc, client: { rpc, storage: { from: () => ({ upload, download }) } } };
 }
-describe("private original-file receipts", () => {
+describe("private anonymized PDF-copy receipts", () => {
+  it("blocks originals, filename-only claims and unreviewed copies before contacting the archive", async () => {
+    const t=setup(),raw=rawFile();
+    await expect(archivePatientOriginal(t.client,pid,raw,"labor")).rejects.toThrow(/gesperrt/);
+    registerPreparedPdfArchiveCopy(raw);
+    await expect(archivePatientOriginal(t.client,pid,raw,"labor")).rejects.toThrow(/gesperrt/);
+    expect(t.rpc).not.toHaveBeenCalled();expect(t.upload).not.toHaveBeenCalled();
+    setPdfArchiveCopyReviewed(raw,true);setPdfArchiveCopyReviewed(raw,false);
+    await expect(archivePatientOriginal(t.client,pid,raw,"labor")).rejects.toThrow(/gesperrt/);
+  });
+  it("allows local Office text but blocks every PDF without its prepared copy", () => {
+    const pdf = rawFile();
+    const copy = file();
+    const office = Object.assign(new Blob(["synthetic office text"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), { name: "synthetic.docx" });
+
+    expect(() => assertCompletePdfArchiveCopies([{ file: pdf }])).toThrow(/PDF fehlt eine passende geprüfte anonymisierte Archivkopie/);
+    expect(() => assertCompletePdfArchiveCopies([{ file: pdf, archiveCopy: copy }, { file: office }])).not.toThrow();
+    expect(archiveCopyAfterPreviewTextEdit(pdf, copy)).toBeUndefined();
+    expect(archiveCopyAfterPreviewTextEdit(office, copy)).toBe(copy);
+  });
+
   it("can verify a restored archive receipt without a new upload and rejects a foreign case", async () => {
     const t = setup(); const receipt = await archivePatientOriginal(t.client, pid, file(), "anamnese");
     expect((await verifyArchivedPatientOriginal(t.client, pid, receipt)).reused).toBe(true);
@@ -43,7 +66,7 @@ describe("private original-file receipts", () => {
     const third = originalArchiveInputPatch(second, [receipt], "sonstigeUntersuchungen");
     expect(third.originalArchiveReceiptsV1).toHaveLength(2);
   });
-  it("keeps the original bytes, uses a neutral filename and verifies the downloaded copy", async () => {
+  it("keeps the approved copy bytes, uses a neutral filename and verifies the downloaded copy", async () => {
     const t = setup(); const original = file();
     const receipt = await archivePatientOriginal(t.client, pid.toLowerCase(), original, "anamnese", "2099-01-01");
     expect(receipt.archivePath).toMatch(/^P-2099-0601\/2099-01-01\/anamnese-[0-9a-f]{64}\.pdf$/);
@@ -75,7 +98,7 @@ describe("private original-file receipts", () => {
   });
   it("does not upload when the private archive cannot be confirmed", async () => {
     const t = setup(); t.rpc.mockResolvedValueOnce({ data: null, error: { message: "synthetic forbidden" } } as any);
-    await expect(archivePatientOriginal(t.client, pid, file(), "dokument")).rejects.toThrow(/private Originalarchiv/);
+    await expect(archivePatientOriginal(t.client, pid, file(), "dokument")).rejects.toThrow(/Archiv der anonymisierten PDF-Kopie/);
     expect(t.upload).not.toHaveBeenCalled();
   });
 });

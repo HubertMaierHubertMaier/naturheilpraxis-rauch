@@ -4,6 +4,11 @@ import { formatIAAAssessment } from "@/lib/iaaAssessment";
 export const ADDITIONAL_ANAMNESIS_FIELDS = [
   ["diagnoses", "Dokumentierte Diagnosen"],
   ["labPathogens", "Labor-Pathogene"],
+  ["hrvSummary", "HRV – dokumentierte Messwerte und Zusammenfassung"],
+  ["hrvSourceInterpretation", "HRV – Deutung laut Quellbericht"],
+  ["hrvClinicalInterpretation", "HRV – zusätzliche fachliche Einordnung"],
+  ["labTherapyRecommendations", "Therapieempfehlung des Labors – externer Vorschlag, keine bestätigte Einnahme"],
+  ["externalTherapySuggestions", "Weitere externe Vorschläge – keine bestätigte Einnahme"],
   ["petExaminations", "PET-Untersuchungen – Datum und untersuchter Bereich / Fragestellung"],
   ["children", "Kinderzahl und Angaben zu Kindern"],
   ["menopause", "Menopause und Zyklus"],
@@ -43,7 +48,7 @@ export function AnamnesisAdditionalFields({ values, onChange, disabled }: {
       <summary className="cursor-pointer text-sm font-semibold">Weitere Anamneseangaben · {count} Bereiche erfasst</summary>
       <p className="mt-2 text-xs text-muted-foreground">Diese Einzelangaben ergänzen die vorhandenen Felder. Der vollständige Anamnesebogen und seine Gesamtauswertung bleiben erhalten. Nicht angegeben, verneint und unsicher sind unterschiedliche Angaben.</p>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
-        {ADDITIONAL_ANAMNESIS_FIELDS.filter(([key]) => !["diagnoses", "labPathogens", "petExaminations", "children", "menopause"].includes(key)).map(([key, label]) => (
+        {ADDITIONAL_ANAMNESIS_FIELDS.filter(([key]) => !["diagnoses", "labPathogens", "petExaminations", "children", "menopause", "hrvSummary", "hrvSourceInterpretation", "hrvClinicalInterpretation", "labTherapyRecommendations"].includes(key)).map(([key, label]) => (
           <div key={key} className="space-y-1.5">
             <label htmlFor={`anamnesis-extra-${key}`} className="text-sm font-medium">{label}</label>
             <Textarea id={`anamnesis-extra-${key}`} value={values[key] || ""} disabled={disabled}

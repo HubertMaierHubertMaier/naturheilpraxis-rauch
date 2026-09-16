@@ -18,6 +18,8 @@ import { PatientContextBar } from "./therapy/PatientContextBar";
 import { PatientBatchUploadZone } from "./therapy/PatientBatchUploadZone";
 import { PatientIntakeWorkflow, PatientWorkflowLayout } from "./therapy/PatientIntakeWorkflow";
 import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAdditionalAnamnesis } from "./therapy/AnamnesisAdditionalFields";
+import { SupplementaryFindingsFields } from "./therapy/SupplementaryFindingsFields";
+import { PdfArchiveReviewDialog } from "./therapy/PdfArchiveReviewDialog";
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
 import { explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
@@ -96,10 +98,11 @@ import { patientDraftSaveQueue } from "@/lib/patientSaveQueue";
 import { flushSync } from "react-dom";
 import { equalPatientInputValue, persistVerifiedPatientInput } from "@/lib/verifiedPatientInput";
 import { PatientDraftConflictReview } from "@/components/admin/therapy/PatientDraftConflictReview";
-import { archivePatientOriginal, verifyArchivedPatientOriginal, originalArchiveInputPatch, type ArchiveOriginals, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
+import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, verifyArchivedPatientOriginal, originalArchiveInputPatch, type ArchiveOriginals, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
 import { inferDocumentDateFromFilename, readVievaPdfPassword, rememberVievaPdfPassword } from "@/lib/batchDocumentDefaults";
+import { prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
@@ -218,6 +221,7 @@ type PendingDirectBefundFile = {
   status: "queued" | "processing" | "ready" | "done" | "error";
   documentType: DirectBefundTarget | "";
   documentTypeInferred?: boolean;
+  archiveCopy?: File;
   documentDate: string;
   privacyReviewed: boolean;
   previewText?: string;
@@ -234,6 +238,7 @@ type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
 const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
+const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
   forPseudonymId: string;
   diagnoses: Array<Partial<IntakeDiagnosis> & { diagnose: string }>;
@@ -547,11 +552,14 @@ const normalizeDocumentInventory = (value: unknown): DocumentInventoryItem[] => 
   : [];
 
 const mergeDocumentInventory = (...groups: DocumentInventoryItem[][]): DocumentInventoryItem[] => {
-  const seen = new Set<string>();
+  const seenArchivePaths = new Set<string>();
   return groups.flat().filter((item) => {
-    const key = item.archivePath ? `archive:${item.archivePath}` : `text:${normalizeDocumentName(item.name)}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    // A filename is not a document identity: different revisions often share it.
+    // Only a neutral, byte-bound archive path may safely deduplicate inventory entries.
+    if (!item.archivePath) return true;
+    const key = item.archivePath;
+    if (seenArchivePaths.has(key)) return false;
+    seenArchivePaths.add(key);
     return true;
   });
 };
@@ -960,6 +968,8 @@ const collectStructuredLabData = (partials: string[]): { labValues: LabValueReco
           String(value.datum ?? "").trim(),
           String(value.wert ?? "").trim().replace(/,/g, ".").replace(/\s+/g, ""),
           normalizeLabUnit(value.einheit),
+          String(value.measurementMethod || ""),
+          String(value.quelle || (value.beleg as Record<string,unknown> | undefined)?.quelle || ""),
         ].join("|");
         if (identity.replace(/\|/g, "")) values.set(identity, value);
       }
@@ -2222,7 +2232,7 @@ export function TherapyRecommendation() {
           "Sicherheitswarnung vor manueller Auswahl:",
           ...warnings.map((item) => `- ${severityLabel(item.severity)}: ${item.title}\n  ${item.action}`),
           "",
-          "Trotzdem als internen Kandidaten markieren?",
+          "Trotzdem im internen Therapievorschlag markieren?",
         ].join("\n"));
         if (!accepted) return;
       }
@@ -3863,6 +3873,12 @@ export function TherapyRecommendation() {
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
         const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate, extracted.ocrPageConfidences);
+        const archiveCopy = isPdfClinicalDocument(item.file)
+          ? await prepareAnonymizedPdfArchive(item.file, progress => {
+            if(scopeIsCurrent())setPendingDirectBefundFiles(current=>current.map(row=>row.id===item.id?{...row,progress}:row));
+          },scopeIsCurrent)
+          : undefined;
+        if(!scopeIsCurrent())return;
         successful += 1;
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
           ...row,
@@ -3871,6 +3887,7 @@ export function TherapyRecommendation() {
           documentType,
           documentTypeInferred: !item.documentType,
           previewText,
+          archiveCopy,
           privacyReviewed: false,
           removedIdentifierCategories: extracted.removedIdentifierCategories,
           localPrivacyFindings: extracted.localPrivacyFindings,
@@ -3912,7 +3929,7 @@ export function TherapyRecommendation() {
       const receipt = await patientDraftSaveQueue.run(pid, async () => {
         if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
         const originals = await archiveOriginals();
-        if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
+        if (!isCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Archivkopien bleiben im ursprünglichen Fall.");
         const base = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
         const previous = asText(base[field]);
         const combined = previous.includes(text) ? previous : [previous.trim(), text].filter(Boolean).join("\n\n");
@@ -3963,6 +3980,10 @@ export function TherapyRecommendation() {
     }
     const ready = pendingDirectBefundFiles.filter((item) => item.status === "ready");
     if (!ready.length) return;
+    if (pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "error")) {
+      toast({ title: "Sammelaufnahme unvollständig", description: "Bitte alle ausgewählten Dateien erfolgreich auslesen oder fehlerhafte Dateien bewusst entfernen und die Vorschauen erneut prüfen.", variant: "destructive" });
+      return;
+    }
     if (ready.some((item) => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
       toast({ title: "Fallwechsel erkannt", description: "Die Vorschau gehört nicht zur aktuellen Pseudonym-ID und wird nicht übernommen.", variant: "destructive" });
       return;
@@ -4048,15 +4069,20 @@ export function TherapyRecommendation() {
       draftRevisionTrackerRef.current.capture(pid);
       for (const item of ready) {
         if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
-        if (!item.archiveReceipt && !item.file.size) throw new Error("Bitte die Originaldatei erneut auswählen. Eine reine Textvorschau ist noch kein gesichertes Original.");
-        const original = item.archiveReceipt
-          ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
-          : await archivePatientOriginal(supabase as any, pid, item.file, item.documentType || "dokument", item.documentDate);
+        if (!item.archiveReceipt && !item.file.size) throw new Error("Bitte das lokale Original erneut auswählen. Eine reine Textvorschau ist noch kein gesicherter Nachweis für eine Archivkopie.");
         const inputFields = { labor: "laborKomplett", metatron: "metatronHeel", vieva: "vievaPlus", anamnese: "anamnese", arzt: "arztbericht", sonstige: "sonstigeUntersuchungen" };
-        payload = { ...payload, ...originalArchiveInputPatch(payload, [original], inputFields[item.documentType]) };
-        if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id ? { ...candidate, archiveReceipt: original } : candidate));
+        const archive = item.archiveReceipt
+          ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
+          : item.archiveCopy
+            ? await archivePatientOriginal(supabase as any, pid, item.archiveCopy, item.documentType || "dokument", item.documentDate)
+            : undefined;
+        if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.");
+        if (archive) {
+          payload = { ...payload, ...originalArchiveInputPatch(payload, [archive], inputFields[item.documentType]) };
+          if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id ? { ...candidate, archiveReceipt: archive } : candidate));
+        }
       }
-      if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
+      if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Archivkopien bleiben im ursprünglichen Fall.");
       return persistVerifiedPatientInput(pid, payload, (target, input) => {
         writeStarted = true;
         return upsertAutoSaveDraft(target, input);
@@ -4089,7 +4115,7 @@ export function TherapyRecommendation() {
     if (!scopeIsCurrent()) return;
     const readyIds = new Set(ready.map((item) => item.id));
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
-    toast({ title: "Originale und Inhalte gespeichert und geprüft", description: `${ready.length} geprüfte Datei(en) wurden unverändert privat archiviert. Zugeordnete Inhalte und Originaldateien wurden vollständig zurückgelesen. Als Nächstes die ausgewählten Befunde auswerten.` });
+    toast({ title: "Archivkopien und Inhalte gespeichert und geprüft", description: `${ready.length} geprüfte Datei(en) wurden gespeichert. Zugehörige anonymisierte PDF-Kopien wurden privat archiviert und bytegenau zurückgelesen; die lokalen Originaldateien sowie Word- und Excel-Dateien bleiben lokal. Als Nächstes die ausgewählten Befunde auswerten.` });
     setHistoryRefresh((n) => n + 1);
     window.setTimeout(() => {
       nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -4120,7 +4146,7 @@ export function TherapyRecommendation() {
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     if (!scopeIsCurrent() || !isPatientScopedStorageReady(pid) || !doc.archivePath.startsWith(`${pid}/`)
       || doc.archivePath.split("/").some(part => part === "." || part === "..")) {
-      toast({ title: "Archivzuordnung nicht bestätigt", description: "Die Originaldatei wurde keinem anderen Fall zugeordnet.", variant: "destructive" });
+      toast({ title: "Archivzuordnung nicht bestätigt", description: "Die Archivkopie wurde keinem anderen Fall zugeordnet.", variant: "destructive" });
       return;
     }
     setLoadingArchiveDocumentPath(doc.archivePath);
@@ -4139,23 +4165,23 @@ export function TherapyRecommendation() {
       if (!scopeIsCurrent()) return;
       if (!["pdf", "docx", "xlsx"].includes(extension)) {
         if (!["docx", "txt", "md", "html", "htm", "csv", "json", "png", "jpg", "jpeg"].includes(extension)) {
-          throw new Error("Dieser Archiv-Dateityp benötigt eine gesonderte Prüfung. Das Original wurde nicht verändert.");
+          throw new Error("Dieser Archiv-Dateityp benötigt eine gesonderte Prüfung. Die lokale Originaldatei wurde nicht verändert.");
         }
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
-        anchor.href = url; anchor.download = `Original-Archivdokument.${extension}`;
+        anchor.href = url; anchor.download = `Anonymisierte-Archivkopie.${extension}`;
         anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 30000);
-        toast({ title: "Originaldatei bereitgestellt", description: "Zum erneuten Übernehmen bitte den passenden Dateiimport mit Datenschutzvorschau verwenden. Es wurde kein klinischer Text eingefügt." });
+        toast({ title: "Archivkopie bereitgestellt", description: "Zum erneuten Übernehmen bitte den passenden Dateiimport mit Datenschutzvorschau verwenden. Es wurde kein klinischer Text eingefügt." });
         return;
       }
       const knownType = canonical && canonical[1] !== "dokument" ? canonical[1] as DirectBefundTarget : "";
       setPendingDirectBefundFiles(current => [...current, {
-        id: crypto.randomUUID(), file: new File([blob], `Original-Archivdokument.${extension}`, { type: extension === "pdf" ? "application/pdf" : "application/octet-stream" }),
+        id: crypto.randomUUID(), file: new File([blob], `Anonymisierte-Archivkopie.${extension}`, { type: extension === "pdf" ? "application/pdf" : "application/octet-stream" }),
         sourcePseudonymId: pid, status: "queued", documentType: knownType,
         documentTypeInferred: Boolean(knownType), documentDate: canonical && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? parts[1] : "",
         privacyReviewed: false,
       }]);
-      toast({ title: "Original zur erneuten Prüfung bereit", description: "Bitte Dokumentart und Datum prüfen, die Datenschutzvorschau erstellen und danach ausdrücklich übernehmen. Ältere Originale bleiben erhalten; bei Übernahme wird eine geprüfte Archivkopie verknüpft." });
+      toast({ title: "Archivkopie zur erneuten Prüfung bereit", description: "Bitte Dokumentart und Datum prüfen, die Datenschutzvorschau erstellen und danach ausdrücklich übernehmen. Bestehende Archivkopien bleiben erhalten; bei Übernahme wird eine neu geprüfte Archivkopie verknüpft." });
     } catch (error: any) {
       if (!scopeIsCurrent()) return;
       toast({ title: "Archiv-PDF nicht auslesbar", description: error?.message || "Bitte Datei erneut direkt auswählen.", variant: "destructive" });
@@ -4225,7 +4251,7 @@ export function TherapyRecommendation() {
       }));
       await logTherapyEvent(pid, "documents_deleted", {
         files: [{ name: doc.name, archivePath: doc.archivePath }],
-        note: `Archivierte Originaldatei + eingefügte Textblöcke aus Patientenkontext entfernt.${serverStripInfo}`,
+        note: `Archivierte anonymisierte PDF-Kopie + eingefügte Textblöcke aus Patientenkontext entfernt.${serverStripInfo}`,
       });
       if (!scopeIsCurrent()) return;
       toast({ title: "Archiv-PDF gelöscht", description: `${doc.name} wurde aus Cloud-Archiv, Snapshot und Befund-Feldern entfernt.` });
@@ -5155,6 +5181,7 @@ export function TherapyRecommendation() {
       )}
       <div className="flex items-center gap-3">
         <Stethoscope className="h-7 w-7 text-primary" />
+        <PdfArchiveReviewDialog scopeKey={pseudonymId} />
         <h1 className="text-2xl font-bold text-foreground">Patientenaufnahme &amp; Auswertung</h1>
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
@@ -5272,7 +5299,7 @@ export function TherapyRecommendation() {
                 </Button>
               )}
               {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
-                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && !file.privacyReviewed))} className="gap-1.5">
+                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Geprüfte Inhalte passend übernehmen
                 </Button>
@@ -5323,18 +5350,19 @@ export function TherapyRecommendation() {
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Ausgelesener Text – vor der Übernahme prüfen</div>
                         <p className="mb-2 text-xs">Dieser Text wurde aus der Datei ausgelesen und automatisch geschwärzt. Schwarze Stellen bleiben verdeckt und müssen nicht nachgelesen werden.</p>
-                        <p className="mb-1 text-xs"><strong>Schwärzung prüfen:</strong> Sind im noch sichtbaren Text persönliche Angaben übrig geblieben? Bei Bedarf „Manuell nachschwärzen“ verwenden.</p>
+                        <p className="mb-1 text-xs"><strong>Schwärzung prüfen:</strong> Sind im noch sichtbaren Text persönliche Angaben übrig geblieben? Bei Bedarf „Manuell nachschwärzen“ verwenden. Bei PDF-Dateien sperrt jede manuelle Textänderung die vorhandene Archivkopie; für eine Übernahme muss die lokale Originaldatei erneut vollständig geprüft werden.</p>
                         {item.documentType === "anamnese" && <p className="mb-2 text-xs"><strong>Texterkennung prüfen:</strong> Antworten, Handschrift und Markierungen mit dem vorliegenden Original abgleichen. „Manuell prüfen“ bedeutet, dass die Zuordnung noch unsicher ist.</p>}
                         <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed"
                           disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming}
                           onChange={text => {
                             if (isImportingAnamnesis || isAnalyzingDocs || isStreaming || normalizePseudonymId(item.sourcePseudonymId) !== pseudonymIdRef.current) return;
-                            setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id && candidate.sourcePseudonymId === item.sourcePseudonymId && candidate.status === "ready" ? { ...candidate, previewText: text, chars: text.length, privacyReviewed: false } : candidate));
+                            if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,false);
+                            setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id && candidate.sourcePseudonymId === item.sourcePseudonymId && candidate.status === "ready" ? { ...candidate, previewText: text, chars: text.length, archiveCopy: archiveCopyAfterPreviewTextEdit(candidate.file, candidate.archiveCopy), privacyReviewed: false } : candidate));
                           }} />
                         {!!item.localPrivacyFindings?.length && (
                           <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
                             <div className="font-semibold">Lokal erkannte personenbezogene Stellen: {item.localPrivacyFindings.length}</div>
-                            <p className="mt-1">Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet. Das unveränderte Original wird erst nach Ihrer Bestätigung privat archiviert.</p>
+                            <p className="mt-1">Diese Trefferliste bleibt lokal. Übertragen wird ausschließlich die geprüfte anonymisierte PDF-Kopie; das Original bleibt lokal.</p>
                             <Button
                               type="button"
                               size="sm"
@@ -5356,14 +5384,20 @@ export function TherapyRecommendation() {
                             )}
                           </div>
                         )}
+                        {item.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Anonymisierte PDF-Kopie prüfen</Button>}
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"
                             checked={item.privacyReviewed}
-                            onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file))}
+                            disabled={isPdfClinicalDocument(item.file) && !item.archiveCopy}
+                            onChange={(event) => { if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked);setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file)); }}
                             className="mt-0.5"
                           />
-                          Bereinigte Vorschau geprüft: keine direkten Identifikatoren im Text. Beim Anamnesebogen zusätzlich Handschrift, Markierungen, Fragezuordnung und alle Hinweise „manuell prüfen“ kontrolliert. Das unveränderte Original soll ausschließlich privat archiviert werden.
+                          {item.archiveCopy
+                            ? "Bereinigten Text und anonymisierte PDF-Kopie geprüft: identifizierende Angaben sind entfernt, Befunde und Messwerte erhalten. Beim Anamnesebogen sind zusätzlich Handschrift, Markierungen und Fragezuordnung geprüft. Nur die bestätigte PDF-Kopie darf privat übertragen werden; das Original bleibt lokal."
+                            : isPdfClinicalDocument(item.file)
+                              ? "PDF-Kopie fehlt oder passt nach einer manuellen Textschwärzung nicht mehr nachweisbar zur Vorschau. Diese PDF-Zeile bleibt gesperrt; lokale Originaldatei erneut auswählen und vollständig prüfen."
+                              : "Bereinigten Word-/Excel-Text geprüft: identifizierende Angaben sind entfernt, Befunde und Werte sind vollständig. Die lokale Ausgangsdatei bleibt lokal und wird nicht archiviert."}
                         </label>
                       </div>
                     )}
@@ -5373,7 +5407,7 @@ export function TherapyRecommendation() {
             )}
             {loadedDocumentInventory.filter((doc) => doc.archivePath).length > 0 && (
               <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs space-y-1">
-                <div className="font-semibold text-foreground">Privates Originalarchiv für diesen Fall</div>
+                <div className="font-semibold text-foreground">Privates Archiv anonymisierter PDF-Kopien für diesen Fall</div>
                 {loadedDocumentInventory.filter((doc) => doc.archivePath).map((doc) => (
                   <div key={doc.archivePath} className="flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -5393,7 +5427,7 @@ export function TherapyRecommendation() {
             )}
             {loadedDocumentInventory.filter((doc) => doc.archivePath).length === 0 && (
               <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs text-muted-foreground">
-                Noch keine Originaldateien geladen. Mit „Archiv neu laden" wird der private Speicher für die aktuelle Fallnummer abgefragt.
+                Noch keine anonymisierten PDF-Kopien geladen. Mit „Archiv neu laden" wird der private Speicher für die aktuelle Fallnummer abgefragt.
               </div>
             )}
           </div>
@@ -5428,7 +5462,7 @@ export function TherapyRecommendation() {
             <p className="mt-1 text-xs text-muted-foreground">
               {docAnalysisHtml
                 ? `Für den sichtbaren Befund gesperrt: ${befundRunProfile?.label || "Altbericht ohne dokumentiertes Profil"}. Für einen Profilwechsel bitte einen neuen Befundlauf beginnen.`
-                : "Dieses Profil wird für Befund, Therapie-Kandidatenentwurf und finalen Plan unveränderlich protokolliert."}
+                : "Dieses Profil wird für Befund, Therapievorschlag und finalen Plan unveränderlich protokolliert."}
             </p>
           </div>
           <div
@@ -5889,6 +5923,7 @@ export function TherapyRecommendation() {
                   <p id="patient-pet-examinations-hint" className="mt-1 text-xs text-muted-foreground">Jede PET-Untersuchung in einer eigenen Zeile mit Datum und Angabe, was untersucht wurde. Mehrere Untersuchungen vollständig aufführen; fehlendes Datum ausdrücklich als unbekannt kennzeichnen.</p>
                 </div>
                 <AnamnesisAdditionalFields values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
+                <SupplementaryFindingsFields section="hrv" values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
               </TabsContent>
 
               {/* ===== TAB: Anamnese ===== */}
@@ -5934,7 +5969,7 @@ export function TherapyRecommendation() {
                         const { stored } = await patientDraftSaveQueue.run(pid, async () => {
                           if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current || patientContextLoadingRef.current) throw new Error("Der Fall wurde inzwischen gewechselt oder neu geladen. Die Übernahme wurde nicht begonnen.");
                           const originals = await archiveOriginals();
-                          if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Originale bleiben im ursprünglichen Fall.");
+                          if (generation !== patientScopeGenerationRef.current || pid !== pseudonymIdRef.current) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Archivkopien bleiben im ursprünglichen Fall.");
                           payload = { ...payload, ...originalArchiveInputPatch(payload, originals, "anamnese") };
                           return persistVerifiedAnamnesis(pid, payload, (target, input) => {
                             writeStarted = true;
@@ -6076,7 +6111,7 @@ export function TherapyRecommendation() {
                       <button type="button" onClick={() => setArztberichtDatum("")} className="text-xs text-muted-foreground underline">zurücksetzen</button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. PDFs werden lokal ausgelesen, der bereinigte Text wird geprüft und das unveränderte Original wird privat archiviert.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Arztbrief, Entlassbrief, Facharzt-/Bildgebungs-/OP-/Histologie-Befund. PDFs werden lokal ausgelesen, der bereinigte Text wird geprüft und nach Bestätigung wird ausschließlich eine anonymisierte PDF-Kopie privat archiviert; das Original bleibt lokal.</p>
                 </div>
               </TabsContent>
 
@@ -6133,7 +6168,7 @@ export function TherapyRecommendation() {
                   </div>
                   {!vievaPlusDatum && <p role="status" className="mb-3 text-xs font-medium text-amber-800 dark:text-amber-200">Vor dem PDF-Import zuerst das Analyse-Datum eintragen.</p>}
                   <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-100">
-                    <strong>Datenschutz- und Sicherheitsprüfung:</strong> Vor dem Einlesen Namen, Geburtsdatum, Adresse, Dateiname und weitere Identifikatoren kontrollieren. Nur den zum aktuellen Pseudonym gehörenden Befund verwenden. Das PDF-Passwort wird nicht gespeichert; das unveränderte Original wird nach Bestätigung privat archiviert. Die Vieva-Auswertung ist eine Befundquelle und ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung.
+                    <strong>Datenschutz- und Sicherheitsprüfung:</strong> Vor dem Einlesen Namen, Geburtsdatum, Adresse, Dateiname und weitere Identifikatoren kontrollieren. Nur den zum aktuellen Pseudonym gehörenden Befund verwenden. Das PDF-Passwort wird nicht gespeichert; nach Bestätigung wird ausschließlich eine anonymisierte PDF-Kopie privat archiviert, das Original bleibt lokal. Die Vieva-Auswertung ist eine Befundquelle und ersetzt keine fachliche Sicherheits-, Interaktions- oder Therapieprüfung.
                   </div>
                   <MultiDocUpload
                     pseudonymId={pseudonymId}
@@ -6380,7 +6415,7 @@ export function TherapyRecommendation() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. Der Text wird lokal ausgelesen und bereinigt; das unveränderte Original wird privat archiviert.
+                        Wird mitgeprüft auf Sinn, Redundanz zu deiner Therapie und echte Wechselwirkungen. Der Text wird lokal ausgelesen und bereinigt; nach Bestätigung wird ausschließlich eine anonymisierte PDF-Kopie privat archiviert, das Original bleibt lokal.
                         {" "}
                         <span className={apothekerRezept.trim().length >= 5 ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>
                           {apothekerRezept.trim().length >= 5
@@ -6993,6 +7028,7 @@ export function TherapyRecommendation() {
           <CardTitle className="text-base">Therapievorschlag</CardTitle>
         </CardHeader>
         <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="w-full"><SupplementaryFindingsFields section="laboratory-advice" values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming} /></div>
           <div className="w-full rounded-md border border-emerald-300/70 bg-emerald-50/60 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
             <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Therapie-Empfehlung stufenweise vorbereiten</div>
             <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">Jede Stufe setzt nur die angegebenen Befundquellen zur Auswertung. Fehlende Quellen werden nicht ersetzt oder geschätzt.</p>
@@ -7396,7 +7432,7 @@ export function TherapyRecommendation() {
 // --- Workflow-Stepper-Indikator ---
 function WorkflowStepper({ stage }: { stage: "edit" | "addons" | "preview" | "finalized" }) {
   const steps: Array<{ key: typeof stage; label: string }> = [
-    { key: "edit", label: "1. Kandidaten prüfen" },
+    { key: "edit", label: "1. Therapievorschlag prüfen" },
     { key: "addons", label: "2. Eigene Ergänzungen" },
     { key: "preview", label: "3. Vorschau" },
     { key: "finalized", label: "✓ Gespeichert" },
@@ -7847,11 +7883,11 @@ function ParsedResultView({
         <div className="space-y-4">
           <h2 className="text-lg font-serif text-foreground flex items-center gap-2 mt-2">
             <Pill className="h-4 w-4 text-primary" />
-            Interne Mittel-Kandidaten
+            Interner Therapievorschlag
             {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             {!isStreaming && selectedKeys && (
               <span className="text-xs font-normal text-muted-foreground ml-2">
-                ({selectedKeys.size} als Kernkandidaten markiert; Warnmittel bleiben standardmäßig abgewählt)
+                ({selectedKeys.size} als Startmittel im Therapievorschlag markiert; Warnmittel bleiben standardmäßig abgewählt)
               </span>
             )}
           </h2>

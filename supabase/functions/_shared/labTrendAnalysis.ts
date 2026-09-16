@@ -522,6 +522,12 @@ export const buildClinicallyRelevantLabHighlights = (
   labValues: LabValueRecord[],
   clinicalContext: unknown,
 ): LabHighlight[] => {
+  // Keep these records in the source data, but never interpret device estimates
+  // as laboratory blood concentrations or combine them with laboratory trends.
+  labValues = labValues.filter(item => {
+    const source=String(item.quelle||"")+" "+String((item.beleg as Record<string,unknown>|undefined)?.quelle||"");
+    return !["vieva_estimate","device_estimate","hrv","other"].includes(String(item.measurementMethod||"")) && !/\b(?:vieva|metatron|nls|bioresonanz)\b/i.test(source);
+  });
   const patientClinicalContext = withoutFamilyHistory(clinicalContext);
   const newestValues = newestByParameter(labValues);
   const highlights = new Map<string, LabHighlight>();

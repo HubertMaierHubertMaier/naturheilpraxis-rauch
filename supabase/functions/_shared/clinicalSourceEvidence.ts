@@ -91,6 +91,13 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
   const pageCounts = new Map(pages.map(page => [page.page, 0]));
   const annotate = (raw: unknown, group: string) => {
     const item = typeof raw === "string" ? { [group === "diagnoses" ? "diagnose" : group === "medicationsTherapies" ? "name" : "text"]: raw } : { ...object(raw) };
+    if(group === "labValues") {
+      const sourceMethod=/\bvieva\b/i.test(sourceLabel)?"vieva_estimate":/\b(?:metatron|nls|bioresonanz)\b/i.test(sourceLabel)?"device_estimate":undefined;
+      if(sourceMethod){
+        if(item.measurementMethod && item.measurementMethod!==sourceMethod)item.ungepruefteMessmethodenangabe=item.measurementMethod;
+        item.measurementMethod=sourceMethod;
+      }
+    }
     // The model cannot confer verified provenance through an unvalidated extra list.
     if (Array.isArray(item.belege)) item.ungepruefteZusatzbelege = item.belege;
     delete item.belege;

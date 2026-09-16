@@ -37,11 +37,13 @@ import { RedactedTextPreview } from "./RedactedTextPreview";
 import { iaaCaptureStatusText, iaaFormValuesText } from "@/lib/iaaAssessment";
 import { anamnesisProfileFormValuesText } from "@/lib/anamnesisProfileForm";
 import { supabase } from "@/integrations/supabase/client";
-import { archivePatientOriginal, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
+import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, assertCompletePdfArchiveCopies, verifyArchivedPatientOriginal, type ArchiveOriginals, type OriginalArchiveKind, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym } from "../../../../supabase/functions/_shared/patientPseudonym";
 import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
-import { createLocalBrowserOcrWorker } from "@/lib/localBrowserOcr";
+import { createLocalBrowserOcrWorker, type LocalOcrResultData } from "@/lib/localBrowserOcr";
+import { rememberPdfOcrRead } from "@/lib/pdfReadOcrCache";
+import { prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -62,6 +64,7 @@ interface Props {
 
 type PendingFile = {
   file: File;
+  archiveCopy?: File;
   status: "queued" | "processing" | "done" | "error";
   pages?: number;
   chars?: number;
@@ -96,6 +99,8 @@ type PendingPrivacyReview = {
   localPrivacyFindings?: LocalPrivacyFinding[];
 };
 
+const isPdfFile = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
 const pendingPrivacyReviewKey = (pseudonymId: string, documentType: string) =>
   `therapy.pendingPrivacyReview.v1:${pseudonymId}:${documentType}`;
 
@@ -118,7 +123,7 @@ export type ClinicalDocumentExtractionResult = {
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
 type OcrWorker = {
-  recognize: (image: HTMLCanvasElement) => Promise<{ data: { text: string; confidence?: number } }>;
+  recognize: (image: HTMLCanvasElement, options?: { includeLayout?: boolean }) => Promise<{ data: LocalOcrResultData }>;
   terminate: () => Promise<unknown>;
 };
 type OcrExtractionSession = {
@@ -207,6 +212,7 @@ export async function extractClinicalDocumentText(
   let doc;
   try {
     doc = await loadingTask.promise;
+    rememberValidatedPdfPassword(file,currentPassword);
     if (currentPassword) onPasswordCaptured?.(currentPassword);
   } catch (error) {
     await destroyLoadingTask();
@@ -291,7 +297,8 @@ export async function extractClinicalDocumentText(
             });
             throwIfAborted(signal);
             ocrStage = "recognition";
-            const recognition = (await ocrSession.worker.recognize(canvas)).data;
+            const recognition = (await ocrSession.worker.recognize(canvas,{includeLayout:true})).data;
+            rememberPdfOcrRead(file,pageNumber,canvas.width,canvas.height,recognition);
             extractedPage.ocrText = recognition.text;
             if (Number.isFinite(recognition.confidence)) {
               extractedPage.ocrConfidence = Number(recognition.confidence);
@@ -544,10 +551,18 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           const datedText = extractionDocumentDate
             ? addAnalysisDocumentMetadata(reviewBody, extractionDocumentDate, documentType)
             : reviewBody;
+          const archiveCopy = isPdfFile(updated[index].file)
+            ? await prepareAnonymizedPdfArchive(updated[index].file, progress => {
+              if (!scopeIsCurrent()) return;
+              updated[index] = {...updated[index],progress};setFiles([...updated]);
+            },scopeIsCurrent)
+            : undefined;
+          if (!scopeIsCurrent()) return;
           combined = [combined, datedText].filter(Boolean).join("\n\n");
           updated[index] = {
             ...updated[index],
             extractedReviewBody: reviewBody,
+            archiveCopy,
             status: "done",
             chars: datedText.length,
             pages: extracted.pages,
@@ -644,7 +659,17 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
     const review = pendingReview;
     if (!review || !privacyConfirmed || reviewSubmitting) return;
     if (!Number.isInteger(review.documentCount) || review.documentCount < 1) {
-      toast({ title: "Originalnachweis fehlt", description: "Bitte die Originaldateien erneut auswählen und prüfen.", variant: "destructive" });
+      toast({ title: "Lokale Ausgangsdateien fehlen", description: "Bitte die lokalen Originaldateien erneut auswählen und prüfen.", variant: "destructive" });
+      return;
+    }
+    if (files.length !== review.documentCount || files.some(item => item.status !== "done")) {
+      toast({ title: "Sammelaufnahme unvollständig", description: "Bitte alle ausgewählten Dateien erfolgreich auslesen oder fehlerhafte Dateien bewusst entfernen und die Vorschau erneut prüfen.", variant: "destructive" });
+      return;
+    }
+    try {
+      assertCompletePdfArchiveCopies(files);
+    } catch (error) {
+      toast({ title: "PDF-Archivkopie fehlt", description: error instanceof Error ? error.message : "Die PDF-Archivkopie muss erneut geprüft werden.", variant: "destructive" });
       return;
     }
     if ((review.documentDate || "") !== documentDate.trim()) {
@@ -679,20 +704,15 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
     const ensureOriginalsArchived: ArchiveOriginals = () => archivePromise ||= (async () => {
       if (!scopeIsCurrent()) throw new Error("Der Fall wurde gewechselt. Die Vorschau bleibt erhalten.");
       const receipts: OriginalArchiveReceipt[] = [];
-      if (Array.isArray(review.archivedOriginals) && review.archivedOriginals.length === review.documentCount) {
-        for (const receipt of review.archivedOriginals) {
-          receipts.push(await verifyArchivedPatientOriginal(supabase as any, review.sourcePseudonymId, receipt));
-          if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
-        }
-      } else {
-        const originals = files.filter(item => item.status === "done");
-        if (originals.length !== review.documentCount || originals.some(item => !item.file.size)) {
-          throw new Error("Die Originaldateien sind nach dem Wiederöffnen nicht mehr ausgewählt. Bitte die Original-PDFs erneut auswählen und die Vorschau erneut prüfen; der bisherige Vorschautext bleibt bis dahin erhalten.");
-        }
-        for (const item of originals) {
-          receipts.push(await archivePatientOriginal(supabase as any, review.sourcePseudonymId, item.file, archiveKind, review.documentDate || ""));
-          if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
-        }
+      const completed = files.filter(item => item.status === "done");
+      const pdfCopies = completed.filter(item => item.archiveCopy);
+      assertCompletePdfArchiveCopies(completed);
+      if (completed.length !== review.documentCount || files.length !== review.documentCount) {
+        throw new Error("Die Sammelaufnahme ist nicht vollständig. Bitte die ausgewählten Dateien erneut prüfen; der bisherige Vorschautext bleibt erhalten.");
+      }
+      for (const item of pdfCopies) {
+        receipts.push(await archivePatientOriginal(supabase as any, review.sourcePseudonymId, item.archiveCopy!, archiveKind, review.documentDate || ""));
+        if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
       }
       setPendingReview(current => current?.text === review.text && current.sourcePseudonymId === review.sourcePseudonymId
         ? { ...current, archivedOriginals: receipts } : current);
@@ -708,7 +728,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
       setFiles([]);
       toast({
         title: "Inhalte datenschutzbereinigt übernommen",
-        description: `${review.documentCount} Datei(en) verarbeitet; Originale unverändert unter neutralen Dateinamen privat archiviert und zurückgelesen.`,
+        description: `${review.documentCount} Datei(en) verarbeitet; geprüfte anonymisierte PDF-Kopien privat archiviert und zurückgelesen. Word- und Excel-Originale bleiben lokal.`,
       });
       if (review.identifierCategories.length) {
         await logTherapyEvent(review.sourcePseudonymId, "pii_warning", {
@@ -815,7 +835,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             </div>
           ))}
           <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
-            Datenschutzmodus: PDF-Textebenen werden bevorzugt. Textarme Rasterseiten und Handschrift werden lokal im Browser erkannt; PDF-, Canvas- und Bilddaten gehen an keinen OCR-Cloud-Dienst. Die OCR-Programm- und Sprachdaten werden aus dieser Anwendung geladen. Nach Ihrer Bestätigung werden die unveränderten Originaldateien ausschließlich im privaten Praxisarchiv gespeichert und zurückgelesen. Der Text für die Analyse wird zuvor bereinigt. Unsichere Handschrift wird sichtbar als „manuell prüfen“ gekennzeichnet.
+            Datenschutzmodus: PDF-Textebenen werden bevorzugt. Textarme Rasterseiten und Handschrift werden lokal im Browser erkannt; PDF-, Canvas- und Bilddaten gehen an keinen OCR-Cloud-Dienst. Die OCR-Programm- und Sprachdaten werden aus dieser Anwendung geladen. Nach Ihrer Bestätigung werden nur geprüfte anonymisierte PDF-Kopien privat archiviert; Word- und Excel-Originale bleiben lokal. Der Text für die Analyse wird zuvor bereinigt. Unsichere Handschrift wird sichtbar als „manuell prüfen“ gekennzeichnet.
           </p>
         </div>
       )}
@@ -838,7 +858,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           {!!pendingReview.localPrivacyFindings?.length && (
             <div className="rounded-md border border-amber-400 bg-amber-100/70 p-2 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
               <strong>Lokal als personenbezogen markierte Stellen: {pendingReview.localPrivacyFindings.length}</strong>
-              <p className="mt-1">Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet. Sie dient hier der Datenschutzprüfung. Das unveränderte Originaldokument wird erst nach Ihrer Bestätigung privat archiviert.</p>
+              <p className="mt-1">Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet. Sie dient hier der Datenschutzprüfung. Das unveränderte Originaldokument bleibt lokal; erst nach Ihrer Bestätigung wird ausschließlich die anonymisierte PDF-Kopie privat archiviert.</p>
               <Button
                 type="button"
                 size="sm"
@@ -866,20 +886,24 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             disabled={reviewSubmitting || loading}
             onChange={text => {
               if (reviewSubmitting || loading || (pseudonymIdRef.current || "").trim() !== pendingReview.sourcePseudonymId) return;
+              for(const item of files)if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,false);
+              setFiles(current => current.map(item => ({ ...item, archiveCopy: archiveCopyAfterPreviewTextEdit(item.file, item.archiveCopy) })));
               setPendingReview(current => current?.sourcePseudonymId === pendingReview.sourcePseudonymId ? { ...current, text, totalChars: text.length } : current);
               setPrivacyConfirmed(false);
             }}
           />
+          <div className="flex flex-wrap gap-2">{files.filter(item=>item.archiveCopy).map((item,index)=><Button key={index} type="button" variant="outline" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Anonymisierte PDF-Kopie {index+1} prüfen</Button>)}</div>
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={privacyConfirmed}
-              onChange={(event) => setPrivacyConfirmed(event.target.checked)}
-              disabled={reviewSubmitting}
+              onChange={(event) => { for (const item of files) if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked);setPrivacyConfirmed(event.target.checked); }}
+              disabled={reviewSubmitting || files.length!==pendingReview.documentCount || files.some(item=>item.status!=="done" || (isPdfFile(item.file) && !item.archiveCopy))}
               className="mt-1"
             />
-            <span>Ich habe den vollständigen bereinigten Text geprüft. Direkte Identifikatoren sind entfernt; das erlaubte Pseudonym darf enthalten bleiben. Bei einem Anamnesebogen habe ich Handschrift, Markierungen, Fragezuordnung und alle Hinweise „manuell prüfen“ kontrolliert. Die Originaldateien sollen unverändert und ausschließlich im privaten Praxisarchiv gespeichert werden.</span>
+            <span>Ich habe den bereinigten Text und – soweit ausgewählt – die anonymisierten PDF-Kopien geprüft. Identifizierende Angaben sind auch in den PDF-Seitenbildern entfernt; Befunde und Messwerte bleiben erhalten. Beim Anamnesebogen sind zusätzlich Handschrift, Markierungen und Fragezuordnung geprüft. Nur bestätigte anonymisierte PDF-Kopien werden privat übertragen; alle Originale bleiben lokal.</span>
           </label>
+          {files.some(item => isPdfFile(item.file) && !item.archiveCopy) && <p className="text-xs text-destructive">Die Vorschau wurde manuell geändert oder die PDF-Kopie konnte nicht vorbereitet werden. Die vorhandene Kopie passt nicht nachweisbar zum Text und bleibt gesperrt. Bitte die lokalen Originaldateien erneut auswählen und die vollständige Prüfung wiederholen.</p>}
           <div className="flex flex-wrap gap-2">
             <input ref={replacementInputRef} type="file" accept={accept} multiple className="hidden" data-original-replacement
               onChange={(event) => {

@@ -1,0 +1,70 @@
+<!doctype html><html lang="de"><meta charset="utf-8"><title>Lokaler synthetischer PDF-Datenschutztest</title>
+<body><h1>Lokaler synthetischer PDF-Datenschutztest</h1><pre id="status">Test wird vorbereitet.</pre><div id="images"></div>
+<script type="module">
+import { jsPDF, AcroFormTextField } from "jspdf";
+import * as pdfjs from "pdfjs-dist";
+import { prepareAnonymizedPdfArchive } from "/src/lib/anonymizedPdfArchive.ts";
+import { createLocalBrowserOcrWorker } from "/src/lib/localBrowserOcr.ts";
+import { readPdfOcrCache } from "/src/lib/pdfReadOcrCache.ts";
+window.pdfPrivacyTest={status:"running",startedAt:new Date().toISOString(),checks:[]};
+const state=window.pdfPrivacyTest;
+const status=document.getElementById("status");
+const check=(name,value)=>{state.checks.push({name,passed:!!value});if(!value)throw Error(name);};
+let worker;
+try {
+  const source=new jsPDF({unit:"pt",format:"a4"});
+  source.setProperties({title:"SYNTHETIC PRIVATE METADATA",author:"Erika Muster"});
+  source.setFontSize(15);source.text("Muster Erika 12.03.1980 (46)",30,40);
+  source.text("Untersuchung 29.04.2026",30,90);source.text("LDL 130 mg/dl",30,115);
+  source.text("Magnesium 0,75 mmol/l",30,140);
+  source.text("Name:",30,195);
+  const personalField=new AcroFormTextField();personalField.Rect=[90,177,210,24];personalField.fieldName="patient_name";personalField.value="SYNTHETICPERSON SECRET";personalField.fontSize=14;source.addField(personalField);
+  source.text("Bemerkung:",30,240);
+  const clinicalField=new AcroFormTextField();clinicalField.Rect=[130,222,250,24];clinicalField.fieldName="clinical_note";clinicalField.value="Muskelkraempfe seit 3 Tagen";clinicalField.fontSize=14;source.addField(clinicalField);
+  source.link(30,30,250,20,{url:"https://example.invalid/private-attachment"});
+  source.addPage();
+  const scan=document.createElement("canvas");scan.width=1190;scan.height=1684;
+  const ctx=scan.getContext("2d");ctx.fillStyle="white";ctx.fillRect(0,0,scan.width,scan.height);
+  ctx.fillStyle="black";ctx.font="30px Arial";ctx.fillText("Beispiel Jonas 21.11.1991 (34)",60,80);
+  ctx.fillText("Untersuchung 21.08.2026",60,180);ctx.fillText("HRV RMSSD 24 ms",60,240);
+  ctx.fillText("Magnesium 0,75 mmol/l",60,300);ctx.fillText("Laborwerte und Messgrafik",60,360);
+  ctx.strokeStyle="#0066cc";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(80,520);ctx.lineTo(220,480);ctx.lineTo(400,600);ctx.lineTo(600,500);ctx.stroke();
+  source.addImage(scan.toDataURL("image/png"),"PNG",0,0,595,842);
+  source.addPage();source.setFontSize(15);source.text("Geheim Anna 11.11.1977 (49)",30,40);
+  source.setFillColor(0,0,0);source.rect(20,15,500,45,"F");
+  source.setTextColor(0,0,0);source.text("Untersuchung 16.09.2026; LDL 110 mg/dl",30,110);
+  const original=new File([source.output("blob")],"synthetischer-pdf-test.pdf",{type:"application/pdf"});
+  const hash=async b=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await b.arrayBuffer()))).map(x=>x.toString(16).padStart(2,"0")).join("");
+  const before=await hash(original);
+  const copy=await prepareAnonymizedPdfArchive(original,message=>{state.progress=message;status.textContent=message;});
+  check("Native/Vektorseite ebenfalls lokal per OCR geprüft",!!readPdfOcrCache(original,3)?.data.text);
+  check("Original unverändert",before===await hash(original));
+  check("Kopie unterscheidet sich vom Original",before!==await hash(copy));
+  const loading=pdfjs.getDocument({data:await copy.arrayBuffer()});
+  const doc=await loading.promise;
+  check("Alle drei Seiten erhalten",doc.numPages===3);
+  const meta=await doc.getMetadata();
+  check("Keine ursprünglichen Personen-Metadaten",!JSON.stringify(meta).includes("Erika")&&!JSON.stringify(meta).includes("PRIVATE METADATA"));
+  check("Keine Formularfelder",!await doc.getFieldObjects());
+  check("Keine Anhänge",!await doc.getAttachments());
+  worker=await createLocalBrowserOcrWorker();
+  state.ocr=[];
+  for(let n=1;n<=doc.numPages;n++){
+    const p=await doc.getPage(n),v=p.getViewport({scale:2}),c=document.createElement("canvas");c.width=Math.ceil(v.width);c.height=Math.ceil(v.height);
+    const content=await p.getTextContent();check(`Seite ${n}: keine ursprüngliche Textebene`,content.items.length===0);
+    check(`Seite ${n}: keine ursprünglichen Annotationen`,(await p.getAnnotations()).length===0);
+    await p.render({canvas:c,canvasContext:c.getContext("2d"),viewport:v}).promise;
+    const text=(await worker.recognize(c)).data.text;
+    check(`Seite ${n}: Namen und Geburtsdaten auch im Seitenbild entfernt`,!/(?:Erika|Muster|Jonas|Beispiel|SYNTHETICPERSON|SECRET|Geheim|Anna|12[.,]03[.,]1980|21[.,]11[.,]1991|11[.,]11[.,]1977)/i.test(text));
+    if(n===1){check("LDL-Messwert erhalten",/LDL\s+130\s+mg\/dl/i.test(text));check("Untersuchungsdatum erhalten",/29[.,]04[.,]2026/.test(text));check("Klinischer Formularwert sichtbar erhalten",/Muskelkr(?:ae|ä)mpfe seit 3 Tagen/i.test(text));}
+    else if(n===2){check("HRV-Messwert erhalten",/RMSSD\s+24\s+ms/i.test(text));const pixel=c.getContext("2d").getImageData(219,479,4,4).data;check("Farbige Messgrafik erhalten",Array.from(pixel).some((x,i)=>i%4===2&&x>100&&pixel[i-2]<80));}
+    else{check("Bestehende Schwärzung nicht rekonstruiert",!text.includes("49"));const pixels=c.getContext("2d").getImageData(65,45,400,50).data;check("Schwarzer Originalbalken erhalten",Array.from(pixels).every((v,i)=>i%4===3||v<30));check("Befund unterhalb bestehender Schwärzung erhalten",/LDL\s+110\s+mg\/dl/i.test(text));}
+    state.ocr.push({page:n,characters:text.length});
+    const image=document.createElement("img");image.src=c.toDataURL("image/png");image.style.width="500px";document.getElementById("images").append(image);
+    p.cleanup();
+  }
+  await loading.destroy();
+  state.status="passed";state.copyBytes=copy.size;
+}catch(error){state.status="failed";state.error=String(error?.message||error);}
+finally{await worker?.terminate();state.endedAt=new Date().toISOString();status.textContent=JSON.stringify(state,null,2);}
+</script></body></html>
