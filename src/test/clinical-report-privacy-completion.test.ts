@@ -19,6 +19,11 @@ describe("clinical report privacy and completion gate", () => {
     expect(() => deidentifyClinicalReportHtml('<p>Ungeprüftes Zeichen &Aopf;</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
     expect(deidentifyClinicalReportHtml('<p>Wörtliches Beispiel: &amp;colon;</p>', pid)).toContain("&amp;colon;");
   });
+  it("blocks legacy named references without semicolons but preserves escaped literal ampersands", () => {
+    expect(() => deidentifyClinicalReportHtml('<p>&ltstrong&gtPatient&colon; Beispiel&nbspPerson</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(() => deidentifyClinicalReportHtml('<p>Ungeprüfter Umbruch&nbspText</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(deidentifyClinicalReportHtml('<p>Wörtlich: A&amp;B, &amp;nbspText</p>', pid)).toContain("A&amp;B");
+  });
   it("accepts an already redacted quoted field followed only by encoded punctuation", () => {
     const html = deidentifyClinicalReportHtml('<pre>Originaltext (Name: [personenbezogene Angabe entfernt])&quot;,</pre>', pid);
     expect(html).toContain("[personenbezogene Angabe entfernt]");

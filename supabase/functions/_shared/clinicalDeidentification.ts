@@ -436,7 +436,7 @@ const decodeHtmlInspectionText = (text: string): string => {
   // Numeric references may omit the semicolon in browser text. Unknown named
   // references fail closed rather than leaving browser-visible text uninspected.
   // Decode once only: a literal &amp;colon; must remain literal text, not ':' .
-  return text.replace(/&(#x[0-9a-f]+;?|#\d+;?|[a-z][a-z0-9]*;)/gi, (entity, reference: string) => {
+  return text.replace(/&(#x[0-9a-f]+;?|#\d+;?|[a-z][a-z0-9]*;?)/gi, (entity, reference: string) => {
     const key = reference.replace(/;$/, "");
     if (key.startsWith("#")) {
       const code = /^#x/i.test(key) ? Number.parseInt(key.slice(2), 16) : Number(key.slice(1));
@@ -444,7 +444,10 @@ const decodeHtmlInspectionText = (text: string): string => {
       if (!Number.isInteger(code) || code < 32 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) throw new Error("Datenschutz-Sicherheitsstopp: Nicht eindeutig lesbare numerische Zeichenreferenz im Bericht.");
       return String.fromCodePoint(code);
     }
-    if (!Object.prototype.hasOwnProperty.call(named, key)) throw new Error("Datenschutz-Sicherheitsstopp: Nicht unterstützte benannte Zeichenreferenz im Bericht muss geprüft werden.");
+    // Browsers also consume legacy named references without ';', sometimes as a
+    // prefix of a longer token. Fail closed on all such spellings; generated
+    // literal ampersands are escaped as &amp; and decoded only once above.
+    if (!reference.endsWith(";") || !Object.prototype.hasOwnProperty.call(named, key)) throw new Error("Datenschutz-Sicherheitsstopp: Nicht unterstützte benannte Zeichenreferenz im Bericht muss geprüft werden.");
     return named[key];
   });
 };
