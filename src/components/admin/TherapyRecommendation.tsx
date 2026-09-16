@@ -5401,33 +5401,6 @@ export function TherapyRecommendation() {
               Auswahl leeren
             </Button>
           </div>
-          <div className="rounded-md border border-emerald-300/70 bg-emerald-50/60 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-            <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Therapie-Empfehlung stufenweise vorbereiten</div>
-            <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">Jede Stufe setzt nur die angegebenen Befundquellen zur Auswertung. Fehlende Quellen werden nicht ersetzt oder geschätzt.</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {therapySourceStages.map((stage) => {
-                const stageKeys = stage.groups.flat();
-                const sourceIds = getTherapyStageSourceIds(stageKeys);
-                const isAvailable = stage.groups.length === 0
-                  ? sourceIds.length > 0
-                  : stage.groups.every((group) => getTherapyStageSourceIds(group).length > 0);
-                return (
-                  <Button
-                    key={stage.label}
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={!isAvailable || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError}
-                    onClick={() => { applyManualAnalysisSelection(sourceIds); setAnamneseZusatz(previous => ({ ...previous, therapySourceStageId: stage.id })); }}
-                    aria-pressed={anamneseZusatz.therapySourceStageId === stage.id}
-                    className="h-auto justify-start whitespace-normal border-emerald-500/60 bg-background px-3 py-2 text-left hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
-                  >
-                    <span><strong>{stage.label}</strong><span className="block text-[11px] font-normal text-muted-foreground">Befund und nachfolgende Therapie an diese Quellen binden</span></span>
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
           <div className="rounded-md border bg-background p-3">
             <label className="text-sm font-semibold" htmlFor="befund-analysis-profile">1. Analyseprofil vor Befundstart festlegen</label>
             <select
@@ -7009,7 +6982,40 @@ export function TherapyRecommendation() {
       )}
 
       <Card id="patient-intake-therapy" className="scroll-mt-64 border-primary/30 bg-primary/5">
+        <CardHeader className="pb-0">
+          <CardTitle className="text-base">Therapievorschlag</CardTitle>
+        </CardHeader>
         <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="w-full rounded-md border border-emerald-300/70 bg-emerald-50/60 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Therapie-Empfehlung stufenweise vorbereiten</div>
+            <p className="mt-1 text-xs text-emerald-900/80 dark:text-emerald-100/80">Jede Stufe setzt nur die angegebenen Befundquellen zur Auswertung. Fehlende Quellen werden nicht ersetzt oder geschätzt.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {therapySourceStages.map((stage) => {
+                const stageKeys = stage.groups.flat();
+                const sourceIds = getTherapyStageSourceIds(stageKeys);
+                const isAvailable = stage.groups.length === 0
+                  ? sourceIds.length > 0
+                  : stage.groups.every((group) => getTherapyStageSourceIds(group).length > 0);
+                return (
+                  <Button
+                    key={stage.label}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!isAvailable || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError}
+                    onClick={() => { applyManualAnalysisSelection(sourceIds); setAnamneseZusatz(previous => ({ ...previous, therapySourceStageId: stage.id })); }}
+                    aria-pressed={anamneseZusatz.therapySourceStageId === stage.id}
+                    className="h-auto justify-start whitespace-normal border-emerald-500/60 bg-background px-3 py-2 text-left hover:bg-emerald-100 dark:hover:bg-emerald-950/40"
+                  >
+                    <span><strong>{stage.label}</strong><span className="block text-[11px] font-normal text-muted-foreground">Befund und nachfolgende Therapie an diese Quellen binden</span></span>
+                  </Button>
+                );
+              })}
+            </div>
+            <Button type="button" variant="link" className="mt-2 h-auto px-0 text-xs" onClick={() => nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+              Zur Befund-Auswertung für die gewählten Quellen
+            </Button>
+          </div>
           <div>
             <div className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">Nächster Schritt: Therapie aus dem vollständigen Befund ableiten</div>
             <p className="text-xs text-muted-foreground mt-0.5">
