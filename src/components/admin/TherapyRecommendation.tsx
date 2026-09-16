@@ -99,6 +99,7 @@ import { PatientDraftConflictReview } from "@/components/admin/therapy/PatientDr
 import { archivePatientOriginal, verifyArchivedPatientOriginal, originalArchiveInputPatch, type ArchiveOriginals, type OriginalArchiveReceipt } from "@/lib/patientOriginalArchive";
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
+import { inferDocumentDateFromFilename, readVievaPdfPassword, rememberVievaPdfPassword } from "@/lib/batchDocumentDefaults";
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
@@ -1317,7 +1318,11 @@ export function TherapyRecommendation() {
   const [sonstigeUntersuchungen, setSonstigeUntersuchungen] = useState("");
   const [vievaPlus, setVievaPlus] = useState("");
   const [vievaPlusDatum, setVievaPlusDatum] = useState("");
-  const [vievaPlusPdfPassword, setVievaPlusPdfPassword] = useState("");
+  const [vievaPlusPdfPassword, setVievaPlusPdfPassword] = useState(readVievaPdfPassword);
+  const updateVievaPlusPdfPassword = (value: string) => {
+    setVievaPlusPdfPassword(value);
+    rememberVievaPdfPassword(value);
+  };
   const [perplexityAnalyse, setPerplexityAnalyse] = useState("");
   const [eigeneTherapieVorlage, setEigeneTherapieVorlage] = useState("");
   const [apothekerRezept, setApothekerRezept] = useState("");
@@ -1401,8 +1406,8 @@ export function TherapyRecommendation() {
   const [sessionPseudonymRestored, setSessionPseudonymRestored] = useState(false);
 
   useEffect(() => {
-    // Das Vieva-PDF-Passwort bleibt ausschließlich für den aktuellen Patienten im flüchtigen Zustand.
-    setVievaPlusPdfPassword("");
+    // Praxisweit gleiches PDF-Passwort lokal wiederverwenden; nie in Falldaten speichern.
+    setVievaPlusPdfPassword(readVievaPdfPassword());
   }, [pseudonymId]);
   const directBefundFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -2463,7 +2468,7 @@ export function TherapyRecommendation() {
     setSonstigeUntersuchungen("");
     setVievaPlus("");
     setVievaPlusDatum("");
-    setVievaPlusPdfPassword("");
+    setVievaPlusPdfPassword(readVievaPdfPassword());
     setPerplexityAnalyse("");
     setEigeneTherapieVorlage("");
     setApothekerRezept("");
@@ -3814,7 +3819,7 @@ export function TherapyRecommendation() {
           status: "queued" as const,
           documentType: inferredType,
           documentTypeInferred: !!inferredType,
-          documentDate: "",
+          documentDate: inferDocumentDateFromFilename(file.name),
           privacyReviewed: false,
         };
       }),
@@ -3851,7 +3856,9 @@ export function TherapyRecommendation() {
           if (scopeIsCurrent()) toast(message);
         }, (progress) => {
           if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
-        }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`);
+        }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`,
+        documentType === "vieva" ? readVievaPdfPassword() || vievaPlusPdfPassword : "",
+        documentType === "vieva" ? updateVievaPlusPdfPassword : undefined);
         if (!scopeIsCurrent()) return;
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
@@ -6137,7 +6144,7 @@ export function TherapyRecommendation() {
                     archiveKind="vieva"
                     requireDocumentDate
                     pdfPassword={vievaPlusPdfPassword}
-                    onPdfPasswordChange={setVievaPlusPdfPassword}
+                    onPdfPasswordChange={updateVievaPlusPdfPassword}
                     onExtracted={(text, pid, archive) => persistImportedDocumentText(text, pid, "vievaPlus", archive)}
                   />
                   <Textarea

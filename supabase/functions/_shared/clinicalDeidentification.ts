@@ -1,4 +1,7 @@
 const REDACTED = "[personenbezogene Angabe entfernt]";
+// Unlabelled personal headers occur in device exports, not just in one patient file.
+// Require the complete name/date/parenthesized-age shape so examination dates stay intact.
+const compactPersonalHeader = () => /^([^\S\r\n]*)(\p{Lu}[\p{L}'’-]+(?:[ \t]+(?:\p{Lu}[\p{L}'’-]+|von|van|de|der|den|zu|zur|da|di|la)|,[ \t]*\p{Lu}[\p{L}'’-]+){1,5})[ \t]+((?:0?[1-9]|[12]\d|3[01])[./-](?:0?[1-9]|1[0-2])[./-](?:19|20)\d{2})[ \t]*\((\d{1,3})(?:[ \t]+Jahre)?\)([^\S\r\n]*)$/gmu;
 const nameStopWords = new Set(["patient", "patientin", "mann", "frau", "männlich", "maennlich", "weiblich", "divers", "psa", "testosteron", "prostata", "karzinom", "diagnose", "befund"]);
 const ocrNameLabel = String.raw`(?:N(?:a|ä)me|Narne|Vorname|Vornarne|Nachname|Nachnarne|Patientenname|Patient(?:in)?|Patlent(?:in)?|Versicherte(?:r|n)?|Behandler(?:in)?|Arzt|Ärztin)`;
 const personNamePart = String.raw`[A-ZÄÖÜ][\p{L}'-]+(?:[^\S\r\n]+[A-ZÄÖÜ][\p{L}'-]+){0,2}`;
@@ -160,6 +163,7 @@ const collectLikelyPersonNames = (value: string) => {
     if (tokens.length < 1 || tokens.length > 3 || tokens.some((token) => nameStopWords.has(token.toLowerCase()))) return;
     names.add(candidate.trim());
   };
+  for (const match of value.matchAll(compactPersonalHeader())) add(match[2]);
   for (const match of value.matchAll(new RegExp(
     String.raw`\b${ocrNameLabel}\s*(?::|=|-)?\s+((?:(?:Dr|Prof)\.?[^\S\r\n]*)?${personNameValue})${nameValueBoundary}`,
     "giu",
@@ -193,7 +197,9 @@ const protectPseudonyms = (value: string) => {
 export const deidentifyClinicalText = (value: unknown) => {
   const raw = String(value ?? "");
   const detectedNames = collectLikelyPersonNames(raw);
-  const protectedValue = protectPseudonyms(raw);
+  const personalHeadersRemoved = raw.replace(compactPersonalHeader(), (_match, indent: string, _name: string, _birthDate: string, age: string, trailing: string) =>
+    `${indent}[Name entfernt] [Geburtsdatum entfernt] (${age})${trailing}`);
+  const protectedValue = protectPseudonyms(personalHeadersRemoved);
   const safeDocumentMarkers: string[] = [];
   const markerProtected = protectedValue.text.replace(/===\s*(?:📄|📷)\s*Dokument-[a-f0-9]{12}\s*\(\d+\s*S\.?\)\s*===/giu, (match) => {
     const token = `__CLINICAL_DOCUMENT_MARKER_${safeDocumentMarkers.length}__`;
@@ -294,6 +300,10 @@ export const deidentifyClinicalData = (value: unknown, key = "", parentKey = "")
 export const directIdentifierCategories = (value: unknown) => {
   const text = String(value ?? "");
   const categories = new Set<string>();
+  if (compactPersonalHeader().test(text)) {
+    categories.add("Name");
+    categories.add("Geburtsdatum");
+  }
   const checks: Array<[string, RegExp]> = [
     ["Name", /(?:Name|Nachname|Vorname|Patientenname|Patient(?:in)?|Versicherte(?:r|n)?|Behandler(?:in)?|Arzt|Ärztin)\s*:?\s*<\/(?:td|th|dt|span|strong|label)>\s*(?:<(?:td|th|dd|span|div|p)[^>]*>)?(?!\s*P-\d{4}-\d{1,4})\s*[^<]{2,100}/iu],
     ["Anschrift", /\b[\p{L}][\p{L}\t .'-]{1,50}(?:stra(?:ß|ss|b)e|str\.|weg|platz|allee|gasse|ring|damm)[^\S\r\n]*\d+[a-z]?/iu],

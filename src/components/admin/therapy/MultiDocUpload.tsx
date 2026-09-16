@@ -195,7 +195,6 @@ export async function extractClinicalDocumentText(
       return;
     }
     currentPassword = entered;
-    onPasswordCaptured?.(entered);
     updatePassword(entered);
   };
   let destroyLoadingTaskPromise: Promise<void> | undefined;
@@ -208,6 +207,7 @@ export async function extractClinicalDocumentText(
   let doc;
   try {
     doc = await loadingTask.promise;
+    if (currentPassword) onPasswordCaptured?.(currentPassword);
   } catch (error) {
     await destroyLoadingTask();
     if (passwordCancelled) throw new Error("PDF-Passwortabfrage abgebrochen.");
