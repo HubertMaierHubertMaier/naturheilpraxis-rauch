@@ -2911,7 +2911,7 @@ export function TherapyRecommendation() {
       let noConventionalMedication = false;
       for (const partial of partials) {
         try {
-          const extracted = parseLlmJson(partial);
+          const extracted = normalizeNativeIaaClaims(parseLlmJson(partial));
           for (const item of Array.isArray(extracted?.diagnoses) ? extracted.diagnoses : []) {
             if (typeof item?.diagnose !== "string" || !item.diagnose.trim()) continue;
             diagnoses.push({ icd10: item.icd10 || "", diagnose: item.diagnose.trim(), quelle: item.quelle || item?.beleg?.quelle || "", status: item.status || "", datum: item.datum || "", zitat: item?.beleg?.zitat || "" });

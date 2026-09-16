@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { prepareClinicalReportHtml } from "@/lib/clinicalReportHtml";
 import { buildAnalysisProfile, parseStartedAnalysisProfile } from "@/lib/analysisProfile";
 import { buildAnamnesisIntake } from "@/lib/anamnesisIntakeFields";
+import { normalizeNativeIaaClaims } from "../../supabase/functions/_shared/nativeIaaEvidence";
 
 const source = readFileSync("src/components/admin/TherapyRecommendation.tsx", "utf8").replace(/\r\n/g, "\n");
 const start = source.indexOf("  const handleRebuildCurrentAnamnesisView =");
@@ -21,7 +22,7 @@ function setup(html: string, queryResult: Promise<unknown> = Promise.resolve({ d
   const env = { pseudonymId: pid, normalizePseudonymId: (value: string) => value, isPatientScopedStorageReady: () => true, isAnalyzingDocs: false,
     patientScopeGenerationRef: { current: 1 }, pseudonymIdRef: { current: pid }, PATIENT_DATA_MISMATCH_ERROR: "owner mismatch",
     setDocAnalysisProgress: vi.fn(), toast: vi.fn(), supabase: { from: () => query, auth: { getUser: async () => ({ data: { user: { id: "synthetic-user" } } }) } },
-    assertStrictPartialAnalysis: vi.fn(), parseLlmJson: JSON.parse, alter: "", geschlecht: "", mannayanOrders: [],
+    assertStrictPartialAnalysis: vi.fn(), parseLlmJson: JSON.parse, normalizeNativeIaaClaims, alter: "", geschlecht: "", mannayanOrders: [],
     buildClientFallbackAnalysisHtml: () => html, sanitizeFinalAnalysisHtml: prepareClinicalReportHtml, parseStartedAnalysisProfile,
     setDocAnalysisHtml: vi.fn(), setBefundRunProfile: vi.fn(), setDisplayedBefundSourceStand: vi.fn(), setIsDocAnalysisPanelMinimized: vi.fn(),
     setLatestBefundLoadedFrom: vi.fn(), writeLatestBefundDisplay: vi.fn(), applyExtractedToInputs: vi.fn(), applyAndPersistExtractedInputs: vi.fn(async () => {}), buildAnamnesisIntake, setHistoryRefresh: vi.fn(),
@@ -32,6 +33,18 @@ function setup(html: string, queryResult: Promise<unknown> = Promise.resolve({ d
 }
 
 describe("checkpoint rebuild respects privacy, ownership and analysis profile", () => {
+  it("does not reinsert an old model-invented IAA symptom when rebuilding saved partials", async () => {
+    const saved = structuredClone(row);
+    saved.eingabe_daten.checkpoint.partials = [JSON.stringify({ findings: [], openQuestions: [], anamnese: {
+      currentProblems: [{ text: "Invented back complaint", beleg: {
+        zitat: "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]", quoteMatched: true, pruefstatus: "quellenzitat_bestaetigt",
+      } }],
+    } })];
+    const test = setup(`<h2>Strukturierte Anamnese</h2><p>Patient: ${pid}</p>`, Promise.resolve({ data: [saved], error: null }));
+    await test.rebuild();
+    expect(test.env.applyAndPersistExtractedInputs).toHaveBeenCalledWith(expect.objectContaining({ symptoms: [] }));
+    expect(test.insert).toHaveBeenCalled();
+  });
   it("does not display or insert a success record after privacy rejection", async () => {
     const test = setup("<p>Patient: OTHER-991</p>"); await test.rebuild();
     expect(test.env.setDocAnalysisHtml).not.toHaveBeenCalled(); expect(test.insert).not.toHaveBeenCalled();
