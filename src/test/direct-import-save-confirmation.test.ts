@@ -10,6 +10,7 @@ import { writeConfirmedPatientDraftCopies } from "@/lib/patientDraftRevision";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses } from "@/lib/anamnesisIntakeFields";
 import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
 import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
+import { parseMedicationFormAnswer } from "@/lib/anamnesisMedicationForm";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -33,7 +34,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
   const extractEnd = source.indexOf("const ANALYSIS_CHUNK_MAX_CHARS", extractStart);
   const extractJs = ts.transpileModule(source.slice(extractStart, extractEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", "createQuestionnaireEvidenceValidator", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields, createQuestionnaireEvidenceValidator);
+  const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", "createQuestionnaireEvidenceValidator", "parseMedicationFormAnswer", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields, createQuestionnaireEvidenceValidator, parseMedicationFormAnswer);
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
@@ -81,6 +82,28 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("saves native medication names, doses and independent schedules through the real import handoff", async () => {
+    const t = setup("anamnese", 'Frage/Feld: Aktuelle Medikamente – Zeile 1 (elektronische Formularfelder, Seite 24)\nErkannte Antwort: {"Name":"Magnesiumcitrat","Dosierung":"200 mg","tägl.":"1","pro_Woche":"7","Grund":"Synthetische Testangabe","seit":"2024"}\nFrage/Feld: Aktuelle Medikamente – Zeile 2 (elektronische Formularfelder, Seite 24)\nErkannte Antwort: {"Name":"Vitamin D3","Dosierung":"1000 IE","tägl.":"1"}');
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    const intake = t.stored().eingabe_daten.anamnesisIntakeV1 as ReturnType<typeof buildAnamnesisIntake>;
+    const medicines = [...intake.medications, ...intake.uncertainMedications];
+    expect(medicines).toHaveLength(2);
+    expect(medicines.find(m => m.name === "Magnesiumcitrat")).toMatchObject({ dosis: "200 mg", haeufigkeit: "täglich: 1; pro Woche: 7", dauer: "seit 2024", indikation: "Synthetische Testangabe", seite: "24" });
+    expect(medicines.find(m => m.name === "Vitamin D3")).toMatchObject({ dosis: "1000 IE", haeufigkeit: "täglich: 1", dauer: "", indikation: "" });
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
+  it("keeps a conflicting native medication row for review without inventing a medication name from JSON", async () => {
+    const t = setup("anamnese", 'Frage/Feld: Aktuelle Medikamente – Zeile 1 (elektronische Formularfelder, Seite 24)\nErkannte Antwort: {"Name":"TEST","Dosierung":["5 mg","10 mg"]}');
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    const data = t.stored().eingabe_daten;
+    const intake = data.anamnesisIntakeV1 as ReturnType<typeof buildAnamnesisIntake>;
+    expect([...intake.medications, ...intake.uncertainMedications]).toHaveLength(0);
+    expect((data.anamneseZusatz as Record<string, string>).unconfirmedFormSources).toContain("10 mg");
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+  });
   it("keeps ambiguous printed selections out of symptom and profile fields even before AI analysis", async () => {
     const t = setup("anamnese", "Frage/Feld: Symptome\nErkannte Antwort: [_] Kopfschmerzen [] Müdigkeit\nFrage/Feld: Menopause\nErkannte Antwort: [7] Ja [ ] Nein");
     const done = t.run();

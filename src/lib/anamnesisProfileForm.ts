@@ -1,7 +1,10 @@
 import { escapeIAAFormMarkers } from "./iaaAssessment";
+import { medicationFormValuesText } from "./anamnesisMedicationForm";
 
 type ProfileWidget = { fieldName?: unknown; fieldType?: unknown; fieldValue?: unknown; checkBox?: boolean; exportValue?: unknown };
 const profileLabels: Record<string, string> = {
+  intro_freitext_anlass: "Anliegen / Beschwerden",
+  beschwerden_hauptbeschwerde: "Hauptbeschwerde",
   soziales_kinderAnzahl: "Kinderzahl",
   soziales_kinderAlter: "Alter der Kinder",
   frauen_menopause_seit: "Menopause seit",
@@ -28,5 +31,6 @@ export function anamnesisProfileFormValuesText(widgets: ProfileWidget[], pageNum
     const safeValue = escapeIAAFormMarkers(value).replace(/[\r\n]+/g, " ");
     lines.push(`${label} (elektronisches Formularfeld, Seite ${pageNumber}): ${safeValue}`);
   }
-  return lines.join("\n");
+  const medicationText = medicationFormValuesText(widgets, pageNumber);
+  return [...lines, medicationText].filter(Boolean).join("\n");
 }

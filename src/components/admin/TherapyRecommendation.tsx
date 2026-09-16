@@ -113,6 +113,7 @@ import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
 import { assertQuestionnaireValidationContract, createQuestionnaireEvidenceValidator } from "../../../supabase/functions/_shared/questionnaireEvidence";
 import { normalizeNativeIaaClaims, renderCanonicalIaaSection } from "../../../supabase/functions/_shared/nativeIaaEvidence";
+import { parseMedicationFormAnswer } from "@/lib/anamnesisMedicationForm";
 
 const SYNTHETIC_THERAPY_CASE = {
   id: "SYNTH-THERAPY-STRUCTURE-001",
@@ -258,6 +259,15 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
     const source = `Anamnesebogen – ${question}`;
     if (unconfirmedEvidence(pair[0])) {
       openQuestions.push({ text: `Unbestätigte Formular-/OCR-Zuordnung – am Original prüfen: ${question}: ${answer}`,
+        sourceAssertionStatus: "unconfirmed_form", originalCollection: "directQuestionAnswer",
+        beleg: { quelle: source, zitat: pair[0], pruefstatus: "formularstelle_unbestaetigt" },
+        unconfirmedSourceStatement: { text: `${question}: ${answer}` } });
+      continue;
+    }
+    const nativeMedication = parseMedicationFormAnswer(question, answer);
+    if (nativeMedication.recognized) {
+      if (nativeMedication.medication) medications.push(nativeMedication.medication);
+      else openQuestions.push({ text: `Elektronische Medikamentenzeile unvollständig oder widersprüchlich – Original prüfen: ${question}: ${answer}`,
         sourceAssertionStatus: "unconfirmed_form", originalCollection: "directQuestionAnswer",
         beleg: { quelle: source, zitat: pair[0], pruefstatus: "formularstelle_unbestaetigt" },
         unconfirmedSourceStatement: { text: `${question}: ${answer}` } });
