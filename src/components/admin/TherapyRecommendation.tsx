@@ -112,6 +112,7 @@ import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
 import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
 import { assertQuestionnaireValidationContract, createQuestionnaireEvidenceValidator } from "../../../supabase/functions/_shared/questionnaireEvidence";
+import { normalizeNativeIaaClaims, renderCanonicalIaaSection } from "../../../supabase/functions/_shared/nativeIaaEvidence";
 
 const SYNTHETIC_THERAPY_CASE = {
   id: "SYNTH-THERAPY-STRUCTURE-001",
@@ -894,8 +895,9 @@ const parseLlmJson = (raw: string): any => {
 const normalizePartialAnalysisJson = (raw: string) => {
   const parsed = parseLlmJson(raw);
   const candidates = [parsed, parsed?.analysis, parsed?.teilauswertung, parsed?.teilauswertungJson, parsed?.result, parsed?.data].filter(Boolean);
-  const source = (candidates.find(hasCompletePartialCollections) || candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate))) as Record<string, unknown> | undefined;
-  if (!source) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  const candidate = (candidates.find(hasCompletePartialCollections) || candidates.find((candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate))) as Record<string, unknown> | undefined;
+  if (!candidate) throw new Error("Teilanalysen-JSON ist kein Objekt");
+  const source = candidate;
   if (!ANALYSIS_REQUIRED_ARRAY_KEYS.every((key) => Array.isArray(source[key]))) throw new Error("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
   if (!source.anamnese || typeof source.anamnese !== "object" || Array.isArray(source.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
   const sourceAnamnese = source.anamnese as Record<string, unknown>;
@@ -904,7 +906,7 @@ const normalizePartialAnalysisJson = (raw: string) => {
   for (const key of ANALYSIS_REQUIRED_ARRAY_KEYS) normalized[key] = Array.isArray(source[key]) ? source[key] : [];
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   if (source.source_coverage_v1 && typeof source.source_coverage_v1 === "object") normalized.source_coverage_v1 = source.source_coverage_v1;
-  const serialized = JSON.stringify(deidentifyClinicalData(normalized));
+  const serialized = JSON.stringify(deidentifyClinicalData(normalizeNativeIaaClaims(normalized)));
   const residualIdentifiers = residualIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
   return serialized;
@@ -1027,7 +1029,7 @@ const buildClientFallbackAnalysisHtml = (
   let parsedCount = 0;
   for (const p of partials) {
     try {
-      const obj = parseLlmJson(p);
+      const obj = normalizeNativeIaaClaims(parseLlmJson(p));
       parsedCount += 1;
       for (const key of Object.keys(aggregate)) if (Array.isArray(obj?.[key])) aggregate[key].push(...obj[key]);
       for (const key of anamneseKeys) if (Array.isArray(obj?.anamnese?.[key])) anamnese[key].push(...obj.anamnese[key]);
@@ -1052,7 +1054,7 @@ const buildClientFallbackAnalysisHtml = (
   };
   const rows = (items: any[], cells: (item: any) => string, colspan = 6) => items.length
     ? items.map((item) => `<tr>${cells(item)}</tr>`).join("\n")
-    : `<tr><td colspan="${colspan}" class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</td></tr>`;
+    : `<tr><td colspan="${colspan}" class="empty">Keine bestätigten Angaben in dieser Rubrik. Ungeprüfte Zuordnungen werden, soweit vorhanden, im Prüfanhang aufgeführt.</td></tr>`;
   const val = (item: any) => escapeHtml(typeof item === "string" ? item : item?.text || item?.diagnose || item?.name || "—");
   const bullets = (items: any[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
@@ -1117,6 +1119,7 @@ ${anamnesisTable("Familienanamnese", "familyHistory")}
 ${anamnesisTable("Sozialanamnese", "socialStatus")}
 ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
 ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
+${renderCanonicalIaaSection(aggregate.findings, escapeHtml, clinicalEvidenceText)}
 
 <h2>4. Dokumentierte Diagnosen / Z.n. & anamnesebasierte Verdachtsdiagnosen</h2>
 <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 6)}</tbody></table>
@@ -1124,7 +1127,7 @@ ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
 <h2>5. Medikamente, Präparate &amp; Therapien</h2>
 <table><thead><tr><th>Mittel/Wirkstoff</th><th>Dosis</th><th>von wem</th><th>Datum</th><th>Indikation</th><th>Wirkmechanismus</th><th>Nebenwirkungen</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.medicationsTherapies, (item: any) => `<td>${escapeHtml(item?.name || "—")}</td><td>${escapeHtml(item?.dosis || "—")}</td><td>${escapeHtml(item?.vonWem || "—")}</td><td>${escapeHtml(item?.datum || "—")}</td><td>${escapeHtml(item?.indikation || item?.grundVerordnung || "—")}</td><td>${escapeHtml(item?.wirkmechanismus || "—")}</td><td>${escapeHtml(item?.nebenwirkungen || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`, 9)}</tbody></table>
 
-<h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+<h2>6. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings.filter(item => item?.sourceKind !== "canonical_iaa_answer"), ...aggregate.systemsPatterns])}
 
 <h2>⚠️ Auffällige oder kontextrelevante Laborwerte — Quintessenz für das Erstgespräch</h2>
 ${(() => {

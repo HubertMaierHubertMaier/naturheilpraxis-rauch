@@ -15,6 +15,7 @@ import {
 import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
 import { assertCompletePartialCollections, attachClinicalSourceEvidence, hasCompletePartialCollections, combineClinicalPartials, deduplicateClinicalFacts, clinicalEvidenceText } from "../_shared/clinicalSourceEvidence.ts";
 import { requiresVerifiedFormReport, isQuestionnaireSource } from "../_shared/questionnaireEvidence.ts";
+import { normalizeNativeIaaClaims, renderCanonicalIaaSection } from "../_shared/nativeIaaEvidence.ts";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 180;
@@ -547,7 +548,7 @@ function validateNormalizedPartialAnalysisJson(raw: string) {
   if (!ANALYSIS_REQUIRED_ARRAY_KEYS.every((key) => Array.isArray(parsed[key]))) throw new Error("Teilanalysen-JSON hat nicht alle erforderlichen Listen");
   if (!parsed.anamnese || typeof parsed.anamnese !== "object" || Array.isArray(parsed.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
   if (!ANALYSIS_ANAMNESE_KEYS.every((key) => Array.isArray(parsed.anamnese[key]))) throw new Error("Teilanalysen-JSON hat nicht alle Anamnese-Listen");
-  const serialized = JSON.stringify(deidentifyClinicalData(parsed));
+  const serialized = JSON.stringify(deidentifyClinicalData(normalizeNativeIaaClaims(parsed)));
   const residualIdentifiers = directIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
   return serialized;
@@ -604,7 +605,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 
   for (const partial of partials) {
     try {
-      const parsed = parseLlmJson(partial);
+      const parsed = normalizeNativeIaaClaims(parseLlmJson(partial));
       for (const key of Object.keys(aggregate)) {
         if (Array.isArray(parsed?.[key])) aggregate[key].push(...parsed[key]);
       }
@@ -658,7 +659,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   const val = (item: any, key = "text") => escapeHtml(typeof item === "string" ? item : item?.[key] || item?.diagnose || item?.name || "In den vorliegenden Unterlagen nicht dokumentiert.");
   const rows = (items: unknown[], cells: (item: any) => string) => items.length
     ? items.map((item) => `<tr>${cells(item)}</tr>`).join("\n")
-    : `<tr><td colspan="9" class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</td></tr>`;
+    : `<tr><td colspan="9" class="empty">Keine bestätigten Angaben in dieser Rubrik. Ungeprüfte Zuordnungen werden, soweit vorhanden, im Prüfanhang aufgeführt.</td></tr>`;
   const bullets = (items: unknown[]) => items.length
     ? `<ul>${items.map((item: any) => `<li>${val(item)} ${typeof item === "object" ? beleg(item) : ""}</li>`).join("")}</ul>`
     : `<p class="empty">In den vorliegenden Unterlagen nicht dokumentiert.</p>`;
@@ -705,7 +706,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 </head>
 <body>
   <h1>Befund-Auswertung</h1>
-  <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)} · <strong>Patient:</strong> ${escapeHtml(patientContext(b))} · <strong>Umfang:</strong> ${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen / ${escapeHtml(chunkCount)} Teilpaket(e)</div>
+  <div class="meta"><strong>Datum:</strong> ${escapeHtml(today)}${b.pseudonymId?.trim() ? ` · <strong>Patient:</strong> ${escapeHtml(b.pseudonymId.trim())}` : ""}${b.alter ? ` · <strong>Alter:</strong> ${escapeHtml(b.alter)}` : ""}${b.geschlecht ? ` · <strong>Geschlecht:</strong> ${escapeHtml(b.geschlecht)}` : ""} · <strong>Umfang:</strong> ${escapeHtml(totalChars.toLocaleString("de-DE"))} Zeichen / ${escapeHtml(chunkCount)} Teilpaket(e)</div>
   <div class="notice"><strong>Hinweis:</strong> ${verifiedFormReport ? "Diese Ausgabe wurde regelgebunden aus den Teilanalysen erstellt. Unbestätigte Formular- und OCR-Zuordnungen werden, soweit vorhanden, getrennt im Prüfanhang geführt und nicht als Patientenangaben übernommen." : "Diese Ausgabe wurde aus den vollständig gespeicherten Teilanalysen stabil rekonstruiert, weil die KI-HTML-Zusammenführung unvollständig ausgeliefert wurde."} Die Extraktionsdaten bleiben erhalten; keine Therapie-Empfehlung.</div>
 
   <h2>1. Übersicht der eingereichten Unterlagen</h2>
@@ -728,6 +729,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
   ${anamnesisTable("Sozialanamnese", "socialStatus")}
   ${anamnesisTable("Körperliche Untersuchung", "physicalExamination")}
   ${anamnesisTable("Weiterführende Untersuchungen", "additionalInvestigations")}
+  ${renderCanonicalIaaSection(aggregate.findings, escapeHtml, clinicalEvidenceText)}
 
   <h2>4. Dokumentierte Diagnosen / Z.n. & anamnesebasierte Verdachtsdiagnosen</h2>
   <table><thead><tr><th>ICD-10</th><th>Diagnose</th><th>Datum</th><th>Quelle</th><th>Status</th><th>Beleg</th></tr></thead><tbody>${rows(aggregate.diagnoses, (item: any) => `<td>${escapeHtml(item?.icd10 || "—")}</td><td>${escapeHtml(item?.diagnose || "—")}</td><td>${escapeHtml(dateOf(item))}</td><td>${escapeHtml(item?.quelle || item?.beleg?.quelle || "—")}</td><td>${escapeHtml(item?.status || "unklar")}</td><td>${beleg(item)}</td>`)}</tbody></table>
@@ -767,7 +769,7 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
     ? `<table><thead><tr><th>Bestelldatum</th><th>Bestell-Nr.</th><th>Mittel</th><th>Bezug zu Befund/Symptom/Pathogen</th><th>Bewertung</th><th>Beleg</th></tr></thead><tbody>${rows(mannayanRows, (row: any) => `<td>${escapeHtml(row.date)}</td><td>${escapeHtml(row.order)}</td><td>${escapeHtml(row.item)}</td><td>Gegen dokumentierte Beschwerden, Diagnosen, Pathogene und Laborauffälligkeiten prüfen.</td><td>❓ unklare Indikation / manuell prüfen</td><td>📄 Mannayan-Bestellung ${escapeHtml(row.order)}</td>`)}</tbody></table>`
     : `<p class="empty">Keine Mannayan-Bestellungen zugeordnet.</p>`}
 
-  <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings, ...aggregate.systemsPatterns])}
+  <h2>7. Auffälligkeiten, Widersprüche, fehlende Befunde</h2>${bullets([...aggregate.findings.filter((item: any) => item?.sourceKind !== "canonical_iaa_answer"), ...aggregate.systemsPatterns])}
 
   <h2>8. Übersetzung Ärzte-Sprache → Patienten-Sprache</h2><table><thead><tr><th>Fachbegriff</th><th>Bedeutung</th></tr></thead><tbody>${rows(aggregate.terms, (item: any) => `<td>${escapeHtml(item?.term || "—")}</td><td>${escapeHtml(item?.plain || "—")}</td>`)}</tbody></table>
   <h2>9. Gesamtbild & Arbeitshypothese</h2><p>Das Gesamtbild ist anhand der belegten Einzelextraktionen oben zu beurteilen. Für interpretative Hypothesen bitte die Befunde im Erstgespräch mit den Originalunterlagen gegenprüfen.</p>

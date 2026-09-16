@@ -7,6 +7,48 @@ const pid = "SYNTH-UI-74ced0ea-17bf-4540-92b8-cfd1e914d8ea";
 const header = `<div><strong>Datum:</strong> 14.09.2099 · <strong>Patient:</strong> ${pid} · <strong>Umfang:</strong> 5.728 Zeichen / 8 Teilpakete</div>`;
 
 describe("clinical report privacy and completion gate", () => {
+  it("does not discard encoded pseudo-tags containing a visible name", () => {
+    expect(() => deidentifyClinicalReportHtml('<p>Patient: [personenbezogene Angabe entfernt]&lt;Beispiel Person&gt;</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it.each(["&Tab;", "&NewLine;", "&#9", "&#xA"])("blocks identities separated by browser-decoded whitespace %s", separator => {
+    expect(() => deidentifyClinicalReportHtml(`<p>Patient:${separator}Beispiel${separator}Person</p>`, pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it("does not let encoded field labels or unsupported character references bypass inspection", () => {
+    expect(() => deidentifyClinicalReportHtml('<p>Patient&colon;&Tab;Beispiel&Tab;Person</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(() => deidentifyClinicalReportHtml('<p>N&#97me&colon; Beispiel Person</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(() => deidentifyClinicalReportHtml('<p>Ungeprüftes Zeichen &Aopf;</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(deidentifyClinicalReportHtml('<p>Wörtliches Beispiel: &amp;colon;</p>', pid)).toContain("&amp;colon;");
+  });
+  it("accepts an already redacted quoted field followed only by encoded punctuation", () => {
+    const html = deidentifyClinicalReportHtml('<pre>Originaltext (Name: [personenbezogene Angabe entfernt])&quot;,</pre>', pid);
+    expect(html).toContain("[personenbezogene Angabe entfernt]");
+    expect(html).toContain("&quot;");
+  });
+  it("inspects adjacent redacted name fields separately without authorizing a real suffix", () => {
+    const html = deidentifyClinicalReportHtml('<p>Name: [personenbezogene Angabe entfernt], Vorname: [personenbezogene Angabe entfernt])</p>', pid);
+    expect(html).toContain("Vorname");
+    expect(() => deidentifyClinicalReportHtml('<p>Name: [personenbezogene Angabe entfernt] Beispiel-Person, Vorname: [personenbezogene Angabe entfernt]</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it("preserves the fixed unanswered employment question but does not exempt added identity data", () => {
+    const question = '<p>Welche berufliche Tätigkeit hat der Patient [personenbezogene Angabe entfernt], bei welchem Arbeitgeber und in welcher Branche?</p>';
+    expect(deidentifyClinicalReportHtml(question, pid)).toContain("bei welchem Arbeitgeber und in welcher Branche?");
+    expect(() => deidentifyClinicalReportHtml(question.replace("entfernt],", "entfernt] Beispiel-Person,"), pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(() => deidentifyClinicalReportHtml(question.replace("Branche?", "Branche Beispiel-Person?"), pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it("preserves a fixed missing-answer notice without exempting added values", () => {
+    const html = '<p>Rückfrage an den Patient [personenbezogene Angabe entfernt], da keine eindeutigen Antworten oder Markierungen erkennbar sind. Bitte prüfen, ob hierzu Angaben vorliegen.</p>';
+    expect(deidentifyClinicalReportHtml(html, pid)).toContain("keine eindeutigen Antworten");
+    expect(() => deidentifyClinicalReportHtml(html.replace("Angaben vorliegen.", "Angaben Beispiel-Person vorliegen."), pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it("still blocks encoded identity suffixes behind a redaction marker", () => {
+    expect(() => deidentifyClinicalReportHtml('<p>Patient: [personenbezogene Angabe entfernt]&#32;Beispiel&#45;Person</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+    expect(() => deidentifyClinicalReportHtml('<p>Patient: [personenbezogene Angabe entfernt]&#10;Beispiel-Person</p>', pid)).toThrow(/Datenschutz-Sicherheitsstopp/);
+  });
+  it("decodes entities only for inspection, never into executable returned markup", () => {
+    const html = deidentifyClinicalReportHtml('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>', pid);
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
   it("neutralizes a free code while preserving adjacent report metadata", () => {
     const html = prepareClinicalReportHtml(`${header}<h2>Strukturierte Anamnese</h2><p>Synthetischer Testinhalt.</p>`, pid);
     expect(html).not.toContain(pid); expect(html).toContain("[personenbezogene Angabe entfernt]"); expect(html).toContain("5.728 Zeichen"); expect(html).toContain("Strukturierte Anamnese");

@@ -1,4 +1,5 @@
 import { createQuestionnaireEvidenceValidator, isQuestionnaireSource } from "./questionnaireEvidence.ts";
+import { normalizeNativeIaaClaims, nativeIaaSourceFacts } from "./nativeIaaEvidence.ts";
 
 export const PARTIAL_ANALYSIS_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 export const PARTIAL_ANAMNESIS_ARRAY_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
@@ -38,7 +39,8 @@ export function deduplicateClinicalFacts<T>(items: T[]): T[] {
 export function combineClinicalPartials(partials: Record<string, any>[]): Record<string, any> {
   const result: Record<string, any> = Object.fromEntries(PARTIAL_ANALYSIS_ARRAY_KEYS.map(key => [key, []]));
   result.anamnese = Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, []]));
-  for (const partial of partials) {
+  for (const rawPartial of partials) {
+    const partial = normalizeNativeIaaClaims(rawPartial);
     for (const key of PARTIAL_ANALYSIS_ARRAY_KEYS) if (Array.isArray(partial[key])) result[key].push(...partial[key]);
     for (const key of PARTIAL_ANAMNESIS_ARRAY_KEYS) if (Array.isArray(partial.anamnese?.[key])) result.anamnese[key].push(...partial.anamnese[key]);
   }
@@ -121,12 +123,13 @@ export function attachClinicalSourceEvidence(value: Record<string, any>, sourceT
   source.anamnese = Object.fromEntries(PARTIAL_ANAMNESIS_ARRAY_KEYS.map(key => [key, (source.anamnese?.[key] || []).map((item: unknown) => annotate(item, key)).filter(Boolean)]));
   const originalQuestions = (source.openQuestions || []).map((item: unknown) => annotate(item, "openQuestions")).filter(Boolean);
   source.openQuestions = [...originalQuestions, ...unconfirmed];
+  source.findings.push(...nativeIaaSourceFacts(sourceText, sourceLabel, sourceId, part));
   source.source_coverage_v1 = {
     sourceId, sourceLabel, part, verifiedQuotes: verified, unverifiedQuotes: unverified, unconfirmedFormStatements: unconfirmed.length, answerValidationVersion: 1, questionnaireSource: isQuestionnaireSource(sourceText),
     pages: [...pageCounts].map(([page, matchedFacts]) => ({ page, matchedFacts, status: matchedFacts ? "quoted_facts_present" : "no_verified_fact_quote" })),
     scope: "Quotation matching and page attribution only; not proof that every clinical statement was interpreted correctly.",
   };
-  return source;
+  return normalizeNativeIaaClaims(source);
 }
 
 /** Keep original page headers when a long page must be split across model calls. */

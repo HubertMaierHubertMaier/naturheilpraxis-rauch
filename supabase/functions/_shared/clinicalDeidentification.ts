@@ -430,6 +430,25 @@ export const redactEvidenceQuote = deidentifyClinicalText;
 export const isBlockedClinicalReportHtml = (value: unknown) => Array.from(String(value ?? "").matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/giu))
   .some(match => /^Datenschutz[-\s]+Sicherheitsstopp$/iu.test(match[1].replace(/<[^>]*>/g, "").trim()));
 
+/** Decode visible text for inspection only; never unescape the returned HTML. */
+const decodeHtmlInspectionText = (text: string): string => {
+  const named: Record<string, string> = { quot: '"', QUOT: '"', apos: "'", amp: "&", AMP: "&", lt: "<", LT: "<", gt: ">", GT: ">", nbsp: " ", auml: "ä", Auml: "Ä", ouml: "ö", Ouml: "Ö", uuml: "ü", Uuml: "Ü", szlig: "ß", ldquo: "“", rdquo: "”", lsquo: "‘", rsquo: "’", colon: ":", Tab: " ", NewLine: " " };
+  // Numeric references may omit the semicolon in browser text. Unknown named
+  // references fail closed rather than leaving browser-visible text uninspected.
+  // Decode once only: a literal &amp;colon; must remain literal text, not ':' .
+  return text.replace(/&(#x[0-9a-f]+;?|#\d+;?|[a-z][a-z0-9]*;)/gi, (entity, reference: string) => {
+    const key = reference.replace(/;$/, "");
+    if (key.startsWith("#")) {
+      const code = /^#x/i.test(key) ? Number.parseInt(key.slice(2), 16) : Number(key.slice(1));
+      if ([9, 10, 13, 160].includes(code)) return " ";
+      if (!Number.isInteger(code) || code < 32 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) throw new Error("Datenschutz-Sicherheitsstopp: Nicht eindeutig lesbare numerische Zeichenreferenz im Bericht.");
+      return String.fromCodePoint(code);
+    }
+    if (!Object.prototype.hasOwnProperty.call(named, key)) throw new Error("Datenschutz-Sicherheitsstopp: Nicht unterstützte benannte Zeichenreferenz im Bericht muss geprüft werden.");
+    return named[key];
+  });
+};
+
 /** Only the exact selected canonical pseudonym stays visible; free codes are neutralized. */
 export const deidentifyClinicalReportHtml = (value: unknown, expectedPseudonymId = ""): string => {
   const raw = String(value ?? "").trim();
@@ -469,11 +488,14 @@ export const deidentifyClinicalReportHtml = (value: unknown, expectedPseudonymId
   const residual = directIdentifierCategories(deidentified);
   if (residual.length) throw new Error(`Datenschutz-Sicherheitsstopp: ${residual.join(", ")} konnte nicht zuverlässig entfernt werden. Kein vollständiger Bericht gespeichert.`);
   const restored = Array.from(placeholders).reduce((html, [placeholder, replacement]) => html.split(placeholder).join(replacement), deidentified);
-  const inspection = restored.replace(/<(?:style|script)\b[^>]*>[\s\S]*?<\/(?:style|script)>/giu, "")
+  const inspection = decodeHtmlInspectionText(restored.replace(/<(?:style|script)\b[^>]*>[\s\S]*?<\/(?:style|script)>/giu, "")
     .replace(/[·|;]\s*(?=<(?:strong|b|span)\b[^>]*>\s*(?:Datum|Patient|Name|Alter|Geschlecht|Umfang|Quelle)\s*:)/giu, "\n")
     .replace(/<\/?(?:p|div|td|th|dd|dt|tr|li|h[1-6])\b[^>]*>/giu, "\n")
-    .replace(/<[^>]*>/g, "").replace(/&nbsp;|&#160;/giu, " ")
-    .replace(new RegExp(String.raw`(^|\n)\s*(${ocrNameLabel})\s*:?[^\S\r\n]*\n+\s*`, "giu"), "$1$2: ");
+    .replace(/<[^>]*>/g, ""))
+    .replace(new RegExp(String.raw`(^|\n)\s*(${ocrNameLabel})\s*:?[^\S\r\n]*\n+\s*`, "giu"), "$1$2: ")
+    .replace(new RegExp(String.raw`[,;|]\s*(?=${ocrNameLabel}\s*:)`, "giu"), "\n");
+  const visibleResidual = directIdentifierCategories(inspection);
+  if (visibleResidual.length) throw new Error(`Datenschutz-Sicherheitsstopp: Sichtbare Restangaben (${visibleResidual.join(", ")}) müssen geprüft werden.`);
   for (const line of inspection.split("\n")) {
     const field = new RegExp(String.raw`\b(${ocrNameLabel})\b\s*(?::\s*|[^\S\r\n]+)(.+)`, "iu").exec(line);
     if (!field) continue;
@@ -487,7 +509,11 @@ export const deidentifyClinicalReportHtml = (value: unknown, expectedPseudonymId
       continue;
     }
     const remainder = (expected ? value.replace(new RegExp(`^${escapeRegExp(pid)}`, "iu"), REDACTED) : value)
-      .replace(/\bAlter\s+\d{1,3}(?:\s+Jahre)?\b|\b(?:männlich|maennlich|weiblich|divers)\b/giu, "");
+      .replace(/\bAlter\s+\d{1,3}(?:\s+Jahre)?\b|\b(?:männlich|maennlich|weiblich|divers)\b/giu, "")
+      // This fixed question contains no supplied identity value. Keep it in the
+      // returned HTML; do not misread the question as a name-field value.
+      .replace(/[,;]?\s*bei welchem Arbeitgeber und in welcher Branche\?[\s"',;)}\]]*$/iu, "")
+      .replace(/[,;]?\s*da keine eindeutigen Antworten oder Markierungen erkennbar sind\. Bitte prüfen, ob hierzu Angaben vorliegen\.[\s"',;)}\]]*$/iu, "");
     if (directIdentifierCategories(`${field[1]}: ${remainder}`).length) throw new Error("Datenschutz-Sicherheitsstopp: Restangaben hinter einer Kennung oder Schwärzung müssen geprüft werden.");
   }
   return restored;

@@ -142,8 +142,11 @@ describe("clinical source evidence", () => {
     const quote = "IAA 1.1: Verstopfung? Bewertung: 1/6";
     const partial = empty(); partial.anamnese.currentProblems = [{ text: "Verstopfung, Bewertung 1/6", beleg: { zitat: quote } }];
     const checked = attachClinicalSourceEvidence(partial, `[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:1]\n${quote}\n[/IAA_FORMULAR]`, "Anamnese", "1/1");
-    expect(checked.anamnese.currentProblems).toHaveLength(1);
-    expect(checked.openQuestions).toHaveLength(0);
+    expect(checked.anamnese.currentProblems).toHaveLength(0);
+    expect(checked.findings).toEqual(expect.arrayContaining([expect.objectContaining({
+      sourceKind: "canonical_iaa_answer", iaaQuestionId: "1.1", iaaQuestion: "Verstopfung?", iaaRating: 1,
+    })]));
+    expect(checked.openQuestions[0].unconfirmedSourceStatement).toMatchObject({ text: "Verstopfung, Bewertung 1/6" });
   });
   it("retains a medication candidate and dose for review without asserting current intake", () => {
     const partial = empty();
@@ -188,6 +191,11 @@ describe("clinical source evidence", () => {
     expect(attachClinicalSourceEvidence(partial, source, "Anamnese", "1/1").anamnese.currentProblems).toHaveLength(1);
     partial.anamnese.currentProblems[0].text = "IAA 1.1: Bewertung: 6/6";
     partial.anamnese.currentProblems[0].beleg.zitat = "[IAA_FORMULAR:1.1;SEITE:37;MARKIERT:6]";
-    expect(attachClinicalSourceEvidence(partial, source, "Anamnese", "1/1").anamnese.currentProblems).toHaveLength(1);
+    const checked = attachClinicalSourceEvidence(partial, source, "Anamnese", "1/1");
+    expect(checked.anamnese.currentProblems).toHaveLength(0);
+    expect(checked.findings).toEqual(expect.arrayContaining([expect.objectContaining({
+      sourceKind: "canonical_iaa_answer", iaaQuestionId: "1.1", iaaQuestion: "Verstopfung?", iaaRating: 6,
+      iaaNote: "Besser durch Bewegung",
+    })]));
   });
 });
