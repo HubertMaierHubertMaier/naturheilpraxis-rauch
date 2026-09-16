@@ -138,7 +138,7 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
         const png=await canvasToPngBytes(canvas);
         if(reviewReason){
           onProgress?.(`Lokale Sichtprüfung erforderlich: PDF-Seite ${number} von ${pageCount}`);
-          await requestPdfPagePrivacyReview({image:new Blob([png],{type:"image/png"}),page:number,totalPages:pageCount,reason:reviewReason},isCurrent);
+          await requestPdfPagePrivacyReview({image:new Blob([png.slice().buffer as ArrayBuffer],{type:"image/png"}),page:number,totalPages:pageCount,reason:reviewReason},isCurrent);
         }
         if(!isCurrent())throw new Error("Der Fall wurde gewechselt; keine Archivübertragung.");
         encodedBytes+=png.byteLength;
