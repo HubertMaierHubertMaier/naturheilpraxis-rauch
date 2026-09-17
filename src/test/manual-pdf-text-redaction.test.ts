@@ -114,4 +114,13 @@ describe("manual PDF redaction text binding", () => {
     expect(result).not.toContain("Erika");expect(result).not.toContain("Beispiel");
     expect(result).toContain("LDL 130 mg/dl");
   });
+
+  it("uses the Name/Ort provider-table header without removing the specialty", () => {
+    const file=source();
+    rememberManualPdfTextRedactions(file,1,[{x:50,y:60,width:20,height:8}],200,100,[],"synthetic-scan",[
+      {text:"Beispiel",x:50,y:60,width:20,height:8,lineText:"Orthopädie Beispiel"},
+    ],[{text:"Fachrichtung Name / Ort",x:10,y:10,width:100,height:8}]);
+    expect(applyManualPdfTextRedactions(file,"--- Seite 1 ---\nFachrichtung Name / Ort\nOrthopädie Beispiel","synthetic-scan"))
+      .toContain("Orthopädie [personenbezogene Angabe entfernt]");
+  });
 });

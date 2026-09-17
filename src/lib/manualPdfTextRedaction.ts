@@ -6,7 +6,7 @@ export type PositionedManualPdfOcrWord = PositionedManualPdfText & { lineText?: 
 type ManualTextTarget = { text: string; providerBound: boolean; sourceLines: string[] };
 type ManualPageTextRedaction = { width: number; height: number; scope?: string; targets: ManualTextTarget[]; unresolved: boolean };
 const redactions = new WeakMap<Blob, Map<number, ManualPageTextRedaction>>();
-const providerLabel = /\b(?:empfohlen\s+von|hausarzt|facharzt|physiotherapeut(?:in)?|behandler(?:in)?|arzt|ärztin|therapeut(?:in)?|verordnet\s+von|unterschrift|stempel)\b/iu;
+const providerLabel = /\b(?:empfohlen\s+von|hausarzt|facharzt|fachärzte|name\s*\/\s*ort|physiotherapeut(?:in)?|psychotherapeut(?:in)?|behandler(?:in)?|arzt|ärztin|therapeut(?:in|en)?|verordnet\s+von|unterschrift|stempel)\b/iu;
 const clinicalValue = /(?:\d|\b(?:mg|µg|ug|ng|mmol|mol|ml|l|iu|ie|rmssd|hrv|iaa)\b)/iu;
 const intersects = (left: PositionedManualPdfText, right: ManualPdfRedaction) => (
   left.x < right.x + right.width && left.x + left.width > right.x && left.y < right.y + right.height && left.y + left.height > right.y
