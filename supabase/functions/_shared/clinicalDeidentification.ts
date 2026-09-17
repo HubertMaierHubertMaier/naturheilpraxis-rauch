@@ -24,11 +24,16 @@ const explicitSensitiveMetadataFields: Array<[string, RegExp]> = [
   ["Leistungserbringer-Kennung", new RegExp(String.raw`^(\s*)(${providerIdentifierFieldLabel})\s*(?::|=|-)?\s+(.+?)\s*$`, "iu")],
 ];
 const reportColumnHeaderPattern = /^Name(?:[\s|;,-]+(?:Messwert|Wert|Ergebnis|Einheit|Referenz(?:bereich)?|Norm(?:bereich)?|Status|Bewertung|Hinweis|Beschreibung|Bedeutung|Optimalbereich|Istwert|Sollwert)){3,}[\s|;,-]*$/iu;
+const explicitSensitiveFieldStart = new RegExp(String.raw`^\s*(?:${ocrNameLabel}|${addressFieldLabel}|${organizationFieldLabel}|${signatureFieldLabel}|${providerIdentifierFieldLabel})(?:(?::|=|-)\s*|\s+)`, "iu");
 
-// Unitless device-result rows (including foods) are not street addresses merely
-// because an uppercase label ends in "RING" followed by a decimal measurement.
-const deviceMeasurementRow = /^[\p{Lu}][\p{Lu}\p{N}\s()[\].,'’/–—-]*\s\d{1,2}[,.]\d{3}$/u;
-const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim()) || deviceMeasurementRow.test(line.trim());
+// Unitless table values (including foods and NLS/device parameters) are not street
+// addresses simply because a parameter happens to end in a street suffix such as
+// "ring". Accept ordinary OCR spacing/casing, but only a decimal value with one to
+// three fractional digits; five-digit postcodes and trailing city names stay visible
+// to the address detector.
+const deviceMeasurementRow = /^\s*[\p{Lu}][\p{L}\p{N}\s()[\].,'’/–—-]*?\s*\d{1,2}\s*[,.]\s*\d{1,3}\s*$/u;
+const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim())
+  || (!explicitSensitiveFieldStart.test(line) && deviceMeasurementRow.test(line.trim()));
 
 const findClinicalMeasurementStart = (line: string, fromIndex = 0) => {
   clinicalMeasurementPattern.lastIndex = fromIndex;
