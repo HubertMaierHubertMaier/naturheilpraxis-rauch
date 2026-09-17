@@ -49,4 +49,18 @@ describe("explicit local PDF redaction",()=>{
     const {manualRedaction,...ordinary}=request;
     await expect(requestPdfPagePrivacyReview(ordinary)).resolves.toBeUndefined();
   });
+
+  it("requires an explicit unchanged-page decision before accepting zero masks",async()=>{
+    unregister=registerPdfPageReviewer(async()=>({approved:true,redactions:[]}));
+    await expect(requestPdfPagePrivacyReview(request)).rejects.toThrow();
+    unregister();
+    unregister=registerPdfPageReviewer(async()=>({approved:true,redactions:[],unchangedPageConfirmed:true}));
+    await expect(requestPdfPagePrivacyReview(request)).resolves.toEqual([]);
+  });
+
+  it("does not transfer an unchanged-page decision across cases or invalid page sizes",async()=>{
+    unregister=registerPdfPageReviewer(async()=>({approved:true,redactions:[],unchangedPageConfirmed:true}));
+    await expect(requestPdfPagePrivacyReview(request,()=>false)).rejects.toThrow();
+    await expect(requestPdfPagePrivacyReview({...request,manualRedaction:{width:0,height:100}})).rejects.toThrow();
+  });
 });

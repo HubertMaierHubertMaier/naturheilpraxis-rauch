@@ -1,6 +1,6 @@
-import {validateManualPdfRedactions,type ManualPdfRedaction} from "./manualPdfRedaction";
+import {validateManualPdfPageSize,validateManualPdfRedactions,type ManualPdfRedaction} from "./manualPdfRedaction";
 export type PdfPagePrivacyReviewRequest={image:Blob;page:number;totalPages:number;reason:string;manualRedaction?:{width:number;height:number}};
-export type PdfPagePrivacyReviewDecision=boolean|{approved:boolean;redactions:ManualPdfRedaction[]};
+export type PdfPagePrivacyReviewDecision=boolean|{approved:boolean;redactions:ManualPdfRedaction[];unchangedPageConfirmed?:boolean};
 type Reviewer=(request:PdfPagePrivacyReviewRequest)=>Promise<PdfPagePrivacyReviewDecision>;
 let reviewer:Reviewer|undefined;
 let queue:Promise<unknown>=Promise.resolve();
@@ -22,6 +22,10 @@ export function requestPdfPagePrivacyReview(request:PdfPagePrivacyReviewRequest,
     if(!approved||!isCurrent()||reviewer!==currentReviewer)throw new Error("PDF-Seite nicht freigegeben; Original bleibt lokal.");
     if(request.manualRedaction){
       if(typeof decision==="boolean")throw new Error("Lokale PDF-Schwärzung fehlt; keine Übertragung.");
+      if(Array.isArray(decision.redactions)&&decision.redactions.length===0&&decision.unchangedPageConfirmed===true){
+        validateManualPdfPageSize(request.manualRedaction.width,request.manualRedaction.height);
+        return [];
+      }
       return validateManualPdfRedactions(decision.redactions,request.manualRedaction.width,request.manualRedaction.height);
     }
     return undefined;

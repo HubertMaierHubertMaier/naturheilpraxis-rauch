@@ -162,8 +162,10 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
             manualRedaction:{width:canvas.width,height:canvas.height},
           },isCurrent);
           if(!rectangles||!isCurrent())throw new Error("Lokale PDF-Schwärzung nicht bestätigt; keine Archivübertragung.");
-          applyManualPdfRedactions(context,rectangles,canvas.width,canvas.height);
-          rememberManualPdfTextRedactions(file,number,rectangles,canvas.width,canvas.height,words,manualTextScope,ocrWords,ocrLines);
+          if(rectangles.length){
+            applyManualPdfRedactions(context,rectangles,canvas.width,canvas.height);
+            rememberManualPdfTextRedactions(file,number,rectangles,canvas.width,canvas.height,words,manualTextScope,ocrWords,ocrLines);
+          }
           reviewReason="";
         }
         const dimensions: [number,number]=[viewport.width/2,viewport.height/2];

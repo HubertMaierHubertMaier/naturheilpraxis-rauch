@@ -24,6 +24,7 @@ const explicitSensitiveMetadataFields: Array<[string, RegExp]> = [
   ["Leistungserbringer-Kennung", new RegExp(String.raw`^(\s*)(${providerIdentifierFieldLabel})\s*(?::|=|-)?\s+(.+?)\s*$`, "iu")],
 ];
 const reportColumnHeaderPattern = /^Name(?:[\s|;,-]+(?:Messwert|Wert|Ergebnis|Einheit|Referenz(?:bereich)?|Norm(?:bereich)?|Status|Bewertung|Hinweis|Beschreibung|Bedeutung|Optimalbereich|Istwert|Sollwert)){3,}[\s|;,-]*$/iu;
+const medicationColumnHeaderPattern = /^Name[\s|;,-]+(?:Dosierung|Dosis)(?:[\s|;,-]+(?:Einheit|t(?:ä|ae)gl(?:ich)?\.?|pro\s+Woche|w(?:ö|oe)chentlich|Grund|Einnahme|Anwendung|Häufigkeit)){2,}[\s|;,-]*$/iu;
 const explicitSensitiveFieldStart = new RegExp(String.raw`^\s*(?:${ocrNameLabel}|${addressFieldLabel}|${organizationFieldLabel}|${signatureFieldLabel}|${providerIdentifierFieldLabel})(?:(?::|=|-)\s*|\s+)`, "iu");
 
 // Unitless table values (including foods and NLS/device parameters) are not street
@@ -33,6 +34,7 @@ const explicitSensitiveFieldStart = new RegExp(String.raw`^\s*(?:${ocrNameLabel}
 // to the address detector.
 const deviceMeasurementRow = /^\s*[\p{Lu}][\p{L}\p{N}\s()[\].,'’/–—-]*?\s*\d{1,2}\s*[,.]\s*\d{1,3}\s*$/u;
 const isReportColumnHeader = (line: string) => reportColumnHeaderPattern.test(line.trim())
+  || medicationColumnHeaderPattern.test(line.trim())
   || (!explicitSensitiveFieldStart.test(line) && deviceMeasurementRow.test(line.trim()));
 
 const findClinicalMeasurementStart = (line: string, fromIndex = 0) => {
@@ -204,7 +206,9 @@ const protectPseudonyms = (value: string) => {
 
 export const deidentifyClinicalText = (value: unknown) => {
   const raw = String(value ?? "");
-  const detectedNames = collectLikelyPersonNames(raw);
+  const detectedNames = collectLikelyPersonNames(raw.split("\n")
+    .filter(line => !reportColumnHeaderPattern.test(line.trim()) && !medicationColumnHeaderPattern.test(line.trim()))
+    .join("\n"));
   const personalHeadersRemoved = raw.replace(compactPersonalHeader(), (_match, indent: string, _name: string, _birthDate: string, age: string, trailing: string) =>
     `${indent}[Name entfernt] [Geburtsdatum entfernt] (${age})${trailing}`);
   const protectedValue = protectPseudonyms(personalHeadersRemoved);

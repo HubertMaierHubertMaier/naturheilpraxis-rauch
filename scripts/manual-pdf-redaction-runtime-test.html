@@ -8,6 +8,7 @@ import {requestPdfPagePrivacyReview} from '/src/lib/pdfPagePrivacyReview.ts';
 import {applyManualPdfRedactions} from '/src/lib/manualPdfRedaction.ts';
 import '/src/index.css';
 createRoot(document.getElementById('review-root')).render(React.createElement(PdfArchiveReviewDialog,{scopeKey:'synthetic-only'}));
+const unchangedTest=new URLSearchParams(location.search).get('unchanged')==='1';
 window.manualRedactionTest={status:'ready',syntheticOnly:true};
 document.getElementById('start').onclick=async()=>{
   const canvas=document.createElement('canvas');canvas.width=400;canvas.height=200;
@@ -18,7 +19,7 @@ document.getElementById('start').onclick=async()=>{
   try{
     const image=new Blob([Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]),c=>c.charCodeAt(0))],{type:'image/png'});
     const rectangles=await requestPdfPagePrivacyReview({image,page:1,totalPages:1,reason:'Künstlicher Test: roten Bereich schwärzen, grünen Nachbarbereich erhalten.',manualRedaction:{width:400,height:200}});
-    applyManualPdfRedactions(context,rectangles,400,200);
+    if(rectangles.length)applyManualPdfRedactions(context,rectangles,400,200);
     const after=context.getImageData(0,0,400,200).data;
     let outsideChanged=0,maskNotOpaqueBlack=0;
     for(let y=0;y<200;y++)for(let x=0;x<400;x++){
@@ -29,7 +30,7 @@ document.getElementById('start').onclick=async()=>{
     const target=(60*400+80)*4,neighbour=(85*400+80)*4;
     const targetRemoved=after[target]===0&&after[target+1]===0&&after[target+2]===0;
     const neighbourPreserved=after[neighbour]===before[neighbour]&&after[neighbour+1]===before[neighbour+1]&&after[neighbour+2]===before[neighbour+2];
-    window.manualRedactionTest={status:'completed',syntheticOnly:true,rectangles,outsideChanged,maskNotOpaqueBlack,targetRemoved,neighbourPreserved,passed:outsideChanged===0&&maskNotOpaqueBlack===0&&targetRemoved&&neighbourPreserved};
+    window.manualRedactionTest={status:'completed',syntheticOnly:true,unchangedTest,rectangles,outsideChanged,maskNotOpaqueBlack,targetRemoved,neighbourPreserved,passed:outsideChanged===0&&maskNotOpaqueBlack===0&&neighbourPreserved&&(unchangedTest?rectangles.length===0&&!targetRemoved:targetRemoved)};
   }catch(error){window.manualRedactionTest={status:'failed',syntheticOnly:true,error:error.message};}
   document.getElementById('result').textContent=JSON.stringify(window.manualRedactionTest,null,2);
 };

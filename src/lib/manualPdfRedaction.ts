@@ -1,8 +1,14 @@
 export type ManualPdfRedaction = { x: number; y: number; width: number; height: number };
 
+export function validateManualPdfPageSize(width: number, height: number): void {
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0 || width * height > 10_000_000) {
+    throw new Error("Ungültige Größe der lokalen PDF-Prüfseite.");
+  }
+}
+
 export function validateManualPdfRedactions(value: unknown, width: number, height: number): ManualPdfRedaction[] {
-  if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0 || width * height > 10_000_000
-    || !Array.isArray(value) || value.length < 1 || value.length > 200) {
+  validateManualPdfPageSize(width,height);
+  if (!Array.isArray(value) || value.length < 1 || value.length > 200) {
     throw new Error("Lokale PDF-Schwärzung benötigt gültige, geprüfte Bereiche.");
   }
   return value.map((rect: ManualPdfRedaction) => {
