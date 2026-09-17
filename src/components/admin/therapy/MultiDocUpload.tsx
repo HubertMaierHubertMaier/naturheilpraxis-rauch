@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, FileUp, X, CheckCircle2, FileText, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { logTherapyEvent } from "./therapyEventLog";
 import {
   collectLocalPrivacyFindings,
@@ -43,8 +44,8 @@ import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
 import { createLocalBrowserOcrWorker, type LocalOcrResultData } from "@/lib/localBrowserOcr";
 import { rememberPdfOcrRead } from "@/lib/pdfReadOcrCache";
-import { discardPreparedAnonymizedPdfArchive, prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
-import { applyManualPdfTextRedactions } from "@/lib/manualPdfTextRedaction";
+import { prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { applyManualPdfTextRedactions, manualPdfTextBindingStatus, rememberOriginalPdfTextContext } from "@/lib/manualPdfTextRedaction";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -87,6 +88,7 @@ type PendingPrivacyReview = {
   documentDate?: string;
   archivedOriginals?: OriginalArchiveReceipt[];
   sourcePseudonymId: string;
+  sourceUserId: string;
   documentCount: number;
   totalPages: number;
   totalChars: number;
@@ -102,8 +104,8 @@ type PendingPrivacyReview = {
 
 const isPdfFile = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
-const pendingPrivacyReviewKey = (pseudonymId: string, documentType: string) =>
-  `therapy.pendingPrivacyReview.v1:${pseudonymId}:${documentType}`;
+const pendingPrivacyReviewKey = (userId: string, pseudonymId: string, documentType: string) =>
+  `therapy.pendingPrivacyReview.v2:${JSON.stringify([userId, pseudonymId, documentType])}`;
 
 export type PiiHit = { kind: string };
 
@@ -357,6 +359,7 @@ export async function extractClinicalDocumentText(
   }
 
   const joined = [assembleExtractedPdfPages(pages), mode === "anamnese" ? iaaCaptureStatusText(nativeIAAFieldsFound, imageOnlyPageFound) : ""].filter(Boolean).join("\n\n");
+  rememberOriginalPdfTextContext(file,joined);
   const removedIdentifierCategories = directIdentifierCategories(joined);
   const localPrivacyFindings = collectLocalPrivacyFindings(joined);
   const safeBody = quarantineResidualDirectIdentifierLines(
@@ -406,9 +409,11 @@ export const extractTherapyTemplateDocument: typeof extractClinicalDocumentText 
 };
 
 export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokument", accept = CLINICAL_DOCUMENT_ACCEPT, extractText = extractClinicalDocumentText, ocrMode = "doctor", label = "Dokument auswählen", documentDate = "", documentType = "Befund", requireDocumentDate = false, pdfPassword = "", onPdfPasswordChange }: Props) {
+  const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const replacementInputRef = useRef<HTMLInputElement>(null);
   const pseudonymIdRef = useRef(pseudonymId);
+  const userIdRef = useRef(user?.id || "");
   const extractionRunRef = useRef(0);
   const activeExtractionRef = useRef<{ controller: AbortController; ocrSession: OcrExtractionSession }>();
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -421,6 +426,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
   pendingReviewRef.current = pendingReview;
   const { toast } = useToast();
   pseudonymIdRef.current = pseudonymId;
+  userIdRef.current = user?.id || "";
 
   useEffect(() => {
     extractionRunRef.current += 1;
@@ -435,11 +441,12 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
     setPrivacyFindingsRevealed(false);
     setReviewSubmitting(false);
     const sourcePseudonymId = (pseudonymId || "").trim();
-    if (sourcePseudonymId) {
-      const key = pendingPrivacyReviewKey(sourcePseudonymId, documentType);
+    if (sourcePseudonymId && user?.id) {
+      const key = pendingPrivacyReviewKey(user.id, sourcePseudonymId, documentType);
       try {
         const restored = JSON.parse(sessionStorage.getItem(key) || "null") as PendingPrivacyReview | null;
         if (restored?.sourcePseudonymId === sourcePseudonymId
+          && restored.sourceUserId === user.id
           && restored.text?.trim()
           && directIdentifierCategories(restored.text).length === 0) {
           setPendingReview({ ...restored, localPrivacyFindings: undefined });
@@ -455,12 +462,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
       activeOnCleanup?.controller.abort();
       if (activeOnCleanup) void terminateAndResetWorkerSession(activeOnCleanup.ocrSession);
     };
-  }, [pseudonymId, documentType]);
+   }, [pseudonymId, documentType, user?.id]);
 
   useEffect(() => {
     const sourcePseudonymId = (pseudonymId || "").trim();
-    if (!sourcePseudonymId) return;
-    const key = pendingPrivacyReviewKey(sourcePseudonymId, documentType);
+    if (!sourcePseudonymId || !user?.id) return;
+    if (pendingReview && (pendingReview.sourceUserId !== user.id || pendingReview.sourcePseudonymId !== sourcePseudonymId)) return;
+    const key = pendingPrivacyReviewKey(user.id, sourcePseudonymId, documentType);
     try {
       if (pendingReview?.text?.trim() && directIdentifierCategories(pendingReview.text).length === 0) {
         const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview;
@@ -469,7 +477,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
         sessionStorage.removeItem(key);
       }
     } catch {}
-  }, [documentType, pendingReview, pseudonymId]);
+  }, [documentType, pendingReview, pseudonymId, user?.id]);
 
   const addFiles = (list: FileList | null) => {
     if (!list?.length) return;
@@ -492,7 +500,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
   };
 
   const runExtraction = async () => {
-    if (!files.length) return;
+    if (!files.length || !userIdRef.current) return;
     const extractionDocumentDate = documentDate.trim();
     let extractionPassword = pdfPassword.trim();
     if (requireDocumentDate && !extractionDocumentDate) {
@@ -503,8 +511,11 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
     setPrivacyConfirmed(false);
     const runId = ++extractionRunRef.current;
     const sourcePseudonymId = (pseudonymId || "").trim();
+    const sourceUserId = userIdRef.current;
+    const manualTextScope = JSON.stringify([sourceUserId, sourcePseudonymId]);
     const scopeIsCurrent = () => runId === extractionRunRef.current
-      && (pseudonymIdRef.current || "").trim() === sourcePseudonymId;
+      && (pseudonymIdRef.current || "").trim() === sourcePseudonymId
+      && userIdRef.current === sourceUserId;
     const scopedToast: ToastFn = (message) => {
       if (scopeIsCurrent()) toast(message);
     };
@@ -549,17 +560,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             ? await prepareAnonymizedPdfArchive(updated[index].file, progress => {
               if (!scopeIsCurrent()) return;
               updated[index] = {...updated[index],progress};setFiles([...updated]);
-            },scopeIsCurrent,sourcePseudonymId)
+            },scopeIsCurrent,manualTextScope)
             : undefined;
           if (!scopeIsCurrent()) return;
+          updated[index] = { ...updated[index], archiveCopy };
           let sourceText = extracted.text;
           if (isPdfFile(updated[index].file)) {
-            try {
-              sourceText = applyManualPdfTextRedactions(updated[index].file, extracted.text, sourcePseudonymId);
-            } catch (error) {
-              discardPreparedAnonymizedPdfArchive(updated[index].file);
-              throw error;
-            }
+            sourceText = applyManualPdfTextRedactions(updated[index].file, extracted.text, manualTextScope);
           }
           const anamneseReview = documentType === "Anamnese / Anamnesebogen"
             ? buildAnamneseQuestionReview(sourceText, extracted.ocrPageConfidences)
@@ -587,7 +594,8 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           };
         } catch (error) {
           if (!scopeIsCurrent()) return;
-          const failure = classifyClinicalPdfFailure(error);
+          const manualBinding = manualPdfTextBindingStatus(error);
+          const failure = manualBinding || classifyClinicalPdfFailure(error);
           updated[index] = {
             ...updated[index],
             status: "error",
@@ -629,6 +637,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           text: reviewText,
           documentDate: extractionDocumentDate,
           sourcePseudonymId,
+          sourceUserId,
           documentCount: successDocs.length,
           totalPages: successDocs.reduce((sum, item) => sum + Number(item.pages || 0), 0),
           totalChars: reviewText.length,
@@ -667,7 +676,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
 
   const confirmPrivacyReview = async () => {
     const review = pendingReview;
-    if (!review || !privacyConfirmed || reviewSubmitting) return;
+    if (!review || !privacyConfirmed || reviewSubmitting || !userIdRef.current || review.sourceUserId !== userIdRef.current) return;
     if (!Number.isInteger(review.documentCount) || review.documentCount < 1) {
       toast({ title: "Lokale Ausgangsdateien fehlen", description: "Bitte die lokalen Originaldateien erneut auswählen und prüfen.", variant: "destructive" });
       return;
@@ -709,6 +718,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
     setReviewSubmitting(true);
     const generation = extractionRunRef.current;
     const scopeIsCurrent = () => generation === extractionRunRef.current
+      && userIdRef.current === review.sourceUserId
       && normalizePatientPseudonym(pseudonymIdRef.current) === normalizePatientPseudonym(review.sourcePseudonymId);
     let archivePromise: Promise<OriginalArchiveReceipt[]> | undefined;
     const ensureOriginalsArchived: ArchiveOriginals = () => archivePromise ||= (async () => {
@@ -721,6 +731,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
         throw new Error("Die Sammelaufnahme ist nicht vollständig. Bitte die ausgewählten Dateien erneut prüfen; der bisherige Vorschautext bleibt erhalten.");
       }
       for (const item of pdfCopies) {
+        if (!scopeIsCurrent()) throw new Error("Benutzer oder Fall wurde gewechselt; keine weitere Archivübertragung.");
         receipts.push(await archivePatientOriginal(supabase as any, review.sourcePseudonymId, item.archiveCopy!, archiveKind, review.documentDate || ""));
         if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
       }
@@ -837,6 +848,7 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
                 </span>
               )}
               {pending.status === "error" && <span className="max-w-[320px] truncate text-rose-700 text-[10px]" title={pending.error}>Fehler ({pending.errorKind || "Technik"}): {pending.error}</span>}
+              {pending.status === "error" && pending.errorKind === "PDF-Textabgleich" && pending.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(pending.archiveCopy!)}>Lokale Arbeitskopie prüfen</Button>}
               {!loading && pending.status !== "processing" && (
                 <button type="button" onClick={() => removeAt(index)} className="text-muted-foreground hover:text-rose-700">
                   <X className="h-3.5 w-3.5" />

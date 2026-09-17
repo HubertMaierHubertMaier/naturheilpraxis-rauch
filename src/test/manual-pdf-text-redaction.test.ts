@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyManualPdfTextRedactions, clearManualPdfTextRedactions, rememberManualPdfTextRedactions } from "@/lib/manualPdfTextRedaction";
+import { applyManualPdfTextRedactions, clearManualPdfTextRedactions, ManualPdfTextBindingError, manualPdfTextBindingStatus, rememberManualPdfTextRedactions, rememberOriginalPdfTextContext } from "@/lib/manualPdfTextRedaction";
+import { deidentifyClinicalText } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 const source = () => Object.assign(new Blob(["synthetic source"], { type: "application/pdf" }), { name: "synthetic.pdf" });
 const rectangle = { x: 10, y: 10, width: 30, height: 12 };
@@ -73,12 +74,14 @@ describe("manual PDF redaction text binding", () => {
     expect(result).toContain("--- Seite 2 ---\nErika\nRMSSD 24 ms");
   });
 
-  it("fails for repeated OCR words or a partially hit mixed native run, then permits a corrected retry", () => {
+  it("preserves unselected OCR occurrences and rejects a partially hit mixed native run", () => {
     const repeated = source();
     const ocrWord = { text: "Erika", x: 10, y: 30, width: 18, height: 8, lineText: "Erika" };
     const providerLine = { text: "Hausarzt", x: 10, y: 10, width: 50, height: 8 };
     rememberManualPdfTextRedactions(repeated, 1, [{ x: 10, y: 30, width: 18, height: 8 }], 100, 100, [], "P-2099-0001", [ocrWord], [providerLine]);
-    expect(() => applyManualPdfTextRedactions(repeated, "--- Seite 1 ---\nHausarzt\nErika\nKlinische Notiz: Erika", "P-2099-0001")).toThrow(/klinischen Text/);
+    expect(applyManualPdfTextRedactions(repeated, "--- Seite 1 ---\nHausarzt\nErika\nKlinische Notiz: Erika", "P-2099-0001"))
+      .toBe("--- Seite 1 ---\nHausarzt\n[personenbezogene Angabe entfernt]\nKlinische Notiz: Erika");
+    expect(() => applyManualPdfTextRedactions(repeated, "--- Seite 1 ---\nHausarzt\nErika\nErika", "P-2099-0001")).toThrow(/Identische Quellzeilen/);
 
     const mixed = source();
     rememberManualPdfTextRedactions(mixed, 1, [{ x: 10, y: 10, width: 15, height: 10 }], 100, 100, [{ text: "Erika LDL 130 mg/l", x: 10, y: 10, width: 90, height: 10 }], "P-2099-0001");
@@ -87,6 +90,26 @@ describe("manual PDF redaction text binding", () => {
     clearManualPdfTextRedactions(repeated);
     rememberManualPdfTextRedactions(repeated, 1, [{ x: 10, y: 30, width: 18, height: 8 }], 100, 100, [], "P-2099-0001", [ocrWord], [providerLine]);
     expect(applyManualPdfTextRedactions(repeated, "--- Seite 1 ---\nHausarzt\nErika", "P-2099-0001")).toContain("[personenbezogene Angabe entfernt]");
+  });
+
+  it("emits a content-free page-bound error code for unresolved text binding", () => {
+    const file = source();
+    rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, [], "P-2099-0001");
+    try {
+      applyManualPdfTextRedactions(file, "--- Seite 1 ---\nName: Erika Beispiel", "P-2099-0001");
+      throw new Error("expected text binding to fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ManualPdfTextBindingError);
+      expect(error).toMatchObject({ code: "MANUAL_TEXT_POSITION", page: 1, phase: "text-binding" });
+      expect((error as Error).message).not.toContain("Erika");
+      expect(manualPdfTextBindingStatus(error)).toEqual({
+        phase: "text-binding",
+        code: "MANUAL_TEXT_POSITION",
+        page: 1,
+        label: "PDF-Textabgleich",
+        message: "Die lokale Bildkopie ist vorbereitet, aber der Textabgleich auf Seite 1 (MANUAL_TEXT_POSITION) ist offen. Es wurde nichts übernommen oder übertragen.",
+      });
+    }
   });
 
   it("clears a failed attempt instead of applying stale page bindings to a later copy", () => {
@@ -101,7 +124,8 @@ describe("manual PDF redaction text binding", () => {
     rememberManualPdfTextRedactions(file,1,[rectangle],100,100,[],"synthetic-case",[{text:"Rose",...rectangle,lineText:"Name: Rose"}],[]);
     const text="--- Seite 1 ---\nName: [personenbezogene Angabe entfernt]\nBefund: Arthrose";
     expect(applyManualPdfTextRedactions(file,text,"synthetic-case")).toBe(text);
-    expect(()=>applyManualPdfTextRedactions(file,"--- Seite 1 ---\nName: [personenbezogene Angabe entfernt]\nTherapie: Rose","synthetic-case")).toThrow(/Quellzeile/);
+    const clinicalText="--- Seite 1 ---\nName: [personenbezogene Angabe entfernt]\nTherapie: Rose";
+    expect(applyManualPdfTextRedactions(file,clinicalText,"synthetic-case")).toBe(clinicalText);
   });
 
   it("binds both OCR name words against the original line while preserving adjacent findings", () => {
@@ -122,5 +146,37 @@ describe("manual PDF redaction text binding", () => {
     ],[{text:"Fachrichtung Name / Ort",x:10,y:10,width:100,height:8}]);
     expect(applyManualPdfTextRedactions(file,"--- Seite 1 ---\nFachrichtung Name / Ort\nOrthopädie Beispiel","synthetic-scan"))
       .toContain("Orthopädie [personenbezogene Angabe entfernt]");
+  });
+
+  it("binds repeated selected words on distinct provider rows without changing an unselected row", () => {
+    const file=source();
+    const first={x:10,y:30,width:18,height:8},second={x:10,y:60,width:18,height:8};
+    rememberManualPdfTextRedactions(file,1,[first,second],200,200,[],"synthetic-case",[
+      {text:"Dres.",...first,lineText:"Hausarzt Dres. Beispiel"},
+      {text:"Dres.",...second,lineText:"Orthopädie Dres. Beispiel"},
+    ],[{text:"Name / Ort",x:10,y:10,width:100,height:8}]);
+    const result=applyManualPdfTextRedactions(file,"--- Seite 1 ---\nHausarzt Dres. Beispiel\nOrthopädie Dres. Beispiel\nGlossar: Dres. bezeichnet einen Titel\nLDL 130 mg/dl","synthetic-case");
+    expect(result).toContain("Hausarzt [personenbezogene Angabe entfernt] Beispiel");
+    expect(result).toContain("Orthopädie [personenbezogene Angabe entfernt] Beispiel");
+    expect(result).toContain("Glossar: Dres. bezeichnet einen Titel\nLDL 130 mg/dl");
+    expect(()=>applyManualPdfTextRedactions(file,"--- Seite 1 ---\nHausarzt Dres. Beispiel\nOrthopädie: Dres. Beispiel","synthetic-case"))
+      .toThrow(/Nicht alle markierten Quellzeilen/);
+  });
+
+  it("matches the document-wide deidentified row without restoring its original name", () => {
+    const file=source(),lineText="Erika Beispiel, u.a.";
+    const original=`--- Seite 1 ---\nEmpfohlen von\n${lineText}\nLDL 130 mg/dl\n--- Seite 2 ---\nName: Erika Beispiel`;
+    rememberOriginalPdfTextContext(file,original);
+    rememberManualPdfTextRedactions(file,1,[rectangle],100,100,[],"synthetic-case",[
+      {text:"u.a.",...rectangle,lineText},
+    ],[{text:"Empfohlen von",x:10,y:0,width:50,height:8}]);
+    const safe=deidentifyClinicalText(original);
+    expect(safe).not.toContain("Erika");
+    expect(safe).toContain("u.a.");
+    const result=applyManualPdfTextRedactions(file,safe,"synthetic-case");
+    expect(result).not.toContain("u.a.");
+    expect(result).not.toContain("Erika");
+    expect(result).not.toContain("Beispiel");
+    expect(result).toContain("LDL 130 mg/dl");
   });
 });

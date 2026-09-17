@@ -61,7 +61,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
     const individualUploadSource = readSource("src/components/admin/therapy/MultiDocUpload.tsx");
     expect(individualUploadSource).toContain("Personenbezogene Stellen vollständig anzeigen");
-    expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v1:");
+    expect(individualUploadSource).toContain("therapy.pendingPrivacyReview.v2:");
     expect(individualUploadSource).toContain("localPrivacyFindings: successDocs.flatMap");
     expect(individualUploadSource).toContain("const { localPrivacyFindings: _localOnly, ...safeReview } = pendingReview");
     expect(individualUploadSource.includes("Diese Trefferliste wird nicht gesondert gespeichert oder an Analysedienste versendet.")).toBe(true);
@@ -99,7 +99,9 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("disabled={isPdfClinicalDocument(item.file) && !item.archiveCopy}");
     expect(individualUploadSource).toContain("assertCompletePdfArchiveCopies(files)");
     expect(individualUploadSource).toContain("archiveCopy: archiveCopyAfterPreviewTextEdit(item.file, item.archiveCopy)");
-    expect(source).toContain("const archiveCopy = isPdfClinicalDocument(item.file)");
+    expect(source).toContain("archiveCopy = isPdfClinicalDocument(item.file)");
+    expect(source).toContain('archiveCopy: manualBinding ? archiveCopy : row.archiveCopy');
+    expect(source).toContain("Lokale Arbeitskopie erneut prüfen");
     expect(source).toContain('if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.")');
     expect(source).toContain("Bereinigten Word-/Excel-Text geprüft");
     expect(source).not.toContain("disabled={!item.archiveCopy}");

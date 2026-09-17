@@ -24,7 +24,7 @@ const explicitSensitiveMetadataFields: Array<[string, RegExp]> = [
   ["Leistungserbringer-Kennung", new RegExp(String.raw`^(\s*)(${providerIdentifierFieldLabel})\s*(?::|=|-)?\s+(.+?)\s*$`, "iu")],
 ];
 const reportColumnHeaderPattern = /^Name(?:[\s|;,-]+(?:Messwert|Wert|Ergebnis|Einheit|Referenz(?:bereich)?|Norm(?:bereich)?|Status|Bewertung|Hinweis|Beschreibung|Bedeutung|Optimalbereich|Istwert|Sollwert)){3,}[\s|;,-]*$/iu;
-const medicationColumnHeaderPattern = /^Name[\s|;,-]+(?:Dosierung|Dosis)(?:[\s|;,-]+(?:Einheit|t(?:ä|ae)gl(?:ich)?\.?|pro\s+Woche|w(?:ö|oe)chentlich|Grund|Einnahme|Anwendung|Häufigkeit)){2,}[\s|;,-]*$/iu;
+const medicationColumnHeaderPattern = /^Name[\s|;,-]+(?:Dosierung|Dosis)(?:[\s|;,-]+(?:Einheit|t(?:ä|ae)gl(?:ich)?\.?|pro\s+Woche|w(?:ö|oe)chentlich|Grund|Einnahme|Anwendung|Häufigkeit|seit|Beginn|Dauer)){2,}[\s|;,-]*$/iu;
 const explicitSensitiveFieldStart = new RegExp(String.raw`^\s*(?:${ocrNameLabel}|${addressFieldLabel}|${organizationFieldLabel}|${signatureFieldLabel}|${providerIdentifierFieldLabel})(?:(?::|=|-)\s*|\s+)`, "iu");
 
 // Unitless table values (including foods and NLS/device parameters) are not street

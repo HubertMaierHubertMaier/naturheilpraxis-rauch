@@ -3,7 +3,7 @@ import {deidentifyClinicalText,directIdentifierCategories} from "../../supabase/
 import {checkedPdfPrivacyReplacements} from "../lib/pdfArchiveRedactionPlan";
 
 describe("clinical medication column headers are not person names",()=>{
-  it.each(["Name Dosierung tägl. pro Woche Grund","Name | Dosierung | täglich | pro Woche | Grund","Name Dosis Einheit Einnahme Grund"])("preserves the clinical header %s",header=>{
+  it.each(["Name Dosierung tägl. pro Woche Grund","Name Dosierung tägl. pro Woche Grund seit","Name | Dosierung | täglich | pro Woche | Grund","Name Dosis Einheit Einnahme Grund"])("preserves the clinical header %s",header=>{
     const source=`Aktuelle Medikamente / Nahrungsergänzung\n${header}\nTestpräparat-Alpha 5 mg 1 Beispielgrund`;
     expect(deidentifyClinicalText(source)).toBe(source);
     expect(directIdentifierCategories(header)).not.toContain("Name");

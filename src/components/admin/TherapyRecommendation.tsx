@@ -103,8 +103,8 @@ import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, verifyArchived
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
 import { inferDocumentDateFromFilename, readVievaPdfPassword, rememberVievaPdfPassword } from "@/lib/batchDocumentDefaults";
-import { discardPreparedAnonymizedPdfArchive, prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
-import { applyManualPdfTextRedactions } from "@/lib/manualPdfTextRedaction";
+import { prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { applyManualPdfTextRedactions, manualPdfTextBindingStatus } from "@/lib/manualPdfTextRedaction";
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
@@ -4006,7 +4006,10 @@ export function TherapyRecommendation() {
       return;
     }
     const scopeGeneration = patientScopeGenerationRef.current;
-    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    const sourceUserId = localSelectionCacheUserRef.current || "";
+    const manualTextScope = JSON.stringify([sourceUserId, pid]);
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
+      && localSelectionCacheUserRef.current === sourceUserId;
     const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
     if (queue.some(item => item.localCacheStatus === "saving")) {
@@ -4025,6 +4028,7 @@ export function TherapyRecommendation() {
     let successful = 0;
     for (const item of queue) {
       if (!scopeIsCurrent()) return;
+      let archiveCopy: File | undefined;
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
         let documentType = item.documentType || inferDirectBefundTarget(item.file.name);
@@ -4038,20 +4042,15 @@ export function TherapyRecommendation() {
         if (!scopeIsCurrent()) return;
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
-        const archiveCopy = isPdfClinicalDocument(item.file)
+        archiveCopy = isPdfClinicalDocument(item.file)
           ? await prepareAnonymizedPdfArchive(item.file, progress => {
             if(scopeIsCurrent())setPendingDirectBefundFiles(current=>current.map(row=>row.id===item.id?{...row,progress}:row));
-          },scopeIsCurrent,pid)
+          },scopeIsCurrent,manualTextScope)
           : undefined;
         if(!scopeIsCurrent())return;
         let sourceText = extracted.text;
         if (isPdfClinicalDocument(item.file)) {
-          try {
-            sourceText = applyManualPdfTextRedactions(item.file, extracted.text, pid);
-          } catch (error) {
-            discardPreparedAnonymizedPdfArchive(item.file);
-            throw error;
-          }
+          sourceText = applyManualPdfTextRedactions(item.file, extracted.text, manualTextScope);
         }
         const previewText = prepareDirectBefundHandoffText(sourceText, documentType, item.documentDate, extracted.ocrPageConfidences);
         successful += 1;
@@ -4072,8 +4071,16 @@ export function TherapyRecommendation() {
         } : row));
       } catch (error: any) {
         if (!scopeIsCurrent()) return;
-        const failure = classifyClinicalPdfFailure(error);
-        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "error", errorKind: failure.label, error: failure.message } : row));
+        const manualBinding = manualPdfTextBindingStatus(error);
+        const failure = manualBinding || classifyClinicalPdfFailure(error);
+        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
+          ...row,
+          status: "error",
+          archiveCopy: manualBinding ? archiveCopy : row.archiveCopy,
+          privacyReviewed: false,
+          errorKind: failure.label,
+          error: failure.message,
+        } : row));
       }
     }
     if (successful) {
@@ -5509,6 +5516,7 @@ export function TherapyRecommendation() {
                     {item.status === "processing" && <p role="status" className="text-sm font-medium text-primary">{item.progress || "Datei wird lokal ausgelesen …"}</p>}
                     {item.recoveryNotice && <p className="text-xs text-amber-800 dark:text-amber-200">{item.recoveryNotice}</p>}
                     {item.localCacheError && <p className="text-xs text-amber-800 dark:text-amber-200">{item.localCacheError}</p>}
+                    {item.status === "error" && item.errorKind === "PDF-Textabgleich" && item.archiveCopy && <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-200"><Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Lokale Arbeitskopie erneut prüfen</Button><span>Markierungen sind noch nicht zur Übernahme freigegeben.</span></div>}
                     {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
