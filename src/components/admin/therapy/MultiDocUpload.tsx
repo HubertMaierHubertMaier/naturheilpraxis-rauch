@@ -43,7 +43,8 @@ import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
 import { createLocalBrowserOcrWorker, type LocalOcrResultData } from "@/lib/localBrowserOcr";
 import { rememberPdfOcrRead } from "@/lib/pdfReadOcrCache";
-import { prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { discardPreparedAnonymizedPdfArchive, prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { applyManualPdfTextRedactions } from "@/lib/manualPdfTextRedaction";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -544,20 +545,29 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           });
           if (!scopeIsCurrent()) return;
           const piiHits = (extracted.removedIdentifierCategories || []).map((kind) => ({ kind }));
-          const anamneseReview = documentType === "Anamnese / Anamnesebogen"
-            ? buildAnamneseQuestionReview(extracted.text, extracted.ocrPageConfidences)
-            : undefined;
-          const reviewBody = anamneseReview?.text || extracted.text;
-          const datedText = extractionDocumentDate
-            ? addAnalysisDocumentMetadata(reviewBody, extractionDocumentDate, documentType)
-            : reviewBody;
           const archiveCopy = isPdfFile(updated[index].file)
             ? await prepareAnonymizedPdfArchive(updated[index].file, progress => {
               if (!scopeIsCurrent()) return;
               updated[index] = {...updated[index],progress};setFiles([...updated]);
-            },scopeIsCurrent)
+            },scopeIsCurrent,sourcePseudonymId)
             : undefined;
           if (!scopeIsCurrent()) return;
+          let sourceText = extracted.text;
+          if (isPdfFile(updated[index].file)) {
+            try {
+              sourceText = applyManualPdfTextRedactions(updated[index].file, extracted.text, sourcePseudonymId);
+            } catch (error) {
+              discardPreparedAnonymizedPdfArchive(updated[index].file);
+              throw error;
+            }
+          }
+          const anamneseReview = documentType === "Anamnese / Anamnesebogen"
+            ? buildAnamneseQuestionReview(sourceText, extracted.ocrPageConfidences)
+            : undefined;
+          const reviewBody = anamneseReview?.text || sourceText;
+          const datedText = extractionDocumentDate
+            ? addAnalysisDocumentMetadata(reviewBody, extractionDocumentDate, documentType)
+            : reviewBody;
           combined = [combined, datedText].filter(Boolean).join("\n\n");
           updated[index] = {
             ...updated[index],

@@ -16,7 +16,7 @@ export type LocalOcrProgress = {
 
 export type LocalOcrResultData = {
     text: string; confidence?: number;
-    blocks?: Array<{paragraphs?:Array<{lines?:Array<{text?:string;bbox?:{x0:number;y0:number;x1:number;y1:number}}>}>}>;
+    blocks?: Array<{paragraphs?:Array<{lines?:Array<{text?:string;bbox?:{x0:number;y0:number;x1:number;y1:number};words?:Array<{text?:string;bbox?:{x0:number;y0:number;x1:number;y1:number}}>}>}>}>;
 };
 export type LocalOcrWorker = {
   recognize: (image: HTMLCanvasElement, options?: { includeLayout?: boolean }) => Promise<{ data: LocalOcrResultData }>;

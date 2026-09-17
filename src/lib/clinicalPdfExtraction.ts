@@ -83,6 +83,13 @@ export function classifyClinicalPdfFailure(error: unknown): ClinicalPdfFailure {
   if (name === "PasswordException" || /password|passwort|kennwort/i.test(message)) {
     return { kind: "password", label: "Passwort", message: "Passwort fehlt, wurde abgebrochen oder ist falsch." };
   }
+  if (/PDF-Schwärzung|PDF-Schwärzungen|PDF-Schwärzungsüberlappung|Schwärzungsbereich|Befundtext würde unleserlich|PDF-Stelle benötigt eine eindeutige Schwärzung/iu.test(message)) {
+    return {
+      kind: "privacy",
+      label: "PDF-Schwärzung prüfen",
+      message: "Die anonymisierte PDF-Kopie konnte nicht sicher erstellt werden: Eine Schwärzung ist uneindeutig oder würde benachbarten Inhalt verändern. Die Datei wurde nicht ins Fallarchiv übernommen; das Original bleibt unverändert.",
+    };
+  }
   if (/praktisch keinen auswertbaren text|kein auswertbarer dokumenttext|ocr|texterkennung/i.test(message)) {
     return { kind: "text", label: "OCR/Text", message: "Die PDF enthält auch nach lokaler OCR keinen ausreichend lesbaren Text." };
   }

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Stethoscope, Loader2, AlertTriangle, Baby, Pill, Heart, Send, RotateCcw, Printer, KeyRound, Sparkles, ShieldAlert, FileText, ClipboardList, Plus, X, RefreshCw, Star, Lightbulb, Search, FileUp, CheckCircle2, ShoppingCart, FileType, Maximize2, Minimize2, ExternalLink, Trash2 } from "lucide-react";
 import { parseTherapyMarkdown, type FreeSection } from "@/lib/therapyParser";
@@ -102,7 +103,8 @@ import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, verifyArchived
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
 import { inferDocumentDateFromFilename, readVievaPdfPassword, rememberVievaPdfPassword } from "@/lib/batchDocumentDefaults";
-import { prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { discardPreparedAnonymizedPdfArchive, prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { applyManualPdfTextRedactions } from "@/lib/manualPdfTextRedaction";
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
@@ -112,6 +114,7 @@ import {
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
 import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
+import { isCurrentLocalSelectionOperation, localSelectionPreviewKey, loadLocalDocumentSelections, removeLocalDocumentSelections, saveLocalDocumentSelections, type LocalDocumentSelection } from "@/lib/localDocumentSelectionCache";
 import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
 import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
@@ -233,11 +236,14 @@ type PendingDirectBefundFile = {
   error?: string;
   errorKind?: string;
   progress?: string;
+  localCacheStatus?: "saving" | "saved" | "error";
+  localCacheError?: string;
+  recoveryNotice?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
-const pendingSafePreviewKey = (pseudonymId: string) => `therapy.pendingSafePreviews.v1:${pseudonymId}`;
+const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
   forPseudonymId: string;
@@ -1289,6 +1295,7 @@ function assertStrictPartialAnalysis(partial: string) {
 }
 
 export function TherapyRecommendation() {
+  const { user, loading: authLoading } = useAuth();
   const [pseudonymId, setPseudonymId] = useState("");
   const pseudonymIdRef = useRef("");
   const [pseudonymFormatWarning, setPseudonymFormatWarning] = useState<string | null>(null);
@@ -1377,6 +1384,12 @@ export function TherapyRecommendation() {
   const [sourceManifestError, setSourceManifestError] = useState("");
   const [sourceHistoryError, setSourceHistoryError] = useState("");
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
+  const [localSelectionCacheUserId, setLocalSelectionCacheUserId] = useState<string | null>(null);
+  const [localSelectionCacheUserResolved, setLocalSelectionCacheUserResolved] = useState(false);
+  const [localSelectionCacheIssue, setLocalSelectionCacheIssue] = useState("");
+  const localSelectionCacheRunRef = useRef(0);
+  const localSelectionCacheFingerprintRef = useRef("");
+  const localSelectionCacheUserRef = useRef<string | null>(null);
   const [loadedDocumentInventory, setLoadedDocumentInventory] = useState<DocumentInventoryItem[]>([]);
   const [isRefreshingDocumentInventory, setIsRefreshingDocumentInventory] = useState(false);
   const [loadingArchiveDocumentPath, setLoadingArchiveDocumentPath] = useState<string | null>(null);
@@ -1448,47 +1461,176 @@ export function TherapyRecommendation() {
   });
 
   useEffect(() => {
+    if (authLoading) {
+      setLocalSelectionCacheUserResolved(false);
+      return;
+    }
+    const nextUserId = user?.id || null;
+    const previousUserId = localSelectionCacheUserRef.current;
+    if (previousUserId !== null && previousUserId !== nextUserId) {
+      localSelectionCacheRunRef.current += 1;
+      localSelectionCacheFingerprintRef.current = "";
+      setPendingDirectBefundFiles([]);
+      setLocalSelectionCacheIssue("Die lokale Auswahl gehörte zu einem anderen Benutzer und wurde nicht in die aktuelle Anmeldung übernommen.");
+    }
+    localSelectionCacheUserRef.current = nextUserId;
+    setLocalSelectionCacheUserId(nextUserId);
+    setLocalSelectionCacheUserResolved(true);
+  }, [authLoading, user?.id]);
+
+  useEffect(() => {
     if (!sessionPseudonymRestored) return;
+    if (!localSelectionCacheUserId || localSelectionCacheUserId !== user?.id) return;
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
-    const key = pendingSafePreviewKey(pid);
+    const key = pendingSafePreviewKey(pid, localSelectionCacheUserId);
+    let previews: PersistedSafeBefundPreview[] = [];
     try {
-      const parsed = JSON.parse(sessionStorage.getItem(key) || "[]") as PersistedSafeBefundPreview[];
-      const restored = parsed.filter((item) => normalizePseudonymId(item.sourcePseudonymId) === pid
+      if (sessionStorage.getItem(`therapy.pendingSafePreviews.v1:${pid}`)) {
+        setLocalSelectionCacheIssue("Ältere lokale Vorschautexte ohne Benutzerzuordnung bleiben erhalten, werden aber nicht automatisch in diese Anmeldung übernommen. Die Originaldatei kann erneut geprüft werden.");
+      }
+      previews = (JSON.parse(sessionStorage.getItem(key) || "[]") as PersistedSafeBefundPreview[]).filter((item) => normalizePseudonymId(item.sourcePseudonymId) === pid
         && item.previewText?.trim()
         && item.documentType
-        && directIdentifierCategories(item.previewText).length === 0
-      ).map((item) => ({
+        && directIdentifierCategories(item.previewText).length === 0);
+      const restored = previews.map((item) => ({
         ...item,
         file: new File([], "Bereinigte-Vorschau.pdf", { type: "application/pdf" }),
         status: "ready" as const,
         privacyReviewed: false,
         localPrivacyFindings: undefined,
         privacyFindingsRevealed: false,
+        recoveryNotice: "Bereinigte Vorschau wiederhergestellt; lokale Originaldatei fehlt und kann nicht übernommen werden.",
       }));
       if (restored.length) setPendingDirectBefundFiles((current) => current.length ? current : restored);
     } catch {
-      sessionStorage.removeItem(key);
+      // A corrupt browser-only preview is disposable; unknown IndexedDB records are never removed here.
+      try { sessionStorage.removeItem(key); } catch { /* Browser storage can be unavailable; keep the live selection. */ }
     } finally {
       pendingPreviewRestoreKeyRef.current = key;
     }
-  }, [pseudonymId, sessionPseudonymRestored]);
+    if (!localSelectionCacheUserId) return;
+    const cacheUserId = localSelectionCacheUserId;
+    const run = ++localSelectionCacheRunRef.current;
+    const operationScope = { userId: cacheUserId, pseudonymId: pid, generation: run };
+    const cacheScopeIsCurrent = () => isCurrentLocalSelectionOperation(operationScope, {
+      userId: localSelectionCacheUserRef.current || "",
+      pseudonymId: normalizePseudonymId(pseudonymIdRef.current),
+      generation: localSelectionCacheRunRef.current,
+    });
+    const previewById = new Map(previews.map(item => [item.id, item]));
+    void loadLocalDocumentSelections(cacheUserId, pid).then(({ selections, unsupportedCount }) => {
+      if (!cacheScopeIsCurrent()) return;
+      if (unsupportedCount) setLocalSelectionCacheIssue("Eine lokale Auswahl hat eine unbekannte Cache-Version und wurde nicht verändert. Sie kann in diesem Browser nicht automatisch wiederhergestellt werden.");
+      if (!selections.length) return;
+      setPendingDirectBefundFiles((current) => {
+        const restoredIds = new Set(selections.map(item => item.id));
+        const preserved = current.filter(item => !restoredIds.has(item.id));
+        const recovered: PendingDirectBefundFile[] = selections.map((item) => {
+          const preview = previewById.get(item.id);
+          const documentType = DIRECT_BEFUND_TARGETS.some(target => target.value === item.documentType)
+            ? item.documentType as DirectBefundTarget
+            : "";
+          return {
+            ...item,
+            documentType,
+            sourcePseudonymId: pid,
+            previewText: preview?.previewText,
+            removedIdentifierCategories: preview?.removedIdentifierCategories,
+            chars: preview?.chars,
+            pages: preview?.pages,
+            privacyReviewed: false,
+            localPrivacyFindings: undefined,
+            privacyFindingsRevealed: false,
+            localCacheStatus: "saved" as const,
+          };
+        });
+        return [...recovered, ...preserved];
+      });
+    }).catch((error) => {
+      if (!cacheScopeIsCurrent()) return;
+      setLocalSelectionCacheIssue(error instanceof Error ? error.message : "Lokale Dateiwiederaufnahme konnte nicht geladen werden. Die aktuelle Auswahl bleibt unverändert.");
+    });
+    return () => { if (run === localSelectionCacheRunRef.current) localSelectionCacheRunRef.current += 1; };
+  }, [localSelectionCacheUserId, user?.id, pseudonymId, sessionPseudonymRestored]);
 
   useEffect(() => {
+    if (!localSelectionCacheUserId || localSelectionCacheUserId !== user?.id) return;
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) return;
-    const key = pendingSafePreviewKey(pid);
+    const key = pendingSafePreviewKey(pid, localSelectionCacheUserId);
     if (pendingPreviewRestoreKeyRef.current !== key) return;
     const safePreviews: PersistedSafeBefundPreview[] = pendingDirectBefundFiles
-      .filter((item) => item.status === "ready"
+      .filter((item) => item.status !== "done"
         && item.previewText?.trim()
         && directIdentifierCategories(item.previewText).length === 0)
       .map(({ id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages, archiveReceipt }) => ({
         id, sourcePseudonymId, documentType, documentTypeInferred, documentDate, previewText, removedIdentifierCategories, chars, pages, archiveReceipt,
       }));
-    if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
-    else sessionStorage.removeItem(key);
-  }, [pendingDirectBefundFiles, pseudonymId]);
+    try {
+      if (safePreviews.length) sessionStorage.setItem(key, JSON.stringify(safePreviews));
+      else sessionStorage.removeItem(key);
+    } catch {
+      setLocalSelectionCacheIssue("Der Vorschautext konnte nicht im Sitzungsspeicher gesichert werden. Die aktuelle Auswahl bleibt im Tab; bitte den lokalen Dateisicherungsstatus beachten.");
+    }
+  }, [pendingDirectBefundFiles, pseudonymId, localSelectionCacheUserId, user?.id]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    if (!localSelectionCacheUserResolved || localSelectionCacheUserId !== user?.id || !isPatientScopedStorageReady(pid)) return;
+    const active = pendingDirectBefundFiles.filter(item => item.status !== "done" && item.file.size > 0);
+    if (!active.length) return;
+    if (active.some(item => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
+      setLocalSelectionCacheIssue("Dateiauswahl gehört zu einem anderen Fall; keine lokale Speicherung unter diesem Pseudonym.");
+      return;
+    }
+    const fingerprint = JSON.stringify(active.map(item => [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind]));
+    if (fingerprint === localSelectionCacheFingerprintRef.current) return;
+    localSelectionCacheFingerprintRef.current = fingerprint;
+    if (!localSelectionCacheUserId) {
+      const message = "Lokale Wiederaufnahme ist ohne angemeldeten Benutzer nicht verfügbar. Die Auswahl bleibt nur im aktuellen Tab.";
+      setLocalSelectionCacheIssue(message);
+      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+        ? { ...item, localCacheStatus: "error", localCacheError: message }
+        : item));
+      return;
+    }
+    const cacheUserId = localSelectionCacheUserId;
+    const run = ++localSelectionCacheRunRef.current;
+    const operationScope = { userId: cacheUserId, pseudonymId: pid, generation: run };
+    const cacheScopeIsCurrent = () => isCurrentLocalSelectionOperation(operationScope, {
+      userId: localSelectionCacheUserRef.current || "",
+      pseudonymId: normalizePseudonymId(pseudonymIdRef.current),
+      generation: localSelectionCacheRunRef.current,
+    });
+    const selections: LocalDocumentSelection[] = active.map(item => ({
+      id: item.id,
+      file: item.file,
+      documentType: item.documentType,
+      documentTypeInferred: item.documentTypeInferred,
+      documentDate: item.documentDate,
+      status: item.status === "done" ? "queued" : item.status,
+      error: item.error,
+      errorKind: item.errorKind,
+    }));
+    setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+      ? { ...item, localCacheStatus: "saving", localCacheError: undefined }
+      : item));
+    void saveLocalDocumentSelections(cacheUserId, pid, selections).then(() => {
+      if (!cacheScopeIsCurrent()) return;
+      setLocalSelectionCacheIssue("");
+      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+        ? { ...item, localCacheStatus: "saved", localCacheError: undefined }
+        : item));
+    }).catch((error) => {
+      if (!cacheScopeIsCurrent()) return;
+      const message = error instanceof Error ? error.message : "Lokale Dateiwiederaufnahme konnte nicht gespeichert werden. Die Auswahl bleibt im aktuellen Tab.";
+      setLocalSelectionCacheIssue(message);
+      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+        ? { ...item, localCacheStatus: "error", localCacheError: message }
+        : item));
+    });
+  }, [localSelectionCacheUserId, localSelectionCacheUserResolved, user?.id, pendingDirectBefundFiles, pseudonymId]);
 
   useEffect(() => {
     if (!isImportingAnamnesis && !pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "ready" || item.status === "error")) return;
@@ -3792,6 +3934,16 @@ export function TherapyRecommendation() {
     }
   }
 
+  const removeDirectBefundFile = (item: PendingDirectBefundFile) => {
+    localSelectionCacheRunRef.current += 1;
+    setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id));
+    const pid = normalizePseudonymId(item.sourcePseudonymId);
+    if (!localSelectionCacheUserId || !isPatientScopedStorageReady(pid)) return;
+    void removeLocalDocumentSelections(localSelectionCacheUserId, pid, [item.id]).catch((error) => {
+      setLocalSelectionCacheIssue(error instanceof Error ? error.message : "Lokale Auswahl konnte nicht entfernt werden. Sie bleibt nur in diesem Browser gespeichert.");
+    });
+  };
+
   const addDirectBefundFiles = (list: FileList | File[] | null) => {
     if (!list?.length) return;
     if (documentEntryMode === "single" && (list.length > 1 || pendingDirectBefundFiles.length > 0)) {
@@ -3800,6 +3952,14 @@ export function TherapyRecommendation() {
     }
     if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
       toast({ title: "Verarbeitung läuft", description: "Bitte die laufende Übernahme abwarten. Die bisherige Dateiliste bleibt erhalten." });
+      return;
+    }
+    if (!localSelectionCacheUserResolved) {
+      toast({ title: "Anmeldung wird geprüft", description: "Bitte die lokale Benutzerbindung abwarten, bevor Dateien ausgewählt werden." });
+      return;
+    }
+    if (!localSelectionCacheUserId) {
+      toast({ title: "Lokale Wiederaufnahme nicht verfügbar", description: "Ohne angemeldeten Benutzer werden keine Originaldateien lokal wiederaufnehmbar gespeichert.", variant: "destructive" });
       return;
     }
     const currentPid = normalizePseudonymId(pseudonymId);
@@ -3818,6 +3978,7 @@ export function TherapyRecommendation() {
       return;
     }
     const stamp = Date.now().toString(36);
+    localSelectionCacheRunRef.current += 1;
     setPendingDirectBefundFiles((prev) => documentEntryMode === "single" && prev.length ? prev : [
       ...prev,
       ...files.map((file, index) => {
@@ -3831,6 +3992,7 @@ export function TherapyRecommendation() {
           documentTypeInferred: !!inferredType,
           documentDate: inferDocumentDateFromFilename(file.name),
           privacyReviewed: false,
+          localCacheStatus: "saving" as const,
         };
       }),
     ]);
@@ -3847,6 +4009,10 @@ export function TherapyRecommendation() {
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
     const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
+    if (queue.some(item => item.localCacheStatus === "saving")) {
+      toast({ title: "Lokale Auswahl wird gesichert", description: "Bitte warten, bis die lokale Wiederaufnahme bestätigt oder ein Speicherhinweis angezeigt wird. Die Datei bleibt im aktuellen Tab erhalten." });
+      return;
+    }
     if (queue.some((item) => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
       toast({ title: "Fallwechsel erkannt", description: "Die ausgewählten Dateien gehören nicht zur aktuellen Pseudonym-ID und werden nicht ausgelesen.", variant: "destructive" });
       return;
@@ -3872,13 +4038,22 @@ export function TherapyRecommendation() {
         if (!scopeIsCurrent()) return;
         if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
         if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
-        const previewText = prepareDirectBefundHandoffText(extracted.text, documentType, item.documentDate, extracted.ocrPageConfidences);
         const archiveCopy = isPdfClinicalDocument(item.file)
           ? await prepareAnonymizedPdfArchive(item.file, progress => {
             if(scopeIsCurrent())setPendingDirectBefundFiles(current=>current.map(row=>row.id===item.id?{...row,progress}:row));
-          },scopeIsCurrent)
+          },scopeIsCurrent,pid)
           : undefined;
         if(!scopeIsCurrent())return;
+        let sourceText = extracted.text;
+        if (isPdfClinicalDocument(item.file)) {
+          try {
+            sourceText = applyManualPdfTextRedactions(item.file, extracted.text, pid);
+          } catch (error) {
+            discardPreparedAnonymizedPdfArchive(item.file);
+            throw error;
+          }
+        }
+        const previewText = prepareDirectBefundHandoffText(sourceText, documentType, item.documentDate, extracted.ocrPageConfidences);
         successful += 1;
         setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
           ...row,
@@ -4114,7 +4289,15 @@ export function TherapyRecommendation() {
     });
     if (!scopeIsCurrent()) return;
     const readyIds = new Set(ready.map((item) => item.id));
+    localSelectionCacheRunRef.current += 1;
     setPendingDirectBefundFiles((current) => current.map((item) => readyIds.has(item.id) ? { ...item, status: "done" } : item));
+    if (localSelectionCacheUserId) {
+      try {
+        await removeLocalDocumentSelections(localSelectionCacheUserId, pid, Array.from(readyIds));
+      } catch (error) {
+        if (scopeIsCurrent()) setLocalSelectionCacheIssue(error instanceof Error ? error.message : "Die lokale Auswahl konnte nach bestätigter Übernahme nicht bereinigt werden.");
+      }
+    }
     toast({ title: "Archivkopien und Inhalte gespeichert und geprüft", description: `${ready.length} geprüfte Datei(en) wurden gespeichert. Zugehörige anonymisierte PDF-Kopien wurden privat archiviert und bytegenau zurückgelesen; die lokalen Originaldateien sowie Word- und Excel-Dateien bleiben lokal. Als Nächstes die ausgewählten Befunde auswerten.` });
     setHistoryRefresh((n) => n + 1);
     window.setTimeout(() => {
@@ -4826,7 +5009,7 @@ export function TherapyRecommendation() {
   const handleReset = () => {
     const currentInputDraftKey = inputDraftKey;
     const currentPid = normalizePseudonymId(pseudonymIdRef.current);
-    if (isPatientScopedStorageReady(currentPid)) sessionStorage.removeItem(pendingSafePreviewKey(currentPid));
+    if (user?.id && isPatientScopedStorageReady(currentPid)) sessionStorage.removeItem(pendingSafePreviewKey(currentPid, user.id));
     patientScopeGenerationRef.current += 1;
     abortRef.current?.abort();
     docAbortRef.current?.abort();
@@ -5280,7 +5463,8 @@ export function TherapyRecommendation() {
               onFiles={addDirectBefundFiles}
             />
             <p className="rounded-md border border-amber-300/70 bg-amber-50/70 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-100">
-              Wichtig: Ausgewählte Dateien bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm. Vor dem Verlassen oder Neuladen erst auslesen, die Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
+              Wichtig: Ausgewählte Dateien werden vor dem Einlesen lokal und nur in diesem Browser für den angemeldeten Benutzer sowie diesen Fall gesichert. Das ist keine Cloud- oder Fallarchiv-Speicherung. Vor der Übernahme Datenschutzvorschau prüfen und „Geprüfte Inhalte passend übernehmen“ anklicken.
+              {localSelectionCacheIssue && <span className="mt-1 block text-destructive">{localSelectionCacheIssue}</span>}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <input ref={directBefundFileRef} type="file" accept={CLINICAL_DOCUMENT_ACCEPT} multiple={documentEntryMode === "batch"} className="hidden" disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId))} onChange={(e) => addDirectBefundFiles(e.target.files)} />
@@ -5316,15 +5500,20 @@ export function TherapyRecommendation() {
                       {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
                       {item.status === "ready" && <Badge variant="outline" className="text-[10px]">Vorschau</Badge>}
                       {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                      {item.localCacheStatus === "saving" && <span className="text-amber-700 text-[10px]">lokal wird gesichert</span>}
+                      {item.localCacheStatus === "saved" && <span className="text-emerald-700 text-[10px]">lokal gesichert · noch nicht im Fallarchiv</span>}
+                      {item.localCacheStatus === "error" && <span className="text-amber-700 text-[10px]" title={item.localCacheError}>lokale Sicherung fehlgeschlagen</span>}
                       {item.status === "error" && <span className="text-destructive">Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
-                      {item.status !== "processing" && <button type="button" onClick={() => setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id))} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                      {item.status !== "processing" && <button type="button" onClick={() => removeDirectBefundFile(item)} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
                     </div>
                     {item.status === "processing" && <p role="status" className="text-sm font-medium text-primary">{item.progress || "Datei wird lokal ausgelesen …"}</p>}
+                    {item.recoveryNotice && <p className="text-xs text-amber-800 dark:text-amber-200">{item.recoveryNotice}</p>}
+                    {item.localCacheError && <p className="text-xs text-amber-800 dark:text-amber-200">{item.localCacheError}</p>}
                     {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
-                        onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value, documentTypeInferred: false } : file))}
+                        onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value, documentTypeInferred: false, localCacheStatus: "saving", localCacheError: undefined } : file))}
                         disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
                       >
                         <SelectTrigger className="h-8 text-xs" aria-label="Dokumentart">
@@ -5338,7 +5527,7 @@ export function TherapyRecommendation() {
                         type="date"
                         aria-label="Dokumentdatum"
                         value={item.documentDate}
-                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value } : file))}
+                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
                         disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
                         className="h-8 text-xs"
                       />

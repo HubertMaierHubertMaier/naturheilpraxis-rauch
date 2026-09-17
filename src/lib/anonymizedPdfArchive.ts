@@ -7,11 +7,18 @@ import { waitForPdfRender } from "./clinicalPdfExtraction";
 import { isPreparedPdfArchiveCopy, registerPreparedPdfArchiveCopy } from "./pdfArchiveCopyRegistry";
 import { readPdfOcrCache, rememberPdfOcrRead } from "./pdfReadOcrCache";
 import { requestPdfPagePrivacyReview } from "./pdfPagePrivacyReview";
+import { applyManualPdfRedactions } from "./manualPdfRedaction";
+import { clearManualPdfTextRedactions, rememberManualPdfTextRedactions, type PositionedManualPdfOcrWord } from "./manualPdfTextRedaction";
 export { setPdfArchiveCopyReviewed, assertReviewedPdfArchiveCopy } from "./pdfArchiveCopyRegistry";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 const passwords = new WeakMap<Blob, string>();
 const prepared = new WeakMap<Blob, Promise<File>>();
+/** Discard a failed manual text-binding attempt so the next local run renders anew. */
+export function discardPreparedAnonymizedPdfArchive(file: Blob) {
+  prepared.delete(file);
+  clearManualPdfTextRedactions(file);
+}
 export function openPdfArchiveCopy(file: File) {
   if (!isPreparedPdfArchiveCopy(file)) throw new Error("Anonymisierte PDF-Kopie fehlt.");
   const url=URL.createObjectURL(file);
@@ -24,21 +31,23 @@ export function rememberValidatedPdfPassword(file: Blob, password: string) {
 }
 export function isAnonymizedPdfArchiveCopy(file: Blob): boolean { return isPreparedPdfArchiveCopy(file); }
 
-export async function prepareAnonymizedPdfArchive(file: Blob & { name: string }, onProgress?: (message: string) => void, isCurrent:()=>boolean=()=>true): Promise<File> {
+export async function prepareAnonymizedPdfArchive(file: Blob & { name: string }, onProgress?: (message: string) => void, isCurrent:()=>boolean=()=>true, manualTextScope?: string): Promise<File> {
   if (isPreparedPdfArchiveCopy(file)) return file as File;
   const previous = prepared.get(file);
   if (previous) return previous;
-  const promise = createCopy(file,onProgress,isCurrent).catch(error => {prepared.delete(file); throw error;});
+  const promise = createCopy(file,onProgress,isCurrent,manualTextScope).catch(error => {prepared.delete(file); throw error;});
   prepared.set(file,promise);
   return promise;
 }
 
-async function createCopy(file: Blob & { name: string }, onProgress:((message: string) => void)|undefined,isCurrent:()=>boolean): Promise<File> {
+async function createCopy(file: Blob & { name: string }, onProgress:((message: string) => void)|undefined,isCurrent:()=>boolean,manualTextScope?:string): Promise<File> {
+  clearManualPdfTextRedactions(file);
   const loading = pdfjs.getDocument({data:await file.arrayBuffer(),password:passwords.get(file)});
   let ocr: LocalOcrWorker | undefined;
   let output: jsPDF | undefined;
   let pageCount=0;
   let encodedBytes=0;
+  let completed=false;
   try {
     const document = await loading.promise;
     pageCount=document.numPages;
@@ -79,6 +88,8 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
         }
         let lines=groupPdfPrivacyWords(words);
         let reviewReason="";
+        const ocrWords: PositionedManualPdfOcrWord[]=[];
+        const ocrLines: PositionedPrivacyLine[]=[];
         // Scan/rotated pages need actual OCR positions; text without positions is insufficient.
         const needsOcrForText=rotated || words.map(w=>w.text).join("").trim().length<40;
         // Any visible ink may include outlined glyphs or appearances absent from the
@@ -95,7 +106,14 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
           const positioned: PositionedPrivacyLine[]=[];
           for(const block of data.blocks||[])for(const paragraph of block.paragraphs||[])for(const line of paragraph.lines||[]) {
             const box=line.bbox;
-            if(box && line.text?.trim())positioned.push({text:line.text.trim(),x:box.x0*scaleX,y:box.y0*scaleY,width:(box.x1-box.x0)*scaleX,height:(box.y1-box.y0)*scaleY});
+            if(box && line.text?.trim()) {
+              const positionedLine={text:line.text.trim(),x:box.x0*scaleX,y:box.y0*scaleY,width:(box.x1-box.x0)*scaleX,height:(box.y1-box.y0)*scaleY};
+              positioned.push(positionedLine);ocrLines.push(positionedLine);
+              for(const word of line.words||[]) {
+                const wordBox=word.bbox;
+                if(wordBox && word.text?.trim())ocrWords.push({text:word.text.trim(),lineText:line.text.trim(),x:wordBox.x0*scaleX,y:wordBox.y0*scaleY,width:(wordBox.x1-wordBox.x0)*scaleX,height:(wordBox.y1-wordBox.y0)*scaleY});
+              }
+            }
           }
           try {assertPdfOcrEvidence(data.text,data.confidence,positioned,canvas.width,canvas.height);}
           catch(error){
@@ -111,6 +129,7 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
               && overlapX*overlapY>=ocrLine.width*ocrLine.height*0.7;
           }))];
         }
+        try {
         const replacements=checkedPdfPrivacyReplacements(lines);
         for(const replacement of replacements) {
           const x=Math.max(0,Math.floor(replacement.x-2)), y=Math.max(0,Math.floor(replacement.y-2));
@@ -119,7 +138,9 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
           if(isOpaquePrivacyCover(context.getImageData(x,y,width,height).data))continue;
           // Rebuild visible pixels, not an annotation covering recoverable original text.
           context.fillStyle="#fff"; context.fillRect(x,y,width,height);
-          context.save(); context.beginPath(); context.rect(x,y,width,height); context.clip();
+          context.save();
+          try {
+          context.beginPath(); context.rect(x,y,width,height); context.clip();
           let font=Math.max(6,replacement.height*0.65);
           context.font=`${font}px sans-serif`;
           const measured=context.measureText(replacement.replacement).width;
@@ -127,7 +148,23 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
           if(font<6 && replacement.replacement.replace(/\[geschwärzt\]/g,"").trim())throw new Error("Verbleibender Befundtext würde unleserlich: Archivkopie benötigt Prüfung.");
           context.font=`${Math.max(6,font)}px sans-serif`; context.fillStyle="#000";context.textBaseline="middle";
           context.fillText(replacement.replacement,x+2,y+height/2);
-          context.restore();
+          } finally { context.restore(); }
+        }
+        } catch(error) {
+          // Return to the untouched rendered page: never ask a reviewer to approve
+          // a partially applied or overlapping automatic redaction.
+          context.putImageData(new ImageData(pixels,canvas.width,canvas.height),0,0);
+          const originalPng=await canvasToPngBytes(canvas);
+          onProgress?.(`Lokale Nachschwärzung erforderlich: PDF-Seite ${number} von ${pageCount}`);
+          const rectangles=await requestPdfPagePrivacyReview({
+            image:new Blob([originalPng.slice().buffer as ArrayBuffer],{type:"image/png"}),page:number,totalPages:pageCount,
+            reason:"Automatische Schwärzungsbereiche sind nicht eindeutig oder würden angrenzende Inhalte verändern. Bitte diese Seite lokal nachschwärzen und vollständig prüfen."+(reviewReason?" Zusätzlich ist die Texterkennung unsicher.":""),
+            manualRedaction:{width:canvas.width,height:canvas.height},
+          },isCurrent);
+          if(!rectangles||!isCurrent())throw new Error("Lokale PDF-Schwärzung nicht bestätigt; keine Archivübertragung.");
+          applyManualPdfRedactions(context,rectangles,canvas.width,canvas.height);
+          rememberManualPdfTextRedactions(file,number,rectangles,canvas.width,canvas.height,words,manualTextScope,ocrWords,ocrLines);
+          reviewReason="";
         }
         const dimensions: [number,number]=[viewport.width/2,viewport.height/2];
         const orientation=dimensions[0]>dimensions[1]?"landscape":"portrait";
@@ -150,8 +187,9 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
     const copy=new File([output.output("blob")],"anonymisierte-befundkopie.pdf",{type:"application/pdf"});
     if(copy.size>50*1024*1024)throw new Error("Anonymisierte Archivkopie überschreitet 50 MB; keine Übertragung.");
     registerPreparedPdfArchiveCopy(copy);
+    completed=true;
     return copy;
-  } finally {try {await ocr?.terminate();} finally {await loading.destroy();}}
+  } finally {try {await ocr?.terminate();} finally {if(!completed)clearManualPdfTextRedactions(file);await loading.destroy();}}
 }
 
 function documentOwnerCanvas() { return globalThis.document.createElement("canvas"); }

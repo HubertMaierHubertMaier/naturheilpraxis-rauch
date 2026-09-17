@@ -218,4 +218,20 @@ describe("clinical PDF extraction decisions", () => {
     expect(failure.message).toContain("Erkannte Kategorie: Name, Anschrift");
     expect(failure.message).not.toContain("Erika");
   });
+
+  it("identifies unsafe archive redaction as a privacy stop without exposing source text", () => {
+    for (const message of [
+      "Eine PDF-Schwärzung würde benachbarten Befundtext überdecken. Lokale Prüfung erforderlich.",
+      "Widersprüchliche überlappende PDF-Schwärzungen: lokale Prüfung erforderlich, keine Übertragung.",
+      "Mehrdeutige PDF-Schwärzungsüberlappung; keine Übertragung.",
+      "Verbleibender Befundtext würde unleserlich: Archivkopie benötigt Prüfung.",
+      "PDF-Stelle benötigt eine eindeutige Schwärzung. Keine Archivübertragung.",
+    ]) {
+      const result = classifyClinicalPdfFailure(new Error(`${message} Vertraulicher Beispieltext`));
+      expect(result.kind).toBe("privacy");
+      expect(result.label).toBe("PDF-Schwärzung prüfen");
+      expect(result.message).toContain("nicht ins Fallarchiv übernommen");
+      expect(result.message).not.toContain("Vertraulicher Beispieltext");
+    }
+  });
 });

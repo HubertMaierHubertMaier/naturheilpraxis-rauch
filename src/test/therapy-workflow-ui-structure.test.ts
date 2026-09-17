@@ -53,7 +53,10 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("2. Nächster Schritt: übernommene Befunde auswerten");
     expect(source).toContain('nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })');
     expect(source).toContain('nextBefundActionRef.current?.focus({ preventScroll: true })');
-    expect(source).toContain("Ausgewählte Dateien bleiben bis zur geprüften Übernahme nur auf diesem Bildschirm");
+    expect(source).toContain("Ausgewählte Dateien werden vor dem Einlesen lokal und nur in diesem Browser");
+    expect(source).toContain("loadLocalDocumentSelections");
+    expect(source).toContain("saveLocalDocumentSelections");
+    expect(source).toContain("removeLocalDocumentSelections");
     expect(source).not.toContain("PDF(s) erst im Tab „Großdaten\" hochladen");
     expect(source).toContain("Personenbezogene Stellen vollständig anzeigen");
     const individualUploadSource = readSource("src/components/admin/therapy/MultiDocUpload.tsx");

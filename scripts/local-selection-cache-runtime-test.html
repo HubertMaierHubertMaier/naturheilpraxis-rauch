@@ -1,0 +1,47 @@
+<!doctype html><html lang="de"><meta charset="utf-8"><title>Synthetische Dateiwiederaufnahmeprüfung</title><body>
+<h1>Lokale synthetische Dateiwiederaufnahmeprüfung</h1><p>Eigene Testdatenbank, künstliche Dateien, keine Patientendaten.</p><pre id="result"></pre>
+<script type="module">
+const marker='sorra-synthetic-local-selection-20260917';
+const prior=JSON.parse(sessionStorage.getItem(marker)||'null');
+const database=prior?.database||'sorra-synthetic-selection-'+crypto.randomUUID();
+window.localCacheTest={status:'running',syntheticOnly:true,phase:prior?'after-reload':'before-reload'};
+const report=()=>document.getElementById('result').textContent=JSON.stringify(window.localCacheTest,null,2);
+report();
+const check=(condition,name)=>{if(!condition)throw Error(name);checks.push(name);};
+const checks=[];
+const bytes=new Uint8Array([0,1,2,127,250,255]);
+const item=(id,status='queued',extension='pdf')=>({id,file:new File([bytes],'synthetic.'+extension,{type:'application/octet-stream',lastModified:1234}),documentType:'anamnese',documentDate:'2026-09-17',status});
+const source=await(await fetch('/src/lib/localDocumentSelectionCache.ts')).text();
+if(!source.includes('"therapy-local-document-selections"'))throw Error('Expected cache module missing');
+const isolated=source.replace('"therapy-local-document-selections"',JSON.stringify(database));
+const load=async()=>{const url=URL.createObjectURL(new Blob([isolated],{type:'text/javascript'}));try{return await import(url);}finally{URL.revokeObjectURL(url);}};
+const openDatabase=()=>new Promise((resolve,reject)=>{const r=indexedDB.open(database);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+try{
+ const api=await load();
+ if(!prior){await api.saveLocalDocumentSelections('synthetic-user-a','synthetic-case-a',[item('reload-file','processing')]);sessionStorage.setItem(marker,JSON.stringify({database}));location.reload();}
+ else{
+  const loaded=await api.loadLocalDocumentSelections('synthetic-user-a','synthetic-case-a');
+  check(loaded.selections.length===1,'one original restored after real page reload');
+  const restored=loaded.selections[0];check(restored.file instanceof File&&JSON.stringify([...new Uint8Array(await restored.file.arrayBuffer())])===JSON.stringify([...bytes]),'bytes retained after reload');
+  check(restored.documentDate==='2026-09-17'&&restored.status==='error'&&!restored.privacyReviewed&&!restored.archiveCopy,'metadata retained, interrupted read requires review');
+  check((await api.loadLocalDocumentSelections('synthetic-user-b','synthetic-case-a')).selections.length===0,'other user isolated');
+  check((await api.loadLocalDocumentSelections('synthetic-user-a','synthetic-case-b')).selections.length===0,'other case isolated');
+  await api.removeLocalDocumentSelections('synthetic-user-a','synthetic-case-a',['reload-file']);
+  for(const extension of ['pdf','docx','xlsx']){await api.saveLocalDocumentSelections('synthetic-user-a','synthetic-case-a',[item(extension,'error',extension)]);}
+  check((await api.loadLocalDocumentSelections('synthetic-user-a','synthetic-case-a')).selections.length===3,'PDF Word and Excel selections retained');
+  await api.removeLocalDocumentSelections('synthetic-user-a','synthetic-case-a',['pdf','docx','xlsx']);
+  const second=await load(),a=Array.from({length:16},(_,n)=>item('budget-a-'+n)),b=Array.from({length:16},(_,n)=>item('budget-b-'+n));
+  const races=await Promise.allSettled([api.saveLocalDocumentSelections('synthetic-user-a','budget-a',a),second.saveLocalDocumentSelections('synthetic-user-b','budget-b',b)]);
+  check(races.filter(r=>r.status==='fulfilled').length===1&&races.filter(r=>r.status==='rejected').length===1,'budget atomic across separate module instances');
+  await api.removeLocalDocumentSelections('synthetic-user-a','budget-a',a.map(x=>x.id));await second.removeLocalDocumentSelections('synthetic-user-b','budget-b',b.map(x=>x.id));
+  const save=api.saveLocalDocumentSelections('synthetic-user-a','synthetic-case-a',[item('removed')]);const remove=api.removeLocalDocumentSelections('synthetic-user-a','synthetic-case-a',['removed']);await Promise.all([save,remove]);
+  check((await api.loadLocalDocumentSelections('synthetic-user-a','synthetic-case-a')).selections.length===0,'removal stays removed after pending save');
+  const db=await openDatabase();await new Promise((resolve,reject)=>{const t=db.transaction('selections','readwrite');t.objectStore('selections').put({key:JSON.stringify(['synthetic-user-a','synthetic-case-a','future']),scope:JSON.stringify(['synthetic-user-a','synthetic-case-a']),schemaVersion:99,size:1});t.oncomplete=resolve;t.onabort=()=>reject(t.error);});db.close();
+  let blocked=false;try{await api.saveLocalDocumentSelections('synthetic-user-a','synthetic-case-a',[item('future')]);}catch{blocked=true;}
+  check(blocked&&(await api.loadLocalDocumentSelections('synthetic-user-a','synthetic-case-a')).unsupportedCount===1,'unknown schema preserved');
+  await api.removeLocalDocumentSelections('synthetic-user-a','synthetic-case-a',['future']);
+  await new Promise((resolve,reject)=>{const r=indexedDB.deleteDatabase(database);r.onsuccess=resolve;r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('Synthetic cleanup blocked'));});sessionStorage.removeItem(marker);
+  window.localCacheTest={status:'completed',syntheticOnly:true,passed:true,checks,cleanup:true};report();
+ }
+}catch(error){window.localCacheTest={status:'failed',syntheticOnly:true,checks,error:error.message};report();}
+</script></body></html>
