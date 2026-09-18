@@ -1,5 +1,6 @@
 import {validateManualPdfPageSize,validateManualPdfRedactions,type ManualPdfRedaction} from "./manualPdfRedaction";
-export type PdfPagePrivacyReviewRequest={image:Blob;page:number;totalPages:number;reason:string;manualRedaction?:{width:number;height:number}};
+import type {PdfRedactionDraftKey} from "./pdfRedactionDraft";
+export type PdfPagePrivacyReviewRequest={image:Blob;page:number;totalPages:number;reason:string;manualRedaction?:{width:number;height:number;draftKey?:PdfRedactionDraftKey;draftWarning?:string}};
 export type PdfPagePrivacyReviewDecision=boolean|{approved:boolean;redactions:ManualPdfRedaction[];unchangedPageConfirmed?:boolean};
 type Reviewer=(request:PdfPagePrivacyReviewRequest)=>Promise<PdfPagePrivacyReviewDecision>;
 let reviewer:Reviewer|undefined;

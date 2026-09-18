@@ -7,6 +7,41 @@ const rectangle = { x: 10, y: 10, width: 30, height: 12 };
 const words = [{ text: "Erika Beispiel", x: 10, y: 10, width: 30, height: 12 }];
 
 describe("manual PDF redaction text binding", () => {
+  it.each(["Freie Zeile enthält Erika Beispiel", "Unbeschrifteter Arztbrief enthält Erika Beispiel"])("uses explicit full-word review without provider keywords: %s", lineText => {
+    const file = source();
+    rememberManualPdfTextRedactions(file, 1, [{ x: 10, y: 10, width: 40, height: 12 }], 200, 100, [], "reviewed", [
+      { text: "Erika", x: 10, y: 10, width: 15, height: 12, lineText },
+      { text: "Beispiel", x: 30, y: 10, width: 20, height: 12, lineText },
+    ]);
+    const input = `--- Seite 1 ---\n${lineText}\nKontrollnotiz: Beispiel\nLDL 130 mg/dl\nKeine Beschwerden\nIAA Stufe 6`;
+    const result = applyManualPdfTextRedactions(file, input, "reviewed");
+    expect(result).toBe(input.replace("Erika Beispiel", "[personenbezogene Angabe entfernt] [personenbezogene Angabe entfernt]"));
+  });
+
+  it("rejects partial unlabelled OCR hits rather than deleting adjacent text", () => {
+    const file = source();
+    rememberManualPdfTextRedactions(file, 1, [{ x: 10, y: 10, width: 5, height: 12 }], 200, 100, [], "reviewed", [
+      { text: "Beispiel", x: 10, y: 10, width: 20, height: 12, lineText: "Unbeschriftete Zeile Beispiel" },
+    ]);
+    expect(() => applyManualPdfTextRedactions(file, "--- Seite 1 ---\nUnbeschriftete Zeile Beispiel", "reviewed")).toThrow(ManualPdfTextBindingError);
+  });
+
+  it("binds an unlabelled native word to the unchanged original row", () => {
+    const file = source(), original = "--- Seite 1 ---\nFreie Zeile Erika Beispiel\nLDL 130 mg/dl";
+    rememberOriginalPdfTextContext(file, original);
+    rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, words, "reviewed");
+    expect(applyManualPdfTextRedactions(file, original, "reviewed"))
+      .toBe(original.replace("Erika Beispiel", "[personenbezogene Angabe entfernt]"));
+  });
+
+  it("does not double-count matching native and OCR word positions", () => {
+    const file = source(), original = "--- Seite 1 ---\nFreie Zeile Erika";
+    rememberOriginalPdfTextContext(file, original);
+    const word = { text: "Erika", ...rectangle };
+    rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, [word], "reviewed", [{ ...word, lineText: "Freie Zeile Erika" }]);
+    expect(applyManualPdfTextRedactions(file, original, "reviewed")).toContain("Freie Zeile [personenbezogene Angabe entfernt]");
+  });
+
   it("redacts only the bound page context and preserves an identical word on another page", () => {
     const file = source();
     rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, words, "P-2099-0001");

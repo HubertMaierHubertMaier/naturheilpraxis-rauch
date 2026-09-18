@@ -8,6 +8,7 @@ import { isPreparedPdfArchiveCopy, registerPreparedPdfArchiveCopy } from "./pdfA
 import { readPdfOcrCache, rememberPdfOcrRead } from "./pdfReadOcrCache";
 import { requestPdfPagePrivacyReview } from "./pdfPagePrivacyReview";
 import { applyManualPdfRedactions } from "./manualPdfRedaction";
+import { createPdfRedactionDraftKey } from "./pdfRedactionDraft";
 import { clearManualPdfTextRedactions, rememberManualPdfTextRedactions, type PositionedManualPdfOcrWord } from "./manualPdfTextRedaction";
 export { setPdfArchiveCopyReviewed, assertReviewedPdfArchiveCopy } from "./pdfArchiveCopyRegistry";
 
@@ -155,11 +156,17 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
           // a partially applied or overlapping automatic redaction.
           context.putImageData(new ImageData(pixels,canvas.width,canvas.height),0,0);
           const originalPng=await canvasToPngBytes(canvas);
+          const reviewImage=new Blob([originalPng.slice().buffer as ArrayBuffer],{type:"image/png"});
+          let draftKey,draftWarning;
+          try {
+            if(!manualTextScope)throw Error("Benutzer-/Fallbindung fehlt.");
+            draftKey=await createPdfRedactionDraftKey(file,reviewImage,number,canvas.width,canvas.height,manualTextScope);
+          } catch { draftWarning="Markierungsentwurf kann hier nicht dauerhaft gesichert werden; er bleibt nur in dieser Sitzung."; }
           onProgress?.(`Lokale Nachschwärzung erforderlich: PDF-Seite ${number} von ${pageCount}`);
           const rectangles=await requestPdfPagePrivacyReview({
-            image:new Blob([originalPng.slice().buffer as ArrayBuffer],{type:"image/png"}),page:number,totalPages:pageCount,
+            image:reviewImage,page:number,totalPages:pageCount,
             reason:"Automatische Schwärzungsbereiche sind nicht eindeutig oder würden angrenzende Inhalte verändern. Bitte diese Seite lokal nachschwärzen und vollständig prüfen."+(reviewReason?" Zusätzlich ist die Texterkennung unsicher.":""),
-            manualRedaction:{width:canvas.width,height:canvas.height},
+            manualRedaction:{width:canvas.width,height:canvas.height,draftKey,draftWarning},
           },isCurrent);
           if(!rectangles||!isCurrent())throw new Error("Lokale PDF-Schwärzung nicht bestätigt; keine Archivübertragung.");
           if(rectangles.length){

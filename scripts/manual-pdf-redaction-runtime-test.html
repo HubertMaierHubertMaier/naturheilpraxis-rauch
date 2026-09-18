@@ -6,9 +6,11 @@ import {createRoot} from 'react-dom/client';
 import {PdfArchiveReviewDialog} from '/src/components/admin/therapy/PdfArchiveReviewDialog.tsx';
 import {requestPdfPagePrivacyReview} from '/src/lib/pdfPagePrivacyReview.ts';
 import {applyManualPdfRedactions} from '/src/lib/manualPdfRedaction.ts';
+import {createPdfRedactionDraftKey} from '/src/lib/pdfRedactionDraft.ts';
 import '/src/index.css';
 createRoot(document.getElementById('review-root')).render(React.createElement(PdfArchiveReviewDialog,{scopeKey:'synthetic-only'}));
 const unchangedTest=new URLSearchParams(location.search).get('unchanged')==='1';
+const draftTest=new URLSearchParams(location.search).get('draft')==='1';
 window.manualRedactionTest={status:'ready',syntheticOnly:true};
 document.getElementById('start').onclick=async()=>{
   const canvas=document.createElement('canvas');canvas.width=400;canvas.height=200;
@@ -18,7 +20,8 @@ document.getElementById('start').onclick=async()=>{
   window.manualRedactionTest={status:'reviewing',syntheticOnly:true};
   try{
     const image=new Blob([Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]),c=>c.charCodeAt(0))],{type:'image/png'});
-    const rectangles=await requestPdfPagePrivacyReview({image,page:1,totalPages:1,reason:'Künstlicher Test: roten Bereich schwärzen, grünen Nachbarbereich erhalten.',manualRedaction:{width:400,height:200}});
+    const draftKey=draftTest?await createPdfRedactionDraftKey(new Blob(['synthetic-draft-fixture']),image,1,400,200,JSON.stringify(['synthetic-review-user','synthetic-draft-case'])):undefined;
+    const rectangles=await requestPdfPagePrivacyReview({image,page:1,totalPages:1,reason:'Künstlicher Test: roten Bereich schwärzen, grünen Nachbarbereich erhalten.',manualRedaction:{width:400,height:200,draftKey}});
     if(rectangles.length)applyManualPdfRedactions(context,rectangles,400,200);
     const after=context.getImageData(0,0,400,200).data;
     let outsideChanged=0,maskNotOpaqueBlack=0;

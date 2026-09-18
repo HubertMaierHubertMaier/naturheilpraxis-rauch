@@ -21,7 +21,7 @@ export function manualPdfTextBindingStatus(error: unknown) {
     message: `Die lokale Bildkopie ist vorbereitet, aber der Textabgleich auf Seite ${error.page} (${error.code}) ist offen. Es wurde nichts übernommen oder übertragen.`,
   };
 }
-type ManualTextTarget = { text: string; providerBound: boolean; sourceLines: string[]; sourceCounts: Map<string,number> };
+type ManualTextTarget = { text: string; providerBound: boolean; fullyCovered: boolean; sourceLines: string[]; sourceCounts: Map<string,number> };
 type ManualPageTextRedaction = { width: number; height: number; scope?: string; targets: ManualTextTarget[]; unresolved: boolean };
 const redactions = new WeakMap<Blob, Map<number, ManualPageTextRedaction>>();
 // Local-only context: never include the original text in extraction results or drafts.
@@ -59,14 +59,27 @@ function ocrProviderContext(word: PositionedManualPdfOcrWord, lines: readonly Po
     && word.y - (line.y + line.height) <= Math.max(80, word.height * 5));
 }
 
-function addTarget(targets: Map<string, ManualTextTarget>, text: string, providerBound: boolean, sourceLine?: string) {
+function addTarget(targets: Map<string, ManualTextTarget>, text: string, providerBound: boolean, sourceLine?: string, fullyCovered = false) {
   const normalized = text.trim().toLowerCase();
   if (!normalized) return;
   const current = targets.get(normalized);
   const sourceCounts=new Map(current?.sourceCounts);
   if(sourceLine){const key=normalizedLine(sourceLine);sourceCounts.set(key,(sourceCounts.get(key)||0)+1);}
-  targets.set(normalized, { text: current?.text || text.trim(), providerBound: Boolean(current?.providerBound) || providerBound, sourceCounts,
+  targets.set(normalized, { text: current?.text || text.trim(), providerBound: Boolean(current?.providerBound) || providerBound, fullyCovered: fullyCovered && (current?.fullyCovered ?? true), sourceCounts,
     sourceLines: Array.from(new Set([...(current?.sourceLines || []), ...(sourceLine ? [sourceLine] : [])])) });
+}
+
+function uniqueOriginalLine(file: Blob, page: number, text: string): string | undefined {
+  const original = originalContexts.get(file)?.text;
+  if (!original) return undefined;
+  const start = original.indexOf(`--- Seite ${page} ---`);
+  if (start < 0) return undefined;
+  const end = original.indexOf("\n--- Seite ", start + 1);
+  const body = original.slice(start, end < 0 ? undefined : end);
+  const matches = [...body.matchAll(targetPattern(text))];
+  if (matches.length !== 1) return undefined;
+  const line = lineAt(body, matches[0].index!);
+  return targetPattern(text).test(line) ? line : undefined;
 }
 
 /** Records only minimal native/OCR word boxes intersected by a confirmed local page mask. */
@@ -94,10 +107,13 @@ export function rememberManualPdfTextRedactions(
       unresolved = true;
       continue;
     }
-    addTarget(targets, word.text, false);
+    // Prefer the more precise OCR row for a duplicate native word. Counting both
+    // representations would falsely require two occurrences in the source text.
+    if (ocrWords.some(ocr => normalizedLine(ocr.text) === normalizedLine(word.text) && intersects(ocr, word))) continue;
+    addTarget(targets, word.text, false, uniqueOriginalLine(file, page, word.text), fullyCovered);
   }
   for (const word of ocrWords.filter(word => word.text.trim() && checked.some(rectangle => intersects(word, rectangle)))) {
-    addTarget(targets, word.text, ocrProviderContext(word, ocrLines), word.lineText);
+    addTarget(targets, word.text, ocrProviderContext(word, ocrLines), word.lineText, checked.some(rectangle => contains(rectangle, word)));
   }
   let pages = redactions.get(file);
   if (!pages) { pages = new Map(); redactions.set(file, pages); }
@@ -165,9 +181,10 @@ function redactTargetsInPage(file:Blob,page: number, pageText: string, targets: 
       throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Quellzeile verändern.");
     }
     const allIdentityBound = selectedContexts.every(identityContext);
-    // Provider geometry is required for unlabeled rows; source counts above
-    // ensure that repeated words stay bound to their selected occurrences.
-    if (!allIdentityBound && !target.providerBound) {
+    // A fully covered, explicitly reviewed word with an exact source-row binding
+    // does not need a name/provider keyword. Unbound or partial spans still stop.
+    const confirmedSourceBound = target.fullyCovered && target.sourceLines.length > 0;
+    if (!confirmedSourceBound && !allIdentityBound && !target.providerBound) {
       throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Namens-/Behandlerbindung verändern.");
     }
     for (const match of selected) edits.push({start:match.index!,end:match.index!+match[0].length});

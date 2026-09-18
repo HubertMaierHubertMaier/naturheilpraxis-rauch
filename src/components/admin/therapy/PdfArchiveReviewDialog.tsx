@@ -3,6 +3,7 @@ import {Dialog,DialogContent,DialogTitle,DialogDescription} from "@/components/u
 import {Button} from "@/components/ui/button";
 import {registerPdfPageReviewer,type PdfPagePrivacyReviewRequest,type PdfPagePrivacyReviewDecision} from "@/lib/pdfPagePrivacyReview";
 import {validateManualPdfRedactions,type ManualPdfRedaction} from "@/lib/manualPdfRedaction";
+import {loadPdfRedactionDraft,savePdfRedactionDraft} from "@/lib/pdfRedactionDraft";
 
 export function PdfArchiveReviewDialog({scopeKey}:{scopeKey:string}){
   const [request,setRequest]=useState<PdfPagePrivacyReviewRequest|null>(null);
@@ -12,11 +13,16 @@ export function PdfArchiveReviewDialog({scopeKey}:{scopeKey:string}){
   const resolver=useRef<((approved:PdfPagePrivacyReviewDecision)=>void)|null>(null);
   const [redactions,setRedactions]=useState<ManualPdfRedaction[]>([]);
   const [unchangedPageConfirmed,setUnchangedPageConfirmed]=useState(false);
+  const [draftRestored,setDraftRestored]=useState(false),[draftMessage,setDraftMessage]=useState("");
+  const [draftWritable,setDraftWritable]=useState(false);
   const [drag,setDrag]=useState<{x:number;y:number;endX:number;endY:number}|null>(null);
   const scroller=useRef<HTMLDivElement|null>(null);
   useEffect(()=>{
     const unregister=registerPdfPageReviewer(next=>new Promise(resolve=>{
-      resolver.current=resolve;setPrivacy(false);setContent(false);setViewed(false);setImageLoaded(false);setRedactions([]);setUnchangedPageConfirmed(false);setDrag(null);setRequest(next);
+      let initial:ManualPdfRedaction[]=[],warning=next.manualRedaction?.draftWarning||"",writable=!!next.manualRedaction?.draftKey;
+      try{if(next.manualRedaction?.draftKey)initial=loadPdfRedactionDraft(next.manualRedaction.draftKey)||[];}
+      catch{writable=false;warning="Gespeicherter Markierungsentwurf konnte nicht geladen werden; bestehende Daten bleiben erhalten.";}
+      resolver.current=resolve;setPrivacy(false);setContent(false);setViewed(false);setImageLoaded(false);setRedactions(initial);setDraftRestored(initial.length>0);setDraftMessage(warning);setDraftWritable(writable);setUnchangedPageConfirmed(false);setDrag(null);setRequest(next);
     }));
     return()=>{unregister();resolver.current?.(false);resolver.current=null;setRequest(null);};
   },[scopeKey]);
@@ -25,8 +31,13 @@ export function PdfArchiveReviewDialog({scopeKey}:{scopeKey:string}){
     const value=URL.createObjectURL(request.image);setUrl(value);
     return()=>URL.revokeObjectURL(value);
   },[request]);
+  useEffect(()=>{
+    const key=request?.manualRedaction?.draftKey;if(!key||!draftWritable)return;
+    try{savePdfRedactionDraft(key,redactions);setDraftMessage("Markierungsentwurf lokal gespeichert. Freigaben werden nicht gespeichert.");}
+    catch{setDraftMessage("Markierungen NICHT dauerhaft gesichert. Sie bleiben nur in dieser Sitzung; vorhandene Entwürfe werden nicht gelöscht.");}
+  },[request,redactions,draftWritable]);
   const finish=(approved:boolean)=>{resolver.current?.(approved&&request?.manualRedaction?{approved:true,redactions,unchangedPageConfirmed:!redactions.length&&unchangedPageConfirmed}:approved);resolver.current=null;setRequest(null);};
-  const changed=()=>{setPrivacy(false);setContent(false);setViewed(false);setUnchangedPageConfirmed(false);};
+  const changed=()=>{setPrivacy(false);setContent(false);setViewed(false);setUnchangedPageConfirmed(false);setDraftWritable(true);};
   const manual=request?.manualRedaction;
   const point=(event:ReactPointerEvent<SVGSVGElement>)=>{
     const box=event.currentTarget.getBoundingClientRect();
@@ -45,6 +56,8 @@ export function PdfArchiveReviewDialog({scopeKey}:{scopeKey:string}){
         <DialogTitle style={{fontSize:24,fontWeight:700}}>Dateiseite {request?.page} von {request?.totalPages}</DialogTitle>
         <DialogDescription>{manual?"Lokale Originalseite: Automatische Schwärzungen wurden verworfen. Nur identifizierende Angaben abdecken; medizinische Inhalte erhalten.":"Lokale Sichtprüfung: Bereits erkannte Angaben sind geschwärzt. Bitte Inhalt und Datenschutz prüfen."} Andere Seiten werden automatisch verarbeitet.</DialogDescription>
         <details className="text-sm"><summary>Warum wird diese Seite angehalten?</summary><p data-pdf-review-reason>{request?.reason}</p></details>
+        {draftRestored&&<p className="text-sm" data-pdf-draft-restored>Gespeicherte Markierungen wiederhergestellt – bitte die gesamte Seite erneut prüfen und bestätigen.</p>}
+        {draftMessage&&<p className="text-xs" role="status" data-pdf-draft-status>{draftMessage}</p>}
       </header>
       {manual&&<div style={{flexShrink:0}} className="flex flex-wrap items-center gap-2 text-sm"><span>Bei Bedarf mit der Maus Schwärzungsrechtecke ziehen.</span><Button type="button" variant="outline" disabled={!redactions.length} onClick={()=>{setRedactions(r=>r.slice(0,-1));changed();}}>Letzte Schwärzung zurücknehmen</Button><span>{redactions.length} Bereich(e)</span></div>}
       <div ref={scroller} onScroll={inspectScroll} data-pdf-review-scroller style={{flex:"1 1 0",minHeight:0,overflow:"auto",border:"1px solid #b8c9c3"}}>
