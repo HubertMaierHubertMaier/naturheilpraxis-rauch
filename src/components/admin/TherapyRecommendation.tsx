@@ -22,6 +22,7 @@ import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAddition
 import { SupplementaryFindingsFields } from "./therapy/SupplementaryFindingsFields";
 import { PdfArchiveReviewDialog } from "./therapy/PdfArchiveReviewDialog";
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
+import { clinicalDataIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDataPrivacy";
 import { explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
@@ -704,9 +705,7 @@ const buildAnalysisFingerprint = (chunks: AnalysisDocChunk[], context: string) =
 const getAnalysisCheckpointKey = (pseudonymId: string, fingerprint: string) => `therapy.befundAnalysis.v2.${normalizePseudonymId(pseudonymId) || "ohne-pseudonym"}.${fingerprint}`;
 
 const getLatestBefundDisplayKey = (pseudonymId: string) => `therapy.befundAnalysis.latest.${normalizePseudonymId(pseudonymId)}`;
-const residualIdentifierCategories = (value: unknown) => directIdentifierCategories(
-  typeof value === "string" ? value : JSON.stringify(value),
-);
+const residualIdentifierCategories = clinicalDataIdentifierCategories;
 
 type LatestBefundDisplay = { html: string; progress: string; reportKind: "befund_auswertung"; meta?: any; createdAt?: string };
 type DisplayedBefundSourceStand = { createdAt: string; entries: SourceManifestEntry[] };

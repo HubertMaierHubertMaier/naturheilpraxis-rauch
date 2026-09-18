@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { deidentifyClinicalData, directIdentifierCategories } from "../_shared/clinicalDeidentification.ts";
+import { deidentifyClinicalData } from "../_shared/clinicalDeidentification.ts";
+import { clinicalDataIdentifierCategories } from "../_shared/clinicalDataPrivacy.ts";
 import { recognizeMedicationGroups } from "../_shared/therapySafety.ts";
 import { formatCurrentNaturalIntake } from "../_shared/currentIntakeContext.ts";
 import { parseTherapySourceScope, parseTherapySourceStageId, verifiedSourceLimitedTherapyInput } from "../_shared/therapySourceScope.ts";
@@ -840,7 +841,7 @@ serve(async (req) => {
 
     // Patientenkontext vor jeder externen KI-Verarbeitung deterministisch bereinigen.
     let requestBody = deidentifyClinicalData(await req.json()) as Record<string, any>;
-    const residualIdentifiers = directIdentifierCategories(JSON.stringify(requestBody));
+    const residualIdentifiers = clinicalDataIdentifierCategories(requestBody);
     if (residualIdentifiers.length) {
       return new Response(JSON.stringify({ error: `Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}` }), {
         status: 400,

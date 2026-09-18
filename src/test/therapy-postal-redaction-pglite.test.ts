@@ -8,6 +8,7 @@ const correction = migration("20260918170000_preserve_form_rows_in_postal_redact
 const form = "Manuell prüfen (keine sichere Frage-Antwort-Zuordnung, Testabschnitt, Seite 7): 00000\nManuell prüfen (keine sichere Frage-Antwort-Zuordnung, Testabschnitt, Seite 7): ooooo |";
 let db: PGlite;
 let originalResult: string;
+let originalMeasurementResult: string;
 const redact = async (value: string) => (await db.query<{ value: string }>(
   "select public.redact_therapy_pii_text($1) as value", [value],
 )).rows[0].value;
@@ -20,6 +21,8 @@ beforeAll(async () => {
   originalResult = await redact(form);
   await db.query("insert into public.therapy_sessions (id, eingabe_daten) values (1, $1::jsonb)", [JSON.stringify({ anamnese: form })]);
   await db.exec(correction);
+  originalMeasurementResult = await redact("Hering 0,245");
+  await db.exec(migration("20260918193000_preserve_device_measurement_rows.sql"));
 }, 20000);
 afterAll(async () => { await db?.close(); });
 
@@ -52,6 +55,24 @@ describe("postal redaction does not consume form rows", () => {
   it("preserves medication doses, negatives and clinical measurements", async () => {
     const text = "Keine Allergien. Vitamin D3 1000 IE täglich. Magnesium 200 mg. CRP 12,5 mg/l. Blutdruck 120/80 mmHg.";
     expect(await redact(text)).toBe(text);
+  });
+  it("preserves device rows previously misclassified as street addresses", async () => {
+    expect(originalMeasurementResult).toContain("[Anschrift entfernt]");
+    const text = "Metatron\nAal 0,350\nHering 0,245\nLachs 0,128\n";
+    expect(await redact(text)).toBe(text);
+    expect(await redact(text.split("\n").join("\r\n"))).toBe(text.split("\n").join("\r\n"));
+  });
+  it("retains literal token-like text and multiple protected rows exactly", async () => {
+    const text = "__CLINICAL_DEVICE_ROW_1__\nHering 0,245\nHering 0.125";
+    expect(await redact(text)).toBe(text);
+  });
+  it("does not protect explicit name/address fields or ordinary addresses as measurements", async () => {
+    expect(await redact("Name: Erika Beispiel\nTeststraße 12, 10115 Berlin")).not.toMatch(/Erika|Beispiel|Teststraße|10115|Berlin/);
+    expect(await redact("Anschrift: Testweg 12,14")).toContain("[Anschrift entfernt]");
+    expect(await redact("Hering 12")).toContain("[Anschrift entfernt]");
+  });
+  it("preserves empty text and exact trailing line endings", async () => {
+    for (const text of ["", "\n", "\r\n", "Hering 0,245\n\n"]) expect(await redact(text)).toBe(text);
   });
   it("retains the other privacy protections", async () => {
     const result = await redact("E-Mail: beispiel@example.invalid\nTelefon: +49 30 12345678\nGeburtsdatum: 01.01.1970\nTeststraße 12, 10115 Berlin");

@@ -23,7 +23,7 @@ describe("therapy safety", () => {
     const source = readFileSync(resolve(process.cwd(), "supabase/functions/therapy-recommend/index.ts"), "utf8");
     expect(source).toContain("INTERNE naturheilkundliche KANDIDATENLISTE");
     expect(source).toContain("deidentifyClinicalData(await req.json())");
-    expect(source).toContain("directIdentifierCategories(JSON.stringify(requestBody))");
+    expect(source).toContain("clinicalDataIdentifierCategories(requestBody)");
     expect(source).toContain("Hoechstens 3 essentielle und 3 empfohlene Kernkandidaten");
     expect(source).toContain('.from("kb_articles")');
     expect(source).toContain('.from("kb_article_revisions")');

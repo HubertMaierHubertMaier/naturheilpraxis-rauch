@@ -12,7 +12,8 @@ import {
   normalizeLabParameter,
   normalizeLabUnit,
 } from "../_shared/labTrendAnalysis.ts";
-import { deidentifyClinicalData, deidentifyClinicalText, directIdentifierCategories, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
+import { deidentifyClinicalData, deidentifyClinicalText, deidentifyClinicalReportHtml } from "../_shared/clinicalDeidentification.ts";
+import { clinicalDataIdentifierCategories } from "../_shared/clinicalDataPrivacy.ts";
 import { assertCompletePartialCollections, attachClinicalSourceEvidence, hasCompletePartialCollections, combineClinicalPartials, deduplicateClinicalFacts, clinicalEvidenceText } from "../_shared/clinicalSourceEvidence.ts";
 import { requiresVerifiedFormReport, isQuestionnaireSource } from "../_shared/questionnaireEvidence.ts";
 import { normalizeNativeIaaClaims, renderCanonicalIaaSection } from "../_shared/nativeIaaEvidence.ts";
@@ -543,7 +544,7 @@ function normalizePartialAnalysisJson(raw: string, block?: DocBlock, part = "") 
   normalized.anamnese = Object.fromEntries(ANALYSIS_ANAMNESE_KEYS.map((key) => [key, Array.isArray(sourceAnamnese[key]) ? sourceAnamnese[key] : []]));
   const withEvidence = block ? attachClinicalSourceEvidence(normalized, block.text, block.label, part) : normalized;
   const serialized = JSON.stringify(deidentifyClinicalData(withEvidence));
-  const residualIdentifiers = directIdentifierCategories(serialized);
+  const residualIdentifiers = clinicalDataIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
   return serialized;
 }
@@ -555,7 +556,7 @@ function validateNormalizedPartialAnalysisJson(raw: string) {
   if (!parsed.anamnese || typeof parsed.anamnese !== "object" || Array.isArray(parsed.anamnese)) throw new Error("Teilanalysen-JSON hat keine strukturierte Anamnese");
   if (!ANALYSIS_ANAMNESE_KEYS.every((key) => Array.isArray(parsed.anamnese[key]))) throw new Error("Teilanalysen-JSON hat nicht alle Anamnese-Listen");
   const serialized = JSON.stringify(deidentifyClinicalData(normalizeNativeIaaClaims(parsed)));
-  const residualIdentifiers = directIdentifierCategories(serialized);
+  const residualIdentifiers = clinicalDataIdentifierCategories(serialized);
   if (residualIdentifiers.length) throw new Error(`Datenschutz-Sicherheitsstopp in Teilanalyse: ${residualIdentifiers.join(", ")}`);
   return serialized;
 }
@@ -1031,7 +1032,7 @@ serve(async (req) => {
         });
       }
       body = deidentifyClinicalData(JSON.parse(raw)) as AnalyzeBody;
-      const residualIdentifiers = directIdentifierCategories(JSON.stringify(body));
+      const residualIdentifiers = clinicalDataIdentifierCategories(body);
       if (residualIdentifiers.length) {
         return new Response(JSON.stringify({ error: `Datenschutz-Sicherheitsstopp: ${residualIdentifiers.join(", ")}` }), {
           status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
