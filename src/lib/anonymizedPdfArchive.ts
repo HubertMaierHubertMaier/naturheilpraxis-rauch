@@ -41,6 +41,67 @@ export async function prepareAnonymizedPdfArchive(file: Blob & { name: string },
   return promise;
 }
 
+/** Rebuild a previously generated image-only copy; never restore an approval flag. */
+export async function restoreAnonymizedPdfArchive(
+  file: File, expectedPages: number, onProgress?: (message: string) => void, isCurrent: () => boolean = () => true,
+): Promise<File> {
+  if (!Number.isInteger(expectedPages) || expectedPages < 1 || expectedPages > 1000
+    || file.size <= 0 || file.size > 50 * 1024 * 1024
+    || (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"))) {
+    throw new Error("Passende zuvor erzeugte PDF-Kopie und bestätigte Seitenzahl fehlen.");
+  }
+  const loading = pdfjs.getDocument({ data: await file.arrayBuffer() });
+  let output: jsPDF | undefined;
+  try {
+    const document = await loading.promise;
+    const { info } = await document.getMetadata();
+    const metadata = info as Record<string, unknown>;
+    if (document.numPages !== expectedPages || metadata.Title !== "Anonymisierte Befundkopie"
+      || metadata.Creator !== "Lokale PDF-Anonymisierung" || metadata.IsAcroFormPresent || metadata.IsXFAPresent
+      || await document.getAttachments() || await document.getJSActions()) {
+      throw new Error("Diese Datei ist keine passende zuvor erzeugte anonyme PDF-Kopie. Das Original bleibt unverändert.");
+    }
+    let totalPixels = 0, encodedBytes = 0;
+    for (let number = 1; number <= document.numPages; number++) {
+      if (!isCurrent()) throw new Error("Der Fall wurde gewechselt; die Kopie wurde nicht übernommen.");
+      onProgress?.(`PDF-Kopie wiederaufnehmen: Seite ${number} von ${document.numPages}`);
+      const page = await document.getPage(number);
+      const canvas = documentOwnerCanvas();
+      try {
+        if ((await page.getTextContent()).items.length || (await page.getAnnotations()).length) {
+          throw new Error("Die ausgewählte Kopie enthält Text- oder Anmerkungsebenen. Bitte den normalen PDF-Prüfweg verwenden.");
+        }
+        const viewport = page.getViewport({ scale: 2 });
+        canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+        const pixels = canvas.width * canvas.height;
+        totalPixels += pixels;
+        if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 10_000_000 || totalPixels > 200_000_000) {
+          throw new Error("Die PDF-Kopie überschreitet das lokale Bilddatenbudget.");
+        }
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("PDF-Kopie konnte nicht lokal wiederaufgenommen werden.");
+        await waitForPdfRender(page.render({ canvas, canvasContext: context, viewport, background: "rgb(255,255,255)", annotationMode: pdfjs.AnnotationMode.DISABLE }));
+        const png = await canvasToPngBytes(canvas);
+        encodedBytes += png.byteLength;
+        if (encodedBytes > 40 * 1024 * 1024) throw new Error("Die PDF-Kopie überschreitet das lokale Bilddatenbudget.");
+        const dimensions: [number, number] = [viewport.width / 2, viewport.height / 2];
+        const orientation = dimensions[0] > dimensions[1] ? "landscape" : "portrait";
+        if (!output) {
+          output = new jsPDF({ unit: "pt", format: dimensions, orientation, compress: true });
+          output.setProperties({ title: "Anonymisierte Befundkopie", author: "", subject: "", keywords: "", creator: "Lokale PDF-Anonymisierung" });
+        } else output.addPage(dimensions, orientation);
+        // New rendered pixels only: no old metadata, unused PDF objects or capabilities.
+        output.addImage(png, "PNG", 0, 0, dimensions[0], dimensions[1], undefined, "FAST");
+      } finally { canvas.width = 1; canvas.height = 1; page.cleanup(); }
+    }
+    if (!isCurrent() || !output || output.getNumberOfPages() !== expectedPages) throw new Error("PDF-Wiederaufnahme nicht vollständig bestätigt.");
+    const copy = new File([output.output("blob")], "anonymisierte-befundkopie.pdf", { type: "application/pdf" });
+    if (copy.size > 50 * 1024 * 1024) throw new Error("PDF-Kopie überschreitet 50 MB.");
+    registerPreparedPdfArchiveCopy(copy);
+    return copy;
+  } finally { await loading.destroy(); }
+}
+
 async function createCopy(file: Blob & { name: string }, onProgress:((message: string) => void)|undefined,isCurrent:()=>boolean,manualTextScope?:string): Promise<File> {
   clearManualPdfTextRedactions(file);
   const loading = pdfjs.getDocument({data:await file.arrayBuffer(),password:passwords.get(file)});

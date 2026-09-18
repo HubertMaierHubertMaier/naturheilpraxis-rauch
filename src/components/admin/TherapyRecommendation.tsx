@@ -104,7 +104,7 @@ import { archiveCopyAfterPreviewTextEdit, archivePatientOriginal, verifyArchived
 import { normalizePatientPseudonym, STANDARD_PATIENT_PSEUDONYM } from "../../../supabase/functions/_shared/patientPseudonym";
 import { readWindowPatientInputDraft } from "@/lib/patientDraftRecovery";
 import { inferDocumentDateFromFilename, readVievaPdfPassword, rememberVievaPdfPassword } from "@/lib/batchDocumentDefaults";
-import { prepareAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { prepareAnonymizedPdfArchive, restoreAnonymizedPdfArchive, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
 import { applyManualPdfTextRedactions, manualPdfTextBindingStatus } from "@/lib/manualPdfTextRedaction";
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
@@ -4088,6 +4088,31 @@ export function TherapyRecommendation() {
     }
   };
 
+  const restorePendingPdfCopy = async (item: PendingDirectBefundFile, file: File) => {
+    const pid = normalizePseudonymId(pseudonymId);
+    const userId = localSelectionCacheUserRef.current;
+    const generation = patientScopeGenerationRef.current;
+    const isCurrent = () => generation === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
+      && localSelectionCacheUserRef.current === userId;
+    if (!userId || !isPatientScopedStorageReady(pid) || normalizePseudonymId(item.sourcePseudonymId) !== pid
+      || !item.previewText?.trim() || !item.file.size || !item.pages || item.archiveCopy) return;
+    setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+      ? { ...row, status: "processing", privacyReviewed: false, error: undefined, errorKind: undefined } : row));
+    try {
+      const copy = await restoreAnonymizedPdfArchive(file, item.pages, progress => {
+        if (isCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
+      }, isCurrent);
+      if (!isCurrent()) return;
+      setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+        ? { ...row, status: "ready", archiveCopy: copy, privacyReviewed: false, progress: undefined,
+          recoveryNotice: "PDF-Kopie wiederaufgenommen; Textvorschau unverändert. Bitte beide nochmals sichtbar prüfen und bestätigen." } : row));
+    } catch (error) {
+      if (isCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+        ? { ...row, status: "error", privacyReviewed: false, progress: undefined, errorKind: "PDF-Wiederaufnahme",
+          error: error instanceof Error ? error.message : "Die PDF-Kopie konnte nicht wiederaufgenommen werden." } : row));
+    }
+  };
+
   const persistImportedDocumentText = async (
     text: string, sourcePseudonymId: string,
     field: "laborKomplett" | "arztbericht" | "metatronHeel" | "vievaPlus" | "sonstigeUntersuchungen" | "apothekerRezept" | "eigeneTherapieVorlage",
@@ -5518,6 +5543,17 @@ export function TherapyRecommendation() {
                     {item.recoveryNotice && <p className="text-xs text-amber-800 dark:text-amber-200">{item.recoveryNotice}</p>}
                     {item.localCacheError && <p className="text-xs text-amber-800 dark:text-amber-200">{item.localCacheError}</p>}
                     {item.status === "error" && item.errorKind === "PDF-Textabgleich" && item.archiveCopy && <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-200"><Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Lokale Arbeitskopie erneut prüfen</Button><span>Markierungen sind noch nicht zur Übernahme freigegeben.</span></div>}
+                    {item.status === "error" && item.previewText?.trim() && item.file.size > 0 && item.pages && isPdfClinicalDocument(item.file) && !item.archiveCopy && (
+                      <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                        <p>Die Textvorschau ist erhalten. Falls Sie die erzeugte anonyme PDF-Kopie gesichert haben, können Sie sie zum selben Original wieder auswählen. Die Kopie wird lokal neu aus Bildern aufgebaut; Text, Metadaten und Freigaben werden nicht aus der PDF übernommen.</p>
+                        <label className="mt-2 block font-medium">Anonyme PDF-Kopie wiederaufnehmen
+                          <input type="file" accept="application/pdf,.pdf" data-restore-pdf-copy className="mt-1 block w-full text-xs" onChange={event => {
+                            const file = event.target.files?.[0]; event.target.value = "";
+                            if (file) void restorePendingPdfCopy(item, file);
+                          }} />
+                        </label>
+                      </div>
+                    )}
                     {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
