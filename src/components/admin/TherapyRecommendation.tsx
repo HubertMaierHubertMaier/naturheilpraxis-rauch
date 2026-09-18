@@ -4641,6 +4641,8 @@ export function TherapyRecommendation() {
   const recommendedUseProModel = deepAnalysisReasons.length > 0;
   const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung (Pro für Befundabschluss und Therapie)" : "Vollständige Auswertung";
   const selectedAnalysisLabel = buildAnalysisProfile(useMapReduce, useProModel).label;
+  const hasIaaContent = patientDataOwnerRef.current === normalizePseudonymId(pseudonymId)
+    && (/\bIAA\b/i.test(anamnese) || Boolean(formatIAAAssessment(anamneseZusatz).trim()));
   const recommendedAnalysisIsSelected = useMapReduce && useProModel === recommendedUseProModel;
   const applyRecommendedAnalysis = () => {
     setUseMapReduce(true);
@@ -6014,7 +6016,7 @@ export function TherapyRecommendation() {
               </span>
                <Badge variant="outline" className="ml-auto text-[10px] font-mono">
                 {[symptome, erkrankung, laborErhoeht, laborErniedrigt, laborKomplett, stuhlbefund, arztbericht, metatronHeel, sonstigeUntersuchungen, vievaPlus, perplexityAnalyse, naturheilMittelHomoeopathie, naturheilMittelPflanzenheilkunde, naturheilMittelVitamine, naturheilMittelMineralstoffe, naturheilMittelSpurenelemente, bisherigeMittel, eigeneTherapieVorlage]
-                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0)}/20 Felder
+                  .filter((s) => s && s.trim()).length + (anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? 1 : 0) + (mannayanOrders.length ? 1 : 0) + (hasIaaContent ? 1 : 0)}/21 Felder
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -6030,6 +6032,10 @@ export function TherapyRecommendation() {
                 <TabsTrigger value="anamnese" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-950/40">
                   <span>📋 Anamnese</span>
                   <span className="text-[9px] opacity-70 font-mono">{anamnese.trim() || loadedDocumentInventory.some((doc) => /anamnese|anamnesebogen/i.test(`${doc.name} ${doc.note || ""}`)) ? "1" : "0"}</span>
+                </TabsTrigger>
+                <TabsTrigger value="iaa" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-teal-100 dark:data-[state=active]:bg-teal-950/40">
+                  <span>📊 IAA</span>
+                  <span className="text-[9px] opacity-70 font-mono" title="IAA-Inhalt vorhanden; die Prüfung einzelner Bewertungen ist separat ausgewiesen.">{hasIaaContent ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="labor" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>🧪 Labor</span>
@@ -6055,7 +6061,7 @@ export function TherapyRecommendation() {
                 </TabsTrigger>
                 <TabsTrigger value="metatron" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal data-[state=active]:bg-amber-100 dark:data-[state=active]:bg-amber-950/40">
                   <span>Metatron Hospital</span>
-                  <span className="text-[9px] opacity-70 font-mono">{metatronHeel.trim() ? "1" : "0"}</span>
+                  <span className="text-[9px] opacity-70 font-mono" title="1 = Metatron-Inhalt im Befundfeld vorhanden. Eine noch ungeprüfte Dateivorschau zählt nicht als übernommener Inhalt.">{metatronHeel.trim() ? "1" : "0"}</span>
                 </TabsTrigger>
                 <TabsTrigger value="mittel" className="text-[11px] sm:text-xs px-1 py-2 flex flex-col gap-0.5 leading-tight whitespace-normal">
                   <span>Naturheilkundliche Mittel</span>
@@ -6121,6 +6127,22 @@ export function TherapyRecommendation() {
                 </div>
                 <AnamnesisAdditionalFields values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
                 <SupplementaryFindingsFields section="hrv" values={anamneseZusatz} onChange={setAnamneseZusatz} disabled={isImportingAnamnesis || isAnalyzingDocs} />
+              </TabsContent>
+
+              {/* ===== TAB: IAA ===== */}
+              <TabsContent value="iaa" className="space-y-3 mt-4">
+                <IAAAssessmentPanel
+                  key={normalizePseudonymId(pseudonymId)}
+                  pseudonymId={normalizePseudonymId(pseudonymId)}
+                  values={patientDataOwnerRef.current === normalizePseudonymId(pseudonymId) ? anamneseZusatz : {}}
+                  hasUnstructuredIAA={/\bIAA\b/i.test(anamnese)}
+                  disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isImportingAnamnesis || isAnalyzingDocs || isStreaming}
+                  onChange={values => {
+                    const owner = normalizePseudonymId(pseudonymId);
+                    if (pseudonymIdRef.current === owner && patientDataOwnerRef.current === owner && isPatientScopedStorageReady(owner)) setAnamneseZusatz(values);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">Die IAA-Angaben gehören zu diesem Patientenfall und werden mit den übrigen Eingaben gespeichert. Ein vorhandener IAA-Bogen bedeutet noch nicht, dass alle einzelnen Bewertungen sicher zugeordnet sind.</p>
               </TabsContent>
 
               {/* ===== TAB: Anamnese ===== */}
@@ -6885,17 +6907,13 @@ export function TherapyRecommendation() {
 
       <Card id="patient-intake-analysis" className="scroll-mt-64 border-primary/30 bg-background shadow-sm">
         <CardContent className="pt-4 pb-4">
-          <IAAAssessmentPanel
-            key={normalizePseudonymId(pseudonymId)}
-            pseudonymId={normalizePseudonymId(pseudonymId)}
-            values={patientDataOwnerRef.current === normalizePseudonymId(pseudonymId) ? anamneseZusatz : {}}
-            hasUnstructuredIAA={/\bIAA\b/i.test(anamnese)}
-            disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isImportingAnamnesis || isAnalyzingDocs || isStreaming}
-            onChange={values => {
-              const owner = normalizePseudonymId(pseudonymId);
-              if (pseudonymIdRef.current === owner && patientDataOwnerRef.current === owner && isPatientScopedStorageReady(owner)) setAnamneseZusatz(values);
-            }}
-          />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-teal-300 p-3 text-sm">
+            <span>{anamneseZusatz.iaaReviewRequired === "true" ? "IAA – Prüfung am Original noch offen" : hasIaaContent ? "IAA-Angaben im Patientenbefund vorhanden" : "Noch keine IAA-Angaben erfasst"}</span>
+            <Button type="button" variant="outline" onClick={() => {
+              setClinicalInputTab("iaa");
+              requestAnimationFrame(() => document.getElementById("patient-intake-facts")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+            }}>IAA öffnen / prüfen</Button>
+          </div>
           <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/25 p-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0 flex-1">
