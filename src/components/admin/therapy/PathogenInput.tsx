@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ClipboardPaste, List } from "lucide-react";
+import { METATRON_PATHOGEN_GROUPS, metatronGroupFor, metatronGroupLabel, parseMetatronGroup, type MetatronPathogenGroup } from "@/lib/metatronPathogenGroups";
 
 export interface PathogenEntry {
   id: string;
   name: string;
   organe: string;
   index: string;
+  category?: MetatronPathogenGroup;
 }
 
 interface Props {
@@ -19,7 +21,7 @@ interface Props {
 }
 
 const newId = () => Math.random().toString(36).slice(2, 9);
-export const emptyEntry = (): PathogenEntry => ({ id: newId(), name: "", organe: "", index: "" });
+export const emptyEntry = (category?: MetatronPathogenGroup): PathogenEntry => ({ id: newId(), name: "", organe: "", index: "", ...(category ? { category } : {}) });
 
 /**
  * Klassifiziert den Metatron/NLS-Resonanz-Index.
@@ -56,7 +58,7 @@ export function formatPathogensForAI(entries: PathogenEntry[]): string {
     "Hinweis zur Index-Skala (Hospital Metatron HR / NLS): KLEINER Wert = HOHE Wahrscheinlichkeit für materielles/aktives Vorhandensein. " +
     "0.000–0.250 sehr hoch, 0.251–0.425 hoch, 0.426–0.600 mittel, 0.601–0.700 gering (nur ergänzend), >0.700 sehr gering (nur informativ, NICHT priorisieren).";
   const lines = filled.map((e) => {
-    const parts = [e.name.trim()];
+    const parts = [e.name.trim(), `Metatron-Gruppe: ${metatronGroupLabel(metatronGroupFor(e))}`];
     if (e.organe.trim()) parts.push(`Organe: ${e.organe.trim().replace(/\n+/g, ", ")}`);
     if (e.index.trim()) {
       const c = classifyPathogenIndex(e.index);
@@ -170,6 +172,7 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   const stripBullet = (s: string) => s.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "");
 
   let current: PathogenEntry | null = null;
+  let activeCategory: MetatronPathogenGroup | undefined;
   const flush = () => {
     if (current) {
       entries.push(current);
@@ -182,8 +185,10 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
   for (const raw of rawLines) {
     const line = stripBullet(raw);
     if (!line) continue;
-    if (isCategoryHeader(line)) {
+    const groupHeader = parseMetatronGroup(line);
+    if (groupHeader || isCategoryHeader(line)) {
       flush();
+      activeCategory = groupHeader;
       continue;
     }
 
@@ -236,7 +241,7 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
       name = name.replace(/[\s:|,;]+$/, "").trim();
 
       if (name) {
-        entries.push({ id: newId(), name, organe, index });
+        entries.push({ id: newId(), name, organe, index, ...(activeCategory ? { category: activeCategory } : {}) });
       }
       continue;
     }
@@ -244,11 +249,11 @@ export function parseBulkPaste(text: string): PathogenEntry[] {
     // --- Block-Format (Metatron) ---
     if (isPathogenNameUpper(line)) {
       flush();
-      current = { id: newId(), name: line, organe: "", index: "" };
+      current = { id: newId(), name: line, organe: "", index: "", ...(activeCategory ? { category: activeCategory } : {}) };
       continue;
     }
     if (!current) {
-      entries.push({ id: newId(), name: line, organe: "", index: "" });
+      entries.push({ id: newId(), name: line, organe: "", index: "", ...(activeCategory ? { category: activeCategory } : {}) });
       continue;
     }
     if (isNumeric(line)) {
@@ -281,8 +286,8 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
     onChange(filtered.length ? filtered : [emptyEntry()]);
   };
 
-  const add = () => {
-    onChange([...entries, emptyEntry()]);
+  const add = (category?: MetatronPathogenGroup) => {
+    onChange([...entries, emptyEntry(category)]);
     setManualOpen(true);
   };
 
@@ -364,17 +369,31 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
           {manualOpen ? "Liste ausblenden" : `Liste bearbeiten (${filledCount})`}
         </Button>
         {manualOpen && (
-          <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={add}>
+          <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => add()}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Zeile
           </Button>
         )}
       </div>
 
-      {manualOpen && (
-        <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-          {entries.map((e) => (
+      <div className="space-y-3">
+        {[...METATRON_PATHOGEN_GROUPS, { value: "unassigned" as const, label: "Noch zuzuordnen" }].map(group => {
+          const grouped = entries.filter(entry => metatronGroupFor(entry) === group.value
+            && (manualOpen || entry.name.trim() || entry.organe.trim() || entry.index.trim()));
+          if (group.value === "unassigned" && !grouped.length) return null;
+          return <section key={group.value} aria-label={`Metatron-Pathogene: ${group.label}`} className="rounded-lg border p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-semibold">{group.label} <span className="font-normal text-muted-foreground">({grouped.filter(entry => entry.name.trim()).length})</span></h4>
+              <Button type="button" variant="outline" size="sm" onClick={() => add(group.value)}>Eintrag hinzufügen</Button>
+            </div>
+            {!grouped.length && <p className="text-xs text-muted-foreground">Noch keine Einträge erfasst.</p>}
+            {!manualOpen && grouped.length > 0 && <ul className="space-y-1 text-xs">{grouped.map(entry => <li key={entry.id}><strong>{entry.name}</strong>{entry.organe && ` · ${entry.organe}`}{entry.index && ` · Index: ${entry.index}`}</li>)}</ul>}
+            {manualOpen && grouped.map((e) => (
             <div key={e.id} className="grid grid-cols-12 gap-1.5 items-start">
+              <select className="col-span-12 rounded border bg-background p-1.5 text-xs" aria-label={`Gruppe für ${e.name || "neuen Eintrag"}`} value={metatronGroupFor(e)} onChange={event => update(e.id, { category: parseMetatronGroup(event.target.value) || "unassigned" })}>
+                {METATRON_PATHOGEN_GROUPS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                <option value="unassigned">Noch zuzuordnen</option>
+              </select>
               <Input
                 className="col-span-5 h-8 text-xs"
                 placeholder="Pathogen (z.B. Helicobacter pylori)"
@@ -403,9 +422,11 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </section>;
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground">Diese Gruppen gehören zu Metatron-Resonanzhinweisen. Labor-Nachweise werden im getrennten Labor-Pathogenfeld geführt. Die Gruppierung kann geprüft und korrigiert werden; unbekannte Einträge bleiben erhalten.</p>
     </div>
   );
 }
