@@ -31,7 +31,8 @@ describe("postal redaction does not consume form rows", () => {
   it.each(["\n", "\r\n", "\r", "\n\n"])("preserves arbitrary section/page labels and line ending %j", async (newline) => {
     const text = `Testabschnitt, Seite 18: 48271${newline}Manuell prüfen (Zuordnung offen)`;
     expect(await redact(text)).toBe(text);
-    expect(await redact(form.replaceAll("\n", newline))).toBe(form.replaceAll("\n", newline));
+    const wrapped = form.split("\n").join(newline);
+    expect(await redact(wrapped)).toBe(wrapped);
   });
   it("does not treat zero placeholders as postal codes even on the same line", async () => {
     const text = "Antworten: 00000 Manuell prüfen";
