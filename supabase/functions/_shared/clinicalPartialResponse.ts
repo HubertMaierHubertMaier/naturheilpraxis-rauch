@@ -19,7 +19,7 @@ export const CLINICAL_PARTIAL_RESPONSE_SCHEMA = {
   properties: {
     documents: array(fact(["datum", "quelle", "untersuchung", "hauptbefund", "auffaellig"])),
     diagnoses: array(fact(["icd10", "diagnose", "quelle", "datum", "status", "polarity"])),
-    medicationsTherapies: array(fact(["name", "sourceRole", "kategorie", "wirkstoff", "dosis", "haeufigkeit", "einnahme", "dauer", "vonWem", "datum", "indikation", "wirkmechanismus", "nebenwirkungen", "grundVerordnung", "status", "polarity"])),
+    medicationsTherapies: array(fact(["name", "sourceRole", "kategorie", "wirkstoff", "dosis", "deviceIndex", "haeufigkeit", "einnahme", "dauer", "vonWem", "datum", "indikation", "wirkmechanismus", "nebenwirkungen", "grundVerordnung", "status", "polarity"])),
     labValues: array(fact(["datum", "parameter", "wert", "einheit", "measurementMethod", "referenz", "bewertung", "bedeutung", "moeglicheSymptome", "quelle"])),
     findings: array(fact(["text", "findingType", "datum", "polarity"])),
     terms: array({ type: "object", properties: strings("term", "plain"), required: ["term", "plain"] }),

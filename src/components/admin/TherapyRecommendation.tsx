@@ -3397,8 +3397,8 @@ export function TherapyRecommendation() {
               let errorMessage = responseText || `HTTP ${chunkResp.status}`;
               try {
                 const parsedError = JSON.parse(responseText);
-                    errorMessage = parsedError.error || parsedError.message || errorMessage;
-                    if (parsedError.completionInfo?.finishReason === "length") errorMessage += " (Ausgabelimit gemeldet)";
+                errorMessage = parsedError.error || parsedError.message || errorMessage;
+                if (parsedError.completionInfo?.finishReason === "length") errorMessage += " (Ausgabelimit gemeldet)";
               } catch { /* Antwort war kein JSON */ }
               throw new Error(errorMessage);
             }
