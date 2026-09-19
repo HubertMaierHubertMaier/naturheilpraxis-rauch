@@ -22,6 +22,7 @@ import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAddition
 import { SupplementaryFindingsFields } from "./therapy/SupplementaryFindingsFields";
 import { PdfArchiveReviewDialog } from "./therapy/PdfArchiveReviewDialog";
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
+import { analysisRetryChunkLimit, isAnalysisOutputFailure } from "@/lib/analysisRetryPolicy";
 import { clinicalDataIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDataPrivacy";
 import { explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
@@ -321,7 +322,6 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
 };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
-const ANALYSIS_RETRY_CHUNK_MAX_CHARS = 2000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
 const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-form-answers-v13";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
@@ -337,7 +337,7 @@ const splitAnalysisText = (label: string, value: string, maxChars = ANALYSIS_CHU
   return splitPageAwareClinicalText(label, value, maxChars);
 };
 
-const isRecoverableAnalysisTimeout = (message: string) => /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig|inhaltlose Teilanalyse|keine extrahierten Daten/i.test(message);
+const isRecoverableAnalysisTimeout = (message: string) => isAnalysisOutputFailure(message) || /401|Nicht autorisiert|JWT|expired|429|500|502|503|504|AI Gateway|IDLE_TIMEOUT|idle timeout|timeout|NetworkError|Failed to fetch|Zeitlimit|Leere Antwort|Ungültige JSON|ungültige\/unkomplette Teilanalyse|unvollständig|inhaltlose Teilanalyse|keine extrahierten Daten/i.test(message);
 
 type AnalysisCheckpoint = {
   version: 2 | 3;
@@ -352,6 +352,7 @@ type AnalysisCheckpoint = {
   duplicateNotes?: string[];
   analysisProfile?: StartedAnalysisProfile;
   status?: "in_progress" | "paused" | "all_chunks_complete" | "final_complete";
+  failure?: { part: number; message: string; retryMaxChars?: number };
   updatedAt: string;
 };
 
@@ -2970,7 +2971,7 @@ export function TherapyRecommendation() {
       const done = Number(checkpoint?.completedChunks || 0);
       const total = Number(checkpoint?.totalChunks || 0);
       const updated = new Date(latestCheckpoint.updated_at).toLocaleString("de-DE");
-      return `\n\n⚠ Neuerer Befund-Lauf ist noch nicht fertig.\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\nDer unten angezeigte Bericht ist der letzte vollständig fertige Stand. Fortsetzen nur über „Nur Befund-Auswertung (HTML)“ — „Alles neu auswerten“ startet komplett neu und kostet erneut Credits.`;
+      return `\n\n⚠ Neuerer Befund-Lauf ist noch nicht fertig.\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}${checkpoint?.failure?.message ? `\nLetzter Fehler in Teil ${checkpoint.failure.part}: ${checkpoint.failure.message}` : ""}\nDer unten angezeigte Bericht ist der letzte vollständig fertige Stand. Über „Gesamtbericht aktualisieren“ fortsetzen; die gesicherten Teilanalysen bleiben erhalten.`;
     })();
 
     if (checkpointTs > newestFinishedTs && !cloudHtml && !localSnapshot) {
@@ -2981,7 +2982,7 @@ export function TherapyRecommendation() {
       setDocAnalysisHtml("");
       setDisplayedBefundSourceStand(null);
       setDocAnalysisProgress(
-        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}\n\nEs wurde kein vollständig fertiger Bericht gefunden. Klicke „Nur Befund-Auswertung (HTML)“, um diesen Lauf fortzusetzen. Bitte NICHT „Alles neu auswerten“, außer du willst bewusst komplett neu starten.`
+        `Neuerer Befund-Lauf gefunden, aber noch NICHT fertig.\nPseudonym: ${pid}\nLetzter Zwischenstand: ${updated}${total ? `\nFortschritt: ${done}/${total} Teilpakete` : ""}${checkpoint?.failure?.message ? `\nLetzter Fehler in Teil ${checkpoint.failure.part}: ${checkpoint.failure.message}` : ""}\n\nÜber „Gesamtbericht aktualisieren“ fortsetzen. Die bereits gespeicherten Teilanalysen werden weiterverwendet.`
       );
       setLatestBefundLoadedFrom(null);
       if (!options?.quiet) toast({ title: "Neuer Lauf ist noch nicht fertig", description: total ? `Zwischenstand ${done}/${total} Teilpakete · bitte fortsetzen.` : "Bitte Befund-Auswertung fortsetzen." });
@@ -3396,7 +3397,8 @@ export function TherapyRecommendation() {
               let errorMessage = responseText || `HTTP ${chunkResp.status}`;
               try {
                 const parsedError = JSON.parse(responseText);
-                errorMessage = parsedError.error || parsedError.message || errorMessage;
+                    errorMessage = parsedError.error || parsedError.message || errorMessage;
+                    if (parsedError.completionInfo?.finishReason === "length") errorMessage += " (Ausgabelimit gemeldet)";
               } catch { /* Antwort war kein JSON */ }
               throw new Error(errorMessage);
             }
@@ -3415,7 +3417,7 @@ export function TherapyRecommendation() {
           } catch (err) {
             lastError = (err as Error).message || String(err);
             if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);
-            if (attempt === 3 || !isRecoverableAnalysisTimeout(lastError)) break;
+            if (attempt === 3 || isAnalysisOutputFailure(lastError) || !isRecoverableAnalysisTimeout(lastError)) break;
             writeProgress(`  ↳ Versuch ${attempt + 1}/3 nach kurzer Pause…`);
             await analysisDelay(1200 * attempt);
           }
@@ -3464,9 +3466,22 @@ export function TherapyRecommendation() {
       for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
+        const retryMaxChars = analysisRetryChunkLimit(chunks[i].text.length, checkpoint?.failure?.part === i + 1 ? checkpoint.failure.retryMaxChars : undefined);
+        const resumeFailedPart = checkpoint?.status === "paused" && i === checkpoint.completedChunks && !!retryMaxChars;
         try {
-          const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
-          partials.push(partial);
+          if (resumeFailedPart) {
+            const smaller = splitAnalysisText(chunks[i].label, chunks[i].text, retryMaxChars!);
+            const recovered: string[] = [];
+            writeProgress(`Gesicherten Lauf bei Teil ${i + 1} mit ${smaller.length} kleineren Abschnitten fortsetzen.`);
+            for (let r = 0; r < smaller.length; r++) {
+              writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${smaller.length} wird gelesen…`);
+              recovered.push(await analyzeChunk(smaller[r], `${i + 1}.${r + 1}`, chunks.length + smaller.length - 1));
+            }
+            partials.push(...recovered);
+          } else {
+            const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
+            partials.push(partial);
+          }
         } catch (error) {
           const message = (error as Error).message || "";
           // Echter Benutzer-Abbruch → wirklich stoppen
@@ -3475,8 +3490,8 @@ export function TherapyRecommendation() {
           }
           let recoveredPartials: string[] | null = null;
           let retryFailure = "";
-          if (isRecoverableAnalysisTimeout(message) && chunks[i].text.length > ANALYSIS_RETRY_CHUNK_MAX_CHARS) {
-            const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, ANALYSIS_RETRY_CHUNK_MAX_CHARS);
+          if (!resumeFailedPart && isRecoverableAnalysisTimeout(message) && retryMaxChars) {
+            const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, retryMaxChars);
             const retryResults: string[] = [];
             writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
             for (let r = 0; r < retryChunks.length; r += 1) {
@@ -3495,8 +3510,8 @@ export function TherapyRecommendation() {
           if (!recoveredPartials) {
             const failureReason = retryFailure || message;
             writeProgress(`✗ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${failureReason}). Zwischenstand bleibt bei ${i}/${chunks.length}; es wird kein unvollständiger Bericht erzeugt.`);
-            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", updatedAt: new Date().toISOString() });
-            throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden. Bitte den Lauf fortsetzen oder erneut starten.`);
+            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", failure: { part: i + 1, message: failureReason, ...(retryMaxChars ? { retryMaxChars } : {}) }, updatedAt: new Date().toISOString() });
+            throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden: ${failureReason}. Der gesicherte Zwischenstand bleibt erhalten.`);
           }
           partials.push(...recoveredPartials);
         }
