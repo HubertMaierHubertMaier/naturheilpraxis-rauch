@@ -789,8 +789,9 @@ function buildDeterministicFinalHtml(partials: string[], b: AnalyzeBody, totalCh
 </html>`;
 }
 
-async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2, opts?: { maxTokens?: number; timeoutMs?: number; attempts?: number; clinicalPartial?: boolean }): Promise<string> {
-  const maxTokens = opts?.maxTokens ?? 32000;
+type GatewayCompletionInfo = { finishReason: string; outputLimit: number; outputTokens: number | null; reasoningTokens: number | null };
+async function callGatewayText(apiKey: string, model: string, prompt: string, temperature = 0.2, opts?: { maxTokens?: number; timeoutMs?: number; attempts?: number; clinicalPartial?: boolean; onCompletion?: (info: GatewayCompletionInfo) => void }): Promise<string> {
+  let maxTokens = opts?.maxTokens ?? 32000;
   const timeoutMs = opts?.timeoutMs ?? 60_000;
   const attempts = opts?.attempts ?? 3;
   let lastError = "AI Gateway lieferte keine verwertbare Antwort";
@@ -828,6 +829,19 @@ async function callGatewayText(apiKey: string, model: string, prompt: string, te
         json = JSON.parse(bodyText);
       } catch {
         throw new Error(`AI Gateway lieferte unvollständiges JSON (${bodyText.length} Zeichen)`);
+      }
+      const finishReason = String(json.choices?.[0]?.finish_reason || "");
+      opts?.onCompletion?.({ finishReason, outputLimit: maxTokens,
+        outputTokens: Number.isFinite(json.usage?.completion_tokens) ? json.usage.completion_tokens : null,
+        reasoningTokens: Number.isFinite(json.usage?.completion_tokens_details?.reasoning_tokens) ? json.usage.completion_tokens_details.reasoning_tokens : null });
+      if (finishReason === "length") {
+        // Never pass a truncated object to the permissive JSON parser. Increase
+        // only after the provider explicitly reports the output limit, once.
+        if (opts?.clinicalPartial && maxTokens < 16000 && attempt < attempts) {
+          maxTokens = 16000;
+          continue;
+        }
+        throw new Error(`KI-Teilanalyse am Ausgabelimit abgeschnitten (${maxTokens} Tokens); Zwischenstand erhalten.`);
       }
       const content = String(json.choices?.[0]?.message?.content || "").trim();
       if (!content) throw new Error("AI Gateway lieferte leeren Inhalt");
@@ -1065,16 +1079,17 @@ serve(async (req) => {
         });
       }
       let partial = "";
+      let completionInfo: GatewayCompletionInfo | undefined;
       try {
         partial = await callGatewayText(
           LOVABLE_API_KEY,
           "google/gemini-2.5-flash",
           buildChunkPrompt({ label, text }, index, total, body),
           0.2,
-          { maxTokens: 8000, timeoutMs: 55_000, attempts: 2, clinicalPartial: true },
+          { maxTokens: 8000, timeoutMs: 55_000, attempts: 2, clinicalPartial: true, onCompletion: info => { completionInfo = info; } },
         );
       } catch (error) {
-        return new Response(JSON.stringify({ error: String((error as Error)?.message || error || "Teilpaket konnte nicht vollständig ausgewertet werden") }), {
+        return new Response(JSON.stringify({ error: String((error as Error)?.message || error || "Teilpaket konnte nicht vollständig ausgewertet werden"), completionInfo }), {
           status: 503,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -1086,7 +1101,7 @@ serve(async (req) => {
       } catch (error) {
         let missingCollections: string[] = [];
         try { missingCollections = missingClinicalPartialCollections(parseLlmJson(partial)); } catch { /* Invalid JSON remains a validation error. */ }
-        return new Response(JSON.stringify({ error: `Ungültige/unkomplette Teilanalyse: ${(error as Error).message}`, missingCollections }), {
+        return new Response(JSON.stringify({ error: `Ungültige/unkomplette Teilanalyse: ${(error as Error).message}`, missingCollections, completionInfo }), {
           status: 503,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
