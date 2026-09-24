@@ -11,9 +11,10 @@ type Props = {
   mode?: "single" | "batch";
   onModeChange?: (mode: "single" | "batch") => void;
   selectionLocked?: boolean;
+  hasSelection?: boolean;
 };
 
-export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles, onFiles, mode = "batch", onModeChange, selectionLocked = false }: Props) {
+export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles, onFiles, mode = "batch", onModeChange, selectionLocked = false, hasSelection = false }: Props) {
   const folderRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
   const [notice, setNotice] = useState("");
@@ -63,7 +64,7 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
         <input type="file" accept={CLINICAL_DOCUMENT_ACCEPT} multiple className="hidden" aria-label="Lokalen Ordner mit Dokumenten auswählen"
           ref={input => { folderRef.current = input; input?.setAttribute("webkitdirectory", ""); }}
           onChange={event => { const selected = Array.from(event.currentTarget.files || []); event.currentTarget.value = ""; acceptFiles(selected); }} />
-        <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => folderRef.current?.click()} className="gap-2">
+        <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => folderRef.current?.click()} className={`gap-2 ${hasSelection ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:bg-blue-500" : !disabled ? "border-primary/50 bg-primary/5 text-primary animate-pulse" : ""}`}>
           <FolderOpen className="h-4 w-4" /> Ordner mit Dokumenten auswählen
         </Button>
         <p className="text-xs text-muted-foreground">Eine Ablage unter Dokumente ist optional. Erst deine Auswahl startet die Prüfung; ein Ordner wird nicht automatisch überwacht.</p>
