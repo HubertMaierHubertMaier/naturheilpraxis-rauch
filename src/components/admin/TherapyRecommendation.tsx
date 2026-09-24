@@ -239,12 +239,31 @@ type PendingDirectBefundFile = {
   errorKind?: string;
   progress?: string;
   localCacheStatus?: "saving" | "saved" | "error";
+  localSavedAt?: string;
   localCacheError?: string;
   recoveryNotice?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
+const directSelectionTimestamp = (files: Array<Pick<PendingDirectBefundFile, "id">>): string => {
+  const latestSelection = Math.max(...files.map(({ id }) => Number.parseInt(id.split("-", 1)[0], 36)).filter(Number.isFinite));
+  return Number.isFinite(latestSelection)
+    ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(latestSelection))
+    : "";
+};
+const localDraftTimestamp = (value?: string): string => {
+  if (!value) return "";
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime())
+    ? ""
+    : new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(timestamp);
+};
+const directDocumentDateLabel = (documentType: DirectBefundTarget | ""): string => {
+  if (documentType === "anamnese") return "Anamnesedatum";
+  if (["labor", "metatron", "vieva", "arzt"].includes(documentType)) return "Befunddatum";
+  return "Dokumentdatum";
+};
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
@@ -1543,6 +1562,7 @@ export function TherapyRecommendation() {
             localPrivacyFindings: undefined,
             privacyFindingsRevealed: false,
             localCacheStatus: "saved" as const,
+            localSavedAt: item.savedAt,
           };
         });
         return [...recovered, ...preserved];
@@ -1620,7 +1640,7 @@ export function TherapyRecommendation() {
       if (!cacheScopeIsCurrent()) return;
       setLocalSelectionCacheIssue("");
       setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
-        ? { ...item, localCacheStatus: "saved", localCacheError: undefined }
+        ? { ...item, localCacheStatus: "saved", localSavedAt: new Date().toISOString(), localCacheError: undefined }
         : item));
     }).catch((error) => {
       if (!cacheScopeIsCurrent()) return;
@@ -5539,6 +5559,9 @@ export function TherapyRecommendation() {
             </div>
             {pendingDirectBefundFiles.length > 0 && (
               <div className="divide-y rounded-md border bg-muted/20 text-xs">
+                <p role="status" className="bg-amber-50/70 px-2 py-2 font-medium text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
+                  {pendingDirectBefundFiles.length} Dokument{pendingDirectBefundFiles.length === 1 ? "" : "e"} zur Prüfung ausgewählt · noch nicht gespeichert{directSelectionTimestamp(pendingDirectBefundFiles) ? ` · Ladedatum ${directSelectionTimestamp(pendingDirectBefundFiles)}` : ""}
+                </p>
                 {pendingDirectBefundFiles.map((item) => (
                   <div key={item.id} className="space-y-2 p-2">
                     <div className="flex items-center gap-2">
@@ -5549,7 +5572,7 @@ export function TherapyRecommendation() {
                       {item.status === "ready" && <Badge variant="outline" className="text-[10px]">Vorschau</Badge>}
                       {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
                       {item.localCacheStatus === "saving" && <span className="text-amber-700 text-[10px]">lokal wird gesichert</span>}
-                      {item.localCacheStatus === "saved" && <span className="text-emerald-700 text-[10px]">lokal gesichert · noch nicht im Fallarchiv</span>}
+                      {item.localCacheStatus === "saved" && <span className="text-emerald-700 text-[10px]">Entwurf lokal gesichert{localDraftTimestamp(item.localSavedAt) ? ` · ${localDraftTimestamp(item.localSavedAt)}` : ""} · noch nicht im Fallarchiv</span>}
                       {item.localCacheStatus === "error" && <span className="text-amber-700 text-[10px]" title={item.localCacheError}>lokale Sicherung fehlgeschlagen</span>}
                       {item.status === "error" && <span className="text-destructive">Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
                       {item.status !== "processing" && <button type="button" onClick={() => removeDirectBefundFile(item)} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
@@ -5569,7 +5592,8 @@ export function TherapyRecommendation() {
                         </label>
                       </div>
                     )}
-                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
+                    <p className="text-[11px] text-muted-foreground">Ladedatum: {directSelectionTimestamp([item]) || "wird beim Auswählen festgehalten"} · automatisch, nicht das Datum des Dokuments.</p>
+                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts {directDocumentDateLabel(item.documentType).toLowerCase()} eintragen und die Dokumentart kontrollieren.</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
@@ -5583,14 +5607,17 @@ export function TherapyRecommendation() {
                           {DIRECT_BEFUND_TARGETS.map((target) => <SelectItem key={target.value} value={target.value}>{target.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Input
-                        type="date"
-                        aria-label="Dokumentdatum"
-                        value={item.documentDate}
-                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
-                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
-                        className="h-8 text-xs"
-                      />
+                      <label className="space-y-1 text-[11px] font-medium">
+                        <span>{directDocumentDateLabel(item.documentType)}</span>
+                        <Input
+                          type="date"
+                          aria-label={directDocumentDateLabel(item.documentType)}
+                          value={item.documentDate}
+                          onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
+                          disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                          className="h-8 text-xs"
+                        />
+                      </label>
                     </div>
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
                       <p className="text-[11px] text-sky-800 dark:text-sky-200">Automatisch erkannt: {directBefundTargetLabel(item.documentType)}. Bitte vor dem Auslesen kontrollieren.</p>
