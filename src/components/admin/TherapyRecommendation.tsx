@@ -245,6 +245,12 @@ type PendingDirectBefundFile = {
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
+const formatDirectSelectionDate = (files: Array<Pick<PendingDirectBefundFile, "id">>): string => {
+  const latestSelection = Math.max(...files.map(({ id }) => Number.parseInt(id.split("-", 1)[0], 36)).filter(Number.isFinite));
+  return Number.isFinite(latestSelection)
+    ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(latestSelection))
+    : "";
+};
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
@@ -5539,6 +5545,9 @@ export function TherapyRecommendation() {
             </div>
             {pendingDirectBefundFiles.length > 0 && (
               <div className="divide-y rounded-md border bg-muted/20 text-xs">
+                <p role="status" className="bg-amber-50/70 px-2 py-2 font-medium text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
+                  {pendingDirectBefundFiles.length} Dokument{pendingDirectBefundFiles.length === 1 ? "" : "e"} zur Prüfung ausgewählt · noch nicht gespeichert{formatDirectSelectionDate(pendingDirectBefundFiles) ? ` · ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}` : ""}
+                </p>
                 {pendingDirectBefundFiles.map((item) => (
                   <div key={item.id} className="space-y-2 p-2">
                     <div className="flex items-center gap-2">
