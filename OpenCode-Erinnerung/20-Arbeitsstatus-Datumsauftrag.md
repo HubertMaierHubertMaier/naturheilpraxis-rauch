@@ -19,8 +19,8 @@ Nach jedem Schritt wird diese Liste gegen den tatsächlichen Stand geprüft und 
 
 ## Nächster Schritt
 
-Den gesicherten Stand kontrolliert in den von Lovable verwendeten Vorschau-Zweig übernehmen und dort die sichtbaren Felder prüfen. Keine Veröffentlichung.
+Lovable liefert nach der GitHub-Übernahme in der eingebetteten Vorschau noch den alten Stand aus. Die nächste Fortsetzung prüft ausschließlich die Lovable-Vorschauverknüpfung und lädt danach die sichtbaren Felder erneut. Keine Veröffentlichung.
 
 ## Wiederherstellungspunkt des aktuellen Auftrags
 
-Der aktuelle Datumsauftrag ist lokal als isolierter, geprüfter Code-Stand gesichert. Die tägliche Hakenliste ist angelegt. In Lovable ist dieser Stand noch nicht sichtbar geprüft; deshalb bleiben alle Lovable-Sichtbarkeits-Haken offen. Bei der Fortsetzung genau hier weiterarbeiten: den gesicherten Stand in die Lovable-Vorschau übernehmen und die offenen Haken dort sichtbar prüfen. Keine Dateien einlesen, keine Patientendaten übertragen und nichts veröffentlichen.
+Der aktuelle Datumsauftrag ist lokal als isolierter, geprüfter Code-Stand gesichert. Die tägliche Hakenliste ist angelegt. Der Hauptzweig ist aktualisiert, aber Lovable zeigt in der eingebetteten Vorschau weiterhin den alten Stand. Deshalb bleiben alle Lovable-Sichtbarkeits-Haken offen. Bei der Fortsetzung genau hier weiterarbeiten: die Lovable-Vorschauverknüpfung prüfen und die offenen Haken dort sichtbar bestätigen. Keine Dateien einlesen, keine Patientendaten übertragen und nichts veröffentlichen.
