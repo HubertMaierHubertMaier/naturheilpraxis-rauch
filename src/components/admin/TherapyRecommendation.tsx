@@ -5605,7 +5605,8 @@ export function TherapyRecommendation() {
                         </label>
                       </div>
                     )}
-                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
+                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das {contentDateLabel(item.documentType)} eintragen und die Dokumentart kontrollieren.</p>}
+                    {fileLoadedAtLabel(item) && <p className="text-[11px] text-muted-foreground">Ladedatum: {fileLoadedAtLabel(item)} (automatisch bei der Auswahl gesetzt)</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
@@ -5619,14 +5620,19 @@ export function TherapyRecommendation() {
                           {DIRECT_BEFUND_TARGETS.map((target) => <SelectItem key={target.value} value={target.value}>{target.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Input
-                        type="date"
-                        aria-label="Dokumentdatum"
-                        value={item.documentDate}
-                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
-                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
-                        className="h-8 text-xs"
-                      />
+                      <label className="block">
+                        <span className="sr-only">{contentDateLabel(item.documentType)}</span>
+                        <Input
+                          type="date"
+                          aria-label={contentDateLabel(item.documentType)}
+                          title={`${contentDateLabel(item.documentType)} (tatsächliches Datum des Inhalts, manuell eintragen)`}
+                          value={item.documentDate}
+                          onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
+                          disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                          className="h-8 text-xs"
+                        />
+                        <span className="mt-0.5 block text-[10px] text-muted-foreground">{contentDateLabel(item.documentType)} · manuell, wird nicht automatisch übernommen</span>
+                      </label>
                     </div>
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
                       <p className="text-[11px] text-sky-800 dark:text-sky-200">Automatisch erkannt: {directBefundTargetLabel(item.documentType)}. Bitte vor dem Auslesen kontrollieren.</p>
