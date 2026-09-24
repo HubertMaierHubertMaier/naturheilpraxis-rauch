@@ -228,6 +228,7 @@ type PendingDirectBefundFile = {
   documentTypeInferred?: boolean;
   archiveCopy?: File;
   documentDate: string;
+  loadedAt: string;
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
@@ -256,6 +257,18 @@ const formatDirectSelectionTime = (files: Array<Pick<PendingDirectBefundFile, "i
   return Number.isFinite(latestSelection)
     ? new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(latestSelection))
     : "";
+};
+const formatLoadedAt = (iso: string): string => {
+  const time = Date.parse(iso);
+  if (!Number.isFinite(time)) return "";
+  const date = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(time));
+  const clock = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(time));
+  return `${date} um ${clock} Uhr`;
+};
+const contentDateLabel = (documentType: DirectBefundTarget | ""): string => {
+  if (documentType === "anamnese") return "Anamnesedatum";
+  if (documentType === "metatron" || documentType === "vieva" || documentType === "arzt" || documentType === "labor") return "Befunddatum";
+  return "Dokumentdatum";
 };
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
@@ -4017,6 +4030,7 @@ export function TherapyRecommendation() {
           documentType: inferredType,
           documentTypeInferred: !!inferredType,
           documentDate: inferDocumentDateFromFilename(file.name),
+          loadedAt: new Date().toISOString(),
           privacyReviewed: false,
           localCacheStatus: "saving" as const,
         };
@@ -4420,6 +4434,7 @@ export function TherapyRecommendation() {
         id: crypto.randomUUID(), file: new File([blob], `Anonymisierte-Archivkopie.${extension}`, { type: extension === "pdf" ? "application/pdf" : "application/octet-stream" }),
         sourcePseudonymId: pid, status: "queued", documentType: knownType,
         documentTypeInferred: Boolean(knownType), documentDate: canonical && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? parts[1] : "",
+        loadedAt: new Date().toISOString(),
         privacyReviewed: false,
       }]);
       toast({ title: "Archivkopie zur erneuten Prüfung bereit", description: "Bitte Dokumentart und Datum prüfen, die Datenschutzvorschau erstellen und danach ausdrücklich übernehmen. Bestehende Archivkopien bleiben erhalten; bei Übernahme wird eine neu geprüfte Archivkopie verknüpft." });
