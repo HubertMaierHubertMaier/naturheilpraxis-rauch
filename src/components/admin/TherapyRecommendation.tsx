@@ -5537,6 +5537,12 @@ export function TherapyRecommendation() {
             </p>
           </div>
           <div className="rounded-md border border-primary/50 bg-background p-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="default" size="sm" onClick={() => window.location.reload()}>
+                <RefreshCw className="mr-1 h-4 w-4" />Vorschau aktualisieren
+              </Button>
+              <span className="text-xs text-muted-foreground">nur Vorschau – keine Veröffentlichung</span>
+            </div>
             <PatientBatchUploadZone
               mode={documentEntryMode}
               onModeChange={setDocumentEntryMode}
