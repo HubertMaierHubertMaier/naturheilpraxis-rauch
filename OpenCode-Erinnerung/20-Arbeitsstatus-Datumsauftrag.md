@@ -23,4 +23,6 @@ Lovable liefert nach der GitHub-Übernahme in der eingebetteten Vorschau noch de
 
 ## Wiederherstellungspunkt des aktuellen Auftrags
 
+**Technischer Wiederherstellungspunkt:** `restore/datumseingabe-2026-09-24`
+
 Der aktuelle Datumsauftrag ist lokal als isolierter, geprüfter Code-Stand gesichert. Die tägliche Hakenliste ist angelegt. Der Hauptzweig ist aktualisiert, aber Lovable zeigt in der eingebetteten Vorschau weiterhin den alten Stand. Deshalb bleiben alle Lovable-Sichtbarkeits-Haken offen. Bei der Fortsetzung genau hier weiterarbeiten: die Lovable-Vorschauverknüpfung prüfen und die offenen Haken dort sichtbar bestätigen. Keine Dateien einlesen, keine Patientendaten übertragen und nichts veröffentlichen.
