@@ -228,6 +228,7 @@ type PendingDirectBefundFile = {
   documentTypeInferred?: boolean;
   archiveCopy?: File;
   documentDate: string;
+  loadedAt?: string;
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
@@ -256,6 +257,23 @@ const formatDirectSelectionTime = (files: Array<Pick<PendingDirectBefundFile, "i
   return Number.isFinite(latestSelection)
     ? new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(latestSelection))
     : "";
+};
+const formatLoadedAt = (iso: string): string => {
+  const time = Date.parse(iso);
+  if (!Number.isFinite(time)) return "";
+  const date = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(time));
+  const clock = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(time));
+  return `${date} um ${clock} Uhr`;
+};
+const fileLoadedAtLabel = (item: Pick<PendingDirectBefundFile, "id" | "loadedAt">): string => {
+  if (item.loadedAt) return formatLoadedAt(item.loadedAt);
+  const fromId = Number.parseInt(item.id.split("-", 1)[0], 36);
+  return Number.isFinite(fromId) ? formatLoadedAt(new Date(fromId).toISOString()) : "";
+};
+const contentDateLabel = (documentType: DirectBefundTarget | ""): string => {
+  if (documentType === "anamnese") return "Anamnesedatum";
+  if (documentType === "metatron" || documentType === "vieva" || documentType === "arzt" || documentType === "labor") return "Befunddatum";
+  return "Dokumentdatum";
 };
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
@@ -4017,6 +4035,7 @@ export function TherapyRecommendation() {
           documentType: inferredType,
           documentTypeInferred: !!inferredType,
           documentDate: inferDocumentDateFromFilename(file.name),
+          loadedAt: new Date().toISOString(),
           privacyReviewed: false,
           localCacheStatus: "saving" as const,
         };
@@ -4420,6 +4439,7 @@ export function TherapyRecommendation() {
         id: crypto.randomUUID(), file: new File([blob], `Anonymisierte-Archivkopie.${extension}`, { type: extension === "pdf" ? "application/pdf" : "application/octet-stream" }),
         sourcePseudonymId: pid, status: "queued", documentType: knownType,
         documentTypeInferred: Boolean(knownType), documentDate: canonical && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? parts[1] : "",
+        loadedAt: new Date().toISOString(),
         privacyReviewed: false,
       }]);
       toast({ title: "Archivkopie zur erneuten Prüfung bereit", description: "Bitte Dokumentart und Datum prüfen, die Datenschutzvorschau erstellen und danach ausdrücklich übernehmen. Bestehende Archivkopien bleiben erhalten; bei Übernahme wird eine neu geprüfte Archivkopie verknüpft." });
@@ -5585,7 +5605,8 @@ export function TherapyRecommendation() {
                         </label>
                       </div>
                     )}
-                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das Dokumentdatum eintragen und die Dokumentart kontrollieren.</p>}
+                    {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das {contentDateLabel(item.documentType)} eintragen und die Dokumentart kontrollieren.</p>}
+                    {fileLoadedAtLabel(item) && <p className="text-[11px] text-muted-foreground">Ladedatum: {fileLoadedAtLabel(item)} (automatisch bei der Auswahl gesetzt)</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
@@ -5599,14 +5620,19 @@ export function TherapyRecommendation() {
                           {DIRECT_BEFUND_TARGETS.map((target) => <SelectItem key={target.value} value={target.value}>{target.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Input
-                        type="date"
-                        aria-label="Dokumentdatum"
-                        value={item.documentDate}
-                        onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
-                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
-                        className="h-8 text-xs"
-                      />
+                      <label className="block">
+                        <span className="sr-only">{contentDateLabel(item.documentType)}</span>
+                        <Input
+                          type="date"
+                          aria-label={contentDateLabel(item.documentType)}
+                          title={`${contentDateLabel(item.documentType)} (tatsächliches Datum des Inhalts, manuell eintragen)`}
+                          value={item.documentDate}
+                          onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
+                          disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                          className="h-8 text-xs"
+                        />
+                        <span className="mt-0.5 block text-[10px] text-muted-foreground">{contentDateLabel(item.documentType)} · manuell, wird nicht automatisch übernommen</span>
+                      </label>
                     </div>
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
                       <p className="text-[11px] text-sky-800 dark:text-sky-200">Automatisch erkannt: {directBefundTargetLabel(item.documentType)}. Bitte vor dem Auslesen kontrollieren.</p>
