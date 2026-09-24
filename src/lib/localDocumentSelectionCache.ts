@@ -20,6 +20,7 @@ export type LocalDocumentSelection = {
   documentType: string;
   documentTypeInferred?: boolean;
   documentDate: string;
+  loadedAt?: string;
   status: CachedDocumentSelectionStatus;
   error?: string;
   errorKind?: string;
@@ -27,6 +28,7 @@ export type LocalDocumentSelection = {
 export type RestoredLocalDocumentSelection = Omit<LocalDocumentSelection, "status"> & {
   status: "queued" | "error";
   recoveryNotice?: string;
+  draftSavedAt?: string;
 };
 
 type StoredSelection = {
@@ -44,6 +46,7 @@ type StoredSelection = {
   documentType: string;
   documentTypeInferred?: boolean;
   documentDate: string;
+  loadedAt?: string;
   status: CachedDocumentSelectionStatus;
   error?: string;
   errorKind?: string;
@@ -131,6 +134,7 @@ function toStoredSelection(userId: string, pseudonymId: string, selection: Local
     documentType: selection.documentType,
     documentTypeInferred: selection.documentTypeInferred,
     documentDate: selection.documentDate,
+    loadedAt: selection.loadedAt,
     status: selection.status,
     error: selection.error,
     errorKind: selection.errorKind,
@@ -156,6 +160,8 @@ export function restoreLocalDocumentSelections(records: readonly StoredSelection
       documentType: record.documentType,
       documentTypeInferred: record.documentTypeInferred,
       documentDate: record.documentDate,
+      loadedAt: typeof record.loadedAt === "string" ? record.loadedAt : undefined,
+      draftSavedAt: typeof record.savedAt === "string" ? record.savedAt : undefined,
       status: needsReRead ? "error" : record.status === "error" ? "error" : "queued",
       error: interrupted ? "Einlesen wurde durch Neuladen oder Schließen unterbrochen. Bitte erneut versuchen." : record.status === "ready" ? "Die lokale Auswahl wurde wiederhergestellt. Bitte erneut auslesen und prüfen." : record.error,
       errorKind: interrupted || record.status === "ready" ? "Wiederaufnahme" : record.errorKind,

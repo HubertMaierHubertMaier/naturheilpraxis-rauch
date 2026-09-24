@@ -242,6 +242,8 @@ type PendingDirectBefundFile = {
   localCacheStatus?: "saving" | "saved" | "error";
   localCacheError?: string;
   recoveryNotice?: string;
+  draftSavedAt?: string;
+  restoredDraft?: boolean;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
@@ -1573,6 +1575,7 @@ export function TherapyRecommendation() {
             localPrivacyFindings: undefined,
             privacyFindingsRevealed: false,
             localCacheStatus: "saved" as const,
+            restoredDraft: true,
           };
         });
         return [...recovered, ...preserved];
@@ -1639,6 +1642,7 @@ export function TherapyRecommendation() {
       documentType: item.documentType,
       documentTypeInferred: item.documentTypeInferred,
       documentDate: item.documentDate,
+      loadedAt: item.loadedAt,
       status: item.status === "done" ? "queued" : item.status,
       error: item.error,
       errorKind: item.errorKind,
@@ -1650,7 +1654,7 @@ export function TherapyRecommendation() {
       if (!cacheScopeIsCurrent()) return;
       setLocalSelectionCacheIssue("");
       setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
-        ? { ...item, localCacheStatus: "saved", localCacheError: undefined }
+        ? { ...item, localCacheStatus: "saved", localCacheError: undefined, draftSavedAt: new Date().toISOString() }
         : item));
     }).catch((error) => {
       if (!cacheScopeIsCurrent()) return;
@@ -5558,13 +5562,13 @@ export function TherapyRecommendation() {
                 Archiv neu laden
               </Button>
               {pendingDirectBefundFiles.length > 0 && (
-                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={!pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || !pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                   {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Sicher auslesen und Vorschau erstellen
                 </Button>
               )}
               {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
-                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
+                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Geprüfte Inhalte passend übernehmen
                 </Button>
@@ -5575,6 +5579,15 @@ export function TherapyRecommendation() {
                 <p role="status" className="bg-amber-50/70 px-2 py-2 font-medium text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
                   {pendingDirectBefundFiles.length} Dokument{pendingDirectBefundFiles.length === 1 ? "" : "e"} zur Prüfung ausgewählt · noch nicht gespeichert{formatDirectSelectionDate(pendingDirectBefundFiles) ? ` · ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}${formatDirectSelectionTime(pendingDirectBefundFiles) ? ` um ${formatDirectSelectionTime(pendingDirectBefundFiles)} Uhr` : ""}` : ""}
                 </p>
+                {pendingDirectBefundFiles.some((file) => file.restoredDraft) && (
+                  <div role="status" className="space-y-2 bg-sky-50/70 px-2 py-2 text-sky-950 dark:bg-sky-950/20 dark:text-sky-100">
+                    <p className="font-medium">Auswahlentwurf nach dem Neuladen wiederhergestellt – noch keine Übernahme. Es wurde nichts ausgelesen, analysiert oder freigegeben.</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setPendingDirectBefundFiles((current) => current.map((file) => file.restoredDraft ? { ...file, restoredDraft: false } : file))}>Entwurf fortsetzen</Button>
+                      <Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => pendingDirectBefundFiles.filter((file) => file.restoredDraft).forEach(removeDirectBefundFile)}>Entwurf entfernen</Button>
+                    </div>
+                  </div>
+                )}
                 {pendingDirectBefundFiles.map((item) => (
                   <div key={item.id} className="space-y-2 p-2">
                     <div className="flex items-center gap-2">
@@ -5607,6 +5620,7 @@ export function TherapyRecommendation() {
                     )}
                     {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das {contentDateLabel(item.documentType)} eintragen und die Dokumentart kontrollieren.</p>}
                     {fileLoadedAtLabel(item) && <p className="text-[11px] text-muted-foreground">Ladedatum: {fileLoadedAtLabel(item)} (automatisch bei der Auswahl gesetzt)</p>}
+                    {item.draftSavedAt && item.status !== "done" && <p className="text-xs font-medium text-sky-800 dark:text-sky-200">Entwurf gespeichert am {formatLoadedAt(item.draftSavedAt)} · noch keine endgültige Übernahme</p>}
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
