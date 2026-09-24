@@ -228,7 +228,7 @@ type PendingDirectBefundFile = {
   documentTypeInferred?: boolean;
   archiveCopy?: File;
   documentDate: string;
-  loadedAt: string;
+  loadedAt?: string;
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
@@ -264,6 +264,11 @@ const formatLoadedAt = (iso: string): string => {
   const date = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(time));
   const clock = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(time));
   return `${date} um ${clock} Uhr`;
+};
+const fileLoadedAtLabel = (item: Pick<PendingDirectBefundFile, "id" | "loadedAt">): string => {
+  if (item.loadedAt) return formatLoadedAt(item.loadedAt);
+  const fromId = Number.parseInt(item.id.split("-", 1)[0], 36);
+  return Number.isFinite(fromId) ? formatLoadedAt(new Date(fromId).toISOString()) : "";
 };
 const contentDateLabel = (documentType: DirectBefundTarget | ""): string => {
   if (documentType === "anamnese") return "Anamnesedatum";
