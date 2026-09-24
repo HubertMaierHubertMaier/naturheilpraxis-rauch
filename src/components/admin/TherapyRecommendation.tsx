@@ -5626,8 +5626,10 @@ export function TherapyRecommendation() {
                       </div>
                     )}
                     {item.status === "queued" && !item.documentDate && <p className="text-xs text-amber-800 dark:text-amber-200">Vor dem Auslesen bitte rechts das {contentDateLabel(item.documentType)} eintragen und die Dokumentart kontrollieren.</p>}
-                    {fileLoadedAtLabel(item) && <p className="text-[11px] text-muted-foreground">Ladedatum: {fileLoadedAtLabel(item)} (automatisch bei der Auswahl gesetzt)</p>}
-                    {item.draftSavedAt && item.status !== "done" && <p className="text-xs font-medium text-sky-800 dark:text-sky-200">Entwurf gespeichert am {formatLoadedAt(item.draftSavedAt)} · noch keine endgültige Übernahme</p>}
+                    <div className="grid gap-1 rounded-md border border-border bg-background px-3 py-2">
+                      {fileLoadedAtLabel(item) && <p className="text-xs text-foreground"><span className="font-semibold">Ladedatum:</span> {fileLoadedAtLabel(item)} <span className="text-muted-foreground">(automatisch bei der Auswahl gesetzt)</span></p>}
+                      {item.draftSavedAt && item.status !== "done" && <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">Entwurf gespeichert am {formatLoadedAt(item.draftSavedAt)} <span className="font-medium">· noch keine endgültige Übernahme</span></p>}
+                    </div>
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select
                         value={item.documentType || undefined}
@@ -5642,7 +5644,7 @@ export function TherapyRecommendation() {
                         </SelectContent>
                       </Select>
                       <label className="block">
-                        <span className="sr-only">{contentDateLabel(item.documentType)}</span>
+                        <span className="mb-1 block text-xs font-semibold text-foreground">{contentDateLabel(item.documentType)}</span>
                         <Input
                           type="date"
                           aria-label={contentDateLabel(item.documentType)}
@@ -5652,7 +5654,7 @@ export function TherapyRecommendation() {
                           disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
                           className="h-8 text-xs"
                         />
-                        <span className="mt-0.5 block text-[10px] text-muted-foreground">{contentDateLabel(item.documentType)} · manuell, wird nicht automatisch übernommen</span>
+                        <span className="mt-1 block text-[10px] text-muted-foreground">Manuell, wird nicht automatisch aus dem Ladedatum übernommen</span>
                       </label>
                     </div>
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
