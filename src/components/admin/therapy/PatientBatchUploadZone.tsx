@@ -37,6 +37,10 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
         ] as const).map(([value, title, description]) => <button key={value} type="button" role="radio" aria-checked={mode === value} disabled={selectionLocked} onClick={() => onModeChange?.(value)} className={`rounded-xl border-2 p-4 text-left transition-all ${mode === value ? "border-blue-600 bg-blue-600 text-white shadow-lg dark:border-blue-500 dark:bg-blue-500" : "border-border bg-background hover:border-primary/40"}`}><span className="block text-base font-semibold">{title}</span><span className={`mt-1 block text-sm ${mode === value ? "text-white/90" : "text-muted-foreground"}`}>{description}</span></button>)}
       </div>
       {selectionLocked && <p className="text-xs text-muted-foreground">Die aktuelle Dateiauswahl bleibt erhalten. Vor einem Wechsel diese Auswahl übernehmen oder bewusst entfernen.</p>}
+      <div className="flex items-center gap-3">
+        <Button type="button" variant="outline" size="sm" onClick={() => window.location.reload()}>Vorschau aktualisieren</Button>
+        <span className="text-xs font-medium text-muted-foreground">nur Vorschau – keine Veröffentlichung</span>
+      </div>
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
