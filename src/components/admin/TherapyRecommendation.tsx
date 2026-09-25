@@ -42,6 +42,9 @@ import { loadPatientMannayanOrders, orderNumberOrMissing } from "@/lib/mannayanP
 import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
+import { DocumentLoadHistory } from "./therapy/DocumentLoadHistory";
+import { recordDocumentLoad } from "@/lib/documentLoadHistoryStore";
+import { contentDateLabel, selectionTimestamp } from "@/lib/documentLoadHistory";
 import {
   downloadClinicalReportHtml,
   openClinicalReportWindow,
@@ -229,6 +232,9 @@ type PendingDirectBefundFile = {
   archiveCopy?: File;
   documentDate: string;
   loadedAt?: string;
+  loadEventId?: string;
+  documentKey?: string;
+  loadHistoryStatus?: "pending" | "saving" | "saved" | "error";
   privacyReviewed: boolean;
   previewText?: string;
   removedIdentifierCategories?: string[];
@@ -248,14 +254,14 @@ type PendingDirectBefundFile = {
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
 >;
-const formatDirectSelectionDate = (files: Array<Pick<PendingDirectBefundFile, "id">>): string => {
-  const latestSelection = Math.max(...files.map(({ id }) => Number.parseInt(id.split("-", 1)[0], 36)).filter(Number.isFinite));
+const formatDirectSelectionDate = (files: Array<Pick<PendingDirectBefundFile, "id" | "loadedAt">>): string => {
+  const latestSelection = Math.max(...files.map(selectionTimestamp).filter((time): time is number => typeof time === "number"));
   return Number.isFinite(latestSelection)
     ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(latestSelection))
     : "";
 };
-const formatDirectSelectionTime = (files: Array<Pick<PendingDirectBefundFile, "id">>): string => {
-  const latestSelection = Math.max(...files.map(({ id }) => Number.parseInt(id.split("-", 1)[0], 36)).filter(Number.isFinite));
+const formatDirectSelectionTime = (files: Array<Pick<PendingDirectBefundFile, "id" | "loadedAt">>): string => {
+  const latestSelection = Math.max(...files.map(selectionTimestamp).filter((time): time is number => typeof time === "number"));
   return Number.isFinite(latestSelection)
     ? new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(latestSelection))
     : "";
@@ -268,16 +274,13 @@ const formatLoadedAt = (iso: string): string => {
   return `${date} um ${clock} Uhr`;
 };
 const fileLoadedAtLabel = (item: Pick<PendingDirectBefundFile, "id" | "loadedAt">): string => {
-  if (item.loadedAt) return formatLoadedAt(item.loadedAt);
-  const fromId = Number.parseInt(item.id.split("-", 1)[0], 36);
-  return Number.isFinite(fromId) ? formatLoadedAt(new Date(fromId).toISOString()) : "";
-};
-const contentDateLabel = (documentType: DirectBefundTarget | ""): string => {
-  if (documentType === "anamnese") return "Anamnesedatum";
-  if (documentType === "metatron" || documentType === "vieva" || documentType === "arzt" || documentType === "labor") return "Befunddatum";
-  return "Dokumentdatum";
+  const time = selectionTimestamp(item);
+  return time === undefined ? "" : formatLoadedAt(new Date(time).toISOString());
 };
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
+const selectionCacheFingerprint = (items: PendingDirectBefundFile[]) => JSON.stringify(items
+  .filter(item => item.status !== "done" && item.file.size > 0)
+  .map(item => [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind, item.loadedAt, item.loadEventId]));
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
   forPseudonymId: string;
@@ -1419,6 +1422,8 @@ export function TherapyRecommendation() {
   const [localSelectionCacheUserId, setLocalSelectionCacheUserId] = useState<string | null>(null);
   const [localSelectionCacheUserResolved, setLocalSelectionCacheUserResolved] = useState(false);
   const [localSelectionCacheIssue, setLocalSelectionCacheIssue] = useState("");
+  const [documentLoadRevision, setDocumentLoadRevision] = useState(0);
+  const documentLoadsInFlight = useRef(new Set<string>());
   const localSelectionCacheRunRef = useRef(0);
   const localSelectionCacheFingerprintRef = useRef("");
   const localSelectionCacheUserRef = useRef<string | null>(null);
@@ -1578,7 +1583,10 @@ export function TherapyRecommendation() {
             restoredDraft: true,
           };
         });
-        return [...recovered, ...preserved];
+        const next = [...recovered, ...preserved];
+        // Restoring an unchanged draft must not stamp it as newly saved.
+        if (!preserved.length) localSelectionCacheFingerprintRef.current = selectionCacheFingerprint(next);
+        return next;
       });
     }).catch((error) => {
       if (!cacheScopeIsCurrent()) return;
@@ -1617,7 +1625,7 @@ export function TherapyRecommendation() {
       setLocalSelectionCacheIssue("Dateiauswahl gehört zu einem anderen Fall; keine lokale Speicherung unter diesem Pseudonym.");
       return;
     }
-    const fingerprint = JSON.stringify(active.map(item => [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind]));
+    const fingerprint = selectionCacheFingerprint(active);
     if (fingerprint === localSelectionCacheFingerprintRef.current) return;
     localSelectionCacheFingerprintRef.current = fingerprint;
     if (!localSelectionCacheUserId) {
@@ -1643,6 +1651,9 @@ export function TherapyRecommendation() {
       documentTypeInferred: item.documentTypeInferred,
       documentDate: item.documentDate,
       loadedAt: item.loadedAt,
+      loadEventId: item.loadEventId,
+      documentKey: item.documentKey,
+      loadHistoryStatus: item.loadHistoryStatus,
       status: item.status === "done" ? "queued" : item.status,
       error: item.error,
       errorKind: item.errorKind,
@@ -1665,6 +1676,32 @@ export function TherapyRecommendation() {
         : item));
     });
   }, [localSelectionCacheUserId, localSelectionCacheUserResolved, user?.id, pendingDirectBefundFiles, pseudonymId]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    const userId = localSelectionCacheUserId;
+    if (!userId || userId !== user?.id || !isPatientScopedStorageReady(pid)) return;
+    const generation = patientScopeGenerationRef.current;
+    const stillCurrent = () => generation === patientScopeGenerationRef.current
+      && pseudonymIdRef.current === pid && localSelectionCacheUserRef.current === userId;
+    for (const item of pendingDirectBefundFiles) {
+      if (!item.loadEventId || !item.loadedAt || item.localCacheStatus !== "saved"
+        || item.sourcePseudonymId !== pid || item.loadHistoryStatus === "saved" || item.loadHistoryStatus === "error"
+        || documentLoadsInFlight.current.has(item.loadEventId)) continue;
+      const eventId = item.loadEventId;
+      documentLoadsInFlight.current.add(eventId);
+      void recordDocumentLoad(userId, pid, eventId, item.file, item.documentType, item.loadedAt).then(entry => {
+        if (!stillCurrent()) return;
+        setPendingDirectBefundFiles(current => current.map(row => row.loadEventId === eventId
+          ? { ...row, documentKey: entry.documentKey, loadHistoryStatus: "saved" } : row));
+        setDocumentLoadRevision(n => n + 1);
+      }).catch(() => {
+        if (!stillCurrent()) return;
+        setPendingDirectBefundFiles(current => current.map(row => row.loadEventId === eventId
+          ? { ...row, loadHistoryStatus: "error" } : row));
+      }).finally(() => documentLoadsInFlight.current.delete(eventId));
+    }
+  }, [pendingDirectBefundFiles, localSelectionCacheUserId, user?.id, pseudonymId]);
 
   useEffect(() => {
     if (!isImportingAnamnesis && !pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "ready" || item.status === "error")) return;
@@ -4025,21 +4062,23 @@ export function TherapyRecommendation() {
       if (directBefundFileRef.current) directBefundFileRef.current.value = "";
       return;
     }
-    const stamp = Date.now().toString(36);
+    const selectedAt = new Date().toISOString();
     localSelectionCacheRunRef.current += 1;
     setPendingDirectBefundFiles((prev) => documentEntryMode === "single" && prev.length ? prev : [
       ...prev,
       ...files.map((file, index) => {
         const inferredType = inferDirectBefundTarget(file.name);
         return {
-          id: `${stamp}-${index}-${file.name}`,
+          id: crypto.randomUUID(),
           file,
           sourcePseudonymId: currentPid,
           status: "queued" as const,
           documentType: inferredType,
           documentTypeInferred: !!inferredType,
-          documentDate: inferDocumentDateFromFilename(file.name),
-          loadedAt: new Date().toISOString(),
+          documentDate: "",
+          loadedAt: selectedAt,
+          loadEventId: crypto.randomUUID(),
+          loadHistoryStatus: "pending" as const,
           privacyReviewed: false,
           localCacheStatus: "saving" as const,
         };
@@ -4061,6 +4100,10 @@ export function TherapyRecommendation() {
       && localSelectionCacheUserRef.current === sourceUserId;
     const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
     if (!queue.length) return;
+    if (queue.some(item => item.loadEventId && item.loadHistoryStatus !== "saved")) {
+      toast({ title: "Ladeverlauf noch nicht gesichert", description: "Bitte den Speicherstatus prüfen und einen fehlgeschlagenen Ladeeintrag erneut sichern. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
+      return;
+    }
     if (queue.some(item => item.localCacheStatus === "saving")) {
       toast({ title: "Lokale Auswahl wird gesichert", description: "Bitte warten, bis die lokale Wiederaufnahme bestätigt oder ein Speicherhinweis angezeigt wird. Die Datei bleibt im aktuellen Tab erhalten." });
       return;
@@ -5544,6 +5587,7 @@ export function TherapyRecommendation() {
               </Button>
               <span className="text-xs font-medium text-muted-foreground">nur Vorschau – keine Veröffentlichung</span>
             </div>
+            <DocumentLoadHistory userId={user?.id} pid={normalizePseudonymId(pseudonymId)} revision={documentLoadRevision} saveError={pendingDirectBefundFiles.some(item => item.loadHistoryStatus === "error") ? "Mindestens ein Ladeeintrag ist noch nicht bestätigt." : ""} />
             <PatientBatchUploadZone
               mode={documentEntryMode}
               onModeChange={setDocumentEntryMode}
@@ -5629,6 +5673,11 @@ export function TherapyRecommendation() {
                     <div className="grid gap-1 rounded-md border border-border bg-background px-3 py-2">
                       {fileLoadedAtLabel(item) && <p className="text-xs text-foreground"><span className="font-semibold">Ladedatum:</span> {fileLoadedAtLabel(item)} <span className="text-muted-foreground">(automatisch bei der Auswahl gesetzt)</span></p>}
                       {item.draftSavedAt && item.status !== "done" && <p className="text-xs font-semibold text-sky-800 dark:text-sky-200">Entwurf gespeichert am {formatLoadedAt(item.draftSavedAt)} <span className="font-medium">· noch keine endgültige Übernahme</span></p>}
+                      {item.documentKey && <p className="text-xs">Dokumentkennung im Ladeverlauf: {item.documentKey.slice(0, 10)}</p>}
+                      {item.loadEventId && item.loadHistoryStatus !== "saved" && <p role="status" className="text-xs text-amber-800">
+                        {item.loadHistoryStatus === "error" || item.localCacheStatus === "error" ? "Ladeverlauf nicht bestätigt." : "Ladeverlauf wird gesichert …"}
+                        {item.loadHistoryStatus === "error" && <Button type="button" size="sm" variant="outline" onClick={() => setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, loadHistoryStatus: "pending" } : row))}>Ladeverlauf erneut sichern</Button>}
+                      </p>}
                     </div>
                     <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px]">
                       <Select

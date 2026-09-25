@@ -21,6 +21,9 @@ export type LocalDocumentSelection = {
   documentTypeInferred?: boolean;
   documentDate: string;
   loadedAt?: string;
+  loadEventId?: string;
+  documentKey?: string;
+  loadHistoryStatus?: "pending" | "saving" | "saved" | "error";
   status: CachedDocumentSelectionStatus;
   error?: string;
   errorKind?: string;
@@ -47,6 +50,9 @@ type StoredSelection = {
   documentTypeInferred?: boolean;
   documentDate: string;
   loadedAt?: string;
+  loadEventId?: string;
+  documentKey?: string;
+  loadHistoryStatus?: "pending" | "saving" | "saved" | "error";
   status: CachedDocumentSelectionStatus;
   error?: string;
   errorKind?: string;
@@ -135,6 +141,9 @@ function toStoredSelection(userId: string, pseudonymId: string, selection: Local
     documentTypeInferred: selection.documentTypeInferred,
     documentDate: selection.documentDate,
     loadedAt: selection.loadedAt,
+    loadEventId: selection.loadEventId,
+    documentKey: selection.documentKey,
+    loadHistoryStatus: selection.loadHistoryStatus,
     status: selection.status,
     error: selection.error,
     errorKind: selection.errorKind,
@@ -161,6 +170,9 @@ export function restoreLocalDocumentSelections(records: readonly StoredSelection
       documentTypeInferred: record.documentTypeInferred,
       documentDate: record.documentDate,
       loadedAt: typeof record.loadedAt === "string" ? record.loadedAt : undefined,
+      loadEventId: typeof record.loadEventId === "string" ? record.loadEventId : undefined,
+      documentKey: typeof record.documentKey === "string" ? record.documentKey : undefined,
+      loadHistoryStatus: record.loadHistoryStatus === "saved" ? "saved" : record.loadEventId ? "pending" : undefined,
       draftSavedAt: typeof record.savedAt === "string" ? record.savedAt : undefined,
       status: needsReRead ? "error" : record.status === "error" ? "error" : "queued",
       error: interrupted ? "Einlesen wurde durch Neuladen oder Schließen unterbrochen. Bitte erneut versuchen." : record.status === "ready" ? "Die lokale Auswahl wurde wiederhergestellt. Bitte erneut auslesen und prüfen." : record.error,

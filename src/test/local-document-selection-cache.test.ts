@@ -74,6 +74,16 @@ describe("local document selection cache", () => {
   beforeEach(() => { indexedDb = new FakeIndexedDb(); vi.stubGlobal("indexedDB", indexedDb); });
   afterEach(() => vi.unstubAllGlobals());
 
+  it("restores the original load timestamp and event ID without creating a new event", async () => {
+    const original = { ...selection("history"), loadedAt: "2026-09-24T15:08:00Z", loadEventId: "fixed-event", loadHistoryStatus: "pending" as const };
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [original]);
+    const first = await loadLocalDocumentSelections("user-a", "P-2099-0001");
+    const again = await loadLocalDocumentSelections("user-a", "P-2099-0001");
+    expect(first.selections[0]).toMatchObject({ loadedAt: original.loadedAt, loadEventId: original.loadEventId, documentDate: original.documentDate, loadHistoryStatus: "pending" });
+    expect(again.selections[0].draftSavedAt).toBe(first.selections[0].draftSavedAt);
+    expect(again.selections[0].loadEventId).toBe(original.loadEventId);
+  });
+
   it("round-trips original bytes and changes interrupted processing into an explicit retry", async () => {
     await saveLocalDocumentSelections("user-a", "P-2099-0001", [selection("one", "processing")]);
     const loaded = await loadLocalDocumentSelections("user-a", "P-2099-0001");
