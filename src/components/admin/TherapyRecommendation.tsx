@@ -4031,8 +4031,8 @@ export function TherapyRecommendation() {
 
   const addDirectBefundFiles = (list: FileList | File[] | null) => {
     if (!list?.length) return;
-    if (documentEntryMode === "single" && (list.length > 1 || pendingDirectBefundFiles.length > 0)) {
-      toast({ title: "Bitte Sammeleingabe wählen", description: "In der Einzeleingabe wird genau ein Dokument ausgewählt. Die bestehende Auswahl bleibt erhalten." });
+    if (documentEntryMode === "single" && list.length > 1) {
+      toast({ title: "Bitte Sammeleingabe wählen", description: "In der Einzeleingabe kann jeweils nur eine Datei auf einmal ausgewählt werden. Die bestehende Auswahl bleibt erhalten." });
       return;
     }
     if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
@@ -4064,7 +4064,7 @@ export function TherapyRecommendation() {
     }
     const selectedAt = new Date().toISOString();
     localSelectionCacheRunRef.current += 1;
-    setPendingDirectBefundFiles((prev) => documentEntryMode === "single" && prev.length ? prev : [
+    setPendingDirectBefundFiles((prev) => [
       ...prev,
       ...files.map((file, index) => {
         const inferredType = inferDirectBefundTarget(file.name);
