@@ -23,4 +23,9 @@ describe("current direct intake selection timestamp", () => {
     expect(source).toContain("Dokument{pendingDirectBefundFiles.length === 1 ? \"\" : \"e\"} zur Prüfung ausgewählt · noch nicht gespeichert");
     expect(source).toContain("ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}");
   });
+
+  it("still records the load event when the local draft cache fails", () => {
+    expect(source).toContain('item.localCacheStatus !== "saved" && item.localCacheStatus !== "error"');
+    expect(source).toContain('item.loadHistoryStatus !== "saved"');
+  });
 });

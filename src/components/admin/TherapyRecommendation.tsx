@@ -1685,7 +1685,7 @@ export function TherapyRecommendation() {
     const stillCurrent = () => generation === patientScopeGenerationRef.current
       && pseudonymIdRef.current === pid && localSelectionCacheUserRef.current === userId;
     for (const item of pendingDirectBefundFiles) {
-      if (!item.loadEventId || !item.loadedAt || item.localCacheStatus !== "saved"
+      if (!item.loadEventId || !item.loadedAt || (item.localCacheStatus !== "saved" && item.localCacheStatus !== "error")
         || item.sourcePseudonymId !== pid || item.loadHistoryStatus === "saved" || item.loadHistoryStatus === "error"
         || documentLoadsInFlight.current.has(item.loadEventId)) continue;
       const eventId = item.loadEventId;
