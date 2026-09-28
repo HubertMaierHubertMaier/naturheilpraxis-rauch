@@ -3,6 +3,7 @@ import { buildAnamneseQuestionReview, type AnamneseOcrPageConfidence } from "@/l
 
 export const DIRECT_BEFUND_TARGETS = [
   { value: "labor", label: "Labor" },
+  { value: "biodiagnostik", label: "Biodiagnostik Laboranalyse" },
   { value: "metatron", label: "Metatron" },
   { value: "vieva", label: "Vieva Pro" },
   { value: "anamnese", label: "Anamnese / Anamnesebogen" },
@@ -33,10 +34,27 @@ export const inferDirectBefundTarget = (...values: string[]): DirectBefundTarget
 // "Hospital" is the practice's Metatron document label when it appears as a filename token.
 // Keep this fallback out of text inference, where hospital can describe a clinical stay.
 export const inferDirectBefundTargetFromFilename = (fileName: string): DirectBefundTarget | "" =>
-  inferDirectBefundTarget(fileName) || (/\bhospital\b/i.test(fileName) ? "metatron" : "");
+  (/\bbiodiagnostik\b/i.test(fileName) ? "biodiagnostik" : inferDirectBefundTarget(fileName))
+    || (/\bhospital\b/i.test(fileName) ? "metatron" : "");
 
-export const selectDirectBefundQueue = <T extends { id: string; status: string }>(items: readonly T[], targetId?: string): T[] =>
-  items.filter(item => (item.status === "queued" || item.status === "error") && (!targetId || item.id === targetId));
+export const selectDirectBefundQueue = <T extends { id: string; status: string; excludedFromHandoff?: boolean }>(items: readonly T[], targetId?: string): T[] =>
+  items.filter(item => !item.excludedFromHandoff && (item.status === "queued" || item.status === "error") && (!targetId || item.id === targetId));
+
+export const hasBlockingDirectBefundSelections = (items: readonly { status: string; excludedFromHandoff?: boolean }[]): boolean =>
+  items.some(item => item.status === "processing" || !item.excludedFromHandoff && (item.status === "queued" || item.status === "error"));
+
+export function directBefundPreviewBlockReason(item: {
+  sourcePseudonymId: string; loadEventId?: string; loadHistoryStatus?: string; localCacheStatus?: string;
+  localCacheConflict?: boolean; contentDateStatus?: string; documentDate: string; restoredDraft?: boolean;
+}, pseudonymId: string): string | undefined {
+  if (item.sourcePseudonymId !== pseudonymId) return "Diese Datei gehört zu einem anderen Patientenfall.";
+  if (item.restoredDraft) return "Wiederhergestellten Entwurf zuerst bewusst fortsetzen.";
+  if (item.loadEventId && item.loadHistoryStatus !== "saved") return "Ladeverlauf für diese Auswahl zuerst bestätigen lassen.";
+  if (!item.documentDate.trim()) return "Dokumentdatum für diese Datei eintragen.";
+  if (item.localCacheConflict || item.localCacheStatus !== "saved") return "Dokumentart und Datum für diese Datei zuerst lokal sichern lassen.";
+  if (item.contentDateStatus !== "saved") return "Dokumentdatum für diese Originaldatei zuerst bestätigen lassen.";
+  return undefined;
+}
 
 export const directBefundTargetLabel = (target: DirectBefundTarget): string => {
   const option = DIRECT_BEFUND_TARGETS.find((candidate) => candidate.value === target);

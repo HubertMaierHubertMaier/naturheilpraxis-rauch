@@ -11,6 +11,7 @@ import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact,
 import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
 import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
 import { parseMedicationFormAnswer } from "@/lib/anamnesisMedicationForm";
+import { hasBlockingDirectBefundSelections } from "@/lib/directBefundHandoff";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -28,7 +29,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const data: Record<string, unknown> = { _pseudonym_id: pid, pseudonymId: pid, laborKomplett: "synthetic prior input", manualDiagnosen: [] };
   const save = deferred<string>(); const read = deferred<any>();
   let submitted: Record<string, unknown> | undefined;
-  let previews = [{ id: "synthetic-document", status: "ready", sourcePseudonymId: pid, documentType,
+  let previews = [{ id: "synthetic-document", documentKey: "a".repeat(64), status: "ready", sourcePseudonymId: pid, documentType,
     privacyReviewed: true, file: { size: 42 }, previewText, documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
   const setter = (field: string) => (value: unknown) => { data[field] = typeof value === "function" ? value(data[field] || "") : value; };
   const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
@@ -40,10 +41,16 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
     isAnalyzingDocs: false, isStreaming: false, isLoadingDiagnosen: false, isLoadingMannayanOrders: false,
     pendingDirectBefundFiles: previews, patientScopeGenerationRef: { current: 0 }, pseudonymIdRef: { current: pid }, patientDataOwnerRef: { current: pid },
+    localSelectionCacheUserRef: { current: "synthetic-user" }, localSelectionCacheUserId: "synthetic-user", localSelectionCacheRunRef: { current: 0 },
+    setLocalSelectionCacheIssue: vi.fn(), removeLocalDocumentSelections: vi.fn(async () => undefined),
+    claimDocumentHandoff: vi.fn(async () => undefined), releaseDocumentPreviewClaim: vi.fn(async () => undefined),
+    assertDocumentHandoffClaim: vi.fn(async () => undefined),
+    markDocumentPreviewAccepted: vi.fn(async () => undefined), isPdfClinicalDocument: () => false,
     asText: (value: unknown) => String(value || ""),
     autoSaveRunIdRef: { current: 0 }, autoSaveTimerRef: { current: null }, autoSaveSessionIdRef: { current: null }, lastAutoSavedPayloadRef: { current: "" },
     window: { clearTimeout: vi.fn(), setTimeout: vi.fn() }, flushSync: (fn: () => void) => fn(), setIsImportingAnamnesis: vi.fn(),
     directIdentifierCategories: () => [], residualIdentifierCategories: () => [],
+    hasBlockingDirectBefundSelections,
     mergeExtractedBlockIntoField: (prior: string, text: string) => `${prior}\n${text}`,
     setLaborKomplett: setter("laborKomplett"), setMetatronHeel: setter("metatronHeel"), setVievaPlus: setter("vievaPlus"),
     setAnamnese: setter("anamnese"), setArztbericht: setter("arztbericht"), setSonstigeUntersuchungen: setter("sonstigeUntersuchungen"),
@@ -145,7 +152,7 @@ describe("direct import confirmation follows the database receipt", () => {
     expect(t.previews()[0].status).toBe("done");
   });
   it("rolls back provisional field changes if original archiving fails", async () => {
-    const t = setup(); t.env.archivePatientOriginal.mockRejectedValueOnce(new Error("synthetic failed archive"));
+    const t = setup(); (t.previews()[0] as any).archiveCopy = { size: 42 }; t.env.archivePatientOriginal.mockRejectedValueOnce(new Error("synthetic failed archive"));
     await t.run();
     expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
     expect(t.env.applyDraftPayload).toHaveBeenLastCalledWith(expect.objectContaining({ laborKomplett: "synthetic prior input" }), pid);

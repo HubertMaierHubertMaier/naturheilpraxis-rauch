@@ -33,6 +33,7 @@ function setup(mode: "single" | "batch", existingCount: number) {
     inferDirectBefundTargetFromFilename,
     crypto: { randomUUID: () => `new-${++nextId}` },
     setPendingDirectBefundFiles: (update: (previous: unknown[]) => unknown[]) => updates.push(update),
+    setBatchPreviewSummary: vi.fn(),
   };
   const addFiles = new Function(...Object.keys(env), `${js}; return addDirectBefundFiles;`)(...Object.values(env)) as (files: Array<{ name: string; webkitRelativePath: string }>) => void;
   return { addFiles, existing, updates, toast, input };

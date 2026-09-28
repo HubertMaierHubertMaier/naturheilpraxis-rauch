@@ -3,7 +3,7 @@ export const DOCUMENT_LOAD_EVENT = "document_selection_recorded";
 
 export function contentDateLabel(documentType: string): string {
   if (documentType === "anamnese") return "Anamnesedatum";
-  if (["metatron", "vieva", "arzt", "labor"].includes(documentType)) return "Befunddatum";
+  if (["metatron", "vieva", "arzt", "labor", "biodiagnostik"].includes(documentType)) return "Befunddatum";
   return "Dokumentdatum";
 }
 
@@ -20,16 +20,20 @@ export function selectionTimestamp(item: { id: string; loadedAt?: string }): num
 }
 
 // Only an opaque, case-scoped identifier leaves the browser; never file contents or names.
+export async function documentLoadKey(scope: string, file: { arrayBuffer: () => Promise<ArrayBuffer> }): Promise<string> {
+  if (!scope) throw new Error("Ungültige Fallzuordnung.");
+  const content = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  const contentHash = Array.from(new Uint8Array(content), n => n.toString(16).padStart(2, "0")).join("");
+  const bytes = new TextEncoder().encode(JSON.stringify([scope, contentHash]));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
+}
+
 export async function documentLoadEntries(
   scope: string, files: readonly { arrayBuffer: () => Promise<ArrayBuffer>; documentType: string }[], loadedAt: string,
 ): Promise<DocumentLoadEntry[]> {
   if (!scope || !Number.isFinite(Date.parse(loadedAt))) throw new Error("Ungültiger Ladezeitpunkt oder Fall.");
-  return Promise.all(files.map(async file => {
-    const content = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-    const contentHash = Array.from(new Uint8Array(content), n => n.toString(16).padStart(2, "0")).join("");
-    const bytes = new TextEncoder().encode(JSON.stringify([scope, contentHash]));
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    const documentKey = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
-    return { documentKey, documentType: file.documentType, loadedAt };
-  }));
+  return Promise.all(files.map(async file => ({
+    documentKey: await documentLoadKey(scope, file), documentType: file.documentType, loadedAt,
+  })));
 }

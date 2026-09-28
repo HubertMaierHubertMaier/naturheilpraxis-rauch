@@ -6,7 +6,7 @@ import { inferDirectBefundTargetFromFilename } from "@/lib/directBefundHandoff";
 const EVENT = DOCUMENT_LOAD_EVENT;
 type Row = { id: string; created_at: string; befund_meta: { loads?: DocumentLoadEntry[] } };
 type SelectionHint = { eventId?: string; fileName: string; documentKey?: string };
-const names: Record<string, string> = { anamnese: "Anamnese", metatron: "Metatron / Hospital", vieva: "VIEVA", labor: "Labor", arzt: "Arztbefund", sonstige: "Allgemeine Unterlagen" };
+const names: Record<string, string> = { anamnese: "Anamnese", metatron: "Metatron / Hospital", vieva: "VIEVA", labor: "Labor", biodiagnostik: "Biodiagnostik Laboranalyse", arzt: "Arztbefund", sonstige: "Allgemeine Unterlagen" };
 
 export function DocumentLoadHistory({ userId, pid, revision, saveError, selectionHints = [] }: {
   userId?: string; pid: string; revision: number; saveError: string; selectionHints?: readonly SelectionHint[];

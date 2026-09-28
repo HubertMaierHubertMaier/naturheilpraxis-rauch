@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   DIRECT_BEFUND_TARGETS,
+  hasBlockingDirectBefundSelections,
   directBefundTargetLabel,
   inferDirectBefundTarget,
   inferDirectBefundTargetFromFilename,
@@ -14,6 +15,7 @@ describe("direct Befund handoff", () => {
   it("offers every existing destination field as an explicit document type", () => {
     expect(DIRECT_BEFUND_TARGETS).toEqual([
       { value: "labor", label: "Labor" },
+      { value: "biodiagnostik", label: "Biodiagnostik Laboranalyse" },
       { value: "metatron", label: "Metatron" },
       { value: "vieva", label: "Vieva Pro" },
       { value: "anamnese", label: "Anamnese / Anamnesebogen" },
@@ -37,6 +39,7 @@ describe("direct Befund handoff", () => {
   });
 
   it("recognizes common batch document types without sending document content away", () => {
+    expect(inferDirectBefundTargetFromFilename("Biodiagnostik Laboranalyse.pdf")).toBe("biodiagnostik");
     expect(inferDirectBefundTarget("Vieva Pro Vitalanalyse.pdf")).toBe("vieva");
     expect(inferDirectBefundTarget("Metatron NLS Auswertung.pdf")).toBe("metatron");
     expect(inferDirectBefundTarget("Laborbefund Blutbild.pdf")).toBe("labor");
@@ -59,6 +62,16 @@ describe("direct Befund handoff", () => {
     const files = [{ id: "old-anamnese", status: "queued" }, { id: "new-anamnese", status: "queued" }, { id: "hospital", status: "error" }, { id: "ready", status: "ready" }];
     expect(selectDirectBefundQueue(files, "new-anamnese").map(file => file.id)).toEqual(["new-anamnese"]);
     expect(selectDirectBefundQueue(files).map(file => file.id)).toEqual(["old-anamnese", "new-anamnese", "hospital"]);
+  });
+
+  it("keeps a visible duplicate out of a mixed batch without blocking its new preview", () => {
+    const files = [
+      { id: "new", status: "ready", excludedFromHandoff: false },
+      { id: "known-duplicate", status: "queued", excludedFromHandoff: true },
+    ];
+    expect(selectDirectBefundQueue(files)).toEqual([]);
+    expect(hasBlockingDirectBefundSelections(files)).toBe(false);
+    expect(hasBlockingDirectBefundSelections([...files, { id: "unresolved", status: "error", excludedFromHandoff: false }])).toBe(true);
   });
 
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {

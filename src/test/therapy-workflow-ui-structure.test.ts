@@ -84,13 +84,15 @@ describe("therapy workflow UI structure", () => {
     expect(source).not.toContain("Welches Modell wann?");
     expect(source).toContain("const inferredType = inferDirectBefundTargetFromFilename(file.name)");
     expect(source).toContain("const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId)");
-    expect(source).toContain('documentEntryMode === "batch" && pendingDirectBefundFiles.length > 0');
+    expect(source).toContain('groupDirectBefundFiles(pendingDirectBefundFiles).map(group =>');
+    expect(source).toContain('documentEntryMode === "batch" && (');
     expect(source).toContain('documentEntryMode === "single" && (item.status === "queued" || item.status === "error")');
-    expect(source).toContain('onClick={() => void processDirectBefundFiles(item.id)}');
+    expect(source).toContain('onClick={() => void processDirectBefundFiles(item.id, item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted")}');
     expect(source).toContain("if (!documentType) documentType = inferDirectBefundTarget(extracted.text)");
     expect(source).toContain("Dokumentart konnte nicht sicher automatisch erkannt werden");
     expect(source).not.toContain('documentType: "sonstige" as const');
-    expect(source).toContain('case "labor": append(setLaborKomplett, text)');
+    expect(source).toContain('case "labor":');
+    expect(source).toContain('case "biodiagnostik": append(setLaborKomplett, text)');
     expect(source).toContain('case "metatron": append(setMetatronHeel, text)');
     expect(source).toContain('case "vieva": append(setVievaPlus, text)');
     expect(source).toContain('case "anamnese": {');

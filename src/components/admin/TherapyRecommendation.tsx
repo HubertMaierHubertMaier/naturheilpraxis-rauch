@@ -44,7 +44,8 @@ import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
 import { logTherapyEvent } from "./therapy/therapyEventLog";
 import { DocumentLoadHistory } from "./therapy/DocumentLoadHistory";
 import { recordDocumentLoad } from "@/lib/documentLoadHistoryStore";
-import { contentDateLabel, selectionTimestamp } from "@/lib/documentLoadHistory";
+import { contentDateLabel, documentLoadKey, selectionTimestamp } from "@/lib/documentLoadHistory";
+import { groupDirectBefundFiles } from "@/lib/directBefundGroups";
 import {
   downloadClinicalReportHtml,
   openClinicalReportWindow,
@@ -113,6 +114,8 @@ import { applyManualPdfTextRedactions, manualPdfTextBindingStatus } from "@/lib/
 import { PatientDraftRevisionTracker, selectLoadedDraftRevision, stampOwnedDraftRevision, writeConfirmedPatientDraftCopies, isDraftRevision } from "@/lib/patientDraftRevision";
 import {
   DIRECT_BEFUND_TARGETS,
+  hasBlockingDirectBefundSelections,
+  directBefundPreviewBlockReason,
   directBefundTargetLabel,
   inferDirectBefundTarget,
   inferDirectBefundTargetFromFilename,
@@ -122,6 +125,7 @@ import {
 } from "@/lib/directBefundHandoff";
 import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
 import { isCurrentLocalSelectionOperation, localSelectionPreviewKey, loadLocalDocumentSelections, removeLocalDocumentSelections, saveLocalDocumentSelections, LocalDocumentSelectionConflictError, type LocalDocumentSelection, type LocalDocumentSelectionBaseline } from "@/lib/localDocumentSelectionCache";
+import { assertDocumentHandoffClaim, claimDocumentHandoff, claimDocumentPreview, completeDocumentPreview, markDocumentPreviewAccepted, readDocumentPreviewStatus, releaseDocumentPreviewClaim, renewDocumentPreviewClaim, saveDocumentContentDate } from "@/lib/localDocumentPreviewLedger";
 import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
 import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
@@ -253,6 +257,14 @@ type PendingDirectBefundFile = {
   recoveryNotice?: string;
   draftSavedAt?: string;
   restoredDraft?: boolean;
+  duplicateStatus?: "previewed" | "accepted" | "busy" | "interrupted" | "same-batch";
+  duplicateNotice?: string;
+  excludedFromHandoff?: boolean;
+  previewSkipNotice?: string;
+  contentDateStatus?: "saving" | "saved" | "conflict" | "error";
+  contentDateBaseline?: string;
+  contentDateConflict?: string;
+  contentDateNotice?: string;
 };
 type PersistedSafeBefundPreview = Pick<PendingDirectBefundFile,
   "id" | "sourcePseudonymId" | "documentType" | "documentTypeInferred" | "documentDate" | "previewText" | "removedIdentifierCategories" | "chars" | "pages" | "archiveReceipt"
@@ -1455,7 +1467,11 @@ export function TherapyRecommendation() {
   const [localSelectionCacheUserResolved, setLocalSelectionCacheUserResolved] = useState(false);
   const [localSelectionCacheIssue, setLocalSelectionCacheIssue] = useState("");
   const [documentLoadRevision, setDocumentLoadRevision] = useState(0);
+  const [batchPreviewSummary, setBatchPreviewSummary] = useState("");
   const documentLoadsInFlight = useRef(new Set<string>());
+  const directPreviewRunRef = useRef(false);
+  const previewStatusCheckedRef = useRef(new Set<string>());
+  const contentDateSavesInFlight = useRef(new Set<string>());
   const localSelectionCacheRunRef = useRef(0);
   const localSelectionCacheFingerprintRef = useRef("");
   const localSelectionCacheUserRef = useRef<string | null>(null);
@@ -1741,6 +1757,73 @@ export function TherapyRecommendation() {
         setPendingDirectBefundFiles(current => current.map(row => row.loadEventId === eventId
           ? { ...row, loadHistoryStatus: "error" } : row));
       }).finally(() => documentLoadsInFlight.current.delete(eventId));
+    }
+  }, [pendingDirectBefundFiles, localSelectionCacheUserId, user?.id, pseudonymId]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    const userId = localSelectionCacheUserId;
+    if (!userId || userId !== user?.id || !isPatientScopedStorageReady(pid)) return;
+    const generation = patientScopeGenerationRef.current;
+    for (const item of pendingDirectBefundFiles) {
+      if (!item.documentKey || (item.status !== "queued" && item.status !== "error")) continue;
+      const lookupKey = JSON.stringify([userId, pid, item.id, item.documentKey]);
+      if (previewStatusCheckedRef.current.has(lookupKey)) continue;
+      previewStatusCheckedRef.current.add(lookupKey);
+      void readDocumentPreviewStatus(userId, pid, item.documentKey).then(status => {
+        if (generation !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid || localSelectionCacheUserRef.current !== userId) return;
+        const duplicateStatus = status.busy ? "busy" : status.interrupted ? "interrupted"
+          : status.acceptedAt ? "accepted" : status.previewedAt ? "previewed" : undefined;
+        const duplicateNotice = duplicateStatus === "accepted"
+          ? "Identische Originalbytes wurden in diesem Browser für diesen Fall bereits ausgelesen und übernommen. Erneutes Auslesen nur nach bewusster Auswahl."
+          : duplicateStatus === "previewed"
+            ? "Identische Originalbytes wurden in diesem Browser für diesen Fall bereits erfolgreich ausgelesen. Erneutes Auslesen nur nach bewusster Auswahl."
+            : duplicateStatus === "busy" ? "Identische Originalbytes werden in einem anderen Tab gerade ausgelesen. Bitte dessen Ergebnis abwarten."
+              : duplicateStatus === "interrupted" ? "Ein früherer Ausleseversuch wurde unterbrochen. Ein neuer Versuch erfordert eine bewusste Bestätigung." : undefined;
+        setPendingDirectBefundFiles(current => current.map(row => row.id === item.id && row.documentKey === item.documentKey
+          && (row.status === "queued" || row.status === "error") ? {
+            ...row, duplicateStatus, duplicateNotice,
+            documentDate: !row.documentDate && status.documentDate ? status.documentDate : row.documentDate,
+            localCacheStatus: !row.documentDate && status.documentDate ? "saving" : row.localCacheStatus,
+            contentDateBaseline: status.documentDate || "",
+            contentDateStatus: status.documentDate && row.documentDate && row.documentDate !== status.documentDate
+              ? "conflict" : row.documentDate || status.documentDate ? status.documentDate ? "saved" : "saving" : undefined,
+            contentDateConflict: status.documentDate && row.documentDate && row.documentDate !== status.documentDate ? status.documentDate : undefined,
+            contentDateNotice: !row.documentDate && status.documentDate ? "Dokumentdatum aus einer früheren Auswahl derselben Originaldatei übernommen." : undefined,
+          } : row));
+      }).catch(() => {
+        setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+          ? { ...row, contentDateStatus: "error", contentDateNotice: "Lokaler Datumsnachweis nicht lesbar. Es wurde nichts ausgelesen." } : row));
+      });
+    }
+  }, [pendingDirectBefundFiles, localSelectionCacheUserId, user?.id, pseudonymId]);
+
+  useEffect(() => {
+    const pid = normalizePseudonymId(pseudonymId);
+    const userId = localSelectionCacheUserId;
+    if (!userId || userId !== user?.id || !isPatientScopedStorageReady(pid)) return;
+    const generation = patientScopeGenerationRef.current;
+    for (const item of pendingDirectBefundFiles) {
+      if (!item.documentKey || !item.documentDate || item.contentDateStatus !== "saving" || item.localCacheStatus !== "saved") continue;
+      const saveKey = JSON.stringify([userId, pid, item.id, item.documentDate]);
+      if (contentDateSavesInFlight.current.has(saveKey)) continue;
+      contentDateSavesInFlight.current.add(saveKey);
+      void saveDocumentContentDate(userId, pid, item.documentKey, item.documentDate, item.contentDateBaseline || "").then(result => {
+        if (generation !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid || localSelectionCacheUserRef.current !== userId) return;
+        setPendingDirectBefundFiles(current => current.map(row => row.id === item.id && row.documentKey === item.documentKey
+          ? result.status === "busy"
+            ? { ...row, contentDateStatus: "error", contentDateNotice: "Ein anderer Tab verarbeitet diese Originaldatei. Das Datum kann erst danach geändert werden." }
+            : result.status === "conflict"
+            ? { ...row, contentDateStatus: "conflict", contentDateConflict: result.documentDate,
+                contentDateNotice: "Ein anderer Tab hat für dieselbe Originaldatei ein anderes Dokumentdatum gesichert. Bitte ausdrücklich entscheiden." }
+            : { ...row, contentDateBaseline: result.documentDate, contentDateStatus: row.documentDate === result.documentDate ? "saved" : "saving",
+                contentDateConflict: undefined, contentDateNotice: undefined }
+          : row));
+      }).catch(error => {
+        if (generation !== patientScopeGenerationRef.current || pseudonymIdRef.current !== pid || localSelectionCacheUserRef.current !== userId) return;
+        setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+          ? { ...row, contentDateStatus: "error", contentDateNotice: error instanceof Error ? error.message : "Dokumentdatum konnte lokal nicht gesichert werden." } : row));
+      }).finally(() => contentDateSavesInFlight.current.delete(saveKey));
     }
   }, [pendingDirectBefundFiles, localSelectionCacheUserId, user?.id, pseudonymId]);
 
@@ -4104,6 +4187,7 @@ export function TherapyRecommendation() {
       return;
     }
     const selectedAt = new Date().toISOString();
+    setBatchPreviewSummary("");
     localSelectionCacheRunRef.current += 1;
     setPendingDirectBefundFiles((prev) => [
       ...prev,
@@ -4128,101 +4212,151 @@ export function TherapyRecommendation() {
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
 
-  const processDirectBefundFiles = async (targetId?: string) => {
-    const pid = normalizePseudonymId(pseudonymId);
-    if (!isPatientScopedStorageReady(pid)) {
-      toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auslesen.", variant: "destructive" });
+  const processDirectBefundFiles = async (targetId?: string, deliberateRepeat = false) => {
+    if (directPreviewRunRef.current) {
+      toast({ title: "Auslesen läuft", description: "Bitte den begonnenen Auslesevorgang erst abschließen lassen." });
       return;
     }
-    const scopeGeneration = patientScopeGenerationRef.current;
-    const sourceUserId = localSelectionCacheUserRef.current || "";
-    const manualTextScope = JSON.stringify([sourceUserId, pid]);
-    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
-      && localSelectionCacheUserRef.current === sourceUserId;
-    const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId);
-    if (!queue.length) return;
-    if (queue.some(item => item.loadEventId && item.loadHistoryStatus !== "saved")) {
-      toast({ title: "Ladeverlauf noch nicht gesichert", description: "Bitte den Speicherstatus prüfen und einen fehlgeschlagenen Ladeeintrag erneut sichern. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
-      return;
-    }
-    if (queue.some(item => item.localCacheStatus === "saving")) {
-      toast({ title: "Lokale Auswahl wird gesichert", description: "Bitte warten, bis die lokale Wiederaufnahme bestätigt oder ein Speicherhinweis angezeigt wird. Die Datei bleibt im aktuellen Tab erhalten." });
-      return;
-    }
-    if (queue.some((item) => normalizePseudonymId(item.sourcePseudonymId) !== pid)) {
-      toast({ title: "Fallwechsel erkannt", description: "Die ausgewählten Dateien gehören nicht zur aktuellen Pseudonym-ID und werden nicht ausgelesen.", variant: "destructive" });
-      return;
-    }
-    const missingDate = queue.find((item) => !item.documentDate.trim());
-    if (missingDate) {
-      toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
-      return;
-    }
-    if (queue.some(item => item.localCacheConflict || item.localCacheStatus !== "saved")) {
-      toast({ title: "Dokumentdatum noch nicht gesichert", description: "Bitte zuerst die lokale Sicherung von Dokumentart und Datum bestätigen lassen. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
-      return;
-    }
-    let successful = 0;
-    for (const item of queue) {
-      if (!scopeIsCurrent()) return;
-      let archiveCopy: File | undefined;
-      setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
-      try {
-        let documentType = item.documentType || inferDirectBefundTargetFromFilename(item.file.name);
-        const extracted = await extractClinicalDocumentText(item.file, documentType === "anamnese" ? "anamnese" : "doctor", (message) => {
-          if (scopeIsCurrent()) toast(message);
-        }, (progress) => {
-          if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
-        }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`,
-        documentType === "vieva" ? readVievaPdfPassword() || vievaPlusPdfPassword : "",
-        documentType === "vieva" ? updateVievaPlusPdfPassword : undefined);
-        if (!scopeIsCurrent()) return;
-        if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
-        if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
-        archiveCopy = isPdfClinicalDocument(item.file)
-          ? await prepareAnonymizedPdfArchive(item.file, progress => {
-            if(scopeIsCurrent())setPendingDirectBefundFiles(current=>current.map(row=>row.id===item.id?{...row,progress}:row));
-          },scopeIsCurrent,manualTextScope)
-          : undefined;
-        if(!scopeIsCurrent())return;
-        let sourceText = extracted.text;
-        if (isPdfClinicalDocument(item.file)) {
-          sourceText = applyManualPdfTextRedactions(item.file, extracted.text, manualTextScope);
-        }
-        const previewText = prepareDirectBefundHandoffText(sourceText, documentType, item.documentDate, extracted.ocrPageConfidences);
-        successful += 1;
-        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
-          ...row,
-          status: "ready",
-          progress: undefined,
-          documentType,
-          documentTypeInferred: !item.documentType,
-          previewText,
-          archiveCopy,
-          privacyReviewed: false,
-          removedIdentifierCategories: extracted.removedIdentifierCategories,
-          localPrivacyFindings: extracted.localPrivacyFindings,
-          privacyFindingsRevealed: false,
-          chars: extracted.chars,
-          pages: extracted.pages,
-        } : row));
-      } catch (error: any) {
-        if (!scopeIsCurrent()) return;
-        const manualBinding = manualPdfTextBindingStatus(error);
-        const failure = manualBinding || classifyClinicalPdfFailure(error);
-        setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? {
-          ...row,
-          status: "error",
-          archiveCopy: manualBinding ? archiveCopy : row.archiveCopy,
-          privacyReviewed: false,
-          errorKind: failure.label,
-          error: failure.message,
-        } : row));
+    directPreviewRunRef.current = true;
+    try {
+      const pid = normalizePseudonymId(pseudonymId);
+      if (!isPatientScopedStorageReady(pid)) {
+        toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann Dokumente auslesen.", variant: "destructive" });
+        return;
       }
-    }
-    if (successful) {
+      const scopeGeneration = patientScopeGenerationRef.current;
+      const sourceUserId = localSelectionCacheUserRef.current || "";
+      if (!sourceUserId) {
+        toast({ title: "Anmeldung fehlt", description: "Ohne bestätigten Benutzer wird kein Dokument ausgelesen.", variant: "destructive" });
+        return;
+      }
+      const manualTextScope = JSON.stringify([sourceUserId, pid]);
+      const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
+        && localSelectionCacheUserRef.current === sourceUserId;
+      const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId);
+      if (!queue.length) return;
+      let successful = 0;
+      let skipped = 0;
+      let failed = 0;
+      const seenKeys = new Set<string>();
+      const skip = (item: PendingDirectBefundFile, notice: string, duplicateStatus?: PendingDirectBefundFile["duplicateStatus"]) => {
+        skipped += 1;
+        setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+          ? { ...row, duplicateStatus, duplicateNotice: duplicateStatus ? notice : undefined, previewSkipNotice: duplicateStatus ? undefined : notice,
+              excludedFromHandoff: !targetId && !!duplicateStatus ? true : row.excludedFromHandoff }
+          : row));
+      };
+      for (const item of queue) {
+        if (!scopeIsCurrent()) return;
+        const blocked = directBefundPreviewBlockReason(item, pid);
+        if (blocked) { skip(item, blocked); continue; }
+        let archiveCopy: File | undefined;
+        let documentKey = "";
+        let claimId = "";
+        let claimed = false;
+        let completed = false;
+        let claimLost = false;
+        let renewalTimer: number | undefined;
+        try {
+          documentKey = /^[0-9a-f]{64}$/i.test(item.documentKey || "")
+            ? item.documentKey!.toLowerCase()
+            : await documentLoadKey(manualTextScope, item.file);
+          if (!scopeIsCurrent()) return;
+          if (item.documentKey !== documentKey) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, documentKey } : row));
+          if (seenKeys.has(documentKey)) {
+            skip(item, "Identische Originalbytes sind in dieser Sammeleingabe bereits berücksichtigt. Diese Auswahl wurde nicht erneut ausgelesen.", "same-batch");
+            continue;
+          }
+          seenKeys.add(documentKey);
+          claimId = crypto.randomUUID();
+          const claim = await claimDocumentPreview(sourceUserId, pid, documentKey, claimId, item.documentDate, deliberateRepeat && item.id === targetId);
+          if (!scopeIsCurrent()) return;
+          if (claim.status === "date-conflict") {
+            skip(item, `Das Dokumentdatum wurde in einem anderen Tab auf ${claim.documentDate ? formatDirectDocumentDate(claim.documentDate) : "leer"} geändert. Bitte den Datumswiderspruch prüfen.`);
+            setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+              ? { ...row, contentDateStatus: "conflict", contentDateConflict: claim.documentDate || "" } : row));
+            continue;
+          }
+          if (claim.status === "previewed") {
+            skip(item, claim.acceptedAt
+              ? "Identische Originalbytes wurden bereits ausgelesen und übernommen. Diese Auswahl wurde übersprungen."
+              : "Identische Originalbytes wurden bereits erfolgreich ausgelesen. Diese Auswahl wurde übersprungen.", claim.acceptedAt ? "accepted" : "previewed");
+            continue;
+          }
+          if (claim.status === "busy") {
+            skip(item, "Identische Originalbytes werden in einem anderen Tab gerade ausgelesen. Diese Auswahl wurde übersprungen.", "busy");
+            continue;
+          }
+          if (claim.status === "interrupted") {
+            skip(item, "Ein früherer Ausleseversuch wurde unterbrochen. Diese Auswahl wurde nicht automatisch erneut ausgelesen.", "interrupted");
+            continue;
+          }
+          claimed = true;
+          renewalTimer = window.setInterval(() => {
+            void renewDocumentPreviewClaim(sourceUserId, pid, documentKey, claimId).then(renewed => {
+              if (!renewed) claimLost = true;
+            }).catch(() => { claimLost = true; });
+          }, 30_000);
+          setPendingDirectBefundFiles(current => current.map(row => row.id === item.id
+            ? { ...row, status: "processing", error: undefined, duplicateStatus: undefined, duplicateNotice: undefined, previewSkipNotice: undefined }
+            : row));
+          let documentType = item.documentType || inferDirectBefundTargetFromFilename(item.file.name);
+          const extracted = await extractClinicalDocumentText(item.file, documentType === "anamnese" ? "anamnese" : "doctor", (message) => {
+            if (scopeIsCurrent()) toast(message);
+          }, (progress) => {
+            if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
+          }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`,
+          documentType === "vieva" ? readVievaPdfPassword() || vievaPlusPdfPassword : "",
+          documentType === "vieva" ? updateVievaPlusPdfPassword : undefined);
+          if (!scopeIsCurrent()) return;
+          if (claimLost) throw new Error("Ein anderer Tab hat den lokalen Ausleseanspruch übernommen. Bitte den Fall neu prüfen.");
+          if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
+          if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
+          archiveCopy = isPdfClinicalDocument(item.file)
+            ? await prepareAnonymizedPdfArchive(item.file, progress => {
+              if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
+            }, scopeIsCurrent, manualTextScope)
+            : undefined;
+          if (!scopeIsCurrent()) return;
+          if (claimLost) throw new Error("Der lokale Ausleseanspruch konnte nicht verlängert werden. Bitte den Fall neu prüfen.");
+          let sourceText = extracted.text;
+          if (isPdfClinicalDocument(item.file)) sourceText = applyManualPdfTextRedactions(item.file, extracted.text, manualTextScope);
+          const previewText = prepareDirectBefundHandoffText(sourceText, documentType, item.documentDate, extracted.ocrPageConfidences);
+          await completeDocumentPreview(sourceUserId, pid, documentKey, claimId);
+          completed = true;
+          if (!scopeIsCurrent()) return;
+          successful += 1;
+          setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? {
+            ...row, status: "ready", progress: undefined, documentType, documentTypeInferred: !item.documentType,
+            documentKey, previewText, archiveCopy, privacyReviewed: false,
+            removedIdentifierCategories: extracted.removedIdentifierCategories,
+            localPrivacyFindings: extracted.localPrivacyFindings, privacyFindingsRevealed: false,
+            chars: extracted.chars, pages: extracted.pages,
+          } : row));
+        } catch (error: any) {
+          if (!scopeIsCurrent()) return;
+          failed += 1;
+          const manualBinding = manualPdfTextBindingStatus(error);
+          const failure = manualBinding || classifyClinicalPdfFailure(error);
+          setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? {
+            ...row, status: "error", archiveCopy: manualBinding ? archiveCopy : row.archiveCopy,
+            privacyReviewed: false, errorKind: failure.label, error: failure.message,
+          } : row));
+        } finally {
+          if (renewalTimer !== undefined) window.clearInterval(renewalTimer);
+          if (claimed && !completed) {
+            try { await releaseDocumentPreviewClaim(sourceUserId, pid, documentKey, claimId); }
+            catch { if (scopeIsCurrent()) setLocalSelectionCacheIssue("Ein unterbrochener Ausleseanspruch konnte nicht freigegeben werden. Bitte den Fall später erneut prüfen."); }
+          }
+        }
+      }
       if (!scopeIsCurrent()) return;
-      toast({ title: "Datenschutzbereinigte Vorschau bereit", description: `${successful} Datei(en) lokal ausgelesen. Bitte jede Vorschau prüfen und erst danach gesammelt übernehmen.` });
+      const summary = `${successful} lokal ausgelesen · ${skipped} mit Hinweis übersprungen · ${failed} fehlgeschlagen`;
+      if (!targetId) setBatchPreviewSummary(summary);
+      if (successful) toast({ title: "Datenschutzbereinigte Vorschau bereit", description: `${summary}. Bitte jede Vorschau vor der Übernahme prüfen.` });
+      else if (skipped || failed) toast({ title: "Keine neue Vorschau erstellt", description: `${summary}. Hinweise stehen bei den einzelnen Dateien.` });
+    } finally {
+      directPreviewRunRef.current = false;
     }
   };
 
@@ -4324,7 +4458,7 @@ export function TherapyRecommendation() {
     }
     const ready = pendingDirectBefundFiles.filter((item) => item.status === "ready");
     if (!ready.length) return;
-    if (pendingDirectBefundFiles.some((item) => item.status === "queued" || item.status === "processing" || item.status === "error")) {
+    if (hasBlockingDirectBefundSelections(pendingDirectBefundFiles)) {
       toast({ title: "Sammelaufnahme unvollständig", description: "Bitte alle ausgewählten Dateien erfolgreich auslesen oder fehlerhafte Dateien bewusst entfernen und die Vorschauen erneut prüfen.", variant: "destructive" });
       return;
     }
@@ -4334,6 +4468,10 @@ export function TherapyRecommendation() {
     }
     if (ready.some((item) => !item.documentType)) {
       toast({ title: "Dokumentart fehlt", description: "Mindestens eine Vorschau hat keine bestätigte Dokumentart und wurde nicht übernommen.", variant: "destructive" });
+      return;
+    }
+    if (new Set(ready.map(item => item.documentKey).filter(Boolean)).size !== ready.length) {
+      toast({ title: "Doppelte Vorschau in der Auswahl", description: "Identische Originaldateien dürfen nicht zweimal zusammen übernommen werden. Bitte eine der Vorschauen bewusst entfernen.", variant: "destructive" });
       return;
     }
     if (ready.some((item) => !item.privacyReviewed || !item.previewText?.trim())) {
@@ -4351,9 +4489,12 @@ export function TherapyRecommendation() {
       });
       return;
     }
+    const handoffUserId = localSelectionCacheUserRef.current || "";
     const scopeGeneration = patientScopeGenerationRef.current;
-    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid;
+    const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
+      && localSelectionCacheUserRef.current === handoffUserId;
     const documentTypes = new Set<string>();
+    const handoffClaims: Array<{ documentKey: string; documentDate: string; claimId: string }> = [];
     const beforeHandoff = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
     let writeStarted = false;
     let receiptConfirmed = false;
@@ -4361,6 +4502,13 @@ export function TherapyRecommendation() {
     autoSaveRunIdRef.current += 1;
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     try {
+    if (!handoffUserId) throw new Error("Die Anmeldung für den lokalen Dokumentnachweis fehlt. Die Vorschau bleibt erhalten.");
+    for (const item of ready) {
+      if (!item.documentKey) throw new Error("Eine Vorschau hat keine Kennung der Originaldatei. Bitte die Datei erneut auswählen und prüfen.");
+      const claimId = crypto.randomUUID();
+      await claimDocumentHandoff(handoffUserId, pid, item.documentKey, item.documentDate, claimId);
+      handoffClaims.push({ documentKey: item.documentKey, documentDate: item.documentDate, claimId });
+    }
     // Commit all document fields and extracted facts together before building the save payload.
     // The preview is retained until the database copy has been verified below.
     flushSync(() => {
@@ -4373,7 +4521,8 @@ export function TherapyRecommendation() {
       if (!documentType) return;
       const text = item.previewText || "";
       switch (documentType) {
-        case "labor": append(setLaborKomplett, text); break;
+        case "labor":
+        case "biodiagnostik": append(setLaborKomplett, text); break;
         case "metatron": append(setMetatronHeel, text); break;
         case "vieva": append(setVievaPlus, text); break;
         case "anamnese": {
@@ -4414,7 +4563,7 @@ export function TherapyRecommendation() {
       for (const item of ready) {
         if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
         if (!item.archiveReceipt && !item.file.size) throw new Error("Bitte das lokale Original erneut auswählen. Eine reine Textvorschau ist noch kein gesicherter Nachweis für eine Archivkopie.");
-        const inputFields = { labor: "laborKomplett", metatron: "metatronHeel", vieva: "vievaPlus", anamnese: "anamnese", arzt: "arztbericht", sonstige: "sonstigeUntersuchungen" };
+        const inputFields = { labor: "laborKomplett", biodiagnostik: "laborKomplett", metatron: "metatronHeel", vieva: "vievaPlus", anamnese: "anamnese", arzt: "arztbericht", sonstige: "sonstigeUntersuchungen" };
         const archive = item.archiveReceipt
           ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
           : item.archiveCopy
@@ -4427,6 +4576,9 @@ export function TherapyRecommendation() {
         }
       }
       if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Archivkopien bleiben im ursprünglichen Fall.");
+      for (const claim of handoffClaims) {
+        await assertDocumentHandoffClaim(handoffUserId, pid, claim.documentKey, claim.documentDate, claim.claimId);
+      }
       return persistVerifiedPatientInput(pid, payload, (target, input) => {
         writeStarted = true;
         return upsertAutoSaveDraft(target, input);
@@ -4445,6 +4597,13 @@ export function TherapyRecommendation() {
       draftRevisionTrackerRef.current.revision(pid), draftWriterId, new Date().toISOString());
     lastAutoSavedPayloadRef.current = JSON.stringify(payload);
     setAutoSaveStatus("saved");
+    if (handoffClaims.length) {
+      const acceptedResults = await Promise.allSettled(handoffClaims.map(claim =>
+        markDocumentPreviewAccepted(handoffUserId, pid, claim.documentKey, claim.documentDate, claim.claimId)));
+      if (acceptedResults.some(result => result.status === "rejected")) {
+        setLocalSelectionCacheIssue("Die Übernahme ist bestätigt, aber der lokale Verarbeitungsnachweis konnte nicht vollständig aktualisiert werden. Bereits ausgelesene Originaldateien bleiben für ein automatisches erneutes Auslesen gesperrt.");
+      }
+    }
     const identifierCategories = Array.from(new Set(ready.flatMap((item) => item.removedIdentifierCategories || [])));
     await logTherapyEvent(pid, "documents_uploaded", {
       document_count: ready.length,
@@ -4486,6 +4645,7 @@ export function TherapyRecommendation() {
         toast({ title: "Übernahme noch nicht bestätigt", description: error?.message || "Die Vorschau bleibt erhalten. Bitte Speicherung erneut prüfen.", variant: "destructive" });
       }
     } finally {
+      await Promise.allSettled(handoffClaims.map(claim => releaseDocumentPreviewClaim(handoffUserId, pid, claim.documentKey, claim.claimId)));
       anamnesisImportPendingRef.current = false;
       setIsImportingAnamnesis(false);
     }
@@ -5657,12 +5817,6 @@ export function TherapyRecommendation() {
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
                 Archiv neu laden
               </Button>
-              {documentEntryMode === "batch" && pendingDirectBefundFiles.length > 0 && (
-                <Button type="button" size="sm" onClick={() => void processDirectBefundFiles()} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || !pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
-                  {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                  Sicher auslesen und Vorschau erstellen
-                </Button>
-              )}
               {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
                 <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -5671,7 +5825,7 @@ export function TherapyRecommendation() {
               )}
             </div>
             {pendingDirectBefundFiles.length > 0 && (
-              <div className="divide-y rounded-md border bg-muted/20 text-xs">
+              <div className="space-y-3 rounded-md border bg-muted/20 p-2 text-xs">
                 <p role="status" className="bg-amber-50/70 px-2 py-2 font-medium text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
                   {pendingDirectBefundFiles.length} Dokument{pendingDirectBefundFiles.length === 1 ? "" : "e"} zur Prüfung ausgewählt · noch nicht gespeichert{formatDirectSelectionDate(pendingDirectBefundFiles) ? ` · ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}${formatDirectSelectionTime(pendingDirectBefundFiles) ? ` um ${formatDirectSelectionTime(pendingDirectBefundFiles)} Uhr` : ""}` : ""}
                 </p>
@@ -5684,14 +5838,30 @@ export function TherapyRecommendation() {
                     </div>
                   </div>
                 )}
-                {pendingDirectBefundFiles.map((item) => (
-                  <div key={item.id} className="space-y-2 p-2">
+                {groupDirectBefundFiles(pendingDirectBefundFiles).map(group => (
+                  <section key={group.id} aria-label={group.label} className={`rounded-md border-l-4 border px-3 py-3 ${group.tone}`}>
+                    <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-current/10 pb-2">
+                      {group.id === "anamnese" ? <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                        : group.id === "patienten" ? <FileText className="h-4 w-4" aria-hidden="true" />
+                        : group.id === "metatron" ? <Stethoscope className="h-4 w-4" aria-hidden="true" />
+                        : group.id === "vieva" ? <Heart className="h-4 w-4" aria-hidden="true" />
+                        : group.id === "biodiagnostik" ? <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                        : <AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+                      <h4 className="text-sm font-semibold">{group.label}</h4>
+                      <Badge variant="outline">{group.items.length} Datei{group.items.length === 1 ? "" : "en"}</Badge>
+                      <span className="text-muted-foreground">{group.items.filter(file => file.status === "ready").length} Vorschau · {group.items.filter(file => !file.excludedFromHandoff && (file.status === "queued" || file.status === "error")).length} offen · {group.items.filter(file => file.excludedFromHandoff).length} übersprungen</span>
+                      <span className="basis-full text-muted-foreground">{group.note}</span>
+                    </div>
+                    <div className="divide-y divide-border/70">
+                    {group.items.map((item) => (
+                  <div key={item.id} className="space-y-2 py-3 first:pt-1 last:pb-0">
                     <div className="flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
                       <span className="min-w-0 flex-1 truncate" title={item.file.name}>{item.file.name}</span>
                       {item.pages ? <span className="text-muted-foreground whitespace-nowrap">{item.pages} S.</span> : null}
                       {item.status === "processing" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
                       {item.status === "ready" && <Badge variant="outline" className="text-[10px]">Vorschau</Badge>}
+                      {item.excludedFromHandoff && <Badge variant="outline" className="text-[10px]">Übersprungen · nicht zur Übernahme</Badge>}
                       {item.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
                       {item.localCacheStatus === "saving" && <span className="text-amber-700 text-[10px]">lokal wird gesichert</span>}
                       {item.localCacheStatus === "saved" && <span className="text-emerald-700 text-[10px]">lokal gesichert · noch nicht im Fallarchiv</span>}
@@ -5701,6 +5871,8 @@ export function TherapyRecommendation() {
                     </div>
                     {item.status === "processing" && <p role="status" className="text-sm font-medium text-primary">{item.progress || "Datei wird lokal ausgelesen …"}</p>}
                     {item.recoveryNotice && <p className="text-xs text-amber-800 dark:text-amber-200">{item.recoveryNotice}</p>}
+                    {item.duplicateNotice && <p role="status" className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">{item.duplicateNotice}</p>}
+                    {item.previewSkipNotice && <p role="status" className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">Übersprungen: {item.previewSkipNotice}</p>}
                     {item.localCacheError && <p className="text-xs text-amber-800 dark:text-amber-200">{item.localCacheError}</p>}
                     {item.status === "error" && item.errorKind === "PDF-Textabgleich" && item.archiveCopy && <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-200"><Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Lokale Arbeitskopie erneut prüfen</Button><span>Markierungen sind noch nicht zur Übernahme freigegeben.</span></div>}
                     {item.status === "error" && item.previewText?.trim() && item.file.size > 0 && item.pages && isPdfClinicalDocument(item.file) && !item.archiveCopy && (
@@ -5744,17 +5916,37 @@ export function TherapyRecommendation() {
                           aria-label={contentDateLabel(item.documentType)}
                           title={`${contentDateLabel(item.documentType)} (tatsächliches Datum des Inhalts, manuell eintragen)`}
                           value={item.documentDate}
-                          onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
+                          onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? {
+                            ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined,
+                            contentDateBaseline: file.contentDateConflict ?? file.contentDateBaseline,
+                            contentDateStatus: event.target.value ? "saving" : undefined,
+                            contentDateConflict: undefined, contentDateNotice: undefined,
+                          } : file))}
                           disabled={item.localCacheConflict || item.status === "processing" || item.status === "ready" || item.status === "done"}
                           className="h-8 text-xs"
                         />
                         <span className="mt-1 block text-[10px] text-muted-foreground">Manuell, wird nicht automatisch aus dem Ladedatum übernommen</span>
-                        {item.documentDate && item.localCacheStatus === "saved" && <span role="status" className="mt-1 block text-[10px] font-semibold text-emerald-700">{contentDateLabel(item.documentType)} lokal gesichert: {formatDirectDocumentDate(item.documentDate)}</span>}
+                        {item.documentDate && item.localCacheStatus === "saved" && item.contentDateStatus === "saved" && <span role="status" className="mt-1 block text-[10px] font-semibold text-emerald-700">{contentDateLabel(item.documentType)} lokal gesichert: {formatDirectDocumentDate(item.documentDate)}</span>}
+                        {item.documentDate && (item.contentDateStatus === "saving" || !item.contentDateStatus) && <span role="status" className="mt-1 block text-[10px] text-amber-800">Datum für diese Originaldatei wird geprüft und lokal gesichert …</span>}
+                        {item.contentDateNotice && <span role="status" className="mt-1 block text-[10px] text-amber-800 dark:text-amber-200">{item.contentDateNotice}</span>}
                       </label>
                     </div>
+                    {item.contentDateStatus === "conflict" && (
+                      <div role="alert" className="space-y-2 rounded border border-amber-400 bg-amber-50 p-2 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                        <p>Für identische Originalbytes ist bereits {item.contentDateConflict ? formatDirectDocumentDate(item.contentDateConflict) : "ein anderes Datum"} gesichert. Diese Auswahl nennt {formatDirectDocumentDate(item.documentDate)}. Bitte das richtige Dokumentdatum bewusst wählen.</p>
+                        <div className="flex flex-wrap gap-2">
+                          {item.contentDateConflict && <Button type="button" size="sm" variant="outline" onClick={() => setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, documentDate: item.contentDateConflict!, contentDateBaseline: item.contentDateConflict, contentDateStatus: "saved", contentDateConflict: undefined, contentDateNotice: undefined, localCacheStatus: "saving" } : row))}>Gesichertes Datum verwenden</Button>}
+                          <Button type="button" size="sm" variant="outline" onClick={() => setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, contentDateBaseline: item.contentDateConflict || "", contentDateStatus: "saving", contentDateConflict: undefined, contentDateNotice: undefined } : row))}>Eingetragenes Datum bewusst sichern</Button>
+                        </div>
+                      </div>
+                    )}
+                    {item.contentDateStatus === "error" && <Button type="button" size="sm" variant="outline" onClick={() => {
+                      previewStatusCheckedRef.current.delete(JSON.stringify([localSelectionCacheUserId, normalizePseudonymId(pseudonymId), item.id, item.documentKey]));
+                      setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, contentDateStatus: undefined, contentDateNotice: undefined } : row));
+                    }}>Lokalen Datumsnachweis erneut prüfen</Button>}
                     {documentEntryMode === "single" && (item.status === "queued" || item.status === "error") && (
-                      <Button type="button" size="sm" onClick={() => void processDirectBefundFiles(item.id)} disabled={item.restoredDraft || pendingDirectBefundFiles.some(file => file.status === "processing")} className="gap-1.5">
-                        <FileText className="h-3.5 w-3.5" /> Sicher auslesen und Vorschau erstellen
+                      <Button type="button" size="sm" onClick={() => void processDirectBefundFiles(item.id, item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted")} disabled={item.restoredDraft || pendingDirectBefundFiles.some(file => file.status === "processing") || item.duplicateStatus === "same-batch" || item.excludedFromHandoff} className="gap-1.5">
+                        <FileText className="h-3.5 w-3.5" /> {item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted" ? "Bewusst erneut auslesen und Vorschau erstellen" : "Sicher auslesen und Vorschau erstellen"}
                       </Button>
                     )}
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
@@ -5816,7 +6008,20 @@ export function TherapyRecommendation() {
                       </div>
                     )}
                   </div>
+                    ))}
+                    </div>
+                  </section>
                 ))}
+                {documentEntryMode === "batch" && (
+                  <div className="space-y-1 border-t pt-3">
+                    <Button type="button" size="sm" onClick={() => void processDirectBefundFiles()} disabled={!pendingDirectBefundFiles.some((file) => !file.excludedFromHandoff && (file.status === "queued" || file.status === "error")) || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                      {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                      Ausgewählte geeignete Dateien sicher auslesen und Vorschauen erstellen
+                    </Button>
+                    <p className="text-muted-foreground">Nur geeignete Dateien dieser Auswahl werden ausgelesen. Übersprungene Dateien erhalten direkt am Eintrag einen Hinweis.</p>
+                    {batchPreviewSummary && <p role="status" className="font-medium">Ergebnis: {batchPreviewSummary}</p>}
+                  </div>
+                )}
               </div>
             )}
             {loadedDocumentInventory.filter((doc) => doc.archivePath).length > 0 && (
