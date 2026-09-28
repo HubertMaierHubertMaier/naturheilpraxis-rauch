@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
 import { inferDirectBefundTargetFromFilename } from "@/lib/directBefundHandoff";
+import { isSupportedClinicalDocument } from "@/lib/clinicalDocumentFormats";
 
 const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
 const start = source.indexOf("  const addDirectBefundFiles =");
@@ -31,11 +32,12 @@ function setup(mode: "single" | "batch", existingCount: number) {
     normalizePseudonymId: (value: string) => value,
     isPatientScopedStorageReady: () => true,
     inferDirectBefundTargetFromFilename,
+    isSupportedClinicalDocument,
     crypto: { randomUUID: () => `new-${++nextId}` },
     setPendingDirectBefundFiles: (update: (previous: unknown[]) => unknown[]) => updates.push(update),
     setBatchPreviewSummary: vi.fn(),
   };
-  const addFiles = new Function(...Object.keys(env), `${js}; return addDirectBefundFiles;`)(...Object.values(env)) as (files: Array<{ name: string; webkitRelativePath: string }>) => void;
+  const addFiles = new Function(...Object.keys(env), `${js}; return addDirectBefundFiles;`)(...Object.values(env)) as (files: Array<{ name: string; webkitRelativePath: string }>, preferredType?: "labor" | "arzt" | "sonstige" | "anamnese" | "metatron" | "vieva" | "biodiagnostik" | "") => void;
   return { addFiles, existing, updates, toast, input };
 }
 
@@ -69,8 +71,31 @@ describe("direct intake selections", () => {
       { name: "P-2099-0001-two.pdf", webkitRelativePath: "" },
     ]);
 
-    expect(test.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Bitte Sammeleingabe wählen" }));
+    expect(test.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Bitte Sammelupload wählen" }));
     expect(test.updates).toHaveLength(0);
     expect(test.existing).toHaveLength(7);
+  });
+
+  it("assigns a chosen category without replacing previous rows or starting extraction", () => {
+    const test = setup("single", 2);
+    test.addFiles([{ name: "synthetic-unknown.pdf", webkitRelativePath: "" }], "biodiagnostik");
+    const result = test.updates[0](test.existing) as Array<Record<string, unknown>>;
+    expect(result.slice(0, 2)).toEqual(test.existing);
+    expect(result[2]).toMatchObject({ documentType: "biodiagnostik", documentTypeInferred: false, status: "queued", documentDate: "" });
+  });
+
+  it("keeps the unassigned area unassigned even when a filename suggests a type", () => {
+    const test = setup("single", 0);
+    test.addFiles([{ name: "synthetic-labor.pdf", webkitRelativePath: "" }], "");
+    const result = test.updates[0](test.existing) as Array<Record<string, unknown>>;
+    expect(result[0]).toMatchObject({ documentType: "", documentTypeInferred: false, status: "queued" });
+  });
+
+  it("rejects an unsupported file from a category picker without changing current rows", () => {
+    const test = setup("single", 2);
+    test.addFiles([{ name: "synthetic.txt", webkitRelativePath: "" }], "labor");
+    expect(test.updates).toHaveLength(0);
+    expect(test.existing).toHaveLength(2);
+    expect(test.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Dateiformat nicht unterstützt" }));
   });
 });

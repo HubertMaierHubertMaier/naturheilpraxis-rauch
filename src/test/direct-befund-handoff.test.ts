@@ -17,7 +17,7 @@ describe("direct Befund handoff", () => {
       { value: "labor", label: "Labor" },
       { value: "biodiagnostik", label: "Biodiagnostik Laboranalyse" },
       { value: "metatron", label: "Metatron" },
-      { value: "vieva", label: "Vieva Pro" },
+      { value: "vieva", label: "Vieva Plus" },
       { value: "anamnese", label: "Anamnese / Anamnesebogen" },
       { value: "arzt", label: "Arztbericht / Arztbrief" },
       { value: "sonstige", label: "Allgemeine Unterlagen" },

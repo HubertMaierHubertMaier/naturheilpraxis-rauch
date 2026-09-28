@@ -20,7 +20,7 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
   const [notice, setNotice] = useState("");
   const acceptFiles = (selected: File[]) => {
     if (disabled) { setNotice(disabledReason); return; }
-    if (mode === "single" && selected.length > 1) { setNotice("Für mehrere Dateien bitte die Sammeleingabe wählen. Es wurde keine Datei übernommen."); return; }
+    if (mode === "single" && selected.length > 1) { setNotice("Für mehrere Dateien bitte Sammelupload wählen. Es wurde keine Datei übernommen."); return; }
     const documents = selected.filter(isSupportedClinicalDocument);
     const unsupported = selected.length - documents.length;
     setNotice(unsupported
@@ -30,13 +30,13 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
   };
   return (
     <div className="space-y-3">
-      <div role="radiogroup" aria-label="Dokumente einzeln oder gesammelt übernehmen" className="grid gap-3 sm:grid-cols-2">
+      <div role="radiogroup" aria-label="Dateien einzeln oder gesammelt auswählen" className="grid gap-3 sm:grid-cols-2">
         {([
-          ["single", "Einzeldokumente", "Jede PDF-, Word- oder Excel-Datei einzeln zuordnen, nachschwärzen und übernehmen."],
-          ["batch", "Sammeleingabe", "PDF, Word und Excel eines Falls gemeinsam auswählen und einzeln prüfen."],
+          ["single", "Einzeldateien", "Jeweils eine Datei hinzufügen. Jede Zeile hat eine eigene Aktion für die sichere Vorschau."],
+          ["batch", "Sammelupload", "Mehrere Dateien auf einmal hinzufügen. Eine Aktion erstellt sichere Vorschauen für geeignete Dateien."],
         ] as const).map(([value, title, description]) => <button key={value} type="button" role="radio" aria-checked={mode === value} disabled={selectionLocked} onClick={() => onModeChange?.(value)} className={`rounded-xl border-2 p-4 text-left transition-all ${mode === value ? "border-blue-600 bg-blue-600 text-white shadow-lg dark:border-blue-500 dark:bg-blue-500" : "border-border bg-background hover:border-primary/40"}`}><span className="block text-base font-semibold">{title}</span><span className={`mt-1 block text-sm ${mode === value ? "text-white/90" : "text-muted-foreground"}`}>{description}</span></button>)}
       </div>
-      {selectionLocked && <p className="text-xs text-muted-foreground">Die aktuelle Dateiauswahl bleibt erhalten. Vor einem Wechsel diese Auswahl übernehmen oder bewusst entfernen.</p>}
+      {selectionLocked && <p className="text-xs text-muted-foreground">Die aktuelle Dateiauswahl bleibt erhalten. Vor einem Moduswechsel diese Auswahl übernehmen oder bewusst entfernen.</p>}
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}
@@ -50,7 +50,7 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
         onDrop={event => {
           event.preventDefault(); setDragging(false);
           if ([...event.dataTransfer.items].some(item => typeof item.webkitGetAsEntry === "function" && item.webkitGetAsEntry()?.isDirectory)) {
-            setNotice(mode === "single" ? "Für einen Ordner zuerst die Sammeleingabe wählen und dort „Ordner mit Dokumenten auswählen“ verwenden." : "Für einen Ordner bitte die Schaltfläche „Ordner mit Dokumenten auswählen“ verwenden."); return;
+            setNotice(mode === "single" ? "Für einen Ordner zuerst Sammelupload wählen und dort „Ordner mit Dokumenten auswählen“ verwenden." : "Für einen Ordner bitte die Schaltfläche „Ordner mit Dokumenten auswählen“ verwenden."); return;
           }
           acceptFiles(Array.from(event.dataTransfer.files));
         }}
@@ -67,14 +67,10 @@ export function PatientBatchUploadZone({ disabled, disabledReason, onSelectFiles
         <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => folderRef.current?.click()} className={`gap-2 ${hasSelection ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:bg-blue-500" : !disabled ? "border-primary/50 bg-primary/5 text-primary animate-pulse" : ""}`}>
           <FolderOpen className="h-4 w-4" /> Ordner mit Dokumenten auswählen
         </Button>
-        <p className="text-xs text-muted-foreground">Eine Ablage unter Dokumente ist optional. Erst deine Auswahl startet die Prüfung; ein Ordner wird nicht automatisch überwacht.</p>
+        <p className="text-xs text-muted-foreground">Eine Ablage unter Dokumente ist optional. Die Auswahl zeigt nur Prüfschritte; ein Ordner wird nicht automatisch überwacht.</p>
       </div>}
       {notice && <p role="status" className="rounded-md border bg-background p-2 text-sm">{notice}</p>}
-      <ol className="grid gap-2 text-sm sm:grid-cols-3">
-        <li><strong>1. Zuordnen:</strong> Dokumentart und Datum je Datei kontrollieren.</li>
-        <li><strong>2. Nachschwärzen und prüfen:</strong> Vorhandene lokale Schwärzung anwenden und die vollständige Datenschutzvorschau prüfen.</li>
-        <li><strong>3. Übernehmen:</strong> Geprüfte Inhalte passend übernehmen und Speicherbestätigung abwarten.</li>
-      </ol>
+      <p className="text-xs text-muted-foreground">Die Auswahl allein liest nichts aus. Im nächsten Schritt Dokumentart und Dokumentdatum je Datei prüfen.</p>
     </div>
   );
 }

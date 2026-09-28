@@ -37,7 +37,7 @@ import { WikiAuditCard, type WikiAuditInfo } from "./therapy/WikiAuditCard";
 import { LiveInputSummary } from "./therapy/LiveInputSummary";
 import { WorkloadBadge, WorkloadTotal } from "./therapy/WorkloadBadge";
 import { extractClinicalDocumentText, extractTherapyTemplateDocument, MultiDocUpload } from "./therapy/MultiDocUpload";
-import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
+import { CLINICAL_DOCUMENT_ACCEPT, isSupportedClinicalDocument } from "@/lib/clinicalDocumentFormats";
 import { loadPatientMannayanOrders, orderNumberOrMissing } from "@/lib/mannayanPatientOrders";
 import type { LocalPrivacyFinding } from "../../../supabase/functions/_shared/clinicalDeidentification";
 import { RedactedTextPreview } from "./therapy/RedactedTextPreview";
@@ -1468,6 +1468,7 @@ export function TherapyRecommendation() {
   const [localSelectionCacheIssue, setLocalSelectionCacheIssue] = useState("");
   const [documentLoadRevision, setDocumentLoadRevision] = useState(0);
   const [batchPreviewSummary, setBatchPreviewSummary] = useState("");
+  const hasUntransferredDocumentSelections = pendingDirectBefundFiles.some(file => !file.excludedFromHandoff && file.status !== "done");
   const documentLoadsInFlight = useRef(new Set<string>());
   const directPreviewRunRef = useRef(false);
   const previewStatusCheckedRef = useRef(new Set<string>());
@@ -3352,6 +3353,10 @@ export function TherapyRecommendation() {
   };
 
   const handleReAnalyzeAll = async () => {
+    if (hasUntransferredDocumentSelections) {
+      toast({ title: "Unterlagen zuerst übernehmen", description: "Ausgewählte Dateien erst prüfen und passend übernehmen.", variant: "destructive" });
+      return;
+    }
     const pid = normalizePseudonymId(pseudonymId);
     if (!pid) {
       toast({ title: "Kein Pseudonym ausgewählt", description: "Bitte zuerst einen Patienten/Pseudonym wählen.", variant: "destructive" });
@@ -3416,6 +3421,10 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async (options?: unknown) => {
+    if (hasUntransferredDocumentSelections) {
+      toast({ title: "Unterlagen zuerst prüfen", description: "Ausgewählte Dateien erst sicher auslesen, Datenschutzvorschau prüfen und passend übernehmen.", variant: "destructive" });
+      return;
+    }
     if (docAbortRef.current) {
       toast({ title: "Befund läuft bereits", description: "Bitte den laufenden Befund-Lauf abwarten oder zuerst abbrechen." });
       return;
@@ -4153,10 +4162,10 @@ export function TherapyRecommendation() {
     });
   };
 
-  const addDirectBefundFiles = (list: FileList | File[] | null) => {
+  const addDirectBefundFiles = (list: FileList | File[] | null, preferredType?: DirectBefundTarget | "") => {
     if (!list?.length) return;
     if (documentEntryMode === "single" && list.length > 1) {
-      toast({ title: "Bitte Sammeleingabe wählen", description: "In der Einzeleingabe kann jeweils nur eine Datei auf einmal ausgewählt werden. Die bestehende Auswahl bleibt erhalten." });
+      toast({ title: "Bitte Sammelupload wählen", description: "Bei Einzeldateien kann jeweils nur eine Datei auf einmal ausgewählt werden. Die bestehende Auswahl bleibt erhalten." });
       return;
     }
     if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
@@ -4179,6 +4188,11 @@ export function TherapyRecommendation() {
     }
     const pidRe = /P-\d{4}-\d{4}/gi;
     const files = Array.from(list);
+    if (files.some(file => !isSupportedClinicalDocument(file))) {
+      toast({ title: "Dateiformat nicht unterstützt", description: "Bitte nur PDF-, Word- oder Excel-Dateien auswählen. Die bisherige Auswahl bleibt erhalten.", variant: "destructive" });
+      if (directBefundFileRef.current) directBefundFileRef.current.value = "";
+      return;
+    }
     const foreign = files
       .filter(file => ((file.webkitRelativePath || file.name).match(pidRe) || []).some(hit => hit.toUpperCase() !== currentPid));
     if (foreign.length) {
@@ -4198,8 +4212,8 @@ export function TherapyRecommendation() {
           file,
           sourcePseudonymId: currentPid,
           status: "queued" as const,
-          documentType: inferredType,
-          documentTypeInferred: !!inferredType,
+          documentType: preferredType === undefined ? inferredType : preferredType,
+          documentTypeInferred: preferredType === undefined && !!inferredType,
           documentDate: "",
           loadedAt: selectedAt,
           loadEventId: crypto.randomUUID(),
@@ -4311,7 +4325,7 @@ export function TherapyRecommendation() {
           if (!scopeIsCurrent()) return;
           if (claimLost) throw new Error("Ein anderer Tab hat den lokalen Ausleseanspruch übernommen. Bitte den Fall neu prüfen.");
           if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
-          if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Pro, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
+          if (!documentType) throw new Error("Dokumentart konnte nicht sicher automatisch erkannt werden. Bitte Labor, Metatron, Vieva Plus, Arztbericht / Anamnese oder Allgemeine Unterlagen auswählen.");
           archiveCopy = isPdfClinicalDocument(item.file)
             ? await prepareAnonymizedPdfArchive(item.file, progress => {
               if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
@@ -5007,6 +5021,7 @@ export function TherapyRecommendation() {
     && manualMittel.length === 0
     && useMapReduce;
   const therapyStartBlockedByBefund = !syntheticCaseIsReady && (isAnalyzingDocs
+    || hasUntransferredDocumentSelections
     || hasEffectivelySelectedBefundSources
     || (nonContextAnalysisSources.length > 0 && !allBefundSourcesManuallyDeselected && !docAnalysisHtml));
 
@@ -5060,7 +5075,7 @@ export function TherapyRecommendation() {
       return;
     }
     if (therapyStartBlockedByBefund) {
-      toast({ title: "Befund-Auswertung zuerst abschließen", description: "Es sind noch neue oder geänderte Befundquellen zur Auswertung ausgewählt.", variant: "destructive" });
+      toast({ title: hasUntransferredDocumentSelections ? "Unterlagen zuerst übernehmen" : "Befund-Auswertung zuerst abschließen", description: hasUntransferredDocumentSelections ? "Ausgewählte Dateien erst prüfen und die freigegebenen Inhalte passend übernehmen." : "Es sind noch neue oder geänderte Befundquellen zur Auswertung ausgewählt.", variant: "destructive" });
       return;
     }
     const isErweitern = !!(opts?.nachschlag && opts?.previousResult);
@@ -5760,9 +5775,11 @@ export function TherapyRecommendation() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="rounded-md border border-primary/30 bg-background px-3 py-2 text-sm font-medium text-foreground">
-            Hier gemeinsam für genau einen zuvor festgelegten Pseudonymfall auswählen: Anamnese, Labor, Arztberichte, Vieva, Metatron und allgemeine Unterlagen. Jede Datei wird einzeln datenschutzbereinigt, geprüft und danach automatisch dem richtigen Befundbereich zugeordnet.
-          </p>
+          <div className="rounded-lg border-2 border-sky-400 bg-sky-50/70 p-3 dark:border-sky-700 dark:bg-sky-950/20">
+            <p className="text-xs font-bold uppercase tracking-wide text-sky-900 dark:text-sky-100">Eingabe · Schritt 1</p>
+            <h3 className="mt-1 text-base font-semibold">Unterlagen hinzufügen / auswählen</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Für genau einen zuvor festgelegten Pseudonymfall Dateien auswählen. Die Auswahl startet weder Auslesen noch Auswertung.</p>
+          </div>
           <p className="text-xs text-muted-foreground">
             Standardmäßig sind nur neue oder geänderte Quellen ausgewählt. Unveränderte Quellen können manuell ergänzt werden; so verbrauchen sie nicht automatisch erneut Analyse-Credits.
           </p>
@@ -5792,7 +5809,6 @@ export function TherapyRecommendation() {
               </Button>
               <span className="text-xs font-medium text-muted-foreground">nur Vorschau – keine Veröffentlichung</span>
             </div>
-            <DocumentLoadHistory userId={user?.id} pid={normalizePseudonymId(pseudonymId)} revision={documentLoadRevision} saveError={pendingDirectBefundFiles.some(item => item.loadHistoryStatus === "error") ? "Mindestens ein Ladeeintrag ist noch nicht bestätigt." : ""} selectionHints={pendingDirectBefundFiles.map(item => ({ eventId: item.loadEventId, fileName: item.file.name, documentKey: item.documentKey }))} />
             <PatientBatchUploadZone
               mode={documentEntryMode}
               onModeChange={setDocumentEntryMode}
@@ -5817,18 +5833,19 @@ export function TherapyRecommendation() {
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
                 Archiv neu laden
               </Button>
-              {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
-                <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Geprüfte Inhalte passend übernehmen
-                </Button>
-              )}
             </div>
-            {pendingDirectBefundFiles.length > 0 && (
-              <div className="space-y-3 rounded-md border bg-muted/20 p-2 text-xs">
+            <div className="space-y-3 rounded-lg border-2 border-amber-400 bg-amber-50/30 p-3 text-xs dark:border-amber-800 dark:bg-amber-950/10">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-100">Eingabe · Schritt 2</p>
+                <h3 className="mt-1 text-base font-semibold">Dokumentart + Dokumentdatum prüfen</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Nach der Auswahl jede Datei zuordnen und ihr tatsächliches Dokumentdatum eintragen. Erst danach „Sicher auslesen und Vorschau erstellen“ wählen und die Datenschutzvorschau prüfen.</p>
+              </div>
+              <DocumentLoadHistory userId={user?.id} pid={normalizePseudonymId(pseudonymId)} revision={documentLoadRevision} saveError={pendingDirectBefundFiles.some(item => item.loadHistoryStatus === "error") ? "Mindestens ein Ladeeintrag ist noch nicht bestätigt." : ""} selectionHints={pendingDirectBefundFiles.map(item => ({ eventId: item.loadEventId, fileName: item.file.name, documentKey: item.documentKey }))} />
+              {pendingDirectBefundFiles.length > 0 ? (
                 <p role="status" className="bg-amber-50/70 px-2 py-2 font-medium text-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
                   {pendingDirectBefundFiles.length} Dokument{pendingDirectBefundFiles.length === 1 ? "" : "e"} zur Prüfung ausgewählt · noch nicht gespeichert{formatDirectSelectionDate(pendingDirectBefundFiles) ? ` · ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}${formatDirectSelectionTime(pendingDirectBefundFiles) ? ` um ${formatDirectSelectionTime(pendingDirectBefundFiles)} Uhr` : ""}` : ""}
                 </p>
+              ) : <p className="rounded-md border border-dashed bg-background px-3 py-2 text-sm text-muted-foreground">Noch keine Datei ausgewählt. Die farbigen Bereiche bleiben sichtbar; dort kann eine passende Datei hinzugefügt werden.</p>}
                 {pendingDirectBefundFiles.some((file) => file.restoredDraft) && (
                   <div role="status" className="space-y-2 bg-sky-50/70 px-2 py-2 text-sky-950 dark:bg-sky-950/20 dark:text-sky-100">
                     <p className="font-medium">Auswahlentwurf nach dem Neuladen wiederhergestellt – noch keine Übernahme. Es wurde nichts ausgelesen, analysiert oder freigegeben.</p>
@@ -5838,7 +5855,7 @@ export function TherapyRecommendation() {
                     </div>
                   </div>
                 )}
-                {groupDirectBefundFiles(pendingDirectBefundFiles).map(group => (
+                {groupDirectBefundFiles(pendingDirectBefundFiles, true).map(group => (
                   <section key={group.id} aria-label={group.label} className={`rounded-md border-l-4 border px-3 py-3 ${group.tone}`}>
                     <div className="mb-2 flex flex-wrap items-center gap-2 border-b border-current/10 pb-2">
                       {group.id === "anamnese" ? <ClipboardList className="h-4 w-4" aria-hidden="true" />
@@ -5851,6 +5868,15 @@ export function TherapyRecommendation() {
                       <Badge variant="outline">{group.items.length} Datei{group.items.length === 1 ? "" : "en"}</Badge>
                       <span className="text-muted-foreground">{group.items.filter(file => file.status === "ready").length} Vorschau · {group.items.filter(file => !file.excludedFromHandoff && (file.status === "queued" || file.status === "error")).length} offen · {group.items.filter(file => file.excludedFromHandoff).length} übersprungen</span>
                       <span className="basis-full text-muted-foreground">{group.note}</span>
+                    </div>
+                    {group.items.length === 0 && <p className="mb-2 rounded-md border border-dashed border-current/25 bg-background/70 px-3 py-3 text-sm text-muted-foreground">Noch keine Datei in diesem Bereich. Eine passende PDF-, Word- oder Excel-Datei hinzufügen; das Auslesen startet erst nach der Prüfung.</p>}
+                    <div className="mb-2 flex flex-wrap gap-2" aria-label={`Dateien für ${group.label} hinzufügen`}>
+                      {group.addOptions.map(option => (
+                        <label key={option.documentType || "unassigned"} className={`inline-flex min-h-9 items-center rounded-md border border-current/30 bg-background px-3 py-2 text-xs font-semibold ${!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(file => file.status === "processing") ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-primary/10 focus-within:ring-2 focus-within:ring-primary"}`}>
+                          <FileUp className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />{option.label}
+                          <input type="file" accept={CLINICAL_DOCUMENT_ACCEPT} multiple={documentEntryMode === "batch"} className="sr-only" aria-label={option.label} disabled={!isPatientScopedStorageReady(normalizePseudonymId(pseudonymId)) || isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(file => file.status === "processing")} onChange={event => { addDirectBefundFiles(event.currentTarget.files, option.documentType); event.currentTarget.value = ""; }} />
+                        </label>
+                      ))}
                     </div>
                     <div className="divide-y divide-border/70">
                     {group.items.map((item) => (
@@ -6022,8 +6048,16 @@ export function TherapyRecommendation() {
                     {batchPreviewSummary && <p role="status" className="font-medium">Ergebnis: {batchPreviewSummary}</p>}
                   </div>
                 )}
+                {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
+                  <div className="rounded-md border border-emerald-400 bg-emerald-50/70 p-3 dark:bg-emerald-950/20">
+                    <p className="mb-2 text-sm font-semibold">Datenschutzvorschau geprüft? Erst dann Inhalte übernehmen.</p>
+                    <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Geprüfte Inhalte passend übernehmen
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
             {loadedDocumentInventory.filter((doc) => doc.archivePath).length > 0 && (
               <div className="rounded-md border border-dashed bg-muted/20 p-2 text-xs space-y-1">
                 <div className="font-semibold text-foreground">Privates Archiv anonymisierter PDF-Kopien für diesen Fall</div>
@@ -6090,14 +6124,17 @@ export function TherapyRecommendation() {
             className="flex flex-wrap items-center gap-3 rounded-md border-2 border-emerald-500 bg-emerald-50/80 p-3 outline-none focus:ring-2 focus:ring-emerald-600 dark:bg-emerald-950/25"
           >
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-emerald-950 dark:text-emerald-100">2. Nächster Schritt: übernommene Befunde auswerten</div>
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-900 dark:text-emerald-100">Auswertung · Schritt 3</p>
+              <div className="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">Übernommene Befunde auswerten, danach Therapie vorbereiten</div>
               <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">
-                {analysisSourceTotals.selected > 0
+                {hasUntransferredDocumentSelections
+                  ? "Zuerst alle ausgewählten Dateien prüfen und freigegebene Inhalte passend übernehmen. Bis dahin startet keine Befund- oder Therapieauswertung."
+                  : analysisSourceTotals.selected > 0
                   ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) lösen die Aktualisierung aus; der neue Gesamtbericht enthält alle ${analysisSources.length} aktuellen Quellen.`
                   : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
               </p>
             </div>
-            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
+            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={hasUntransferredDocumentSelections || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Gesamtbericht aktualisieren ({analysisSourceTotals.selected} Änderung(en))
             </Button>
@@ -6106,7 +6143,7 @@ export function TherapyRecommendation() {
             <details className="w-full rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs">
               <summary className="cursor-pointer font-medium text-muted-foreground">Erweiterte Aktion</summary>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <Button type="button" size="sm" variant="outline" onClick={handleReAnalyzeAll} disabled={isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSources.length === 0} className="gap-1.5 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30">
+                <Button type="button" size="sm" variant="outline" onClick={handleReAnalyzeAll} disabled={hasUntransferredDocumentSelections || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSources.length === 0} className="gap-1.5 border-terracotta-600 text-terracotta-700 hover:bg-terracotta-50 dark:hover:bg-terracotta-950/30">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Befund-Auswertung komplett neu starten
                 </Button>

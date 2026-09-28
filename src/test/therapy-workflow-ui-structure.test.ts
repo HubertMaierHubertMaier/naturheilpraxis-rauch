@@ -27,7 +27,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('aria-label="Patientenfall / Pseudonym-ID"');
     expect(source).toContain('id="patient-intake-case" data-workflow-order={1}');
     expect(source).toContain('id="patient-intake-documents" data-workflow-order={2}');
-    expect(source).toContain("für genau einen zuvor festgelegten Pseudonymfall");
+    expect(source).toContain("Für genau einen zuvor festgelegten Pseudonymfall");
     expect(source).toContain("Mehrere Dateien (PDF/Word/Excel) auswählen");
     expect(count(source, "requireDocumentDate")).toBe(3);
     expect(source).toContain("await applyAndPersistExtractedInputs({ forPseudonymId: analysisPid");
@@ -50,7 +50,9 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("Sicher auslesen und Vorschau erstellen");
     expect(source).toContain("Ausgelesener Text – vor der Übernahme prüfen");
     expect(source).toContain("Geprüfte Inhalte passend übernehmen");
-    expect(source).toContain("2. Nächster Schritt: übernommene Befunde auswerten");
+    expect(source).toContain("Auswertung · Schritt 3");
+    expect(source).toContain("Eingabe · Schritt 1");
+    expect(source).toContain("Eingabe · Schritt 2");
     expect(source).toContain('nextBefundActionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })');
     expect(source).toContain('nextBefundActionRef.current?.focus({ preventScroll: true })');
     expect(source).toContain("Ausgewählte Dateien werden vor dem Einlesen lokal und nur in diesem Browser");
@@ -84,7 +86,7 @@ describe("therapy workflow UI structure", () => {
     expect(source).not.toContain("Welches Modell wann?");
     expect(source).toContain("const inferredType = inferDirectBefundTargetFromFilename(file.name)");
     expect(source).toContain("const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId)");
-    expect(source).toContain('groupDirectBefundFiles(pendingDirectBefundFiles).map(group =>');
+    expect(source).toContain('groupDirectBefundFiles(pendingDirectBefundFiles, true).map(group =>');
     expect(source).toContain('documentEntryMode === "batch" && (');
     expect(source).toContain('documentEntryMode === "single" && (item.status === "queued" || item.status === "error")');
     expect(source).toContain('onClick={() => void processDirectBefundFiles(item.id, item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted")}');

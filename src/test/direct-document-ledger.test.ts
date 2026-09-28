@@ -158,4 +158,13 @@ describe("document groups", () => {
       ["anamnese", 1], ["patienten", 1], ["biodiagnostik", 1], ["unassigned", 1],
     ]);
   });
+
+  it("shows every intake area when no synthetic file has been selected", () => {
+    const groups = groupDirectBefundFiles([], true);
+    expect(groups.map(group => [group.id, group.items.length])).toEqual([
+      ["anamnese", 0], ["patienten", 0], ["metatron", 0], ["vieva", 0], ["biodiagnostik", 0], ["unassigned", 0],
+    ]);
+    expect(groups.find(group => group.id === "patienten")?.addOptions.map(option => option.documentType)).toEqual(["labor", "arzt", "sonstige"]);
+    expect(groups.find(group => group.id === "vieva")?.label).toBe("Vieva Plus Analyse");
+  });
 });

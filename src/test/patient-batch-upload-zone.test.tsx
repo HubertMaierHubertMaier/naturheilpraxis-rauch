@@ -22,8 +22,8 @@ it("accepts a single PDF and routes a folder drop to the visible batch-mode choi
   fireEvent.drop(zone, { dataTransfer: { files: [pdf], items: [] } });
   expect(onFiles).toHaveBeenCalledWith([pdf]);
   fireEvent.drop(zone, { dataTransfer: { files: [], items: [{ webkitGetAsEntry: () => ({ isDirectory: true }) }] } });
-  expect(screen.getByRole("status")).toHaveTextContent("zuerst die Sammeleingabe wählen");
-  fireEvent.click(screen.getByRole("radio", { name: /Sammeleingabe/ }));
+  expect(screen.getByRole("status")).toHaveTextContent("zuerst Sammelupload wählen");
+  fireEvent.click(screen.getByRole("radio", { name: /Sammelupload/ }));
   expect(onModeChange).toHaveBeenCalledWith("batch");
   expect(onFiles).toHaveBeenCalledTimes(1);
 });
