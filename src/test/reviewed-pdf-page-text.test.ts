@@ -55,6 +55,15 @@ describe("text from reviewed PDF image pages", () => {
     expect(result).not.toContain("[IAA_ERFASSUNG:NATIVE_FELDER]");
   });
 
+  it("accepts OCR text containing only the selected page", () => {
+    const selectedPageOnly = "=== Dokument B ===\n--- Seite 2 ---\nIAA Frage 1: am Original prüfen\nSymptom: Müdigkeit";
+    const result = replaceReviewedPdfPageText(original, selectedPageOnly, [2]);
+    expect(result).toContain("Hausarzt: Erika Beispiel");
+    expect(result).toContain("IAA Frage 1: am Original prüfen");
+    expect(result).toContain("[IAA_ERFASSUNG:MANUELL_PRUEFEN]");
+    expect(() => replaceReviewedPdfPageText(original, selectedPageOnly, [1])).toThrow(/fehlt/);
+  });
+
   it("names IAA fields lost from a masked page without copying their ratings or notes", () => {
     const withNativeIaa = original.replace("Symptom: Gelenkschmerzen", "Symptom: Gelenkschmerzen\n[IAA_FORMULAR:1.2;SEITE:1;MARKIERT:6]\nPrivater Freitext\n[/IAA_FORMULAR]");
     const result = replaceReviewedPdfPageText(withNativeIaa, maskedCopy, [1]);

@@ -160,6 +160,7 @@ export async function extractClinicalDocumentText(
   pdfPassword = "",
   onPasswordCaptured?: (password: string) => void,
   forceFullPdfOcr = false,
+  onlyPages?: readonly number[],
 ): Promise<ClinicalDocumentExtractionResult> {
   if (file.type.startsWith("image/")) {
     throw new Error("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet. Bitte den sicheren PDF-Import verwenden.");
@@ -226,6 +227,13 @@ export async function extractClinicalDocumentText(
     throw error;
   }
   const totalPages = doc.numPages;
+  const selectedPages = onlyPages === undefined ? undefined : new Set(onlyPages);
+  if (selectedPages && (!selectedPages.size || selectedPages.size !== onlyPages?.length
+    || [...selectedPages].some(page => !Number.isInteger(page) || page < 1 || page > totalPages))) {
+    signal?.removeEventListener("abort", abortLoadingTask);
+    await destroyLoadingTask();
+    throw new Error("Die ausgewählten Seiten der anonymisierten PDF-Kopie sind ungültig.");
+  }
   const pages: ExtractedPdfPage[] = [];
   let ocrPageCount = 0;
   const failedOcrPages: number[] = [];
@@ -245,6 +253,7 @@ export async function extractClinicalDocumentText(
   try {
     for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
       throwIfAborted(signal);
+      if (selectedPages && !selectedPages.has(pageNumber)) continue;
       const page = await doc.getPage(pageNumber);
       try {
         const operators = await page.getOperatorList();
@@ -573,14 +582,13 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             const maskedPages = manualPdfTextRedactionPages(updated[index].file, manualTextScope);
             if (maskedPages.length) {
               if (!isAnonymizedPdfArchiveCopy(archiveCopy)) throw new Error("Geprüfte anonymisierte PDF-Kopie fehlt.");
-              // Only selected page text is taken from the second OCR pass. Use
-              // normal PDF mode so an unrelated blank page in the copy cannot
-              // fail the complete-anamnesis check passed by the original.
+              // Re-read only pages with confirmed pixel masks. The original
+              // already passed the complete-anamnesis page check.
               const reviewedCopy = await extractClinicalDocumentText(archiveCopy, "doctor", scopedToast, progress => {
                 if (!scopeIsCurrent()) return;
                 updated[index] = { ...updated[index], progress: `Nachgeschwärzte Bildkopie: ${progress}` };
                 setFiles([...updated]);
-              }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "");
+              }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "", "", undefined, false, maskedPages);
               if (!scopeIsCurrent()) return;
               if (reviewedCopy.pages !== extracted.pages || maskedPages.some(page => reviewedCopy.ocrFailedPages?.includes(page))) {
                 throw new Error("Nachgeschwärzte PDF-Seite konnte nicht vollständig lokal ausgelesen werden.");
