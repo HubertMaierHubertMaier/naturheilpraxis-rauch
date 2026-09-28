@@ -82,7 +82,11 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain("enteredPathogenCount >= 8");
     expect(source).toContain("enteredMedicationCount >= 5");
     expect(source).not.toContain("Welches Modell wann?");
-    expect(source).toContain("const inferredType = inferDirectBefundTarget(file.name)");
+    expect(source).toContain("const inferredType = inferDirectBefundTargetFromFilename(file.name)");
+    expect(source).toContain("const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId)");
+    expect(source).toContain('documentEntryMode === "batch" && pendingDirectBefundFiles.length > 0');
+    expect(source).toContain('documentEntryMode === "single" && (item.status === "queued" || item.status === "error")');
+    expect(source).toContain('onClick={() => void processDirectBefundFiles(item.id)}');
     expect(source).toContain("if (!documentType) documentType = inferDirectBefundTarget(extracted.text)");
     expect(source).toContain("Dokumentart konnte nicht sicher automatisch erkannt werden");
     expect(source).not.toContain('documentType: "sonstige" as const');

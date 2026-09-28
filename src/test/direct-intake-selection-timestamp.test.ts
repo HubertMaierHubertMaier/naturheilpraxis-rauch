@@ -15,13 +15,18 @@ describe("current direct intake selection timestamp", () => {
     expect(end).toBeGreaterThan(start);
 
     const js = ts.transpileModule(source.slice(start, end), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-    const formatDirectSelectionDate = new Function("selectionTimestamp", `${js}; return formatDirectSelectionDate;`)(selectionTimestamp) as (files: Array<{ id: string; loadedAt?: string }>) => string;
+    const { formatDirectSelectionDate, formatDirectDocumentDate } = new Function("selectionTimestamp", `${js}; return { formatDirectSelectionDate, formatDirectDocumentDate };`)(selectionTimestamp) as {
+      formatDirectSelectionDate: (files: Array<{ id: string; loadedAt?: string }>) => string;
+      formatDirectDocumentDate: (value: string) => string;
+    };
     const stamp = Date.UTC(2026, 8, 24, 12).toString(36);
 
     expect(formatDirectSelectionDate([{ id: `${stamp}-0-synthetic.pdf` }])).toBe("24.09.2026");
     expect(formatDirectSelectionDate([{ id: "synthetic-id", loadedAt: "2026-09-25T12:00:00Z" }])).toBe("25.09.2026");
+    expect(formatDirectDocumentDate("2030-09-17")).toBe("17.09.2030");
     expect(source).toContain("Dokument{pendingDirectBefundFiles.length === 1 ? \"\" : \"e\"} zur Prüfung ausgewählt · noch nicht gespeichert");
     expect(source).toContain("ausgewählt am ${formatDirectSelectionDate(pendingDirectBefundFiles)}");
+    expect(source).toContain("{contentDateLabel(item.documentType)} lokal gesichert: {formatDirectDocumentDate(item.documentDate)}");
   });
 
   it("still records the load event when the local draft cache fails", () => {

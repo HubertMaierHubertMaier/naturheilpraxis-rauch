@@ -35,6 +35,9 @@ export const inferDirectBefundTarget = (...values: string[]): DirectBefundTarget
 export const inferDirectBefundTargetFromFilename = (fileName: string): DirectBefundTarget | "" =>
   inferDirectBefundTarget(fileName) || (/\bhospital\b/i.test(fileName) ? "metatron" : "");
 
+export const selectDirectBefundQueue = <T extends { id: string; status: string }>(items: readonly T[], targetId?: string): T[] =>
+  items.filter(item => (item.status === "queued" || item.status === "error") && (!targetId || item.id === targetId));
+
 export const directBefundTargetLabel = (target: DirectBefundTarget): string => {
   const option = DIRECT_BEFUND_TARGETS.find((candidate) => candidate.value === target);
   if (!option) throw new Error("Bitte eine gültige Dokumentart auswählen.");

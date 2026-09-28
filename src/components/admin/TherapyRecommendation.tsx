@@ -117,6 +117,7 @@ import {
   inferDirectBefundTarget,
   inferDirectBefundTargetFromFilename,
   prepareDirectBefundHandoffText,
+  selectDirectBefundQueue,
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
 import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
@@ -278,10 +279,23 @@ const fileLoadedAtLabel = (item: Pick<PendingDirectBefundFile, "id" | "loadedAt"
   const time = selectionTimestamp(item);
   return time === undefined ? "" : formatLoadedAt(new Date(time).toISOString());
 };
+const formatDirectDocumentDate = (value: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
+};
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
+const selectionCacheItem = (item: PendingDirectBefundFile) =>
+  [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind, item.loadedAt, item.loadEventId];
 const selectionCacheFingerprint = (items: PendingDirectBefundFile[]) => JSON.stringify(items
-  .filter(item => item.status !== "done" && item.file.size > 0)
-  .map(item => [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind, item.loadedAt, item.loadEventId]));
+  .filter(item => item.status !== "done" && item.file.size > 0).map(selectionCacheItem));
+const changedSelectionCacheItems = (items: PendingDirectBefundFile[], previousFingerprint: string) => {
+  let previous: unknown;
+  try { previous = JSON.parse(previousFingerprint); } catch { previous = []; }
+  const previousById = new Map((Array.isArray(previous) ? previous : [])
+    .filter((row): row is unknown[] => Array.isArray(row) && typeof row[0] === "string")
+    .map(row => [row[0] as string, JSON.stringify(row)]));
+  return items.filter(item => previousById.get(item.id) !== JSON.stringify(selectionCacheItem(item)));
+};
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
   forPseudonymId: string;
@@ -1564,7 +1578,11 @@ export function TherapyRecommendation() {
       setPendingDirectBefundFiles((current) => {
         const restoredIds = new Set(selections.map(item => item.id));
         const preserved = current.filter(item => !restoredIds.has(item.id));
-        const recovered: PendingDirectBefundFile[] = selections.map((item) => {
+        const recovered: PendingDirectBefundFile[] = [...selections].sort((a, b) => {
+          const first = selectionTimestamp(a) ?? 0;
+          const second = selectionTimestamp(b) ?? 0;
+          return first - second || a.id.localeCompare(b.id);
+        }).map((item) => {
           const preview = previewById.get(item.id);
           const documentType = DIRECT_BEFUND_TARGETS.some(target => target.value === item.documentType)
             ? item.documentType as DirectBefundTarget
@@ -1585,8 +1603,8 @@ export function TherapyRecommendation() {
           };
         });
         const next = [...recovered, ...preserved];
-        // Restoring an unchanged draft must not stamp it as newly saved.
-        if (!preserved.length) localSelectionCacheFingerprintRef.current = selectionCacheFingerprint(next);
+        // Existing cache rows are the baseline; only live rows added during restore need writing.
+        localSelectionCacheFingerprintRef.current = selectionCacheFingerprint(recovered);
         return next;
       });
     }).catch((error) => {
@@ -1628,11 +1646,13 @@ export function TherapyRecommendation() {
     }
     const fingerprint = selectionCacheFingerprint(active);
     if (fingerprint === localSelectionCacheFingerprintRef.current) return;
+    const changed = changedSelectionCacheItems(active, localSelectionCacheFingerprintRef.current);
     localSelectionCacheFingerprintRef.current = fingerprint;
+    if (!changed.length) return;
     if (!localSelectionCacheUserId) {
       const message = "Lokale Wiederaufnahme ist ohne angemeldeten Benutzer nicht verfügbar. Die Auswahl bleibt nur im aktuellen Tab.";
       setLocalSelectionCacheIssue(message);
-      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+      setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
         ? { ...item, localCacheStatus: "error", localCacheError: message }
         : item));
       return;
@@ -1645,7 +1665,8 @@ export function TherapyRecommendation() {
       pseudonymId: normalizePseudonymId(pseudonymIdRef.current),
       generation: localSelectionCacheRunRef.current,
     });
-    const selections: LocalDocumentSelection[] = active.map(item => ({
+    // The cache writer preserves all records not passed here. Saving unchanged stale rows could erase dates from another tab.
+    const selections: LocalDocumentSelection[] = changed.map(item => ({
       id: item.id,
       file: item.file,
       documentType: item.documentType,
@@ -1659,20 +1680,20 @@ export function TherapyRecommendation() {
       error: item.error,
       errorKind: item.errorKind,
     }));
-    setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+    setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
       ? { ...item, localCacheStatus: "saving", localCacheError: undefined }
       : item));
     void saveLocalDocumentSelections(cacheUserId, pid, selections).then(() => {
       if (!cacheScopeIsCurrent()) return;
       setLocalSelectionCacheIssue("");
-      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+      setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
         ? { ...item, localCacheStatus: "saved", localCacheError: undefined, draftSavedAt: new Date().toISOString() }
         : item));
     }).catch((error) => {
       if (!cacheScopeIsCurrent()) return;
       const message = error instanceof Error ? error.message : "Lokale Dateiwiederaufnahme konnte nicht gespeichert werden. Die Auswahl bleibt im aktuellen Tab.";
       setLocalSelectionCacheIssue(message);
-      setPendingDirectBefundFiles(current => current.map(item => active.some(candidate => candidate.id === item.id)
+      setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
         ? { ...item, localCacheStatus: "error", localCacheError: message }
         : item));
     });
@@ -4088,7 +4109,7 @@ export function TherapyRecommendation() {
     if (directBefundFileRef.current) directBefundFileRef.current.value = "";
   };
 
-  const processDirectBefundFiles = async () => {
+  const processDirectBefundFiles = async (targetId?: string) => {
     const pid = normalizePseudonymId(pseudonymId);
     if (!isPatientScopedStorageReady(pid)) {
       toast({ title: "Pseudonym-ID fehlt", description: "Bitte zuerst eine vollständige Pseudonym-ID eintragen, dann PDFs auslesen.", variant: "destructive" });
@@ -4099,7 +4120,7 @@ export function TherapyRecommendation() {
     const manualTextScope = JSON.stringify([sourceUserId, pid]);
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
       && localSelectionCacheUserRef.current === sourceUserId;
-    const queue = pendingDirectBefundFiles.filter((item) => item.status === "queued" || item.status === "error");
+    const queue = selectDirectBefundQueue(pendingDirectBefundFiles, targetId);
     if (!queue.length) return;
     if (queue.some(item => item.loadEventId && item.loadHistoryStatus !== "saved")) {
       toast({ title: "Ladeverlauf noch nicht gesichert", description: "Bitte den Speicherstatus prüfen und einen fehlgeschlagenen Ladeeintrag erneut sichern. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
@@ -4116,6 +4137,10 @@ export function TherapyRecommendation() {
     const missingDate = queue.find((item) => !item.documentDate.trim());
     if (missingDate) {
       toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
+      return;
+    }
+    if (queue.some(item => item.localCacheStatus !== "saved")) {
+      toast({ title: "Dokumentdatum noch nicht gesichert", description: "Bitte zuerst die lokale Sicherung von Dokumentart und Datum bestätigen lassen. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
       return;
     }
     let successful = 0;
@@ -5613,8 +5638,8 @@ export function TherapyRecommendation() {
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingDocumentInventory ? "animate-spin" : ""}`} />
                 Archiv neu laden
               </Button>
-              {pendingDirectBefundFiles.length > 0 && (
-                <Button type="button" size="sm" onClick={processDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || !pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+              {documentEntryMode === "batch" && pendingDirectBefundFiles.length > 0 && (
+                <Button type="button" size="sm" onClick={() => void processDirectBefundFiles()} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || !pendingDirectBefundFiles.some((file) => file.status === "queued" || file.status === "error") || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                   {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Sicher auslesen und Vorschau erstellen
                 </Button>
@@ -5705,8 +5730,14 @@ export function TherapyRecommendation() {
                           className="h-8 text-xs"
                         />
                         <span className="mt-1 block text-[10px] text-muted-foreground">Manuell, wird nicht automatisch aus dem Ladedatum übernommen</span>
+                        {item.documentDate && item.localCacheStatus === "saved" && <span role="status" className="mt-1 block text-[10px] font-semibold text-emerald-700">{contentDateLabel(item.documentType)} lokal gesichert: {formatDirectDocumentDate(item.documentDate)}</span>}
                       </label>
                     </div>
+                    {documentEntryMode === "single" && (item.status === "queued" || item.status === "error") && (
+                      <Button type="button" size="sm" onClick={() => void processDirectBefundFiles(item.id)} disabled={item.restoredDraft || pendingDirectBefundFiles.some(file => file.status === "processing")} className="gap-1.5">
+                        <FileText className="h-3.5 w-3.5" /> Sicher auslesen und Vorschau erstellen
+                      </Button>
+                    )}
                     {item.documentTypeInferred && item.documentType && item.status !== "done" && (
                       <p className="text-[11px] text-sky-800 dark:text-sky-200">Automatisch erkannt: {directBefundTargetLabel(item.documentType)}. Bitte vor dem Auslesen kontrollieren.</p>
                     )}

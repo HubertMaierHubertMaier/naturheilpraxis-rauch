@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import ts from "typescript";
 import {
   isCurrentLocalSelectionOperation,
   localSelectionPreviewKey,
@@ -69,6 +72,16 @@ const selection = (id: string, status: LocalDocumentSelection["status"] = "queue
   status,
 });
 
+const intakeSource = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
+const fingerprintStart = intakeSource.indexOf("const selectionCacheItem =");
+const fingerprintEnd = intakeSource.indexOf("const isPdfClinicalDocument =", fingerprintStart);
+if (fingerprintStart < 0 || fingerprintEnd <= fingerprintStart) throw new Error("Selection change detection not found");
+const fingerprintJs = ts.transpileModule(intakeSource.slice(fingerprintStart, fingerprintEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+const { selectionCacheFingerprint, changedSelectionCacheItems } = new Function(`${fingerprintJs}; return { selectionCacheFingerprint, changedSelectionCacheItems };`)() as {
+  selectionCacheFingerprint: (items: LocalDocumentSelection[]) => string;
+  changedSelectionCacheItems: (items: LocalDocumentSelection[], previous: string) => LocalDocumentSelection[];
+};
+
 describe("local document selection cache", () => {
   let indexedDb: FakeIndexedDb;
   beforeEach(() => { indexedDb = new FakeIndexedDb(); vi.stubGlobal("indexedDB", indexedDb); });
@@ -100,6 +113,37 @@ describe("local document selection cache", () => {
     expect((await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections).toHaveLength(1);
     expect((await loadLocalDocumentSelections("user-a", "P-2099-0002")).selections).toHaveLength(1);
     expect((await loadLocalDocumentSelections("user-b", "P-2099-0001")).selections).toHaveLength(1);
+  });
+
+  it("retains other selections in the same case when saving only one changed row", async () => {
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [selection("anamnese"), selection("hospital")]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...selection("anamnese"), documentDate: "2099-09-17" }]);
+    const restored = (await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections;
+    expect(restored).toHaveLength(2);
+    expect(restored.find(item => item.id === "anamnese")?.documentDate).toBe("2099-09-17");
+    expect(restored.find(item => item.id === "hospital")?.documentDate).toBe("2099-01-01");
+  });
+
+  it("keeps both document dates when another tab appends a selection from an older view", async () => {
+    const oldView = [
+      { ...selection("anamnese"), documentType: "anamnese", documentDate: "", loadedAt: "2030-09-28T10:00:00Z", loadEventId: "event-anamnese" },
+      { ...selection("hospital"), documentType: "metatron", documentDate: "", loadedAt: "2030-09-28T10:01:00Z", loadEventId: "event-hospital" },
+    ];
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", oldView);
+    const oldFingerprint = selectionCacheFingerprint(oldView);
+    const datedView = oldView.map(item => ({ ...item, documentDate: "2030-09-17" }));
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", changedSelectionCacheItems(datedView, oldFingerprint));
+
+    const staleViewWithNewFile = [...oldView, { ...selection("another-hospital"), documentType: "metatron", documentDate: "", loadedAt: "2030-09-28T10:02:00Z", loadEventId: "event-new" }];
+    const changed = changedSelectionCacheItems(staleViewWithNewFile, oldFingerprint);
+    expect(changed.map(item => item.id)).toEqual(["another-hospital"]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", changed);
+
+    const reopened = (await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections;
+    expect(reopened).toHaveLength(3);
+    expect(reopened.find(item => item.id === "anamnese")).toMatchObject({ documentDate: "2030-09-17", loadedAt: oldView[0].loadedAt, loadEventId: oldView[0].loadEventId });
+    expect(reopened.find(item => item.id === "hospital")).toMatchObject({ documentDate: "2030-09-17", loadedAt: oldView[1].loadedAt, loadEventId: oldView[1].loadEventId });
+    expect(reopened.find(item => item.id === "another-hospital")?.documentDate).toBe("");
   });
 
   it("does not partially save a selection batch beyond the bounded capacity", async () => {

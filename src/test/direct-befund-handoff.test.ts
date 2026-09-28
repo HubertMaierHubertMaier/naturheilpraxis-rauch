@@ -7,6 +7,7 @@ import {
   inferDirectBefundTarget,
   inferDirectBefundTargetFromFilename,
   prepareDirectBefundHandoffText,
+  selectDirectBefundQueue,
 } from "@/lib/directBefundHandoff";
 
 describe("direct Befund handoff", () => {
@@ -52,6 +53,12 @@ describe("direct Befund handoff", () => {
     expect(inferDirectBefundTargetFromFilename("Metatron Hospital.pdf")).toBe("metatron");
     expect(inferDirectBefundTargetFromFilename("Hospital Entlassbrief.pdf")).toBe("arzt");
     expect(inferDirectBefundTarget("Hospital stay in 2025")).toBe("");
+  });
+
+  it("selects only the clicked file in single mode and the pending collection in batch mode", () => {
+    const files = [{ id: "old-anamnese", status: "queued" }, { id: "new-anamnese", status: "queued" }, { id: "hospital", status: "error" }, { id: "ready", status: "ready" }];
+    expect(selectDirectBefundQueue(files, "new-anamnese").map(file => file.id)).toEqual(["new-anamnese"]);
+    expect(selectDirectBefundQueue(files).map(file => file.id)).toEqual(["old-anamnese", "new-anamnese", "hospital"]);
   });
 
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {
