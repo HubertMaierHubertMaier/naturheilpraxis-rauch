@@ -186,7 +186,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Hot reloads/preview refreshes can briefly emit a null session before
         // persisted auth storage is available. Re-check before redirecting.
         if (sessionRef.current) confirmMissingSession();
-        else clearSession();
+        else {
+          clearSession();
+          setLoading(false);
+        }
       }
     );
 

@@ -88,6 +88,16 @@ it("keeps local files during a transient null event if the same session is confi
   expect(screen.getByLabelText("Testdatei")).toBe(input); expect(screen.getByTestId("file-count").textContent).toBe("1");
 });
 
+it("leaves the loading screen when the initial session is absent", async () => {
+  const initial = deferred();
+  mocks.getSession.mockReturnValue(initial.promise);
+  mount();
+  await emit("INITIAL_SESSION", null);
+  await waitFor(() => expect(screen.getByText("Signed out")).toBeTruthy());
+  expect(state()).toMatchObject({ user: null, admin: false, roleChecked: true });
+  await act(async () => initial.resolve({ data: { session: null } }));
+});
+
 it("does not clear or sign out a replacement session after an old audit request resolves", async () => {
   mount(); await ready(); const audit = deferred();
   mocks.rpc.mockImplementation((name, args) => name === "insert_audit_log" && args?._action === "logout" ? audit.promise : Promise.resolve({ data: true, error: null }));
