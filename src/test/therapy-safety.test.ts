@@ -53,6 +53,8 @@ describe("therapy safety", () => {
     expect(source).toContain("Oregano und Banderol nicht gleichzeitig ansetzen");
     expect(source).toContain("[PETER_PRAXISSCHEMA:2026-08-26]");
     expect(source).toContain("Viren, Pilze und Parasiten allein lösen es nicht aus");
+    expect(source).toContain("Ein Metatron-Index oder eine im Metatron-Text genannte Bakterienbelastung allein löst kein Bakterienprotokoll aus");
+    expect(source).toContain("Aus dem Index allein weder Infektionswahrscheinlichkeit");
     expect(source).toContain("### Candida-Diät");
     expect(source).toContain("[INFOTHEK:candida-diaet.html]");
     expect(source).toContain("vollständig meiden, nur mäßig, erlaubt und Getränke");

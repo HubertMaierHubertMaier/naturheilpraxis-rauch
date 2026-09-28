@@ -10,16 +10,7 @@ type MannayanOrderContext = {
   items: Array<{ name: string; quantity?: number; unit?: string; sku?: string; price_eur?: number }>;
 };
 
-const indexBadgeClass = (level: ReturnType<typeof classifyPathogenIndex>["level"]) => {
-  switch (level) {
-    case "sehr hoch": return "border-red-500 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30";
-    case "hoch": return "border-orange-500 text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/30";
-    case "mittel": return "border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30";
-    case "gering": return "border-sky-400 text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30";
-    case "sehr gering": return "border-muted text-muted-foreground bg-muted/40";
-    default: return "";
-  }
-};
+const indexBadgeClass = "border-muted text-muted-foreground bg-muted/40";
 
 interface Props {
   pathogens: PathogenEntry[];
@@ -109,7 +100,7 @@ export function LiveInputSummary({
           <div>
             <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
               <Bug className="h-3.5 w-3.5" />
-              Pathogene / Belastungen ({filledPathogens.length})
+              Metatron Hospital – Resonanzhinweise ({filledPathogens.length})
             </div>
             <ol className="space-y-1.5 list-decimal list-inside">
               {filledPathogens.map((p) => {
@@ -123,10 +114,10 @@ export function LiveInputSummary({
                     {c && (
                       <Badge
                         variant="outline"
-                        className={`ml-1.5 text-[10px] py-0 px-1.5 font-mono ${indexBadgeClass(c.level)}`}
-                        title={`Metatron/NLS-Index ${p.index.trim()} – Wahrscheinlichkeit ${c.level}: ${c.hint}`}
+                        className={`ml-1.5 text-[10px] py-0 px-1.5 font-mono ${indexBadgeClass}`}
+                        title={`Metatron Hospital – Geräteindex ${p.index.trim()}: ${c.hint}`}
                       >
-                        {p.index.trim()} · {c.level}
+                        Geräteindex {p.index.trim()}
                       </Badge>
                     )}
                   </li>

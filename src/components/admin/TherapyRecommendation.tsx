@@ -684,7 +684,7 @@ const buildPatientLoadFieldSummary = (d: Record<string, unknown>): AnalysisSourc
   addText("symptome", "Symptome / Beschwerden", d.symptome);
   addText("erkrankung", "Erkrankungen / Diagnosen", d.erkrankung);
   addArray("manualDiagnosen", "Manuelle/übernommene Diagnosen", diagnosesValue);
-  addText("pathogens", "Pathogene / NLS-EAV-Befunde", d.belastungen || formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []));
+  addText("pathogens", "Metatron Hospital – Resonanzhinweise", formatPathogensForAI(Array.isArray(d.pathogens) ? d.pathogens as PathogenEntry[] : []) || d.belastungen);
   addText("medikamente", "Aktuelle konventionell-medizinische Medikamente", d.medikamente);
   addText("naturheilMittelHomoeopathie", "Aktuelle naturheilkundliche Mittel – Homöopathie", d.naturheilMittelHomoeopathie);
   addText("naturheilMittelPflanzenheilkunde", "Aktuelle naturheilkundliche Mittel – Pflanzenheilkunde", d.naturheilMittelPflanzenheilkunde);

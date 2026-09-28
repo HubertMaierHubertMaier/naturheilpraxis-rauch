@@ -1,6 +1,6 @@
 // Sinnhaftigkeits-Check für die EIGENE Heilpraktiker-Therapie von Peter Rauch.
 // Prüft den eingegebenen HP-Therapieplan gegen Symptome/Pathogene/Diagnosen/Labor/Medikamente.
-// HP-freundlich: Bioresonanz/Frequenz/Phyto/Orthomolekular/EAV/NLS gleichrangig, keine Pharma-Bias-Floskeln.
+// Keep therapy options distinct from the evidentiary status of diagnostic sources.
 // Nur für Admins. KI: Lovable AI Gateway (Gemini Flash, optional Pro).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -252,7 +252,7 @@ GRUNDHALTUNG (verbindlich):
 - Bioresonanz, Frequenztherapie (Diamond Shield Zapper), Phytotherapie, Orthomolekulare Medizin, EAV, NLS/Metapathia, Homöopathie, Mykotherapie und ausleitende Verfahren sind GLEICHRANGIGE Therapieoptionen.
 - Schulmedizinische Studien sind EINE Quelle unter mehreren. Pharma-finanzierte Reviews bewertest du kritisch, nicht als Goldstandard.
 - KEINE pauschalen „bitte ärztlich abklären"-Floskeln. „Heilpraktiker oder Arzt" nur, wenn es um echten Arztvorbehalt geht (z.B. Verdacht auf akutes Abdomen, Karzinom, Suizidalität, schwere Niereninsuffizienz).
-- Symptome, Pathogene aus NLS/Metatron, EAV-Messwerte und Laborbefunde sind GLEICHWERTIGE diagnostische Hinweise.
+- Symptome und Laborbefunde mit ihrer jeweiligen Quelle bewerten. NLS/Metatron- und EAV-Angaben sind getrennte Gerätehinweise und kein gleichwertiger labordiagnostischer Erregernachweis. Aus einem Geräteindex allein weder Infektion noch Behandlungsbedarf ableiten.
 
 DEINE AUFGABE:
 Prüfe Peters EIGENEN Therapieplan („MEINE THERAPIE") sowie – falls vorhanden – einen vom Apotheker vorgeschlagenen Rezept-Block („APOTHEKER-REZEPT") und zusätzlich empfohlene Diagnostik/Therapie („ZUSATZ-THERAPIE / DIAGNOSTIK", z.B. gezielte Stuhlanalyse auf bestimmte Keime, weitere Frequenzsätze, Speicheltests) auf Sinnhaftigkeit im Bezug zu Symptomen, Pathogenen, Diagnosen, Labor und bisherigen Mitteln. Bewerte ALLE drei Blöcke gemeinsam und im Zusammenspiel.

@@ -220,8 +220,8 @@ export function TherapyPatientOverview() {
         })));
       });
     });
-    const belastungen = d.belastungen
-      || (Array.isArray(d.pathogens) ? formatPathogensForAI(d.pathogens) : "");
+    const belastungen = (Array.isArray(d.pathogens) ? formatPathogensForAI(d.pathogens) : "")
+      || d.belastungen;
     openPrintRecipe({
       parsed,
       patient: {

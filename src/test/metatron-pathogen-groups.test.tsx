@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { PathogenInput, parseBulkPaste, formatPathogensForAI, type PathogenEntry } from "@/components/admin/therapy/PathogenInput";
+import { PathogenInput, classifyPathogenIndex, parseBulkPaste, formatPathogensForAI, type PathogenEntry } from "@/components/admin/therapy/PathogenInput";
 import { inferMetatronGroup, metatronGroupFor } from "@/lib/metatronPathogenGroups";
 
 describe("Metatron pathogen groups", () => {
@@ -58,5 +58,15 @@ describe("Metatron pathogen groups", () => {
   it("includes the group without omitting the original name, organ or index from analysis context", () => {
     const text = formatPathogensForAI([{ id: "synthetic", name: "Candida albicans", organe: "Dünndarm", index: "0.42" }]);
     for (const part of ["Candida albicans", "Hefepilze (Candida-Arten)", "Dünndarm", "0.42"]) expect(text).toContain(part);
+  });
+  it("keeps device indices without making infection or treatment claims", () => {
+    for (const index of ["0.14", "0.42", "0.89", "2.1"]) {
+      const result = classifyPathogenIndex(index);
+      expect(result.level).toBe("dokumentiert");
+      const text = formatPathogensForAI([{ id: index, name: "Synthetic reference", organe: "", index }]);
+      expect(text).toContain(`Geräteindex laut Metatron-Befund: ${index}`);
+      expect(text).not.toMatch(/→ Wahrscheinlichkeit|akut\/materiell|klinisch relevant – behandeln|PRIORITÄT/);
+    }
+    expect(classifyPathogenIndex("0.42abc").level).toBe("unbekannt");
   });
 });
