@@ -17,12 +17,14 @@ function setup(mode: "single" | "batch", existingCount: number) {
   const updates: Array<(previous: unknown[]) => unknown[]> = [];
   const toast = vi.fn();
   const input = { value: "selected" };
+  const importRef = { current: false };
   let nextId = 0;
   const env = {
     documentEntryMode: mode,
     pendingDirectBefundFiles: existing,
     isAnalyzingDocs: false,
     isImportingAnamnesis: false,
+    anamnesisImportPendingRef: importRef,
     localSelectionCacheUserResolved: true,
     localSelectionCacheUserId: "synthetic-user",
     pseudonymId: "P-2099-0001",
@@ -38,10 +40,17 @@ function setup(mode: "single" | "batch", existingCount: number) {
     setBatchPreviewSummary: vi.fn(),
   };
   const addFiles = new Function(...Object.keys(env), `${js}; return addDirectBefundFiles;`)(...Object.values(env)) as (files: Array<{ name: string; webkitRelativePath: string }>, preferredType?: "labor" | "arzt" | "sonstige" | "anamnese" | "metatron" | "vieva" | "biodiagnostik" | "") => void;
-  return { addFiles, existing, updates, toast, input };
+  return { addFiles, existing, updates, toast, input, importRef };
 }
 
 describe("direct intake selections", () => {
+  it("does not add a file while a confirmed transfer is in progress", () => {
+    const test = setup("single", 1);
+    test.importRef.current = true;
+    test.addFiles([{ name: "synthetic-hospital.pdf", webkitRelativePath: "" }]);
+    expect(test.updates).toHaveLength(0);
+  });
+
   it("appends one new file in single mode without replacing restored selections", () => {
     const test = setup("single", 7);
     const file = { name: "P-2099-0001-synthetic-anamnese.pdf", webkitRelativePath: "" };
