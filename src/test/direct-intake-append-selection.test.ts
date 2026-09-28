@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
+import { inferDirectBefundTargetFromFilename } from "@/lib/directBefundHandoff";
 
 const source = readFileSync(resolve(process.cwd(), "src/components/admin/TherapyRecommendation.tsx"), "utf8").replace(/\r\n/g, "\n");
 const start = source.indexOf("  const addDirectBefundFiles =");
@@ -29,7 +30,7 @@ function setup(mode: "single" | "batch", existingCount: number) {
     toast,
     normalizePseudonymId: (value: string) => value,
     isPatientScopedStorageReady: () => true,
-    inferDirectBefundTarget: () => "anamnesis",
+    inferDirectBefundTargetFromFilename,
     crypto: { randomUUID: () => `new-${++nextId}` },
     setPendingDirectBefundFiles: (update: (previous: unknown[]) => unknown[]) => updates.push(update),
   };
@@ -48,9 +49,16 @@ describe("direct intake selections", () => {
     const result = test.updates[0](test.existing) as Array<Record<string, unknown>>;
     expect(result).toHaveLength(8);
     expect(result.slice(0, 7)).toEqual(test.existing);
-    expect(result[7]).toMatchObject({ file, id: "new-1", loadEventId: "new-2", documentDate: "", localCacheStatus: "saving", loadHistoryStatus: "pending" });
+    expect(result[7]).toMatchObject({ file, id: "new-1", loadEventId: "new-2", documentType: "anamnese", documentDate: "", localCacheStatus: "saving", loadHistoryStatus: "pending" });
     expect(Number.isNaN(Date.parse(String(result[7].loadedAt)))).toBe(false);
     expect(test.input.value).toBe("");
+  });
+
+  it("records a Hospital filename as Metatron at selection time", () => {
+    const test = setup("single", 7);
+    test.addFiles([{ name: "P-2099-0001 - Hospital - Muster.pdf", webkitRelativePath: "" }]);
+    const result = test.updates[0](test.existing) as Array<Record<string, unknown>>;
+    expect(result[7]).toMatchObject({ documentType: "metatron", documentTypeInferred: true, documentDate: "" });
   });
 
   it("still rejects selecting several files at once in single mode", () => {

@@ -30,6 +30,11 @@ export const inferDirectBefundTarget = (...values: string[]): DirectBefundTarget
   return "";
 };
 
+// "Hospital" is the practice's Metatron document label when it appears as a filename token.
+// Keep this fallback out of text inference, where hospital can describe a clinical stay.
+export const inferDirectBefundTargetFromFilename = (fileName: string): DirectBefundTarget | "" =>
+  inferDirectBefundTarget(fileName) || (/\bhospital\b/i.test(fileName) ? "metatron" : "");
+
 export const directBefundTargetLabel = (target: DirectBefundTarget): string => {
   const option = DIRECT_BEFUND_TARGETS.find((candidate) => candidate.value === target);
   if (!option) throw new Error("Bitte eine gültige Dokumentart auswählen.");

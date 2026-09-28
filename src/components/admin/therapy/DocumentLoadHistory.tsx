@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DOCUMENT_LOAD_EVENT, type DocumentLoadEntry } from "@/lib/documentLoadHistory";
+import { inferDirectBefundTargetFromFilename } from "@/lib/directBefundHandoff";
 
 const EVENT = DOCUMENT_LOAD_EVENT;
 type Row = { id: string; created_at: string; befund_meta: { loads?: DocumentLoadEntry[] } };
-const names: Record<string, string> = { anamnese: "Anamnese", metatron: "Metatron / Hospital", vieva: "VIEVA", labor: "Labor", arzt: "Arztbefund" };
+type SelectionHint = { eventId?: string; fileName: string; documentKey?: string };
+const names: Record<string, string> = { anamnese: "Anamnese", metatron: "Metatron / Hospital", vieva: "VIEVA", labor: "Labor", arzt: "Arztbefund", sonstige: "Allgemeine Unterlagen" };
 
-export function DocumentLoadHistory({ userId, pid, revision, saveError }: {
-  userId?: string; pid: string; revision: number; saveError: string;
+export function DocumentLoadHistory({ userId, pid, revision, saveError, selectionHints = [] }: {
+  userId?: string; pid: string; revision: number; saveError: string; selectionHints?: readonly SelectionHint[];
 }) {
   const [state, setState] = useState<{ scope: string; rows: Row[]; loading: boolean; error: boolean }>({ scope: "", rows: [], loading: false, error: false });
   const [page, setPage] = useState(0);
@@ -34,9 +36,13 @@ export function DocumentLoadHistory({ userId, pid, revision, saveError }: {
     {saveError && <p role="alert" className="text-red-800">{saveError} Die Dateiauswahl bleibt erhalten; dieser Ladevorgang ist nicht als protokolliert bestätigt.</p>}
     {current.loading ? <p>Ladeverlauf wird geladen …</p> : current.error ? <p role="alert">Ladeverlauf konnte nicht abgerufen werden.</p> : !current.rows.length ? <p>Noch keine protokollierten Ladevorgänge auf dieser Seite. Frühere Auswahlzeitpunkte werden nicht nachträglich erfunden.</p> :
       <ol className="space-y-2">{current.rows.map(row => <li key={row.id} className="border-t border-sky-200 pt-2">
-        {(Array.isArray(row.befund_meta?.loads) ? row.befund_meta.loads : []).filter(entry => typeof entry?.documentKey === "string" && typeof entry?.loadedAt === "string").map((entry, index) => <p key={`${row.id}-${index}`} className="text-sm">
-          {names[entry.documentType] || "Dokument"} · Kennung {entry.documentKey.slice(0, 10)} · Ladedatum: {Number.isFinite(Date.parse(entry.loadedAt)) ? new Date(entry.loadedAt).toLocaleString("de-DE") : "unbekannt"}
-        </p>)}
+        {(Array.isArray(row.befund_meta?.loads) ? row.befund_meta.loads : []).filter(entry => typeof entry?.documentKey === "string" && typeof entry?.loadedAt === "string").map((entry, index) => {
+          const hint = selectionHints.find(item => item.eventId === row.id && (!item.documentKey || item.documentKey === entry.documentKey));
+          const inferredType = hint ? inferDirectBefundTargetFromFilename(hint.fileName) : "";
+          return <p key={`${row.id}-${index}`} className="text-sm">
+            {names[entry.documentType] || names[inferredType] || "Dokument"} · Kennung {entry.documentKey.slice(0, 10)} · Ladedatum: {Number.isFinite(Date.parse(entry.loadedAt)) ? new Date(entry.loadedAt).toLocaleString("de-DE") : "unbekannt"}
+          </p>;
+        })}
       </li>)}</ol>}
     <div className="flex gap-3 text-sm">
       <button type="button" disabled={!page || current.loading} onClick={() => setPage(p => p - 1)}>Neuere Einträge</button>

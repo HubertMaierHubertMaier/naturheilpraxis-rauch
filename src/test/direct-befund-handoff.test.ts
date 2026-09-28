@@ -5,6 +5,7 @@ import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
   inferDirectBefundTarget,
+  inferDirectBefundTargetFromFilename,
   prepareDirectBefundHandoffText,
 } from "@/lib/directBefundHandoff";
 
@@ -44,6 +45,13 @@ describe("direct Befund handoff", () => {
     expect(inferDirectBefundTarget("sorra-synth-labor.pdf")).toBe("labor");
     expect(inferDirectBefundTarget("sorra-synth-arzt.pdf")).toBe("arzt");
     expect(inferDirectBefundTarget("Unbekanntes Dokument.pdf")).toBe("");
+  });
+
+  it("treats Hospital as Metatron only when reading a filename", () => {
+    expect(inferDirectBefundTargetFromFilename("P-2030-1234 - Hospital - - Muster.pdf")).toBe("metatron");
+    expect(inferDirectBefundTargetFromFilename("Metatron Hospital.pdf")).toBe("metatron");
+    expect(inferDirectBefundTargetFromFilename("Hospital Entlassbrief.pdf")).toBe("arzt");
+    expect(inferDirectBefundTarget("Hospital stay in 2025")).toBe("");
   });
 
   it("blocks handoff without a date or a non-empty privacy-safe preview", () => {

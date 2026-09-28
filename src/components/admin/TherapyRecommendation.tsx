@@ -115,6 +115,7 @@ import {
   DIRECT_BEFUND_TARGETS,
   directBefundTargetLabel,
   inferDirectBefundTarget,
+  inferDirectBefundTargetFromFilename,
   prepareDirectBefundHandoffText,
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
@@ -4067,7 +4068,7 @@ export function TherapyRecommendation() {
     setPendingDirectBefundFiles((prev) => [
       ...prev,
       ...files.map((file, index) => {
-        const inferredType = inferDirectBefundTarget(file.name);
+        const inferredType = inferDirectBefundTargetFromFilename(file.name);
         return {
           id: crypto.randomUUID(),
           file,
@@ -4123,7 +4124,7 @@ export function TherapyRecommendation() {
       let archiveCopy: File | undefined;
       setPendingDirectBefundFiles((current) => current.map((row) => row.id === item.id ? { ...row, status: "processing", error: undefined } : row));
       try {
-        let documentType = item.documentType || inferDirectBefundTarget(item.file.name);
+        let documentType = item.documentType || inferDirectBefundTargetFromFilename(item.file.name);
         const extracted = await extractClinicalDocumentText(item.file, documentType === "anamnese" ? "anamnese" : "doctor", (message) => {
           if (scopeIsCurrent()) toast(message);
         }, (progress) => {
@@ -5587,7 +5588,7 @@ export function TherapyRecommendation() {
               </Button>
               <span className="text-xs font-medium text-muted-foreground">nur Vorschau – keine Veröffentlichung</span>
             </div>
-            <DocumentLoadHistory userId={user?.id} pid={normalizePseudonymId(pseudonymId)} revision={documentLoadRevision} saveError={pendingDirectBefundFiles.some(item => item.loadHistoryStatus === "error") ? "Mindestens ein Ladeeintrag ist noch nicht bestätigt." : ""} />
+            <DocumentLoadHistory userId={user?.id} pid={normalizePseudonymId(pseudonymId)} revision={documentLoadRevision} saveError={pendingDirectBefundFiles.some(item => item.loadHistoryStatus === "error") ? "Mindestens ein Ladeeintrag ist noch nicht bestätigt." : ""} selectionHints={pendingDirectBefundFiles.map(item => ({ eventId: item.loadEventId, fileName: item.file.name, documentKey: item.documentKey }))} />
             <PatientBatchUploadZone
               mode={documentEntryMode}
               onModeChange={setDocumentEntryMode}
