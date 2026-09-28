@@ -212,6 +212,16 @@ function redactTargetsInPage(file:Blob,page: number, pageText: string, targets: 
 
 export function clearManualPdfTextRedactions(file: Blob) { redactions.delete(file); }
 
+/** Returns pages with confirmed pixel masks, bound to the current case. */
+export function manualPdfTextRedactionPages(file: Blob, scope?: string): number[] {
+  const pages = redactions.get(file);
+  if (!pages?.size) return [];
+  for (const [page, redaction] of pages) {
+    if (redaction.scope !== scope) throw new ManualPdfTextBindingError("MANUAL_TEXT_SCOPE", page, "Manuelle PDF-Schwärzung gehört nicht zum aktuellen Patientenfall. Die Übernahme bleibt gesperrt.");
+  }
+  return [...pages.keys()].sort((left, right) => left - right);
+}
+
 /** Applies only page-/blob-/case-bound manual spans; uncertain mappings fail closed. */
 export function applyManualPdfTextRedactions(file: Blob, text: string, scope?: string) {
   const pages = redactions.get(file);

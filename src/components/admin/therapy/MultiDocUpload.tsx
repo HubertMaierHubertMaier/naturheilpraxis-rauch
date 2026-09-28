@@ -44,8 +44,9 @@ import { extractClinicalOfficeText } from "@/lib/clinicalOfficeExtraction";
 import { CLINICAL_DOCUMENT_ACCEPT } from "@/lib/clinicalDocumentFormats";
 import { createLocalBrowserOcrWorker, type LocalOcrResultData } from "@/lib/localBrowserOcr";
 import { rememberPdfOcrRead } from "@/lib/pdfReadOcrCache";
-import { prepareAnonymizedPdfArchive, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
-import { applyManualPdfTextRedactions, manualPdfTextBindingStatus, rememberOriginalPdfTextContext } from "@/lib/manualPdfTextRedaction";
+import { prepareAnonymizedPdfArchive, isAnonymizedPdfArchiveCopy, rememberValidatedPdfPassword, openPdfArchiveCopy, setPdfArchiveCopyReviewed } from "@/lib/anonymizedPdfArchive";
+import { manualPdfTextBindingStatus, manualPdfTextRedactionPages, rememberOriginalPdfTextContext } from "@/lib/manualPdfTextRedaction";
+import { replaceReviewedPdfPageText } from "@/lib/reviewedPdfPageText";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -566,11 +567,35 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
           if (!scopeIsCurrent()) return;
           updated[index] = { ...updated[index], archiveCopy };
           let sourceText = extracted.text;
-          if (isPdfFile(updated[index].file)) {
-            sourceText = applyManualPdfTextRedactions(updated[index].file, extracted.text, manualTextScope);
+          let ocrPageConfidences = extracted.ocrPageConfidences || [];
+          let ocrPages = extracted.ocrPages || 0;
+          if (archiveCopy) {
+            const maskedPages = manualPdfTextRedactionPages(updated[index].file, manualTextScope);
+            if (maskedPages.length) {
+              if (!isAnonymizedPdfArchiveCopy(archiveCopy)) throw new Error("Geprüfte anonymisierte PDF-Kopie fehlt.");
+              // Only selected page text is taken from the second OCR pass. Use
+              // normal PDF mode so an unrelated blank page in the copy cannot
+              // fail the complete-anamnesis check passed by the original.
+              const reviewedCopy = await extractClinicalDocumentText(archiveCopy, "doctor", scopedToast, progress => {
+                if (!scopeIsCurrent()) return;
+                updated[index] = { ...updated[index], progress: `Nachgeschwärzte Bildkopie: ${progress}` };
+                setFiles([...updated]);
+              }, ocrSession, extractionDocumentDate ? `${documentType}|${extractionDocumentDate}` : "");
+              if (!scopeIsCurrent()) return;
+              if (reviewedCopy.pages !== extracted.pages || maskedPages.some(page => reviewedCopy.ocrFailedPages?.includes(page))) {
+                throw new Error("Nachgeschwärzte PDF-Seite konnte nicht vollständig lokal ausgelesen werden.");
+              }
+              sourceText = replaceReviewedPdfPageText(extracted.text, reviewedCopy.text, maskedPages);
+              const confidenceByPage = new Map(ocrPageConfidences.map(entry => [entry.pageNumber, entry]));
+              for (const entry of reviewedCopy.ocrPageConfidences || []) {
+                if (maskedPages.includes(entry.pageNumber)) confidenceByPage.set(entry.pageNumber, entry);
+              }
+              ocrPageConfidences = [...confidenceByPage.values()].sort((left, right) => left.pageNumber - right.pageNumber);
+              ocrPages = Math.max(ocrPages, reviewedCopy.ocrPages || 0);
+            }
           }
           const anamneseReview = documentType === "Anamnese / Anamnesebogen"
-            ? buildAnamneseQuestionReview(sourceText, extracted.ocrPageConfidences)
+            ? buildAnamneseQuestionReview(sourceText, ocrPageConfidences)
             : undefined;
           const reviewBody = anamneseReview?.text || sourceText;
           const datedText = extractionDocumentDate
@@ -584,9 +609,9 @@ export function MultiDocUpload({ onExtracted, pseudonymId, archiveKind = "dokume
             status: "done",
             chars: datedText.length,
             pages: extracted.pages,
-            ocrPages: extracted.ocrPages,
+            ocrPages,
             ocrFailedPages: extracted.ocrFailedPages,
-            ocrPageConfidences: extracted.ocrPageConfidences,
+            ocrPageConfidences,
             anamneseMappedAnswers: anamneseReview?.mappedAnswerCount,
             anamneseManualReviewItems: anamneseReview?.manualReviewCount,
             progress: undefined,
