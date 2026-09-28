@@ -23,7 +23,8 @@ import { SupplementaryFindingsFields } from "./therapy/SupplementaryFindingsFiel
 import { PdfArchiveReviewDialog } from "./therapy/PdfArchiveReviewDialog";
 import { PdfArchiveCopyReviewDialog } from "./therapy/PdfArchiveCopyReviewDialog";
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
-import { analysisRetryChunkLimit, isAnalysisOutputFailure } from "@/lib/analysisRetryPolicy";
+import { analysisRetryLimitAfterFailure, isAnalysisOutputFailure, isAnalysisRateLimitError } from "@/lib/analysisRetryPolicy";
+import { runOrderedAnalysisBatches } from "@/lib/orderedAnalysisBatches";
 import { clinicalDataIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDataPrivacy";
 import { checkedIAAQuestions, explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
@@ -3591,6 +3592,7 @@ export function TherapyRecommendation() {
         } catch { /* lokale Sicherung genügt, falls Cloud-Checkpoint nicht lesbar ist */ }
       }
       const writeProgress = (line: string) => {
+        if (!runIsCurrent()) return;
         setDocAnalysisProgress((previous) => `${previous || "Start…"}\n${line}`);
       };
       if (checkpoint?.partials?.length) {
@@ -3599,6 +3601,7 @@ export function TherapyRecommendation() {
       const analyzeChunk = async (chunk: AnalysisDocChunk, indexLabel: string, totalLabel: number) => {
         let lastError = "Unbekannter Analysefehler";
         for (let attempt = 1; attempt <= 3; attempt += 1) {
+          if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
           try {
             const headers = await getFreshAuthHeaders();
             const chunkResp = await fetch(endpoint, {
@@ -3625,6 +3628,7 @@ export function TherapyRecommendation() {
                 errorMessage = parsedError.error || parsedError.message || errorMessage;
                 if (parsedError.completionInfo?.finishReason === "length") errorMessage += " (Ausgabelimit gemeldet)";
               } catch { /* Antwort war kein JSON */ }
+              if (chunkResp.status === 429) errorMessage = `429 ${errorMessage}`;
               throw new Error(errorMessage);
             }
             if (!responseText.trim()) throw new Error("Leere Antwort vom Analyse-Dienst");
@@ -3638,13 +3642,15 @@ export function TherapyRecommendation() {
             if (!partial) throw new Error("Leere Teilanalyse vom Analyse-Dienst");
             const normalized = normalizePartialAnalysisJson(partial);
             assertQuestionnaireValidationContract(JSON.parse(normalized), chunk.text);
+            if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
             return normalized;
           } catch (err) {
+            if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
             lastError = (err as Error).message || String(err);
             if (/401|Nicht autorisiert|JWT|expired/i.test(lastError)) await supabase.auth.refreshSession().catch(() => null);
-            if (attempt === 3 || isAnalysisOutputFailure(lastError) || !isRecoverableAnalysisTimeout(lastError)) break;
+            if (attempt === 3 || isAnalysisOutputFailure(lastError) || (!isRecoverableAnalysisTimeout(lastError) && !isAnalysisRateLimitError(lastError))) break;
             writeProgress(`  ↳ Versuch ${attempt + 1}/3 nach kurzer Pause…`);
-            await analysisDelay(1200 * attempt);
+            await analysisDelay((isAnalysisRateLimitError(lastError) ? 4000 : 1200) * attempt);
           }
         }
         throw new Error(lastError);
@@ -3688,10 +3694,12 @@ export function TherapyRecommendation() {
       };
 
       const partials: string[] = checkpoint?.partials?.slice() ?? [];
-      for (let i = Math.min(checkpoint?.completedChunks ?? 0, chunks.length); i < chunks.length; i += 1) {
+      const analyzePreparedChunk = async (i: number): Promise<string[]> => {
+        if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
         setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
         writeProgress(`Teil ${i + 1}/${chunks.length} wird gelesen: ${chunks[i].label}`);
-        const retryMaxChars = analysisRetryChunkLimit(chunks[i].text.length, checkpoint?.failure?.part === i + 1 ? checkpoint.failure.retryMaxChars : undefined);
+        const previousFailure = checkpoint?.failure?.part === i + 1 ? checkpoint.failure : undefined;
+        const retryMaxChars = analysisRetryLimitAfterFailure(chunks[i].text.length, previousFailure?.message, previousFailure?.retryMaxChars);
         const resumeFailedPart = checkpoint?.status === "paused" && i === checkpoint.completedChunks && !!retryMaxChars;
         try {
           if (resumeFailedPart) {
@@ -3702,11 +3710,9 @@ export function TherapyRecommendation() {
               writeProgress(`  ↳ Teil ${i + 1}.${r + 1}/${smaller.length} wird gelesen…`);
               recovered.push(await analyzeChunk(smaller[r], `${i + 1}.${r + 1}`, chunks.length + smaller.length - 1));
             }
-            partials.push(...recovered);
-          } else {
-            const partial = await analyzeChunk(chunks[i], String(i + 1), chunks.length);
-            partials.push(partial);
+            return recovered;
           }
+          return [await analyzeChunk(chunks[i], String(i + 1), chunks.length)];
         } catch (error) {
           const message = (error as Error).message || "";
           // Echter Benutzer-Abbruch → wirklich stoppen
@@ -3715,7 +3721,7 @@ export function TherapyRecommendation() {
           }
           let recoveredPartials: string[] | null = null;
           let retryFailure = "";
-          if (!resumeFailedPart && isRecoverableAnalysisTimeout(message) && retryMaxChars) {
+          if (!resumeFailedPart && !isAnalysisRateLimitError(message) && isRecoverableAnalysisTimeout(message) && retryMaxChars) {
             const retryChunks = splitAnalysisText(chunks[i].label, chunks[i].text, retryMaxChars);
             const retryResults: string[] = [];
             writeProgress(`⚠ Teil ${i + 1} war zu groß/langsam (${message}). Teile automatisch in ${retryChunks.length} kleinere Pakete auf…`);
@@ -3734,16 +3740,32 @@ export function TherapyRecommendation() {
           }
           if (!recoveredPartials) {
             const failureReason = retryFailure || message;
-            writeProgress(`✗ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${failureReason}). Zwischenstand bleibt bei ${i}/${chunks.length}; es wird kein unvollständiger Bericht erzeugt.`);
-            await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", failure: { part: i + 1, message: failureReason, ...(retryMaxChars ? { retryMaxChars } : {}) }, updatedAt: new Date().toISOString() });
-            throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden: ${failureReason}. Der gesicherte Zwischenstand bleibt erhalten.`);
+            throw new Error(failureReason);
           }
-          partials.push(...recoveredPartials);
+          return recoveredPartials;
         }
-        await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
-        setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
-        writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
-      }
+      };
+      await runOrderedAnalysisBatches(
+        Math.min(checkpoint?.completedChunks ?? 0, chunks.length), chunks.length, 2,
+        analyzePreparedChunk,
+        async (i, results) => {
+          if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
+          partials.push(...results);
+          await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i + 1, partials, duplicateNotes: prepared.duplicateNotes, status: i + 1 === chunks.length ? "all_chunks_complete" : "in_progress", updatedAt: new Date().toISOString() });
+          if (!runIsCurrent()) throw new DOMException("Befundlauf nicht mehr aktuell.", "AbortError");
+          setDocAnalysisStats({ current: i + 1, total: chunks.length, label: chunks[i].label });
+          writeProgress(`✓ Teil ${i + 1}/${chunks.length} verarbeitet`);
+        },
+        async (i, error) => {
+          if (!runIsCurrent()) throw new DOMException("Auswertung vom Benutzer abgebrochen.", "AbortError");
+          const failureReason = (error as Error).message || String(error);
+          const retryMaxChars = analysisRetryLimitAfterFailure(chunks[i].text.length, failureReason,
+            checkpoint?.failure?.part === i + 1 ? checkpoint.failure.retryMaxChars : undefined);
+          writeProgress(`✗ Teil ${i + 1}/${chunks.length} dauerhaft fehlgeschlagen (${failureReason}). Zwischenstand bleibt bei ${i}/${chunks.length}; es wird kein unvollständiger Bericht erzeugt.`);
+          await saveCheckpoint({ version: 3, fingerprint, pseudonymId: analysisPid, totalChunks: chunks.length, totalChars, completedChunks: i, partials, duplicateNotes: prepared.duplicateNotes, status: "paused", failure: { part: i + 1, message: failureReason, ...(retryMaxChars ? { retryMaxChars } : {}) }, updatedAt: new Date().toISOString() });
+          throw new Error(`Teil ${i + 1}/${chunks.length} konnte nicht vollständig ausgewertet werden: ${failureReason}. Der gesicherte Zwischenstand bleibt erhalten.`);
+        },
+      );
       partials.forEach(assertStrictPartialAnalysis);
       if (partials.length < chunks.length) throw new Error("Der Analyse-Zwischenstand ist unvollständig; die Abschluss-Zusammenführung wurde blockiert.");
       const extractedItemCount = countPartialExtractionItems(partials);
@@ -4061,6 +4083,9 @@ export function TherapyRecommendation() {
         await logTherapyEvent(analysisPid, "befund_html_failed", { error: msg });
       }
     } finally {
+      // A failed earlier part may leave its concurrently started neighbor in
+      // flight. Stop it before another run can start for this or another case.
+      if (!docController.signal.aborted) docController.abort();
       releaseRun();
     }
   };
