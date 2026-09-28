@@ -171,6 +171,17 @@ describe("direct import confirmation follows the database receipt", () => {
     t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
     expect(t.previews()[0].status).toBe("done");
   });
+  it("copies only explicit affirmed PET answers into the PET field with source and known date", async () => {
+    const t = setup("anamnese", "Frage/Feld: PET-Untersuchung\nErkannte Antwort: 12.03.2025 – Thorax\nFrage/Feld: PET/CT-Untersuchung\nErkannte Antwort: Ja\nFrage/Feld: PET-Untersuchung\nErkannte Antwort: Nein");
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.upsertAutoSaveDraft).toHaveBeenCalled());
+    const pet = (t.stored().eingabe_daten.anamneseZusatz as Record<string, string>).petExaminations;
+    expect(pet).toContain("12.03.2025 – Thorax · Quelle: Anamnesebogen – PET-Untersuchung");
+    expect(pet).toContain("Datum unbekannt – PET-Untersuchung angegeben; Bereich/Fragestellung unbekannt · Quelle: Anamnesebogen – PET/CT-Untersuchung");
+    expect(pet).not.toContain("Nein");
+    t.save.resolve("synthetic-row"); t.read.resolve({ data: t.stored(), error: null }); await done;
+    expect(t.previews()[0].status).toBe("done");
+  });
   it("rolls back provisional field changes if original archiving fails", async () => {
     const t = setup(); (t.previews()[0] as any).archiveCopy = { size: 42 }; t.env.archivePatientOriginal.mockRejectedValueOnce(new Error("synthetic failed archive"));
     await t.run();

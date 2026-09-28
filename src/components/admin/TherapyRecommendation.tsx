@@ -340,12 +340,14 @@ type ExtractedBefundInputs = {
   noConventionalMedication?: boolean;
   pregnancyStatus?: "schwanger" | "nein" | "stillend";
   iaaFields?: Record<string, string>;
+  petExaminations?: string[];
 };
 
 const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs, "forPseudonymId"> => {
   const diagnoses: ExtractedBefundInputs["diagnoses"] = [];
   const symptoms: ExtractedBefundInputs["symptoms"] = [];
   const medications: ExtractedBefundInputs["medications"] = [];
+  const petExaminations: string[] = [];
   const openQuestions: Record<string, unknown>[] = [];
   const unconfirmedEvidence = createQuestionnaireEvidenceValidator(text);
   let noConventionalMedication = false;
@@ -372,6 +374,17 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
       continue;
     }
     const polarity = /^(?:nein|keine?|verneint)\b/i.test(answer) ? "negated" as const : /unleserlich|unklar|verdacht/i.test(answer) ? "uncertain" as const : "affirmed" as const;
+    if (/\bPET(?:\s*\/\s*CT)?\b/i.test(question)) {
+      if (polarity === "affirmed" && !/^(?:nicht angegeben|keine angabe|unbekannt|offen|[-–—?]+)$/i.test(answer)) {
+        const date = answer.match(/\b\d{1,2}\.\d{1,2}\.\d{4}\b/)?.[0] || "Datum unbekannt";
+        const datedAnswer = answer.replace(/^\s*\d{1,2}\.\d{1,2}\.\d{4}\s*[-–—:]?\s*/, "").trim();
+        const detail = /^(?:ja|durchgeführt|erfolgt)[.!]?$/i.test(datedAnswer)
+          ? "PET-Untersuchung angegeben; Bereich/Fragestellung unbekannt"
+          : datedAnswer || "PET-Untersuchung angegeben; Bereich/Fragestellung unbekannt";
+        petExaminations.push(`${date} – ${detail} · Quelle: ${source}`);
+      }
+      continue;
+    }
     if (/hauptbeschwerde|beschwerde|symptom/.test(normalizedQuestion)) {
       symptoms.push({ text: `${question}: ${answer}`, quelle: source, zitat: answer, polarity });
       continue;
@@ -402,7 +415,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
   const profile = extractAnamnesisProfileAnswers(text);
   const intake = buildAnamnesisIntake([{ diagnoses, medicationsTherapies: medications, anamnese: { currentProblems: symptoms }, openQuestions }]);
   intake.additional = { ...intake.additional, ...profile.additional };
-  return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus, iaaFields: explicitIAAFields(text) };
+  return { diagnoses, symptoms, medications, noConventionalMedication, intake, pregnancyStatus: profile.pregnancyStatus, iaaFields: explicitIAAFields(text), petExaminations };
 };
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
@@ -4065,6 +4078,10 @@ export function TherapyRecommendation() {
     setAnamnesisIntakeV1(previous => mergeAnamnesisIntakes(previous, intake));
     setAnamneseZusatz(previous => {
       const next = mergeIAAFields(previous, extracted.iaaFields || {});
+      if (extracted.petExaminations?.length) {
+        const existing = (next.petExaminations || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        next.petExaminations = [...new Set([...existing, ...extracted.petExaminations])].join("\n");
+      }
       const groups = { ...intake.additional, hypotheses: intake.hypotheses, negativeOrUncertainFindings: intake.negativeOrUncertainFindings, historicalMedications: intake.historicalMedications, uncertainMedications: intake.uncertainMedications };
       for (const [key, items] of Object.entries(groups)) {
         if (items.length) next[key] = mergeIntakeText(next[key] || "", items.map(formatIntakeFact));
@@ -4572,7 +4589,7 @@ export function TherapyRecommendation() {
       }
       documentTypes.add(directBefundTargetLabel(documentType));
     }
-    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length) || Object.keys(anamneseInputs.iaaFields || {}).length) {
+    if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || anamneseInputs.petExaminations?.length || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length) || Object.keys(anamneseInputs.iaaFields || {}).length) {
       applyExtractedToInputs({ forPseudonymId: pid, ...anamneseInputs });
     }
     const latestDateFor = (documentType: DirectBefundTarget) => ready
