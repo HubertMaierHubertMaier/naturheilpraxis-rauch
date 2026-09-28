@@ -423,8 +423,8 @@ describe("Wiki Phase 1 backup coverage", () => {
     expect(fallbackTables.some((table) => table.startsWith("kb_"))).toBe(false);
   });
 
-  it("exports only tables confirmed by successful OpenAPI discovery", () => {
-    expect(backupExportSource).toContain('return { tables: [...new Set(filtered)].sort(), source: "openapi" }');
+  it("exports discovered tables plus only the existing owner transport exception", () => {
+    expect(backupExportSource).toContain('return { tables: [...new Set([...filtered, OWNER_TRANSPORT_TABLE])].sort(), source: "openapi" }');
     expect(backupExportSource).not.toContain("new Set([...filtered, ...REQUIRED_KB_TABLES, ...REQUIRED_KB_IMPORT_TABLES])");
   });
 
