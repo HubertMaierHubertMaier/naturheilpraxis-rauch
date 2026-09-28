@@ -21,6 +21,7 @@ import { PatientIntakeWorkflow, PatientWorkflowLayout } from "./therapy/PatientI
 import { AnamnesisAdditionalFields, formatAdditionalAnamnesis, normalizeAdditionalAnamnesis } from "./therapy/AnamnesisAdditionalFields";
 import { SupplementaryFindingsFields } from "./therapy/SupplementaryFindingsFields";
 import { PdfArchiveReviewDialog } from "./therapy/PdfArchiveReviewDialog";
+import { PdfArchiveCopyReviewDialog } from "./therapy/PdfArchiveCopyReviewDialog";
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
 import { analysisRetryChunkLimit, isAnalysisOutputFailure } from "@/lib/analysisRetryPolicy";
 import { clinicalDataIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDataPrivacy";
@@ -1467,6 +1468,7 @@ export function TherapyRecommendation() {
   const [sourceManifestError, setSourceManifestError] = useState("");
   const [sourceHistoryError, setSourceHistoryError] = useState("");
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
+  const [copyReview, setCopyReview] = useState<{ id: string; file: File; sourcePseudonymId: string } | null>(null);
   const privacyApprovalEpochRef = useRef(0);
   const [localSelectionCacheUserId, setLocalSelectionCacheUserId] = useState<string | null>(null);
   const [localSelectionCacheUserResolved, setLocalSelectionCacheUserResolved] = useState(false);
@@ -5751,6 +5753,18 @@ export function TherapyRecommendation() {
       <div className="flex items-center gap-3">
         <Stethoscope className="h-7 w-7 text-primary" />
         <PdfArchiveReviewDialog scopeKey={pseudonymId} />
+        <PdfArchiveCopyReviewDialog
+          file={copyReview && normalizePseudonymId(copyReview.sourcePseudonymId) === pseudonymIdRef.current ? copyReview.file : null}
+          onClose={() => setCopyReview(null)}
+          onAllPagesViewed={() => {
+            const review = copyReview;
+            if (review && normalizePseudonymId(review.sourcePseudonymId) === pseudonymIdRef.current) {
+              setPendingDirectBefundFiles(current => current.map(item => item.id === review.id && item.archiveCopy === review.file && item.status === "ready"
+                ? { ...item, archiveCopyOpened: true } : item));
+            }
+            setCopyReview(null);
+          }}
+        />
         <h1 className="text-2xl font-bold text-foreground">Patientenaufnahme &amp; Auswertung</h1>
         <Badge variant="secondary" className="text-xs">KI-gestützt</Badge>
       </div>
@@ -6067,8 +6081,9 @@ export function TherapyRecommendation() {
                             )}
                           </div>
                         )}
-                        {item.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={() => { if (anamnesisImportPendingRef.current) return; openPdfArchiveCopy(item.archiveCopy!); setPendingDirectBefundFiles(current => current.map(file => file.id === item.id ? { ...file, archiveCopyOpened: true } : file)); }}>Anonymisierte PDF-Kopie öffnen und prüfen</Button>}
-                        {item.archiveCopy && !item.archiveCopyOpened && <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Die PDF-Kopie vor der Freigabe öffnen und alle sichtbaren Seiten prüfen.</p>}
+                        {item.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={() => { if (anamnesisImportPendingRef.current) return; setCopyReview({ id: item.id, file: item.archiveCopy!, sourcePseudonymId: item.sourcePseudonymId }); }}>Anonymisierte PDF-Kopie öffnen und prüfen</Button>}
+                        {item.archiveCopy && !item.archiveCopyOpened && <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Die PDF-Kopie vor der Freigabe seitenweise prüfen.</p>}
+                        {item.archiveCopy && item.archiveCopyOpened && <p role="status" className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">Alle Seiten der lokalen PDF-Kopie wurden angezeigt und bis zum Ende angesehen.</p>}
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"
