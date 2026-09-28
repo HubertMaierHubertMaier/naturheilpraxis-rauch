@@ -1,4 +1,4 @@
-import { deidentifyClinicalText, directIdentifierCategories } from "../../supabase/functions/_shared/clinicalDeidentification";
+import { deidentifyClinicalText, directIdentifierCategories, quarantineResidualDirectIdentifierLines, removeResidualDirectIdentifierLines } from "../../supabase/functions/_shared/clinicalDeidentification";
 import { validateManualPdfRedactions, type ManualPdfRedaction } from "./manualPdfRedaction";
 
 export type PositionedManualPdfText = { text: string; x: number; y: number; width: number; height: number };
@@ -137,9 +137,12 @@ function contextualLine(file:Blob,page:number,line:string){
   const previous=context.lines.get(line);if(previous!==undefined)return previous;
   let marker:string;
   do{marker=`\uE000LOCALREVIEWBOUNDARY${++contextMarkerSequence}\uE001`;}while(context.text.includes(marker)||line.includes(marker));
-  // Obtain the same name-discovery context as the original full-document pass.
-  // Only its final line is used for matching; the existing safe output is not replaced.
-  const safe=deidentifyClinicalText(`${context.text}\n${marker}\n${line}`);
+  // Match the full-document preview pipeline. Blank boundaries keep the appended
+  // candidate from changing the neighboring source row during line quarantine.
+  // Only its final line is used; the existing safe output is never replaced.
+  const safe=quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(
+    deidentifyClinicalText(`${context.text}\n\n${marker}\n\n${line}`),
+  ));
   const at=safe.lastIndexOf(marker);
   if(at<0)throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Lokaler Dokumentkontext konnte nicht eindeutig abgeglichen werden.","CONTEXT_MARKER_MISSING");
   const result=safe.slice(at+marker.length).trim();context.lines.set(line,result);return result;

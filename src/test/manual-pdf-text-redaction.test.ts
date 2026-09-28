@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyManualPdfTextRedactions, clearManualPdfTextRedactions, ManualPdfTextBindingError, manualPdfTextBindingStatus, rememberManualPdfTextRedactions, rememberOriginalPdfTextContext } from "@/lib/manualPdfTextRedaction";
-import { deidentifyClinicalText } from "../../supabase/functions/_shared/clinicalDeidentification";
+import { deidentifyClinicalText, quarantineResidualDirectIdentifierLines, removeResidualDirectIdentifierLines } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 const source = () => Object.assign(new Blob(["synthetic source"], { type: "application/pdf" }), { name: "synthetic.pdf" });
 const rectangle = { x: 10, y: 10, width: 30, height: 12 };
@@ -229,6 +229,20 @@ describe("manual PDF redaction text binding", () => {
     expect(result).not.toContain("u.a.");
     expect(result).not.toContain("Erika");
     expect(result).not.toContain("Beispiel");
+    expect(result).toContain("LDL 130 mg/dl");
+  });
+
+  it("binds reviewed words against the same three-stage sanitized preview", () => {
+    const file=source(),lineText="Erika Beispiel, u.a.";
+    const original=`--- Seite 1 ---\nEmpfohlen von\n${lineText}\nLDL 130 mg/dl\n--- Seite 2 ---\nName: Erika Beispiel`;
+    rememberOriginalPdfTextContext(file,original);
+    rememberManualPdfTextRedactions(file,1,[rectangle],100,100,[],"synthetic-case",[
+      {text:"u.a.",...rectangle,lineText},
+    ],[{text:"Empfohlen von",x:10,y:0,width:50,height:8}]);
+    const safe=quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(deidentifyClinicalText(original)));
+    const result=applyManualPdfTextRedactions(file,safe,"synthetic-case");
+    expect(result).not.toContain("Erika");
+    expect(result).not.toContain("u.a.");
     expect(result).toContain("LDL 130 mg/dl");
   });
 });
