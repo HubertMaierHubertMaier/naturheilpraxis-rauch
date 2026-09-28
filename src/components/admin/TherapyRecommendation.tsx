@@ -84,7 +84,6 @@ import {
   buildSourceManifest,
   completeSuccessfulSourceAnalysis,
   compareSourcesWithHistory,
-  neutralAnalysisSourceLabel,
   normalizeAnalysisSourceId,
   parseSourceHistoryReport,
   reconcileSourceSelection,
@@ -95,12 +94,15 @@ import {
   type SourceSelectionState,
 } from "@/lib/analysisSourceHistory";
 import { buildAnalysisProfile, parseStartedAnalysisProfile, type StartedAnalysisProfile } from "@/lib/analysisProfile";
+import { displayAnalysisSourceLabel } from "@/lib/analysisSourceDisplay";
 import { THERAPY_SOURCE_STAGES, buildTherapySourceScope, parseTherapySourceStageId, sameTherapySourceScope, sourceField, stageIncludesSource } from "../../../supabase/functions/_shared/therapySourceScope";
 import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
   mergeExtractedSymptoms,
   missingPatientProfileFields,
+  hasRestorablePatientProfile,
+  patientProfileText,
   shouldApplyCloudDraft,
   addAnalysisDocumentMetadata,
 } from "@/lib/patientInputPersistence";
@@ -216,6 +218,9 @@ const pickClinicalText = (source: Record<string, unknown>, keys: string[]) => {
 
 const normalizeTherapyInput = (input: unknown) => {
   const d = input && typeof input === "object" ? { ...(input as Record<string, unknown>) } : {};
+  for (const key of ["alter", "groesseCm", "gewichtKg"]) {
+    if (typeof d[key] === "number") d[key] = patientProfileText(d[key]);
+  }
   const laborText = pickClinicalText(d, ["laborKomplett", "labordaten", "laborDaten", "laborwerte", "laborWerte", "labor", "laborText", "extractedLaborText"]);
   const arztText = pickClinicalText(d, ["arztbericht", "arztbrief", "arztBrief", "arztBefund", "doctorReport", "doctorText", "extractedDoctorText"]);
   if (!textFromClinicalValue(d.laborKomplett) && laborText) d.laborKomplett = laborText;
@@ -630,11 +635,6 @@ const sameBefundSourceRevision = (left: SelectableAnalysisSource[] | null, right
   ));
 };
 
-const neutralSourceLabel = (source: SelectableAnalysisSource, fallbackIndex: number) => {
-  void fallbackIndex;
-  return neutralAnalysisSourceLabel(normalizeAnalysisSourceId(source.key), source.group);
-};
-
 const createSourceManifest = (sources: SelectableAnalysisSource[]) => buildSourceManifest(sources.map((source) => ({
   sourceId: normalizeAnalysisSourceId(source.key),
   group: source.group,
@@ -759,6 +759,7 @@ const countLoadedClinicalChars = (d: Record<string, unknown>) => [
 
 const hasRestorableClinicalData = (d: Record<string, unknown>) => (
   countLoadedClinicalChars(d) > 0
+  || hasRestorablePatientProfile(d)
   || countDiagnoseEntries(d.manualDiagnosen) > 0
   || countDiagnoseEntries(d.diagnosen) > 0
   || (Array.isArray(d.pathogens) && d.pathogens.some(entry => typeof entry === "string"
@@ -1557,6 +1558,8 @@ export function TherapyRecommendation() {
     pid: string; scope: number; revision: string | null; local: Record<string, unknown>; remote: Record<string, unknown>;
   } | null>(null);
   const [isImportingAnamnesis, setIsImportingAnamnesis] = useState(false);
+  const documentIntakeBusyForAnalysis = isImportingAnamnesis
+    || pendingDirectBefundFiles.some(file => file.status === "processing");
   const patientContextLoadingRef = useRef(false);
   const patientContextLoadRequestRef = useRef(0);
   const archiveDeleteRunIdRef = useRef(0);
@@ -2216,7 +2219,10 @@ export function TherapyRecommendation() {
       setLoadedDocumentInventory((current) => mergeDocumentInventory(draftDocumentInventory, current));
       const rawDraftInput = normalizeTherapyInput({ ...(draftRow?.eingabe_daten || {}), document_inventory: draftDocumentInventory });
       const draftRecovery = mergeAnamnesisRecovery(selectedBaseInput, rawDraftInput, pid);
-      const draftInput = draftRecovery.input;
+      const draftInput = {
+        ...draftRecovery.input,
+        ...missingPatientProfileFields(draftRecovery.input, selectedBaseInput),
+      };
       const hasDraftClinicalData = hasRestorableClinicalData(rawDraftInput);
       if (!localNeedsReview && hasDraftClinicalData && shouldApplyCloudDraft(localTs, draftRow?.updated_at)) {
         applyDraftPayload(draftInput, pid);
@@ -2249,7 +2255,11 @@ export function TherapyRecommendation() {
         bevorzugteLinie: Array.isArray(draftInput.bevorzugteLinie) ? draftInput.bevorzugteLinie : snapshot.bevorzugteLinie,
         pinnedMittel: Array.isArray(draftInput.pinnedMittel) ? draftInput.pinnedMittel : snapshot.pinnedMittel,
       } : snapshot;
-      const snapshotWithDraftAdmin = mergeAnamnesisRecovery(selectedBaseInput, rawSnapshotWithDraftAdmin, pid).input;
+      const recoveredSnapshot = mergeAnamnesisRecovery(selectedBaseInput, rawSnapshotWithDraftAdmin, pid).input;
+      const snapshotWithDraftAdmin = {
+        ...recoveredSnapshot,
+        ...missingPatientProfileFields(recoveredSnapshot, selectedBaseInput),
+      };
       const cloudTs = snapshot?.snapshotUpdatedAt ? new Date(String(snapshot.snapshotUpdatedAt)).getTime() : 0;
       const hasSnapshotClinicalData = hasRestorableClinicalData(rawSnapshotWithDraftAdmin);
       if (!localNeedsReview && !loadedFromCloud && hasSnapshotClinicalData && (!localData || !localTs || cloudTs >= localTs)) {
@@ -2357,6 +2367,7 @@ export function TherapyRecommendation() {
     }
     const payload = JSON.stringify(safeInput);
     if (payload === lastAutoSavedPayloadRef.current) return;
+    setAutoSaveStatus("saving");
 
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
@@ -3375,6 +3386,10 @@ export function TherapyRecommendation() {
   };
 
   const handleReAnalyzeAll = async () => {
+    if (documentIntakeBusyForAnalysis || anamnesisImportPendingRef.current || directPreviewRunRef.current) {
+      toast({ title: "Dokumentenübernahme läuft", description: "Bitte die laufende Vorschau oder Übernahme abschließen, bevor gespeicherte Zwischenstände zurückgesetzt werden.", variant: "destructive" });
+      return;
+    }
     if (hasUntransferredDocumentSelections) {
       toast({ title: "Unterlagen zuerst übernehmen", description: "Ausgewählte Dateien erst prüfen und passend übernehmen.", variant: "destructive" });
       return;
@@ -3443,8 +3458,8 @@ export function TherapyRecommendation() {
 
 
   const handleAnalyzeDocuments = async (options?: unknown) => {
-    if (hasUntransferredDocumentSelections) {
-      toast({ title: "Unterlagen zuerst prüfen", description: "Ausgewählte Dateien erst sicher auslesen, Datenschutzvorschau prüfen und passend übernehmen.", variant: "destructive" });
+    if (documentIntakeBusyForAnalysis || anamnesisImportPendingRef.current || directPreviewRunRef.current) {
+      toast({ title: "Dokumentenübernahme läuft", description: "Bitte die laufende Vorschau oder Übernahme abschließen. Offene Entwürfe allein verhindern die Auswertung bereits übernommener Quellen nicht.", variant: "destructive" });
       return;
     }
     if (docAbortRef.current) {
@@ -4220,7 +4235,7 @@ export function TherapyRecommendation() {
       toast({ title: "Bitte Sammelupload wählen", description: "Bei Einzeldateien kann jeweils nur eine Datei auf einmal ausgewählt werden. Die bestehende Auswahl bleibt erhalten." });
       return;
     }
-    if (isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
+    if (docAbortRef.current || isAnalyzingDocs || isImportingAnamnesis || pendingDirectBefundFiles.some(item => item.status === "processing")) {
       toast({ title: "Verarbeitung läuft", description: "Bitte die laufende Übernahme abwarten. Die bisherige Dateiliste bleibt erhalten." });
       return;
     }
@@ -4280,6 +4295,10 @@ export function TherapyRecommendation() {
 
   const processDirectBefundFiles = async (targetId?: string, deliberateRepeat = false) => {
     if (anamnesisImportPendingRef.current) return;
+    if (docAbortRef.current || isAnalyzingDocs) {
+      toast({ title: "Befund-Auswertung läuft", description: "Bitte die laufende Auswertung erst abschließen. Die ausgewählten Dateien bleiben erhalten." });
+      return;
+    }
     if (directPreviewRunRef.current) {
       toast({ title: "Auslesen läuft", description: "Bitte den begonnenen Auslesevorgang erst abschließen lassen." });
       return;
@@ -4429,6 +4448,7 @@ export function TherapyRecommendation() {
   };
 
   const restorePendingPdfCopy = async (item: PendingDirectBefundFile, file: File) => {
+    if (docAbortRef.current || isAnalyzingDocs || anamnesisImportPendingRef.current) return;
     const pid = normalizePseudonymId(pseudonymId);
     const userId = localSelectionCacheUserRef.current;
     const generation = patientScopeGenerationRef.current;
@@ -4460,7 +4480,7 @@ export function TherapyRecommendation() {
   ) => {
     const pid = normalizePseudonymId(sourcePseudonymId);
     if (pid !== pseudonymIdRef.current || patientDataOwnerRef.current !== pid) throw new Error(PATIENT_DATA_MISMATCH_ERROR);
-    if (anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
+    if (docAbortRef.current || anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
       || isAnalyzingDocs || isStreaming || isLoadingDiagnosen || isLoadingMannayanOrders) throw new Error("Bitte den laufenden Lade-, Speicher- oder Auswertungsschritt abwarten. Die Vorschau bleibt erhalten.");
     draftRevisionTrackerRef.current.capture(pid);
     const scope = patientScopeGenerationRef.current;
@@ -4520,7 +4540,7 @@ export function TherapyRecommendation() {
 
   const handoffDirectBefundFiles = async () => {
     const pid = normalizePseudonymId(pseudonymId);
-    if (anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
+    if (docAbortRef.current || anamnesisImportPendingRef.current || patientContextLoadingRef.current || patientContextLoadError?.pid === pid
       || isAnalyzingDocs || isStreaming || isLoadingDiagnosen || isLoadingMannayanOrders) {
       toast({ title: "Bitte laufenden Schritt abwarten", description: "Vor der Übernahme müssen das Laden, Speichern und laufende Auswertungen beendet sein. Die Vorschau bleibt erhalten.", variant: "destructive" });
       return;
@@ -6011,7 +6031,7 @@ export function TherapyRecommendation() {
                       <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
                         <p>Die Textvorschau ist erhalten. Falls Sie die erzeugte anonyme PDF-Kopie gesichert haben, können Sie sie zum selben Original wieder auswählen. Die Kopie wird lokal neu aus Bildern aufgebaut; Text, Metadaten und Freigaben werden nicht aus der PDF übernommen.</p>
                         <label className="mt-2 block font-medium">Anonyme PDF-Kopie wiederaufnehmen
-                          <input type="file" accept="application/pdf,.pdf" data-restore-pdf-copy className="mt-1 block w-full text-xs" onChange={event => {
+                          <input type="file" accept="application/pdf,.pdf" data-restore-pdf-copy className="mt-1 block w-full text-xs" disabled={isAnalyzingDocs} onChange={event => {
                             const file = event.target.files?.[0]; event.target.value = "";
                             if (file) void restorePendingPdfCopy(item, file);
                           }} />
@@ -6077,7 +6097,7 @@ export function TherapyRecommendation() {
                       setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, contentDateStatus: undefined, contentDateNotice: undefined } : row));
                     }}>Lokalen Datumsnachweis erneut prüfen</Button>}
                     {documentEntryMode === "single" && (item.status === "queued" || item.status === "error") && (
-                      <Button type="button" size="sm" onClick={() => void processDirectBefundFiles(item.id, item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted")} disabled={item.restoredDraft || pendingDirectBefundFiles.some(file => file.status === "processing") || item.duplicateStatus === "same-batch" || item.excludedFromHandoff} className="gap-1.5">
+                      <Button type="button" size="sm" onClick={() => void processDirectBefundFiles(item.id, item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted")} disabled={isAnalyzingDocs || item.restoredDraft || pendingDirectBefundFiles.some(file => file.status === "processing") || item.duplicateStatus === "same-batch" || item.excludedFromHandoff} className="gap-1.5">
                         <FileText className="h-3.5 w-3.5" /> {item.duplicateStatus === "previewed" || item.duplicateStatus === "accepted" || item.duplicateStatus === "interrupted" ? "Bewusst erneut auslesen und Vorschau erstellen" : "Sicher auslesen und Vorschau erstellen"}
                       </Button>
                     )}
@@ -6160,7 +6180,7 @@ export function TherapyRecommendation() {
                 ))}
                 {documentEntryMode === "batch" && (
                   <div className="space-y-1 border-t pt-3">
-                    <Button type="button" size="sm" onClick={() => void processDirectBefundFiles()} disabled={!pendingDirectBefundFiles.some((file) => !file.excludedFromHandoff && (file.status === "queued" || file.status === "error")) || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
+                    <Button type="button" size="sm" onClick={() => void processDirectBefundFiles()} disabled={isAnalyzingDocs || !pendingDirectBefundFiles.some((file) => !file.excludedFromHandoff && (file.status === "queued" || file.status === "error")) || pendingDirectBefundFiles.some((file) => file.status === "processing")} className="gap-1.5">
                       {pendingDirectBefundFiles.some((file) => file.status === "processing") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                       Ausgewählte geeignete Dateien sicher auslesen und Vorschauen erstellen
                     </Button>
@@ -6248,7 +6268,7 @@ export function TherapyRecommendation() {
               <div className="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">Übernommene Befunde auswerten, danach Therapie vorbereiten</div>
               <p className="text-xs text-emerald-900/80 dark:text-emerald-100/80">
                 {hasUntransferredDocumentSelections
-                  ? "Zuerst alle ausgewählten Dateien prüfen und freigegebene Inhalte passend übernehmen. Bis dahin startet keine Befund- oder Therapieauswertung."
+                  ? "Offene Datei-Entwürfe bleiben unberücksichtigt. Der Bericht kann bereits übernommene und geprüfte Quellen auswerten; die Entwürfe müssen vor ihrer eigenen Übernahme geprüft werden."
                   : analysisSourceTotals.selected > 0
                   ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) lösen die Aktualisierung aus; der neue Bericht enthält ${activeReportSources.length} aktuelle Quelle(n)${activeReportStageId ? " der gewählten Quellenstufe" : ""}.`
                   : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
@@ -6266,7 +6286,7 @@ export function TherapyRecommendation() {
                 }}>Anamnese + Metatron als Quellen wählen</Button>
               )}
             </div>
-            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={hasUntransferredDocumentSelections || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
+            <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={documentIntakeBusyForAnalysis || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
               Gesamtbericht aktualisieren ({analysisSourceTotals.selected} Änderung(en))
             </Button>
@@ -6285,7 +6305,7 @@ export function TherapyRecommendation() {
           </div>
           {analysisSources.length ? (
             <div className="max-h-80 overflow-auto rounded-md border bg-background divide-y">
-              {analysisSources.map((source, sourceIndex) => {
+              {analysisSources.map((source) => {
                 const sourceId = normalizeAnalysisSourceId(source.key);
                 const comparison = comparisonBySourceId.get(sourceId);
                 const checked = selectedAnalysisSourceKeys.includes(sourceId);
@@ -6312,7 +6332,7 @@ export function TherapyRecommendation() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm break-words">{comparison?.label || neutralSourceLabel(source, sourceIndex)}</span>
+                        <span className="font-medium text-sm break-words">{displayAnalysisSourceLabel(source)}</span>
                         <Badge variant="outline" className="text-[10px]">{source.group === "dokument" ? "PDF/Datei" : source.group === "kontext" ? "Kontext" : source.group === "recherche" ? "Recherche" : "Befund"}</Badge>
                         <Badge variant={comparison?.status === "unchanged" ? "secondary" : "default"} className="text-[10px]">{statusLabel}</Badge>
                       </div>

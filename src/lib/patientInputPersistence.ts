@@ -44,9 +44,20 @@ export const missingPatientProfileFields = (
   patientSnapshot: Record<string, unknown>,
 ): Record<string, unknown> => Object.fromEntries(
   ["alter", "geschlecht", "groesseCm", "gewichtKg", "schwanger"]
-    .filter((key) => !String(selectedBase[key] || "").trim() && String(patientSnapshot[key] || "").trim())
-    .map((key) => [key, patientSnapshot[key]]),
+    .filter((key) => !patientProfileText(selectedBase[key]) && patientProfileText(patientSnapshot[key]))
+    .map((key) => [key, patientProfileText(patientSnapshot[key])]),
 );
+
+export const patientProfileText = (value: unknown): string => {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+};
+
+export const hasRestorablePatientProfile = (input: Record<string, unknown>): boolean =>
+  ["alter", "geschlecht", "groesseCm", "gewichtKg"]
+    .some((key) => Boolean(patientProfileText(input[key])))
+  || Boolean(patientProfileText(input.schwanger) && patientProfileText(input.schwanger).toLocaleLowerCase("de-DE") !== "nein");
 
 export const addAnalysisDocumentMetadata = (text: string, documentDate: string, documentType: string): string => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(documentDate)) throw new Error("Ungültiges Erstellungsdatum der Analyse.");

@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { emptyEntry } from "@/components/admin/therapy/PathogenInput";
 import { normalizePatientPseudonym } from "../../supabase/functions/_shared/patientPseudonym";
+import { hasRestorablePatientProfile } from "@/lib/patientInputPersistence";
 
 const source = readFileSync("src/components/admin/TherapyRecommendation.tsx", "utf8").replace(/\r\n/g, "\n");
 const ast = ts.createSourceFile("TherapyRecommendation.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -33,6 +34,7 @@ function setup(payload: Record<string, unknown>) {
     sessionStorage: storage(windowValues), localStorage: storage(sharedValues), DRAFT_KEY: "unscoped",
     buildInputData: () => payload, useProModel: false, residualIdentifierCategories: () => [],
     normalizeTherapyInput: (input: unknown) => input, isPatientScopedStorageReady: () => true,
+    hasRestorablePatientProfile,
     inputDraftKey: "recovery", draftRevisionTrackerRef: { current: { revision: () => "11111111-1111-4111-8111-111111111111" } },
     draftWriterId: "synthetic-writer",
   };
@@ -65,5 +67,11 @@ describe("empty form placeholders cannot replace patient recovery", () => {
     const test = setup(payload); test.mirror();
     expect(JSON.parse(test.windowValues.get("recovery")!).anamnese).toBe(payload.anamnese);
     expect(JSON.parse(test.sharedValues.get("recovery")!).anamnese).toBe(payload.anamnese);
+  });
+  it("mirrors an age-only edit to both recovery copies", () => {
+    const test = setup({ alter: "54", pathogens: [emptyEntry()] });
+    test.mirror();
+    expect(JSON.parse(test.windowValues.get("recovery")!).alter).toBe("54");
+    expect(JSON.parse(test.sharedValues.get("recovery")!).alter).toBe("54");
   });
 });

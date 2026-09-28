@@ -6,6 +6,23 @@ const readSource = (path: string) => readFileSync(resolve(process.cwd(), path), 
 const count = (value: string, pattern: string) => value.split(pattern).length - 1;
 
 describe("therapy workflow UI structure", () => {
+  it("keeps pending document drafts out of the approved-source report run", () => {
+    const source = readSource("src/components/admin/TherapyRecommendation.tsx");
+    const sourceBuilder = source.slice(source.indexOf("const analysisSources = useMemo"), source.indexOf("useEffect(() => {", source.indexOf("const analysisSources = useMemo")));
+    const reportHandler = source.slice(source.indexOf("const handleAnalyzeDocuments = async"), source.indexOf("const requestedSourceIds =", source.indexOf("const handleAnalyzeDocuments = async")));
+    const reportButton = source.split("\n").find(line => line.includes("onClick={handleAnalyzeDocuments}"));
+    const previewHandler = source.slice(source.indexOf("const processDirectBefundFiles = async"), source.indexOf("const restorePendingPdfCopy =", source.indexOf("const processDirectBefundFiles = async")));
+
+    expect(sourceBuilder).not.toContain("pendingDirectBefundFiles");
+    expect(reportHandler).not.toContain("hasUntransferredDocumentSelections");
+    expect(reportHandler).toContain("directPreviewRunRef.current");
+    expect(reportButton).toBeDefined();
+    expect(reportButton).not.toContain("hasUntransferredDocumentSelections");
+    expect(reportButton).toContain("documentIntakeBusyForAnalysis");
+    expect(previewHandler).toContain("docAbortRef.current");
+    expect(source).toContain("if (docAbortRef.current || anamnesisImportPendingRef.current || patientContextLoadingRef.current");
+  });
+
   it("renders each primary workflow action only once", () => {
     const source = readSource("src/components/admin/TherapyRecommendation.tsx");
 

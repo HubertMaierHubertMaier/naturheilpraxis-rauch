@@ -40,7 +40,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const extract = new Function("buildAnamnesisIntake", "extractAnamnesisProfileAnswers", "explicitIAAFields", "createQuestionnaireEvidenceValidator", "parseMedicationFormAnswer", `${extractJs}; return extractExplicitAnamneseInputs;`)(buildAnamnesisIntake, extractAnamnesisProfileAnswers, explicitIAAFields, createQuestionnaireEvidenceValidator, parseMedicationFormAnswer);
   const env = {
     pseudonymId: pid, normalizePseudonymId: normalizePatientPseudonym, isPatientScopedStorageReady: () => true,
-    anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
+    docAbortRef: { current: null }, anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
     isAnalyzingDocs: false, isStreaming: false, isLoadingDiagnosen: false, isLoadingMannayanOrders: false,
     pendingDirectBefundFiles: previews, patientScopeGenerationRef: { current: 0 }, pseudonymIdRef: { current: pid }, patientDataOwnerRef: { current: pid },
     privacyApprovalEpochRef: { current: 0 }, hasUnresolvedDirectPrivacyAudit,
@@ -92,6 +92,14 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("does not take over a pending preview during a running report", async () => {
+    const t = setup();
+    t.env.docAbortRef.current = {} as never;
+    await t.run();
+    expect(t.env.claimDocumentHandoff).not.toHaveBeenCalled();
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+  });
+
   it("blocks a preview with a failed OCR page before claiming or saving", async () => {
     const t = setup();
     t.previews()[0].privacyAudit.failedOcrPages = [88];

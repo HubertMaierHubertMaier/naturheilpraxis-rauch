@@ -5,7 +5,9 @@ import {
   mergeExtractedDiagnoses,
   mergeExtractedMedications,
   mergeExtractedSymptoms,
+  hasRestorablePatientProfile,
   missingPatientProfileFields,
+  patientProfileText,
   shouldApplyCloudDraft,
 } from "@/lib/patientInputPersistence";
 
@@ -23,6 +25,15 @@ describe("patient input persistence", () => {
       { alter: "", geschlecht: "maennlich", symptome: "aktuell" },
       { alter: "54", geschlecht: "weiblich", symptome: "veraltet", schwanger: "nein" },
     )).toEqual({ alter: "54", schwanger: "nein" });
+  });
+
+  it("restores a draft containing only age and preserves it when a newer cloud copy omits it", () => {
+    const local = { _pseudonym_id: "P-2026-0020", alter: "54" };
+    const cloud = { _pseudonym_id: "P-2026-0020", geschlecht: "weiblich", alter: "" };
+    expect(hasRestorablePatientProfile(local)).toBe(true);
+    expect({ ...cloud, ...missingPatientProfileFields(cloud, local) }).toMatchObject({ alter: "54", geschlecht: "weiblich" });
+    expect(hasRestorablePatientProfile({ geschlecht: "weiblich" })).toBe(true);
+    expect(patientProfileText(54)).toBe("54");
   });
 
   it("merges extracted symptoms, diagnoses and medications without duplicates", () => {
