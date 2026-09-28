@@ -25,3 +25,11 @@ it("retains unselected notes in analysis context without listing the question as
   expect(formatIAAAssessment(values)).toContain("Synthetic original note without a mark");
   expect(formatIAAAssessment(values)).toContain("manuell am Original zu prüfen");
 });
+it("keeps IAA complaints separate and marks a pending original review", () => {
+  const text = formatIAAAssessment({ "iaa.1.1": "5", "iaaSource.1.1": "Synthetic IAA page", iaaReviewRequired: "true" });
+  expect(text).toContain("IAA 1.1: Verstopfung?");
+  expect(text).toContain("Bewertung: 5/6");
+  expect(text).toContain("Quelle: Synthetic IAA page");
+  expect(text).toContain("bis dahin nicht als bestätigte Beschwerde übernehmen");
+  expect(text).toContain("nicht in weitere Symptome oder Diagnosen umdeuten");
+});

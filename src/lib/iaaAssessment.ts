@@ -42,11 +42,12 @@ export function formatIAAAssessment(values: Record<string, string>): string {
   const manualReview = values.iaaReviewRequired === "true";
   const reviewConfirmed = values.iaaReviewConfirmedAt;
   if (!entries.length && !unselectedNotes.length && !manualReview && !reviewConfirmed) return "";
-  return ["IAA – Individuelle Austestung und Analyse für Trikombin",
+  return ["IAA – Individuelle Austestung und Analyse aus dem Anamnesebogen",
+    "IAA-Angaben sind quellengebundene Selbstauskünfte. Tatsächlich bestätigte Beschwerden zusammen mit den Antworten der übrigen Anamnese auswerten; den Fragewortlaut nicht in weitere Symptome oder Diagnosen umdeuten.",
     manualReview ? "IAA-Markierungen aus mindestens einer Quelle sind noch manuell am Original zu prüfen; keine fehlenden Bewertungen ergänzen." : "",
     !manualReview && reviewConfirmed ? `IAA-Prüfung am Original manuell bestätigt: ${reviewConfirmed}` : "",
     entries.length ? "Angekreuzte Fragen, Bewertung absteigend 6–1:" : "Keine strukturiert angekreuzten Fragen erfasst.",
-    ...entries.map(entry => `IAA ${entry.id}: ${entry.question}\nBewertung: ${entry.rating === null ? "offen – prüfen" : `${entry.rating}/6`}${entry.note ? `\nBemerkung / Auslöser: ${entry.note}` : ""}\nQuelle: ${entry.source}${entry.needsReview ? `\n${entry.reviewNote || "Zuordnung / Bewertung prüfen."}` : ""}`),
+    ...entries.map(entry => `IAA ${entry.id}: ${entry.question}\nBewertung: ${entry.rating === null ? "offen – prüfen" : `${entry.rating}/6`}${entry.note ? `\nBemerkung / Auslöser: ${entry.note}` : ""}\nQuelle: ${entry.source}${entry.needsReview || manualReview ? `\n${entry.reviewNote || "Zuordnung / Bewertung am Original prüfen; bis dahin nicht als bestätigte Beschwerde übernehmen."}` : ""}`),
     ...unselectedNotes.map(([key, value]) => `Originalbemerkung zu IAA ${key.slice(8)} (${questionById.get(key.slice(8))?.textDe || values[`iaaQuestion.${key.slice(8)}`] || "Fragentext ungeklärt"}) – nicht als angekreuzte Frage oder Bewertung übernommen:\n${value}`),
   ].filter(Boolean).join("\n\n");
 }

@@ -25,7 +25,7 @@ import { PdfArchiveCopyReviewDialog } from "./therapy/PdfArchiveCopyReviewDialog
 import { IAAAssessmentPanel } from "./therapy/IAAAssessmentPanel";
 import { analysisRetryChunkLimit, isAnalysisOutputFailure } from "@/lib/analysisRetryPolicy";
 import { clinicalDataIdentifierCategories } from "../../../supabase/functions/_shared/clinicalDataPrivacy";
-import { explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
+import { checkedIAAQuestions, explicitIAAFields, formatIAAAssessment, mergeIAAFields } from "@/lib/iaaAssessment";
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
@@ -420,7 +420,7 @@ const extractExplicitAnamneseInputs = (text: string): Omit<ExtractedBefundInputs
 
 const ANALYSIS_CHUNK_MAX_CHARS = 6000;
 const ACTIVE_BEFUND_CHECKPOINT_WINDOW_MS = 2 * 60 * 1000;
-const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-form-answers-v13";
+const ANALYSIS_PROMPT_VERSION = "befund-source-evidence-form-answers-v14";
 const ANALYSIS_ANAMNESE_KEYS = ["currentProblems", "pastHistory", "allergies", "presentMedication", "habits", "reviewOfSystems", "recentExaminations", "vaccinationStatus", "familyHistory", "socialStatus", "physicalExamination", "additionalInvestigations"];
 const ANALYSIS_REQUIRED_ARRAY_KEYS = ["documents", "diagnoses", "medicationsTherapies", "labValues", "findings", "terms", "redFlags", "systemsPatterns", "openQuestions", "missingReports"];
 const countAnalysisObjectItems = (source: Record<string, unknown>) => {
@@ -4881,7 +4881,7 @@ export function TherapyRecommendation() {
       ...addSimple("laborErniedrigt", "Labor – erniedrigte Werte", laborErniedrigt, "befund"),
       ...addSimple("stuhlbefund", "Stuhlbefund", stuhlbefund, "befund"),
       ...splitMarkedDocumentSources("anamnese", anamneseDatum.trim() ? `Anamnese – ${anamneseDatum.trim()}` : "Anamnese / Anamnesebogen", anamnese),
-      ...addSimple("anamnese:iaa", "IAA – angekreuzte Fragen für Trikombin", formatIAAAssessment(anamneseZusatz), "befund"),
+      ...addSimple("anamnese:iaa", "IAA – Angaben aus dem Anamnesebogen", formatIAAAssessment(anamneseZusatz), "befund"),
       ...splitMarkedDocumentSources("arztbericht", arztberichtDatum.trim() ? `Arztbericht – ${arztberichtDatum.trim()}` : "Arztbericht", arztbericht),
       ...splitMarkedDocumentSources("metatronHeel", "Metatron Hospital / NLS", includeStandaloneAnalysisDate(metatronHeel, metatronDatum, "Metatron Hospital")),
       ...splitMarkedDocumentSources("sonstigeUntersuchungen", "Sonstige / unsortierte Voruntersuchungen", sonstigeUntersuchungen),
@@ -5036,6 +5036,8 @@ export function TherapyRecommendation() {
   const recommendedUseProModel = deepAnalysisReasons.length > 0;
   const recommendedAnalysisLabel = recommendedUseProModel ? "Tiefenprüfung (Pro für Befundabschluss und Therapie)" : "Vollständige Auswertung";
   const selectedAnalysisLabel = buildAnalysisProfile(useMapReduce, useProModel).label;
+  const checkedIaaEntries = patientDataOwnerRef.current === normalizePseudonymId(pseudonymId)
+    ? checkedIAAQuestions(anamneseZusatz) : [];
   const hasIaaContent = patientDataOwnerRef.current === normalizePseudonymId(pseudonymId)
     && (/\bIAA\b/i.test(anamnese) || Boolean(formatIAAAssessment(anamneseZusatz).trim()));
   const recommendedAnalysisIsSelected = useMapReduce && useProModel === recommendedUseProModel;
@@ -6655,6 +6657,16 @@ export function TherapyRecommendation() {
                     placeholder="z.B. chronische Müdigkeit, Gelenkschmerzen, Verdauungsbeschwerden..."
                     rows={3}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">Dieses Feld enthält dokumentierte Beschwerden aus der Anamnese. Angaben aus der darin enthaltenen IAA werden bei der Auswertung zusätzlich mit eigener Frage, Bewertung und Quelle berücksichtigt.</p>
+                  {(checkedIaaEntries.length > 0 || (patientDataOwnerRef.current === normalizePseudonymId(pseudonymId) && anamneseZusatz.iaaReviewRequired === "true")) && (
+                    <details className="mt-2 rounded-md border p-2 text-sm">
+                      <summary className="cursor-pointer font-medium">IAA-Angaben aus dem Anamnesebogen: {checkedIaaEntries.length} erfasste Frage(n){anamneseZusatz.iaaReviewRequired === "true" ? " · Prüfung am Original offen" : ""}</summary>
+                      <p className="mt-2 text-xs text-muted-foreground">IAA-Fragen sind Selbstauskünfte. Sie werden nicht automatisch zu gesicherten Diagnosen oder zusätzlich erfundenen Symptomen.</p>
+                      {checkedIaaEntries.length > 0 && <ul className="mt-2 max-h-48 list-disc space-y-1 overflow-y-auto pl-5">
+                        {checkedIaaEntries.map(entry => <li key={entry.id}>{entry.id} · {entry.question} — {entry.rating === null ? "Bewertung offen" : `${entry.rating}/6`}{entry.needsReview ? " · Zuordnung prüfen" : ""}</li>)}
+                      </ul>}
+                    </details>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Erkrankungen</label>

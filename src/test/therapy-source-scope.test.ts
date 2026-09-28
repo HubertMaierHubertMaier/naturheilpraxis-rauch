@@ -7,6 +7,7 @@ describe("therapy source stages", () => {
   it("recognizes both split-document keys and single fields without adding unrelated sources", () => {
     expect(stageIncludesSource("anamnese", "anamnese:doc:abcdef012345")).toBe(true);
     expect(stageIncludesSource("anamnese", "anamnese::legacy")).toBe(true);
+    expect(stageIncludesSource("anamnese", "anamnese:iaa")).toBe(true);
     expect(stageIncludesSource("anamnese", "metatronHeel")).toBe(false);
     expect(stageIncludesSource("all", "patientenkontext")).toBe(false);
     expect(stageIncludesSource("all", "analysisProfile")).toBe(false);
@@ -40,5 +41,18 @@ describe("therapy source stages", () => {
     expect(input.anamnese).toBe("Unverified different raw text");
     await expect(verifiedSourceLimitedTherapyInput({ ...input, therapySourceDocuments: [{ sourceId: "anamnese:doc:abcdef012345", text: "Changed after the report" }] }, scope)).rejects.toThrow(/nicht.*überein/);
     await expect(verifiedSourceLimitedTherapyInput({ anamnese: "Approved synthetic history" }, scope)).rejects.toThrow(/fehlen/);
+  });
+  it("keeps the reviewed IAA source alongside the rest of the anamnesis in an anamnesis-stage report", async () => {
+    const documents = [
+      { sourceId: "anamnese:doc:abcdef012345", text: "Synthetic direct complaint" },
+      { sourceId: "anamnese:iaa", text: "IAA 1.1: Verstopfung? Bewertung: 5/6 · synthetic reviewed entry" },
+    ];
+    const scope = buildTherapySourceScope("anamnese", documents.map(document => ({
+      sourceId: document.sourceId,
+      contentSha256: createHash("sha256").update(document.text).digest("hex"),
+    })));
+    const scoped = await verifiedSourceLimitedTherapyInput({ therapySourceDocuments: documents }, scope);
+    expect(scoped.anamnese).toContain("Synthetic direct complaint");
+    expect(scoped.anamnese).toContain("IAA 1.1: Verstopfung? Bewertung: 5/6");
   });
 });
