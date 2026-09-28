@@ -121,7 +121,7 @@ import {
   type DirectBefundTarget,
 } from "@/lib/directBefundHandoff";
 import { classifyClinicalPdfFailure } from "@/lib/clinicalPdfExtraction";
-import { isCurrentLocalSelectionOperation, localSelectionPreviewKey, loadLocalDocumentSelections, removeLocalDocumentSelections, saveLocalDocumentSelections, type LocalDocumentSelection } from "@/lib/localDocumentSelectionCache";
+import { isCurrentLocalSelectionOperation, localSelectionPreviewKey, loadLocalDocumentSelections, removeLocalDocumentSelections, saveLocalDocumentSelections, LocalDocumentSelectionConflictError, type LocalDocumentSelection, type LocalDocumentSelectionBaseline } from "@/lib/localDocumentSelectionCache";
 import { assertUntruncatedPatientInput } from "@/lib/patientInputCompleteness";
 import { formatCurrentNaturalIntake } from "../../../supabase/functions/_shared/currentIntakeContext";
 import { hasCompletePartialCollections, splitPageAwareClinicalText, deduplicateClinicalFacts, clinicalEvidenceText } from "../../../supabase/functions/_shared/clinicalSourceEvidence";
@@ -249,6 +249,7 @@ type PendingDirectBefundFile = {
   progress?: string;
   localCacheStatus?: "saving" | "saved" | "error";
   localCacheError?: string;
+  localCacheConflict?: boolean;
   recoveryNotice?: string;
   draftSavedAt?: string;
   restoredDraft?: boolean;
@@ -284,17 +285,33 @@ const formatDirectDocumentDate = (value: string): string => {
   return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
 };
 const pendingSafePreviewKey = (pseudonymId: string, userId: string) => localSelectionPreviewKey(userId, pseudonymId);
-const selectionCacheItem = (item: PendingDirectBefundFile) =>
-  [item.id, item.file.name, item.file.size, item.file.lastModified, item.documentType, item.documentDate, item.status, item.error, item.errorKind, item.loadedAt, item.loadEventId];
+const selectionCacheItem = (item: PendingDirectBefundFile): LocalDocumentSelectionBaseline => ({
+  id: item.id, name: item.file.name, type: item.file.type, size: item.file.size, lastModified: item.file.lastModified,
+  documentType: item.documentType, documentTypeInferred: item.documentTypeInferred, documentDate: item.documentDate,
+  loadedAt: item.loadedAt, loadEventId: item.loadEventId, documentKey: item.documentKey,
+  loadHistoryStatus: item.loadHistoryStatus, status: item.status, error: item.error, errorKind: item.errorKind,
+});
 const selectionCacheFingerprint = (items: PendingDirectBefundFile[]) => JSON.stringify(items
   .filter(item => item.status !== "done" && item.file.size > 0).map(selectionCacheItem));
-const changedSelectionCacheItems = (items: PendingDirectBefundFile[], previousFingerprint: string) => {
+const previousSelectionCacheItems = (previousFingerprint: string): Map<string, LocalDocumentSelectionBaseline> => {
   let previous: unknown;
   try { previous = JSON.parse(previousFingerprint); } catch { previous = []; }
-  const previousById = new Map((Array.isArray(previous) ? previous : [])
-    .filter((row): row is unknown[] => Array.isArray(row) && typeof row[0] === "string")
-    .map(row => [row[0] as string, JSON.stringify(row)]));
-  return items.filter(item => previousById.get(item.id) !== JSON.stringify(selectionCacheItem(item)));
+  return new Map((Array.isArray(previous) ? previous : [])
+    .filter((row): row is LocalDocumentSelectionBaseline => !!row && typeof row === "object" && typeof row.id === "string")
+    .map(row => [row.id, row]));
+};
+const changedSelectionCacheItems = (items: PendingDirectBefundFile[], previousFingerprint: string) => {
+  const previousById = previousSelectionCacheItems(previousFingerprint);
+  return items.filter(item => JSON.stringify(previousById.get(item.id)) !== JSON.stringify(selectionCacheItem(item)));
+};
+const saveableSelectionCacheItems = (items: PendingDirectBefundFile[], previousFingerprint: string) =>
+  changedSelectionCacheItems(items, previousFingerprint).filter(item => !item.localCacheConflict);
+const updateMatchingSelectionCacheItems = (
+  current: PendingDirectBefundFile[], changed: PendingDirectBefundFile[],
+  update: (item: PendingDirectBefundFile) => PendingDirectBefundFile,
+) => {
+  const snapshots = new Map(changed.map(item => [item.id, JSON.stringify(selectionCacheItem(item))]));
+  return current.map(item => snapshots.get(item.id) === JSON.stringify(selectionCacheItem(item)) ? update(item) : item);
 };
 const isPdfClinicalDocument = (file: File) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 type ExtractedBefundInputs = {
@@ -1646,7 +1663,8 @@ export function TherapyRecommendation() {
     }
     const fingerprint = selectionCacheFingerprint(active);
     if (fingerprint === localSelectionCacheFingerprintRef.current) return;
-    const changed = changedSelectionCacheItems(active, localSelectionCacheFingerprintRef.current);
+    const baseline = previousSelectionCacheItems(localSelectionCacheFingerprintRef.current);
+    const changed = saveableSelectionCacheItems(active, localSelectionCacheFingerprintRef.current);
     localSelectionCacheFingerprintRef.current = fingerprint;
     if (!changed.length) return;
     if (!localSelectionCacheUserId) {
@@ -1658,13 +1676,10 @@ export function TherapyRecommendation() {
       return;
     }
     const cacheUserId = localSelectionCacheUserId;
-    const run = ++localSelectionCacheRunRef.current;
-    const operationScope = { userId: cacheUserId, pseudonymId: pid, generation: run };
-    const cacheScopeIsCurrent = () => isCurrentLocalSelectionOperation(operationScope, {
-      userId: localSelectionCacheUserRef.current || "",
-      pseudonymId: normalizePseudonymId(pseudonymIdRef.current),
-      generation: localSelectionCacheRunRef.current,
-    });
+    localSelectionCacheRunRef.current += 1;
+    const patientGeneration = patientScopeGenerationRef.current;
+    const cacheScopeIsCurrent = () => patientGeneration === patientScopeGenerationRef.current
+      && localSelectionCacheUserRef.current === cacheUserId && normalizePseudonymId(pseudonymIdRef.current) === pid;
     // The cache writer preserves all records not passed here. Saving unchanged stale rows could erase dates from another tab.
     const selections: LocalDocumentSelection[] = changed.map(item => ({
       id: item.id,
@@ -1680,22 +1695,26 @@ export function TherapyRecommendation() {
       error: item.error,
       errorKind: item.errorKind,
     }));
-    setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
-      ? { ...item, localCacheStatus: "saving", localCacheError: undefined }
-      : item));
-    void saveLocalDocumentSelections(cacheUserId, pid, selections).then(() => {
+    setPendingDirectBefundFiles(current => updateMatchingSelectionCacheItems(current, changed,
+      item => ({ ...item, localCacheStatus: "saving", localCacheError: undefined })));
+    void saveLocalDocumentSelections(cacheUserId, pid, selections, baseline).then(() => {
       if (!cacheScopeIsCurrent()) return;
       setLocalSelectionCacheIssue("");
-      setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
-        ? { ...item, localCacheStatus: "saved", localCacheError: undefined, draftSavedAt: new Date().toISOString() }
-        : item));
+      setPendingDirectBefundFiles(current => updateMatchingSelectionCacheItems(current, changed,
+        item => item.localCacheConflict ? item : ({ ...item, localCacheStatus: "saved", localCacheError: undefined, draftSavedAt: new Date().toISOString() })));
     }).catch((error) => {
       if (!cacheScopeIsCurrent()) return;
       const message = error instanceof Error ? error.message : "Lokale Dateiwiederaufnahme konnte nicht gespeichert werden. Die Auswahl bleibt im aktuellen Tab.";
       setLocalSelectionCacheIssue(message);
-      setPendingDirectBefundFiles(current => current.map(item => changed.some(candidate => candidate.id === item.id)
-        ? { ...item, localCacheStatus: "error", localCacheError: message }
-        : item));
+      if (error instanceof LocalDocumentSelectionConflictError) {
+        const changedIds = new Set(changed.map(item => item.id));
+        setPendingDirectBefundFiles(current => current.map(item => changedIds.has(item.id)
+          ? { ...item, localCacheStatus: "error", localCacheError: message, localCacheConflict: true }
+          : item));
+      } else {
+        setPendingDirectBefundFiles(current => updateMatchingSelectionCacheItems(current, changed,
+          item => ({ ...item, localCacheStatus: "error", localCacheError: message })));
+      }
     });
   }, [localSelectionCacheUserId, localSelectionCacheUserResolved, user?.id, pendingDirectBefundFiles, pseudonymId]);
 
@@ -4139,7 +4158,7 @@ export function TherapyRecommendation() {
       toast({ title: "Dokumentdatum fehlt", description: "Bitte für jede Datei Art und Datum festlegen, bevor sie lokal ausgelesen wird.", variant: "destructive" });
       return;
     }
-    if (queue.some(item => item.localCacheStatus !== "saved")) {
+    if (queue.some(item => item.localCacheConflict || item.localCacheStatus !== "saved")) {
       toast({ title: "Dokumentdatum noch nicht gesichert", description: "Bitte zuerst die lokale Sicherung von Dokumentart und Datum bestätigen lassen. Die Dateiauswahl bleibt erhalten.", variant: "destructive" });
       return;
     }
@@ -5709,7 +5728,7 @@ export function TherapyRecommendation() {
                       <Select
                         value={item.documentType || undefined}
                         onValueChange={(value: DirectBefundTarget) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentType: value, documentTypeInferred: false, localCacheStatus: "saving", localCacheError: undefined } : file))}
-                        disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                        disabled={item.localCacheConflict || item.status === "processing" || item.status === "ready" || item.status === "done"}
                       >
                         <SelectTrigger className="h-8 text-xs" aria-label="Dokumentart">
                           <SelectValue placeholder="Dokumentart wählen" />
@@ -5726,7 +5745,7 @@ export function TherapyRecommendation() {
                           title={`${contentDateLabel(item.documentType)} (tatsächliches Datum des Inhalts, manuell eintragen)`}
                           value={item.documentDate}
                           onChange={(event) => setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, documentDate: event.target.value, localCacheStatus: "saving", localCacheError: undefined } : file))}
-                          disabled={item.status === "processing" || item.status === "ready" || item.status === "done"}
+                          disabled={item.localCacheConflict || item.status === "processing" || item.status === "ready" || item.status === "done"}
                           className="h-8 text-xs"
                         />
                         <span className="mt-1 block text-[10px] text-muted-foreground">Manuell, wird nicht automatisch aus dem Ladedatum übernommen</span>

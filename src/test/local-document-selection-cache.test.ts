@@ -4,11 +4,13 @@ import { resolve } from "node:path";
 import ts from "typescript";
 import {
   isCurrentLocalSelectionOperation,
+  LocalDocumentSelectionConflictError,
   localSelectionPreviewKey,
   loadLocalDocumentSelections,
   removeLocalDocumentSelections,
   saveLocalDocumentSelections,
   type LocalDocumentSelection,
+  type LocalDocumentSelectionBaseline,
 } from "@/lib/localDocumentSelectionCache";
 
 type Handler = ((event: Event) => void) | null;
@@ -77,9 +79,12 @@ const fingerprintStart = intakeSource.indexOf("const selectionCacheItem =");
 const fingerprintEnd = intakeSource.indexOf("const isPdfClinicalDocument =", fingerprintStart);
 if (fingerprintStart < 0 || fingerprintEnd <= fingerprintStart) throw new Error("Selection change detection not found");
 const fingerprintJs = ts.transpileModule(intakeSource.slice(fingerprintStart, fingerprintEnd), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-const { selectionCacheFingerprint, changedSelectionCacheItems } = new Function(`${fingerprintJs}; return { selectionCacheFingerprint, changedSelectionCacheItems };`)() as {
+const { selectionCacheItem, selectionCacheFingerprint, changedSelectionCacheItems, saveableSelectionCacheItems, updateMatchingSelectionCacheItems } = new Function(`${fingerprintJs}; return { selectionCacheItem, selectionCacheFingerprint, changedSelectionCacheItems, saveableSelectionCacheItems, updateMatchingSelectionCacheItems };`)() as {
+  selectionCacheItem: (item: LocalDocumentSelection) => LocalDocumentSelectionBaseline;
   selectionCacheFingerprint: (items: LocalDocumentSelection[]) => string;
   changedSelectionCacheItems: (items: LocalDocumentSelection[], previous: string) => LocalDocumentSelection[];
+  saveableSelectionCacheItems: <T extends LocalDocumentSelection & { localCacheConflict?: boolean }>(items: T[], previous: string) => T[];
+  updateMatchingSelectionCacheItems: <T extends LocalDocumentSelection>(current: T[], changed: T[], update: (item: T) => T) => T[];
 };
 
 describe("local document selection cache", () => {
@@ -132,18 +137,67 @@ describe("local document selection cache", () => {
     await saveLocalDocumentSelections("user-a", "P-2099-0001", oldView);
     const oldFingerprint = selectionCacheFingerprint(oldView);
     const datedView = oldView.map(item => ({ ...item, documentDate: "2030-09-17" }));
-    await saveLocalDocumentSelections("user-a", "P-2099-0001", changedSelectionCacheItems(datedView, oldFingerprint));
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", changedSelectionCacheItems(datedView, oldFingerprint), new Map(oldView.map(item => [item.id, selectionCacheItem(item)])));
 
     const staleViewWithNewFile = [...oldView, { ...selection("another-hospital"), documentType: "metatron", documentDate: "", loadedAt: "2030-09-28T10:02:00Z", loadEventId: "event-new" }];
     const changed = changedSelectionCacheItems(staleViewWithNewFile, oldFingerprint);
     expect(changed.map(item => item.id)).toEqual(["another-hospital"]);
-    await saveLocalDocumentSelections("user-a", "P-2099-0001", changed);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", changed, new Map(oldView.map(item => [item.id, selectionCacheItem(item)])));
 
     const reopened = (await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections;
     expect(reopened).toHaveLength(3);
     expect(reopened.find(item => item.id === "anamnese")).toMatchObject({ documentDate: "2030-09-17", loadedAt: oldView[0].loadedAt, loadEventId: oldView[0].loadEventId });
     expect(reopened.find(item => item.id === "hospital")).toMatchObject({ documentDate: "2030-09-17", loadedAt: oldView[1].loadedAt, loadEventId: oldView[1].loadEventId });
     expect(reopened.find(item => item.id === "another-hospital")?.documentDate).toBe("");
+  });
+
+  it("rejects a stale type change on the same file instead of replacing another tab's date", async () => {
+    const initial = { ...selection("same-file"), documentType: "", documentDate: "" };
+    const baseline = new Map([[initial.id, selectionCacheItem(initial)]]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [initial]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...initial, documentDate: "2030-09-17" }], baseline);
+    await expect(saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...initial, documentType: "metatron" }], baseline)).rejects.toBeInstanceOf(LocalDocumentSelectionConflictError);
+    expect((await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections[0]).toMatchObject({ documentType: "", documentDate: "2030-09-17" });
+  });
+
+  it("reports a conflict instead of overwriting a date changed in another tab", async () => {
+    const initial = { ...selection("same-file"), documentType: "anamnese", documentDate: "" };
+    const baseline = new Map([[initial.id, selectionCacheItem(initial)]]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [initial]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...initial, documentDate: "2030-09-17" }], baseline);
+    await expect(saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...initial, documentDate: "2030-09-18" }], baseline)).rejects.toThrow(/anderen Tab/);
+    expect((await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections[0].documentDate).toBe("2030-09-17");
+  });
+
+  it("keeps a conflicted date blocked when the stale tab changes a different field afterward", async () => {
+    const initial = { ...selection("same-file"), documentType: "anamnese", documentDate: "" };
+    const baseline = new Map([[initial.id, selectionCacheItem(initial)]]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [initial]);
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", [{ ...initial, documentDate: "2030-09-17" }], baseline);
+    const staleDate = { ...initial, documentDate: "2030-09-18" };
+    await expect(saveLocalDocumentSelections("user-a", "P-2099-0001", [staleDate], baseline)).rejects.toBeInstanceOf(LocalDocumentSelectionConflictError);
+    const staleFingerprint = selectionCacheFingerprint([staleDate]);
+    const staleTypeChange = { ...staleDate, documentType: "metatron", localCacheConflict: true, localCacheStatus: "error" };
+    expect(saveableSelectionCacheItems([staleTypeChange], staleFingerprint)).toEqual([]);
+    expect(staleTypeChange.localCacheStatus).toBe("error");
+    expect((await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections[0]).toMatchObject({ documentType: "anamnese", documentDate: "2030-09-17" });
+  });
+
+  it("acknowledges two overlapping saves per row without leaving the first date pending", async () => {
+    const anamnese = { ...selection("anamnese"), documentType: "anamnese", documentDate: "2030-09-17", localCacheStatus: "saving" };
+    const hospital = { ...selection("hospital"), documentType: "metatron", documentDate: "2030-09-17", localCacheStatus: "saving" };
+    let current = [anamnese, hospital];
+    const acknowledge = (changed: typeof current) => {
+      current = updateMatchingSelectionCacheItems(current, changed, item => ({ ...item, localCacheStatus: "saved" }));
+    };
+    const firstSave = saveLocalDocumentSelections("user-a", "P-2099-0001", [anamnese]).then(() => acknowledge([anamnese]));
+    const secondSave = saveLocalDocumentSelections("user-a", "P-2099-0001", [hospital]).then(() => acknowledge([hospital]));
+    await Promise.all([firstSave, secondSave]);
+    expect(current.map(item => item.localCacheStatus)).toEqual(["saved", "saved"]);
+    expect((await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections.map(item => item.documentDate)).toEqual(["2030-09-17", "2030-09-17"]);
+
+    const newerAnamnese = { ...current[0], documentDate: "2030-09-18", localCacheStatus: "saving" };
+    expect(updateMatchingSelectionCacheItems([newerAnamnese], [anamnese], item => ({ ...item, localCacheStatus: "saved" }))[0].localCacheStatus).toBe("saving");
   });
 
   it("does not partially save a selection batch beyond the bounded capacity", async () => {

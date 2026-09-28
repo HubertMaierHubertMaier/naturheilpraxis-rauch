@@ -28,6 +28,13 @@ export type LocalDocumentSelection = {
   error?: string;
   errorKind?: string;
 };
+export type LocalDocumentSelectionBaseline = Omit<LocalDocumentSelection, "file" | "status"> & {
+  status: string;
+  name: string;
+  type: string;
+  lastModified: number;
+  size: number;
+};
 export type RestoredLocalDocumentSelection = Omit<LocalDocumentSelection, "status"> & {
   status: "queued" | "error";
   recoveryNotice?: string;
@@ -68,6 +75,12 @@ export class LocalDocumentSelectionCacheError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "LocalDocumentSelectionCacheError";
+  }
+}
+export class LocalDocumentSelectionConflictError extends LocalDocumentSelectionCacheError {
+  constructor(message: string) {
+    super(message);
+    this.name = "LocalDocumentSelectionConflictError";
   }
 }
 
@@ -182,7 +195,23 @@ export function restoreLocalDocumentSelections(records: readonly StoredSelection
   });
 }
 
-function saveRecordsAtomically(database: IDBDatabase, records: readonly StoredSelection[]): Promise<void> {
+const editableSelectionFields = ["documentType", "documentTypeInferred", "documentDate", "loadedAt", "loadEventId", "documentKey", "loadHistoryStatus", "status", "error", "errorKind"] as const;
+
+function mergeSelectionWithBaseline(incoming: StoredSelection, current: StoredSelection | undefined, baseline?: LocalDocumentSelectionBaseline): StoredSelection {
+  if (!baseline) return incoming;
+  if (!current || current.name !== baseline.name || current.type !== baseline.type
+    || current.lastModified !== baseline.lastModified || current.size !== baseline.size) {
+    throw new LocalDocumentSelectionConflictError("Diese lokale Auswahl wurde in einem anderen Tab geändert oder entfernt. Bitte den Fall neu öffnen, bevor Sie sie erneut speichern.");
+  }
+  for (const field of editableSelectionFields) {
+    if (current[field] !== baseline[field]) {
+      throw new LocalDocumentSelectionConflictError("Diese Dokumentangabe wurde in einem anderen Tab geändert. Bitte den Fall neu öffnen und die Angabe prüfen.");
+    }
+  }
+  return { ...incoming, bytes: current.bytes };
+}
+
+function saveRecordsAtomically(database: IDBDatabase, records: readonly StoredSelection[], baselines: ReadonlyMap<string, LocalDocumentSelectionBaseline>): Promise<void> {
   return new Promise((resolve, reject) => {
     let settled = false;
     const fail = (error: Error) => {
@@ -213,29 +242,38 @@ function saveRecordsAtomically(database: IDBDatabase, records: readonly StoredSe
           return;
         }
       }
+      let mergedRecords: StoredSelection[];
+      try {
+        const existingByKey = new Map(existing.filter((item): item is StoredSelection => !!item && typeof item === "object" && typeof (item as StoredSelection).key === "string")
+          .map(item => [item.key, item]));
+        mergedRecords = records.map(record => mergeSelectionWithBaseline(record, existingByKey.get(record.key), baselines.get(record.id)));
+      } catch (error) {
+        fail(error instanceof Error ? error : new LocalDocumentSelectionCacheError("Lokale Dateiwiederaufnahme konnte nicht gespeichert werden."));
+        return;
+      }
       const retained = existing.filter(item => !(item && typeof item === "object" && replacing.has(String((item as { key?: unknown }).key ?? ""))));
       const retainedBytes = retained.reduce<number>((sum, item) => {
         const size = Number((item as { size?: unknown })?.size);
         return sum + (Number.isFinite(size) && size >= 0 ? size : LOCAL_DOCUMENT_SELECTION_CACHE_MAX_BYTES);
       }, 0);
-      const totalBytes = retainedBytes + records.reduce<number>((sum, record) => sum + record.size, 0);
-      if (retained.length + records.length > LOCAL_DOCUMENT_SELECTION_CACHE_MAX_ENTRIES || totalBytes > LOCAL_DOCUMENT_SELECTION_CACHE_MAX_BYTES) {
+      const totalBytes = retainedBytes + mergedRecords.reduce<number>((sum, record) => sum + record.size, 0);
+      if (retained.length + mergedRecords.length > LOCAL_DOCUMENT_SELECTION_CACHE_MAX_ENTRIES || totalBytes > LOCAL_DOCUMENT_SELECTION_CACHE_MAX_BYTES) {
         fail(new LocalDocumentSelectionCacheError("Lokaler Wiederaufnahmespeicher ist voll (maximal 30 Dateien bzw. 100 MB). Die aktuelle Auswahl bleibt im Tab und wurde nicht als gesichert bestätigt."));
         return;
       }
-      try { records.forEach(record => store.put(record)); }
+      try { mergedRecords.forEach(record => store.put(record)); }
       catch { fail(new LocalDocumentSelectionCacheError("Lokale Dateiwiederaufnahme konnte nicht gespeichert werden. Die Auswahl bleibt im aktuellen Tab.")); }
     };
   });
 }
 
-export async function saveLocalDocumentSelections(userId: string, pseudonymId: string, selections: readonly LocalDocumentSelection[]): Promise<void> {
+export async function saveLocalDocumentSelections(userId: string, pseudonymId: string, selections: readonly LocalDocumentSelection[], baselines: ReadonlyMap<string, LocalDocumentSelectionBaseline> = new Map()): Promise<void> {
   assertScope(userId, pseudonymId);
   if (!selections.length) return;
   const records = selections.map(selection => toStoredSelection(userId, pseudonymId, selection));
   return enqueueScopeOperation(userId, pseudonymId, async () => {
     const database = await openDatabase();
-    try { await saveRecordsAtomically(database, records); }
+    try { await saveRecordsAtomically(database, records, baselines); }
     finally { database.close(); }
   });
 }
