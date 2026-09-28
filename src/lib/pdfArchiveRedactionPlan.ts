@@ -4,6 +4,35 @@ export type PositionedPrivacyLine = { text: string; x: number; y: number; width:
 export type PdfPrivacyReplacement = PositionedPrivacyLine & { replacement: string; categories: string[] };
 const overlapArea=(a:PositionedPrivacyLine,b:PositionedPrivacyLine)=>Math.max(0,Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y));
 const compact=(text:string)=>text.replace(/\s+/g,"").toLowerCase();
+const splitIdentityLabel = /^(?:Name|Vorname|Nachname|Patientenname|Patient|Behandler(?:in)?|Arzt|Ärztin|Praxis|Labor|Klinik|Geburtsdatum|Anschrift|Adresse|Telefon(?:nummer)?|E-Mail)\s*[:=]\s*$/iu;
+
+function splitIdentityReplacements(lines: readonly PositionedPrivacyLine[]): PdfPrivacyReplacement[] {
+  const result: PdfPrivacyReplacement[] = [];
+  for (const label of lines) {
+    if (!splitIdentityLabel.test(label.text.trim())) continue;
+    const candidates = lines.filter(value => value !== label && !splitIdentityLabel.test(value.text.trim())
+      && Math.abs(value.x - label.x) <= 4
+      && value.y >= label.y + label.height - 2
+      && value.y <= label.y + label.height * 1.8
+      && !overlapArea(label, value));
+    if (candidates.length !== 1) throw new Error("Getrenntes Personenfeld ist nicht eindeutig. Lokale PDF-Sichtprüfung erforderlich.");
+    const candidate = candidates[0];
+    const category = /^(?:Geburtsdatum)/iu.test(label.text) ? "Geburtsdatum"
+      : /^(?:Telefon|E-Mail)/iu.test(label.text) ? "Kontaktdaten"
+      : /^(?:Anschrift|Adresse)/iu.test(label.text) ? "Anschrift" : "Name";
+    const value = candidate.text.trim();
+    // A capitalized diagnosis can look exactly like a two-word person's name.
+    // A separate name or address line therefore needs human review.
+    if (category === "Name" || category === "Anschrift") {
+      throw new Error("Getrenntes Personenfeld ist nicht eindeutig. Lokale PDF-Sichtprüfung erforderlich.");
+    }
+    const unambiguous = category === "Geburtsdatum" ? /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(value)
+      : /^(?:[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|[+()\d][\d\s()/-]{5,})$/.test(value);
+    if (!unambiguous) throw new Error("Getrenntes Personenfeld ist nicht eindeutig. Lokale PDF-Sichtprüfung erforderlich.");
+    result.push({ ...candidate, replacement: "[geschwärzt]", categories: [category] });
+  }
+  return result;
+}
 
 export function assertPdfOcrEvidence(text:string,confidence:number|undefined,lines:readonly PositionedPrivacyLine[],width:number,height:number){
   if(!text.trim()||!lines.length)throw new Error("Sichtbarer PDF-Seiteninhalt ohne prüfbare OCR-Positionen. Lokale Sichtprüfung erforderlich; keine Archivübertragung.");
@@ -63,7 +92,7 @@ export function isOpaquePrivacyCover(pixels: Uint8ClampedArray): boolean {
 }
 
 export function buildPdfPrivacyReplacements(lines: readonly PositionedPrivacyLine[]): PdfPrivacyReplacement[] {
-  return lines.flatMap(line => {
+  const direct = lines.flatMap(line => {
     const categories = directIdentifierCategories(line.text);
     if (!categories.length) return [];
     if (![line.x, line.y, line.width, line.height].every(Number.isFinite) || line.width <= 0 || line.height <= 0) {
@@ -75,6 +104,7 @@ export function buildPdfPrivacyReplacements(lines: readonly PositionedPrivacyLin
     }
     return [{ ...line, replacement: safe.replace(/\[[^\]\n]*entfernt\]/giu, "[geschwärzt]"), categories }];
   });
+  return [...direct, ...splitIdentityReplacements(lines)];
 }
 
 export function groupPdfPrivacyWords(words: readonly PositionedPrivacyLine[]): PositionedPrivacyLine[] {

@@ -369,18 +369,20 @@ export const collectLocalPrivacyFindings = (input: string): LocalPrivacyFinding[
       continue;
     }
     lineNumber += 1;
-    const lineCategories = directIdentifierCategories(lines[index]);
-    if (!lineCategories.length) continue;
-
+    const findingLineNumber = lineNumber;
+    let lineCategories = directIdentifierCategories(lines[index]);
     let originalText = lines[index];
     if (standalonePrivacyLabel.test(lines[index]) && index + 1 < lines.length) {
       const pairCategories = directIdentifierCategories(`${lines[index]}\n${lines[index + 1]}`);
       if (pairCategories.length) {
+        lineCategories = [...new Set([...lineCategories, ...pairCategories])];
         originalText = `${lines[index]}\n${lines[index + 1]}`;
         index += 1;
+        lineNumber += 1;
       }
     }
-    findings.push({ categories: lineCategories, pageNumber, lineNumber, originalText });
+    if (!lineCategories.length) continue;
+    findings.push({ categories: lineCategories, pageNumber, lineNumber: findingLineNumber, originalText });
   }
   return findings;
 };

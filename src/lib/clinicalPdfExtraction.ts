@@ -186,7 +186,13 @@ export function selectPreferredPageText(page: ExtractedPdfPage): string {
   const textLayer = normalizeExtractedText(escapeIAAFormMarkers(page.textLayer));
   const ocrText = normalizeExtractedText(escapeIAAFormMarkers(page.ocrText || ""));
   if (page.includeOcrAlongsideTextLayer && ocrText) {
-    return normalizeExtractedText([textLayer, ocrText, page.formText].filter(Boolean).join("\n"));
+    const comparable = (value: string) => value.normalize("NFC").toLocaleLowerCase("de-DE").replace(/\s+/g, " ").trim();
+    const nativeLines = new Set(textLayer.split("\n").map(comparable).filter(Boolean));
+    const additionalOcrLines = ocrText.split("\n").filter(line => {
+      const candidate = comparable(line);
+      return candidate.length > 0 && !nativeLines.has(candidate);
+    });
+    return normalizeExtractedText([textLayer, ...additionalOcrLines, page.formText].filter(Boolean).join("\n"));
   }
   if (countMeaningfulTextCharacters(textLayer) >= MIN_TEXT_PER_PAGE) return normalizeExtractedText([textLayer, page.formText].filter(Boolean).join("\n"));
 

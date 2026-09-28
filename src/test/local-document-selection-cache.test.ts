@@ -102,6 +102,24 @@ describe("local document selection cache", () => {
     expect(again.selections[0].loadEventId).toBe(original.loadEventId);
   });
 
+  it("restores two already previewed documents with their original bytes and load IDs", async () => {
+    const selected = [
+      { ...selection("anamnese", "ready"), documentType: "anamnese", documentDate: "2099-09-17", loadedAt: "2099-09-28T10:00:00Z", loadEventId: "synthetic-load-a", loadHistoryStatus: "saved" as const },
+      { ...selection("hospital", "ready"), documentType: "metatron", documentDate: "2099-09-17", loadedAt: "2099-09-28T10:01:00Z", loadEventId: "synthetic-load-b", loadHistoryStatus: "saved" as const },
+    ];
+    await saveLocalDocumentSelections("user-a", "P-2099-0001", selected);
+    const recovered = (await loadLocalDocumentSelections("user-a", "P-2099-0001")).selections;
+    expect(recovered).toHaveLength(2);
+    for (let index = 0; index < selected.length; index++) {
+      expect(recovered[index]).toMatchObject({
+        documentType: selected[index].documentType, documentDate: "2099-09-17",
+        loadedAt: selected[index].loadedAt, loadEventId: selected[index].loadEventId,
+        loadHistoryStatus: "saved", status: "error", errorKind: "Wiederaufnahme",
+      });
+      await expect(readText(recovered[index].file)).resolves.toBe(`bytes-${selected[index].id}`);
+    }
+  });
+
   it("round-trips original bytes and changes interrupted processing into an explicit retry", async () => {
     await saveLocalDocumentSelections("user-a", "P-2099-0001", [selection("one", "processing")]);
     const loaded = await loadLocalDocumentSelections("user-a", "P-2099-0001");

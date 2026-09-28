@@ -62,11 +62,16 @@ export async function archivePatientOriginal(
   file: Blob & { name: string },
   kind: OriginalArchiveKind,
   documentDate = "",
+  isApprovalCurrent: () => boolean = () => true,
 ): Promise<OriginalArchiveReceipt> {
+  const assertApprovalCurrent = () => {
+    assertReviewedPdfArchiveCopy(file);
+    if (!isApprovalCurrent()) throw new Error("Die Datenschutzfreigabe ist nicht mehr aktuell. Die weitere Übernahme wurde gesperrt.");
+  };
   const pid = normalizePatientPseudonym(pseudonymId);
   const extension = file.name.split(".").at(-1)?.toLowerCase() || "";
   if (extension !== "pdf") throw new Error("Archivübertragung gesperrt: Originale bleiben lokal. Eine geprüfte anonymisierte PDF-Kopie ist erforderlich.");
-  assertReviewedPdfArchiveCopy(file);
+  assertApprovalCurrent();
   if (!pid || pid.length < 6 || pid.length > 100 || /[/\\\x00-\x1f\x7f]/.test(pid)
     || (/^P-/i.test(pid) && !/^P-\d{4}-\d{4}$/.test(pid))) throw new Error("Die Archivkopie ist keinem gültigen Fall zugeordnet.");
   if (!extensions.has(extension) || file.size < 1 || file.size > 50 * 1024 * 1024) {
@@ -75,6 +80,7 @@ export async function archivePatientOriginal(
   if (documentDate && !/^\d{4}-\d{2}-\d{2}$/.test(documentDate)) throw new Error("Bitte das Dokumentdatum prüfen.");
   const digest = await sha256(await file.arrayBuffer());
   const expectedPath = `${pid}/${documentDate || "undatiert"}/${kind}-${digest}.${extension}`;
+  assertApprovalCurrent();
   const { data: plan, error: prepareError } = await client.rpc("prepare_therapy_document_archive", {
     _pseudonym_id: pid, _sha256: digest, _size_bytes: file.size,
     _document_type: kind, _extension: extension, _document_date: documentDate || null,
@@ -84,9 +90,11 @@ export async function archivePatientOriginal(
     || plan.sha256 !== digest || Number(plan.bytes) !== file.size || typeof plan.exists !== "boolean") {
     throw new Error("Die Archivzuordnung wurde nicht eindeutig bestätigt. Es wurde keine Archivkopie hochgeladen.");
   }
+  assertApprovalCurrent();
   const storage = client.storage.from("therapy-documents");
   let uploadError: unknown = null;
   if (!plan.exists) {
+    assertApprovalCurrent();
     try {
       const result = await storage.upload(expectedPath, file, { upsert: false,
         contentType: extension === "pdf" ? "application/pdf" : "application/octet-stream" });
@@ -94,10 +102,12 @@ export async function archivePatientOriginal(
     } catch (error) { uploadError = error; }
   }
   // An interrupted upload response can still have committed the file. Verify rather than overwrite.
+  assertApprovalCurrent();
   const { data: original, error: readError } = await storage.download(expectedPath);
   if (readError || !original || original.size !== file.size || await sha256(await original.arrayBuffer()) !== digest) {
     throw new Error("Die anonymisierte Archivkopie konnte nicht vollständig und unverändert aus dem privaten Archiv zurückgelesen werden. Die Vorschau bleibt erhalten.");
   }
+  assertApprovalCurrent();
   return { pseudonymId: pid, archivePath: expectedPath, sha256: digest, bytes: file.size, reused: plan.exists || Boolean(uploadError) };
 }
 

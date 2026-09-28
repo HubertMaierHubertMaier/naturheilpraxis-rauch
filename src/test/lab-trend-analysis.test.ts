@@ -991,7 +991,7 @@ describe("laboratory trend analysis", () => {
     expect(ocrSource).not.toContain("fetch(");
     expect(ocrSource).not.toContain("supabase");
     expect(uploadSource).toContain("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet");
-    expect(uploadSource).toContain('shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })');
+    expect(uploadSource).toContain('shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" || forceFullPdfOcr })');
     expect(uploadSource).toContain("rasterImageOperatorIds.has(operatorId)");
     expect(uploadSource).toContain('from "@/lib/localBrowserOcr"');
     expect(ocrSource).toContain("const nativeWorker = new Worker(workerUrl)");

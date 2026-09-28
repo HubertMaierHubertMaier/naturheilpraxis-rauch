@@ -104,14 +104,14 @@ describe("therapy workflow UI structure", () => {
     expect(source).toContain('if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked)');
     expect(source).toContain('if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,false)');
     expect(source).toContain("archiveCopy: archiveCopyAfterPreviewTextEdit(candidate.file, candidate.archiveCopy)");
-    expect(source).toContain("disabled={isPdfClinicalDocument(item.file) && !item.archiveCopy}");
+    expect(source).toContain("disabled={isImportingAnamnesis || hasUnresolvedDirectPrivacyAudit(item.privacyAudit) || (isPdfClinicalDocument(item.file) && (!item.archiveCopy || !item.archiveCopyOpened))}");
     expect(individualUploadSource).toContain("assertCompletePdfArchiveCopies(files)");
     expect(individualUploadSource).toContain("archiveCopy: archiveCopyAfterPreviewTextEdit(item.file, item.archiveCopy)");
     expect(source).toContain("archiveCopy = isPdfClinicalDocument(item.file)");
     expect(source).toContain('archiveCopy: manualBinding ? archiveCopy : row.archiveCopy');
     expect(source).toContain("Lokale Arbeitskopie erneut prüfen");
     expect(source).toContain('if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.")');
-    expect(source).toContain("Bereinigten Word-/Excel-Text geprüft");
+    expect(source).toContain("Bereinigten Word-/Excel-Text und alle Prüfpunkte mit dem Original abgeglichen");
     expect(source).not.toContain("disabled={!item.archiveCopy}");
   });
 

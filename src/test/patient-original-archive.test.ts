@@ -101,4 +101,21 @@ describe("private anonymized PDF-copy receipts", () => {
     await expect(archivePatientOriginal(t.client, pid, file(), "dokument")).rejects.toThrow(/Archiv der anonymisierten PDF-Kopie/);
     expect(t.upload).not.toHaveBeenCalled();
   });
+  it("stops before an external write when approval was withdrawn", async () => {
+    const t = setup(); const copy = file();
+    await expect(archivePatientOriginal(t.client, pid, copy, "labor", "", () => false)).rejects.toThrow(/Datenschutzfreigabe/);
+    expect(t.rpc).not.toHaveBeenCalled();
+    expect(t.upload).not.toHaveBeenCalled();
+  });
+  it("checks PDF approval again after the archive plan returns", async () => {
+    const t = setup(); const copy = file();
+    const realRpc = t.rpc.getMockImplementation()!;
+    t.rpc.mockImplementationOnce(async (...args) => {
+      const result = await realRpc(...args);
+      setPdfArchiveCopyReviewed(copy, false);
+      return result;
+    });
+    await expect(archivePatientOriginal(t.client, pid, copy, "labor")).rejects.toThrow(/noch nicht geprüft/);
+    expect(t.upload).not.toHaveBeenCalled();
+  });
 });

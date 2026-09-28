@@ -88,4 +88,25 @@ describe("PDF privacy replacements preserve clinical content",()=>{
     expect(result.map(x=>x.text)).toEqual(["Name: Erika Muster","LDL 130 mg/dl"]);
     expect(result[0].width).toBe(108);
   });
+  it("masks an unambiguous date value below its label",()=>{
+    const replacements=checkedPdfPrivacyReplacements([
+      line("Geburtsdatum:",20,70,120,15),line("12.03.1980",20,90,100,15),
+      line("LDL 130 mg/dl",20,120,170,15),
+    ]);
+    expect(replacements).toHaveLength(1);
+    expect(replacements.map(item=>item.text)).toEqual(["12.03.1980"]);
+    expect(replacements.every(item=>item.replacement==="[geschwärzt]")).toBe(true);
+  });
+  it("requires review for a split name because a diagnosis can look like a name",()=>{
+    expect(()=>checkedPdfPrivacyReplacements([line("Name:",20,20,50,15),line("Erika Beispiel",20,40,170,15)])).toThrow(/Sichtprüfung/);
+    expect(()=>checkedPdfPrivacyReplacements([line("Name:",20,20,50,15),line("Multiple Sklerose",20,40,170,15)])).toThrow(/Sichtprüfung/);
+    expect(()=>checkedPdfPrivacyReplacements([line("Name:",20,20,50,15),line("LDL 130 mg/dl",20,40,170,15)])).toThrow(/Sichtprüfung/);
+    expect(()=>checkedPdfPrivacyReplacements([line("Name:",20,20,50,15),line("Erika Beispiel",170,20,170,15)])).toThrow(/Sichtprüfung/);
+  });
+  it("requires review for multiple values below one identity label",()=>{
+    expect(()=>checkedPdfPrivacyReplacements([
+      line("Geburtsdatum:",20,20,120,15),
+      line("12.03.1980",20,40,100,15),line("14.04.1981",22,42,100,15),
+    ])).toThrow(/Sichtprüfung/);
+  });
 });

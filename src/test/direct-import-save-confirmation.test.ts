@@ -12,6 +12,7 @@ import { explicitIAAFields, mergeIAAFields } from "@/lib/iaaAssessment";
 import { createQuestionnaireEvidenceValidator } from "../../supabase/functions/_shared/questionnaireEvidence";
 import { parseMedicationFormAnswer } from "@/lib/anamnesisMedicationForm";
 import { hasBlockingDirectBefundSelections } from "@/lib/directBefundHandoff";
+import { hasUnresolvedDirectPrivacyAudit } from "@/lib/directPrivacyAudit";
 
 const pid = "P-2099-0401";
 function deferred<T>() {
@@ -30,7 +31,8 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
   const save = deferred<string>(); const read = deferred<any>();
   let submitted: Record<string, unknown> | undefined;
   let previews = [{ id: "synthetic-document", documentKey: "a".repeat(64), status: "ready", sourcePseudonymId: pid, documentType,
-    privacyReviewed: true, file: { size: 42 }, previewText, documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
+    privacyReviewed: true, privacyAudit: { findingLocations: [], failedOcrPages: [], lowConfidencePages: [], quarantinedLineCount: 0, officeWarningCount: 0 },
+    file: { size: 42 }, previewText, documentDate: "2099-01-01", removedIdentifierCategories: [], pages: 1, chars: 35 }];
   const setter = (field: string) => (value: unknown) => { data[field] = typeof value === "function" ? value(data[field] || "") : value; };
   const extractStart = source.indexOf("const extractExplicitAnamneseInputs =");
   const extractEnd = source.indexOf("const ANALYSIS_CHUNK_MAX_CHARS", extractStart);
@@ -41,6 +43,7 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
     anamnesisImportPendingRef: { current: false }, patientContextLoadingRef: { current: false }, patientContextLoadError: null,
     isAnalyzingDocs: false, isStreaming: false, isLoadingDiagnosen: false, isLoadingMannayanOrders: false,
     pendingDirectBefundFiles: previews, patientScopeGenerationRef: { current: 0 }, pseudonymIdRef: { current: pid }, patientDataOwnerRef: { current: pid },
+    privacyApprovalEpochRef: { current: 0 }, hasUnresolvedDirectPrivacyAudit,
     localSelectionCacheUserRef: { current: "synthetic-user" }, localSelectionCacheUserId: "synthetic-user", localSelectionCacheRunRef: { current: 0 },
     setLocalSelectionCacheIssue: vi.fn(), removeLocalDocumentSelections: vi.fn(async () => undefined),
     claimDocumentHandoff: vi.fn(async () => undefined), releaseDocumentPreviewClaim: vi.fn(async () => undefined),
@@ -89,6 +92,23 @@ function setup(documentType = "labor", previewText = "synthetic reviewed laborat
 }
 
 describe("direct import confirmation follows the database receipt", () => {
+  it("blocks a preview with a failed OCR page before claiming or saving", async () => {
+    const t = setup();
+    t.previews()[0].privacyAudit.failedOcrPages = [88];
+    await t.run();
+    expect(t.env.claimDocumentHandoff).not.toHaveBeenCalled();
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+  });
+  it("stops if privacy approval changes during an asynchronous handoff", async () => {
+    const t = setup(); const claim = deferred<void>();
+    t.env.claimDocumentHandoff.mockImplementationOnce(() => claim.promise);
+    const done = t.run();
+    await vi.waitFor(() => expect(t.env.claimDocumentHandoff).toHaveBeenCalled());
+    t.env.privacyApprovalEpochRef.current += 1;
+    claim.resolve(); await done;
+    expect(t.env.upsertAutoSaveDraft).not.toHaveBeenCalled();
+    expect(t.previews()[0].status).toBe("ready");
+  });
   it("saves native medication names, doses and independent schedules through the real import handoff", async () => {
     const t = setup("anamnese", 'Frage/Feld: Aktuelle Medikamente – Zeile 1 (elektronische Formularfelder, Seite 24)\nErkannte Antwort: {"Name":"Magnesiumcitrat","Dosierung":"200 mg","tägl.":"1","pro_Woche":"7","Grund":"Synthetische Testangabe","seit":"2024"}\nFrage/Feld: Aktuelle Medikamente – Zeile 2 (elektronische Formularfelder, Seite 24)\nErkannte Antwort: {"Name":"Vitamin D3","Dosierung":"1000 IE","tägl.":"1"}');
     const done = t.run();

@@ -46,6 +46,7 @@ import { DocumentLoadHistory } from "./therapy/DocumentLoadHistory";
 import { recordDocumentLoad } from "@/lib/documentLoadHistoryStore";
 import { contentDateLabel, documentLoadKey, selectionTimestamp } from "@/lib/documentLoadHistory";
 import { groupDirectBefundFiles } from "@/lib/directBefundGroups";
+import { buildDirectPrivacyAudit, hasUnresolvedDirectPrivacyAudit, type DirectPrivacyAudit } from "@/lib/directPrivacyAudit";
 import {
   downloadClinicalReportHtml,
   openClinicalReportWindow,
@@ -245,6 +246,9 @@ type PendingDirectBefundFile = {
   previewText?: string;
   removedIdentifierCategories?: string[];
   localPrivacyFindings?: LocalPrivacyFinding[];
+  privacyAudit?: DirectPrivacyAudit;
+  officeWarnings?: string[];
+  archiveCopyOpened?: boolean;
   privacyFindingsRevealed?: boolean;
   chars?: number;
   pages?: number;
@@ -1463,6 +1467,7 @@ export function TherapyRecommendation() {
   const [sourceManifestError, setSourceManifestError] = useState("");
   const [sourceHistoryError, setSourceHistoryError] = useState("");
   const [pendingDirectBefundFiles, setPendingDirectBefundFiles] = useState<PendingDirectBefundFile[]>([]);
+  const privacyApprovalEpochRef = useRef(0);
   const [localSelectionCacheUserId, setLocalSelectionCacheUserId] = useState<string | null>(null);
   const [localSelectionCacheUserResolved, setLocalSelectionCacheUserResolved] = useState(false);
   const [localSelectionCacheIssue, setLocalSelectionCacheIssue] = useState("");
@@ -4153,6 +4158,7 @@ export function TherapyRecommendation() {
   }
 
   const removeDirectBefundFile = (item: PendingDirectBefundFile) => {
+    if (anamnesisImportPendingRef.current) return;
     localSelectionCacheRunRef.current += 1;
     setPendingDirectBefundFiles((current) => current.filter((file) => file.id !== item.id));
     const pid = normalizePseudonymId(item.sourcePseudonymId);
@@ -4164,6 +4170,7 @@ export function TherapyRecommendation() {
 
   const addDirectBefundFiles = (list: FileList | File[] | null, preferredType?: DirectBefundTarget | "") => {
     if (!list?.length) return;
+    if (anamnesisImportPendingRef.current) return;
     if (documentEntryMode === "single" && list.length > 1) {
       toast({ title: "Bitte Sammelupload wählen", description: "Bei Einzeldateien kann jeweils nur eine Datei auf einmal ausgewählt werden. Die bestehende Auswahl bleibt erhalten." });
       return;
@@ -4227,6 +4234,7 @@ export function TherapyRecommendation() {
   };
 
   const processDirectBefundFiles = async (targetId?: string, deliberateRepeat = false) => {
+    if (anamnesisImportPendingRef.current) return;
     if (directPreviewRunRef.current) {
       toast({ title: "Auslesen läuft", description: "Bitte den begonnenen Auslesevorgang erst abschließen lassen." });
       return;
@@ -4321,7 +4329,7 @@ export function TherapyRecommendation() {
             if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? { ...row, progress } : row));
           }, undefined, `${documentType ? directBefundTargetLabel(documentType) : "Dokumentart wird lokal erkannt"}|${item.documentDate}`,
           documentType === "vieva" ? readVievaPdfPassword() || vievaPlusPdfPassword : "",
-          documentType === "vieva" ? updateVievaPlusPdfPassword : undefined);
+          documentType === "vieva" ? updateVievaPlusPdfPassword : undefined, true);
           if (!scopeIsCurrent()) return;
           if (claimLost) throw new Error("Ein anderer Tab hat den lokalen Ausleseanspruch übernommen. Bitte den Fall neu prüfen.");
           if (!documentType) documentType = inferDirectBefundTarget(extracted.text);
@@ -4342,9 +4350,10 @@ export function TherapyRecommendation() {
           successful += 1;
           setPendingDirectBefundFiles(current => current.map(row => row.id === item.id ? {
             ...row, status: "ready", progress: undefined, documentType, documentTypeInferred: !item.documentType,
-            documentKey, previewText, archiveCopy, privacyReviewed: false,
+            documentKey, previewText, archiveCopy, privacyReviewed: false, archiveCopyOpened: false,
             removedIdentifierCategories: extracted.removedIdentifierCategories,
             localPrivacyFindings: extracted.localPrivacyFindings, privacyFindingsRevealed: false,
+            privacyAudit: buildDirectPrivacyAudit({ ...extracted, previewText }), officeWarnings: extracted.officeWarnings,
             chars: extracted.chars, pages: extracted.pages,
           } : row));
         } catch (error: any) {
@@ -4492,6 +4501,11 @@ export function TherapyRecommendation() {
       toast({ title: "Datenschutzprüfung fehlt", description: "Bitte jede bereinigte Vorschau sichtbar prüfen und bestätigen.", variant: "destructive" });
       return;
     }
+    if (ready.some(item => hasUnresolvedDirectPrivacyAudit(item.privacyAudit)
+      || (isPdfClinicalDocument(item.file) && (!item.archiveCopy || !item.archiveCopyOpened)))) {
+      toast({ title: "Datenschutzprüfung unvollständig", description: "Fehlgeschlagene OCR-Seiten sperren die Übernahme. PDF-Kopien müssen geöffnet und sichtbar geprüft sein.", variant: "destructive" });
+      return;
+    }
     const residualIdentifiers = Array.from(new Set(
       ready.flatMap((item) => directIdentifierCategories(item.previewText || "")),
     ));
@@ -4507,17 +4521,25 @@ export function TherapyRecommendation() {
     const scopeGeneration = patientScopeGenerationRef.current;
     const scopeIsCurrent = () => scopeGeneration === patientScopeGenerationRef.current && pseudonymIdRef.current === pid
       && localSelectionCacheUserRef.current === handoffUserId;
+    const approvalEpoch = privacyApprovalEpochRef.current;
+    const assertApprovalCurrent = () => {
+      if (!scopeIsCurrent() || privacyApprovalEpochRef.current !== approvalEpoch) {
+        throw new Error("Fall oder Datenschutzfreigabe wurden während der Übernahme geändert. Bitte die Vorschau erneut prüfen.");
+      }
+    };
     const documentTypes = new Set<string>();
     const handoffClaims: Array<{ documentKey: string; documentDate: string; claimId: string }> = [];
     const beforeHandoff = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
     let writeStarted = false;
     let receiptConfirmed = false;
     anamnesisImportPendingRef.current = true;
+    setIsImportingAnamnesis(true);
     autoSaveRunIdRef.current += 1;
     if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
     try {
     if (!handoffUserId) throw new Error("Die Anmeldung für den lokalen Dokumentnachweis fehlt. Die Vorschau bleibt erhalten.");
     for (const item of ready) {
+      assertApprovalCurrent();
       if (!item.documentKey) throw new Error("Eine Vorschau hat keine Kennung der Originaldatei. Bitte die Datei erneut auswählen und prüfen.");
       const claimId = crypto.randomUUID();
       await claimDocumentHandoff(handoffUserId, pid, item.documentKey, item.documentDate, claimId);
@@ -4572,16 +4594,16 @@ export function TherapyRecommendation() {
     assertPayloadMatchesPseudonym(pid, payload);
     if (residualIdentifierCategories(payload).length) throw new Error("Die Datenschutzprüfung der gesamten Eingabe ist noch erforderlich. Die Vorschau bleibt erhalten.");
     const receipt = await patientDraftSaveQueue.run(pid, async () => {
-      if (!scopeIsCurrent()) throw new Error("Der Fall wurde gewechselt. Die Vorschau wurde nicht als gespeichert bestätigt.");
+      assertApprovalCurrent();
       draftRevisionTrackerRef.current.capture(pid);
       for (const item of ready) {
-        if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt.");
+        assertApprovalCurrent();
         if (!item.archiveReceipt && !item.file.size) throw new Error("Bitte das lokale Original erneut auswählen. Eine reine Textvorschau ist noch kein gesicherter Nachweis für eine Archivkopie.");
         const inputFields = { labor: "laborKomplett", biodiagnostik: "laborKomplett", metatron: "metatronHeel", vieva: "vievaPlus", anamnese: "anamnese", arzt: "arztbericht", sonstige: "sonstigeUntersuchungen" };
         const archive = item.archiveReceipt
           ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
           : item.archiveCopy
-            ? await archivePatientOriginal(supabase as any, pid, item.archiveCopy, item.documentType || "dokument", item.documentDate)
+            ? await archivePatientOriginal(supabase as any, pid, item.archiveCopy, item.documentType || "dokument", item.documentDate, () => scopeIsCurrent() && privacyApprovalEpochRef.current === approvalEpoch)
             : undefined;
         if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.");
         if (archive) {
@@ -4589,11 +4611,13 @@ export function TherapyRecommendation() {
           if (scopeIsCurrent()) setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id ? { ...candidate, archiveReceipt: archive } : candidate));
         }
       }
-      if (!scopeIsCurrent()) throw new Error("Der Fall wurde inzwischen gewechselt. Bereits gesicherte Archivkopien bleiben im ursprünglichen Fall.");
+      assertApprovalCurrent();
       for (const claim of handoffClaims) {
         await assertDocumentHandoffClaim(handoffUserId, pid, claim.documentKey, claim.documentDate, claim.claimId);
       }
+      assertApprovalCurrent();
       return persistVerifiedPatientInput(pid, payload, (target, input) => {
+        assertApprovalCurrent();
         writeStarted = true;
         return upsertAutoSaveDraft(target, input);
       }, async (id) => {
@@ -4626,6 +4650,13 @@ export function TherapyRecommendation() {
       identifier_categories: identifierCategories,
       document_types: Array.from(documentTypes),
       privacy_preview_confirmed: true,
+      privacy_report: {
+        recognized_locations: ready.reduce((sum, item) => sum + (item.privacyAudit?.findingLocations.length || 0), 0),
+        low_confidence_pages: ready.reduce((sum, item) => sum + (item.privacyAudit?.lowConfidencePages.length || 0), 0),
+        office_warnings: ready.reduce((sum, item) => sum + (item.privacyAudit?.officeWarningCount || 0), 0),
+        quarantined_lines: ready.reduce((sum, item) => sum + (item.privacyAudit?.quarantinedLineCount || 0), 0),
+        failed_ocr_pages: 0,
+      },
       original_archived: true,
       privacy_mode: "local-deidentification",
     });
@@ -4958,6 +4989,14 @@ export function TherapyRecommendation() {
     all: analysisSources.length,
     chars: selectedAnalysisSources.reduce((sum, source) => sum + source.chars, 0),
   }), [analysisSources.length, selectedAnalysisSources]);
+  const activeReportStageId = parseTherapySourceStageId(anamneseZusatz.therapySourceStageId);
+  const activeReportSources = activeReportStageId
+    ? analysisSources.filter(source => stageIncludesSource(activeReportStageId, source.key))
+    : analysisSources;
+  const activeAnamneseSourceCount = activeReportSources.filter(source => sourceField(source.key) === "anamnese").length;
+  const activeMetatronSourceCount = activeReportSources.filter(source => sourceField(source.key) === "metatronHeel").length;
+  const hasBothReportInputs = analysisSources.some(source => sourceField(source.key) === "anamnese")
+    && analysisSources.some(source => sourceField(source.key) === "metatronHeel");
   const nonContextAnalysisSources = analysisSources.filter((source) => source.group !== "kontext");
   const selectedClinicalSourceCount = selectedAnalysisSources.filter((source) => source.group !== "kontext").length;
   const enteredPathogenCount = pathogens.filter((entry) => entry.name.trim()).length
@@ -5893,7 +5932,7 @@ export function TherapyRecommendation() {
                       {item.localCacheStatus === "saved" && <span className="text-emerald-700 text-[10px]">lokal gesichert · noch nicht im Fallarchiv</span>}
                       {item.localCacheStatus === "error" && <span className="text-amber-700 text-[10px]" title={item.localCacheError}>lokale Sicherung fehlgeschlagen</span>}
                       {item.status === "error" && <span className="text-destructive">Fehler ({item.errorKind || "Technik"}): {item.error}</span>}
-                      {item.status !== "processing" && <button type="button" onClick={() => removeDirectBefundFile(item)} className="text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>}
+                      {item.status !== "processing" && <button type="button" onClick={() => removeDirectBefundFile(item)} disabled={isImportingAnamnesis} className="text-muted-foreground hover:text-destructive disabled:opacity-50"><X className="h-3.5 w-3.5" /></button>}
                     </div>
                     {item.status === "processing" && <p role="status" className="text-sm font-medium text-primary">{item.progress || "Datei wird lokal ausgelesen …"}</p>}
                     {item.recoveryNotice && <p className="text-xs text-amber-800 dark:text-amber-200">{item.recoveryNotice}</p>}
@@ -5981,16 +6020,28 @@ export function TherapyRecommendation() {
                     {item.status === "ready" && item.previewText && (
                       <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 dark:border-emerald-900/50 dark:bg-emerald-950/20">
                         <div className="mb-1 font-medium text-emerald-900 dark:text-emerald-100">Ausgelesener Text – vor der Übernahme prüfen</div>
-                        <p className="mb-2 text-xs">Dieser Text wurde aus der Datei ausgelesen und automatisch geschwärzt. Schwarze Stellen bleiben verdeckt und müssen nicht nachgelesen werden.</p>
+                        <p className="mb-2 text-xs">Erkannte persönliche Angaben wurden lokal automatisch geschwärzt. Texterkennung kann sichtbare Angaben übersehen; prüfen Sie den verbleibenden Text und bei PDF die gesamte erzeugte Kopie.</p>
                         <p className="mb-1 text-xs"><strong>Schwärzung prüfen:</strong> Sind im noch sichtbaren Text persönliche Angaben übrig geblieben? Bei Bedarf „Manuell nachschwärzen“ verwenden. Bei PDF-Dateien sperrt jede manuelle Textänderung die vorhandene Archivkopie; für eine Übernahme muss die lokale Originaldatei erneut vollständig geprüft werden.</p>
                         {item.documentType === "anamnese" && <p className="mb-2 text-xs"><strong>Texterkennung prüfen:</strong> Antworten, Handschrift und Markierungen mit dem vorliegenden Original abgleichen. „Manuell prüfen“ bedeutet, dass die Zuordnung noch unsicher ist.</p>}
                         <RedactedTextPreview text={item.previewText} className="max-h-32 overflow-auto rounded bg-background p-2 text-[11px] leading-relaxed"
                           disabled={isImportingAnamnesis || isAnalyzingDocs || isStreaming}
                           onChange={text => {
-                            if (isImportingAnamnesis || isAnalyzingDocs || isStreaming || normalizePseudonymId(item.sourcePseudonymId) !== pseudonymIdRef.current) return;
+                            if (anamnesisImportPendingRef.current || isImportingAnamnesis || isAnalyzingDocs || isStreaming || normalizePseudonymId(item.sourcePseudonymId) !== pseudonymIdRef.current) return;
+                            privacyApprovalEpochRef.current += 1;
                             if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,false);
-                            setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id && candidate.sourcePseudonymId === item.sourcePseudonymId && candidate.status === "ready" ? { ...candidate, previewText: text, chars: text.length, archiveCopy: archiveCopyAfterPreviewTextEdit(candidate.file, candidate.archiveCopy), privacyReviewed: false } : candidate));
+                            setPendingDirectBefundFiles(current => current.map(candidate => candidate.id === item.id && candidate.sourcePseudonymId === item.sourcePseudonymId && candidate.status === "ready" ? { ...candidate, previewText: text, chars: text.length, archiveCopy: archiveCopyAfterPreviewTextEdit(candidate.file, candidate.archiveCopy), archiveCopyOpened: false, privacyReviewed: false } : candidate));
                           }} />
+                        <div className="mt-2 rounded border border-sky-300 bg-sky-50 p-2 text-xs text-sky-950 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-100">
+                          <div className="font-semibold">Lokaler Datenschutz-Prüfbericht</div>
+                          <p>Automatisch erkannte Stellen: {item.privacyAudit?.findingLocations.length ?? 0}. Die Liste enthält nur Fundorte und Kategorien, keine Originaltexte.</p>
+                          {item.privacyAudit?.findingLocations.length ? <details className="mt-1"><summary>Fundorte anzeigen</summary><ul className="mt-1 max-h-32 overflow-auto pl-4 list-disc">{item.privacyAudit.findingLocations.map((finding, index) => <li key={`${finding.page}-${finding.line}-${index}`}>Seite {finding.page}, Zeile {finding.line}: {finding.categories.join(", ")}</li>)}</ul></details> : null}
+                          {!!item.privacyAudit?.failedOcrPages.length && <p className="mt-1 font-semibold text-destructive">OCR fehlgeschlagen auf Seite {item.privacyAudit.failedOcrPages.join(", ")}. Übernahme gesperrt; bitte eine lesbare Fassung verwenden.</p>}
+                          {!!item.privacyAudit?.lowConfidencePages.length && <p className="mt-1">OCR unsicher auf Seite {item.privacyAudit.lowConfidencePages.join(", ")}: diese Seiten mit dem Original abgleichen.</p>}
+                          {!!item.privacyAudit?.quarantinedLineCount && <p className="mt-1">{item.privacyAudit.quarantinedLineCount} Restzeile(n) wurden vollständig zurückgehalten; klinische Angaben dort am Original prüfen.</p>}
+                          {!!item.officeWarnings?.length && <div className="mt-1"><strong>Word-/Excel-Prüfpunkte:</strong><ul className="pl-4 list-disc">{item.officeWarnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
+                          {!item.privacyAudit && <p className="mt-1 font-semibold text-destructive">Prüfbericht fehlt; die Datei erneut lokal auslesen.</p>}
+                          <p className="mt-1">Ein leerer Bericht beweist keine vollständige Erkennung. Sichtbare Seiten, Handschrift und Markierungen können weitere Angaben enthalten.</p>
+                        </div>
                         {!!item.localPrivacyFindings?.length && (
                           <div className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
                             <div className="font-semibold">Lokal erkannte personenbezogene Stellen: {item.localPrivacyFindings.length}</div>
@@ -6016,20 +6067,21 @@ export function TherapyRecommendation() {
                             )}
                           </div>
                         )}
-                        {item.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={()=>openPdfArchiveCopy(item.archiveCopy!)}>Anonymisierte PDF-Kopie prüfen</Button>}
+                        {item.archiveCopy && <Button type="button" variant="outline" size="sm" onClick={() => { if (anamnesisImportPendingRef.current) return; openPdfArchiveCopy(item.archiveCopy!); setPendingDirectBefundFiles(current => current.map(file => file.id === item.id ? { ...file, archiveCopyOpened: true } : file)); }}>Anonymisierte PDF-Kopie öffnen und prüfen</Button>}
+                        {item.archiveCopy && !item.archiveCopyOpened && <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">Die PDF-Kopie vor der Freigabe öffnen und alle sichtbaren Seiten prüfen.</p>}
                         <label className="mt-2 flex items-start gap-2 text-[11px] font-medium">
                           <input
                             type="checkbox"
                             checked={item.privacyReviewed}
-                            disabled={isPdfClinicalDocument(item.file) && !item.archiveCopy}
-                            onChange={(event) => { if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked);setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file)); }}
+                            disabled={isImportingAnamnesis || hasUnresolvedDirectPrivacyAudit(item.privacyAudit) || (isPdfClinicalDocument(item.file) && (!item.archiveCopy || !item.archiveCopyOpened))}
+                            onChange={(event) => { if (anamnesisImportPendingRef.current || (event.target.checked && (hasUnresolvedDirectPrivacyAudit(item.privacyAudit) || (isPdfClinicalDocument(item.file) && (!item.archiveCopy || !item.archiveCopyOpened))))) return; privacyApprovalEpochRef.current += 1; if(item.archiveCopy)setPdfArchiveCopyReviewed(item.archiveCopy,event.target.checked);setPendingDirectBefundFiles((current) => current.map((file) => file.id === item.id ? { ...file, privacyReviewed: event.target.checked } : file)); }}
                             className="mt-0.5"
                           />
                           {item.archiveCopy
-                            ? "Bereinigten Text und anonymisierte PDF-Kopie geprüft: identifizierende Angaben sind entfernt, Befunde und Messwerte erhalten. Beim Anamnesebogen sind zusätzlich Handschrift, Markierungen und Fragezuordnung geprüft. Nur die bestätigte PDF-Kopie darf privat übertragen werden; das Original bleibt lokal."
+                            ? "Bereinigten Text, Prüfbericht und alle sichtbaren PDF-Seiten mit dem Original geprüft; verbliebene persönliche Angaben und fehlende Befunde ausgeschlossen. Beim Anamnesebogen auch Handschrift, Markierungen und Fragezuordnung geprüft. Nur die bestätigte PDF-Kopie darf privat übertragen werden; das Original bleibt lokal."
                             : isPdfClinicalDocument(item.file)
                               ? "PDF-Kopie fehlt oder passt nach einer manuellen Textschwärzung nicht mehr nachweisbar zur Vorschau. Diese PDF-Zeile bleibt gesperrt; lokale Originaldatei erneut auswählen und vollständig prüfen."
-                              : "Bereinigten Word-/Excel-Text geprüft: identifizierende Angaben sind entfernt, Befunde und Werte sind vollständig. Die lokale Ausgangsdatei bleibt lokal und wird nicht archiviert."}
+                              : "Bereinigten Word-/Excel-Text und alle Prüfpunkte mit dem Original abgeglichen; identifizierende Angaben entfernt und Befunde vollständig. Die lokale Ausgangsdatei bleibt lokal und wird nicht archiviert."}
                         </label>
                       </div>
                     )}
@@ -6051,7 +6103,7 @@ export function TherapyRecommendation() {
                 {pendingDirectBefundFiles.some((file) => file.status === "ready") && (
                   <div className="rounded-md border border-emerald-400 bg-emerald-50/70 p-3 dark:bg-emerald-950/20">
                     <p className="mb-2 text-sm font-semibold">Datenschutzvorschau geprüft? Erst dann Inhalte übernehmen.</p>
-                    <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || (isPdfClinicalDocument(file.file) && !file.archiveCopy))))} className="gap-1.5">
+                    <Button type="button" size="sm" onClick={handoffDirectBefundFiles} disabled={isImportingAnamnesis || pendingDirectBefundFiles.some((file) => file.restoredDraft) || pendingDirectBefundFiles.some((file) => file.status === "processing" || (file.status === "ready" && (!file.privacyReviewed || hasUnresolvedDirectPrivacyAudit(file.privacyAudit) || (isPdfClinicalDocument(file.file) && (!file.archiveCopy || !file.archiveCopyOpened))))) } className="gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Geprüfte Inhalte passend übernehmen
                     </Button>
@@ -6130,9 +6182,21 @@ export function TherapyRecommendation() {
                 {hasUntransferredDocumentSelections
                   ? "Zuerst alle ausgewählten Dateien prüfen und freigegebene Inhalte passend übernehmen. Bis dahin startet keine Befund- oder Therapieauswertung."
                   : analysisSourceTotals.selected > 0
-                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) lösen die Aktualisierung aus; der neue Gesamtbericht enthält alle ${analysisSources.length} aktuellen Quellen.`
+                  ? `${analysisSourceTotals.selected} neue oder geänderte Quelle(n) lösen die Aktualisierung aus; der neue Bericht enthält ${activeReportSources.length} aktuelle Quelle(n)${activeReportStageId ? " der gewählten Quellenstufe" : ""}.`
                   : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
               </p>
+              <div role="status" className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-emerald-950 dark:text-emerald-100">
+                <span>Anamnese im Bericht: {activeAnamneseSourceCount ? `${activeAnamneseSourceCount} Quelle(n)` : "keine"}</span>
+                <span>Metatron im Bericht: {activeMetatronSourceCount ? `${activeMetatronSourceCount} Quelle(n)` : "keine"}</span>
+                {activeReportStageId && <span>Quellenstufe: {THERAPY_SOURCE_STAGES.find(stage => stage.id === activeReportStageId)?.label}</span>}
+              </div>
+              {hasBothReportInputs && (!activeAnamneseSourceCount || !activeMetatronSourceCount) && (
+                <Button type="button" size="sm" variant="outline" className="mt-2 h-auto whitespace-normal" onClick={() => {
+                  const sourceIds = getTherapyStageSourceIds(["anamnese", "metatronHeel"]);
+                  applyManualAnalysisSelection(sourceIds);
+                  setAnamneseZusatz(previous => ({ ...previous, therapySourceStageId: "anamnese-metatron" }));
+                }}>Anamnese + Metatron als Quellen wählen</Button>
+              )}
             </div>
             <Button type="button" size="sm" onClick={handleAnalyzeDocuments} disabled={hasUntransferredDocumentSelections || isAnalyzingDocs || isStreaming || isSourceComparisonLoading || !!sourceComparisonError || !isPatientScopedStorageReady(pseudonymId) || analysisSourceTotals.selected === 0} className="ml-auto gap-1.5">
               {isAnalyzingDocs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}

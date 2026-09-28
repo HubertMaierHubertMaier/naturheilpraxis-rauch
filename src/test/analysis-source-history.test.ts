@@ -14,6 +14,8 @@ import {
   type SourceHistoryReport,
   type SourceManifestEntry,
 } from "@/lib/analysisSourceHistory";
+import { deidentifyClinicalText, directIdentifierCategories } from "../../supabase/functions/_shared/clinicalDeidentification";
+import { buildTherapySourceScope } from "../../supabase/functions/_shared/therapySourceScope";
 
 const entry = (sourceId: string, contentSha256: string): SourceManifestEntry => ({
   sourceId,
@@ -127,6 +129,22 @@ describe("analysis source history", () => {
     expect(selectCompleteSourceSetForAnalysis(sources, ["nicht-vorhanden"])).toEqual([]);
   });
 
+  it("keeps reviewed synthetic anamnesis and Metatron documents together in the report source manifest", async () => {
+    const sources = [
+      { key: "anamnese:doc:0:dokument-aaaaaaaaaaaa", group: "dokument" as const,
+        text: deidentifyClinicalText("Anamnese 2099-09-17\nName: Erika Beispiel\nBeschwerde: synthetisch") },
+      { key: "metatronHeel:doc:0:dokument-bbbbbbbbbbbb", group: "dokument" as const,
+        text: deidentifyClinicalText("Metatron Hospital 2099-09-17\nTelefon: +49 30 12345678\nMesswert: 7,1") },
+    ];
+    const selected = selectCompleteSourceSetForAnalysis(sources, [sources[0].key]);
+    expect(selected).toHaveLength(2);
+    expect(selected.every(source => directIdentifierCategories(source.text).length === 0)).toBe(true);
+    expect(JSON.stringify(selected)).not.toMatch(/Erika Beispiel|12345678/);
+    const manifest = await buildSourceManifest(selected.map(source => ({ sourceId: source.key, group: source.group, text: source.text })));
+    expect(manifest.map(source => source.sourceId)).toEqual(["anamnese:doc:aaaaaaaaaaaa", "metatronHeel:doc:bbbbbbbbbbbb"]);
+    expect(buildTherapySourceScope("anamnese-metatron", manifest).sources).toHaveLength(2);
+  });
+
   it("keeps modern document identity across reordering and rejects duplicate identities", async () => {
     const first = await buildSourceManifest([
       { sourceId: "vievaPlus:doc:0:dokument-111111111111", group: "dokument", text: "Vitamin D" },
@@ -165,7 +183,7 @@ describe("analysis source history", () => {
     expect(recommendation).toContain("Standardmäßig sind nur neue oder geänderte Quellen ausgewählt");
     expect(recommendation).toContain("selectCompleteSourceSetForAnalysis(analysisSources, selectedSourceIds)");
     expect(recommendation).toContain("manifestFingerprint");
-    expect(recommendation).toContain("der neue Gesamtbericht enthält alle");
+    expect(recommendation).toContain("der neue Bericht enthält ${activeReportSources.length} aktuelle Quelle(n)");
     expect(recommendation).toContain("Letzte fertige Auswertung:");
     expect(recommendation).toContain("Quellenstand:");
     expect(recommendation).toContain("GEÄNDERT* (Altbestand)");

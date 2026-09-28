@@ -16,7 +16,7 @@ vi.mock("jspdf", () => ({ jsPDF: class {
   output() { return new Blob(["rebuilt pixels"], { type: "application/pdf" }); }
 } }));
 
-import { restoreAnonymizedPdfArchive } from "@/lib/anonymizedPdfArchive";
+import { MAX_TOTAL_RENDERED_PIXELS, restoreAnonymizedPdfArchive } from "@/lib/anonymizedPdfArchive";
 import { assertReviewedPdfArchiveCopy, isPreparedPdfArchiveCopy } from "@/lib/pdfArchiveCopyRegistry";
 
 const source = () => {
@@ -41,6 +41,9 @@ beforeEach(() => {
 });
 
 describe("rebuild a saved anonymous PDF copy without repeating OCR", () => {
+  it("permits a typical 200-page render within the cumulative pixel budget", () => {
+    expect(200 * 612 * 792 * 4).toBeLessThan(MAX_TOTAL_RENDERED_PIXELS);
+  });
   it("rebuilds every page and requires a fresh explicit review instead of restoring approval", async () => {
     const original = source();
     const copy = await restoreAnonymizedPdfArchive(original, 2);

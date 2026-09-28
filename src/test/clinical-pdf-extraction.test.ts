@@ -13,6 +13,7 @@ import {
   terminateAndResetWorkerSession,
   waitForPdfRender,
 } from "@/lib/clinicalPdfExtraction";
+import { collectLocalPrivacyFindings, deidentifyClinicalText, directIdentifierCategories, quarantineResidualDirectIdentifierLines, removeResidualDirectIdentifierLines } from "../../supabase/functions/_shared/clinicalDeidentification";
 
 describe("clinical PDF extraction decisions", () => {
   it("reconstructs PDF.js text items from EOL markers and y changes without splitting table rows", () => {
@@ -69,6 +70,60 @@ describe("clinical PDF extraction decisions", () => {
       ocrText: "Ja, seit drei Wochen.",
       includeOcrAlongsideTextLayer: true,
     })).toBe("Frage: Bestehen Beschwerden?\nJa, seit drei Wochen.");
+  });
+
+  it("keeps image text on a dense mixed page and removes duplicate OCR lines", () => {
+    const native = "Metatron-Auswertung mit längerem sichtbarem Grundtext und Messwert 4,2 mg/l";
+    expect(shouldRunLocalOcr({ containsRasterImage: true, textLayer: native, force: true })).toBe(true);
+    const combined = selectPreferredPageText({ pageNumber: 1, textLayer: native,
+      ocrText: `${native}\nName: Erika Beispiel\nZusatzbefund 7,1 mmol/l`, includeOcrAlongsideTextLayer: true });
+    expect(combined.split(native)).toHaveLength(2);
+    expect(combined).toContain("Zusatzbefund 7,1 mmol/l");
+    const safe = deidentifyClinicalText(combined);
+    expect(safe).not.toContain("Erika Beispiel");
+    expect(safe).toContain("7,1 mmol/l");
+    expect(directIdentifierCategories(safe)).toEqual([]);
+  });
+
+  it("keeps OCR lines when inequalities or decimal values disagree with the native layer", () => {
+    const combined = selectPreferredPageText({
+      pageNumber: 1,
+      textLayer: "CRP <5 mg/l\nHb 13,0 g/dl",
+      ocrText: "CRP >5 mg/l\nHb 130 g/dl\nCRP <5 mg/l",
+      includeOcrAlongsideTextLayer: true,
+    });
+    expect(combined.split("\n")).toEqual([
+      "CRP <5 mg/l", "Hb 13,0 g/dl", "CRP >5 mg/l", "Hb 130 g/dl",
+    ]);
+  });
+
+  it("keeps split identity fields out of the text passed to the report", () => {
+    const source = "--- Seite 1 ---\nName:\nErika Beispiel\nLDL 130 mg/dl";
+    expect(collectLocalPrivacyFindings(source)).toEqual([expect.objectContaining({ pageNumber: 1, lineNumber: 1, categories: expect.arrayContaining(["Name"]) })]);
+    const safe = quarantineResidualDirectIdentifierLines(removeResidualDirectIdentifierLines(deidentifyClinicalText(source)));
+    expect(safe).not.toContain("Erika Beispiel");
+    expect(safe).toContain("LDL 130 mg/dl");
+    expect(directIdentifierCategories(safe)).toEqual([]);
+  });
+
+  it("keeps later finding line numbers after a two-line identity field", () => {
+    const findings = collectLocalPrivacyFindings("--- Seite 1 ---\nName:\nErika Beispiel\nLDL 130 mg/dl\nName: Max Muster");
+    expect(findings.map(finding => finding.lineNumber)).toEqual([1, 4]);
+  });
+
+  it("assembles 200 synthetic text, image and mixed pages before privacy filtering", () => {
+    const pages = Array.from({ length: 200 }, (_, index) => ({
+      pageNumber: index + 1,
+      textLayer: index % 3 === 0 ? "Metatron-Grundtext mit Messwert 4,2 mg/l" : "",
+      ocrText: index % 3 === 0 ? "Zusatzbefund 7,1 mmol/l" : "Laborwert 5,3 mmol/l",
+      includeOcrAlongsideTextLayer: true,
+    }));
+    const safe = deidentifyClinicalText(assembleExtractedPdfPages(pages));
+    expect((safe.match(/--- Seite \d+ ---/g) || [])).toHaveLength(200);
+    expect(safe.indexOf("--- Seite 1 ---")).toBeLessThan(safe.indexOf("--- Seite 200 ---"));
+    expect(safe).toContain("Zusatzbefund 7,1 mmol/l");
+    expect(safe).toContain("Laborwert 5,3 mmol/l");
+    expect(directIdentifierCategories(safe)).toEqual([]);
   });
 
   it("combines normal and locally recognized pages in page-number order", () => {

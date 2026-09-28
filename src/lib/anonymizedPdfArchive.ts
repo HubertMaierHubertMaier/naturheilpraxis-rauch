@@ -15,6 +15,9 @@ export { setPdfArchiveCopyReviewed, assertReviewedPdfArchiveCopy } from "./pdfAr
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 const passwords = new WeakMap<Blob, string>();
 const prepared = new WeakMap<Blob, Promise<File>>();
+// A 200-page US Letter PDF at 2× needs about 388 million rendered pixels.
+// Pages are processed one at a time; the per-page and encoded-byte caps still apply.
+export const MAX_TOTAL_RENDERED_PIXELS = 600_000_000;
 /** Discard a failed manual text-binding attempt so the next local run renders anew. */
 export function discardPreparedAnonymizedPdfArchive(file: Blob) {
   prepared.delete(file);
@@ -75,7 +78,7 @@ export async function restoreAnonymizedPdfArchive(
         canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
         const pixels = canvas.width * canvas.height;
         totalPixels += pixels;
-        if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 10_000_000 || totalPixels > 200_000_000) {
+        if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 10_000_000 || totalPixels > MAX_TOTAL_RENDERED_PIXELS) {
           throw new Error("Die PDF-Kopie überschreitet das lokale Bilddatenbudget.");
         }
         const context = canvas.getContext("2d", { alpha: false });
@@ -121,7 +124,7 @@ async function createCopy(file: Blob & { name: string }, onProgress:((message: s
       const pixels=Math.ceil(v.width)*Math.ceil(v.height);
       if(!Number.isFinite(pixels)||pixels<=0||pixels>10_000_000)throw new Error("Ungültige oder zu große PDF-Seite; keine Archivübertragung.");
       totalPixels+=pixels;
-      if(totalPixels>200_000_000)throw new Error("Die PDF überschreitet das lokale Bilddatenbudget. Keine Seiten wurden ausgelassen oder übertragen.");
+      if(totalPixels>MAX_TOTAL_RENDERED_PIXELS)throw new Error("Die PDF überschreitet das lokale Bilddatenbudget. Keine Seiten wurden ausgelassen oder übertragen.");
       p.cleanup();
     }
     for (let number=1;number<=pageCount;number++) {

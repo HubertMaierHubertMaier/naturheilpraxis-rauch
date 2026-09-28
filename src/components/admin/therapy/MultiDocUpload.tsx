@@ -122,6 +122,7 @@ export type ClinicalDocumentExtractionResult = {
   ocrPageConfidences?: AnamneseOcrPageConfidence[];
   removedIdentifierCategories?: string[];
   localPrivacyFindings?: LocalPrivacyFinding[];
+  officeWarnings?: string[];
 };
 
 type ToastFn = (args: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
@@ -157,6 +158,7 @@ export async function extractClinicalDocumentText(
   identitySalt = "",
   pdfPassword = "",
   onPasswordCaptured?: (password: string) => void,
+  forceFullPdfOcr = false,
 ): Promise<ClinicalDocumentExtractionResult> {
   if (file.type.startsWith("image/")) {
     throw new Error("Datenschutz-Stopp: Bilder werden nicht an eine externe OCR gesendet. Bitte den sicheren PDF-Import verwenden.");
@@ -173,7 +175,7 @@ export async function extractClinicalDocumentText(
     if (!safeBody.trim() || directIdentifierCategories(safeBody).length) throw new Error("Datenschutzprüfung der Office-Datei erforderlich; noch keine Übernahme.");
     const documentId = await createNeutralDocumentId(safeBody, identitySalt);
     const text = `=== KLINISCHES DOKUMENT ${documentId} ===\nDokumentformat: ${office.format === "docx" ? "Word; Absatzangaben" : "Excel; Blatt- und Zellangaben"}\n${safeBody}`;
-    return { text, chars: text.length, pages: 0, ocrPages: 0, ocrFailedPages: [], ocrPageConfidences: [], removedIdentifierCategories, localPrivacyFindings };
+    return { text, chars: text.length, pages: 0, ocrPages: 0, ocrFailedPages: [], ocrPageConfidences: [], removedIdentifierCategories, localPrivacyFindings, officeWarnings: office.warnings };
   }
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     throw new Error("Bitte PDF, Word (.docx) oder Excel (.xlsx) auswählen. Die Dateien werden lokal geprüft.");
@@ -255,10 +257,10 @@ export async function extractClinicalDocumentText(
           pageNumber,
           textLayer: pageText,
           formText: mode === "anamnese" ? [iaaFormValuesText(formAnnotations, pageNumber), anamnesisProfileFormValuesText(formAnnotations, pageNumber)].filter(Boolean).join("\n\n") : undefined,
-          includeOcrAlongsideTextLayer: mode === "anamnese",
+          includeOcrAlongsideTextLayer: mode === "anamnese" || forceFullPdfOcr,
         };
 
-        if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" })) {
+        if (shouldRunLocalOcr({ containsRasterImage, textLayer: pageText, force: mode === "anamnese" || forceFullPdfOcr })) {
           let canvas: HTMLCanvasElement | undefined;
           let ocrStage: "initialization" | "rendering" | "recognition" = ocrSession.worker ? "rendering" : "initialization";
           try {
@@ -303,10 +305,9 @@ export async function extractClinicalDocumentText(
             const recognition = (await ocrSession.worker.recognize(canvas,{includeLayout:true})).data;
             rememberPdfOcrRead(file,pageNumber,canvas.width,canvas.height,recognition);
             extractedPage.ocrText = recognition.text;
-            if (Number.isFinite(recognition.confidence)) {
-              extractedPage.ocrConfidence = Number(recognition.confidence);
-              ocrPageConfidences.push({ pageNumber, confidence: Number(recognition.confidence) });
-            }
+            const confidence = Number.isFinite(recognition.confidence) ? Number(recognition.confidence) : 0;
+            extractedPage.ocrConfidence = confidence;
+            ocrPageConfidences.push({ pageNumber, confidence });
             ocrPageCount += 1;
           } catch (error) {
             throwIfAborted(signal);
