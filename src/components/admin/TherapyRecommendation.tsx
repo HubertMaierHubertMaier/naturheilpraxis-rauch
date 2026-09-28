@@ -6633,7 +6633,7 @@ export function TherapyRecommendation() {
                 <div>
                   <label className="text-sm font-medium flex items-center gap-1.5 mb-2">
                     <AlertTriangle className="h-3.5 w-3.5 text-accent" />
-                    Metatron-Pathogene / Resonanzhinweise
+                    Metatron Hospital – Pathogene / Resonanzhinweise (kein Labornachweis)
                   </label>
                   <PathogenInput
                     entries={pathogens}

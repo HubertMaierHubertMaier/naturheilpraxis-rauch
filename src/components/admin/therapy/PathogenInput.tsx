@@ -312,7 +312,7 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium flex items-center gap-1.5">
             <ClipboardPaste className="h-3.5 w-3.5 text-primary" />
-            <span>⚡ Schnell-Eingabe</span>
+            <span>⚡ Metatron Hospital – Schnell-Eingabe</span>
             <span className="text-muted-foreground font-normal">– eine Zeile pro Pathogen</span>
           </p>
           <span className="text-[11px] text-muted-foreground">{filledCount} erfasst</span>
@@ -381,9 +381,9 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
           const grouped = entries.filter(entry => metatronGroupFor(entry) === group.value
             && (manualOpen || entry.name.trim() || entry.organe.trim() || entry.index.trim()));
           if (group.value === "unassigned" && !grouped.length) return null;
-          return <section key={group.value} aria-label={`Metatron-Pathogene: ${group.label}`} className="rounded-lg border p-3 space-y-2">
+          return <section key={group.value} aria-label={`Metatron Hospital – Pathogene: ${group.label}`} className="rounded-lg border p-3 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-sm font-semibold">{group.label} <span className="font-normal text-muted-foreground">({grouped.filter(entry => entry.name.trim()).length})</span></h4>
+              <h4 className="text-sm font-semibold">Metatron Hospital – {group.label} <span className="font-normal text-muted-foreground">({grouped.filter(entry => entry.name.trim()).length})</span></h4>
               <Button type="button" variant="outline" size="sm" onClick={() => add(group.value)}>Eintrag hinzufügen</Button>
             </div>
             {!grouped.length && <p className="text-xs text-muted-foreground">Noch keine Einträge erfasst.</p>}
@@ -426,7 +426,7 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
           </section>;
         })}
       </div>
-      <p className="text-xs text-muted-foreground">Diese Gruppen gehören zu Metatron-Resonanzhinweisen. Labor-Nachweise werden im getrennten Labor-Pathogenfeld geführt. Die Gruppierung kann geprüft und korrigiert werden; unbekannte Einträge bleiben erhalten.</p>
+      <p className="text-xs text-muted-foreground">Diese Einträge sind Metatron-Hospital-Resonanzhinweise und kein labordiagnostischer Nachweis. Labor-Pathogene werden im getrennten Laborfeld geführt. Die Gruppierung kann geprüft und korrigiert werden; unbekannte Einträge bleiben erhalten.</p>
     </div>
   );
 }

@@ -36,7 +36,9 @@ describe("Metatron pathogen groups", () => {
   it("shows all five requested sections even before data has been entered", () => {
     render(<PathogenInput entries={[]} onChange={() => {}} bulkText="" onBulkTextChange={() => {}} />);
     for (const label of ["Bakterien", "Viren", "Hefepilze (Candida-Arten)", "Schimmelpilze", "Parasiten"]) {
-      expect(screen.getByRole("region", { name: `Metatron-Pathogene: ${label}` })).toBeInTheDocument();
+      const section = screen.getByRole("region", { name: `Metatron Hospital – Pathogene: ${label}` });
+      expect(section).toBeInTheDocument();
+      expect(within(section).getByRole("heading", { name: `Metatron Hospital – ${label} (0)` })).toBeInTheDocument();
     }
   });
   it("keeps identity, source metadata, organs and index when a category is corrected", () => {
@@ -47,11 +49,11 @@ describe("Metatron pathogen groups", () => {
       return <PathogenInput entries={entries} onChange={next => { changed(next); setEntries(next); }} bulkText="" onBulkTextChange={() => {}} />;
     }
     render(<Harness />);
-    expect(within(screen.getByRole("region", { name: "Metatron-Pathogene: Hefepilze (Candida-Arten)" })).getByText("Candida albicans")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Metatron Hospital – Pathogene: Hefepilze (Candida-Arten)" })).getByText("Candida albicans")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Liste bearbeiten/ }));
     fireEvent.change(screen.getByRole("combobox", { name: "Gruppe für Candida albicans" }), { target: { value: "unassigned" } });
     expect(changed.mock.lastCall?.[0]).toEqual([{ ...original, category: "unassigned" }]);
-    expect(screen.getByRole("region", { name: "Metatron-Pathogene: Noch zuzuordnen" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Metatron Hospital – Pathogene: Noch zuzuordnen" })).toBeInTheDocument();
   });
   it("includes the group without omitting the original name, organ or index from analysis context", () => {
     const text = formatPathogensForAI([{ id: "synthetic", name: "Candida albicans", organe: "Dünndarm", index: "0.42" }]);
