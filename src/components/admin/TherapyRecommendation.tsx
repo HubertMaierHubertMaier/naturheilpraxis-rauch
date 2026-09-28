@@ -6186,8 +6186,8 @@ export function TherapyRecommendation() {
                   : "Zuerst die Anamnese oder eine andere Befundquelle oben anhaken."}
               </p>
               <div role="status" className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-emerald-950 dark:text-emerald-100">
-                <span>Anamnese im Bericht: {activeAnamneseSourceCount ? `${activeAnamneseSourceCount} Quelle(n)` : "keine"}</span>
-                <span>Metatron im Bericht: {activeMetatronSourceCount ? `${activeMetatronSourceCount} Quelle(n)` : "keine"}</span>
+                <span>Anamnese für neuen Bericht vorgesehen: {activeAnamneseSourceCount ? `${activeAnamneseSourceCount} Quelle(n)` : "keine"}</span>
+                <span>Metatron für neuen Bericht vorgesehen: {activeMetatronSourceCount ? `${activeMetatronSourceCount} Quelle(n)` : "keine"}</span>
                 {activeReportStageId && <span>Quellenstufe: {THERAPY_SOURCE_STAGES.find(stage => stage.id === activeReportStageId)?.label}</span>}
               </div>
               {hasBothReportInputs && (!activeAnamneseSourceCount || !activeMetatronSourceCount) && (
@@ -6973,12 +6973,12 @@ export function TherapyRecommendation() {
                   <Textarea
                     value={sonstigeUntersuchungen}
                     onChange={(e) => setSonstigeUntersuchungen(e.target.value)}
-                    placeholder={"Gemischte Befunde mit eigenen Untersuchungsdaten – KI extrahiert Datum + Typ automatisch:\n\n— MRT LWS vom 14.03.2024: ...\n— Sono Abdomen vom 02.11.2025: ...\n— EAV-Messung vom 08.06.2026: ...\n— Bioresonanz/NLS-Auswertung vom ...\n— EKG/Lufu/Allergietest/Knochendichte vom ...\n— Reha-/Kurbericht vom ...\n— Selbstmessungen (RR, HRV, CGM) Zeitraum ...\n\n100+ Seiten kein Problem – wird VOLLSTÄNDIG verarbeitet (kein Trimmen, kein Stichproben)."}
+                    placeholder={"Gemischte Befunde mit eigenen Untersuchungsdaten – KI ordnet Datum und Typ zur Prüfung zu:\n\n— MRT LWS vom 14.03.2024: ...\n— Sono Abdomen vom 02.11.2025: ...\n— EAV-Messung vom 08.06.2026: ...\n— Bioresonanz/NLS-Auswertung vom ...\n— EKG/Lufu/Allergietest/Knochendichte vom ...\n— Reha-/Kurbericht vom ...\n— Selbstmessungen (RR, HRV, CGM) Zeitraum ...\n\nBei langen Unterlagen Vorschau, Quellenliste und Bericht auf fehlende Inhalte prüfen."}
                     rows={22}
                     className="font-sans text-[13px] leading-relaxed resize-y max-h-[70vh]"
                   />
                   <p className="text-xs text-muted-foreground mt-1.5">
-                    <strong className="text-indigo-700 dark:text-indigo-300">100% vollständig verarbeitet</strong> – auch 100+ Seiten. Die KI extrahiert die Untersuchungsdaten selbständig (TT.MM.JJJJ, „März 2024", „vor 2 Jahren" …) und ordnet jeden Befund seinem Datum / Typ zu (Bildgebung → Organfokus, EAV/NLS → Resonanz-Hinweis, Selbstmessung → Verlaufstrend, Reha-Bericht → Anamnesekontext). Output-Sektion <em>🗂️ Voruntersuchungen – chronologische Auswertung</em> entsteht automatisch. <strong>Bei &gt; 80 k Zeichen unbedingt Pro-Modell</strong> (Gemini-2.5-Pro, 1 Mio Token Kontext) – Schalter weiter unten oder oben rechts.
+                    Lange Texte werden für die Auswertung in Abschnitte aufgeteilt. Texterkennung und KI-Zuordnung können Angaben auslassen oder verwechseln; prüfen Sie Vorschau, Quellenliste und Ergebnisbericht am Original. Datum und Untersuchungstyp werden als Vorschlag zugeordnet. <strong>Bei &gt; 80 k Zeichen das Pro-Modell prüfen</strong> – Schalter weiter unten oder oben rechts.
                   </p>
                 </div>
 
