@@ -147,6 +147,23 @@ describe("manual PDF redaction text binding", () => {
     }
   });
 
+  it("reports a content-free reason when a marked source row cannot be located", () => {
+    const file = source();
+    rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, [], "synthetic-case", [
+      { text: "Erika", ...rectangle, lineText: "Hausarzt Erika" },
+    ]);
+    const input = "--- Seite 1 ---\nKlinische Notiz: Erika\nLDL 130 mg/dl";
+    try {
+      applyManualPdfTextRedactions(file, input, "synthetic-case");
+      throw new Error("expected text binding to fail");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "MANUAL_TEXT_CONTEXT", page: 1, reason: "SOURCE_ROW_MISSING" });
+      const status = manualPdfTextBindingStatus(error);
+      expect(status?.message).toContain("SOURCE_ROW_MISSING");
+      expect(JSON.stringify(status)).not.toMatch(/Erika|Hausarzt|LDL/);
+    }
+  });
+
   it("clears a failed attempt instead of applying stale page bindings to a later copy", () => {
     const file = source();
     rememberManualPdfTextRedactions(file, 1, [rectangle], 100, 100, words, "P-2099-0001");

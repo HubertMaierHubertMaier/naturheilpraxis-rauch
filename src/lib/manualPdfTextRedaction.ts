@@ -4,9 +4,13 @@ import { validateManualPdfRedactions, type ManualPdfRedaction } from "./manualPd
 export type PositionedManualPdfText = { text: string; x: number; y: number; width: number; height: number };
 export type PositionedManualPdfOcrWord = PositionedManualPdfText & { lineText?: string };
 export type ManualPdfTextBindingCode = "MANUAL_TEXT_SCOPE" | "MANUAL_TEXT_POSITION" | "MANUAL_TEXT_PAGE" | "MANUAL_TEXT_CONTEXT";
+export type ManualPdfTextBindingReason = "CONTEXT_MARKER_MISSING" | "TARGET_ABSENT_WITH_IDENTIFIERS"
+  | "SOURCE_ROW_MISSING" | "SOURCE_COUNT_EXCESS" | "SOURCE_COUNT_MISMATCH"
+  | "AMBIGUOUS_OCCURRENCE" | "IDENTITY_BINDING_MISSING";
 export class ManualPdfTextBindingError extends Error {
   readonly phase = "text-binding" as const;
-  constructor(readonly code: ManualPdfTextBindingCode, readonly page: number, message: string) {
+  constructor(readonly code: ManualPdfTextBindingCode, readonly page: number, message: string,
+    readonly reason?: ManualPdfTextBindingReason) {
     super(message);
     this.name = "ManualPdfTextBindingError";
   }
@@ -18,7 +22,8 @@ export function manualPdfTextBindingStatus(error: unknown) {
     code: error.code,
     page: error.page,
     label: "PDF-Textabgleich",
-    message: `Die lokale Bildkopie ist vorbereitet, aber der Textabgleich auf Seite ${error.page} (${error.code}) ist offen. Es wurde nichts übernommen oder übertragen.`,
+    ...(error.reason ? { reason: error.reason } : {}),
+    message: `Die lokale Bildkopie ist vorbereitet, aber der Textabgleich auf Seite ${error.page} (${error.code}${error.reason ? `/${error.reason}` : ""}) ist offen. Es wurde nichts übernommen oder übertragen.`,
   };
 }
 type ManualTextTarget = { text: string; providerBound: boolean; fullyCovered: boolean; sourceLines: string[]; sourceCounts: Map<string,number> };
@@ -136,7 +141,7 @@ function contextualLine(file:Blob,page:number,line:string){
   // Only its final line is used for matching; the existing safe output is not replaced.
   const safe=deidentifyClinicalText(`${context.text}\n${marker}\n${line}`);
   const at=safe.lastIndexOf(marker);
-  if(at<0)throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Lokaler Dokumentkontext konnte nicht eindeutig abgeglichen werden.");
+  if(at<0)throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Lokaler Dokumentkontext konnte nicht eindeutig abgeglichen werden.","CONTEXT_MARKER_MISSING");
   const result=safe.slice(at+marker.length).trim();context.lines.set(line,result);return result;
 }
 
@@ -146,7 +151,7 @@ function redactTargetsInPage(file:Blob,page: number, pageText: string, targets: 
     const matches = Array.from(pageText.matchAll(targetPattern(target.text)));
     if (!matches.length) {
       if (pageText.split("\n").some(line => providerLabel.test(line) && directIdentifierCategories(line).length)) {
-        throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung konnte nicht eindeutig an den Auswertungstext gebunden werden.");
+        throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung konnte nicht eindeutig an den Auswertungstext gebunden werden.", "TARGET_ABSENT_WITH_IDENTIFIERS");
       }
       continue;
     }
@@ -170,22 +175,22 @@ function redactTargetsInPage(file:Blob,page: number, pageText: string, targets: 
         // remaining identical clinical word elsewhere to be erased.
         const alreadyRemoved=[...groups.values()].every(group=>group.alreadyRemoved);
         if(alreadyRemoved)continue;
-        throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Manuelle PDF-Schwärzung hat keine eindeutig gebundene Quellzeile im Text.");
+        throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Manuelle PDF-Schwärzung hat keine eindeutig gebundene Quellzeile im Text.","SOURCE_ROW_MISSING");
       }
       for(const group of groups.values()){
         const count=selectedContexts.filter(line=>group.variants.has(normalizedLine(line))).length;
-        if(count>group.count)throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Identische Quellzeilen sind nicht eindeutig den ausgewählten Textpositionen zugeordnet.");
-        if(count!==group.count&&!(count===0&&group.alreadyRemoved))throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Nicht alle markierten Quellzeilen konnten eindeutig abgeglichen werden.");
+        if(count>group.count)throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Identische Quellzeilen sind nicht eindeutig den ausgewählten Textpositionen zugeordnet.","SOURCE_COUNT_EXCESS");
+        if(count!==group.count&&!(count===0&&group.alreadyRemoved))throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT",page,"Nicht alle markierten Quellzeilen konnten eindeutig abgeglichen werden.","SOURCE_COUNT_MISMATCH");
       }
     } else if (matches.length !== 1) {
-      throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Quellzeile verändern.");
+      throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Quellzeile verändern.", "AMBIGUOUS_OCCURRENCE");
     }
     const allIdentityBound = selectedContexts.every(identityContext);
     // A fully covered, explicitly reviewed word with an exact source-row binding
     // does not need a name/provider keyword. Unbound or partial spans still stop.
     const confirmedSourceBound = target.fullyCovered && target.sourceLines.length > 0;
     if (!confirmedSourceBound && !allIdentityBound && !target.providerBound) {
-      throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Namens-/Behandlerbindung verändern.");
+      throw new ManualPdfTextBindingError("MANUAL_TEXT_CONTEXT", page, "Manuelle PDF-Schwärzung würde klinischen Text ohne eindeutige Namens-/Behandlerbindung verändern.", "IDENTITY_BINDING_MISSING");
     }
     for (const match of selected) edits.push({start:match.index!,end:match.index!+match[0].length});
   }
