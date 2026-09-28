@@ -22,7 +22,7 @@ describe("reviewed local therapy-template documents", () => {
     const file = { name: "private-synthetic-source.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: bytes.byteLength, arrayBuffer: async () => bytes } as File;
     const result = await extractTherapyTemplateDocument(file);
     expect(result.text).toContain("Synthetischer Therapieplan zur Überprüfung.");
-    expect(result.text).toMatch(/Dokument-[a-f0-9]{12}/);
+    expect(result.text).toMatch(/=== KLINISCHES DOKUMENT [a-f0-9]{12} ===/);
     expect(result.text).not.toContain(file.name);
   });
   it.each(["txt", "md"])("retains local %s text without exposing its original filename", async extension => {
