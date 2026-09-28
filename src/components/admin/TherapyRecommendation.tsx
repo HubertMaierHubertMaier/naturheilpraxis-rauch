@@ -29,6 +29,7 @@ import { checkedIAAQuestions, explicitIAAFields, formatIAAAssessment, mergeIAAFi
 import { buildAnamnesisIntake, extractAnamnesisProfileAnswers, formatIntakeFact, mergeAnamnesisIntakes, mergeIntakeText, partitionIntakeDiagnoses, type AnamnesisIntake, type IntakeDiagnosis, type IntakeFact, type IntakeMedication } from "@/lib/anamnesisIntakeFields";
 import { openPrintRecipe } from "./therapy/printRecipe";
 import { PathogenInput, emptyEntry, formatPathogensForAI, parseBulkPaste, type PathogenEntry } from "./therapy/PathogenInput";
+import { extractMetatronResultPathogens, mergeMetatronResultPathogens } from "@/lib/metatronResultPathogens";
 import { CategoryFilter } from "./therapy/CategoryFilter";
 import { PseudonymHistory, generatePseudonymId, type TherapySession } from "./therapy/PseudonymHistory";
 import { useNextFreePseudonym } from "@/hooks/useNextFreePseudonym";
@@ -4453,7 +4454,12 @@ export function TherapyRecommendation() {
         const base = latestBuildInputDataRef.current({ autoSavedDraft: true, finalized: false });
         const previous = asText(base[field]);
         const combined = previous.includes(text) ? previous : [previous.trim(), text].filter(Boolean).join("\n\n");
+        const metatronEntries = field === "metatronHeel" ? extractMetatronResultPathogens(text) : [];
+        const combinedPathogens = metatronEntries.length
+          ? mergeMetatronResultPathogens(Array.isArray(base.pathogens) ? base.pathogens as PathogenEntry[] : [], metatronEntries)
+          : [];
         const payload = latestBuildInputDataRef.current({ [field]: combined,
+          ...(combinedPathogens.length ? { pathogens: combinedPathogens, belastungen: formatPathogensForAI(combinedPathogens) } : {}),
           ...originalArchiveInputPatch(base, originals, field), autoSavedDraft: true, finalized: false });
         if (residualIdentifierCategories(payload).length) throw new Error("Bitte die Datenschutzprüfung der Eingaben vornehmen.");
         return persistVerifiedPatientInput(pid, payload, (target, input) => {
@@ -4570,6 +4576,8 @@ export function TherapyRecommendation() {
     setIsImportingAnamnesis(true);
     const append = (setter: typeof setLaborKomplett, text: string) => setter((previous) => mergeExtractedBlockIntoField(previous, text));
     const anamneseInputs = extractExplicitAnamneseInputs(ready.filter(item => item.documentType === "anamnese").map(item => item.previewText || "").join("\n\n"));
+    const metatronEntries = ready.filter(item => item.documentType === "metatron")
+      .flatMap(item => extractMetatronResultPathogens(item.previewText || ""));
     for (const item of ready) {
       if (!scopeIsCurrent()) return;
       const documentType = item.documentType;
@@ -4592,6 +4600,7 @@ export function TherapyRecommendation() {
     if (anamneseInputs.diagnoses.length || anamneseInputs.symptoms.length || anamneseInputs.medications.length || anamneseInputs.noConventionalMedication || anamneseInputs.petExaminations?.length || Object.values(anamneseInputs.intake?.additional || {}).some(items => items.length) || Object.keys(anamneseInputs.iaaFields || {}).length) {
       applyExtractedToInputs({ forPseudonymId: pid, ...anamneseInputs });
     }
+    if (metatronEntries.length) setPathogens(previous => mergeMetatronResultPathogens(previous, metatronEntries));
     const latestDateFor = (documentType: DirectBefundTarget) => ready
       .filter((item) => item.documentType === documentType)
       .map((item) => item.documentDate.trim())

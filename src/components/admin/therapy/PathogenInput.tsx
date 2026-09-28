@@ -11,6 +11,7 @@ export interface PathogenEntry {
   organe: string;
   index: string;
   category?: MetatronPathogenGroup;
+  source?: string;
 }
 
 interface Props {
@@ -48,6 +49,7 @@ export function formatPathogensForAI(entries: PathogenEntry[]): string {
     if (e.index.trim()) {
       parts.push(`Geräteindex laut Metatron-Befund: ${e.index.trim()}`);
     }
+    if (e.source?.trim()) parts.push(`Quelle: ${e.source.trim()}`);
     return "- " + parts.join(" | ");
   });
   return header + "\n" + lines.join("\n");
@@ -371,7 +373,7 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
               <Button type="button" variant="outline" size="sm" onClick={() => add(group.value)}>Eintrag hinzufügen</Button>
             </div>
             {!grouped.length && <p className="text-xs text-muted-foreground">Noch keine Einträge erfasst.</p>}
-            {!manualOpen && grouped.length > 0 && <ul className="space-y-1 text-xs">{grouped.map(entry => <li key={entry.id}><strong>{entry.name}</strong>{entry.organe && ` · ${entry.organe}`}{entry.index && ` · Index: ${entry.index}`}</li>)}</ul>}
+            {!manualOpen && grouped.length > 0 && <ul className="space-y-1 text-xs">{grouped.map(entry => <li key={entry.id}><strong>{entry.name}</strong>{entry.organe && ` · ${entry.organe}`}{entry.index && ` · Geräteindex: ${entry.index}`}{entry.source && ` · ${entry.source}`}</li>)}</ul>}
             {manualOpen && grouped.map((e) => (
             <div key={e.id} className="grid grid-cols-12 gap-1.5 items-start">
               <select className="col-span-12 rounded border bg-background p-1.5 text-xs" aria-label={`Gruppe für ${e.name || "neuen Eintrag"}`} value={metatronGroupFor(e)} onChange={event => update(e.id, { category: parseMetatronGroup(event.target.value) || "unassigned" })}>
@@ -405,6 +407,7 @@ export function PathogenInput({ entries, onChange, bulkText, onBulkTextChange }:
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
+              {e.source && <span className="col-span-12 text-xs text-muted-foreground">Quelle: {e.source} · Resonanzhinweis, kein Labornachweis</span>}
             </div>
             ))}
           </section>;
