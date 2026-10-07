@@ -111,6 +111,8 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
       font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
     html.has-rail .cmp-why { display: none !important; }
     html body .cmp-mark.cmp-mark.cmp-mark, html body .cmp-mark.cmp-mark *:not(.cmp-badge):not(.cmp-status), html body .reveal .slides section .cmp-mark, html body .reveal .slides section .cmp-mark *:not(.cmp-badge) { color: #111827 !important; -webkit-text-fill-color: #111827 !important; text-shadow: none !important; }
+    html body .cmp-badge.cmp-badge { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+    html body .cmp-status.cmp-status { -webkit-text-fill-color: currentColor !important; }
     .cmp-why strong { font-weight: 700; }
     .cmp-status { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid #64748b; font: 700 12px/1.4 Arial, sans-serif; color: #334155; }
     .cmp-status[data-accepted] { background: #15803d; border-color: #15803d; color: #fff; }
