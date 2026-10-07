@@ -35,3 +35,9 @@ Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entschei
 - Vorgehen: seitenweise im bestätigten Zwei-HTML-Vergleich, keine Massenänderung, angenommene Punkte und Nutzerentscheidungen nie ändern.
 - Begriffspräzision: Modellvorstellung/Deutung ≠ diagnostischer Befund ≠ belegte Ursache. Deutungen dem konkreten Denkmodell zuordnen (z. B. „Energiefeld-Modell der Frequenztherapie“), nicht pauschal „die Erfahrungsheilkunde“ vereinnahmen. Keine reflexartigen Zusätze wie „kein Diagnosebefund“, wo gar keine Diagnose behauptet wird.
 - Nachbartext im selben Absatz/Element mitprüfen; nötige Änderungen dort nur offen als eigener Vorschlag oder gemeldeter Punkt, nie versteckt.
+
+## Beschriftungsstandard (Peter)
+- Navigation: „Vorschlag N von M“ + verständlicher Gegenstand (z. B. „Wo Frequenztherapie ansetzen will“) + „Abschnitt X“; nie nur „Äx / y“ oder Kategorien wie „Inhalt/Recht“/„SEO“.
+- Metadaten verständlich: „Seitentitel für Browser und Suche“, „Beschreibung für Suchergebnisse“.
+- Schmal: zweizeilig, ohne die HTML-Fenster zu verdrängen. Randnotiz nutzt dieselbe Bezeichnung. Interne Nummern bleiben unverändert.
+- Es sind Vorschläge im Artikel, keine HTML-Dateien.

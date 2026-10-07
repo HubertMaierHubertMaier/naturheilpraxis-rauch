@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
-import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, type ComparisonChange } from "@/lib/infothekComparisonChanges";
+import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, CHANGE_TOPICS, type ComparisonChange } from "@/lib/infothekComparisonChanges";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
 const ROUTE = "/krankheit-ist-messbar.html";
@@ -504,7 +504,10 @@ export default function InfothekHtmlVergleich() {
 
         <div className="my-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-xs">
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(-1)} aria-label="Vorherige Änderung"><ChevronLeft className="h-4 w-4" />Vorherige</Button>
-          <span className="min-w-[4.5rem] text-center font-semibold">{active ? `Ä${active} / ${CHANGES.length}` : `– / ${CHANGES.length}`}</span>
+          <span className="flex min-w-[9rem] max-w-[22rem] flex-col text-center leading-tight sm:max-w-[30rem]" aria-live="polite">
+            <span className="font-semibold">{active ? `Vorschlag ${active} von ${CHANGES.length}` : `Kein Vorschlag gewählt (${CHANGES.length})`}</span>
+            {active && <span className="truncate text-xs text-muted-foreground">{CHANGE_TOPICS[active]}{(() => { const c = CHANGES.find((x) => x.id === active); return c?.headOnly ? " · im Artikel nicht sichtbar" : original?.sectionOf.get(active) ? ` · Abschnitt ${original.sectionOf.get(active)}` : ""; })()}</span>}
+          </span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">{accepted.size} von {CHANGES.length} übernommen</span>
           <label className="flex items-center gap-1.5 font-medium">
@@ -572,7 +575,7 @@ export default function InfothekHtmlVergleich() {
                   <div ref={cardRef} className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 lg:overflow-y-auto transition-[top] duration-150" style={wide ? { top, maxHeight: railH } : undefined}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <button type="button" className="font-semibold hover:underline" onClick={() => chooseActive(c.id)}>
-                        Ä{c.id}{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel" : " · Meta-Beschreibung") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                        Vorschlag {c.id} · {CHANGE_TOPICS[c.id]}{c.headOnly ? "" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
                     </div>
