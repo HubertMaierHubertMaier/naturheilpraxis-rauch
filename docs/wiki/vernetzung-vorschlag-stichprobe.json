@@ -44,7 +44,8 @@
       "id_pruefung": "kb_entities.id vorhanden (Typ product_variant); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
       "quelle_revision_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
       "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
-      "vollstaendig": true
+      "vollstaendig": false,
+      "unvollstaendig_grund": "Hersteller belegt; contains ohne Deklarationsfundstelle"
     },
     {
       "candidate_key": "rel:radegundis-nase-frei:offered_by:radegundis-apotheke",
