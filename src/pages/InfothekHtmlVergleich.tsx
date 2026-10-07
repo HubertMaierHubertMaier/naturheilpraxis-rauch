@@ -12,6 +12,7 @@ import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
+import { fundstelle } from "@/lib/infothekFundstelle";
 import { applyContactCorrection } from "@/lib/practiceContact";
 
 // Active comparison (one page instance at a time; set at render start, page remounts per slug).
@@ -85,13 +86,8 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
 }
 
 /** Static, script-free rendering with change markers. */
-/** Fundstelle: HTML page + real section (X of Y); head-only items are outside the article text. Never invents page numbers. */
-export function whereOf(c: { id: number; headOnly?: { kind: string } }, p?: { sectionOf: Map<number, number>; sectionCount: number }, page = CFG.base.kind === "delivered" ? CFG.base.route.replace(/^\//, "") : `${CFG.slug} (Entwurf)`): string {
-  const kind = c.headOnly ? (c.headOnly.kind === "title" ? "Seitentitel" : "Meta-Beschreibung") : "";
-  if (c.headOnly) return `${page} · ${kind}: Seiteneinstellungen / Google-Suchvorschau – außerhalb des Artikeltexts`;
-  const sec = p?.sectionOf.get(c.id);
-  return sec ? `${page} · Abschnitt ${sec} von ${p!.sectionCount}` : `${page} · Abschnitt nicht ermittelbar`;
-}
+const pageName = () => (CFG.base.kind === "delivered" ? CFG.base.route.replace(/^\//, "") : `${CFG.slug} (Entwurf)`);
+const whereOf = (c: { id: number; headOnly?: { kind: string } }, p?: { sectionOf: Map<number, number>; sectionCount: number }) => fundstelle(c, p, pageName());
 
 export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<number>): { html: string; found: Set<number>; sectionOf: Map<number, number>; sectionCount: number } {
   const doc = new DOMParser().parseFromString(html, "text/html");
