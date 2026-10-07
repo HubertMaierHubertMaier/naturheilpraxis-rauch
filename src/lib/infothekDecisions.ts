@@ -44,9 +44,9 @@ export const EXTRA_CHECKS = [
 ];
 
 export function buildProgressReport(opts: {
-  changes: ComparisonChange[]; topics: Record<number, string>; d: Decisions; storageKey: string; sectionOf?: Map<number, number>;
+  changes: ComparisonChange[]; topics: Record<number, string>; d: Decisions; storageKey: string; sectionOf?: Map<number, number>; title?: string; extraChecks?: string[];
 }): string {
-  const { changes, topics, d, storageKey, sectionOf } = opts;
+  const { changes, topics, d, storageKey, sectionOf, title = "Krankheit ist messbar", extraChecks = EXTRA_CHECKS } = opts;
   const line = (c: ComparisonChange) => {
     const where = c.headOnly ? "im Artikel nicht sichtbar" : sectionOf?.get(c.id) ? `Abschnitt ${sectionOf.get(c.id)}` : "";
     const rep = replacedBy(c, changes, d);
@@ -57,7 +57,7 @@ export function buildProgressReport(opts: {
   };
   const open = undecided(changes, d);
   return [
-    `# Fortschrittsbericht – Krankheit ist messbar`,
+    `# Fortschrittsbericht – ${title}`,
     ``,
     `Erstellt: ${new Date().toLocaleString("de-DE")}`,
     `Speicherort der Entscheidungen: nur dieser Browser (localStorage, Schlüssel \`${storageKey}\`), nicht auf dem Server. Dieser Bericht sichert den Stand als Datei.`,
@@ -70,7 +70,7 @@ export function buildProgressReport(opts: {
     ...changes.map(line),
     ``,
     `## Zusätzlich zu prüfen`,
-    ...EXTRA_CHECKS.map((x) => `- ${x}`),
+    ...extraChecks.map((x) => `- ${x}`),
     ``,
   ].join("\n");
 }

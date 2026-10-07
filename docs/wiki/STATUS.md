@@ -95,3 +95,5 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 ## Paket 5 (07.10.2026 ~19:45)
 - PubMed/Clinical and Experimental Dental Research → zusammengesetzt_ungeklaert + 2 getrennte Kandidaten (Test).
 - Strunz-Bestand nur lesend: docs/wiki/strunz-bestand-2026-10-07.json; 9/9 Produktkarten in DB (Quellrevision + Produkt), 0 fehlend; Gesamtbestand weit größer (88 Ordnerartikel, 113 Quellen mit Strunz-Bezug, 53/20/6 Staging-Kandidaten). kb_import_batches nicht lesbar.
+
+- Vorgabe 07.10.2026: Der lesende Abgleich der 21 Strunz-Anwendungsbereich-Artikel dokumentiert eindeutige Artikel-/Revisions-IDs, Quellenfundstellen und Abfrageumfang (nicht nur Summen); keine Rechteerweiterung.

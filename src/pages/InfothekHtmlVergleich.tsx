@@ -11,7 +11,7 @@ import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/i
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
-import { buildProgressReport, EXTRA_CHECKS, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
+import { buildProgressReport, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 
 // Active comparison (one page instance at a time; set at render start, page remounts per slug).
 let CFG: ComparisonConfig = configFor(undefined);
@@ -296,7 +296,7 @@ function InfothekHtmlVergleich() {
   const openItems = undecided(CHANGES, decisions);
   const downloadReport = () => {
     if (!storageKey) return;
-    const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf });
+    const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf, title: CFG.reportTitle, extraChecks: CFG.extraChecks });
     const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -603,7 +603,7 @@ function InfothekHtmlVergleich() {
               {openItems.length === 0 && <li>Alle Vorschläge entschieden.</li>}
             </ul>
             <p className="mt-2 font-semibold">Zusätzlich zu prüfen (nicht durch die Vorschläge abgedeckt)</p>
-            <ul className="list-disc pl-5">{EXTRA_CHECKS.map((x) => <li key={x}>{x}</li>)}</ul>
+            <ul className="list-disc pl-5">{CFG.extraChecks.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
         )}
         {statusOpen && (
