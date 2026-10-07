@@ -28,5 +28,5 @@ describe("letzte drei HTMLs", () => {
     const walk = (p: string): string[] => readdirSync(p).flatMap((n) => statSync(join(p, n)).isDirectory() ? walk(join(p, n)) : [join(p, n)]);
     for (const f of walk("src").filter((f) => !/[\\/]test[\\/]/.test(f))) expect({ f, hit: readFileSync(f, "utf8").includes("hochohmiges-wasser.entwurf") }).toEqual({ f, hit: false });
   });
-  it("Gesamtzahl: 19 online", () => expect(COMPARISON_CONFIGS.length).toBe(19));
+  it("Gesamtzahl: 14 online", () => expect(COMPARISON_CONFIGS.length).toBe(14));
 });
