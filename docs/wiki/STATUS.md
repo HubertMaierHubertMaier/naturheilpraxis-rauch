@@ -97,3 +97,5 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Strunz-Bestand nur lesend: docs/wiki/strunz-bestand-2026-10-07.json; 9/9 Produktkarten in DB (Quellrevision + Produkt), 0 fehlend; Gesamtbestand weit größer (88 Ordnerartikel, 113 Quellen mit Strunz-Bezug, 53/20/6 Staging-Kandidaten). kb_import_batches nicht lesbar.
 
 - Vorgabe 07.10.2026: Der lesende Abgleich der 21 Strunz-Anwendungsbereich-Artikel dokumentiert eindeutige Artikel-/Revisions-IDs, Quellenfundstellen und Abfrageumfang (nicht nur Summen); keine Rechteerweiterung.
+
+- SIBO/PGlite-Test (07.10.2026): Im Gesamtlauf 17:43 UTC fehlgeschlagen nach 6656 ms („× SIBO source import > executes without ambiguous variables and remains idempotent 6656ms“, vollständiger Fehlertext nicht erhalten; Vermutung Zeitlimit unbewiesen). Einzellauf 17:59 UTC: PASS in 2563 ms. Ursache offen; bei nächstem Gesamtlauf gezielt mit Fehlerausgabe erneut prüfen. Keine Live-SQL angewendet.
