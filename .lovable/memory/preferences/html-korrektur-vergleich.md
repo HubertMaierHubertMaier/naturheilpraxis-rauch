@@ -60,3 +60,12 @@ Gilt für ALLE bestehenden, noch nicht bearbeiteten UND künftig neu geschrieben
 - Bestehende Artikel: keine automatische Massenbearbeitung, keine Umnummerierung, keine Veröffentlichung; Peter entscheidet punktweise im bestätigten Vergleich.
 - Übernommene Punkte: Text nie nachträglich ändern (Übernahme speichert nur die Nummer – jede Entwurfsänderung wäre rückwirkend). Neue Fassung nur als eigener Vorschlag mit „supersedes“ auf die alte Nummer. Annahmestatus nie raten, sondern von Peter/aus der sichtbaren Liste übernehmen.
 - Praxisangaben (Geräte, Ablauf) nur mit benannter Quelle; sonst als „von Peter zu bestätigen“ kennzeichnen. Einsatz eines Geräts belegt keinen diagnostischen Nutzen.
+
+## Entscheidungs- und Fortschrittsstandard (Peter)
+- Pro Vorschlag drei Zustände: übernommen / „Original beibehalten“ (ausdrückliche Entscheidung, eigener Zähler) / noch offen (≠ abgelehnt). Kleine aufklappbare Liste „Noch zu entscheiden (N)“ mit Thema + Abschnitt, Klick springt zum Paar.
+- Alternativen (supersedes) als „optionale Alternative zu Vorschlag N“ kennzeichnen, nicht als zusätzliches Problem.
+- „Zusätzlich zu prüfen“ sichtbar führen (Punkte außerhalb der Nummern), nie als versteckte HTML-Kommentare.
+- Abschluss erst nach bewussten Entscheidungen + Restprüfung, nicht durch den Übernommen-Zähler.
+- Bearbeitungsstand aller HTMLs aus dem Manifest (nicht begonnen / in Prüfung / redaktionell abgeschlossen), Veröffentlichung separat; ohne Nachweis = nicht begonnen.
+- Downloadbarer Fortschrittsbericht mit Datum, Entscheidungen, Textschnappschuss, echtem Speicherort (browserlokal, solange kein Server-Speicher).
+- Peter ist der behandelnde Heilpraktiker: seine Methoden nicht sprachlich „neben seine eigene Behandlung“ stellen. Abgrenzung einmal am Übergang zur Modellvorstellung statt Negativformeln am Satzende. MRT o. ä. nie als Beleg für Frequenztherapie, andere Frequenzanwendungen nicht abwerten.
