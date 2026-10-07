@@ -1,0 +1,4402 @@
+{
+ "artikel_id": "7030f130-65fb-4a9e-bb89-0e3327f92e01",
+ "revision_id": "7030f130-65fb-4a9e-bb89-0e3327f92e01",
+ "titel": "Buhner – Pathogen → Heilpflanzen Kreuzreferenz (188 Erreger)",
+ "quellen": "im Artikel keine eigene Quellenrevision verknüpft geprüft – offen",
+ "abgerufen": "2026-10-08",
+ "typen_mittel": [
+  "plant",
+  "substance"
+ ],
+ "typen_pathogen": [
+  "pathogen"
+ ],
+ "bestehende_relationen_kb_entity_relations": 0,
+ "zaehlung": {
+  "paare": 257,
+  "eindeutige_paare": 257,
+  "duplikate": 0,
+  "erreger_zeilen": 143,
+  "mittel_namen": 46,
+  "offener Kandidat": 257,
+  "mittel_exakt": 2,
+  "pathogen_exakt": 3,
+  "mehrdeutig": 0
+ },
+ "paare": [
+  {
+   "pathogen": "Adenovirus (3 und 4)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 12,
+   "wortlaut": "| **Adenovirus (3 und 4)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aviäres Bronchitis-Virus (Corona)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 13,
+   "wortlaut": "| **Aviäres Bronchitis-Virus (Corona)** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aviäres Bronchitis-Virus (Corona)",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 13,
+   "wortlaut": "| **Aviäres Bronchitis-Virus (Corona)** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Coxsackie Virus B (3, 4, 5)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 14,
+   "wortlaut": "| **Coxsackie Virus B (3, 4, 5)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Artemesia annua",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Astragalus",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Bidens pilosa",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Bupleurum kaoi",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Forsythia suspensa",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Geum japanosum",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Glyccyrrhiza",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Hypericum",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Isatis",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Lomatium",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Nigella sativa",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Quercetin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "exakt",
+    "entity_id": "6b262335-e2f7-5635-b30c-35e344368f39",
+    "typ": "plant"
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Scaevola",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Syzygium",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Terminalia chebula",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Urtica dioica",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cytomegalovirus",
+   "mittel": "Zingiber",
+   "abschnitt": "🦠 Viren",
+   "zeile": 15,
+   "wortlaut": "| **Cytomegalovirus** | Artemesia annua, Astragalus, Berberin, Bidens pilosa, Bupleurum kaoi, Forsythia suspensa, Geum japanosum, Glyccyrrhiza, Houttuynia, Hypericum, Isatis, Lomatium, Nigella sativa, Quercetin, Scaevola, Syzygium, Terminalia chebula, Urtica dioica, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Dengue Virus",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 16,
+   "wortlaut": "| **Dengue Virus** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Dengue Virus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 16,
+   "wortlaut": "| **Dengue Virus** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Echovirus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 17,
+   "wortlaut": "| **Echovirus** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Enterovirus 71",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 18,
+   "wortlaut": "| **Enterovirus 71** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Epstein-Barr Virus",
+   "mittel": "Andrographis Kraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 19,
+   "wortlaut": "| **Epstein-Barr Virus** | Andrographis Kraut, Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "exakt",
+    "entity_id": "fe2df0e8-8f06-56c8-b198-b42e8d1aea0f",
+    "typ": "pathogen"
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Epstein-Barr Virus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 19,
+   "wortlaut": "| **Epstein-Barr Virus** | Andrographis Kraut, Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "exakt",
+    "entity_id": "fe2df0e8-8f06-56c8-b198-b42e8d1aea0f",
+    "typ": "pathogen"
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Epstein-Barr Virus",
+   "mittel": "Usnea",
+   "abschnitt": "🦠 Viren",
+   "zeile": 19,
+   "wortlaut": "| **Epstein-Barr Virus** | Andrographis Kraut, Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "exakt",
+    "entity_id": "fe2df0e8-8f06-56c8-b198-b42e8d1aea0f",
+    "typ": "pathogen"
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Gelbfieber Virus",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 20,
+   "wortlaut": "| **Gelbfieber Virus** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hepatitis A",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 21,
+   "wortlaut": "| **Hepatitis A** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hepatitis B",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 22,
+   "wortlaut": "| **Hepatitis B** | Baikal Helmkraut, Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hepatitis B",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 22,
+   "wortlaut": "| **Hepatitis B** | Baikal Helmkraut, Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hepatitis C",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 23,
+   "wortlaut": "| **Hepatitis C** | Baikal Helmkraut, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hepatitis C",
+   "mittel": "Zingiber",
+   "abschnitt": "🦠 Viren",
+   "zeile": 23,
+   "wortlaut": "| **Hepatitis C** | Baikal Helmkraut, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Herpes simplex 1 und 2",
+   "mittel": "Andrographis Kraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 24,
+   "wortlaut": "| **Herpes simplex 1 und 2** | Andrographis Kraut, Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Herpes simplex 1 und 2",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 24,
+   "wortlaut": "| **Herpes simplex 1 und 2** | Andrographis Kraut, Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Herpes simplex 1 und 2",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 24,
+   "wortlaut": "| **Herpes simplex 1 und 2** | Andrographis Kraut, Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Herpes simplex 1 und 2",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 24,
+   "wortlaut": "| **Herpes simplex 1 und 2** | Andrographis Kraut, Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Herpes simplex 1 und 2",
+   "mittel": "Usnea",
+   "abschnitt": "🦠 Viren",
+   "zeile": 24,
+   "wortlaut": "| **Herpes simplex 1 und 2** | Andrographis Kraut, Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "HIV-I",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 25,
+   "wortlaut": "| **HIV-I** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "HIV-I",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 25,
+   "wortlaut": "| **HIV-I** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "HIV-I",
+   "mittel": "Zingiber",
+   "abschnitt": "🦠 Viren",
+   "zeile": 25,
+   "wortlaut": "| **HIV-I** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "HTLV (Humanes T-Zell-Leukämie Virus)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 26,
+   "wortlaut": "| **HTLV (Humanes T-Zell-Leukämie Virus)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Influenza A (H1N1, H3N2)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 27,
+   "wortlaut": "| **Influenza A (H1N1, H3N2)** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Influenza A (H1N1, H3N2)",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 27,
+   "wortlaut": "| **Influenza A (H1N1, H3N2)** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Influenza A (H1N1, H3N2)",
+   "mittel": "Zingiber",
+   "abschnitt": "🦠 Viren",
+   "zeile": 27,
+   "wortlaut": "| **Influenza A (H1N1, H3N2)** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Influenza B",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 28,
+   "wortlaut": "| **Influenza B** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Junin Virus",
+   "mittel": "Usnea",
+   "abschnitt": "🦠 Viren",
+   "zeile": 29,
+   "wortlaut": "| **Junin Virus** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Masern",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 30,
+   "wortlaut": "| **Masern** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mosaik Virus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 31,
+   "wortlaut": "| **Mosaik Virus** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Parainfluenza Viren",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 32,
+   "wortlaut": "| **Parainfluenza Viren** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Polio Virus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 33,
+   "wortlaut": "| **Polio Virus** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Polyoma Virus (Tumor)",
+   "mittel": "Usnea",
+   "abschnitt": "🦠 Viren",
+   "zeile": 34,
+   "wortlaut": "| **Polyoma Virus (Tumor)** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "PRRS Virus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 35,
+   "wortlaut": "| **PRRS Virus** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudorabies Virus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 36,
+   "wortlaut": "| **Pseudorabies Virus** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "RSV (Respiratory Syncytial Virus)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 37,
+   "wortlaut": "| **RSV (Respiratory Syncytial Virus)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "SARS Coronavirus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 38,
+   "wortlaut": "| **SARS Coronavirus** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "SARS Coronavirus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🦠 Viren",
+   "zeile": 38,
+   "wortlaut": "| **SARS Coronavirus** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Sendai Virus (Parainfluenza Typ 1)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 39,
+   "wortlaut": "| **Sendai Virus (Parainfluenza Typ 1)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Tacaribe Virus",
+   "mittel": "Usnea",
+   "abschnitt": "🦠 Viren",
+   "zeile": 40,
+   "wortlaut": "| **Tacaribe Virus** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "VSIV (Vesicular Stomatitis)",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🦠 Viren",
+   "zeile": 41,
+   "wortlaut": "| **VSIV (Vesicular Stomatitis)** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "West-Nil-Virus",
+   "mittel": "Berberin",
+   "abschnitt": "🦠 Viren",
+   "zeile": 42,
+   "wortlaut": "| **West-Nil-Virus** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Rhinovirus spp.",
+   "mittel": "Zingiber",
+   "abschnitt": "🦠 Viren",
+   "zeile": 43,
+   "wortlaut": "| **Rhinovirus spp.** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Acinetobacter baumannii",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 51,
+   "wortlaut": "| **Acinetobacter baumannii** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Actinomyces viscosus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 52,
+   "wortlaut": "| **Actinomyces viscosus** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus cereus",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 53,
+   "wortlaut": "| **Bacillus cereus** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus megaterium",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 54,
+   "wortlaut": "| **Bacillus megaterium** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus sphaericus",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 55,
+   "wortlaut": "| **Bacillus sphaericus** | Piper nigrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus subtilis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 56,
+   "wortlaut": "| **Bacillus subtilis** | Baikal Helmkraut, Berberin, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus subtilis",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 56,
+   "wortlaut": "| **Bacillus subtilis** | Baikal Helmkraut, Berberin, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus subtilis",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 56,
+   "wortlaut": "| **Bacillus subtilis** | Baikal Helmkraut, Berberin, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus subtilis",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 56,
+   "wortlaut": "| **Bacillus subtilis** | Baikal Helmkraut, Berberin, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacillus subtilis",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 56,
+   "wortlaut": "| **Bacillus subtilis** | Baikal Helmkraut, Berberin, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacteroides spp.",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 57,
+   "wortlaut": "| **Bacteroides spp.** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bacteroides spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 57,
+   "wortlaut": "| **Bacteroides spp.** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Bordetella pertussis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 58,
+   "wortlaut": "| **Bordetella pertussis** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Campylobacter jejuni",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 59,
+   "wortlaut": "| **Campylobacter jejuni** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Chlamydia trachomatis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 60,
+   "wortlaut": "| **Chlamydia trachomatis** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Chlamydien",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 61,
+   "wortlaut": "| **Chlamydien** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Chromobacterium violaceum",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 62,
+   "wortlaut": "| **Chromobacterium violaceum** | Piper nigrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Clostridium difficile",
+   "mittel": "Echinacea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 63,
+   "wortlaut": "| **Clostridium difficile** | Echinacea, Glyccyrrhiza, Zingiber |",
+   "mittel_match": {
+    "status": "exakt",
+    "entity_id": "84ba00f5-ab77-7e69-2600-b9cdf9f33ffb",
+    "typ": "plant"
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Clostridium difficile",
+   "mittel": "Glyccyrrhiza",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 63,
+   "wortlaut": "| **Clostridium difficile** | Echinacea, Glyccyrrhiza, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Clostridium difficile",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 63,
+   "wortlaut": "| **Clostridium difficile** | Echinacea, Glyccyrrhiza, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Clostridien spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 64,
+   "wortlaut": "| **Clostridien spp.** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Corynebacterium diphtheriae",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 65,
+   "wortlaut": "| **Corynebacterium diphtheriae** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Corynebacterium diphtheriae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 65,
+   "wortlaut": "| **Corynebacterium diphtheriae** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Corynebacterium diphtheriae",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 65,
+   "wortlaut": "| **Corynebacterium diphtheriae** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Diplococcus pneumoniae",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 66,
+   "wortlaut": "| **Diplococcus pneumoniae** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Diplococcus pneumoniae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 66,
+   "wortlaut": "| **Diplococcus pneumoniae** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "EHEC",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 67,
+   "wortlaut": "| **EHEC** | Alchornia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Enterobacter aerogenes",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 68,
+   "wortlaut": "| **Enterobacter aerogenes** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Enterococcus faecalis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 69,
+   "wortlaut": "| **Enterococcus faecalis** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Enterococcus faecalis",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 69,
+   "wortlaut": "| **Enterococcus faecalis** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Enterococcus faecium",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 70,
+   "wortlaut": "| **Enterococcus faecium** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Escherichia coli",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 71,
+   "wortlaut": "| **Escherichia coli** | Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Escherichia coli",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 71,
+   "wortlaut": "| **Escherichia coli** | Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Escherichia coli",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 71,
+   "wortlaut": "| **Escherichia coli** | Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Fusobacterium nucleatum",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 72,
+   "wortlaut": "| **Fusobacterium nucleatum** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Haemophilus influenzae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 73,
+   "wortlaut": "| **Haemophilus influenzae** | Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Haemophilus influenzae",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 73,
+   "wortlaut": "| **Haemophilus influenzae** | Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Helicobacter pylori",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 74,
+   "wortlaut": "| **Helicobacter pylori** | Alchornia, Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Helicobacter pylori",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 74,
+   "wortlaut": "| **Helicobacter pylori** | Alchornia, Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Helicobacter pylori",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 74,
+   "wortlaut": "| **Helicobacter pylori** | Alchornia, Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Helicobacter pylori",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 74,
+   "wortlaut": "| **Helicobacter pylori** | Alchornia, Baikal Helmkraut, Berberin, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Klebsiella pneumoniae",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 75,
+   "wortlaut": "| **Klebsiella pneumoniae** | Baikal Helmkraut, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Klebsiella pneumoniae",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 75,
+   "wortlaut": "| **Klebsiella pneumoniae** | Baikal Helmkraut, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Klebsiella pneumoniae",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 75,
+   "wortlaut": "| **Klebsiella pneumoniae** | Baikal Helmkraut, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Klebsiella pneumoniae",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 75,
+   "wortlaut": "| **Klebsiella pneumoniae** | Baikal Helmkraut, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Lactobacillus plantarum",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 76,
+   "wortlaut": "| **Lactobacillus plantarum** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Leptospira spp.",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 77,
+   "wortlaut": "| **Leptospira spp.** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Listeria monocytogenes",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 78,
+   "wortlaut": "| **Listeria monocytogenes** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Listeria spp.",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 79,
+   "wortlaut": "| **Listeria spp.** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "MRSA",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 80,
+   "wortlaut": "| **MRSA** | Alchornia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycobacterium smegmatis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 81,
+   "wortlaut": "| **Mycobacterium smegmatis** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycobacterium tuberculosis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 82,
+   "wortlaut": "| **Mycobacterium tuberculosis** | Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycobacterium tuberculosis",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 82,
+   "wortlaut": "| **Mycobacterium tuberculosis** | Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycobacterium tuberculosis",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 82,
+   "wortlaut": "| **Mycobacterium tuberculosis** | Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycobacterium tuberculosis",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 82,
+   "wortlaut": "| **Mycobacterium tuberculosis** | Baikal Helmkraut, Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycoplasma hominis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 83,
+   "wortlaut": "| **Mycoplasma hominis** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Mycoplasma hominis",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 83,
+   "wortlaut": "| **Mycoplasma hominis** | Baikal Helmkraut, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Neisseria catarrhalis",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 84,
+   "wortlaut": "| **Neisseria catarrhalis** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Neisseria meningitidis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 85,
+   "wortlaut": "| **Neisseria meningitidis** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Porphyromonas gingivalis",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 86,
+   "wortlaut": "| **Porphyromonas gingivalis** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Prevotella intermedia",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 87,
+   "wortlaut": "| **Prevotella intermedia** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Propionibacterium acnes",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 88,
+   "wortlaut": "| **Propionibacterium acnes** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Propionibacterium acnes",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 88,
+   "wortlaut": "| **Propionibacterium acnes** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Proteus vulgaris",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 89,
+   "wortlaut": "| **Proteus vulgaris** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Proteus vulgaris",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 89,
+   "wortlaut": "| **Proteus vulgaris** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Proteus vulgaris",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 89,
+   "wortlaut": "| **Proteus vulgaris** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudomonas aeruginosa",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 90,
+   "wortlaut": "| **Pseudomonas aeruginosa** | Alchornia, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudomonas aeruginosa",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 90,
+   "wortlaut": "| **Pseudomonas aeruginosa** | Alchornia, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudomonas aeruginosa",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 90,
+   "wortlaut": "| **Pseudomonas aeruginosa** | Alchornia, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudomonas aeruginosa",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 90,
+   "wortlaut": "| **Pseudomonas aeruginosa** | Alchornia, Berberin, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Pseudomonas fluorescens",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 91,
+   "wortlaut": "| **Pseudomonas fluorescens** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella enteritidis",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 92,
+   "wortlaut": "| **Salmonella enteritidis** | Alchornia, Andrographis, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella enteritidis",
+   "mittel": "Andrographis",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 92,
+   "wortlaut": "| **Salmonella enteritidis** | Alchornia, Andrographis, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella enteritidis",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 92,
+   "wortlaut": "| **Salmonella enteritidis** | Alchornia, Andrographis, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella paratyphi",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 93,
+   "wortlaut": "| **Salmonella paratyphi** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella Spp.",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 94,
+   "wortlaut": "| **Salmonella Spp.** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella typhi",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 95,
+   "wortlaut": "| **Salmonella typhi** | Alchornia, Andrographis, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella typhi",
+   "mittel": "Andrographis",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 95,
+   "wortlaut": "| **Salmonella typhi** | Alchornia, Andrographis, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella typhi",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 95,
+   "wortlaut": "| **Salmonella typhi** | Alchornia, Andrographis, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Salmonella typhimurium",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 96,
+   "wortlaut": "| **Salmonella typhimurium** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Sarcina ureae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 97,
+   "wortlaut": "| **Sarcina ureae** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella dysenteriae",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 98,
+   "wortlaut": "| **Shigella dysenteriae** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella dysenteriae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 98,
+   "wortlaut": "| **Shigella dysenteriae** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella dysenteriae",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 98,
+   "wortlaut": "| **Shigella dysenteriae** | Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella flexneri",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 99,
+   "wortlaut": "| **Shigella flexneri** | Alchornia, Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella flexneri",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 99,
+   "wortlaut": "| **Shigella flexneri** | Alchornia, Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella flexneri",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 99,
+   "wortlaut": "| **Shigella flexneri** | Alchornia, Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella flexneri",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 99,
+   "wortlaut": "| **Shigella flexneri** | Alchornia, Baikal Helmkraut, Houttuynia, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella sonnei",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 100,
+   "wortlaut": "| **Shigella sonnei** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Shigella spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 101,
+   "wortlaut": "| **Shigella spp.** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Alchornia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus aureus",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 102,
+   "wortlaut": "| **Staphylococcus aureus** | Alchornia, Baikal Helmkraut, Houttuynia, Piper nigrum, Usnea, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus epidermidis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 103,
+   "wortlaut": "| **Staphylococcus epidermidis** | Baikal Helmkraut, Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus epidermidis",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 103,
+   "wortlaut": "| **Staphylococcus epidermidis** | Baikal Helmkraut, Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Staphylococcus simulans",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 104,
+   "wortlaut": "| **Staphylococcus simulans** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus hemolyticus",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 105,
+   "wortlaut": "| **Streptococcus hemolyticus** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus mutans",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 106,
+   "wortlaut": "| **Streptococcus mutans** | Baikal Helmkraut, Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus mutans",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 106,
+   "wortlaut": "| **Streptococcus mutans** | Baikal Helmkraut, Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus mutans",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 106,
+   "wortlaut": "| **Streptococcus mutans** | Baikal Helmkraut, Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus pyogenes",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 107,
+   "wortlaut": "| **Streptococcus pyogenes** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus pyogenes",
+   "mittel": "Usnea",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 107,
+   "wortlaut": "| **Streptococcus pyogenes** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus sanguinis",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 108,
+   "wortlaut": "| **Streptococcus sanguinis** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Streptococcus viridans",
+   "mittel": "Zingiber",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 109,
+   "wortlaut": "| **Streptococcus viridans** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Ureaplasma urealyticum",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 110,
+   "wortlaut": "| **Ureaplasma urealyticum** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Vibrio cholerae",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 111,
+   "wortlaut": "| **Vibrio cholerae** | Baikal Helmkraut, Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Vibrio cholerae",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 111,
+   "wortlaut": "| **Vibrio cholerae** | Baikal Helmkraut, Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Vibrio cholerae",
+   "mittel": "Houttuynia",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 111,
+   "wortlaut": "| **Vibrio cholerae** | Baikal Helmkraut, Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Xanthomonas citri",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 112,
+   "wortlaut": "| **Xanthomonas citri** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Zoogloea ramigera",
+   "mittel": "Berberin",
+   "abschnitt": "🔬 Bakterien",
+   "zeile": 113,
+   "wortlaut": "| **Zoogloea ramigera** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aspergillus niger",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 121,
+   "wortlaut": "| **Aspergillus niger** | Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aspergillus niger",
+   "mittel": "Zingiber",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 121,
+   "wortlaut": "| **Aspergillus niger** | Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aspergillus spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 122,
+   "wortlaut": "| **Aspergillus spp.** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aspergillus spp.",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 122,
+   "wortlaut": "| **Aspergillus spp.** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Aureobasidium pullulans",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 123,
+   "wortlaut": "| **Aureobasidium pullulans** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida albicans",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 124,
+   "wortlaut": "| **Candida albicans** | Baikal Helmkraut, Houttuynia, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida albicans",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 124,
+   "wortlaut": "| **Candida albicans** | Baikal Helmkraut, Houttuynia, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida albicans",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 124,
+   "wortlaut": "| **Candida albicans** | Baikal Helmkraut, Houttuynia, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida albicans",
+   "mittel": "Zingiber",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 124,
+   "wortlaut": "| **Candida albicans** | Baikal Helmkraut, Houttuynia, Piper nigrum, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida glabrata",
+   "mittel": "Zingiber",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 125,
+   "wortlaut": "| **Candida glabrata** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 126,
+   "wortlaut": "| **Candida spp.** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Candida spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 126,
+   "wortlaut": "| **Candida spp.** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Chromoblastomycosis",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 127,
+   "wortlaut": "| **Chromoblastomycosis** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Colletotrichum capsicum",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 128,
+   "wortlaut": "| **Colletotrichum capsicum** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cryptococcus neoformans",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 129,
+   "wortlaut": "| **Cryptococcus neoformans** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Cryptococcus neoformans",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 129,
+   "wortlaut": "| **Cryptococcus neoformans** | Berberin, Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Epidermophyton floccosum",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 130,
+   "wortlaut": "| **Epidermophyton floccosum** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Epidermophyton rubrum",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 131,
+   "wortlaut": "| **Epidermophyton rubrum** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Fusarium nivale",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 132,
+   "wortlaut": "| **Fusarium nivale** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Fusarium moniliforme",
+   "mittel": "Zingiber",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 133,
+   "wortlaut": "| **Fusarium moniliforme** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Fusarium oxysporum",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 134,
+   "wortlaut": "| **Fusarium oxysporum** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Malassezia spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 135,
+   "wortlaut": "| **Malassezia spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Malassezia spp.",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 135,
+   "wortlaut": "| **Malassezia spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Malassezia spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 135,
+   "wortlaut": "| **Malassezia spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum audouinii",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 136,
+   "wortlaut": "| **Microsporum audouinii** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum canis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 137,
+   "wortlaut": "| **Microsporum canis** | Baikal Helmkraut |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum ferrugineum",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 138,
+   "wortlaut": "| **Microsporum ferrugineum** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum gypseum",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 139,
+   "wortlaut": "| **Microsporum gypseum** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 140,
+   "wortlaut": "| **Microsporum spp.** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Microsporum spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 140,
+   "wortlaut": "| **Microsporum spp.** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Sporotrichum spp.",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 141,
+   "wortlaut": "| **Sporotrichum spp.** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Tinea imbricata",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 142,
+   "wortlaut": "| **Tinea imbricata** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trichoderma spp.",
+   "mittel": "Piper nigrum",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 143,
+   "wortlaut": "| **Trichoderma spp.** | Piper nigrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trichophyton spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 144,
+   "wortlaut": "| **Trichophyton spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trichophyton spp.",
+   "mittel": "Houttuynia",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 144,
+   "wortlaut": "| **Trichophyton spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trichophyton spp.",
+   "mittel": "Usnea",
+   "abschnitt": "🍄 Pilze",
+   "zeile": 144,
+   "wortlaut": "| **Trichophyton spp.** | Berberin, Houttuynia, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Angiostrongylus cantonensis",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 152,
+   "wortlaut": "| **Angiostrongylus cantonensis** | Baikal Helmkraut, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Angiostrongylus cantonensis",
+   "mittel": "Zingiber",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 152,
+   "wortlaut": "| **Angiostrongylus cantonensis** | Baikal Helmkraut, Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Anisakis simplex",
+   "mittel": "Zingiber",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 153,
+   "wortlaut": "| **Anisakis simplex** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Blastocystis hominis",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 154,
+   "wortlaut": "| **Blastocystis hominis** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Contortus",
+   "mittel": "Zingiber",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 155,
+   "wortlaut": "| **Contortus** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Dirofilaria immitis",
+   "mittel": "Zingiber",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 156,
+   "wortlaut": "| **Dirofilaria immitis** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Echinococcus granulosus (+ Zysten)",
+   "mittel": "Usnea",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 157,
+   "wortlaut": "| **Echinococcus granulosus (+ Zysten)** | Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Entamoeba histolytica",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 158,
+   "wortlaut": "| **Entamoeba histolytica** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Giardia lamblia",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 159,
+   "wortlaut": "| **Giardia lamblia** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Haemonchus",
+   "mittel": "Zingiber",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 160,
+   "wortlaut": "| **Haemonchus** | Zingiber |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Hymenolepis diminuta",
+   "mittel": "Houttuynia",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 161,
+   "wortlaut": "| **Hymenolepis diminuta** | Houttuynia |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Leishmania spp.",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 162,
+   "wortlaut": "| **Leishmania spp.** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Toxoplasma gondii",
+   "mittel": "Baikal Helmkraut",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 163,
+   "wortlaut": "| **Toxoplasma gondii** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Toxoplasma gondii",
+   "mittel": "Usnea",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 163,
+   "wortlaut": "| **Toxoplasma gondii** | Baikal Helmkraut, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trichomonas vaginalis",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 164,
+   "wortlaut": "| **Trichomonas vaginalis** | Berberin |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trypanosoma cruzi",
+   "mittel": "Berberin",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 165,
+   "wortlaut": "| **Trypanosoma cruzi** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Trypanosoma cruzi",
+   "mittel": "Usnea",
+   "abschnitt": "🐛 Parasiten",
+   "zeile": 165,
+   "wortlaut": "| **Trypanosoma cruzi** | Berberin, Usnea |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Baikal Helmkraut",
+   "mittel": "56 | Viren",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 173,
+   "wortlaut": "| **Baikal Helmkraut** | 56 | Viren, Bakterien, Parasiten – breitestes Spektrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Baikal Helmkraut",
+   "mittel": "Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 173,
+   "wortlaut": "| **Baikal Helmkraut** | 56 | Viren, Bakterien, Parasiten – breitestes Spektrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Baikal Helmkraut",
+   "mittel": "Parasiten – breitestes Spektrum",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 173,
+   "wortlaut": "| **Baikal Helmkraut** | 56 | Viren, Bakterien, Parasiten – breitestes Spektrum |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Berberin",
+   "mittel": "44 | Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 174,
+   "wortlaut": "| **Berberin** | 44 | Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Berberin",
+   "mittel": "Pilze",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 174,
+   "wortlaut": "| **Berberin** | 44 | Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Berberin",
+   "mittel": "Parasiten",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 174,
+   "wortlaut": "| **Berberin** | 44 | Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Houttuynia",
+   "mittel": "44 | Breitspektrum-Antivirenmittel",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 175,
+   "wortlaut": "| **Houttuynia** | 44 | Breitspektrum-Antivirenmittel, Bakterien, Pilze |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Houttuynia",
+   "mittel": "Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 175,
+   "wortlaut": "| **Houttuynia** | 44 | Breitspektrum-Antivirenmittel, Bakterien, Pilze |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Houttuynia",
+   "mittel": "Pilze",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 175,
+   "wortlaut": "| **Houttuynia** | 44 | Breitspektrum-Antivirenmittel, Bakterien, Pilze |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Zingiber (Ingwer)",
+   "mittel": "33 | Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 176,
+   "wortlaut": "| **Zingiber (Ingwer)** | 33 | Bakterien, Viren, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Zingiber (Ingwer)",
+   "mittel": "Viren",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 176,
+   "wortlaut": "| **Zingiber (Ingwer)** | 33 | Bakterien, Viren, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Zingiber (Ingwer)",
+   "mittel": "Parasiten",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 176,
+   "wortlaut": "| **Zingiber (Ingwer)** | 33 | Bakterien, Viren, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Usnea",
+   "mittel": "29 | Grampositive Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 177,
+   "wortlaut": "| **Usnea** | 29 | Grampositive Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Usnea",
+   "mittel": "Pilze",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 177,
+   "wortlaut": "| **Usnea** | 29 | Grampositive Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Usnea",
+   "mittel": "Parasiten",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 177,
+   "wortlaut": "| **Usnea** | 29 | Grampositive Bakterien, Pilze, Parasiten |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Piper nigrum",
+   "mittel": "10 | Bakterien",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 178,
+   "wortlaut": "| **Piper nigrum** | 10 | Bakterien, Pilze |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Piper nigrum",
+   "mittel": "Pilze",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 178,
+   "wortlaut": "| **Piper nigrum** | 10 | Bakterien, Pilze |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Alchornia",
+   "mittel": "8 | MRSA",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 179,
+   "wortlaut": "| **Alchornia** | 8 | MRSA, EHEC, Salmonellen |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Alchornia",
+   "mittel": "EHEC",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 179,
+   "wortlaut": "| **Alchornia** | 8 | MRSA, EHEC, Salmonellen |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Alchornia",
+   "mittel": "Salmonellen",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 179,
+   "wortlaut": "| **Alchornia** | 8 | MRSA, EHEC, Salmonellen |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Andrographis Kraut",
+   "mittel": "5 | Salmonellen",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 180,
+   "wortlaut": "| **Andrographis Kraut** | 5 | Salmonellen, Herpes, EBV |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Andrographis Kraut",
+   "mittel": "Herpes",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 180,
+   "wortlaut": "| **Andrographis Kraut** | 5 | Salmonellen, Herpes, EBV |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Andrographis Kraut",
+   "mittel": "EBV",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 180,
+   "wortlaut": "| **Andrographis Kraut** | 5 | Salmonellen, Herpes, EBV |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Echinacea",
+   "mittel": "1 | Clostridium difficile",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 181,
+   "wortlaut": "| **Echinacea** | 1 | Clostridium difficile |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Glyccyrrhiza (Süßholz)",
+   "mittel": "2 | Cytomegalovirus",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 182,
+   "wortlaut": "| **Glyccyrrhiza (Süßholz)** | 2 | Cytomegalovirus, C. difficile |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  },
+  {
+   "pathogen": "Glyccyrrhiza (Süßholz)",
+   "mittel": "C. difficile",
+   "abschnitt": "🌿 Die wichtigsten Breitspektrum-Heilpflanzen (Top 10)",
+   "zeile": 182,
+   "wortlaut": "| **Glyccyrrhiza (Süßholz)** | 2 | Cytomegalovirus, C. difficile |",
+   "mittel_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "pathogen_match": {
+    "status": "kein Treffer",
+    "kandidaten": []
+   },
+   "status": "offener Kandidat",
+   "belegart": "Buchzuordnung (Buhner) laut Wiki-Artikel – keine klinisch bestätigte Wirkung"
+  }
+ ]
+}
