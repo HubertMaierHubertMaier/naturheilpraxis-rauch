@@ -145,3 +145,10 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Keine neue Doppel-EAN; 4260180442878 bleibt einziger Widerspruch (Teil 5), keine Identität.
 - Damit alle 136 nicht als Variante gruppierten Listeneinträge einmal lesend erfasst (Test prüft Abdeckung 136/136). 149 URLs/13 Varianten/6 Gruppen unverändert.
 - Offen: 13 Varianten (eigener Schritt), wörtliche Fundstellen für 1–72 nachrüsten; Hersteller aller 136 offen. Keine Karten/Writes.
+
+## 2026-10-07 ca. 20:45Z Infothek-Restkorrekturen Paket 2 (vier Vergleiche)
+- Neuer Test infothek-new4-fulltext: keine Übernahme = Original, alle Übernahmen = vollständiger Entwurftext (whitespace-normalisiert) für Candida, SIBO, Burnout, Kräuter – 4/4 PASS.
+- Ungedeckte Entwurfsänderung SIBO „Methan-Profil (IMO)“ jetzt als Ä6; neue Einzelvorschläge SIBO Ä7/Ä8 (keine „sichtbaren“ Dosierungen, nur Quellenprüfartefakt), Candida Ä13–Ä16 (Grundprinzip, Leiste, zwei Überschriften). Candida Ä11 Kastenüberschrift „Neue oder zunehmende Beschwerden“, Ä12 Testung als Teil der Therapieplanung, Ä3-Begründung ohne Pilzhinweis. Kräuter Ä5 + Quellen-JSON: Asthma nur als durch Salicylat/NSAR ausgelöstes.
+- ACG-Volltext-PDF selbst abgerufen 20:32:43Z, Beleg + Grenzen im Quellenpaket.
+- Kombinationstest sequentiell 20/20 PASS (eine vitest-RPC-Timeoutmeldung durch lange synchrone Schleife, kein Testfehler); übrige Infothek-Tests 114/114.
+- Offen: Akupunktur-Cortisol-Suchlink (Prüfpunkt), Pils (ASS), 11 weitere HTML-Vergleiche.
