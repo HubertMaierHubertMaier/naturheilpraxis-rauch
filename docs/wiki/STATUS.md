@@ -159,3 +159,9 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Quellen: docs/wiki/infothek-quellen-paket3-2026-10-07.json (JAMA 403 → nicht selbst gelesen).
 - Tests: Volltext leer=Original/alle=Entwurf 8/8, Kombinationen 28/28, Registry 15 Vergleiche.
 - Restliste: 7 HTML-Vergleiche fehlen noch.
+
+## 2026-10-07 ca. 21:00Z Fix Einzelentscheidungen (SIBO Ä6/Ä4)
+- Optionaler Zielselektor je Vorschlag (`targetSelector`, nicht global); SIBO Ä6 auf `strong` begrenzt – übernimmt Ä4 nicht mehr mit.
+- composeWorkingVersion meldet Überlappung eines Austauschbereichs (inkl. withPrev/withNext) mit einem unabhängigen, nicht übernommenen Vorschlag als Konflikt und wendet ihn nicht an; supersedes-Paare ausgenommen.
+- Tests: SIBO 6/4/4+6, Einzelübernahme aller Vergleiche ohne Konflikt, KIM 33→17/35→8/36→5.
+- Quellenpaket 2: veralteter IMO-Prüfpunkt entfernt (Volltextbeleg vorhanden).

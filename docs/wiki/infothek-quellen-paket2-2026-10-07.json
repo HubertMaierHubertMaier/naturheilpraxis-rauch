@@ -9,7 +9,7 @@
     {
       "url": "https://pubmed.ncbi.nlm.nih.gov/32023228/",
       "beleg": "ACG-Leitlinie SIBO 2020 (Abstract via NCBI E-Utilities): SIBO = übermäßige Bakterienzahl im Dünndarm mit GI-Symptomen; GRADE + Expertenkonsens",
-      "grenze": "Nur Abstract gelesen (PubMed-Seite per Captcha gesperrt); IMO-Begriff aus Volltext nicht selbst verifiziert"
+      "grenze": "Nur Abstract gelesen (PubMed-Seite per Captcha gesperrt); IMO-Begriff aus Volltext nicht selbst verifiziert – Volltextbeleg separat gespeichert (ACG-PDF, Eintrag unten); IMO-Prüfpunkt erledigt."
     },
     {
       "url": "https://www.nice.org.uk/guidance/ng206/chapter/Recommendations",
@@ -44,8 +44,7 @@
     "sibo_methan_pdf": "Biofilmloser morgens, Allicin bis ca. 2500 mg taeglich, Oreganooel, Berberin, Neem, Altratin, Ingwer- plus Artischockenextrakt mit je ca. 500 mg taeglich vor dem Schlafengehen sowie sporenbasierte Bakterien; normale Probiotika im PDF ausgeschlossen (nur intern, nicht öffentlich)"
   },
   "offen": [
-    "Akupunktur-Cortisol-Satz im Burnout-Artikel nur mit Suchlink belegt",
-    "SIBO-IMO-Begriff: Leitlinienvolltext lesen"
+    "Akupunktur-Cortisol-Satz im Burnout-Artikel nur mit Suchlink belegt"
   ],
   "hinweis_zugriff": "docs/wiki liegt im Repository und ist kein Beleg für Zugriffsschutz; Dosierungen dort nur als Quellenprüfdokumentation."
 }
