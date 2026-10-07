@@ -1,5 +1,7 @@
 import { fetchAllPages } from "@/lib/wikiFetchAll";
 import { ArticleEvidencePanel } from "@/components/wiki/ArticleEvidencePanel";
+import { paginate } from "@/lib/wikiTaxonomy";
+const WIKI_LIST_PAGE = 25;
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Bug, Database, ExternalLink, FileSearch, Link2, Search, ShieldCheck } from "lucide-react";
@@ -358,6 +360,8 @@ export default function WikiDatenbank() {
   const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
   const [importCandidates, setImportCandidates] = useState<DisplayCandidate[]>([]);
   const [search, setSearch] = useState("");
+  const [listPage, setListPage] = useState(1);
+  const [openArticles, setOpenArticles] = useState<Record<string, boolean>>({});
   const deferredSearch = useDeferredValue(search.trim());
   const [detailedImportResults, setDetailedImportResults] = useState<DetailedImportCandidate[]>([]);
   const [importSearchLoading, setImportSearchLoading] = useState(false);
@@ -665,6 +669,16 @@ export default function WikiDatenbank() {
     ].join(" "));
     return queryTerms.every((term) => haystack.includes(term));
   });
+  const pagedEntries = paginate(filteredEntries, listPage, WIKI_LIST_PAGE);
+  const pager = filteredEntries.length > WIKI_LIST_PAGE && (
+    <nav aria-label="Seiten der Wiki-Liste" className="flex flex-wrap items-center gap-2 text-sm">
+      <Button size="sm" variant="outline" disabled={pagedEntries.page <= 1} onClick={() => setListPage(1)}>Erste</Button>
+      <Button size="sm" variant="outline" disabled={pagedEntries.page <= 1} onClick={() => setListPage(pagedEntries.page - 1)}>Zurück</Button>
+      <span data-testid="wiki-page-info">Seite {pagedEntries.page} von {pagedEntries.pages}</span>
+      <Button size="sm" variant="outline" disabled={pagedEntries.page >= pagedEntries.pages} onClick={() => setListPage(pagedEntries.page + 1)}>Weiter</Button>
+      <Button size="sm" variant="outline" disabled={pagedEntries.page >= pagedEntries.pages} onClick={() => setListPage(pagedEntries.pages)}>Letzte</Button>
+    </nav>
+  );
   const filteredProductLinks = productLinks.filter((link) => {
     if (queryTerms.length === 0) return false;
     const haystack = normalize([
@@ -800,7 +814,9 @@ export default function WikiDatenbank() {
               {!loading && !error && filteredEntries.length === 0 && (
                 <Card><CardContent className="p-8 text-center text-muted-foreground">Keine strukturierten Wiki-Eintraege fuer diese Suche vorhanden.</CardContent></Card>
               )}
-              {filteredEntries.map((entry) => {
+              {!loading && !error && <p data-testid="wiki-count" className="text-sm text-muted-foreground">{hasQuery ? `${filteredEntries.length} Treffer von ${entries.length} Artikeln (aktuelle Revision)` : `${entries.length} Artikel (aktuelle Revision)`} · angezeigt {filteredEntries.length ? `${(pagedEntries.page - 1) * WIKI_LIST_PAGE + 1}–${(pagedEntries.page - 1) * WIKI_LIST_PAGE + pagedEntries.items.length}` : "0"} · Suche/Filter über den vollständig geladenen Bestand</p>}
+              {pager}
+              {pagedEntries.items.map((entry) => {
                 const sources = sourceCitations(entry.source_citations);
                 return (
                   <Card key={entry.id} className="min-w-0">
@@ -820,7 +836,7 @@ export default function WikiDatenbank() {
                         <Badge variant="outline">Rechte: {entry.rights_status || "unbekannt"}</Badge>
                         {entry.patient_facing_allowed === false && <Badge variant="outline">Nicht patientengerichtet</Badge>}
                       </div>
-                      <div className="mt-4 min-w-0"><WikiSourceContent content={entry.content || ""} /></div>
+                      <div className="mt-4 min-w-0">{openArticles[entry.id] ? <><Button size="sm" variant="outline" onClick={() => setOpenArticles((c) => ({ ...c, [entry.id]: false }))}>Volltext schließen</Button><div className="mt-3"><WikiSourceContent content={entry.content || ""} /></div></> : <Button size="sm" variant="outline" onClick={() => setOpenArticles((c) => ({ ...c, [entry.id]: true }))}>Volltext öffnen ({(entry.content || "").length.toLocaleString("de-DE")} Zeichen)</Button>}</div>
                       {(entry.tags || []).length > 0 && <div className="mt-4 flex flex-wrap gap-2">{entry.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
                       {(entry.therapeutic_topics || []).length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Themen</p><div className="mt-2 flex flex-wrap gap-2">{entry.therapeutic_topics.map((topic) => <Badge key={topic} variant="outline">{topic}</Badge>)}</div></div>}
                       {sources.length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quellen</p><div className="mt-2 flex flex-wrap gap-3 text-sm">{sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">{source.label}<ExternalLink className="h-3.5 w-3.5" /></a>)}</div></div>}
@@ -832,6 +848,7 @@ export default function WikiDatenbank() {
                   </Card>
                 );
               })}
+              {pager}
             </section>
 
             {hasQuery && filteredProductLinks.length > 0 && (
