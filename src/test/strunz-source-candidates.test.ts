@@ -119,3 +119,25 @@ describe("Strunz Listeneinträge Teil 5 (97–120)", () => {
     expect(a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen").length).toBe(13);
   });
 });
+
+describe("Strunz Listeneinträge Teil 6 (121–136)", () => {
+  const a = STRUNZ_AREA as any;
+  it("Reihenfolge, Fundstellen, Hersteller offen, alle 136 abgedeckt", () => {
+    const r = a.produktquellen_teil6.ergebnisse;
+    const nv = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung !== "variante_offen");
+    expect(nv.length).toBe(136);
+    expect(r.map((x: any) => x.url)).toEqual(nv.slice(120, 136).map((x: any) => x.url));
+    r.forEach((x: any) => {
+      expect(x.http).toBe(200);
+      expect(x.hersteller).toBeNull();
+      if (x.ean.length) expect(x.ean_fundstelle.wortlaut).toContain(x.ean[0]); else expect(x.ean_fundstelle).toBe("nicht angegeben");
+      if (x.marke_laut_seite) expect(x.marke_fundstelle.wortlaut.toLowerCase()).toContain(x.marke_laut_seite.toLowerCase());
+      else expect(x.marke_status).toContain("offen");
+    });
+    expect(r.filter((x: any) => x.ean.length).length).toBe(8);
+    const all = [1, 2, 3, 4, 5, 6].flatMap((i) => a[`produktquellen_teil${i}`].ergebnisse.map((x: any) => x.url));
+    expect(new Set(all).size).toBe(136);
+    expect(all.sort()).toEqual(nv.map((x: any) => x.url).sort());
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+  });
+});
