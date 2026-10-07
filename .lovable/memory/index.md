@@ -11,12 +11,14 @@
 - **Practitioner Equality Language**: NEVER default to "bitte ärztlich abklären". Use "Heilpraktiker oder Arzt" gleichrangig.
 - **Email Routing**: Split transmission (Anamnese vs. IAA). PHP relay v3.6.
 - **Hypnose-TTS-Standard**: Edge-TTS, Stimme `de-DE-FlorianMultilingualNeural`, Rate `-50%`, Pitch `±0 Hz`.
+- **Praxis-Telefon**: 0821-2621462 / tel:+498212621462 (bestätigt). Nie 0821 2177 2670 o. Ä.
 - **Vite-Fallbacks**: Hardcoded fallback values in `vite.config.ts` for Supabase URL/Key/Project-ID to prevent production crashes.
 - **HTML Infothek**: Produktionsstand 21.07.2026, App-Code `f26dd55` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, sitzungsgebundener 2FA auch für Admins, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer. Der ursprüngliche HWS-Therapiesatz ist wiederhergestellt; Reveal-Navigation, Bildpfade und Textzoom werden im geschützten Frame technisch korrigiert.
 
 - **Infothek-Ton (alle bestehenden UND neuen HTMLs, ab Erstellung)**: Praxiswerbung + Info + SEO in HWG/UWG-Grenzen; keine Heilversprechen, keine Pauschal-Disclaimer. Siehe html-korrektur-vergleich.
 
 ## Memories
+- [Praxis-Kontakt](mem://project/practice-contact) — Bestätigte Telefonnummer, falsche Varianten
 - [Wiki-Budget](mem://preferences/wiki-budget) — max 250 Credits ab 301,51, Reserve ≥50 (Stopp ≤51,51); Paketberichte; keine Writes/Publish
 - [Wikidatenbank-Status](mem://project/wiki-datenbank-status) — HTML-Pause, Alternativen-Ersetzung, Backup-Patch offen, Belege nur Entwürfe
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
