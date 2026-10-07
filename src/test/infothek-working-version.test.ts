@@ -19,6 +19,11 @@ it("applies every proposal and matches the draft text when all are accepted", ()
   // Superseded alternative (Ä17 replaced by Ä33) is not part of the final text.
   const d = new DOMParser().parseFromString(draft, "text/html");
   [...d.querySelectorAll("h3")].find((h) => h.textContent?.includes("regulierend auf dieses Feld einzuwirken"))?.remove();
+  // Ä8 → Ä35, Ä5 → Ä36: superseded draft elements are not part of the final text.
+  const p8 = [...d.querySelectorAll("p")].find((p) => p.textContent?.includes("ein Nachweis einer therapeutischen Wirkung ist sie nicht"));
+  p8?.previousElementSibling?.remove(); p8?.remove();
+  const l5 = [...d.querySelectorAll("li")].find((l) => l.textContent?.includes("aus E = mc² selbst folgt keine Wirkung"));
+  l5?.previousElementSibling?.remove(); l5?.remove();
   expect(text(html)).toBe(text(`<!DOCTYPE html>${d.documentElement.outerHTML}`));
   const doc = new DOMParser().parseFromString(html, "text/html");
   expect(doc.title).toBe(new DOMParser().parseFromString(draft, "text/html").title);
