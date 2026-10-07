@@ -74,3 +74,19 @@ export function buildProgressReport(opts: {
     ``,
   ].join("\n");
 }
+
+/** Derived, read-only projection of stored decisions. Never mutates decisions. */
+export function progressProjection(changes: ComparisonChange[], d: Decisions, failed: number[] = []) {
+  const ids = new Set(changes.map((c) => c.id));
+  const replaced = changes.filter((c) => replacedBy(c, changes, d) !== undefined).map((c) => c.id);
+  const rep = new Set(replaced);
+  const accepted = changes.filter((c) => d.accepted.has(c.id) && !rep.has(c.id)).map((c) => c.id);
+  const kept = changes.filter((c) => d.kept.has(c.id) && !d.accepted.has(c.id) && !rep.has(c.id)).map((c) => c.id);
+  const open = undecided(changes, d).map((c) => c.id);
+  const optionalOpen = changes.filter((c) => open.includes(c.id) && isOptionalAlternative(c, d)).map((c) => c.id);
+  const fail = new Set(failed);
+  const appliedFailed = accepted.filter((id) => fail.has(id));
+  const applied = accepted.filter((id) => !fail.has(id));
+  const unknownStored = [...d.accepted, ...d.kept].filter((id) => !ids.has(id));
+  return { total: changes.length, accepted, kept, replaced, open, optionalOpen, applied, appliedFailed, unknownStored };
+}
