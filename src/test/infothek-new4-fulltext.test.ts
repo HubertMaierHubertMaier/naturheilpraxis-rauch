@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
 import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 const norm = (h: string) => (new DOMParser().parseFromString(h, "text/html").body.textContent ?? "").replace(/\s+/g, "");
-const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung"];
+const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "dankbarkeit-alltag", "umwelt-alltag-gesundheit", "fit-gesund-herbst-winter-7-minuten", "fit-gesund-herbst-winter-infothek"];
 describe("Vier Vergleiche: keine Übernahme = Original, alle = vollständiger Entwurf", () => {
   for (const slug of SLUGS) it(slug, () => {
     const c = COMPARISON_CONFIGS.find((x) => x.slug === slug)!;

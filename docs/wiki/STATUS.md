@@ -152,3 +152,10 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - ACG-Volltext-PDF selbst abgerufen 20:32:43Z, Beleg + Grenzen im Quellenpaket.
 - Kombinationstest sequentiell 20/20 PASS (eine vitest-RPC-Timeoutmeldung durch lange synchrone Schleife, kein Testfehler); übrige Infothek-Tests 114/114.
 - Offen: Akupunktur-Cortisol-Suchlink (Prüfpunkt), Pils (ASS), 11 weitere HTML-Vergleiche.
+
+## 2026-10-07 ca. 20:50Z Infothek-HTML-Paket 3 (vier Vergleiche)
+- Neu: dankbarkeit-alltag (1), umwelt-alltag-gesundheit (9), fit-gesund-herbst-winter-7-minuten (2), fit-gesund-herbst-winter-infothek (1) Vorschläge, alle offen.
+- Herbst/Winter: linke Seite aus interner Datei (nicht ausgeliefert), bleiben internal/pending/noindex; noindex ist kein Zugriffsschutz-Beleg.
+- Quellen: docs/wiki/infothek-quellen-paket3-2026-10-07.json (JAMA 403 → nicht selbst gelesen).
+- Tests: Volltext leer=Original/alle=Entwurf 8/8, Kombinationen 28/28, Registry 15 Vergleiche.
+- Restliste: 7 HTML-Vergleiche fehlen noch.
