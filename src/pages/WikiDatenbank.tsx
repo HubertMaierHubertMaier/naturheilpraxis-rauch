@@ -362,6 +362,7 @@ export default function WikiDatenbank() {
   const [search, setSearch] = useState("");
   const [listPage, setListPage] = useState(1);
   const [openArticles, setOpenArticles] = useState<Record<string, boolean>>({});
+  useEffect(() => { setListPage(1); }, [deferredSearch]);
   const deferredSearch = useDeferredValue(search.trim());
   const [detailedImportResults, setDetailedImportResults] = useState<DetailedImportCandidate[]>([]);
   const [importSearchLoading, setImportSearchLoading] = useState(false);
@@ -763,7 +764,7 @@ export default function WikiDatenbank() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onChange={(event) => { setSearch(event.target.value); setListPage(1); }}
                     placeholder="Einzelbegriff oder kombiniert, z. B. Klinghardt, Covid oder Buhner, Banderol ..."
                     className="pl-9"
                     aria-label="WikiDatenbank durchsuchen"
