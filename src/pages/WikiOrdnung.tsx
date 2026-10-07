@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, productsWithSubstance, rxLabel, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -24,7 +24,7 @@ const st = (s: string) => (s === "draft" ? "Entwurf, nicht geprüft" : s === "im
 const all = (table: string, cols: string, order: string[]) =>
   fetchAllPages((f, t) => order.reduce((q, c) => q.order(c, { ascending: true }), db.from(table).select(cols)).range(f, t));
 
-async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
+async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacyText: Map<string, Set<string>>; pharmacyTextError: boolean }> {
   const [e, er, cl, rel, a, ar, s, sr] = await Promise.all([
     all("kb_entities", "id, entity_type_code, current_revision_id", ["id"]),
     all("kb_entity_revisions", "id, entity_id, display_name, review_status, original_kind:metadata->candidate_snapshot->proposed_data->>original_kind, prescription_status:metadata->candidate_snapshot->proposed_data->>prescription_status", ["id"]),
@@ -44,13 +44,20 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
     entities: e.data as never, entityRevisions: er.data as never, coreLinks: cl.data as never, relations: rel.data as never,
     articles: a.data as never, articleRevisions: ar.data as never, sources: s.data as never, sourceRevisions: sr.data as never,
   });
-  return { model, counts };
+  // Named pharmacies in article text (server-side word match, then name extraction) – text hits only.
+  const ph = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("id, article_id, content_markdown").filter("content_markdown", "imatch", "apotheke").order("id", { ascending: true }).range(f, t));
+  const pharmacyText = new Map<string, Set<string>>();
+  if (!ph.error) for (const r of ph.data as { id: string; article_id: string; content_markdown: string }[]) {
+    if (model.articles.get(r.article_id)?.revisionId !== r.id) continue;
+    for (const n of pharmacyNamesInText(r.content_markdown ?? "")) { if (!pharmacyText.has(n)) pharmacyText.set(n, new Set()); pharmacyText.get(n)!.add(r.article_id); }
+  }
+  return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "actors" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "actors" | "pharmacies" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", pharmacies: "Apotheken", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -69,7 +76,7 @@ const LinkBadge = ({ kind }: { kind: "import" | "field" | "text" }) => (
 export default function WikiOrdnung() {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
   const [params, setParams] = useSearchParams();
-  const [data, setData] = useState<{ model: WikiModel; counts: Counts } | null>(null);
+  const [data, setData] = useState<Awaited<ReturnType<typeof loadModel>> | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [fullText, setFullText] = useState<Record<string, string[] | "loading" | "error">>({});
   const searchFullText = async (a: Actor) => {
@@ -135,6 +142,7 @@ export default function WikiOrdnung() {
     const tiles: Array<[View, string, number]> = [
       ["actors", VIEW_LABEL.actors, m.actors.size],
       ...(["products", "pathogens", "symptoms", "diseases"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ["pharmacies", "Apotheken", [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
       ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
       ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
@@ -166,7 +174,7 @@ export default function WikiOrdnung() {
       </>
     );
   } else if (view === "actors" && !id) {
-    const roles = ["Von Peter benannt", "Hersteller", "Herausgeber", "Autor", "Ordner"];
+    const roles = ["Von Peter benannt", "Apotheke", "Hersteller", "Herausgeber", "Autor", "Ordner"];
     const list = actorsSorted.filter((a) => (!q || matchesAll(a.name, q)) && (!role || a.roles.has(role as never)));
     const pg = paginate(list, page, PAGE);
     body = (
@@ -225,6 +233,18 @@ export default function WikiOrdnung() {
         <Input className="mb-3 max-w-xs" placeholder="Suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
         <ul className="space-y-1 text-sm">{pg.items.map((x) => x.k === "e" ? <li key={x.id}>Begriff: {entButton(x.id)}</li> : <li key={x.id}>Artikel: {x.t}</li>)}</ul>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+      </>
+    );
+  } else if (view === "pharmacies") {
+    const structured = [...m.actors.values()].filter((a) => a.roles.has("Apotheke"));
+    const textOnly = [...data!.pharmacyText.entries()].filter(([n]) => !structured.some((a) => norm(a.name) === norm(n))).sort((x, y) => x[0].localeCompare(y[0], "de"));
+    body = (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">Apotheke ist eine eigene Rolle, getrennt von Hersteller und Autor. Mehrere Rollen erscheinen nur, wenn die Daten sie belegen. Apotheken nur als Text-Erwähnung sind als „Treffer im Quelltext" gekennzeichnet.</p>
+        <p className="font-semibold">Im Datensatz erfasst ({structured.length})</p>
+        <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{structured.map((a) => <button key={a.key} onClick={() => set({ v: "actors", id: a.key })} className="rounded border-2 border-primary/50 bg-card p-3 text-left text-sm hover:border-primary"><span className="font-semibold">{a.name}</span><br /><span className="text-xs text-muted-foreground">{[...a.roles].join(", ")} · {actorCount(a)} Zuordnungen</span>{data!.pharmacyText.get(a.name) && <span className="text-xs text-muted-foreground"> · {data!.pharmacyText.get(a.name)!.size} Artikel nennen sie im Text</span>}</button>)}</div>
+        <p className="font-semibold">Nur im Artikeltext genannt ({textOnly.length}) <LinkBadge kind="text" /></p>
+        {data!.pharmacyTextError ? <p className="text-destructive text-sm">Volltextsuche nicht möglich.</p> : <ul className="space-y-2 text-sm">{textOnly.map(([n, ids]) => <li key={n}><span className="font-semibold">{n}</span> – kein eigener Datensatz, keine Produktverknüpfung<ul className="mt-1 space-y-1 pl-4">{[...ids].map((x) => artLine(x, "text"))}</ul></li>)}</ul>}
       </>
     );
   } else if (view === "drugs" && !id) {

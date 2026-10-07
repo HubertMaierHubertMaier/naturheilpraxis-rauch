@@ -53,3 +53,9 @@ Grenzen: Heel-/Pascoe-Mittel existieren im Bestand nur als Artikeltexte (Heel 28
 - Bestand 07.10.2026: 0 strukturierte Arzneimittel (kein solcher Begriffstyp, 0 PZN/ATC-Kennungen). Klinghardt: 62 interne Quellen, Mittel darin nur als Quelltext (z.B. Quellentitel nennen Erythromycin, Fluoxetin).
 - Sichtbar statt versteckt: Hinweis auf Lücke, Link zu Dr. Klinghardt, Volltextsuche in Klinghardt-Artikeln als „Treffer im Quelltext".
 - Nötig für echte Vernetzung (nicht umgesetzt, Migration/Schreibzugriff): Arzneimittel-Einträge aus Klinghardt-Quellen über Prüfvorschläge, Feld Produktart + Verschreibungsstatus mit Quelle, Verknüpfungen zu Symptom/Erkrankung/Anbieter/Quelle.
+
+## Rubrik „Apotheken" (Peter, 07.10.2026)
+- Eigene Rolle „Apotheke", getrennt von Hersteller/Autor; Mehrfachrolle nur aus Daten (Radegundis Apotheke: Herstellerbegriff + Herausgeber + Apotheke).
+- Apotheke = Name eines Akteurs enthält ein Wort „…apotheke"; generisches „Apotheke(n)" zählt nicht.
+- Im Artikeltext genannte Apotheken (Schlossapotheke Koblenz, Burgapotheke – Klinghardt-Covid-Artikel) nur als „Treffer im Quelltext", ohne Datensatz/Produktverknüpfung.
+- Bestand 07.10.2026: 1 strukturiert erfasst, 2 nur im Text. Keine Platzhalter.

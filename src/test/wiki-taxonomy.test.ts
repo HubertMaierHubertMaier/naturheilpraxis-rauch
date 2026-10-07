@@ -142,3 +142,12 @@ describe("Arzneimittel-Rubrik", () => {
     expect(rxLabel("verschreibungspflichtig")).toMatch(/verschreibungspflichtig/);
   });
 });
+
+import { isPharmacyName, pharmacyNamesInText } from "@/lib/wikiTaxonomy";
+describe("Apotheken", () => {
+  it("erkennt nur benannte Apotheken", () => {
+    expect(isPharmacyName("Radegundis Apotheke")).toBe(true);
+    expect(isPharmacyName("Apotheke")).toBe(false);
+    expect(pharmacyNamesInText("Herzmittel (Schlossapotheke Koblenz) und Spermidin (Burgapotheke). Die Natur ist die beste Apotheke. Apotheken in Deutschland")).toEqual(["Schlossapotheke Koblenz", "Burgapotheke"]);
+  });
+});
