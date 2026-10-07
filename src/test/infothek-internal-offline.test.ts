@@ -7,7 +7,7 @@ import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 
 const INTERNAL = ["fit-gesund-herbst-winter-7-minuten", "fit-gesund-herbst-winter-infothek"];
 const walk = (d: string): string[] => readdirSync(d).flatMap((f) => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : [p]; });
-const SRC = walk("src").filter((f) => /\.(ts|tsx|js|jsx)$/.test(f) && !f.includes("/test/"));
+const SRC = walk("src").filter((f) => /\.(ts|tsx|js|jsx)$/.test(f) && !/[\\/]test[\\/]/.test(f));
 const offline = JSON.parse(readFileSync("docs/infothek-offline/herbst-winter-vergleich.json", "utf8"));
 
 describe("Interne Herbst/Winter-HTMLs nicht im Browser-Code", () => {

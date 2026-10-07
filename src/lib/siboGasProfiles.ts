@@ -23,8 +23,8 @@ export const GAS_SOURCES: GasSource[] = [
   { id: "S-CHEDID-2014", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4030608/", belegart: "Primärstudie (Volltext)", kurz: "Retrospektiv, selbstgewählte Pflanzenkombination (37) vs. Rifaximin (67): negative Folgeatemtests 46 % vs. 34 %, nicht signifikant.", grenzen: "Keine bewiesene Gleichwertigkeit; Mehrstoffpräparate – keine Einzelmittel-, Gasprofil- oder Spezieswirkung ableitbar." },
   { id: "S-WISMUT-1998", url: "https://pubmed.ncbi.nlm.nih.gov/9558280/", belegart: "Primärstudie (Abstract)", kurz: "Zehn Gesunde: fäkale H₂S-Freisetzung unter Wismutsubsalicylat vermindert.", grenzen: "Kein Nachweis einer H₂S-SIBO-Heilung; nicht auf alle Wismutverbindungen übertragbar." },
   { id: "S-METHAN-RCT-2014", url: "https://pubmed.ncbi.nlm.nih.gov/24788320/", belegart: "Primärstudie (Abstract)", kurz: "31 methanpositive IBS-C: Rifaximin+Neomycin vs. Neomycin allein; Symptome besser außer Bauchschmerz.", grenzen: "Alter Methangrenzwert, kein Archaeen-Speziesnachweis, kein Allgemeinprotokoll." },
-  { id: "S-ACG", belegart: "Leitlinie (Volltext)", kurz: "ACG-Leitlinie (bereits im Quellenpaket): IMO als eigene Entität, Methanbildung durch Archaeen.", grenzen: "Einordnung, keine Empfehlung der hier gelisteten Naturstoffe." },
-  { id: "S-PRAXIS-PDF", belegart: "Praxisquelle (PDF-Liste)", kurz: "Peters bestehende PDF-Listen: Mittel diesem Profil zugeordnet.", grenzen: "Praxiszuordnung – klinische Einzelbelegprüfung offen, keine Aussage „wirkt gegen Art X“." },
+  { id: "S-ACG", url: "https://commdx.com/wp-content/uploads/2023/06/ACG_Clinical_Guideline__Small_Intestinal_Bacterial.9.pdf", belegart: "Leitlinie (Volltext)", kurz: "ACG-Leitlinie (bereits im Quellenpaket): IMO als eigene Entität, Methanbildung durch Archaeen.", grenzen: "Einordnung, keine Empfehlung der hier gelisteten Naturstoffe." },
+  { id: "S-PRAXIS-PDF", belegart: "Praxisquelle (PDF-Liste)", kurz: "Peters bestehende PDF-Listen im gespeicherten Artikel (Quellenrevisionen siehe Artikelnachweis oben): Mittel diesem Profil zugeordnet.", grenzen: "Praxiszuordnung – klinische Einzelbelegprüfung offen, keine Aussage „wirkt gegen Art X“." },
 ];
 
 const P = (id: string, profile: ProfileKey, mittel: string, pruefbedarf = "Klinische Einzelbelegprüfung offen"): GasCandidate =>
@@ -32,7 +32,7 @@ const P = (id: string, profile: ProfileKey, mittel: string, pruefbedarf = "Klini
 
 export const GAS_CANDIDATES: GasCandidate[] = [
   ...["Oregano", "Berberin", "Wermut", "Thymian", "Phellodendron"].map((x, i) => P(`H2-P${i + 1}`, "h2", x)),
-  { id: "H2-S1", profile: "h2", mittel: "Pflanzliche Mehrstoffkombination", mikroorganismen: "nicht bestimmt", ergebnis: "Folgeatemtest negativ 46 % vs. 34 % Rifaximin, nicht signifikant", sourceId: "S-CHEDID-2014", status: "kandidat", pruefbedarf: "Retrospektiv; keine Einzelmittelaussage" },
+  { id: "H2-S1", profile: "h2", mittel: "Pflanzliche Mehrstoffkombination", mikroorganismen: "nicht bestimmt", ergebnis: "Folgeatemtest negativ 46 % vs. 34 % Rifaximin, nicht signifikant", sourceId: "S-CHEDID-2014", status: "kandidat", pruefbedarf: "Gasprofilunspezifisch – keine H₂-spezifische Wirkung; retrospektiv; keine Einzelmittelaussage" },
   ...["Oregano", "Berberin", "Wismut", "Molybdän", "Zinkacetat", "Tributyrat"].map((x, i) => P(`H2S-P${i + 1}`, "h2s", x)),
   P("H2S-P7", "h2s", "L. plantarum", "Stammangabe erforderlich; Einzelbelegprüfung offen"),
   { id: "H2S-S1", profile: "h2s", mittel: "Wismutsubsalicylat", mikroorganismen: "nicht bestimmt", ergebnis: "Fäkale H₂S-Freisetzung bei Gesunden vermindert", sourceId: "S-WISMUT-1998", status: "kandidat", pruefbedarf: "Gesunde, n=10; kein SIBO-Nachweis" },
@@ -46,3 +46,18 @@ export const GAS_CANDIDATES: GasCandidate[] = [
 export const uniqueCount = (xs: { id: string }[]) => new Set(xs.map((x) => x.id)).size;
 export const byProfile = (p: ProfileKey) => GAS_CANDIDATES.filter((c) => c.profile === p);
 export const statusCounts = () => GAS_CANDIDATES.reduce<Record<CandStatus, number>>((a, c) => (a[c.status]++, a), { kandidat: 0, praxiszuordnung: 0, abgelehnt: 0, dupliziert: 0, pruefbestaetigt: 0 });
+
+/** Mikroorganismen laut Praxisquelle (gespeicherter Artikel) – Praxiszuordnung, keine Kausalliste, keine Mittelwirkung gegen Einzelspezies. */
+export const PRAXIS_KEIME: Record<ProfileKey, { gruppe: string; keime: string[] }[]> = {
+  h2: [{ gruppe: "Bakterien", keime: ["E. coli", "Enterobacter", "Clostridien", "Prevotella", "Streptococcus"] }, { gruppe: "Pilz (gesondert, nicht H₂-Profil)", keime: ["Candida"] }],
+  h2s: [{ gruppe: "Bakterien", keime: ["Desulfovibrio", "Bilophila wadsworthia", "Fusobacterium", "einige Clostridien", "Salmonellen", "eventuell Klebsiella / E. coli"] }],
+  ch4: [{ gruppe: "Archaeen (Methanbildner)", keime: ["Methanobrevibacter smithii", "Methanomassiliicoccus", "Methanosphaera stadtmanae"] }, { gruppe: "H₂-liefernde Bakterien (getrennt)", keime: ["Clostridien", "Bacteroides", "Prevotella", "Streptococcus", "E. coli", "Klebsiella", "Enterobacter"] }],
+};
+
+/** Lesender exakter Entity-Abgleich 07.10.2026 (kb_entities.canonical_key). Nur eindeutige Begriffstreffer verlinkt; keine Therapierelation. */
+export const ENTITY_MATCHES: { begriff: string; entityId: string | null; ergebnis: "eindeutig" | "offen" | "kein Treffer"; grund: string }[] = [
+  { begriff: "Candida", entityId: "7d372277-d3a3-8c0b-ee23-6fa2b33dfef7", ergebnis: "eindeutig", grund: "pathogen.candida, Typ pathogen" },
+  { begriff: "Ingwer/Artischocke", entityId: null, ergebnis: "offen", grund: "Nur seg.mean.plant.ingwer (Pflanze) und product.ingwertee (Produkt); Kombibegriff nicht identisch" },
+  { begriff: "Zinkacetat", entityId: null, ergebnis: "offen", grund: "Nur product.mannayan-zink (Produkt) und Laborparameter Zink – Stoff ≠ Produkt/Parameter" },
+];
+export const ENTITY_NO_MATCH = ["Oregano", "Berberin", "Wermut", "Thymian", "Phellodendron", "Wismut", "Molybdän", "Tributyrat", "L. plantarum", "Allicin", "Neem", "alle Bakterien-/Archaeennamen außer Candida"];

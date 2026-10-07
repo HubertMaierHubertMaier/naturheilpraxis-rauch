@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { byProfile, GAS_CANDIDATES, GAS_SOURCES, uniqueCount, statusCounts } from "@/lib/siboGasProfiles";
+import { ENTITY_MATCHES, PRAXIS_KEIME, byProfile, GAS_CANDIDATES, GAS_SOURCES, uniqueCount, statusCounts } from "@/lib/siboGasProfiles";
 
 describe("SIBO Gasprofile", () => {
   it("drei Profile mit Einträgen", () => { for (const p of ["h2", "ch4", "h2s"] as const) expect(byProfile(p).length).toBeGreaterThan(0); });
@@ -19,4 +19,16 @@ describe("SIBO Gasprofile", () => {
     expect(comp).not.toContain("content_markdown");
     expect(readFileSync("src/pages/WikiOrdnung.tsx", "utf8")).toContain("SiboGasProfiles");
   });
+  it("22 Kandidaten: 17 Praxis + 5 Quellen", () => { expect(GAS_CANDIDATES.length).toBe(22); expect(statusCounts().praxiszuordnung).toBe(17); expect(statusCounts().kandidat).toBe(5); });
+  it("Keimlisten getrennt, Archaeen nur Methan, Candida separat", () => {
+    expect(PRAXIS_KEIME.ch4[0].gruppe).toMatch(/Archaeen/);
+    expect(JSON.stringify([PRAXIS_KEIME.h2, PRAXIS_KEIME.h2s])).not.toMatch(/Methano/);
+    expect(PRAXIS_KEIME.h2.find((g) => g.keime.includes("Candida"))!.gruppe).toMatch(/Pilz/);
+  });
+  it("Revisionsfehler sichtbar, Quellen aus Revision mit Fallback", () => {
+    const c = readFileSync("src/components/wiki/SiboGasProfiles.tsx", "utf8");
+    expect(c).toContain("gas-rev-error"); expect(c).toContain("artikel-fallback"); expect(c).not.toContain("Migration nicht angewendet");
+  });
+  it("nur eindeutige Entity-Treffer verlinkt", () => { for (const e of ENTITY_MATCHES) expect(!!e.entityId).toBe(e.ergebnis === "eindeutig"); });
+  it("ACG mit Volltextlink", () => expect(GAS_SOURCES.find((s) => s.id === "S-ACG")!.url).toMatch(/^https:/));
 });
