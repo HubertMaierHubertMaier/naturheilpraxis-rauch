@@ -9,3 +9,4 @@ type: feature
 - Backup-Patch (kb_import_events entfernen) nur vorbereitet in docs/wiki/; Bereitstellung erst nach Freigabe.
 - Details/Zahlen/nächste Schritte: docs/wiki/STATUS.md.
 - Ordnungsauftrag (07.10.2026) verbindlich: Kästchen-Einstieg Firmen&Personen/Mittel/Pathogene/Symptome/Erkrankungen, Peter-Namen Nutramedix, Heel, Dr. Klinghardt, Pascoe; Rollen getrennt; Texttreffer nur als „zu prüfen“; nie Wirksamkeit aus Herstellermaterial; vollständige Listen. Details docs/wiki/STATUS.md.
+- Präzisierung: ein zentraler Mittel-Eintrag mit Mehrfachverknüpfung Anbieter/Symptom/Erkrankung (beidseitig, mit Quelle); Heel/Pascoe = Anbieter homöopathischer Komplexmittel, Einstufung nur per Produktdatensatz; Einstiege Vitamine, Mineralstoffe, Spurenelemente (Untergruppe); Stoff vs. Produkt.
