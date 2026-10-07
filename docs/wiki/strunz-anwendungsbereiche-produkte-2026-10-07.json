@@ -1068,604 +1068,1032 @@
  "produkte_ohne_karte_liste": [
   {
    "name": "BCAA + Glutamin – Apfel",
-   "url": "https://www.strunz.com/bcaa-und-glutamin-apfel.html"
+   "url": "https://www.strunz.com/bcaa-und-glutamin-apfel.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "bcaa + glutamin"
   },
   {
    "name": "BCAA + Glutamin – Zitrone",
-   "url": "https://www.strunz.com/bcaa-und-glutamin-zitrone.html"
+   "url": "https://www.strunz.com/bcaa-und-glutamin-zitrone.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "bcaa + glutamin"
   },
   {
    "name": "acerola vitamin c pulver",
-   "url": "https://www.strunz.com/for-you-acerola-vitamin-c-pulver.html"
+   "url": "https://www.strunz.com/for-you-acerola-vitamin-c-pulver.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "AHCC®",
-   "url": "https://www.strunz.com/for-you-ahcc.html"
+   "url": "https://www.strunz.com/for-you-ahcc.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "amino energy - Maracuja",
-   "url": "https://www.strunz.com/for-you-amino-energy-maracuja.html"
+   "url": "https://www.strunz.com/for-you-amino-energy-maracuja.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "amino energy"
   },
   {
    "name": "amino energy - Limette",
-   "url": "https://www.strunz.com/for-you-amino-energy.html"
+   "url": "https://www.strunz.com/for-you-amino-energy.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "amino energy"
   },
   {
    "name": "amino night – Joghurt-Kirsche",
-   "url": "https://www.strunz.com/for-you-amino-night-joghurt-kirsche.html"
+   "url": "https://www.strunz.com/for-you-amino-night-joghurt-kirsche.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "amino night"
   },
   {
    "name": "amino night  – Orange",
-   "url": "https://www.strunz.com/for-you-amino-night-orange.html"
+   "url": "https://www.strunz.com/for-you-amino-night-orange.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "amino night"
   },
   {
    "name": "apfelessig ingwer shot",
-   "url": "https://www.strunz.com/for-you-apfelessig-ingwer-shot.html"
+   "url": "https://www.strunz.com/for-you-apfelessig-ingwer-shot.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "aqua phyto balance",
-   "url": "https://www.strunz.com/for-you-aqua-phyto-balance.html"
+   "url": "https://www.strunz.com/for-you-aqua-phyto-balance.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "ashwagandha",
-   "url": "https://www.strunz.com/for-you-ashwagandha.html"
+   "url": "https://www.strunz.com/for-you-ashwagandha.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "augen vital",
-   "url": "https://www.strunz.com/for-you-augen-vital.html"
+   "url": "https://www.strunz.com/for-you-augen-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "BCAA + Glutamin - Wassermelone",
-   "url": "https://www.strunz.com/for-you-bcaa-glutamin-wassermelone.html"
+   "url": "https://www.strunz.com/for-you-bcaa-glutamin-wassermelone.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "bcaa + glutamin"
   },
   {
    "name": "bitterkräuter",
-   "url": "https://www.strunz.com/for-you-bitterkraeuter-tropfen.html"
+   "url": "https://www.strunz.com/for-you-bitterkraeuter-tropfen.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "brain vital",
-   "url": "https://www.strunz.com/for-you-brain-vital.html"
+   "url": "https://www.strunz.com/for-you-brain-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "brokkoli plus",
-   "url": "https://www.strunz.com/for-you-brokkoli-plus.html"
+   "url": "https://www.strunz.com/for-you-brokkoli-plus.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "creatin",
-   "url": "https://www.strunz.com/for-you-creatin.html"
+   "url": "https://www.strunz.com/for-you-creatin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "darmflora gummies - Ananas-Orange",
-   "url": "https://www.strunz.com/for-you-darmflora-gummies.html"
+   "url": "https://www.strunz.com/for-you-darmflora-gummies.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "darmflora komplex kids",
-   "url": "https://www.strunz.com/for-you-darmflora-komplex-kids.html"
+   "url": "https://www.strunz.com/for-you-darmflora-komplex-kids.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "darmflora komplex - Maracuja",
-   "url": "https://www.strunz.com/for-you-darmflora-komplex-maracuja.html"
+   "url": "https://www.strunz.com/for-you-darmflora-komplex-maracuja.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "darmflora komplex"
   },
   {
    "name": "darmflora komplex",
-   "url": "https://www.strunz.com/for-you-darmflora-komplex.html"
+   "url": "https://www.strunz.com/for-you-darmflora-komplex.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "darmflora komplex"
   },
   {
    "name": "darmflora probio complete",
-   "url": "https://www.strunz.com/for-you-darmflora-probio-complete.html"
+   "url": "https://www.strunz.com/for-you-darmflora-probio-complete.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "darmflora slimbiotika",
-   "url": "https://www.strunz.com/for-you-darmflora-slimbiotika.html"
+   "url": "https://www.strunz.com/for-you-darmflora-slimbiotika.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "frauen balance",
-   "url": "https://www.strunz.com/for-you-frauen-balance.html"
+   "url": "https://www.strunz.com/for-you-frauen-balance.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "GABA + B6",
-   "url": "https://www.strunz.com/for-you-gaba-b6.html"
+   "url": "https://www.strunz.com/for-you-gaba-b6.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "glucomannan",
-   "url": "https://www.strunz.com/for-you-glucomannan.html"
+   "url": "https://www.strunz.com/for-you-glucomannan.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "hair vital",
-   "url": "https://www.strunz.com/for-you-hair-vital.html"
+   "url": "https://www.strunz.com/for-you-hair-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "haut balance",
-   "url": "https://www.strunz.com/for-you-haut-balance.html"
+   "url": "https://www.strunz.com/for-you-haut-balance.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "haut vital",
-   "url": "https://www.strunz.com/for-you-haut-vital.html"
+   "url": "https://www.strunz.com/for-you-haut-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "heidelbeer plus",
-   "url": "https://www.strunz.com/for-you-heidelbeer-plus.html"
+   "url": "https://www.strunz.com/for-you-heidelbeer-plus.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "hista komplex",
-   "url": "https://www.strunz.com/for-you-hista-komplex.html"
+   "url": "https://www.strunz.com/for-you-hista-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "krillöl",
-   "url": "https://www.strunz.com/for-you-krilloel.html"
+   "url": "https://www.strunz.com/for-you-krilloel.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "longevity keto kakao",
-   "url": "https://www.strunz.com/for-you-longevity-keto-kakao.html"
+   "url": "https://www.strunz.com/for-you-longevity-keto-kakao.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "longevity komplex",
-   "url": "https://www.strunz.com/for-you-longevity-komplex.html"
+   "url": "https://www.strunz.com/for-you-longevity-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "mann balance",
-   "url": "https://www.strunz.com/for-you-mann-balance.html"
+   "url": "https://www.strunz.com/for-you-mann-balance.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "melatonin Spray",
-   "url": "https://www.strunz.com/for-you-melatonin-spray.html"
+   "url": "https://www.strunz.com/for-you-melatonin-spray.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "multi enzym komplex",
-   "url": "https://www.strunz.com/for-you-multi-enzym-komplex.html"
+   "url": "https://www.strunz.com/for-you-multi-enzym-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "multi kakao kids",
-   "url": "https://www.strunz.com/for-you-multi-kakao-kids.html"
+   "url": "https://www.strunz.com/for-you-multi-kakao-kids.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "multi natural complete",
-   "url": "https://www.strunz.com/for-you-multi-natural-complete.html"
+   "url": "https://www.strunz.com/for-you-multi-natural-complete.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "NADH",
-   "url": "https://www.strunz.com/for-you-nadh.html"
+   "url": "https://www.strunz.com/for-you-nadh.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "natural basenpulver",
-   "url": "https://www.strunz.com/for-you-natural-basenpulver.html"
+   "url": "https://www.strunz.com/for-you-natural-basenpulver.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "osteo komplex",
-   "url": "https://www.strunz.com/for-you-osteo-komplex.html"
+   "url": "https://www.strunz.com/for-you-osteo-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "phyto balance",
-   "url": "https://www.strunz.com/for-you-phyto-balance.html"
+   "url": "https://www.strunz.com/for-you-phyto-balance.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "phyto slim",
-   "url": "https://www.strunz.com/for-you-phyto-slim.html"
+   "url": "https://www.strunz.com/for-you-phyto-slim.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "präbio ballaststoffe X10 komplex",
-   "url": "https://www.strunz.com/for-you-praebio-ballaststoffe-x10-komplex.html"
+   "url": "https://www.strunz.com/for-you-praebio-ballaststoffe-x10-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "probio mundflora",
-   "url": "https://www.strunz.com/for-you-probio-mundflora.html"
+   "url": "https://www.strunz.com/for-you-probio-mundflora.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "prostata vital",
-   "url": "https://www.strunz.com/for-you-prostata-vital.html"
+   "url": "https://www.strunz.com/for-you-prostata-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "pur msm",
-   "url": "https://www.strunz.com/for-you-pur-msm.html"
+   "url": "https://www.strunz.com/for-you-pur-msm.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "quercetin",
-   "url": "https://www.strunz.com/for-you-quercetin.html"
+   "url": "https://www.strunz.com/for-you-quercetin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "resveratrol",
-   "url": "https://www.strunz.com/for-you-resveratrol.html"
+   "url": "https://www.strunz.com/for-you-resveratrol.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "sango koralle",
-   "url": "https://www.strunz.com/for-you-sango-koralle.html"
+   "url": "https://www.strunz.com/for-you-sango-koralle.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "schilddrüse vital",
-   "url": "https://www.strunz.com/for-you-schilddruese-vital.html"
+   "url": "https://www.strunz.com/for-you-schilddruese-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "schwarzer knoblauch plus",
-   "url": "https://www.strunz.com/for-you-schwarzer-knoblauch-plus.html"
+   "url": "https://www.strunz.com/for-you-schwarzer-knoblauch-plus.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "selen",
-   "url": "https://www.strunz.com/for-you-selen-fluessig.html"
+   "url": "https://www.strunz.com/for-you-selen-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "synbio smoothie bowl - Erdbeere",
-   "url": "https://www.strunz.com/for-you-smoothie-bowl-erdbeere.html"
+   "url": "https://www.strunz.com/for-you-smoothie-bowl-erdbeere.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "spirulina",
-   "url": "https://www.strunz.com/for-you-spirulina.html"
+   "url": "https://www.strunz.com/for-you-spirulina.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "spurenelemente",
-   "url": "https://www.strunz.com/for-you-spurenelemente-komplex.html"
+   "url": "https://www.strunz.com/for-you-spurenelemente-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "super greens",
-   "url": "https://www.strunz.com/for-you-super-greens.html"
+   "url": "https://www.strunz.com/for-you-super-greens.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "super reds",
-   "url": "https://www.strunz.com/for-you-super-reds.html"
+   "url": "https://www.strunz.com/for-you-super-reds.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "TMG betain",
-   "url": "https://www.strunz.com/for-you-tmg-betain.html"
+   "url": "https://www.strunz.com/for-you-tmg-betain.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vagiflora komplex",
-   "url": "https://www.strunz.com/for-you-vagiflora-komplex.html"
+   "url": "https://www.strunz.com/for-you-vagiflora-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vegan collagen",
-   "url": "https://www.strunz.com/for-you-vegan-collagen.html"
+   "url": "https://www.strunz.com/for-you-vegan-collagen.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "venen komplex",
-   "url": "https://www.strunz.com/for-you-venen-komplex.html"
+   "url": "https://www.strunz.com/for-you-venen-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vitamin C Spray",
-   "url": "https://www.strunz.com/for-you-vitamin-c-spray.html"
+   "url": "https://www.strunz.com/for-you-vitamin-c-spray.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vitamin D - Lutschtabletten - Walderdbeere",
-   "url": "https://www.strunz.com/for-you-vitamin-d-lutschtabletten.html"
+   "url": "https://www.strunz.com/for-you-vitamin-d-lutschtabletten.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin A, E, D3 & K2 kids",
-   "url": "https://www.strunz.com/for-you-vitamin-kids-fluessig.html"
+   "url": "https://www.strunz.com/for-you-vitamin-kids-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "weihrauch",
-   "url": "https://www.strunz.com/for-you-weihrauch.html"
+   "url": "https://www.strunz.com/for-you-weihrauch.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "zistrose Spray",
-   "url": "https://www.strunz.com/for-you-zistrose-spray.html"
+   "url": "https://www.strunz.com/for-you-zistrose-spray.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Acetyl-L-Carnitin",
-   "url": "https://www.strunz.com/forever-young-acetyl-l-carnitin.html"
+   "url": "https://www.strunz.com/forever-young-acetyl-l-carnitin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Active Q10 Spray",
-   "url": "https://www.strunz.com/forever-young-active-q10-spray.html"
+   "url": "https://www.strunz.com/forever-young-active-q10-spray.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Amino 10 - Limette",
-   "url": "https://www.strunz.com/forever-young-amino-10.html"
+   "url": "https://www.strunz.com/forever-young-amino-10.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Amino 11 oblong",
-   "url": "https://www.strunz.com/forever-young-amino-11-oblong.html"
+   "url": "https://www.strunz.com/forever-young-amino-11-oblong.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Amino 11",
-   "url": "https://www.strunz.com/forever-young-amino-11-tabletten.html"
+   "url": "https://www.strunz.com/forever-young-amino-11-tabletten.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Amino 8",
-   "url": "https://www.strunz.com/forever-young-amino-8.html"
+   "url": "https://www.strunz.com/forever-young-amino-8.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Amino flüssig - Schwarze Johannisbeere",
-   "url": "https://www.strunz.com/forever-young-amino-fluessig.html"
+   "url": "https://www.strunz.com/forever-young-amino-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Ascorbylpalmitat",
-   "url": "https://www.strunz.com/forever-young-ascorbylpalmitat.html"
+   "url": "https://www.strunz.com/forever-young-ascorbylpalmitat.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Astaxanthin",
-   "url": "https://www.strunz.com/forever-young-astaxanthin.html"
+   "url": "https://www.strunz.com/forever-young-astaxanthin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Beta-Carotin",
-   "url": "https://www.strunz.com/forever-young-beta-carotin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-beta-carotin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Ca-AKG",
-   "url": "https://www.strunz.com/forever-young-calcium-alpha-ketoglutarat.html"
+   "url": "https://www.strunz.com/forever-young-calcium-alpha-ketoglutarat.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Eisen Vital - Granatapfel",
-   "url": "https://www.strunz.com/forever-young-eisen-vital.html"
+   "url": "https://www.strunz.com/forever-young-eisen-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Folsäure aktiv Komplex",
-   "url": "https://www.strunz.com/forever-young-folsaeure-aktiv-komplex.html"
+   "url": "https://www.strunz.com/forever-young-folsaeure-aktiv-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Geschenkgutschein",
-   "url": "https://www.strunz.com/forever-young-geschenkgutschein.html"
+   "url": "https://www.strunz.com/forever-young-geschenkgutschein.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Gluco Stabil",
-   "url": "https://www.strunz.com/forever-young-gluco-stabil.html"
+   "url": "https://www.strunz.com/forever-young-gluco-stabil.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Glucosamin + Chondroitin",
-   "url": "https://www.strunz.com/forever-young-glucosamin-chondroitin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-glucosamin-chondroitin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Glycin",
-   "url": "https://www.strunz.com/forever-young-glycin.html"
+   "url": "https://www.strunz.com/forever-young-glycin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Guarana Shot - Kirsch-Himbeere",
-   "url": "https://www.strunz.com/forever-young-guarana-shot.html"
+   "url": "https://www.strunz.com/forever-young-guarana-shot.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Hyaluronsäure",
-   "url": "https://www.strunz.com/forever-young-hyaluronsaeure-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-hyaluronsaeure-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Kollagen Skin - Kokos-Maracuja",
-   "url": "https://www.strunz.com/forever-young-kollagen-skin-komplex.html"
+   "url": "https://www.strunz.com/forever-young-kollagen-skin-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Kollagenhydrolysat",
-   "url": "https://www.strunz.com/forever-young-kollagenhydrolysat.html"
+   "url": "https://www.strunz.com/forever-young-kollagenhydrolysat.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Kupfer Caps",
-   "url": "https://www.strunz.com/forever-young-kupfer-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-kupfer-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Arginin + L-Citrullin",
-   "url": "https://www.strunz.com/forever-young-l-arginin-l-citrullin.html"
+   "url": "https://www.strunz.com/forever-young-l-arginin-l-citrullin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Carnosin",
-   "url": "https://www.strunz.com/forever-young-l-carnosin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-l-carnosin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Citrullin - Orange",
-   "url": "https://www.strunz.com/forever-young-l-citrullin.html"
+   "url": "https://www.strunz.com/forever-young-l-citrullin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Lysin",
-   "url": "https://www.strunz.com/forever-young-l-lysin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-l-lysin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Phenylalanin",
-   "url": "https://www.strunz.com/forever-young-l-phenylalanin.html"
+   "url": "https://www.strunz.com/forever-young-l-phenylalanin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Prolin",
-   "url": "https://www.strunz.com/forever-young-l-prolin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-l-prolin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Threonin",
-   "url": "https://www.strunz.com/forever-young-l-threonin.html"
+   "url": "https://www.strunz.com/forever-young-l-threonin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Tryptophan + B6",
-   "url": "https://www.strunz.com/forever-young-l-tryptophan-kapseln-b6.html"
+   "url": "https://www.strunz.com/forever-young-l-tryptophan-kapseln-b6.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Tyrosin",
-   "url": "https://www.strunz.com/forever-young-l-tyrosin.html"
+   "url": "https://www.strunz.com/forever-young-l-tyrosin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Lactoferrin",
-   "url": "https://www.strunz.com/forever-young-lactoferrin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-lactoferrin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Brain Mag",
-   "url": "https://www.strunz.com/forever-young-magnesium-l-threonat.html"
+   "url": "https://www.strunz.com/forever-young-magnesium-l-threonat.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Power Magnesium - Blutorange",
-   "url": "https://www.strunz.com/forever-young-magnesium-pulver.html"
+   "url": "https://www.strunz.com/forever-young-magnesium-pulver.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Methionin",
-   "url": "https://www.strunz.com/forever-young-methionin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-methionin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Multi Eiweiß - Käsekuchen-Mandarine",
-   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-kaesekuchen-mandarine.html"
+   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-kaesekuchen-mandarine.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "multi eiweiß"
   },
   {
    "name": "Multi Eiweiß - Vanille-Erdbeere",
-   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-vanille-erdbeere.html"
+   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-vanille-erdbeere.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "multi eiweiß"
   },
   {
    "name": "Mushroom Chai",
-   "url": "https://www.strunz.com/forever-young-mushroom-chai.html"
+   "url": "https://www.strunz.com/forever-young-mushroom-chai.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "NAC + Glycin",
-   "url": "https://www.strunz.com/forever-young-nac-glycin.html"
+   "url": "https://www.strunz.com/forever-young-nac-glycin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Nattokinase",
-   "url": "https://www.strunz.com/forever-young-nattokinase-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-nattokinase-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Omega 3",
-   "url": "https://www.strunz.com/forever-young-omega-3-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-omega-3-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "OPC + MPC Komplex",
-   "url": "https://www.strunz.com/forever-young-opc-mpc-komplex.html"
+   "url": "https://www.strunz.com/forever-young-opc-mpc-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Phytoextrakt",
-   "url": "https://www.strunz.com/forever-young-phytoextrakt.html"
+   "url": "https://www.strunz.com/forever-young-phytoextrakt.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Power Arginin - Kirsch-Orange",
-   "url": "https://www.strunz.com/forever-young-power-arginin.html"
+   "url": "https://www.strunz.com/forever-young-power-arginin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Power Hydration - Wildberry",
-   "url": "https://www.strunz.com/forever-young-power-hydration-elektrolyte-pulver.html"
+   "url": "https://www.strunz.com/forever-young-power-hydration-elektrolyte-pulver.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Propionat",
-   "url": "https://www.strunz.com/forever-young-propionat-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-propionat-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "R-Alpha-Liponsäure Bio Enhanced® RLA",
-   "url": "https://www.strunz.com/forever-young-r-alpha-liponsaeure.html"
+   "url": "https://www.strunz.com/forever-young-r-alpha-liponsaeure.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Relax Caps",
-   "url": "https://www.strunz.com/forever-young-relax-caps.html"
+   "url": "https://www.strunz.com/forever-young-relax-caps.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Schwarzkümmelöl",
-   "url": "https://www.strunz.com/forever-young-schwarzkuemmeloel-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-schwarzkuemmeloel-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Spermidin",
-   "url": "https://www.strunz.com/forever-young-spermidin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-spermidin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Taurin",
-   "url": "https://www.strunz.com/forever-young-taurin-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-taurin-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Ubiquinol",
-   "url": "https://www.strunz.com/forever-young-ubiquinol.html"
+   "url": "https://www.strunz.com/forever-young-ubiquinol.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin B12 Vital-Komplex - Lutschtabletten - Himbeere",
-   "url": "https://www.strunz.com/forever-young-vitamin-b12-lutschtabletten.html"
+   "url": "https://www.strunz.com/forever-young-vitamin-b12-lutschtabletten.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin B3",
-   "url": "https://www.strunz.com/forever-young-vitamin-b3-kapseln-niacin.html"
+   "url": "https://www.strunz.com/forever-young-vitamin-b3-kapseln-niacin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin K Komplex",
-   "url": "https://www.strunz.com/forever-young-vitamin-k1-k2-komplex.html"
+   "url": "https://www.strunz.com/forever-young-vitamin-k1-k2-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamineral Amino - Maracuja",
-   "url": "https://www.strunz.com/forever-young-vitamineral-amino-komplex.html"
+   "url": "https://www.strunz.com/forever-young-vitamineral-amino-komplex.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamineral Phyto - Kirsche",
-   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-kirsche.html"
+   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-kirsche.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "vitamineral phyto"
   },
   {
    "name": "Vitamineral Phyto - Orange-Ingwer-Curcuma",
-   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-orange-ingwer.html"
+   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-orange-ingwer.html",
+   "einordnung": "variante_offen",
+   "variantengruppe": "vitamineral phyto"
   },
   {
    "name": "Ziegenkolostrum",
-   "url": "https://www.strunz.com/forever-young-ziegenkolostrum-kapseln.html"
+   "url": "https://www.strunz.com/forever-young-ziegenkolostrum-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Zink Vital - Blutorange",
-   "url": "https://www.strunz.com/forever-young-zink-vital.html"
+   "url": "https://www.strunz.com/forever-young-zink-vital.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Zink + Vitamin C - Lutschtabletten - Limette",
-   "url": "https://www.strunz.com/forever-young-zink-vitamin-c-lutschtabletten.html"
+   "url": "https://www.strunz.com/forever-young-zink-vitamin-c-lutschtabletten.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "high curcuma",
-   "url": "https://www.strunz.com/high-curcuma.html"
+   "url": "https://www.strunz.com/high-curcuma.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Glutamin",
-   "url": "https://www.strunz.com/l-glutamin.html"
+   "url": "https://www.strunz.com/l-glutamin.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Tox",
-   "url": "https://www.strunz.com/l-tox-leber-detox-kapseln.html"
+   "url": "https://www.strunz.com/l-tox-leber-detox-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "L-Tryptophan",
-   "url": "https://www.strunz.com/l-tryptophan.html"
+   "url": "https://www.strunz.com/l-tryptophan.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthochondroplus",
-   "url": "https://www.strunz.com/orthochondroplus.html"
+   "url": "https://www.strunz.com/orthochondroplus.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthomental",
-   "url": "https://www.strunz.com/orthomental.html"
+   "url": "https://www.strunz.com/orthomental.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthoneuro",
-   "url": "https://www.strunz.com/orthoneuro.html"
+   "url": "https://www.strunz.com/orthoneuro.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthonorm f",
-   "url": "https://www.strunz.com/orthonorm-f.html"
+   "url": "https://www.strunz.com/orthonorm-f.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthonorm m",
-   "url": "https://www.strunz.com/orthonorm-m.html"
+   "url": "https://www.strunz.com/orthonorm-m.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthonorm",
-   "url": "https://www.strunz.com/orthonorm.html"
+   "url": "https://www.strunz.com/orthonorm.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthotendo",
-   "url": "https://www.strunz.com/orthotendo.html"
+   "url": "https://www.strunz.com/orthotendo.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Power Carnitin - Ananas",
-   "url": "https://www.strunz.com/power-carnitin-fluessig.html"
+   "url": "https://www.strunz.com/power-carnitin-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "präbio ballaststoffe",
-   "url": "https://www.strunz.com/praebio-ballaststoffe.html"
+   "url": "https://www.strunz.com/praebio-ballaststoffe.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vitamin A",
-   "url": "https://www.strunz.com/vitamin-a-fluessig.html"
+   "url": "https://www.strunz.com/vitamin-a-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "vitamin B12",
-   "url": "https://www.strunz.com/vitamin-b12-fluessig.html"
+   "url": "https://www.strunz.com/vitamin-b12-fluessig.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin C Depo 2er-Set",
-   "url": "https://www.strunz.com/vitamin-c-depo-2er-set.html"
+   "url": "https://www.strunz.com/vitamin-c-depo-2er-set.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamin E Tocotrienole",
-   "url": "https://www.strunz.com/vitamin-e-tocotrienole-120-kapseln.html"
+   "url": "https://www.strunz.com/vitamin-e-tocotrienole-120-kapseln.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "orthomolar Vitamincocktail",
-   "url": "https://www.strunz.com/vitamincocktail-orthomolar.html"
+   "url": "https://www.strunz.com/vitamincocktail-orthomolar.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamineral 32 2er-Set",
-   "url": "https://www.strunz.com/vitamineral32-2er-set.html"
+   "url": "https://www.strunz.com/vitamineral32-2er-set.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   },
   {
    "name": "Vitamineral 32 - Waldbeere",
-   "url": "https://www.strunz.com/vitamineral32-waldbeere.html"
+   "url": "https://www.strunz.com/vitamineral32-waldbeere.html",
+   "einordnung": "eindeutiges_produkt_ohne_karte"
   }
  ],
  "nicht_eindeutig": [],
  "offen": [
   "Produkte ohne Karte (siehe Liste) sind nicht im Wiki – keine Entität erfunden",
   "Listung ist Momentaufnahme des Abrufdatums; Herstellerseite kann sich ändern"
- ]
+ ],
+ "pagination_pruefung": {
+  "geprueft": "2026-10-07",
+  "methode": "GET Seite + ?p=2 je URL; Vergleich Shop-Gesamtzahl (amountData) mit Produktlinks Seite 1",
+  "ergebnis": "alle 21 Seiten liefern die vollständige Liste auf Seite 1; ?p=2 ohne neue Produkte",
+  "seiten": [
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+    "toolbar_gesamt": 50,
+    "produktlinks_p1": 50,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+    "toolbar_gesamt": 77,
+    "produktlinks_p1": 77,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+    "toolbar_gesamt": 27,
+    "produktlinks_p1": 27,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+    "toolbar_gesamt": 19,
+    "produktlinks_p1": 19,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+    "toolbar_gesamt": 49,
+    "produktlinks_p1": 49,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+    "toolbar_gesamt": 18,
+    "produktlinks_p1": 18,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+    "toolbar_gesamt": 33,
+    "produktlinks_p1": 33,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+    "toolbar_gesamt": 44,
+    "produktlinks_p1": 44,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+    "toolbar_gesamt": 35,
+    "produktlinks_p1": 35,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+    "toolbar_gesamt": 49,
+    "produktlinks_p1": 49,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+    "toolbar_gesamt": 50,
+    "produktlinks_p1": 50,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+    "toolbar_gesamt": 42,
+    "produktlinks_p1": 42,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+    "toolbar_gesamt": 6,
+    "produktlinks_p1": 6,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+    "toolbar_gesamt": 32,
+    "produktlinks_p1": 32,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+    "toolbar_gesamt": 26,
+    "produktlinks_p1": 26,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+    "toolbar_gesamt": 35,
+    "produktlinks_p1": 35,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+    "toolbar_gesamt": 8,
+    "produktlinks_p1": 8,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+    "toolbar_gesamt": 16,
+    "produktlinks_p1": 16,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+    "toolbar_gesamt": 41,
+    "produktlinks_p1": 41,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+    "toolbar_gesamt": 51,
+    "produktlinks_p1": 51,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   },
+   {
+    "url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+    "toolbar_gesamt": 6,
+    "produktlinks_p1": 6,
+    "neu_auf_p2": 0,
+    "artikel_text": [
+     "0020",
+     "0020",
+     "0020"
+    ],
+    "folgeseite": false
+   }
+  ],
+  "alle_vollstaendig": true
+ },
+ "ungemappt_aufteilung": {
+  "regel": "je URL eine Nennung; gleiche Basisbezeichnung mit Geschmack/Größe = Variantengruppe, nicht zusammengeführt",
+  "eindeutig": 136,
+  "varianten": 13,
+  "variantengruppen": 6
+ }
 }
