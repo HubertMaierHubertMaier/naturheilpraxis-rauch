@@ -33,6 +33,8 @@ export function toStaticPreview(html: string): string {
       border-bottom: 2px dashed #b7c3ae;
     }
     .reveal .controls, .reveal .progress, .protected-overlay { display: none !important; }
+    .reveal { font-size: 18px !important; }
+    .reveal h1 { font-size: 2.2em !important; } .reveal h2 { font-size: 1.5em !important; } .reveal h3 { font-size: 1.2em !important; }
     img { max-width: 100%; height: auto; }`;
   doc.head.appendChild(style);
   return `<!doctype html>${doc.documentElement.outerHTML}`;
@@ -45,7 +47,7 @@ function Pane({ label, html, error }: { label: string; html?: string; error?: st
       {error ? (
         <p className="p-4 text-sm text-destructive">{error}</p>
       ) : html ? (
-        <iframe title={label} srcDoc={html} sandbox="" referrerPolicy="no-referrer" className="h-[75vh] w-full flex-1 border-0 bg-background" />
+        <iframe title={label} srcDoc={html} sandbox="" referrerPolicy="no-referrer" className="h-[75vh] w-full border-0 bg-background" />
       ) : (
         <Skeleton className="m-3 h-[70vh]" />
       )}
