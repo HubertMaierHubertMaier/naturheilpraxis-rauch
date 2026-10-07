@@ -23,26 +23,26 @@ RLS: alle kb_*-Tabellen `has_role(auth.uid(),'admin')` (ALL). Bleibt unveränder
 - Neue Entitätstypen: `person`, `organization`. Rollen NICHT als Typ, sondern als Beziehung: `manufactured_by`, `offered_by` (Apotheke/Händler führt Produkt), `authored_by`, `published_by`. Damit Mehrfachrolle (Radegundis: Hersteller + Herausgeber + Apotheke) ohne Duplikat.
 - Mapping Ist → Ziel:
   - Herstellerfeld `metadata.proposed_data.manufacturer` (57× „Mannayan GmbH & Co. KG") → 1 organization + 57 `manufactured_by`.
-  - Quellen-publisher/authors → organization/person + `published_by`/`authored_by` an der **Quellen**-Entität (Quelle bleibt kb_sources; Verknüpfung über neue Tabelle kb_source_actors, s. Patch).
+  - Quellen-publisher/authors → organization/person → Rolle author/publisher in **kb_source_actors** (Quellenrevision↔Akteur, revisionsfest, Review nur über `kb_review_source_actor`). Keine Relationstypen authored_by/published_by (Quelle ist keine Entität).
   - Ordner (Buhner, Homotoxikologie, Strunz, Auerswald, Vitaplace, Sanum, Schüsslersalze, Chip Cards, Nutramedix …) → nur **Kandidaten** für Artikel↔Begriff, nicht automatisch.
   - Peter-Kästchen: Heel, Pascoe, Nutramedix, Dr. Klinghardt, Mannayan, Radegundis Apotheke, Schlossapotheke Koblenz, Burgapotheke, Dr. Strunz, Buhner, Martin Auerswald, SchnellEinfachGesund (organization, getrennt von Auerswald), Vitaplace (organization/Produktlinie, Apothekenrolle unbelegt), Bio-Diagnostik.
   - Verfahren: Homotoxikologie, Sanum-Therapie, Schüssler-Salze → therapy_method; Biodiagnostik → diagnostic_method (Name „Biodiagnostik", Alias „Bio-Diagnostik").
   - ChipCards → program (Typ bleibt); Arzneimittel → product mit Feld `product_kind` + `prescription_status` (nur mit Quelle, sonst null = unklar).
-- **Dubletten-/Synonymregeln:** normalized_name = lower + NFKD ohne Diakritika + Nicht-Alnum→Leerzeichen; Firmenzusätze (GmbH, & Co. KG, AG) nur für Abgleich entfernen, nie im Anzeigenamen. Treffer gleicher normalized_name + gleicher Typ → Merge-**Vorschlag**, nie Auto-Merge. Aliase als kb_entity_names(name_kind='alias'): Mannayan, Einfach Schnell Gesund, Viatplace, Bio-Diagnostik, Schüßler/Schüssler. Person ≠ Organisation ≠ Plattform auch bei Namensnähe (Auerswald ≠ SchnellEinfachGesund). Kennungen (PZN/ATC/GTIN) nur aus Quelle.
+- **Dubletten-/Synonymregeln:** normalized_name = lower + NFKD ohne Diakritika + Nicht-Alnum→Leerzeichen; Firmenzusätze (GmbH, & Co. KG, AG) nur für Abgleich entfernen, nie im Anzeigenamen. Treffer gleicher normalized_name + gleicher Typ → Merge-**Vorschlag**, nie Auto-Merge. Aliase nur mit erlaubten name_kind-Werten (preferred, abbreviation, scientific, trade, historical, spelling_variant): Viatplace, Bio-Diagnostik, Schüßler/Schüssler → `spelling_variant`; Mannayan (Kurzform von Mannayan GmbH & Co. KG) → `abbreviation`; „Einfach Schnell Gesund" → `spelling_variant` von SchnellEinfachGesund. UI-Label „auch geschrieben als". Person ≠ Organisation ≠ Plattform auch bei Namensnähe (Auerswald ≠ SchnellEinfachGesund). Kennungen (PZN/ATC/GTIN) nur aus Quelle.
 
 ## 2. Typisierte bidirektionale Beziehungen (Ziel 2)
 - Entität↔Entität: kb_entity_relations (gerichtet gespeichert, beidseitig abgefragt; is_symmetric für alternative_to/interacts_with). Domänen ergänzen: product→nutrient/substance/plant `contains`, product→organization `manufactured_by`/`offered_by`, product/substance→symptom/disease `indicated_for`/`may_support`, product→pathogen `targets_pathogen`.
 - „Quelle beschreibt Produkt bei Symptom" = Assertion (claim + Quelle/Fundstelle) mit Relation product→symptom; Wortlaut „laut Quelle".
-- Artikel↔Begriff: kb_article_entities (role: hauptthema | erwähnt | produkt | anbieter | symptom | erkrankung | pathogen).
+- Artikel↔Begriff: kb_article_entities (role ∈ about | mentions | recommends | warns_about | source_for). UI-Mapping: about=Hauptthema, mentions=erwähnt, recommends=„laut Artikel empfohlen", warns_about=„Warnhinweis", source_for=„Quelle für". Art des Begriffs (Produkt/Anbieter/Symptom/…) kommt aus entity_type_code, nicht aus der Rolle.
 
 ## 3. Herkunft je Beziehung (Ziel 3)
-Jede Relation → assertion → assertion_sources(source_revision_id, locator, original_quote, is_primary). Herkunft `origin_type` ∈ {import, manual, text_candidate}. Texttreffer bleiben in kb_relation_candidates (status imported_unreviewed) bis Review; UI zeigt sie weiter als „Treffer im Quelltext".
+Jede Relation → assertion → assertion_sources(source_revision_id, locator, original_quote, is_primary). Herkunft `origin_type` ∈ {human, import, parser, ai} (Kernschema). Texttreffer sind KEINE Assertion, sondern bleiben Kandidat. Texttreffer bleiben in kb_relation_candidates (status imported_unreviewed) bis Review; UI zeigt sie weiter als „Treffer im Quelltext".
 
 ## 4. Revisionen (Ziel 4)
 kb_article_entities hängt an article_revision_id. Anzeige: Zuordnung an aktueller Revision = gültig; nur an älterer Revision = „veraltet – an Rev. N belegt, zu prüfen". Neue Revision übernimmt Zuordnungen nur per Review. Quellenbeleg zeigt immer die belegende source_revision, auch wenn neuere existiert.
 
 ## 5. Widerspruch/Verneinung (Ziel 5)
-Assertion-Feld `polarity` ∈ {affirms, negates, uncertain} + `contradicts_assertion_id` (Patch). Beide Aussagen bleiben sichtbar. review_status der Quelle ≠ Fachfreigabe; „angegeben für (laut Quelle)" nie als Wirkung formulieren.
+Keine neue Spalte an kb_assertions (kein pauschales „affirms" für Altbestand; Altbestand gilt als nicht klassifiziert/prüfbedürftig). Verneinung/Einschränkung über vorhandenes `kb_assertion_sources.source_role` (refutes, qualifies; supports, mentions). Widersprüche zwischen zwei Aussagen in append-only `kb_assertion_conflicts` (contradicts|qualifies|negates), beide Aussagen bleiben. Beide Aussagen bleiben sichtbar. review_status der Quelle ≠ Fachfreigabe; „angegeben für (laut Quelle)" nie als Wirkung formulieren.
 
 ## 6. Suche/Zähler (Ziel 6)
 Weiter fetchAllPages + exact count; Zähler je Kästchen getrennt nach geprüft / ungeprüft / Kandidat. Bereiche „ohne Zuordnung" und „Kandidat ohne Review" bleiben. Serverseitige Volltextsuche (bestehend) für Kandidatenerzeugung.
@@ -51,16 +51,21 @@ Weiter fetchAllPages + exact count; Zähler je Kästchen getrennt nach geprüft 
 Firmen & Personen, Apotheken, Mannayan, Vitaplace, Heel, Pascoe, Nutramedix, Klinghardt, Strunz, Buhner, Auerswald, SchnellEinfachGesund → person/organization + Rollenrelationen. Mittel/Produkte, Arzneimittel, ChipCards, Vitamine/Mineralstoffe/Spurenelemente → product/program/nutrient + contains. Homotoxikologie, Sanum, Schüssler-Salze, Biodiagnostik → therapy_/diagnostic_method. Symptome/Erkrankungen/Pathogene → bestehende Typen, strikt getrennt.
 
 ## Phasen (je Phase Freigabe)
-1. Migration A (nur additiv, Patch `docs/wiki/vernetzung-migration-A.sql`): Typen, Relationstypen, Domänen, kb_source_actors, assertion polarity/contradicts, product_kind/prescription_status als metadata-Schlüssel (kein neues Pflichtfeld).
+1. Migration A (nur additiv, Patch `docs/wiki/vernetzung-migration-A.sql`): Typen person/organization und Relationstyp offered_by **inaktiv**, vollständiger Domänenplan als draft, kb_source_actors, kb_assertion_conflicts; product_kind/prescription_status als metadata-Schlüssel. Aktivierung erst in eigener Migration: Domäne approved + is_active=true in einer Transaktion (Constraint-Trigger prüft beim COMMIT). Offline-Testprotokoll: `docs/wiki/migration-A-testprotokoll.md`.
 2. Kandidatenerzeugung (nur kb_*_candidates, Batch mit eigener batch_id): Akteure aus Feldern, Aliase, Ordner/Text → Artikel↔Begriff-Kandidaten.
 3. Review in UI (kb_review_import_candidate_proposal) → Materialisierung in kb_entity_relations/kb_article_entities nur nach Peters Entscheidung.
 4. UI liest primär echte Relationen, Kandidaten getrennt.
 
-## Rücksetzkonzept
-- Jeder Schritt in eigenem kb_import_batches-Eintrag; Rücknahme = Batch auf „verworfen", Kandidaten bleiben als Audit (Trigger kb_protect_import_audit_row verhindern Löschung).
-- Materialisierte Relationen tragen batch_id in metadata → gezielte Rücknahme per neuer Assertion-Version (supersedes) statt DELETE.
-- Migration A rein additiv; Rückweg: neue Typen auf is_active=false.
-- Vor Phase 2/3: Backup-Export (Patch kb_import_events vorher anwenden!).
+## Rücksetzkonzept (an reale Statusregeln angepasst)
+- Importbatches: erlaubt sind nur created/processing/ready_for_review/reviewed/failed/cancelled; reviewed/failed/cancelled sind terminal, ready_for_review→cancelled ist verboten. Einen „verworfen"-Status gibt es nicht. Ein abgeschlossener Batch wird **nie** umgestellt.
+- Rücknahme = eigener, auditierbarer **Rücknahmebatch** (created→processing→ready_for_review→reviewed) mit Begründung in dessen metadata; er referenziert die zurückzunehmenden Objekte.
+- Materialisierte Entitätsrelationen: kb_entity_relations hat kein metadata-Feld. Herkunft liegt an der tragenden Assertion (`kb_assertions.metadata.import_batch_id`) und an `kb_import_core_links`. Rücknahme = neue Assertion-Version bzw. Statusübergang über den bestehenden Review-Workflow (released→withdrawn/superseded, durch kb_protect_reviewed_record erlaubt), kein DELETE.
+- kb_source_actors: Rücknahme nur über `kb_review_source_actor(id,'withdrawn',notiz)`; Ersatz als neue Zeile mit supersedes_id. Löschen nur im Entwurf.
+- Migration A rein additiv; Rückweg: neue Typen bleiben inaktiv.
+- Backup: siehe Abschnitt „Backup-Inventar".
+
+## Backup-Inventar
+`kb_source_actors` und `kb_assertion_conflicts` fehlen im festen Inventar (`src/lib/backupAreas.ts`, `supabase/functions/backup-export/index.ts`). Vorbereitet als **zusätzlicher Patch** `docs/wiki/backup-kb_source_actors.patch` (nicht angewendet; Edge-Code würde automatisch live gehen). Reihenfolge: Patch kb_import_events + dieser Patch prüfen → Probe-Export/Restore synthetisch → erst dann Befüllung (Phase 2).
 
 ## Synthetische Tests (vor jeder Phase, ohne Echtdaten)
 Fixtures mit erfundenen Namen (z.B. „Testfirma Alpha GmbH", „Teststoff X"):
@@ -74,4 +79,4 @@ Fixtures mit erfundenen Namen (z.B. „Testfirma Alpha GmbH", „Teststoff X"):
 - RLS: anon/Patient sehen 0 Zeilen.
 
 ## Wiedereinstieg HTML (gesichert, keine weitere Inhaltsarbeit)
-Vergleichsansicht „Krankheit ist messbar": Peters Stand 28/36 übernommen inkl. Ä35 (ersetzt Ä8) und Ä36 (ersetzt Ä5); Entscheidungen nur browserlokal (Fortschrittsbericht als Sicherung). Offen: Ä2, Ä3, Ä4, Ä11, Ä13, Ä31, Ä32, Ä33 + Extra-Prüfpunkte.
+Vergleichsansicht „Krankheit ist messbar": Peters Stand 28/36 übernommen inkl. Ä35 (ersetzt Ä8) und Ä36 (ersetzt Ä5); Entscheidungen nur browserlokal (Fortschrittsbericht als Sicherung). Ä3 und Ä4 sind übernommen. Roh offen: Ä2, Ä8, Ä11, Ä13, Ä31, Ä32, Ä33, Ä34; Ä8 ist durch übernommene Ä35 ersetzt, Ä5 durch Ä36 → **wirksam offen: Ä2, Ä11, Ä13, Ä31, Ä32, Ä33, Ä34** (Ä33 optionale Alternative). Alle Entscheidungen bleiben erhalten.
