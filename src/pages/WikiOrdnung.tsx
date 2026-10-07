@@ -439,7 +439,7 @@ export default function WikiOrdnung() {
       </>
     );
   } else if (view === "unassigned") {
-    const items = [...m.unassignedEntityIds.map((x) => ({ k: "e", id: x, t: m.entities.get(x)!.name })), ...m.unassignedArticleIds.map((x) => ({ k: "a", id: x, t: m.articles.get(x)!.title }))].filter((x) => !q || matchesAll(x.t, q));
+    const items = [...m.unassignedEntityIds.map((x) => ({ k: "e", id: x, t: m.entities.get(x)!.name })), ...m.unassignedArticleIds.map((x) => ({ k: "a", id: x, t: m.articles.get(x)!.title }))].filter((x) => !q || matchesAll(x.t, q)).sort((a, b) => byName(a.t, b.t));
     const pg = paginate(items, page, PAGE);
     body = (
       <>
@@ -485,7 +485,7 @@ export default function WikiOrdnung() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <WikiTile key={e.id} title={e.name} onOpen={() => set({ id: e.id })} meta={<>Typ {e.type} · {neighbours(m, e.id).length} Verknüpfungen{neighbours(m, e.id).length === 0 ? " (keine Themen/Symptome zugeordnet)" : ""}</>} />)}</div>
         {list.length === 0 && <p className="text-sm">Keine Datensätze in dieser Rubrik.</p>}
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
-        {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{textProducts.map((e) => <WikiTile key={e.id} title={e.name} meta={<>Typ {e.type}</>} onOpen={() => set({ id: e.id })} />)}</div></div>}
+        {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[...textProducts].sort((a, b) => byName(a.name, b.name)).map((e) => <WikiTile key={e.id} title={e.name} meta={<>Typ {e.type}</>} onOpen={() => set({ id: e.id })} />)}</div></div>}
         {!isM && <div className="mt-4 space-y-3 text-sm">
           <div><p className="font-semibold">Artikel im Ordner/Titel „Chip Cards" ({chipArticles.length}) <LinkBadge kind="field" /></p><RevealList items={chipArticles} render={(a) => artLine(a.id, "field")} label="Artikel" /></div>
           <div><p className="font-semibold">Weitere Programm-Datensätze ohne „ChipCard" im Namen ({otherPrograms.length}) – nicht eingeordnet, zu prüfen</p><div className="flex flex-wrap gap-3">{otherPrograms.map((e) => entButton(e.id))}</div></div>
