@@ -14,6 +14,8 @@
 - **Vite-Fallbacks**: Hardcoded fallback values in `vite.config.ts` for Supabase URL/Key/Project-ID to prevent production crashes.
 - **HTML Infothek**: Produktionsstand 21.07.2026, App-Code `f26dd55` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, sitzungsgebundener 2FA auch für Admins, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer. Der ursprüngliche HWS-Therapiesatz ist wiederhergestellt; Reveal-Navigation, Bildpfade und Textzoom werden im geschützten Frame technisch korrigiert.
 
+- **Infothek-Ton (alle HTMLs)**: positiv, einladend, sachlich; keine Heilversprechen, keine Pauschal-Disclaimer, Irreführung konkret im Kontext prüfen. Siehe html-korrektur-vergleich.
+
 ## Memories
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
 - [DSGVO Compliance](mem://compliance/dsgvo-specifics) — 10y retention, E2E encryption, explicit consent workflow
@@ -99,4 +101,4 @@
 - [Edge Function Optimization](mem://infrastructure/edge-function-resource-optimization) — RPC stripping and lazy-loading for Edge Function stability
 - [Repeated Error Policy](mem://preferences/repeated-error-policy) — Stopping patches after 2 repeated infrastructure errors
 - [HTML Infothek Delivery Status](mem://features/infothek-html-delivery-status) — Produktionsstand 17.07.2026, serverseitige Auslieferung aus patient-library/infothek
-- [HTML-Korrektur-Vergleich](mem://preferences/html-korrektur-vergleich) — Bestätigter Standard: Original links/Entwurf rechts, Randnotiz, Button „Nur Änderung ÄN übernehmen“ je Punkt, für alle weiteren HTMLs
+- [HTML-Korrektur-Vergleich](mem://preferences/html-korrektur-vergleich) — Bestätigter Standard: Original links/Entwurf rechts, Randnotiz, Button „Nur Änderung ÄN übernehmen“ je Punkt, für alle weiteren HTMLs; inkl. redaktioneller Maßstab (positiv, sachlich, HWG/UWG) für alle Infothekartikel
