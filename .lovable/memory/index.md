@@ -17,6 +17,7 @@
 - **Infothek-Ton (alle bestehenden UND neuen HTMLs, ab Erstellung)**: Praxiswerbung + Info + SEO in HWG/UWG-Grenzen; keine Heilversprechen, keine Pauschal-Disclaimer. Siehe html-korrektur-vergleich.
 
 ## Memories
+- [Wiki-Budget](mem://preferences/wiki-budget) — max 250 Credits ab 301,51, Reserve ≥50 (Stopp ≤51,51); Paketberichte; keine Writes/Publish
 - [Wikidatenbank-Status](mem://project/wiki-datenbank-status) — HTML-Pause, Alternativen-Ersetzung, Backup-Patch offen, Belege nur Entwürfe
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
 - [DSGVO Compliance](mem://compliance/dsgvo-specifics) — 10y retention, E2E encryption, explicit consent workflow
