@@ -177,8 +177,9 @@ export function buildWikiModel(i: {
 }
 
 /** Bidirectional neighbours of an entity via import relations (never via text hits). */
-export function neighbours(m: WikiModel, entityId: string) {
-  return m.relations.flatMap((r) => {
+export interface Neighbour { relation: Relation; other: Entity | undefined; direction: "out" | "in" }
+export function neighbours(m: WikiModel, entityId: string): Neighbour[] {
+  return m.relations.flatMap((r): Neighbour[] => {
     if (r.subjectId === entityId && r.objectId) return [{ relation: r, other: m.entities.get(r.objectId), direction: "out" as const }];
     if (r.objectId === entityId && r.subjectId) return [{ relation: r, other: m.entities.get(r.subjectId), direction: "in" as const }];
     return [];
