@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SiboGasProfiles } from "@/components/wiki/SiboGasProfiles";
+import { GAS_CANDIDATES } from "@/lib/siboGasProfiles";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, currentCardsOnly, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
@@ -59,10 +61,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
   return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | "klinghardt" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | "klinghardt" | "gasprofile" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", klinghardt: "Klinghardt-Navigator", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", klinghardt: "Klinghardt-Navigator", gasprofile: "3 Gasprofile (SIBO)", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -187,6 +189,7 @@ export default function WikiOrdnung() {
       ["pharmacies", "Apotheken", EXTERNAL_PHARMACIES.length + [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
       ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
       ["klinghardt", "Klinghardt-Navigator (Quellenkarten)", [...m.sources.values()].filter((s) => s.publisher === KLINGHARDT_PUBLISHER).length],
+      ["gasprofile", "3 Gasprofile (SIBO: H₂, CH₄, H₂S)", GAS_CANDIDATES.length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
       ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
       ["trace", "Spurenelemente", [...m.entities.values()].filter((e) => e.nutrient === "trace").length],
@@ -231,6 +234,8 @@ export default function WikiOrdnung() {
         </CardContent></Card>
       </>
     );
+  } else if (view === "gasprofile") {
+    body = <SiboGasProfiles />;
   } else if (view === "klinghardt") {
     const kc = kCurrent;
     const axes = (params.get("ax") ?? "").split(",").filter(Boolean) as AxisKey[];
