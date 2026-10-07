@@ -67,7 +67,7 @@ export const PETER_ACTORS: Array<{ key: string; name: string; aliases: string[] 
 ];
 
 export interface EntityIn { id: string; entity_type_code: string; current_revision_id: string | null }
-export interface EntityRevIn { id: string; entity_id: string; display_name: string; review_status: string; original_kind?: string | null; prescription_status?: string | null }
+export interface EntityRevIn { id: string; entity_id: string; display_name: string; review_status: string; original_kind?: string | null; prescription_status?: string | null; manufacturer?: string | null }
 export interface CoreLinkIn { candidate_kind: string; candidate_id: string; core_record_kind: string; core_entity_id: string | null; core_source_revision_id: string | null }
 export interface RelationIn { id: string; subject_candidate_id: string | null; object_candidate_id: string | null; proposed_relation_type_code: string | null; candidate_status: string; source_candidate_id: string | null; source_locator: string | null }
 export interface ArticleIn { id: string; current_revision_id: string | null; article_kind: string }
@@ -75,7 +75,7 @@ export interface ArticleRevIn { id: string; article_id: string; revision_no: num
 export interface SourceIn { id: string; current_revision_id: string | null }
 export interface SourceRevIn { id: string; source_id: string; revision_no: number; title: string | null; publisher: string | null; authors: string[] | null; review_status: string }
 
-export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string; nutrient?: NutrientClass; stoffart?: "Stoff" | "Produkt"; drug?: boolean; rx?: string | null }
+export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string; nutrient?: NutrientClass; stoffart?: "Stoff" | "Produkt"; drug?: boolean; rx?: string | null; manufacturerField?: string | null; chipCard?: boolean }
 export interface Relation { id: string; subjectId?: string; objectId?: string; type: string; status: string; sourceRevisionId?: string; locator?: string | null }
 export interface Article { id: string; revisionId: string; revisionNo: number; title: string; category: string; kind: string; reviewStatus: string; folders: string[] }
 export interface Actor {
@@ -114,7 +114,7 @@ export function buildWikiModel(i: {
   for (const e of i.entities) {
     const r = e.current_revision_id ? eRev.get(e.current_revision_id) : undefined;
     if (!r || r.entity_id !== e.id) { missing.entities++; continue; }
-    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status, nutrient: nutrientClass(e.entity_type_code, r.display_name), stoffart: stoffart(e.entity_type_code), drug: isDrug(e.entity_type_code, r.original_kind), rx: r.prescription_status ?? null });
+    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status, nutrient: nutrientClass(e.entity_type_code, r.display_name), stoffart: stoffart(e.entity_type_code), drug: isDrug(e.entity_type_code, r.original_kind), rx: r.prescription_status ?? null, manufacturerField: r.manufacturer?.trim() || null, chipCard: isChipCard(e.entity_type_code, r.display_name) });
   }
   const sRev = new Map(i.sourceRevisions.map((r) => [r.id, r]));
   const sources = new Map<string, SourceRevIn>();
@@ -167,6 +167,8 @@ export function buildWikiModel(i: {
     if (s.publisher?.trim()) { const a = actor(keyFor(s.publisher), s.publisher.trim()); a.roles.add("Herausgeber"); a.sourceRevisionIds.add(s.id); }
     for (const au of s.authors ?? []) if (au?.trim()) { const a = actor(keyFor(au), au.trim()); a.roles.add("Autor"); a.sourceRevisionIds.add(s.id); }
   }
+  // Manufacturer from the stored product field (exact string, e.g. "Mannayan GmbH & Co. KG").
+  for (const e of entities.values()) if (e.manufacturerField) { const a = actor(keyFor(e.manufacturerField), e.manufacturerField); a.roles.add("Hersteller"); a.entityIds.add(e.id); }
   // Pharmacy role: only when the stored actor name itself is a pharmacy name (data field). Other roles stay (multi-role).
   for (const a of actors.values()) if (isPharmacyName(a.name)) a.roles.add("Apotheke");
   // Products manufactured_by an actor's manufacturer entity (import link).
@@ -210,6 +212,10 @@ export function buildWikiModel(i: {
     unassignedEntityIds: [...entities.keys()].filter((id) => !related.has(id) && !articleTextEntities.has(id)),
   };
 }
+
+/** ChipCard only if a stored program record carries "ChipCard"/"Chipcard"/"Chip" in its own name. Never a drug or confirmed treatment. */
+export const isChipCard = (type: string, name: string) => type === "program" && /chip[ -]?card|\bchip\b|-chip\b/i.test(name);
+export const MANNAYAN_ALIAS = "mannayan";
 
 /** A name is a pharmacy name if one of its words is "...apotheke" (e.g. "Radegundis Apotheke", "Burgapotheke"). Generic "Apotheke(n)" alone is not a name. */
 export const isPharmacyName = (name: string) => {

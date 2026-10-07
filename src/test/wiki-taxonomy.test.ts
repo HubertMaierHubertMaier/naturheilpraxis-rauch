@@ -151,3 +151,14 @@ describe("Apotheken", () => {
     expect(pharmacyNamesInText("Herzmittel (Schlossapotheke Koblenz) und Spermidin (Burgapotheke). Die Natur ist die beste Apotheke. Apotheken in Deutschland")).toEqual(["Schlossapotheke Koblenz", "Burgapotheke"]);
   });
 });
+
+import { isChipCard } from "@/lib/wikiTaxonomy";
+describe("ChipCards", () => {
+  it("nur Programm-Datensätze mit ChipCard/Chip im Namen", () => {
+    expect(isChipCard("program", "HNO-ChipCard")).toBe(true);
+    expect(isChipCard("program", "Diamond Shield Zapper Chipcard Md - Müde")).toBe(true);
+    expect(isChipCard("program", "CAN (Candida-Chip)")).toBe(true);
+    expect(isChipCard("program", "DTX-Card")).toBe(false);
+    expect(isChipCard("product", "ChipCard LY")).toBe(false);
+  });
+});
