@@ -115,6 +115,7 @@ const App = () => (
               <Route path="/wikidatenbank/ordnung" element={<WikiOrdnung />} />
               <Route path="/therapie-kandidaten" element={<TherapieKandidaten />} />
               <Route path="/admin/infothek-vergleich/krankheit-ist-messbar" element={<InfothekHtmlVergleich />} />
+              <Route path="/admin/infothek-vergleich/:slug" element={<InfothekHtmlVergleich />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />

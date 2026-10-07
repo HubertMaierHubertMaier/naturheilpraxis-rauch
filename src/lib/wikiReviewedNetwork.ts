@@ -7,10 +7,11 @@
 import { norm } from "@/lib/wikiTaxonomy";
 import type { DryRun } from "@/lib/wikiNetworkDryRun";
 
-export type ActorCategory = "person" | "hersteller" | "anbieter" | "apotheke" | "plattform" | "herausgeber_institution" | "kein_akteur";
+export type ActorCategory = "person" | "hersteller" | "anbieter" | "apotheke" | "plattform" | "herausgeber_institution" | "kein_akteur" | "zusammengesetzt_ungeklaert";
 export const CATEGORY_LABEL: Record<ActorCategory, string> = {
   person: "Person", hersteller: "Hersteller", anbieter: "Anbieter", apotheke: "Apotheke", plattform: "Plattform",
   herausgeber_institution: "Herausgeber (Verlag/Behörde/Institution)", kein_akteur: "Kein Akteur",
+  zusammengesetzt_ungeklaert: "Zusammengesetzte Angabe – ungeklärt",
 };
 export type Certainty = "sicher" | "wahrscheinlich" | "unsicher";
 
@@ -21,6 +22,12 @@ export interface ActorReview {
 }
 
 const r = (name: string, category: ActorCategory, certainty: Certainty, reason: string, linkedTo?: ActorReview["linkedTo"]): ActorReview => ({ name, category, certainty, reason, linkedTo });
+
+/** Aus zusammengesetzten Angaben abgeleitete, getrennte Kandidaten (nicht in den 34 Probelauf-Akteuren). */
+export const SPLIT_CANDIDATES = [
+  { from: "PubMed / Clinical and Experimental Dental Research", name: "PubMed", category: "plattform" as ActorCategory, certainty: "wahrscheinlich" as Certainty, fundstelle: "Herausgeberfeld der Quellenrevision 6399335a… (Teil vor „/“)" },
+  { from: "PubMed / Clinical and Experimental Dental Research", name: "Clinical and Experimental Dental Research", category: "herausgeber_institution" as ActorCategory, certainty: "wahrscheinlich" as Certainty, fundstelle: "Herausgeberfeld der Quellenrevision 6399335a… (Teil nach „/“); Zeitschrift, Verlag nicht im Datensatz" },
+];
 
 export const ACTOR_REVIEWS: ActorReview[] = [
   // Personen
@@ -47,7 +54,7 @@ export const ACTOR_REVIEWS: ActorReview[] = [
   r("Amazon", "plattform", "sicher", "Handelsplattform („Bezugsquellenangabe Amazon“) – kein Hersteller."),
   r("DocCheck", "plattform", "sicher", "Fachportal (DocCheck Flexikon)."),
   r("Google Patents", "plattform", "sicher", "Patentdatenbank (WO2016074203A1) – Anmelder nicht erfasst."),
-  r("PubMed / Clinical and Experimental Dental Research", "plattform", "sicher", "Literaturdatenbank PubMed + Fachjournal; Journal-Verlag nicht getrennt erfasst."),
+  r("PubMed / Clinical and Experimental Dental Research", "zusammengesetzt_ungeklaert", "unsicher", "Herausgeberfeld nennt zwei verschiedene Entitäten: PubMed (Literaturdatenbank, Fundort) und Clinical and Experimental Dental Research (Fachzeitschrift). Nicht als ein Akteur führen; getrennte Kandidaten unten, Verlag der Zeitschrift nicht im Datensatz.", { name: "PubMed | Clinical and Experimental Dental Research", kind: "merge_hinweis_unbelegt", fundstelle: "Quellenrevision 6399335a-b4f2-2938-7e42-05ac2699d2f0, Herausgeberfeld „PubMed / Clinical and Experimental Dental Research“" }),
   r("dr-kirkamm.de", "plattform", "sicher", "Website (Domain) – nicht die Person.", { name: "Dr. med. Ralf Kirkamm", kind: "website_von", fundstelle: "Quellenrevision 30f76a14…: Herausgeber dr-kirkamm.de + Autor Dr. med. Ralf Kirkamm, Titel „Dr. med. Ralf Kirkamm: SIBO …“" }),
   // Herausgeber/Institutionen (außerhalb der fünf Rollen, keine Hersteller)
   r("National Health Service, United Kingdom", "herausgeber_institution", "sicher", "Staatlicher Gesundheitsdienst (Herausgeber)."),

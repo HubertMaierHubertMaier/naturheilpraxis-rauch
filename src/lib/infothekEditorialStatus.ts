@@ -2,7 +2,8 @@
 export type EditorialState = "nicht begonnen" | "in Prüfung" | "redaktionell abgeschlossen";
 export interface EditorialEntry { file: string; title: string; visibility: string; reviewStatus: string; indexable: boolean; state: EditorialState; comparePath?: string; openTopics: string[] }
 export const EDITORIAL_STATUS: EditorialEntry[] = [
-  { file: "allergiebehandlung.html", title: "Allergiebehandlung in der Naturheilpraxis | Heilpraktiker Rauch Augsburg", visibility: "patient", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
+  { file: "drafts/kieferostitis (neu)", title: "Kieferostitis verstehen: Kieferknochen, Entzündung und Erreger", visibility: "Entwurf", reviewStatus: "pending", indexable: false, state: "in Prüfung", comparePath: "/admin/infothek-vergleich/kieferostitis", openTopics: ["neuer Artikel – keine veröffentlichte Fassung", "Veröffentlichung separat"] },
+  { file: "allergiebehandlung.html", title: "Allergiebehandlung in der Naturheilpraxis | Heilpraktiker Rauch Augsburg", visibility: "patient", reviewStatus: "pending", indexable: false, state: "in Prüfung", comparePath: "/admin/infothek-vergleich/allergiebehandlung", openTopics: ["9 Vorschläge vorbereitet", "Veröffentlichung separat"] },
   { file: "ass-salicylat-histamin.html", title: "ASS-Intoleranz, Salicylat- & Histamin-Unverträglichkeit | Naturheilpraxis Rauch", visibility: "public", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
   { file: "candida-diaet.html", title: "Candida-Diät | Naturheilpraxis Rauch", visibility: "patient", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
   { file: "dankbarkeit-alltag.html", title: "Dankbarkeit im Alltag | Naturheilpraxis Peter Rauch", visibility: "patient", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
