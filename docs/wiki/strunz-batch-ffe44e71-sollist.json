@@ -1,0 +1,10 @@
+{
+  "batch_id": "ffe44e71-68ab-55dd-8f3f-1ef92b227417",
+  "checked": "2026-10-07",
+  "mode": "read-only, kein Import, keine Writes",
+  "soll_laut_endpruefbericht_2026-08-18": { "gesamt": 89, "quellen": 53, "entitaeten": 9, "dosierungen": 9, "sicherheit": 18 },
+  "ist_staging": { "quellen": 53, "entitaeten": 9, "dosierungen": 9, "sicherheit": 18, "status": "imported_unreviewed" },
+  "ist_core_links": { "source>source": 53, "entity>entity": 9, "dosage>assertion": 9, "safety>assertion": 18, "status": "internal_draft" },
+  "abweichungen": [],
+  "einordnung": "Soll = Ist (89/89). Alle Kandidaten ungeprüft, alle Kernverknüpfungen nur interner Entwurf – kein freigegebener Wiki-Kernbestand. Dosierungen bleiben admin-intern."
+}
