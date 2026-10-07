@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
 import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 
-const SLUGS = ["ass-salicylat-histamin", "diabetes-handout", "ersttermin-naturheilpraxis", "therapieweg-uebersicht"];
+const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "ass-salicylat-histamin", "diabetes-handout", "ersttermin-naturheilpraxis", "therapieweg-uebersicht"];
 const cfg = (s: string) => COMPARISON_CONFIGS.find((x) => x.slug === s)!;
 const orig = (s: string) => readFileSync(`website-content/infothek/${s}.html`, "utf8");
 

@@ -4,7 +4,7 @@ import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 describe("Redaktionsstatus aus Registry", () => {
   const s = editorialWithRegistry(COMPARISON_CONFIGS);
   it("neue Vergleiche sind vorbereitet, nicht abgeschlossen", () => {
-    for (const f of ["ass-salicylat-histamin.html", "diabetes-handout.html", "ersttermin-naturheilpraxis.html", "therapieweg-uebersicht.html"]) {
+    for (const f of ["ass-salicylat-histamin.html", "diabetes-handout.html", "ersttermin-naturheilpraxis.html", "therapieweg-uebersicht.html", "candida-diaet.html", "sibo-duenndarmfehlbesiedlung.html", "muedigkeit-erschoepfung-burnout.html", "kraeuter-schmerz-entzuendung.html"]) {
       const e = s.find((x) => x.file === f)!;
       expect(e.state).toBe("Vergleich vorbereitet"); expect(e.comparePath).toMatch(/infothek-vergleich/);
     }
@@ -14,7 +14,7 @@ describe("Redaktionsstatus aus Registry", () => {
     expect(a.state).toBe("in Prüfung"); expect(a.openTopics.join()).not.toMatch(/^9 /); expect(a.openTopics[0]).toMatch(/^12 Vorschläge/);
   });
   it("Zählung", () => {
-    expect(s.filter((x) => x.comparePath).length).toBe(7);
-    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 7);
+    expect(s.filter((x) => x.comparePath).length).toBe(11);
+    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 11);
   });
 });
