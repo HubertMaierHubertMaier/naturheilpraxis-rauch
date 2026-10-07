@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -27,7 +27,7 @@ const all = (table: string, cols: string, order: string[]) =>
 async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacyText: Map<string, Set<string>>; pharmacyTextError: boolean }> {
   const [e, er, cl, rel, a, ar, s, sr] = await Promise.all([
     all("kb_entities", "id, entity_type_code, current_revision_id", ["id"]),
-    all("kb_entity_revisions", "id, entity_id, display_name, review_status, original_kind:metadata->candidate_snapshot->proposed_data->>original_kind, prescription_status:metadata->candidate_snapshot->proposed_data->>prescription_status", ["id"]),
+    all("kb_entity_revisions", "id, entity_id, display_name, review_status, original_kind:metadata->candidate_snapshot->proposed_data->>original_kind, prescription_status:metadata->candidate_snapshot->proposed_data->>prescription_status, manufacturer:metadata->candidate_snapshot->proposed_data->>manufacturer", ["id"]),
     all("kb_import_core_links", "candidate_kind, candidate_id, core_record_kind, core_entity_id, core_source_revision_id", ["candidate_kind", "candidate_id"]),
     all("kb_relation_candidates", "id, subject_candidate_id, object_candidate_id, proposed_relation_type_code, candidate_status, source_candidate_id, source_locator", ["id"]),
     all("kb_articles", "id, current_revision_id, article_kind", ["id"]),
@@ -54,10 +54,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
   return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "actors" | "pharmacies" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", pharmacies: "Apotheken", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -125,7 +125,7 @@ export default function WikiOrdnung() {
   );
   const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size + a.textEntityIds.size;
   const ent = (eid: string) => m?.entities.get(eid);
-  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.drug ? "drugs" : e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
+  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
     return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
@@ -142,6 +142,8 @@ export default function WikiOrdnung() {
     const tiles: Array<[View, string, number]> = [
       ["actors", VIEW_LABEL.actors, m.actors.size],
       ...(["products", "pathogens", "symptoms", "diseases"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ["mannayan", "Mannayan-Produkte", [...m.entities.values()].filter((e) => e.manufacturerField && norm(e.manufacturerField).split(" ").includes(MANNAYAN_ALIAS)).length],
+      ["chipcards", "ChipCards", [...m.entities.values()].filter((e) => e.chipCard).length],
       ["pharmacies", "Apotheken", [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
       ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
@@ -235,6 +237,31 @@ export default function WikiOrdnung() {
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
+  } else if ((view === "mannayan" || view === "chipcards") && !id) {
+    const isM = view === "mannayan";
+    const pool = [...m.entities.values()].filter((e) => isM ? !!e.manufacturerField && norm(e.manufacturerField).split(" ").includes(MANNAYAN_ALIAS) : !!e.chipCard);
+    const list = pool.filter((e) => !q || matchesAll(e.name, q)).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const maker = isM ? [...m.actors.values()].find((a) => norm(a.name).split(" ").includes(MANNAYAN_ALIAS) && a.roles.has("Hersteller")) : undefined;
+    const textProducts = isM ? [...m.entities.values()].filter((e) => !pool.includes(e) && e.stoffart === "Produkt" && norm(e.name).split(" ").includes(MANNAYAN_ALIAS)) : [];
+    const otherPrograms = !isM ? [...m.entities.values()].filter((e) => e.type === "program" && !e.chipCard) : [];
+    const chipArticles = !isM ? [...m.articles.values()].filter((a) => /chip ?-?cards?/i.test(`${a.title} ${a.category}`)) : [];
+    const pg = paginate(list, page, PAGE);
+    body = (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">{isM
+          ? <>Zuordnung über das Herstellerfeld im Produktdatensatz („{maker?.name ?? "Mannayan GmbH & Co. KG"}"); Suchbegriff „Mannayan" funktioniert. Herstellerangaben sind Quellenangaben, keine bestätigte Wirksamkeit. {maker && <button className="underline" onClick={() => set({ v: "actors", id: maker.key })}>Zum Hersteller</button>}</>
+          : <>Als ChipCard gilt nur ein vorhandener Programm-Datensatz mit „ChipCard"/„Chip" im eigenen Namen. Produktart bleibt „Programm" laut Datensatz – keine Einstufung als Arzneimittel und keine gesicherte Wirksamkeit.</>}</p>
+        <Input className="mb-3 max-w-xs" placeholder={isM ? "Mannayan-Produkt suchen" : "ChipCard suchen"} value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · Typ {e.type} · {neighbours(m, e.id).length} Verknüpfungen{neighbours(m, e.id).length === 0 ? " (keine Themen/Symptome zugeordnet)" : ""}</button>)}</div>
+        {list.length === 0 && <p className="text-sm">Keine Datensätze in dieser Rubrik.</p>}
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+        {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{textProducts.map((e) => entButton(e.id))}</div></div>}
+        {!isM && <div className="mt-4 space-y-3 text-sm">
+          <div><p className="font-semibold">Artikel im Ordner/Titel „Chip Cards" ({chipArticles.length}) <LinkBadge kind="field" /></p><ul className="space-y-1">{chipArticles.slice(0, 200).map((a) => artLine(a.id, "field"))}</ul>{chipArticles.length > 200 && <p className="text-muted-foreground">Erste 200 von {chipArticles.length}.</p>}</div>
+          <div><p className="font-semibold">Weitere Programm-Datensätze ohne „ChipCard" im Namen ({otherPrograms.length}) – nicht eingeordnet, zu prüfen</p><div className="flex flex-wrap gap-3">{otherPrograms.map((e) => entButton(e.id))}</div></div>
+        </div>}
+      </>
+    );
   } else if (view === "pharmacies") {
     const structured = [...m.actors.values()].filter((a) => a.roles.has("Apotheke"));
     const textOnly = [...data!.pharmacyText.entries()].filter(([n]) => !structured.some((a) => norm(a.name) === norm(n))).sort((x, y) => x[0].localeCompare(y[0], "de"));
@@ -306,7 +333,7 @@ export default function WikiOrdnung() {
     body = !e ? <p>Nicht gefunden.</p> : (
       <Card><CardContent className="space-y-3 p-4 text-sm">
         <h2 className="text-xl font-semibold">{e.name}</h2>
-        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.drug && <Badge variant="outline">Arzneimittel (laut Datensatz) · {rxLabel(e.rx)}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
+        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.chipCard && <Badge variant="outline">ChipCard (Programm laut Datensatz)</Badge>}{e.manufacturerField && <Badge variant="outline">Herstellerfeld: {e.manufacturerField}</Badge>}{e.drug && <Badge variant="outline">Arzneimittel (laut Datensatz) · {rxLabel(e.rx)}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
         <p className="text-xs text-muted-foreground">Ein zentraler Eintrag: dieselben Verknüpfungen erscheinen bei Anbieter, Symptom und Erkrankung.</p>
         <p className="text-muted-foreground">Beschreibungen aus Hersteller-/Autorenmaterial sind Quellenangaben – keine bestätigte Wirksamkeit oder Therapieempfehlung.</p>
         <div><p className="font-semibold">Anbieter/Personen</p>{makers.length ? <ul>{makers.map(({ actor: a, kind }) => <li key={a.key} className="flex flex-wrap items-center gap-2"><button className="underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button><LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Kein Anbieter im Datensatz hinterlegt.</p>}</div>

@@ -13,3 +13,4 @@ type: feature
 
 - Kästchen „Ärztliche Mittel / Arzneimittel" (Peter): nur ausdrücklich im Datensatz als Arzneimittel erfasste Einträge; Erwähnung (z.B. Klinghardt) ≠ Arzneimittel; Verschreibungsstatus nur bei hinterlegter Angabe, sonst „unklar"; Wissensnavigation, keine Verordnung/Freigabe; nichts importieren/erfinden; mit Klinghardt/Quelle/Anbieter/Symptom/Erkrankung vernetzen.
 - Kästchen „Apotheken" (Peter): eigene Rolle getrennt von Hersteller/Autor, Mehrfachrolle nur aus Daten; Textnennungen nur als Treffer im Quelltext; keine erfundenen Apotheken.
+- Kästchen „Mannayan-Produkte" (Herstellerfeld „Mannayan GmbH & Co. KG", Alias „Mannayan") und „ChipCards" (nur Programm-Datensätze mit ChipCard im Namen, Typ erhalten, keine Arzneimittel-/Wirkungseinstufung); fehlende Zuordnungen sichtbar.
