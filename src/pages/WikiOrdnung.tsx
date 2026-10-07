@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
+import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
@@ -172,6 +173,11 @@ export default function WikiOrdnung() {
             </button>
           ))}
         </div>
+        <Card className="mt-4"><CardContent className="space-y-2 p-4 text-sm">
+          <p className="font-semibold">Vernetzung – Probelauf (nichts wird gespeichert)</p>
+          <p className="text-muted-foreground">Die Kästchen sind eine Navigationsschicht, keine fertige Vernetzung. Der Probelauf berechnet Prüfvorschläge für Firmen, Personen und Apotheken samt Rollen aus vorhandenen Datenfeldern und lädt sie als Datei herunter.</p>
+          <Button size="sm" variant="outline" onClick={() => { const d = buildDryRun(m); const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }); const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = `wiki-vernetzung-probelauf-${d.generated_at.slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(u); }}>Prüfvorschläge herunterladen</Button>
+        </CardContent></Card>
         <Card className="mt-4"><CardContent className="p-4 text-sm">
           <p className="font-semibold">Exakte Zählung (Server) vs. geladen</p>
           <ul className="mt-1 list-disc pl-5">
