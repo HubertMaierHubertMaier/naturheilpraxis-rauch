@@ -79,3 +79,10 @@ export function reconcile(dbKeys: string[], fileKeys: string[]) {
   const d = new Set(dbKeys), f = new Set(fileKeys);
   return { onlyInDb: [...d].filter((k) => !f.has(k)).sort(), onlyInFile: [...f].filter((k) => !d.has(k)).sort(), both: [...d].filter((k) => f.has(k)).length, duplicatesInDb: dbKeys.length - d.size };
 }
+
+/** Filtert auf aktuelle Revisionen. Ohne geladenes Modell (currentIds null) → "loading", nie ungefiltert. */
+export function currentCardsOnly(raw: KCard[] | "loading" | "error" | null, currentIds: Set<string> | null): KCard[] | "loading" | "error" | null {
+  if (raw === null || raw === "loading" || raw === "error") return raw;
+  if (!currentIds) return "loading";
+  return raw.filter((c) => currentIds.has(c.revisionId)).sort((a, b) => a.title.localeCompare(b.title, "de"));
+}
