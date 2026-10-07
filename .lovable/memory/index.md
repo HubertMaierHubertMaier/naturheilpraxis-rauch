@@ -99,3 +99,4 @@
 - [Edge Function Optimization](mem://infrastructure/edge-function-resource-optimization) — RPC stripping and lazy-loading for Edge Function stability
 - [Repeated Error Policy](mem://preferences/repeated-error-policy) — Stopping patches after 2 repeated infrastructure errors
 - [HTML Infothek Delivery Status](mem://features/infothek-html-delivery-status) — Produktionsstand 17.07.2026, serverseitige Auslieferung aus patient-library/infothek
+- [HTML-Korrektur-Vergleich](mem://preferences/html-korrektur-vergleich) — Bestätigter Standard: Original links/Entwurf rechts, Randnotiz, Button „Nur Änderung ÄN übernehmen“ je Punkt, für alle weiteren HTMLs
