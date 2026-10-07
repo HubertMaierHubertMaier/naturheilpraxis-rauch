@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, type ComparisonChange } from "@/lib/infothekComparisonChanges";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
@@ -21,32 +22,34 @@ const MARK = {
   active: "#1d4ed8",
 };
 
-const TEXT_TAGS = "h1,h2,h3,h4,h5,h6,p,li,td,th,figcaption,blockquote";
-
-function markChange(doc: Document, change: ComparisonChange, side: Side): boolean {
-  const snippet = side === "orig" ? change.orig : change.draft;
-  if (!snippet) return false;
-  const nth = (side === "orig" ? change.origNth : change.draftNth) ?? 0;
-  let target: Element | undefined;
-  if (change.img) {
-    target = Array.from(doc.images).filter((img) => img.alt.includes(snippet))[nth];
-  } else {
-    const hits = Array.from(doc.body.querySelectorAll(TEXT_TAGS)).filter((el) => el.textContent?.includes(snippet));
-    target = hits.filter((el) => !hits.some((other) => other !== el && el.contains(other)))[nth];
-  }
+type MarkStyle = Side | "kept";
+function markChange(doc: Document, change: ComparisonChange, side: Side, style: MarkStyle = side): boolean {
+  const target = findChangeTarget(doc, change, side);
   if (!target) return false;
   const badge = doc.createElement("span");
-  badge.className = `cmp-badge ${side}`;
-  badge.textContent = `Ä${change.id} · ${MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
-  target.classList.add("cmp-mark", side);
+  badge.className = `cmp-badge ${style}`;
+  badge.textContent = `Ä${change.id} · ${style === "kept" ? "Original beibehalten (nicht übernommen)" : MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
+  target.classList.add("cmp-mark", style);
   target.setAttribute("data-change", String(change.id));
   if (change.img) target.parentElement?.insertBefore(badge, target);
   else target.prepend(badge);
+  if (style === "draft") {
+    const why = doc.createElement("div");
+    why.className = "cmp-why";
+    const head = doc.createElement("strong");
+    head.textContent = `Ä${change.id} – warum besser: `;
+    const status = doc.createElement("span");
+    status.className = "cmp-status";
+    status.setAttribute("data-status-for", String(change.id));
+    status.textContent = "Offen";
+    why.append(status, head, doc.createTextNode(change.why));
+    target.after(why);
+  }
   return true;
 }
 
 /** Static, script-free rendering with change markers. */
-export function toStaticPreview(html: string, side: Side): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
+export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<number>): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("script, iframe, object, embed, meta[http-equiv]").forEach((el) => el.remove());
   doc.querySelectorAll("*").forEach((el) => {
@@ -60,7 +63,13 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
     img.removeAttribute("loading");
   });
   const found = new Set<number>();
-  for (const change of CHANGES) if (markChange(doc, change, side)) found.add(change.id);
+  for (const change of CHANGES) {
+    // Working version: accepted proposals are marked green, not accepted ones as kept original wording (grey).
+    const ok = workingAccepted && !workingAccepted.has(change.id)
+      ? markChange(doc, change, "orig", "kept")
+      : markChange(doc, change, side);
+    if (ok) found.add(change.id);
+  }
   // Shared section numbers (same slide order in original and draft).
   const sectionOf = new Map<number, number>();
   doc.querySelectorAll(".reveal .slides > section").forEach((sec, i) => {
@@ -95,6 +104,14 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
     .cmp-mark[data-active] { outline: 4px solid ${MARK.active}; outline-offset: 3px; }
     .reveal .slides > section { box-sizing: border-box !important; }
     .cmp-sec { display: block; margin: -12px 0 10px; font: 700 12px/1.4 Arial, sans-serif !important; color: #475569 !important; letter-spacing: .04em; text-transform: uppercase; }
+    .cmp-mark.kept { background: #f1f5f9 !important; box-shadow: inset 6px 0 0 #64748b; }
+    img.cmp-mark.kept { border-color: #64748b; }
+    .cmp-badge.kept { background: #475569; }
+    .cmp-why { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed ${c.border}; border-radius: 6px; background: #ffffff;
+      font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
+    .cmp-why strong { font-weight: 700; }
+    .cmp-status { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid #64748b; font: 700 12px/1.4 Arial, sans-serif; color: #334155; }
+    .cmp-status[data-accepted] { background: #15803d; border-color: #15803d; color: #fff; }
     .cmp-badge { display: inline-block; margin: 0 8px 4px 0; padding: 2px 8px; border-radius: 999px; background: ${c.border}; color: #fff !important;
       font: 700 13px/1.4 Arial, sans-serif !important; letter-spacing: 0; text-transform: none; vertical-align: middle; }`;
   doc.head.appendChild(style);
@@ -132,7 +149,51 @@ export default function InfothekHtmlVergleich() {
   const [active, setActive] = useState<number>();
   const origRef = useRef<HTMLIFrameElement>(null);
   const draftRef = useRef<HTMLIFrameElement>(null);
-  const draft = useMemo(() => toStaticPreview(draftHtml, "draft"), []);
+  const [origRaw, setOrigRaw] = useState<string>();
+  const storageKey = user ? `infothek-vergleich:krankheit-ist-messbar:v1:${user.id}` : null;
+  const [accepted, setAccepted] = useState<Set<number>>(new Set());
+  const [savedAt, setSavedAt] = useState<string>();
+  const [rightMode, setRightMode] = useState<"proposal" | "working">("proposal");
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { accepted?: number[]; savedAt?: string };
+        setAccepted(new Set((parsed.accepted ?? []).filter((id) => CHANGES.some((c) => c.id === id))));
+        setSavedAt(parsed.savedAt);
+      }
+    } catch { /* ignore broken local state */ }
+  }, [storageKey]);
+  const toggleAccepted = (id: number, value: boolean) => {
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      if (value) next.add(id); else next.delete(id);
+      const stamp = new Date().toISOString();
+      if (storageKey) localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
+      setSavedAt(stamp);
+      return next;
+    });
+  };
+  const working = useMemo(
+    () => (origRaw ? composeWorkingVersion(origRaw, draftHtml, CHANGES, accepted) : undefined),
+    [origRaw, accepted],
+  );
+  const proposal = useMemo(() => toStaticPreview(draftHtml, "draft"), []);
+  const workingPreview = useMemo(
+    () => (rightMode === "working" && working ? toStaticPreview(working.html, "draft", accepted) : undefined),
+    [rightMode, working, accepted],
+  );
+  const draft = workingPreview ?? proposal;
+  const downloadWorking = () => {
+    if (!working) return;
+    const url = URL.createObjectURL(new Blob([working.html], { type: "text/html;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `krankheit-ist-messbar.arbeitsfassung-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -147,7 +208,9 @@ export default function InfothekHtmlVergleich() {
           { headers, signal: controller.signal },
         );
         if (!res.ok) return setError(`Original nicht verfügbar (Status ${res.status}).`);
-        setOriginal(toStaticPreview(await res.text(), "orig"));
+        const text = await res.text();
+        setOrigRaw(text);
+        setOriginal(toStaticPreview(text, "orig"));
       } catch (e) {
         if ((e as Error).name !== "AbortError") setError("Original konnte nicht geladen werden.");
       }
@@ -246,6 +309,13 @@ export default function InfothekHtmlVergleich() {
   }, [loaded, equalize, syncFrom]);
 
   useEffect(() => applyActive(active), [active, applyActive]);
+  useEffect(() => {
+    docOf("draft")?.querySelectorAll<HTMLElement>("[data-status-for]").forEach((el) => {
+      const on = accepted.has(Number(el.dataset.statusFor));
+      el.textContent = on ? "Übernommen" : "Offen";
+      el.toggleAttribute("data-accepted", on);
+    });
+  }, [accepted, loaded]);
 
   const step = (dir: 1 | -1) => {
     const idx = jumpable.findIndex((c) => c.id === active);
@@ -276,6 +346,7 @@ export default function InfothekHtmlVergleich() {
           <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.orig.bg, boxShadow: `inset 4px 0 0 ${MARK.orig.border}` }} />Rot + „Äx · Original“: beanstandete Stelle (links)</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.draft.bg, boxShadow: `inset 4px 0 0 ${MARK.draft.border}` }} />Grün + „Äx · Entwurf“: geänderte Stelle (rechts)</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: "#f1f5f9", boxShadow: "inset 4px 0 0 #64748b" }} />Grau + „Original beibehalten“: in der Arbeitsfassung nicht übernommen</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border-2" style={{ borderColor: MARK.active }} />Blauer Rahmen: aktuell gewählte Änderung</span>
           </div>
           <div className="mb-2 flex items-center gap-2">
@@ -287,24 +358,51 @@ export default function InfothekHtmlVergleich() {
               Synchron scrollen (nach gemeinsamer Abschnittsnummer)
             </label>
           </div>
-          <ol className="max-h-56 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
-            {CHANGES.map((c) => (
-              <li key={c.id}>
-                {c.headOnly ? (
-                  <div className="rounded border border-border px-2 py-1">
-                    <span className="font-semibold">Ä{c.id}</span> [{c.reason.join(", ")}] {c.note} – nur im Seitenkopf:
-                    <span className="block text-muted-foreground">vorher: „{c.headOnly.before}“</span>
-                    <span className="block">neu: „{c.headOnly.after}“</span>
+          <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-border bg-muted/40 px-2 py-1.5 text-xs">
+            <span className="font-semibold">{accepted.size} von {CHANGES.length} Änderungen übernommen</span>
+            <span className="text-muted-foreground">
+              Gespeichert nur lokal in diesem Browser für dein Konto{savedAt ? ` (zuletzt ${new Date(savedAt).toLocaleString("de-DE")})` : ""} – nicht auf dem Server, keine Freigabe, Originalartikel unverändert.
+            </span>
+            <span className="ml-auto flex gap-2">
+              <Button size="sm" variant={rightMode === "working" ? "default" : "outline"} className="h-7 text-xs"
+                onClick={() => setRightMode((m) => (m === "working" ? "proposal" : "working"))} disabled={!working}>
+                {rightMode === "working" ? "Rechts: Vorschlag zeigen" : "Rechts: Arbeitsfassung zeigen"}
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={downloadWorking} disabled={!working}>Arbeitsfassung herunterladen (HTML)</Button>
+            </span>
+            {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
+          </div>
+          <ol className="max-h-80 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
+            {CHANGES.map((c) => {
+              const on = accepted.has(c.id);
+              return (
+                <li key={c.id} className={`rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
+                  <div className="flex flex-wrap items-start gap-2">
+                    {c.headOnly ? (
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold">Ä{c.id}</span> · Seitenkopf [{c.reason.join(", ")}] {c.note}
+                        <span className="block text-muted-foreground">vorher: „{c.headOnly.before}“</span>
+                        <span className="block">neu: „{c.headOnly.after}“</span>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setActive(c.id)} aria-current={active === c.id} className="min-w-0 flex-1 text-left hover:underline">
+                        <span className="font-semibold">Ä{c.id}</span>{original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
+                        <span className="text-destructive">{status(c, "orig")}{status(c, "draft")}</span>
+                      </button>
+                    )}
+                    {on ? (
+                      <span className="flex items-center gap-1">
+                        <span className="rounded-full bg-primary px-2 py-0.5 font-semibold text-primary-foreground">Übernommen</span>
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => toggleAccepted(c.id, false)}>Rückgängig</Button>
+                      </span>
+                    ) : (
+                      <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => toggleAccepted(c.id, true)} aria-label={`Ä${c.id} übernehmen`}>Übernehmen</Button>
+                    )}
                   </div>
-                ) : (
-                  <button type="button" onClick={() => setActive(c.id)} aria-current={active === c.id}
-                    className={`w-full rounded border px-2 py-1 text-left hover:bg-muted ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
-                    <span className="font-semibold">Ä{c.id}</span>{original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
-                    <span className="text-destructive">{status(c, "orig")}{status(c, "draft")}</span>
-                  </button>
-                )}
-              </li>
-            ))}
+                  <p className="mt-0.5 text-muted-foreground">Warum besser: {c.why}</p>
+                </li>
+              );
+            })}
           </ol>
           <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
             {UNMARKED_NOTES.map((n) => <li key={n}>{n}</li>)}
@@ -313,7 +411,7 @@ export default function InfothekHtmlVergleich() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
-          <Pane label="Vorgeschlagener Entwurf" html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
+          <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommene Vorschläge)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
         </div>
       </div>
     </Layout>
