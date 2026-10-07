@@ -110,6 +110,9 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-why { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed ${c.border}; border-radius: 6px; background: #ffffff;
       font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
     html.has-rail .cmp-why { display: none !important; }
+    html body .cmp-mark.cmp-mark.cmp-mark, html body .cmp-mark.cmp-mark *:not(.cmp-badge):not(.cmp-status), html body .reveal .slides section .cmp-mark, html body .reveal .slides section .cmp-mark *:not(.cmp-badge) { color: #111827 !important; -webkit-text-fill-color: #111827 !important; text-shadow: none !important; }
+    html body .cmp-badge.cmp-badge { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+    html body .cmp-status.cmp-status { -webkit-text-fill-color: currentColor !important; }
     .cmp-why strong { font-weight: 700; }
     .cmp-status { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid #64748b; font: 700 12px/1.4 Arial, sans-serif; color: #334155; }
     .cmp-status[data-accepted] { background: #15803d; border-color: #15803d; color: #fff; }
@@ -148,7 +151,7 @@ export default function InfothekHtmlVergleich() {
   const ignoreScroll = useRef<Record<Side, boolean>>({ orig: false, draft: false });
   const [error, setError] = useState<string>();
   const [active, setActive] = useState<number>();
-  const [cardId, setCardId] = useState<number>(CHANGES[0].id);
+  const [cardId, setCardId] = useState<number | undefined>(undefined);
   const cardIdRef = useRef(cardId);
   cardIdRef.current = cardId;
   const [cardTop, setCardTop] = useState(0);
@@ -420,7 +423,7 @@ export default function InfothekHtmlVergleich() {
               {CHANGES.map((c) => (
                 <li key={c.id} className={`flex items-start gap-2 rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
                   <button type="button" onClick={() => setActive(c.id)} className="min-w-0 flex-1 text-left hover:underline">
-                    <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? " · Seitenkopf" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
+                    <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
                   <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
@@ -440,20 +443,32 @@ export default function InfothekHtmlVergleich() {
             <div className="relative lg:h-[calc(100vh-17rem)] lg:min-h-[300px]">
               {(() => {
                 const c = CHANGES.find((x) => x.id === cardId);
-                if (!c) return null;
+                if (!c) return (
+                  <div className="rounded-md border border-dashed border-border bg-card p-2 text-xs text-muted-foreground">
+                    Keine Änderung gewählt. Mit „Nächste“ eine Änderung wählen oder zu einer markierten Stelle scrollen – die Randnotiz zeigt dann deren Nummer und Begründung.
+                  </div>
+                );
                 const top = wide ? Math.max(0, Math.min(cardTop, window.innerHeight - 22 * 16)) : 0;
                 return (
                   <div className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 transition-[top] duration-150" style={wide ? { top } : undefined}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <button type="button" className="font-semibold hover:underline" onClick={() => setActive(c.id)}>
-                        Ä{c.id}{c.headOnly ? " · Seitenkopf (SEO)" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                        Ä{c.id}{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel" : " · Meta-Beschreibung") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
                     </div>
                     {c.headOnly && (
-                      <div className="mb-1 space-y-0.5">
-                        <p className="text-muted-foreground">vorher: „{c.headOnly.before}“</p>
-                        <p>neu: „{c.headOnly.after}“</p>
+                      <div className="mb-2 space-y-1">
+                        <p className="rounded bg-muted px-1.5 py-1 font-medium">
+                          {c.headOnly.kind === "title"
+                            ? "HTML-Seitentitel – Browser-Tab/Suche, im Artikel nicht sichtbar."
+                            : "Meta-Beschreibung – Suchergebnis/Link-Vorschau, im Artikel nicht sichtbar."}
+                          {" "}Es gibt dafür keine markierte Textzeile im Artikel.
+                        </p>
+                        <dl className="space-y-1">
+                          <div className="rounded border-l-4 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Original</dt><dd>„{c.headOnly.before}“</dd></div>
+                          <div className="rounded border-l-4 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Entwurf</dt><dd>„{c.headOnly.after}“</dd></div>
+                        </dl>
                       </div>
                     )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
