@@ -362,8 +362,8 @@ export default function WikiDatenbank() {
   const [search, setSearch] = useState("");
   const [listPage, setListPage] = useState(1);
   const [openArticles, setOpenArticles] = useState<Record<string, boolean>>({});
-  useEffect(() => { setListPage(1); }, [deferredSearch]);
   const deferredSearch = useDeferredValue(search.trim());
+  useEffect(() => { setListPage(1); }, [deferredSearch]);
   const [detailedImportResults, setDetailedImportResults] = useState<DetailedImportCandidate[]>([]);
   const [importSearchLoading, setImportSearchLoading] = useState(false);
   const [importSearchError, setImportSearchError] = useState<string | null>(null);
