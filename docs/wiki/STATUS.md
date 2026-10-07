@@ -66,3 +66,8 @@ Grenzen: Heel-/Pascoe-Mittel existieren im Bestand nur als Artikeltexte (Heel 28
 
 ## WICHTIG (Peter, 07.10.2026): Kästchen ≠ fertige Vernetzung
 Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_entity_relations = 0, kb_article_entities = 0. Weiterer Aufbau: siehe docs/wiki/VERNETZUNG-PLAN.md (Plan) und docs/wiki/vernetzung-migration-A.sql (Entwurf, NICHT angewendet). Codex plant/prüft, Lovable setzt um; jede Phase einzeln freigeben.
+
+## Paket 1 (07.10.2026): Vernetzung-Probelauf – nur Download, nichts geschrieben
+- src/lib/wikiNetworkDryRun.ts + Button „Prüfvorschläge herunterladen" (Ordnung-Startseite); Tests src/test/wiki-network-dryrun.test.ts (4, synthetisch).
+- Echter Lauf: 34 Akteurvorschläge (30 Organisation, 3 Person, 1 Apotheke), 234 Rollenbeziehungen (manufactured_by/published_by/authored_by) als candidate; 1 bereits als Entität vorhanden (Radegundis); 0 Merge-Hinweise.
+- Review-Befunde (vor Phase 2 zu klären): Typ-Heuristik Person/Organisation unzuverlässig („Andreas Kalcker", „Peter Römer" als Organisation; „Nutzerbereitgestellte Quelle", „Externe Fachquelle" sind keine Akteure; „Klinghardt Talks 001-025" ist Reihe/Herausgeber, nicht Person Dr. Klinghardt; „A. L. Kalcker" vs „Andreas Kalcker" mögliche Dublette ohne automatischen Hinweis; Plattformen wie Amazon/BitChute/PubMed sind Fundorte). → Typ je Akteur muss Peter/Codex festlegen; keine automatische Typisierung übernehmen.
