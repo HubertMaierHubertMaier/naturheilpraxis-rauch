@@ -22,17 +22,18 @@ const MARK = {
   active: "#1d4ed8",
 };
 
-function markChange(doc: Document, change: ComparisonChange, side: Side): boolean {
+type MarkStyle = Side | "kept";
+function markChange(doc: Document, change: ComparisonChange, side: Side, style: MarkStyle = side): boolean {
   const target = findChangeTarget(doc, change, side);
   if (!target) return false;
   const badge = doc.createElement("span");
-  badge.className = `cmp-badge ${side}`;
-  badge.textContent = `Ä${change.id} · ${MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
-  target.classList.add("cmp-mark", side);
+  badge.className = `cmp-badge ${style}`;
+  badge.textContent = `Ä${change.id} · ${style === "kept" ? "Original beibehalten (nicht übernommen)" : MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
+  target.classList.add("cmp-mark", style);
   target.setAttribute("data-change", String(change.id));
   if (change.img) target.parentElement?.insertBefore(badge, target);
   else target.prepend(badge);
-  if (side === "draft") {
+  if (style === "draft") {
     const why = doc.createElement("div");
     why.className = "cmp-why";
     const head = doc.createElement("strong");
@@ -48,7 +49,7 @@ function markChange(doc: Document, change: ComparisonChange, side: Side): boolea
 }
 
 /** Static, script-free rendering with change markers. */
-export function toStaticPreview(html: string, side: Side): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
+export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<number>): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("script, iframe, object, embed, meta[http-equiv]").forEach((el) => el.remove());
   doc.querySelectorAll("*").forEach((el) => {
@@ -62,7 +63,13 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
     img.removeAttribute("loading");
   });
   const found = new Set<number>();
-  for (const change of CHANGES) if (markChange(doc, change, side)) found.add(change.id);
+  for (const change of CHANGES) {
+    // Working version: accepted proposals are marked green, not accepted ones as kept original wording (grey).
+    const ok = workingAccepted && !workingAccepted.has(change.id)
+      ? markChange(doc, change, "orig", "kept")
+      : markChange(doc, change, side);
+    if (ok) found.add(change.id);
+  }
   // Shared section numbers (same slide order in original and draft).
   const sectionOf = new Map<number, number>();
   doc.querySelectorAll(".reveal .slides > section").forEach((sec, i) => {
@@ -97,6 +104,9 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
     .cmp-mark[data-active] { outline: 4px solid ${MARK.active}; outline-offset: 3px; }
     .reveal .slides > section { box-sizing: border-box !important; }
     .cmp-sec { display: block; margin: -12px 0 10px; font: 700 12px/1.4 Arial, sans-serif !important; color: #475569 !important; letter-spacing: .04em; text-transform: uppercase; }
+    .cmp-mark.kept { background: #f1f5f9 !important; box-shadow: inset 6px 0 0 #64748b; }
+    img.cmp-mark.kept { border-color: #64748b; }
+    .cmp-badge.kept { background: #475569; }
     .cmp-why { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed ${c.border}; border-radius: 6px; background: #ffffff;
       font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
     .cmp-why strong { font-weight: 700; }
@@ -171,8 +181,8 @@ export default function InfothekHtmlVergleich() {
   );
   const proposal = useMemo(() => toStaticPreview(draftHtml, "draft"), []);
   const workingPreview = useMemo(
-    () => (rightMode === "working" && working ? toStaticPreview(working.html, "draft") : undefined),
-    [rightMode, working],
+    () => (rightMode === "working" && working ? toStaticPreview(working.html, "draft", accepted) : undefined),
+    [rightMode, working, accepted],
   );
   const draft = workingPreview ?? proposal;
   const downloadWorking = () => {
@@ -336,6 +346,7 @@ export default function InfothekHtmlVergleich() {
           <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.orig.bg, boxShadow: `inset 4px 0 0 ${MARK.orig.border}` }} />Rot + „Äx · Original“: beanstandete Stelle (links)</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.draft.bg, boxShadow: `inset 4px 0 0 ${MARK.draft.border}` }} />Grün + „Äx · Entwurf“: geänderte Stelle (rechts)</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: "#f1f5f9", boxShadow: "inset 4px 0 0 #64748b" }} />Grau + „Original beibehalten“: in der Arbeitsfassung nicht übernommen</span>
             <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border-2" style={{ borderColor: MARK.active }} />Blauer Rahmen: aktuell gewählte Änderung</span>
           </div>
           <div className="mb-2 flex items-center gap-2">
