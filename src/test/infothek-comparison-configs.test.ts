@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { COMPARISON_CONFIGS, configFor } from "@/lib/infothekComparisonConfigs";
 
-const text = (h: string) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+const text = (h: string) => (new DOMParser().parseFromString(h, "text/html").body.textContent ?? "").replace(/\s+/g, " ");
 describe("Vergleichs-Konfigurationen", () => {
   it("Frequenztherapie bleibt Standard mit unveränderten Vorschlägen", () => {
     expect(configFor(undefined).slug).toBe("krankheit-ist-messbar");
