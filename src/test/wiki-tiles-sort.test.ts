@@ -12,6 +12,6 @@ describe("Wiki-Kacheln A–Z", () => {
     const t = readFileSync("src/pages/WikiOrdnung.tsx", "utf8");
     expect(t).toContain('new Intl.Collator("de", { sensitivity: "base", numeric: true })');
     expect(t).not.toMatch(/localeCompare\(/);
-    expect((t.match(/sortBy=\{artTitle\}/g) ?? []).length).toBe((t.match(/artLine\(x,/g) ?? []).length);
+    expect((t.match(/sortBy=\{artTitle\}|byName\(artTitle\(a\), artTitle\(b\)\)/g) ?? []).length).toBe((t.match(/artLine\(x,/g) ?? []).length);
   });
 });

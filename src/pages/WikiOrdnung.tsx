@@ -426,11 +426,11 @@ export default function WikiOrdnung() {
       </CardContent></Card>
     );
   } else if (view === "folders") {
-    const list = [...m.folders.entries()].filter(([f]) => !q || matchesAll(f, q)).sort((x, y) => y[1].size - x[1].size);
+    const list = [...m.folders.entries()].filter(([f]) => !q || matchesAll(f, q)).sort((x, y) => byName(x[0], y[0]));
     const open = id ? m.folders.get(id) : undefined;
-    const pg = paginate<unknown>(open ? [...open] : list, page, PAGE);
+    const pg = paginate<unknown>(open ? [...open].sort((a, b) => byName(artTitle(a), artTitle(b))) : list, page, PAGE);
     body = open ? (
-      <Card><CardContent className="p-4 text-sm"><h2 className="mb-2 text-xl font-semibold">Ordner: {id}</h2><ul className="space-y-1">{(pg.items as unknown as string[]).map((x) => artLine(x, "field"))}</ul><div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div></CardContent></Card>
+      <Card><CardContent className="p-4 text-sm"><h2 className="mb-2 text-xl font-semibold">Ordner: {id}</h2><ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(pg.items as unknown as string[]).map((x) => artLine(x, "field"))}</ul><div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div></CardContent></Card>
     ) : (
       <>
         <Input className="mb-3 max-w-xs" placeholder="Ordner suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
@@ -509,7 +509,7 @@ export default function WikiOrdnung() {
             <p className="mt-1 text-xs">Primärquellen: {x.sources.map((q, i) => <span key={q.url}>{i ? " · " : ""}<a className="underline" href={q.url} target="_blank" rel="noreferrer">{q.label}</a></span>)}</p>
           </div>); })}</div>
         <p className="font-semibold">Nur im Artikeltext genannt ({textOnly.length}) <LinkBadge kind="text" /></p>
-        {data!.pharmacyTextError ? <p className="text-destructive text-sm">Volltextsuche nicht möglich.</p> : <ul className="space-y-2 text-sm">{textOnly.map(([n, ids]) => <li key={n}><span className="font-semibold">{n}</span> – kein eigener Datensatz, keine Produktverknüpfung<ul className="mt-1 space-y-1 pl-4">{[...ids].map((x) => artLine(x, "text"))}</ul></li>)}</ul>}
+        {data!.pharmacyTextError ? <p className="text-destructive text-sm">Volltextsuche nicht möglich.</p> : <ul className="space-y-2 text-sm">{textOnly.map(([n, ids]) => <li key={n}><span className="font-semibold">{n}</span> – kein eigener Datensatz, keine Produktverknüpfung<ul className="mt-1 space-y-1 pl-4">{[...ids].sort((a, b) => byName(artTitle(a), artTitle(b))).map((x) => artLine(x, "text"))}</ul></li>)}</ul>}
       </>
     );
   } else if (view === "drugs" && !id) {
