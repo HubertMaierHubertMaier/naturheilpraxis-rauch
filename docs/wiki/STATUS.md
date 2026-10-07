@@ -78,3 +78,4 @@ Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_e
 - Teilbestand: Ladefehler auf späterer Seite bricht weiterhin mit Fehlermeldung ab (fetchAllPages-Test), keine Teilzahl als vollständig.
 - Offen: kb_article_revisions lädt alle Revisionen inkl. content_markdown (nur aktuelle werden genutzt) – Optimierung möglich.
 - Vorschlagsstichprobe: docs/wiki/vernetzung-vorschlag-stichprobe.json (8 Kandidaten: Mannayan, Radegundis, Nutramedix, Heel, Pascoe, Vitaplace, Klinghardt-Erythromycin, HNO-ChipCard) mit stabilem candidate_key, Revisions-ID, Fundstelle, Produktart, Beziehungen, Unsicherheit. NICHT angewendet.
+- Vitaplace (07.10.2026, Codex extern geprüft): unter Apotheken als „extern geprüfte Betreiberzuordnung" (vitaplace.de, BfArM-Versandhandelsregister mit Blumenau-Apotheke, Impressum Blumenau-Apotheke); Produktlinienrolle bleibt; Artikel weiter über Ordner. Keine DB-Rolle; reversibel in EXTERNAL_PHARMACIES.

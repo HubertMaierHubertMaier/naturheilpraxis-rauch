@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -145,7 +145,7 @@ export default function WikiOrdnung() {
       ...(["products", "pathogens", "symptoms", "diseases"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
       ["mannayan", "Mannayan-Produkte", [...m.entities.values()].filter((e) => e.manufacturerField && norm(e.manufacturerField).split(" ").includes(MANNAYAN_ALIAS)).length],
       ["chipcards", "ChipCards", [...m.entities.values()].filter((e) => e.chipCard).length],
-      ["pharmacies", "Apotheken", [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
+      ["pharmacies", "Apotheken", EXTERNAL_PHARMACIES.length + [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
       ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
       ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
@@ -303,6 +303,14 @@ export default function WikiOrdnung() {
         <p className="mb-3 text-sm text-muted-foreground">Apotheke ist eine eigene Rolle, getrennt von Hersteller und Autor. Mehrere Rollen erscheinen nur, wenn die Daten sie belegen. Apotheken nur als Text-Erwähnung sind als „Treffer im Quelltext" gekennzeichnet.</p>
         <p className="font-semibold">Im Datensatz erfasst ({structured.length})</p>
         <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{structured.map((a) => <button key={a.key} onClick={() => set({ v: "actors", id: a.key })} className="rounded border-2 border-primary/50 bg-card p-3 text-left text-sm hover:border-primary"><span className="font-semibold">{a.name}</span><br /><span className="text-xs text-muted-foreground">{[...a.roles].join(", ")} · {actorCount(a)} Zuordnungen</span>{data!.pharmacyText.get(a.name) && <span className="text-xs text-muted-foreground"> · {data!.pharmacyText.get(a.name)!.size} Artikel nennen sie im Text</span>}</button>)}</div>
+        <p className="font-semibold">Extern geprüfte Betreiberzuordnung ({EXTERNAL_PHARMACIES.length})</p>
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">{EXTERNAL_PHARMACIES.map((x) => { const t = TOPICS.find((y) => y.key === x.topicKey)!; const h = topicHits(m, t); return (
+          <div key={x.name} className="rounded border-2 border-primary/50 bg-card p-3 text-sm">
+            <button className="font-semibold underline" onClick={() => set({ v: "topic", t: x.topicKey })}>{x.name}</button>
+            <p className="text-xs text-muted-foreground">Rollen: Apotheke (extern geprüft {x.checkedOn}) · Produktlinie · Suchbegriffe: {x.aliases.join(", ")} · {h.folderArticleIds.length + h.titleArticleIds.length} Artikel aus dem Bestand</p>
+            <p className="mt-1 text-xs">{x.note}</p>
+            <p className="mt-1 text-xs">Primärquellen: {x.sources.map((q, i) => <span key={q.url}>{i ? " · " : ""}<a className="underline" href={q.url} target="_blank" rel="noreferrer">{q.label}</a></span>)}</p>
+          </div>); })}</div>
         <p className="font-semibold">Nur im Artikeltext genannt ({textOnly.length}) <LinkBadge kind="text" /></p>
         {data!.pharmacyTextError ? <p className="text-destructive text-sm">Volltextsuche nicht möglich.</p> : <ul className="space-y-2 text-sm">{textOnly.map(([n, ids]) => <li key={n}><span className="font-semibold">{n}</span> – kein eigener Datensatz, keine Produktverknüpfung<ul className="mt-1 space-y-1 pl-4">{[...ids].map((x) => artLine(x, "text"))}</ul></li>)}</ul>}
       </>

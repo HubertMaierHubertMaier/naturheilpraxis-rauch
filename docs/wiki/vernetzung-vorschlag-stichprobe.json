@@ -75,8 +75,10 @@
       "subjekt": { "art": "kb_article", "id": "fbca0501-7f87-440d-982e-48b2051c6d63", "revision_id": "fbca0501-7f87-440d-982e-48b2051c6d63", "titel": "Night Relax Kapseln" },
       "fundstelle": "Ordner „Vitaplace > Nahrungsergänzungsmittel“ (Datenfeld)",
       "vorgeschlagene_produktart": "Nahrungsergänzungsmittel (aus Ordnername)",
-      "beziehungen": [ { "typ": "manufactured_by oder offered_by", "objekt": "organization:vitaplace (neu) – keine Apothekenrolle belegt", "herkunft": "Ordner" } ],
-      "unsicherheit": "mittel: Rolle Hersteller vs. Händler offen"
+      "beziehungen": [ { "typ": "offered_by", "objekt": "pharmacy:vitaplace (neu, Kandidat; Rolle Apotheke + Produktlinie)", "herkunft": "Ordner (Datenfeld) + extern geprüfte Betreiberzuordnung 07.10.2026" } ],
+      "externe_primaerquellen": ["https://www.vitaplace.de/ (VITAPLACE Versandapotheke, Terofalstraße 4, München)", "https://versandhandel.dimdi.de/websearch/servlet/Gate?accessid=dimdi_var&term=baa686aeb5b5701de3a453313ff7e7fd (BfArM-Versandhandelsregister: Vitaplace + Blumenau-Apotheke, gleicher Standort)", "https://www.blumenau-apotheke.de/impressum/"],
+      "aliase": ["Vitaplace", "Viatplace"],
+      "unsicherheit": "niedrig für Apothekenrolle (extern geprüft); Hersteller vs. Vertrieb je Produkt offen"
     },
     {
       "candidate_key": "ent:drug:erythromycin",
