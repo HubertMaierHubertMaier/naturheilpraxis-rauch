@@ -8751,7 +8751,7 @@
           "wortlaut": "orthochondroplus"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8770,7 +8770,7 @@
           "wortlaut": "orthomental"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8813,7 +8813,7 @@
           "wortlaut": "orthonorm f"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8832,7 +8832,7 @@
           "wortlaut": "orthonorm m"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8851,7 +8851,7 @@
           "wortlaut": "orthonorm"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8870,7 +8870,7 @@
           "wortlaut": "orthotendo"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -8915,7 +8915,7 @@
           "wortlaut": "for you präbio ballaststoffe"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": "for you eHealth",
         "marke_fundstelle": {
           "feld": "Überschrift",
@@ -9038,7 +9038,7 @@
           "wortlaut": "orthomolar Vitamincocktail"
         },
         "ean": [],
-        "ean_fundstelle": null,
+        "ean_fundstelle": "nicht angegeben",
         "marke_laut_seite": null,
         "marke_fundstelle": null,
         "hersteller": null,
@@ -9100,6 +9100,6 @@
         "seitentyp": "produktseite"
       }
     ],
-    "hinweis": "10 EAN, 6 ohne EAN (orthochondroplus, orthomental, orthonorm f/m, orthonorm, orthotendo, vitamincocktail orthomolar: 7 – siehe ean[]); Hersteller überall offen; Herstellerwortfunde nur Qualitätsversprechen/Kundenbewertung, verworfen."
+    "hinweis": "8 mit expliziter EAN, 8 ohne (orthochondroplus, orthomental, orthonorm f, orthonorm m, orthonorm, orthotendo, for you präbio ballaststoffe, orthomolar Vitamincocktail); Marken: FOREVER YOUNG 4 (H1), for you eHealth 3 (Überschrift Qualitätsversprechen); 9 ohne Markennennung (offen). Hersteller überall offen; „Hersteller“-Wortfunde nur Qualitätsversprechen/Kundenbewertung, verworfen."
   }
 }
