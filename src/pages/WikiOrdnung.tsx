@@ -80,6 +80,13 @@ const LinkBadge = ({ kind }: { kind: "import" | "field" | "text" }) => (
   <Badge variant="outline" className="text-[10px]">{kind === "import" ? "Importverknüpfung, ungeprüft" : kind === "field" ? "Datenfeld" : "Treffer im Quelltext – Zuordnung noch zu prüfen"}</Badge>
 );
 
+const TILE = "flex h-full w-full flex-col gap-1 rounded-lg border-2 border-primary/30 bg-card p-3 text-left text-sm transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+/** Einheitliche Wiki-Kachel: Name oben, Zusatzangaben darunter; ganze Kachel öffnet den Eintrag (ohne verschachtelte Buttons). */
+function WikiTile({ title, meta, onOpen }: { title: string; meta?: React.ReactNode; onOpen?: () => void }) {
+  const inner = <><span className="font-semibold leading-snug text-foreground">{title}</span>{meta && <span className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">{meta}</span>}</>;
+  return onOpen ? <button type="button" onClick={onOpen} className={TILE}>{inner}</button> : <div className={TILE.replace(/ hover:\S+/g, "")}>{inner}</div>;
+}
+
 /** List with visible count and "Weitere Treffer zeigen" – all entries reachable. */
 function RevealList<T>({ items, render, label = "Treffer" }: { items: T[]; render: (x: T) => JSX.Element | null; label?: string }) {
   const [shown, setShown] = useState(0);
@@ -87,7 +94,7 @@ function RevealList<T>({ items, render, label = "Treffer" }: { items: T[]; rende
   const w = revealWindow(items, shown);
   return (
     <>
-      <ul className="space-y-1">{w.visible.map(render)}</ul>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{w.visible.map(render)}</ul>
       {w.total > 0 && w.total > 200 && <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">{w.shown} von {w.total} {label} angezeigt
         {w.remaining > 0 && <><Button size="sm" variant="outline" onClick={() => setShown(w.next)}>Weitere {w.next - w.shown} zeigen</Button><Button size="sm" variant="ghost" onClick={() => setShown(w.total)}>Alle {w.total} zeigen</Button></>}</p>}
     </>
@@ -157,7 +164,7 @@ export default function WikiOrdnung() {
   const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
-    return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
+    return <li key={aid}><WikiTile title={a.title} meta={<><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></>} /></li>;
   };
   const srcText = (sid: string) => {
     const s = m!.allSourceRevisions.get(sid);
@@ -434,7 +441,7 @@ export default function WikiOrdnung() {
       <>
         <p className="mb-2 text-sm text-muted-foreground">Ohne Firma/Person, ohne Importverknüpfung und ohne Titeltreffer zu einem Begriff. Nichts davon ist ausgeblendet – die Inhalte stehen weiter vollständig in der Wikidatenbank.</p>
         <Input className="mb-3 max-w-xs" placeholder="Suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <ul className="space-y-1 text-sm">{pg.items.map((x) => x.k === "e" ? <li key={x.id}>Begriff: {entButton(x.id)}</li> : <li key={x.id}>Artikel: {x.t}</li>)}</ul>
+        <ul className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((x) => { const e = x.k === "e" ? ent(x.id) : undefined; return <li key={x.id}>{x.k === "e" ? <WikiTile title={e?.name ?? x.id} meta="Begriff" onOpen={e ? () => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: x.id, q: null }) : undefined} /> : <WikiTile title={x.t} meta="Artikel" />}</li>; })}</ul>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
@@ -471,10 +478,10 @@ export default function WikiOrdnung() {
           ? <>Zuordnung über das Herstellerfeld im Produktdatensatz („{maker?.name ?? "Mannayan GmbH & Co. KG"}"); Suchbegriff „Mannayan" funktioniert. Herstellerangaben sind Quellenangaben, keine bestätigte Wirksamkeit. {maker && <button className="underline" onClick={() => set({ v: "actors", id: maker.key })}>Zum Hersteller</button>}</>
           : <>Als ChipCard gilt nur ein vorhandener Programm-Datensatz mit „ChipCard"/„Chip" im eigenen Namen. Produktart bleibt „Programm" laut Datensatz – keine Einstufung als Arzneimittel und keine gesicherte Wirksamkeit.</>}</p>
         <Input className="mb-3 max-w-xs" placeholder={isM ? "Mannayan-Produkt suchen" : "ChipCard suchen"} value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · Typ {e.type} · {neighbours(m, e.id).length} Verknüpfungen{neighbours(m, e.id).length === 0 ? " (keine Themen/Symptome zugeordnet)" : ""}</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <WikiTile key={e.id} title={e.name} onOpen={() => set({ id: e.id })} meta={<>Typ {e.type} · {neighbours(m, e.id).length} Verknüpfungen{neighbours(m, e.id).length === 0 ? " (keine Themen/Symptome zugeordnet)" : ""}</>} />)}</div>
         {list.length === 0 && <p className="text-sm">Keine Datensätze in dieser Rubrik.</p>}
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
-        {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{textProducts.map((e) => entButton(e.id))}</div></div>}
+        {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{textProducts.map((e) => <WikiTile key={e.id} title={e.name} meta={<>Typ {e.type}</>} onOpen={() => set({ id: e.id })} />)}</div></div>}
         {!isM && <div className="mt-4 space-y-3 text-sm">
           <div><p className="font-semibold">Artikel im Ordner/Titel „Chip Cards" ({chipArticles.length}) <LinkBadge kind="field" /></p><RevealList items={chipArticles} render={(a) => artLine(a.id, "field")} label="Artikel" /></div>
           <div><p className="font-semibold">Weitere Programm-Datensätze ohne „ChipCard" im Namen ({otherPrograms.length}) – nicht eingeordnet, zu prüfen</p><div className="flex flex-wrap gap-3">{otherPrograms.map((e) => entButton(e.id))}</div></div>
@@ -517,7 +524,7 @@ export default function WikiOrdnung() {
           <p>Wissensnavigation – keine Verordnung und keine Anwendungsfreigabe. Als Arzneimittel gilt ein Eintrag nur, wenn sein Datensatz das ausdrücklich angibt (Begriffstyp oder hinterlegte Art); eine bloße Erwähnung, etwa in den Klinghardt-Unterlagen, reicht nicht. Verschreibungsstatus nur, wenn im Datensatz hinterlegt, sonst „unklar".</p>
         </CardContent></Card>
         <Input className="mb-3 max-w-xs" placeholder="Arzneimittel suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · {rxLabel(e.rx)} · {neighbours(m, e.id).length} Verknüpfungen</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <WikiTile key={e.id} title={e.name} onOpen={() => set({ id: e.id })} meta={<>{rxLabel(e.rx)} · {neighbours(m, e.id).length} Verknüpfungen</>} />)}</div>
         {list.length === 0 && <p className="text-sm font-semibold">Im Bestand ist derzeit kein Eintrag als Arzneimittel strukturiert erfasst (kein Begriffstyp „Arzneimittel", keine PZN/ATC-Kennung, keine hinterlegte Produktart).</p>}
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
         {kl && <div className="mt-4 text-sm"><p className="font-semibold">Dr. Klinghardt: {kl.sourceRevisionIds.size} interne Quellen, {kl.folderArticleIds.size} Ordner-Artikel <LinkBadge kind="field" /></p>
@@ -533,7 +540,7 @@ export default function WikiOrdnung() {
       <>
         <p className="mb-2 text-sm text-muted-foreground">Einordnung nach Stoffname, nur für Datensätze vom Typ Nährstoff (Stoff). Produkte mit diesen Stoffen stehen im Detail. {view === "minerals" && "Spurenelemente sind als Untergruppe enthalten und markiert."} {view === "trace" && "Untergruppe der Mineralstoffe."}</p>
         <Input className="mb-3 max-w-xs" placeholder={`${NUTRIENT_LABEL[view]} suchen`} value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span>{view === "minerals" && e.nutrient === "trace" ? " · Spurenelement" : ""} · {neighbours(m, e.id).length} Verknüpfungen · {productsWithSubstance(m, e.id).length} Produkte</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <WikiTile key={e.id} title={e.name} onOpen={() => set({ id: e.id })} meta={<>{view === "minerals" && e.nutrient === "trace" ? " · Spurenelement" : ""} · {neighbours(m, e.id).length} Verknüpfungen · {productsWithSubstance(m, e.id).length} Produkte</>} />)}</div>
         {list.length === 0 && <p className="text-sm">Im Bestand keine Datensätze in dieser Rubrik.</p>}
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
         <p className="mt-3 text-xs text-muted-foreground">Nicht eingeordnete Nährstoffe ({unclassified.length}): {unclassified.map((e) => e.name).join(", ")} – stehen unter Mittel/Produkte.</p>
@@ -546,7 +553,7 @@ export default function WikiOrdnung() {
     body = (
       <>
         <Input className="mb-3 max-w-xs" placeholder={`${GROUP_LABEL[g]} suchen`} value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · {neighbours(m, e.id).length} Verknüpfungen</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <WikiTile key={e.id} title={e.name} onOpen={() => set({ id: e.id })} meta={<>{neighbours(m, e.id).length} Verknüpfungen</>} />)}</div>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
