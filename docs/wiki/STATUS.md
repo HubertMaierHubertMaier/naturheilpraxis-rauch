@@ -101,3 +101,8 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - SIBO/PGlite-Test (07.10.2026): Im Gesamtlauf 17:43 UTC fehlgeschlagen nach 6656 ms („× SIBO source import > executes without ambiguous variables and remains idempotent 6656ms“, vollständiger Fehlertext nicht erhalten; Vermutung Zeitlimit unbewiesen). Einzellauf 17:59 UTC: PASS in 2563 ms. Ursache offen; bei nächstem Gesamtlauf gezielt mit Fehlerausgabe erneut prüfen. Keine Live-SQL angewendet.
 
 - 07.10.2026 ~18:30 UTC: 21 Strunz-Übersichtsseiten live abgerufen (alle HTTP 200) → docs/wiki/strunz-anwendungsbereiche-produkte-2026-10-07.json: 69 Kandidaten „im Anwendungsbereich gelistet“ (nur exakte URL-Treffer auf die 9 Produktkarten, je Artikel-/Revisions-ID, Position, Produktschlüssel), 149 gelistete Produkte ohne Wiki-Karte, keine Wirk-/Indikationscodes. UI: /wikidatenbank/ordnung?v=reviewed. Ochsengalle/Heel: kein Heel-Produkt mit Fel tauri D6 belegt (offen). Medacalm: Pfefferminzöl, Abtei/GSK laut Gebrauchsinformation, NICHT Pascoe.
+
+## 2026-10-07 Strunz 53 Quellkandidaten + Pagination
+- `docs/wiki/strunz-quellkandidaten-53-2026-10-07.json`: 53 echte Kandidaten-IDs (Batch ffe44e71) lesend typisiert; 27 eindeutig auf 9 Karten (je Produktseite + Form/Zielgruppe + Interaktion), 26 offen (12 Einzelstoff-, 1 Regulatorik-, 2 übergreifende Sicherheits-, 11 Auditberichte). Keine Zuordnung über gleichen Nährstoff.
+- Pagination: alle 21 Listen vollständig auf Seite 1 (amountData = Produktlinks, ?p=2 ohne neue). 149 ungemappt = 136 eindeutige Produkte + 13 Varianten in 6 Gruppen (nicht zusammengeführt).
+- Nächster Schritt: 136 eindeutige Produkte ohne Karte gegen bestehende kb_entities-Namen lesend auf vorhandene Karten/Dubletten prüfen.
