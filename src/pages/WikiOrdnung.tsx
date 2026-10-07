@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
-import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
+import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, currentCardsOnly, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
 import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
@@ -125,8 +125,9 @@ export default function WikiOrdnung() {
     if (!isAdmin || view !== "klinghardt" || kCards !== null) return;
     setKCards("loading");
     fetchAllPages((f, t) => db.from("kb_source_revisions").select("id, revision_no, title, key:metadata->candidate_snapshot->>candidate_key, locator:metadata->candidate_snapshot->>source_locator, tags:metadata->candidate_snapshot->proposed_data->tags, topics:metadata->candidate_snapshot->proposed_data->therapeutic_topics, content:metadata->candidate_snapshot->proposed_data->>content").eq("publisher", KLINGHARDT_PUBLISHER).order("id", { ascending: true }).range(f, t))
-      .then((r) => { if (r.error) return setKCards("error"); const cur = new Set([...(m?.sources.values() ?? [])].map((s) => s.id)); setKCards((r.data as never[]).map(toCard).filter((c) => cur.size === 0 || cur.has(c.revisionId)).sort((a, b) => a.title.localeCompare(b.title, "de"))); });
-  }, [isAdmin, view, kCards, m]);
+      .then((r) => { if (r.error) return setKCards("error"); setKCards((r.data as never[]).map(toCard)); });
+  }, [isAdmin, view, kCards]);
+  const kCurrent = useMemo(() => currentCardsOnly(kCards, m ? new Set([...m.sources.values()].map((s) => s.id)) : null), [kCards, m]);
 
   const actorsSorted = useMemo(() => {
     if (!m) return [];
@@ -229,7 +230,7 @@ export default function WikiOrdnung() {
       </>
     );
   } else if (view === "klinghardt") {
-    const kc = kCards;
+    const kc = kCurrent;
     const axes = (params.get("ax") ?? "").split(",").filter(Boolean) as AxisKey[];
     const chapter = params.get("kap");
     if (kc === null || kc === "loading") body = <p>Lädt Quellenkarten …</p>;

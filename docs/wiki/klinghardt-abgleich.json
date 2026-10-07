@@ -455,5 +455,20 @@
         "Pathogene und Infektionen"
       ]
     }
-  ]
+  ],
+  "live_abgleich": {
+    "datum": "2026-10-07T17:52Z",
+    "modus": "read-only SELECT, keine Writes",
+    "abfrageumfang": "kb_source_revisions WHERE publisher='Klinghardt Talks 001-025' LEFT JOIN kb_sources ON source_id (alle Zeilen, ohne LIMIT)",
+    "zeilen": 62,
+    "eindeutige_revisions_ids": 62,
+    "eindeutige_source_ids": 62,
+    "aktuelle_revisionen": 62,
+    "historische_revisionen": 0,
+    "eindeutige_candidate_keys": 62,
+    "revision_no": "alle 1",
+    "revisions_ids_md5": "113bd4d242be346d6290070a7bacd203",
+    "md5_definition": "md5(string_agg(id::text, ',' ORDER BY id))",
+    "einordnung": "Live-Bestand verifiziert 62/62 mit eindeutigen IDs. Der bisherige candidate_key-Abgleich war statisch; dieser Eintrag ist der Live-Nachweis."
+  }
 }
