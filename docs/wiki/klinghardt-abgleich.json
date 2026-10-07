@@ -1,0 +1,459 @@
+{
+  "stand": "07.10.2026",
+  "quelle_db": "kb_source_revisions (aktuelle Revisionen), Herausgeber 'Klinghardt Talks 001-025'",
+  "quelle_datei": "docs/klinghardt-talks-001-025-import-batch.json",
+  "kompendium": {
+    "datei": "000_Klinghardt_Gesamtkompendium_001_bis_025_Praxisnavigator_Grossschrift.pdf",
+    "seiten": 903,
+    "quellenkarten": 586,
+    "themenzeilen": 516,
+    "praxiskarten": 62,
+    "pdf_sha256": "20dce7162cc99a44b12d988f2adbb12dc471a5fd67aecf66786bc4196e71c26b",
+    "docx_sha256": "fb2631f0effde4a05d74a0c1b114340f0e91839f24a04416f8a53a5006e6b2f7",
+    "hinweis": "586 = Kompendium-Bestand; importiert sind nur 62 Praxiskarten (524 nicht im Wiki)"
+  },
+  "abgleich": {
+    "db": 62,
+    "datei": 62,
+    "in_beiden": 62,
+    "nur_db": [],
+    "nur_datei": [],
+    "fundstelle_abweichend": []
+  },
+  "karten": [
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-activated-charcoal",
+      "fundstelle": "Folge 010 1:27:33-1:28:22 E010-009",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-aluminium-detox-binders",
+      "fundstelle": "Folge 014 34:55-37:23 E014-013",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-antiparasitics-seizures",
+      "fundstelle": "Folge 022 1:07:18-1:08:38 E022-031",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-apolactoferrin",
+      "fundstelle": "Folge 010 1:01:58-1:32:42 E010-003",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-artemisinin-babesia-label-only",
+      "fundstelle": "Folge 007 18:36-20:12; 38:40-40:07 E007-007",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-artesunate-lung-fibrosis",
+      "fundstelle": "Folge 022 26:44-29:22 E022-014",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-binder-high-dose",
+      "fundstelle": "Folge 005 07:32-08:46; 15:47-20:08 E005-005",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-blue-light-ms",
+      "fundstelle": "Folge 025 29:03-31:29 E025-014",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-blue-room-light-autism",
+      "fundstelle": "Folge 023 54:00-55:21 E023-025",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-borax-calcium",
+      "fundstelle": "Folge 022 09:58-11:38 E022-005",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-borax-pineal",
+      "fundstelle": "Folge 022 07:34-09:58 E022-004",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-brain-training",
+      "fundstelle": "Folge 015 40:57-43:27 E015-019",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-bright-light-depression",
+      "fundstelle": "Folge 021 17:45-21:29 E021-011",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-car-scan-autism",
+      "fundstelle": "Folge 023 35:00-37:51 E023-017",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-carpal-tunnel-thyroid",
+      "fundstelle": "Folge 005 45:26-46:10 E005-014",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-cistus-lyme",
+      "fundstelle": "Folge 007 06:36-11:55 E007-003",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-copper",
+      "fundstelle": "Folge 010 1:02:39-1:32:42 E010-004",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-core-sequence",
+      "fundstelle": "Folge 007 44:39-47:27 E007-018",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-cyprus-brain-stimulation",
+      "fundstelle": "Folge 022 51:39-55:00 E022-025",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-dapson-children-autism",
+      "fundstelle": "Folge 003 24:34-36:36 E003-004",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-dapson-lyme",
+      "fundstelle": "Folge 003 08:35-24:34 E003-001",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-dapson-protection-glutathione",
+      "fundstelle": "Folge 003 17:26-21:18 E003-002",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-dhea-pulmonary-hypertension",
+      "fundstelle": "Folge 022 30:13-32:39 E022-016",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-disulfiram-low-dose",
+      "fundstelle": "Folge 004 56:35-57:37 E004-015",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-disulfiram-titration",
+      "fundstelle": "Folge 019 1:00:02-1:03:23 E019-025; Folge 019 1:03:23-1:04:56 E019-026",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-eboo-frequency",
+      "fundstelle": "Folge 022 35:02-38:12 E022-018",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-edta-dmsa-calendar",
+      "fundstelle": "Folge 015 32:50-34:19 E015-015",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-emf-protection",
+      "fundstelle": "Folge 014 55:11-57:49 E014-020",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-erythromycin-prolotherapy",
+      "fundstelle": "Folge 020 16:26-18:54 E020-008",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-footbath-autism",
+      "fundstelle": "Folge 014 42:42-46:30 E014-016; Folge 024 46:31-49:48 E024-020",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-footbath-metals",
+      "fundstelle": "Folge 014 38:35-42:42 E014-015",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-four-antibiotics-cycles",
+      "fundstelle": "Folge 019 51:57-55:22 E019-022",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-glutathione-covid",
+      "fundstelle": "Folge 003 36:36-42:55 E003-007",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-head-compression",
+      "fundstelle": "Folge 022 20:22-21:42 E022-011",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-herbs-lyme-bartonella-babesia",
+      "fundstelle": "Folge 020 1:01:59-1:02:40 E020-029",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-high-dose-iod-pneumonia",
+      "fundstelle": "Folge 022 15:55-17:48 E022-008",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-hyaluronic-acid-lyme",
+      "fundstelle": "Folge 022 40:06-42:27 E022-020",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-hyaluronic-acid-timing",
+      "fundstelle": "Folge 007 11:56-14:26 E007-004",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-insuless",
+      "fundstelle": "Folge 010 1:02:21-1:34:48 E010-002",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-intranasal-infrared",
+      "fundstelle": "Folge 023 42:12-45:22 E023-021",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-iv-antibiotics-six-months",
+      "fundstelle": "Folge 019 14:12-16:32 E019-006",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-lactoferrin-novalytic-insuless",
+      "fundstelle": "Folge 010 1:02:21-1:03:48; 1:22:54-1:24:55 E010-007",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-liposorb-herbal-iv",
+      "fundstelle": "Folge 007 27:39-30:04 E007-010",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-lithium-memory",
+      "fundstelle": "Folge 022 46:01-47:28 E022-022",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-livessence-preparation",
+      "fundstelle": "Folge 007 32:45-35:17 E007-013",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-lymphatic-detox-bartonella",
+      "fundstelle": "Folge 007 20:13-22:44 E007-008",
+      "kapitel": [
+        "Pflanzenheilkunde"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-melatonin-route-ear-point",
+      "fundstelle": "Folge 016 1:01:43-1:03:58 E016-024",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-niacin-cholesterol",
+      "fundstelle": "Folge 005 05:03-07:31 E005-004",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-novalytic",
+      "fundstelle": "Folge 010 03:46-05:18; 58:09-1:30:01 E010-001",
+      "kapitel": [
+        "Medikamente und Nährstoffe"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-orange-light-crohn",
+      "fundstelle": "Folge 023 02:34-04:03 E023-003",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-ozone-lyme-viruses",
+      "fundstelle": "Folge 022 55:00-58:43 E022-026",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-photonwave-aluminium",
+      "fundstelle": "Folge 021 41:35-43:17 E021-024",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-photonwave-hallucinations",
+      "fundstelle": "Folge 021 43:17-45:31 E021-025",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-photonwave-neurotransmitters",
+      "fundstelle": "Folge 023 50:47-53:58 E023-024",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-queen-springs-water",
+      "fundstelle": "Folge 024 40:00-41:09 E024-016",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-rectal-melatonin",
+      "fundstelle": "Folge 016 12:06-13:18 E016-006",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-series-kits-fsm-brain-diet",
+      "fundstelle": "Folge 015 28:54-32:50 E015-014",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-silica-water-deferoxamine",
+      "fundstelle": "Folge 014 37:23-38:35 E014-014",
+      "kapitel": [
+        "Ausleitung"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-streptococcus-potencies",
+      "fundstelle": "Folge 006 49:51-51:20; 59:49-1:02:29 E006-012",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-stroke-vitamin-c-dmso",
+      "fundstelle": "Folge 022 1:00:13-1:03:29 E022-028",
+      "kapitel": [
+        "Erkrankungen und Symptome"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-topical-melatonin",
+      "fundstelle": "Folge 014 1:01:21-1:03:42 E014-023",
+      "kapitel": [
+        "Therapieverfahren"
+      ]
+    },
+    {
+      "candidate_key": "source:klinghardt-talks-001-025-zoster-neuralgia",
+      "fundstelle": "Folge 005 20:09-23:07 E005-007",
+      "kapitel": [
+        "Pathogene und Infektionen"
+      ]
+    }
+  ]
+}
