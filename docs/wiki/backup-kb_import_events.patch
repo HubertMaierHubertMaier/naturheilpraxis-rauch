@@ -1,0 +1,33 @@
+diff -ru a/src/lib/backupAreas.ts b/src/lib/backupAreas.ts
+--- a/src/lib/backupAreas.ts	2026-10-07 15:13:57.814280817 +0000
++++ b/src/lib/backupAreas.ts	2026-10-07 15:13:57.817938954 +0000
+@@ -112,7 +112,6 @@
+       "kb_import_candidate_proposals",
+       "kb_import_proposal_review_events",
+       "kb_import_core_links",
+-      "kb_import_events",
+       "faqs",
+       "practice_pricing",
+       "practice_info",
+diff -ru a/src/test/wiki-phase1-core-schema.test.ts b/src/test/wiki-phase1-core-schema.test.ts
+--- a/src/test/wiki-phase1-core-schema.test.ts	2026-10-07 15:13:57.847137386 +0000
++++ b/src/test/wiki-phase1-core-schema.test.ts	2026-10-07 15:13:57.850281144 +0000
+@@ -44,7 +44,6 @@
+   "kb_import_candidate_proposals",
+   "kb_import_proposal_review_events",
+   "kb_import_core_links",
+-  "kb_import_events",
+ ];
+ 
+ const wikiBackupTables = [
+diff -ru a/supabase/functions/backup-export/index.ts b/supabase/functions/backup-export/index.ts
+--- a/supabase/functions/backup-export/index.ts	2026-10-07 15:13:57.831147064 +0000
++++ b/supabase/functions/backup-export/index.ts	2026-10-07 15:13:57.834489510 +0000
+@@ -83,7 +83,6 @@
+   "kb_import_candidate_proposals",
+   "kb_import_proposal_review_events",
+   "kb_import_core_links",
+-  "kb_import_events",
+ ] as const;
+ 
+ // Fallback-Listen (werden nur verwendet, wenn die Auto-Discovery fehlschlägt).
