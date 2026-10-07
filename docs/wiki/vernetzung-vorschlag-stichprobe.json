@@ -1,110 +1,327 @@
 {
-  "status": "VORSCHLAG – NICHT ANGEWENDET. Keine Produktivwrites, keine Migration. Gelesen aus Hosted-DB am 2026-10-07.",
-  "hinweis_ids": "Bei Importdatensätzen sind Entitäts-/Artikel-ID und aktuelle Revisions-ID laut Abfrage identisch (deterministische Import-IDs). Vor Übernahme durch Codex verifizieren.",
+  "status": "VORSCHLAG v2 (07.10.2026, an korrigierten Plan angepasst) – NICHT ANGEWENDET, NICHT AUSFÜHRBAR. Keine Produktivwrites, keine Migration. Kein Eintrag ist eine fertige Zuordnung; alle Speichercodes sind Zielcodes für eine spätere Review-Materialisierung.",
+  "hinweis_ids": "Revisions-IDs je Tabelle am 07.10.2026 read-only geprüft (siehe id_pruefung je Kandidat). Gleichheit Objekt-ID = Revisions-ID ist bei Importdatensätzen tatsächlich so gespeichert (kb_entities/kb_articles.current_revision_id zeigt auf denselben UUID-Wert in kb_entity_revisions/kb_article_revisions; kb_source_revisions.source_id = id, revision_no 1). Nicht für andere Datensätze verallgemeinern.",
   "regeln": [
-    "candidate_key stabil: '<kind>:<typ>:<normalisierter name>' – unabhängig von Lauf/Zeit",
-    "Quelle = bestehende Revision; Fundstelle wörtlich aus Datensatz/Text",
-    "review_status immer 'candidate'; Quellenaussage ≠ Wirkung/Freigabe",
-    "Produktart nur vorgeschlagen, mit Begründung und Unsicherheit"
+    "candidate_key stabil: '<kind>:<typ>:<normalisierter name>'",
+    "Trennung: 'ui_bezeichnung' = Anzeige (Deutsch); 'speichercode' = ausschließlich erlaubter Wert laut Schema (kb_relation_types.code, kb_article_entities.role ∈ about|mentions|recommends|warns_about|source_for, kb_source_actors.role ∈ author|publisher|manufacturer|pharmacy). 'laut Quelle' ist UI-Text, nie Teil des Codes.",
+    "speichercode=null bedeutet: kein zulässiger Code vorhanden/fehlende Voraussetzung – nicht materialisierbar",
+    "Herkunft 'Ordner' oder 'Produktbekanntheit' ist kein Beleg für Herstellerschaft",
+    "vollstaendig=false, solange Quellrevision oder Fundstelle fehlt",
+    "review_status immer 'candidate'; Quellenaussage ≠ Wirkung/Freigabe"
   ],
   "kandidaten": [
     {
       "candidate_key": "rel:mannayan-zink-60-tabletten:manufactured_by:mannayan",
       "anbieter": "Mannayan GmbH & Co. KG",
-      "subjekt": { "art": "kb_entity", "id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440", "revision_id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440", "name": "Mannayan ZINK + (60 Tabletten)", "typ_ist": "product_variant" },
+      "subjekt": {
+        "art": "kb_entity",
+        "id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440",
+        "revision_id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440",
+        "name": "Mannayan ZINK + (60 Tabletten)",
+        "typ_ist": "product_variant"
+      },
       "fundstelle": "docs/source-inventory/2026-08-07-mannayan-zink-read-only.json (Herstellerfeld proposed_data.manufacturer)",
-      "quelle_kandidat_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
       "vorgeschlagene_produktart": "Nahrungsergänzungsmittel",
       "beziehungen": [
-        { "typ": "manufactured_by", "objekt": "organization:mannayan gmbh co kg (neu, Kandidat)", "herkunft": "Datenfeld" },
-        { "typ": "contains", "objekt": "nutrient:Zink (bestehend)", "herkunft": "Produktname/Deklaration – zu prüfen" }
+        {
+          "ui_bezeichnung": "hergestellt von",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "manufactured_by",
+          "objekt": "organization: Mannayan GmbH & Co. KG (neu, Kandidat; Typ organization erst nach Aktivierung, sonst bestehender Typ manufacturer)",
+          "herkunft": "Herstellerfeld proposed_data.manufacturer",
+          "voraussetzung": "Domäne product_variant→organization draft; heute approved nur product_variant→manufacturer"
+        },
+        {
+          "ui_bezeichnung": "enthält (laut Deklaration)",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "contains",
+          "objekt": "nutrient: Zink (bestehend)",
+          "herkunft": "Produktname – Deklaration noch nicht belegt",
+          "fundstelle_fehlt": true
+        }
       ],
-      "unsicherheit": "niedrig für Hersteller (Feld); Produktart aus Herstellerdeklaration abgeleitet, nicht als Feld gespeichert"
+      "unsicherheit": "niedrig für Hersteller (Feld); Produktart aus Herstellerdeklaration abgeleitet, nicht als Feld gespeichert",
+      "id_pruefung": "kb_entities.id vorhanden (Typ product_variant); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
+      "quelle_revision_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
+      "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
+      "vollstaendig": false,
+      "unvollstaendig_grund": "Hersteller belegt; contains ohne Deklarationsfundstelle"
     },
     {
       "candidate_key": "rel:radegundis-nase-frei:offered_by:radegundis-apotheke",
       "anbieter": "Radegundis Apotheke",
-      "subjekt": { "art": "kb_entity", "id": "b2bda25d-27de-52b5-0afa-3121d763e8da", "revision_id": "b2bda25d-27de-52b5-0afa-3121d763e8da", "name": "Radegundis Nase frei", "typ_ist": "product" },
+      "subjekt": {
+        "art": "kb_entity",
+        "id": "b2bda25d-27de-52b5-0afa-3121d763e8da",
+        "revision_id": "b2bda25d-27de-52b5-0afa-3121d763e8da",
+        "name": "Radegundis Nase frei",
+        "typ_ist": "product"
+      },
       "fundstelle": "S. 2, Spalte Akute Phase (Quelle „Radegundis Apotheke – Mittel gegen Pollen und Symptome der Nase“)",
-      "quelle_kandidat_id": "c8aa4a29-25bb-3a71-e25a-7be80e148e2e",
       "vorgeschlagene_produktart": "unklar (Apothekeneigenprodukt; Arzneimittel/NEM nicht angegeben)",
       "beziehungen": [
-        { "typ": "offered_by", "objekt": "pharmacy:Radegundis Apotheke (bestehend als manufacturer → Typ prüfen)", "herkunft": "Quelle/Herausgeber" },
-        { "typ": "indicated_for (laut Quelle)", "objekt": "Symptome der Nase – bestehende Importverknüpfungen in /wikidatenbank/ordnung übernehmen", "herkunft": "Import" }
+        {
+          "ui_bezeichnung": "geführt von Apotheke",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "offered_by",
+          "objekt": "Radegundis Apotheke (gespeichert als manufacturer-Entität; Apothekenrolle zusätzlich über kb_source_actors.role='pharmacy')",
+          "herkunft": "Quelle/Herausgeber",
+          "voraussetzung": "offered_by inaktiv; Domäne product→pharmacy nur draft"
+        },
+        {
+          "ui_bezeichnung": "Herausgeber der Quelle",
+          "speichertabelle": "kb_source_actors",
+          "speichercode": "publisher",
+          "objekt": "Radegundis Apotheke",
+          "herkunft": "Herausgeberfeld der Quellenrevision"
+        },
+        {
+          "ui_bezeichnung": "angegeben bei (laut Quelle)",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "indicated_for",
+          "objekt": "Symptome der Nase – nur bestehende Importkandidaten, einzeln zu prüfen",
+          "herkunft": "Import, ungeprüft"
+        }
       ],
-      "unsicherheit": "mittel: Hersteller vs. Anbieter (Apotheke) aus Quelle nicht eindeutig"
+      "unsicherheit": "mittel: Hersteller vs. Anbieter (Apotheke) aus Quelle nicht eindeutig",
+      "id_pruefung": "kb_entities.id vorhanden (Typ product); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
+      "quelle_revision_id": "c8aa4a29-25bb-3a71-e25a-7be80e148e2e",
+      "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
+      "vollstaendig": true
     },
     {
-      "candidate_key": "rel:banderol:manufactured_by:nutramedix",
-      "anbieter": "Nutramedix",
-      "subjekt": { "art": "kb_entity", "id": "e8455b88-2003-654d-a76b-b7dc7fe15d86", "revision_id": "e8455b88-2003-654d-a76b-b7dc7fe15d86", "name": "Banderol", "typ_ist": "product" },
-      "fundstelle": "„Bestehende lokale Quelle und Peters Praxisangabe“; Ordner Nutramedix (Datenfeld)",
-      "quelle_kandidat_id": "7ba2f517-0b7c-5c12-b8d7-776d8cfa45eb",
+      "candidate_key": "ent:product:banderol:hersteller-offen",
+      "anbieter": "offen (Ordner „Nutramedix“ vorhanden – kein Herstellerbeleg)",
+      "subjekt": {
+        "art": "kb_entity",
+        "id": "e8455b88-2003-654d-a76b-b7dc7fe15d86",
+        "revision_id": "e8455b88-2003-654d-a76b-b7dc7fe15d86",
+        "name": "Banderol",
+        "typ_ist": "product"
+      },
+      "fundstelle": "Quellentitel „Bestehende lokale Quelle und Peters Praxisangabe“; Herstellerangabe fehlt",
       "vorgeschlagene_produktart": "Pflanzenextrakt/Nahrungsergänzung – unklar",
-      "beziehungen": [ { "typ": "manufactured_by", "objekt": "organization:nutramedix (neu, Kandidat)", "herkunft": "Ordner + Produktbekanntheit – Herstellerfeld fehlt" } ],
-      "unsicherheit": "mittel: Herstellerzuordnung nicht als Feld gespeichert; Peter bestätigen"
+      "beziehungen": [
+        {
+          "ui_bezeichnung": "Hersteller",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": null,
+          "objekt": "offen – Nutramedix NICHT als Hersteller eintragen, solange kein Herstellerfeld/keine Quellenfundstelle",
+          "herkunft": "Ordnerzugehörigkeit (nur Navigation)",
+          "grund": "kein Herstellerfeld im Datensatz; Ordner und Produktbekanntheit sind kein Beleg"
+        }
+      ],
+      "unsicherheit": "hoch für Hersteller: unbelegt; Peter/Quelle muss Hersteller mit Fundstelle liefern",
+      "id_pruefung": "kb_entities.id vorhanden (Typ product); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
+      "quelle_revision_id": "7ba2f517-0b7c-5c12-b8d7-776d8cfa45eb",
+      "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
+      "vollstaendig": false
     },
     {
       "candidate_key": "ent:product:ochsengalle-felis-tauri-d6-heel",
       "anbieter": "Heel",
-      "subjekt": { "art": "kb_article", "id": "26b7f387-164d-4f05-a17f-f04376e32bfd", "revision_id": "26b7f387-164d-4f05-a17f-f04376e32bfd", "titel": "Gallensäuren im Stuhl" },
+      "subjekt": {
+        "art": "kb_article",
+        "id": "26b7f387-164d-4f05-a17f-f04376e32bfd",
+        "revision_id": "26b7f387-164d-4f05-a17f-f04376e32bfd",
+        "titel": "Gallensäuren im Stuhl"
+      },
       "fundstelle": "Artikeltext: „**Ochsengalle** (Felis tauri D6, Heel) | 3×10 Tr. | 6 Wo.“",
       "vorgeschlagene_produktart": "homöopathisches Arzneimittel (Einzelmittel, Potenz D6) – nicht Komplexmittel",
       "beziehungen": [
-        { "typ": "neue Entität", "objekt": "product:Ochsengalle Felis tauri D6", "herkunft": "Texttreffer" },
-        { "typ": "manufactured_by", "objekt": "organization:heel (neu)", "herkunft": "Texttreffer" },
-        { "typ": "kb_article_entities", "rolle": "produkt", "objekt": "Artikel-Revision oben", "herkunft": "Texttreffer" }
+        {
+          "ui_bezeichnung": "neues Produkt (Kandidat)",
+          "speichertabelle": "kb_entity_candidates",
+          "speichercode": null,
+          "objekt": "product: Ochsengalle Felis tauri D6",
+          "herkunft": "Texttreffer",
+          "grund": "erst Entitätskandidat, keine Entität"
+        },
+        {
+          "ui_bezeichnung": "Hersteller laut Artikeltext",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "manufactured_by",
+          "objekt": "organization/manufacturer: Heel (neu)",
+          "herkunft": "Texttreffer im Artikel – Artikel ist keine Primärquelle"
+        },
+        {
+          "ui_bezeichnung": "im Artikel empfohlen",
+          "speichertabelle": "kb_article_entities",
+          "speichercode": "recommends",
+          "objekt": "Artikel-Revision 26b7f387… ↔ Produkt (nach Anlage)",
+          "herkunft": "Texttreffer",
+          "ui_alt": "erwähnt (mentions), falls keine Empfehlung gemeint"
+        }
       ],
-      "unsicherheit": "hoch: nur Texttreffer; Dosierung bleibt Admin-Wiki-Inhalt, nicht in Relation"
+      "unsicherheit": "hoch: nur Texttreffer; Dosierung bleibt Admin-Wiki-Inhalt, nicht in Relation",
+      "id_pruefung": "admin_knowledge_base.id und kb_articles.id vorhanden; current_revision_id = gleicher UUID, in kb_article_revisions vorhanden (article_id passt)",
+      "vollstaendig": false
     },
     {
       "candidate_key": "ent:product:medacalm-pascoe",
       "anbieter": "Pascoe",
-      "subjekt": { "art": "kb_article", "id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f", "revision_id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f", "titel": "Reizdarm – Symptome & naturheilkundliche Mittel" },
+      "subjekt": {
+        "art": "kb_article",
+        "id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f",
+        "revision_id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f",
+        "titel": "Reizdarm – Symptome & naturheilkundliche Mittel"
+      },
       "fundstelle": "Artikeltext: „Medacalm Kps. (Pascoe) – 3× tgl. 1 Kps.“",
       "vorgeschlagene_produktart": "unklar (Arzneimittel oder NEM nicht im Text)",
       "beziehungen": [
-        { "typ": "manufactured_by", "objekt": "organization:pascoe (neu)", "herkunft": "Texttreffer" },
-        { "typ": "may_support (laut Quelle)", "objekt": "disease:Reizdarm (Abgleich mit bestehender Entität prüfen)", "herkunft": "Artikelkontext" }
+        {
+          "ui_bezeichnung": "Hersteller laut Artikeltext",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "manufactured_by",
+          "objekt": "Pascoe (neu)",
+          "herkunft": "Texttreffer"
+        },
+        {
+          "ui_bezeichnung": "kann unterstützen (laut Artikel)",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "may_support",
+          "objekt": "disease: Reizdarm (Abgleich mit bestehender Entität prüfen)",
+          "herkunft": "Artikelkontext",
+          "voraussetzung": "Domäne may_support product→disease ist approved (geprüft 07.10.2026); Produktentität fehlt noch"
+        },
+        {
+          "ui_bezeichnung": "im Artikel erwähnt",
+          "speichertabelle": "kb_article_entities",
+          "speichercode": "mentions",
+          "objekt": "Artikel-Revision 1530835d… ↔ Produkt",
+          "herkunft": "Texttreffer"
+        }
       ],
-      "unsicherheit": "hoch: Texttreffer; Komplexmittel-Status unbekannt"
+      "unsicherheit": "hoch: Texttreffer; Komplexmittel-Status unbekannt",
+      "id_pruefung": "admin_knowledge_base.id und kb_articles.id vorhanden; current_revision_id = gleicher UUID, in kb_article_revisions vorhanden (article_id passt)",
+      "vollstaendig": false
     },
     {
       "candidate_key": "ent:product:night-relax-kapseln-vitaplace",
       "anbieter": "Vitaplace",
-      "subjekt": { "art": "kb_article", "id": "fbca0501-7f87-440d-982e-48b2051c6d63", "revision_id": "fbca0501-7f87-440d-982e-48b2051c6d63", "titel": "Night Relax Kapseln" },
+      "subjekt": {
+        "art": "kb_article",
+        "id": "fbca0501-7f87-440d-982e-48b2051c6d63",
+        "revision_id": "fbca0501-7f87-440d-982e-48b2051c6d63",
+        "titel": "Night Relax Kapseln"
+      },
       "fundstelle": "Ordner „Vitaplace > Nahrungsergänzungsmittel“ (Datenfeld)",
       "vorgeschlagene_produktart": "Nahrungsergänzungsmittel (aus Ordnername)",
-      "beziehungen": [ { "typ": "offered_by", "objekt": "pharmacy:vitaplace (neu, Kandidat; Rolle Apotheke + Produktlinie)", "herkunft": "Ordner (Datenfeld) + extern geprüfte Betreiberzuordnung 07.10.2026" } ],
-      "externe_primaerquellen": ["https://www.vitaplace.de/ (VITAPLACE Versandapotheke, Terofalstraße 4, München)", "https://versandhandel.dimdi.de/websearch/servlet/Gate?accessid=dimdi_var&term=baa686aeb5b5701de3a453313ff7e7fd (BfArM-Versandhandelsregister: Vitaplace + Blumenau-Apotheke, gleicher Standort)", "https://www.blumenau-apotheke.de/impressum/"],
-      "aliase": ["Vitaplace", "Viatplace"],
-      "unsicherheit": "niedrig für Apothekenrolle (extern geprüft); Hersteller vs. Vertrieb je Produkt offen"
+      "beziehungen": [
+        {
+          "ui_bezeichnung": "geführt von Versandapotheke",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "offered_by",
+          "objekt": "Vitaplace (Apothekenrolle extern belegt; Produktlinienrolle bleibt)",
+          "herkunft": "externe Betreiberzuordnung 07.10.2026 + Ordner",
+          "voraussetzung": "offered_by inaktiv; Hersteller je Produkt offen"
+        },
+        {
+          "ui_bezeichnung": "Hauptthema des Artikels",
+          "speichertabelle": "kb_article_entities",
+          "speichercode": "about",
+          "objekt": "Artikel-Revision fbca0501… ↔ Produkt Night Relax (Entität noch anzulegen)",
+          "herkunft": "Artikeltitel"
+        }
+      ],
+      "externe_primaerquellen": [
+        "https://www.vitaplace.de/ (VITAPLACE Versandapotheke, Terofalstraße 4, München)",
+        "https://versandhandel.dimdi.de/websearch/servlet/Gate?accessid=dimdi_var&term=baa686aeb5b5701de3a453313ff7e7fd (BfArM-Versandhandelsregister: Vitaplace + Blumenau-Apotheke, gleicher Standort)",
+        "https://www.blumenau-apotheke.de/impressum/"
+      ],
+      "aliase": [
+        "Vitaplace",
+        "Viatplace"
+      ],
+      "unsicherheit": "niedrig für Apothekenrolle (extern geprüft); Hersteller vs. Vertrieb je Produkt offen",
+      "id_pruefung": "admin_knowledge_base.id und kb_articles.id vorhanden; current_revision_id = gleicher UUID, in kb_article_revisions vorhanden (article_id passt)",
+      "vollstaendig": true
     },
     {
       "candidate_key": "ent:drug:erythromycin",
       "anbieter": "– (Wirkstoff; Quelle Dr. Klinghardt)",
-      "subjekt": { "art": "kb_source_revision", "id": "20e451aa-3ea9-5e71-b90c-ba724af155ec", "revision_no": 1, "titel": "Klinghardt-Quellenkarte: Erythromycin 500 mg viermal täglich, Prolotherapie und Behördenkonflikt", "herausgeber": "Klinghardt Talks 001-025" },
-      "fundstelle": "Quellentitel (Volltext-Fundstelle in Quellenkarte bei Review ergänzen)",
+      "subjekt": {
+        "art": "kb_source_revision",
+        "id": "20e451aa-3ea9-5e71-b90c-ba724af155ec",
+        "revision_no": 1,
+        "titel": "Klinghardt-Quellenkarte: Erythromycin 500 mg viermal täglich, Prolotherapie und Behördenkonflikt",
+        "herausgeber": "Klinghardt Talks 001-025"
+      },
+      "fundstelle": "FEHLT – nur Quellentitel gelesen; Volltext-Fundstelle in der Quellenkarte ist nicht erfasst",
       "vorgeschlagene_produktart": "Arzneimittel (Makrolid-Antibiotikum)",
       "verschreibungsstatus": "unklar laut Datensatz (nicht gespeichert; fachlich bekannt, aber nur mit Quelle setzen)",
       "beziehungen": [
-        { "typ": "described_in / authored_by", "objekt": "source:Klinghardt Talks → person:Dr. Klinghardt (Reihe ≠ Person; Rolle prüfen)", "herkunft": "Herausgeberfeld" }
+        {
+          "ui_bezeichnung": "Herausgeber der Quelle (Reihe)",
+          "speichertabelle": "kb_source_actors",
+          "speichercode": "publisher",
+          "objekt": "Klinghardt Talks 001-025 (Reihe – Typ organization oder Sammlungstitel klären)",
+          "herkunft": "Herausgeberfeld"
+        },
+        {
+          "ui_bezeichnung": "Autor/Sprecher",
+          "speichertabelle": "kb_source_actors",
+          "speichercode": "author",
+          "objekt": "person: Dr. Klinghardt – nur wenn Autorfeld/Fundstelle belegt",
+          "herkunft": "nicht belegt (Reihe ≠ Person)",
+          "grund": "authors-Feld nicht geprüft; ohne Beleg nicht setzen"
+        },
+        {
+          "ui_bezeichnung": "in Quelle beschrieben",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": null,
+          "objekt": "Wirkstoff Erythromycin ↔ Quelle",
+          "herkunft": "Quellentitel",
+          "grund": "kein Relationstyp described_in; Abbildung nur als Assertion mit kb_assertion_sources.source_role='mentions' plus Fundstelle"
+        }
       ],
-      "unsicherheit": "mittel: Quellenkarte beschreibt Anekdote/Einsatz, keine Wirkfreigabe; keine Dosis in Relation"
+      "unsicherheit": "mittel: Quellenkarte beschreibt Anekdote/Einsatz, keine Wirkfreigabe; keine Dosis in Relation",
+      "id_pruefung": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
+      "quelle_revision_id": "20e451aa-3ea9-5e71-b90c-ba724af155ec",
+      "vollstaendig": false,
+      "unvollstaendig_grund": "ausdrücklich unvollständiger Vorschlag: Quellrevision vorhanden, Fundstelle fehlt"
     },
     {
       "candidate_key": "rel:hno-chipcard:program-classification",
       "anbieter": "– (kein Hersteller im Datensatz)",
-      "subjekt": { "art": "kb_entity", "id": "ad6b83bf-70c8-0895-2b93-0a7298395133", "revision_id": "ad6b83bf-70c8-0895-2b93-0a7298395133", "name": "HNO-ChipCard", "typ_ist": "program" },
+      "subjekt": {
+        "art": "kb_entity",
+        "id": "ad6b83bf-70c8-0895-2b93-0a7298395133",
+        "revision_id": "ad6b83bf-70c8-0895-2b93-0a7298395133",
+        "name": "HNO-ChipCard",
+        "typ_ist": "program"
+      },
       "fundstelle": "„Praxisangaben 20.08.2026“ (Import „Herbst und Winter: HNO-, Virus-, TCM- und Praxisquellen“)",
-      "quelle_kandidat_id": "83e27f19-b762-3d10-c58b-f3ffbb2337ef",
       "vorgeschlagene_produktart": "Programm/ChipCard (Typ bleibt) – kein Arzneimittel",
       "beziehungen": [
-        { "typ": "bestehende Importverknüpfungen (14)", "objekt": "Symptome/Erkrankungen laut /wikidatenbank/ordnung", "herkunft": "Import, ungeprüft" },
-        { "typ": "kb_article_entities", "rolle": "hauptthema", "objekt": "Artikel im Ordner „Chip Cards“ mit Titel HNO – Abgleich zu prüfen", "herkunft": "Titeltreffer" },
-        { "typ": "manufactured_by", "objekt": "offen – Gerätehersteller nicht im Datensatz", "herkunft": "fehlt" }
+        {
+          "ui_bezeichnung": "angegeben bei (Importkandidaten, 14)",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "indicated_for",
+          "objekt": "Symptome/Erkrankungen – einzeln prüfen",
+          "herkunft": "Import, ungeprüft"
+        },
+        {
+          "ui_bezeichnung": "Hauptthema des Artikels",
+          "speichertabelle": "kb_article_entities",
+          "speichercode": "about",
+          "objekt": "Artikel im Ordner „Chip Cards“ mit HNO im Titel – konkrete Artikel-ID noch nicht ermittelt",
+          "herkunft": "Titeltreffer",
+          "fundstelle_fehlt": true
+        },
+        {
+          "ui_bezeichnung": "Hersteller",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": null,
+          "objekt": "offen – nicht im Datensatz",
+          "herkunft": "fehlt"
+        }
       ],
-      "unsicherheit": "mittel: Zuordnung Programm↔Gerät (Zapper/Trikombin) nicht gespeichert"
+      "unsicherheit": "mittel: Zuordnung Programm↔Gerät (Zapper/Trikombin) nicht gespeichert",
+      "id_pruefung": "kb_entities.id vorhanden (Typ program); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
+      "quelle_revision_id": "83e27f19-b762-3d10-c58b-f3ffbb2337ef",
+      "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
+      "vollstaendig": false
     }
   ]
 }
