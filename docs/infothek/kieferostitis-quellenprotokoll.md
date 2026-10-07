@@ -19,3 +19,8 @@ Entwurf: website-content/infothek/drafts/kieferostitis.entwurf.html (noindex, ni
 - Lechner 2017 (PMC5687454): 24 FDOK-Proben, Histologie/CCL5, ausgewähltes Bakterien-DNA-Panel, keine Enterovirus-RNA → im Artikel nicht als Enterovirus-Beleg verwendet. Eine negative Bakterien-PCR schließt Enteroviren weder aus noch weist sie sie nach.
 - Enterovirus-PCR aus Stuhl/Rachen und Antikörper lokalisieren keinen Kieferherd; keine routinemäßige Testung, kein antivirales Wirkversprechen.
 - Allgemein: ECDC (enteroviruses/facts), CDC (non-polio-enterovirus/signs-symptoms): Herpangina/HFMK = Schleimhauterkrankung, nicht automatisch Knocheninfektion.
+
+## Formen / Behandlung (Astra-Nachprüfung)
+- Chirurgische Herdbehandlung nur für bakterielle, insbesondere odontogene Formen.
+- Primär chronische nicht-bakterielle Osteomyelitis: eigene fachärztliche Therapieentscheidung (PMID 31941491, Fallserie).
+- Strahlen-/medikamentenbedingte Osteonekrose: eigene Gruppe, nicht pauschal nicht-bakteriell; bakterielle Begleitinfektion möglich (AWMF 007-046, Infizierte Osteoradionekrose 2025).
