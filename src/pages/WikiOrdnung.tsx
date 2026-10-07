@@ -105,6 +105,7 @@ export default function WikiOrdnung() {
     setFullText((x) => ({ ...x, [a.key]: r.error ? "error" : splitRevisionHits(r.data as { id: string; article_id: string }[], m!.articles) }));
   };
   const view = (params.get("v") as View) || "start";
+  const m = data?.model;
   const id = params.get("id");
   const q = params.get("q") ?? "";
   const role = params.get("rolle") ?? "";
@@ -127,7 +128,6 @@ export default function WikiOrdnung() {
       .then((r) => { if (r.error) return setKCards("error"); const cur = new Set([...(m?.sources.values() ?? [])].map((s) => s.id)); setKCards((r.data as never[]).map(toCard).filter((c) => cur.size === 0 || cur.has(c.revisionId)).sort((a, b) => a.title.localeCompare(b.title, "de"))); });
   }, [isAdmin, view, kCards, m]);
 
-  const m = data?.model;
   const actorsSorted = useMemo(() => {
     if (!m) return [];
     const peter = PETER_ACTORS.map((p) => m.actors.get(p.key)!);

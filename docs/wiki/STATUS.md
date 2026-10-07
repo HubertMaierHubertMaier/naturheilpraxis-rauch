@@ -87,3 +87,7 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - 34 Akteure redaktionell eingeordnet (Codex-Routine): 4 Personen, 2 Hersteller, 8 Anbieter, 1 Apotheke, 6 Plattformen, 10 Herausgeber/Institutionen, 3 keine Akteure. Datei docs/wiki/akteure-zuordnung.json (je Akteur Belegquellrevisionen), Modul src/lib/wikiReviewedNetwork.ts. A. L. Kalcker ≠ Andreas Kalcker zusammengeführt (keine Fundstelle).
 - Stichprobe: 6/8 vollständig (Zink-Deklaration, Banderol-Herstellerzeile, Erythromycin Folge 020 16:26–18:54, HNO-ChipCard-Artikel d3cc3e16). Offen: Ochsengalle/Heel, Medacalm/Pascoe (nur Artikeltext).
 - UI: /wikidatenbank/ordnung?v=reviewed – geprüft (Dateistand) getrennt von ungeprüften Kandidaten. Nichts in DB angewendet.
+
+## Paket 4 Klinghardt-Navigator (07.10.2026)
+- /wikidatenbank/ordnung?v=klinghardt: 62 Praxis-Quellenkarten aus DB (aktuelle Rev.), 6 Kapitel (13/14/7/13/9/6), Achsen Viren/Bakterien/Pilze/Metalle kombinierbar + Überschneidungsmatrix, Detail mit Fundstelle/E-ID, Originalaussage getrennt von Evidenz/Sicherheit, volle Karte unverändert. Sprachpaare 010/011, 012/013, 018/019 zählen einmal.
+- Abgleich DB↔Importdatei 62/62, 0 fehlend/0 zusätzlich, Fundstellen identisch (docs/wiki/klinghardt-abgleich.json). Kompendium 586 Karten = nur Bestand, nicht importiert.
