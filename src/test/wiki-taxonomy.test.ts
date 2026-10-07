@@ -105,3 +105,26 @@ describe("vollständiges Laden und Fehler", () => {
     expect(wikiErrorText("permission denied for table kb_assertions")).not.toContain("kb_assertions");
   });
 });
+
+import { actorsOfEntity, nutrientClass, productsWithSubstance } from "@/lib/wikiTaxonomy";
+describe("Vitamine/Mineralstoffe/Spurenelemente und zentrale Mittel", () => {
+  it("klassifiziert nur Nährstoff-Datensätze, Spurenelemente als Untergruppe", () => {
+    expect(nutrientClass("nutrient", "Vitamin B9/Folat")).toBe("vitamins");
+    expect(nutrientClass("nutrient", "Zink")).toBe("trace");
+    expect(nutrientClass("nutrient", "Magnesium")).toBe("minerals");
+    expect(nutrientClass("nutrient", "Omega-3")).toBeUndefined();
+    expect(nutrientClass("product_variant", "Mannayan ZINK + (60 Tabletten)")).toBeUndefined();
+  });
+  it("ein Mittel – mehrere Wege: Anbieter, Symptom, Stoff; ohne Duplikat", () => {
+    const i = input();
+    i.entities.push({ id: "E7", entity_type_code: "nutrient", current_revision_id: "ER7" }, { id: "E8", entity_type_code: "product_variant", current_revision_id: "ER8" });
+    i.entityRevisions.push({ id: "ER7", entity_id: "E7", display_name: "Zink", review_status: "draft" }, { id: "ER8", entity_id: "E8", display_name: "Mannayan ZINK + (60 Tabletten)", review_status: "draft" });
+    i.sourceRevisions[0].publisher = "Mannayan GmbH & Co. KG";
+    const m = buildWikiModel(i);
+    expect(productsWithSubstance(m, "E7").map((x) => [x.product.id, x.kind])).toEqual([["E8", "text"]]);
+    expect(actorsOfEntity(m, "E1").map((x) => [x.actor.key, x.kind])).toEqual([["nutramedix", "import"]]);
+    // Symptom → Mittel → Anbieter (same central entity E1)
+    expect(neighbours(m, "E3").map((x) => x.other!.id)).toEqual(["E1"]);
+    expect(m.entities.get("E1")!.stoffart).toBe("Produkt");
+  });
+});

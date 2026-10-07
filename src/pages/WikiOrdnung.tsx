@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  buildWikiModel, GROUP_LABEL, matchesAll, neighbours, paginate, PETER_ACTORS, RELATION_LABEL,
-  type Actor, type GroupKey, type WikiModel,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, productsWithSubstance, RELATION_LABEL,
+  type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,8 +47,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
   return { model, counts };
 }
 
-type View = "start" | "actors" | GroupKey | "folders" | "unassigned";
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", ...GROUP_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+type View = "start" | "actors" | GroupKey | NutrientClass | "folders" | "unassigned";
+const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
+const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -69,6 +71,14 @@ export default function WikiOrdnung() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState<{ model: WikiModel; counts: Counts } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [fullText, setFullText] = useState<Record<string, string[] | "loading" | "error">>({});
+  const searchFullText = async (a: Actor) => {
+    const al = PETER_ACTORS.find((p) => p.key === a.key)?.aliases ?? [a.name.toLowerCase()];
+    setFullText((x) => ({ ...x, [a.key]: "loading" }));
+    const pattern = `(^|[^[:alpha:]])(${al.map((x) => x.replace(/[^a-z0-9 ]/gi, "").replace(/ /g, "[ -]?")).join("|")})([^[:alpha:]]|$)`;
+    const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("article_id").filter("content_markdown", "imatch", pattern).order("id", { ascending: true }).range(f, t));
+    setFullText((x) => ({ ...x, [a.key]: r.error ? "error" : [...new Set((r.data as { article_id: string }[]).map((y) => y.article_id))].filter((id) => m?.articles.get(id)?.revisionId) }));
+  };
   const view = (params.get("v") as View) || "start";
   const id = params.get("id");
   const q = params.get("q") ?? "";
@@ -106,9 +116,9 @@ export default function WikiOrdnung() {
       {id && <><span>›</span><span className="font-semibold">Detail</span></>}
     </nav>
   );
-  const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size;
+  const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size + a.textEntityIds.size;
   const ent = (eid: string) => m?.entities.get(eid);
-  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.group, id: eid, q: null })}>{e.name}</button> : null; };
+  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
     return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
@@ -124,7 +134,11 @@ export default function WikiOrdnung() {
   else if (view === "start") {
     const tiles: Array<[View, string, number]> = [
       ["actors", VIEW_LABEL.actors, m.actors.size],
-      ...(["products", "pathogens", "symptoms", "diseases", "other"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ...(["products", "pathogens", "symptoms", "diseases"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
+      ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
+      ["trace", "Spurenelemente", [...m.entities.values()].filter((e) => e.nutrient === "trace").length],
+      ["other", GROUP_LABEL.other, [...m.entities.values()].filter((e) => e.group === "other").length],
       ["folders", VIEW_LABEL.folders, m.folders.size],
       ["unassigned", VIEW_LABEL.unassigned, m.unassignedArticleIds.length + m.unassignedEntityIds.length],
     ];
@@ -179,9 +193,12 @@ export default function WikiOrdnung() {
         <div className="flex flex-wrap gap-1">{[...a.roles].map((r) => <Badge key={r} variant="outline">{r}</Badge>)}</div>
         <p className="text-muted-foreground">Rollen stammen nur aus Datenfeldern (Herstellerbegriff, Herausgeber, Autor, Ordnername) oder aus Peters Benennung – keine abgeleitete Wirksamkeit.</p>
         {a.entityIds.size > 0 && <div><p className="font-semibold">Mittel/Begriffe (Import, ungeprüft)</p><div className="flex flex-wrap gap-3">{[...a.entityIds].map(entButton)}</div></div>}
+        {a.roles.has("Von Peter benannt") && <p className="text-xs text-muted-foreground">Ob ein Produkt ein Komplexmittel ist, steht nur fest, wenn der Produktdatensatz es angibt – keine pauschale Einstufung je Anbieter.</p>}
+        {a.textEntityIds.size > 0 && <div><p className="font-semibold">Produkte mit diesem Namen im Produktnamen ({a.textEntityIds.size}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{[...a.textEntityIds].map(entButton)}</div></div>}
         {a.sourceRevisionIds.size > 0 && <div><p className="font-semibold">Interne Quellen ({a.sourceRevisionIds.size}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{[...a.sourceRevisionIds].map((s) => srcLine(s))}</ul></div>}
         {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><ul className="space-y-1">{[...a.folderArticleIds].slice(0, 200).map((x) => artLine(x, "field"))}</ul>{a.folderArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.folderArticleIds.size} angezeigt.</p>}</div>}
         {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><ul className="space-y-1">{[...a.textArticleIds].slice(0, 200).map((x) => artLine(x, "text"))}</ul>{a.textArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.textArticleIds.size} angezeigt.</p>}</div>}
+        <div><p className="font-semibold">Volltext der Artikel</p>{(() => { const ft = fullText[a.key]; return ft === undefined ? <Button size="sm" variant="outline" onClick={() => searchFullText(a)}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <><p className="text-xs text-muted-foreground">{ft.length} Artikel nennen den Namen im Text <LinkBadge kind="text" /></p><ul className="space-y-1">{ft.slice(0, 200).map((x) => artLine(x, "text"))}</ul></>; })()}</div>
         {actorCount(a) === 0 && <p className="font-semibold">Im aktuellen Bestand keine Zuordnung und kein Titel-/Ordnertreffer gefunden.</p>}
       </CardContent></Card>
     );
@@ -209,6 +226,20 @@ export default function WikiOrdnung() {
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
+  } else if (isNutrientView(view) && !id) {
+    const list = [...m.entities.values()].filter((e) => (view === "minerals" ? e.nutrient === "minerals" || e.nutrient === "trace" : e.nutrient === view) && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const unclassified = [...m.entities.values()].filter((e) => e.type === "nutrient" && !e.nutrient);
+    const pg = paginate(list, page, PAGE);
+    body = (
+      <>
+        <p className="mb-2 text-sm text-muted-foreground">Einordnung nach Stoffname, nur für Datensätze vom Typ Nährstoff (Stoff). Produkte mit diesen Stoffen stehen im Detail. {view === "minerals" && "Spurenelemente sind als Untergruppe enthalten und markiert."} {view === "trace" && "Untergruppe der Mineralstoffe."}</p>
+        <Input className="mb-3 max-w-xs" placeholder={`${NUTRIENT_LABEL[view]} suchen`} value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span>{view === "minerals" && e.nutrient === "trace" ? " · Spurenelement" : ""} · {neighbours(m, e.id).length} Verknüpfungen · {productsWithSubstance(m, e.id).length} Produkte</button>)}</div>
+        {list.length === 0 && <p className="text-sm">Im Bestand keine Datensätze in dieser Rubrik.</p>}
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+        <p className="mt-3 text-xs text-muted-foreground">Nicht eingeordnete Nährstoffe ({unclassified.length}): {unclassified.map((e) => e.name).join(", ")} – stehen unter Mittel/Produkte.</p>
+      </>
+    );
   } else if (!id) {
     const g = view as GroupKey;
     const list = [...m.entities.values()].filter((e) => e.group === g && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
@@ -224,20 +255,24 @@ export default function WikiOrdnung() {
     const e = m.entities.get(id);
     const nb = e ? neighbours(m, e.id) : [];
     const byGroup = (["products", "pathogens", "symptoms", "diseases", "other"] as GroupKey[]).map((g) => [g, nb.filter((x) => x.other!.group === g)] as const).filter(([, xs]) => xs.length);
-    const makers = [...m.actors.values()].filter((a) => e && a.entityIds.has(e.id));
+    const makers = e ? actorsOfEntity(m, e.id) : [];
+    const prods = e && e.stoffart === "Stoff" ? productsWithSubstance(m, e.id) : [];
     const texts = e ? [...(m.articleTextEntities.get(e.id) ?? [])] : [];
     body = !e ? <p>Nicht gefunden.</p> : (
       <Card><CardContent className="space-y-3 p-4 text-sm">
         <h2 className="text-xl font-semibold">{e.name}</h2>
-        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge></div>
+        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
+        <p className="text-xs text-muted-foreground">Ein zentraler Eintrag: dieselben Verknüpfungen erscheinen bei Anbieter, Symptom und Erkrankung.</p>
         <p className="text-muted-foreground">Beschreibungen aus Hersteller-/Autorenmaterial sind Quellenangaben – keine bestätigte Wirksamkeit oder Therapieempfehlung.</p>
-        {makers.length > 0 && <p>Firma/Person: {makers.map((a) => <button key={a.key} className="mr-2 underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button>)}</p>}
+        <div><p className="font-semibold">Anbieter/Personen</p>{makers.length ? <ul>{makers.map(({ actor: a, kind }) => <li key={a.key} className="flex flex-wrap items-center gap-2"><button className="underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button><LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Kein Anbieter im Datensatz hinterlegt.</p>}</div>
+        {e.stoffart === "Stoff" && <div><p className="font-semibold">Produkte mit diesem Stoff ({prods.length})</p>{prods.length ? <ul>{prods.map(({ product, kind }) => <li key={product.id} className="flex flex-wrap items-center gap-2">{entButton(product.id)}<LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Inhaltsstoffe der Produkte sind für diesen Stoff nicht strukturiert hinterlegt.</p>}</div>}
         {byGroup.map(([g, xs]) => (
           <div key={g}><p className="font-semibold">{GROUP_LABEL[g]} ({xs.length})</p>
             <ul className="space-y-1">{xs.map(({ relation: r, other, direction }) => (
               <li key={r.id + direction} className="flex flex-wrap items-center gap-2">
                 {direction === "out" ? <>{RELATION_LABEL[r.type] ?? r.type} → {entButton(other!.id)}</> : <>{entButton(other!.id)} → {RELATION_LABEL[r.type] ?? r.type}</>}
                 <LinkBadge kind="import" /><Badge variant="secondary" className="text-[10px]">{st(r.status)}</Badge>
+                {actorsOfEntity(m, other!.id).map(({ actor: a }) => <button key={a.key} className="text-xs underline" onClick={() => set({ v: "actors", id: a.key })}>Anbieter: {a.name}</button>)}
                 <span className="text-xs text-muted-foreground">{r.sourceRevisionId ? (() => { const s = m.sources.get(r.sourceRevisionId!); return `Quelle: ${s?.title ?? "nicht lesbar"}${s ? ` (Rev. ${s.revision_no})` : ""}${r.locator ? ` · ${r.locator}` : ""}`; })() : "Keine Quelle verknüpft"}</span>
               </li>
             ))}</ul>
