@@ -85,7 +85,15 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
 }
 
 /** Static, script-free rendering with change markers. */
-export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<number>): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
+/** Fundstelle: HTML page + real section (X of Y); head-only items are outside the article text. Never invents page numbers. */
+export function whereOf(c: { id: number; headOnly?: { kind: string } }, p?: { sectionOf: Map<number, number>; sectionCount: number }, page = CFG.base.kind === "delivered" ? CFG.base.route.replace(/^\//, "") : `${CFG.slug} (Entwurf)`): string {
+  const kind = c.headOnly ? (c.headOnly.kind === "title" ? "Seitentitel" : "Meta-Beschreibung") : "";
+  if (c.headOnly) return `${page} · ${kind}: Seiteneinstellungen / Google-Suchvorschau – außerhalb des Artikeltexts`;
+  const sec = p?.sectionOf.get(c.id);
+  return sec ? `${page} · Abschnitt ${sec} von ${p!.sectionCount}` : `${page} · Abschnitt nicht ermittelbar`;
+}
+
+export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<number>): { html: string; found: Set<number>; sectionOf: Map<number, number>; sectionCount: number } {
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("script, iframe, object, embed, meta[http-equiv]").forEach((el) => el.remove());
   doc.querySelectorAll("*").forEach((el) => {
@@ -165,7 +173,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-badge { display: inline-block; margin: 0 8px 4px 0; padding: 2px 8px; border-radius: 999px; background: ${c.border}; color: #fff !important;
       font: 700 13px/1.4 Arial, sans-serif !important; letter-spacing: 0; text-transform: none; vertical-align: middle; }`;
   doc.head.appendChild(style);
-  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found, sectionOf };
+  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found, sectionOf, sectionCount: doc.querySelectorAll(".reveal .slides > section").length };
 }
 
 function Pane({ label, html, error, frameRef, onLoad }: {
@@ -561,7 +569,7 @@ function InfothekHtmlVergleich() {
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(-1)} aria-label="Vorherige Änderung"><ChevronLeft className="h-4 w-4" />Vorherige</Button>
           <span className="flex min-w-[9rem] max-w-[22rem] flex-col text-center leading-tight sm:max-w-[30rem]" aria-live="polite">
             <span className="font-semibold">{active ? `Vorschlag ${active} von ${CHANGES.length}` : `Kein Vorschlag gewählt (${CHANGES.length})`}</span>
-            {active && <span className="truncate text-xs text-muted-foreground">{CHANGE_TOPICS[active]}{(() => { const c = CHANGES.find((x) => x.id === active); return c?.headOnly ? " · im Artikel nicht sichtbar" : original?.sectionOf.get(active) ? ` · Abschnitt ${original.sectionOf.get(active)}` : ""; })()}</span>}
+            {active && <span className="truncate text-xs text-muted-foreground">{CHANGE_TOPICS[active]}{(() => { const c = CHANGES.find((x) => x.id === active); return c ? ` · ${whereOf(c, original)}` : ""; })()}</span>}
           </span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold" title={`Original beibehalten: ${proj.kept.length} · ersetzt durch Alternative: ${proj.replaced.length} · offen: ${proj.open.length}${proj.optionalOpen.length ? ` (davon ${proj.optionalOpen.length} optionale Alternativen)` : ""}`}>{proj.accepted.length} von {CHANGES.length} übernommen{proj.replaced.length ? ` · ${proj.replaced.length} ersetzt` : ""}{proj.appliedFailed.length ? ` · ${proj.appliedFailed.length} nicht angewandt` : ""}</span>
@@ -597,7 +605,7 @@ function InfothekHtmlVergleich() {
                 <li key={c.id}>
                   <button type="button" className="text-left hover:underline" onClick={() => chooseActive(c.id)}>
                     <span className="font-semibold">Vorschlag {c.id}</span> · {CHANGE_TOPICS[c.id]}
-                    {c.headOnly ? " · im Artikel nicht sichtbar" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                    {` · ${whereOf(c, original)}`}
                     {isOptionalAlternative(c, decisions) && <span className="ml-1 rounded bg-muted px-1">optionale Alternative zu Vorschlag {c.supersedes}</span>}
                   </button>
                 </li>
@@ -640,7 +648,7 @@ function InfothekHtmlVergleich() {
               {CHANGES.map((c) => (
                 <li key={c.id} className={`flex items-start gap-2 rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
                   <button type="button" onClick={() => chooseActive(c.id)} className="min-w-0 flex-1 text-left hover:underline">
-                    <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
+                    <span className="font-semibold">Ä{c.id}</span>{` · ${whereOf(c, original)}`} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
                   {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
@@ -672,7 +680,7 @@ function InfothekHtmlVergleich() {
                   <div ref={cardRef} className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 lg:overflow-y-auto transition-[top] duration-150" style={wide ? { top, maxHeight: railH } : undefined}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <button type="button" className="font-semibold hover:underline" onClick={() => chooseActive(c.id)}>
-                        Vorschlag {c.id} · {CHANGE_TOPICS[c.id]}{c.headOnly ? "" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                        Vorschlag {c.id} · {CHANGE_TOPICS[c.id]}{` · ${whereOf(c, original)}`}
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
                     </div>
