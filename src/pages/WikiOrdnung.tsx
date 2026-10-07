@@ -311,6 +311,13 @@ export default function WikiOrdnung() {
               {s.missing && <p className="text-xs text-destructive">Fehlt: {s.missing}</p>}
             </li>))}</ul>)}
         </div>
+        <Card><CardContent className="p-4">
+          <p className="font-semibold">Strunz-Anwendungsbereiche → Produktkarten: ungeprüfte Quellenkandidaten ({STRUNZ_AREA.kandidaten.length})</p>
+          <p className="text-xs text-muted-foreground">Abgerufen {STRUNZ_AREA.abgerufen}. {STRUNZ_AREA.bedeutung} Weitere {STRUNZ_AREA.produkte_ohne_karte} gelistete Produkte haben keine Wiki-Karte. <Badge variant="outline">nicht in DB angewendet</Badge></p>
+          <ul className="mt-2 space-y-1">{groupByProduct(STRUNZ_AREA.kandidaten).map(([k, xs]) => (
+            <li key={k}><span className="font-semibold">{xs[0].product_name}</span> <span className="text-xs">({k}) – gelistet in {xs.length}: {xs.map((x) => <a key={x.article_id} href={x.page_url} target="_blank" rel="noreferrer" className="underline mr-1">{x.area} (Pos. {x.position})</a>)}</span></li>
+          ))}</ul>
+        </CardContent></Card>
       </div>
     );
   } else if (view === "actors" && !id) {
