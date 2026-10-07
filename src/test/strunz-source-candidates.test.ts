@@ -22,3 +22,20 @@ describe("Strunz 53 source candidates", () => {
     expect(a.ungemappt_aufteilung.eindeutig + a.ungemappt_aufteilung.varianten).toBe(149);
   });
 });
+
+describe("149 unmapped Strunz products", () => {
+  const a = STRUNZ_AREA as any;
+  const L = a.produkte_ohne_karte_liste as any[];
+  it("every product has area/position provenance and a match status", () => {
+    expect(L.length).toBe(149);
+    expect(new Set(L.map((x) => x.url)).size).toBe(149);
+    L.forEach((x) => { expect(x.fundstellen.length).toBeGreaterThan(0); expect(x.abgleich.status).toMatch(/^(kein_treffer|moeglicher_treffer_name|treffer_url)$/); });
+  });
+  it("name-only hits never claim product identity", () => {
+    L.filter((x) => x.abgleich.status === "moeglicher_treffer_name").forEach((x) => {
+      expect(x.abgleich.grund).toContain("nicht bestätigt");
+      x.abgleich.entitaeten.forEach((e: any) => expect(e.typ).not.toBe("product"));
+    });
+    expect(a.ungemappt_abgleich.vollstaendigkeit).toContain("keine Aussage über das gesamte");
+  });
+});
