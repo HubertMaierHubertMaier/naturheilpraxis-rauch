@@ -7484,5 +7484,602 @@
    }
   ],
   "hinweis": "„Hersteller“-Wortfunde auf 3 FOREVER-YOUNG-Seiten stammen aus Kundenbewertungen und wurden nicht übernommen."
+ },
+ "produktquellen_teil4": {
+  "umfang": "Produkte 73–96 der 136 nicht als Variante gekennzeichneten Produkte in Listenreihenfolge",
+  "modus": "HTTP GET lesend, keine DB-Writes",
+  "fundstellen_regel": "jede positive Angabe mit Feld/Überschrift und wörtlichem Auszug",
+  "ergebnisse": [
+   {
+    "url": "https://www.strunz.com/forever-young-geschenkgutschein.html",
+    "abgerufen": "2026-10-07T19:52:49Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Geschenkgutschein",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Geschenkgutschein"
+    },
+    "ean": [],
+    "ean_fundstelle": "nicht angegeben",
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "forever young Geschenkgutschein verschenken"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-gluco-stabil.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Gluco Stabil",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Gluco Stabil"
+    },
+    "ean": [
+     "4260180442724"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442724"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-glucosamin-chondroitin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Glucosamin + Chondroitin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Glucosamin + Chondroitin"
+    },
+    "ean": [
+     "4260180442038"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442038"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Was ist FOREVER YOUNG Glucosamin + Chondroitin?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-glycin.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Glycin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Glycin"
+    },
+    "ean": [
+     "4260180441772"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441772"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Warum sollte ich Glycin von FOREVER YOUNG online kaufen?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-guarana-shot.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Guarana Shot - Kirsch-Himbeere",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Guarana Shot - Kirsch-Himbeere"
+    },
+    "ean": [
+     "4260180441901"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441901"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-hyaluronsaeure-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Hyaluronsäure",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Hyaluronsäure"
+    },
+    "ean": [
+     "4260180441895"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441895"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-kollagen-skin-komplex.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Kollagen Skin - Kokos-Maracuja",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Kollagen Skin - Kokos-Maracuja"
+    },
+    "ean": [
+     "4260180442809"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442809"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-kollagenhydrolysat.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Kollagenhydrolysat",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Kollagenhydrolysat"
+    },
+    "ean": [
+     "4260180441321"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441321"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Warum Kollagenhydrolysat-Pulver mit Rinderkollagen von FOREVER YOUNG kaufen?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-kupfer-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Kupfer Caps",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Kupfer Caps"
+    },
+    "ean": [
+     "4260180441949"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441949"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-arginin-l-citrullin.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Arginin + L-Citrullin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Arginin + L-Citrullin"
+    },
+    "ean": [
+     "4260180442717"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442717"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-carnosin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Carnosin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Carnosin"
+    },
+    "ean": [
+     "4260180442786"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442786"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Wie sollte FOREVER YOUNG L-Carnosin dosiert werden?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-citrullin.html",
+    "abgerufen": "2026-10-07T19:52:50Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Citrullin - Orange",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Citrullin - Orange"
+    },
+    "ean": [],
+    "ean_fundstelle": "nicht angegeben",
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-lysin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Lysin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Lysin"
+    },
+    "ean": [
+     "4260180441543"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441543"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-phenylalanin.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Phenylalanin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Phenylalanin"
+    },
+    "ean": [
+     "4260180441888"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441888"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Ist FOREVER YOUNG L-Phenylalanin vegan?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-prolin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Prolin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Prolin"
+    },
+    "ean": [
+     "4260180441581"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441581"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Ist FOREVER YOUNG L-Prolin vegan?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-threonin.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Threonin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Threonin"
+    },
+    "ean": [
+     "4260180441871"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441871"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Ist das FOREVER YOUNG L-Threonin vegan?"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-tryptophan-kapseln-b6.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Tryptophan + B6",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Tryptophan + B6"
+    },
+    "ean": [
+     "4260180441956"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441956"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-l-tyrosin.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Tyrosin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Tyrosin"
+    },
+    "ean": [
+     "4260180441758"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441758"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-lactoferrin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Lactoferrin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Lactoferrin"
+    },
+    "ean": [
+     "4260180442632"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442632"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Was FOREVER YOUNG Lactoferrin 200 mg auszeichnet"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-magnesium-l-threonat.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Brain Mag",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Brain Mag"
+    },
+    "ean": [
+     "4260180442823"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442823"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-magnesium-pulver.html",
+    "abgerufen": "2026-10-07T19:52:51Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Power Magnesium - Blutorange",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Power Magnesium - Blutorange"
+    },
+    "ean": [
+     "4260180440126"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180440126"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-methionin-kapseln.html",
+    "abgerufen": "2026-10-07T19:52:52Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG L-Methionin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG L-Methionin"
+    },
+    "ean": [
+     "4260180441765"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180441765"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-mushroom-chai.html",
+    "abgerufen": "2026-10-07T19:52:52Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Mushroom Chai",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG Mushroom Chai"
+    },
+    "ean": [
+     "4260180442731"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442731"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "FOREVER YOUNG Qualität – durchdacht und sinnvoll kombiniert"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-nac-glycin.html",
+    "abgerufen": "2026-10-07T19:52:52Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG NAC + Glycin",
+    "produktname_fundstelle": {
+     "feld": "H1",
+     "wortlaut": "FOREVER YOUNG NAC + Glycin"
+    },
+    "ean": [
+     "4260180442656"
+    ],
+    "ean_fundstelle": {
+     "feld": "Produktdaten, Textfeld „EAN:“",
+     "wortlaut": "EAN: 4260180442656"
+    },
+    "marke_laut_seite": "FOREVER YOUNG",
+    "marke_fundstelle": {
+     "feld": "Zwischenüberschrift",
+     "wortlaut": "Forever Young"
+    },
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; Qualitätsversprechen, Rohstoffhersteller und Kundenbewertungen nicht übernommen",
+    "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)"
+   }
+  ]
  }
 }
