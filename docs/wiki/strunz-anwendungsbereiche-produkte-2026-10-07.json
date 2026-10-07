@@ -9101,5 +9101,536 @@
       }
     ],
     "hinweis": "8 mit expliziter EAN, 8 ohne (orthochondroplus, orthomental, orthonorm f, orthonorm m, orthonorm, orthotendo, for you präbio ballaststoffe, orthomolar Vitamincocktail); Marken: FOREVER YOUNG 4 (H1), for you eHealth 3 (Überschrift Qualitätsversprechen); 9 ohne Markennennung (offen). Hersteller überall offen; „Hersteller“-Wortfunde nur Qualitätsversprechen/Kundenbewertung, verworfen."
+  },
+  "produktquellen_varianten": {
+    "umfang": "13 als variante_offen erfasste URLs (6 Hypothesengruppen), Listenreihenfolge",
+    "modus": "HTTP GET lesend, keine DB-Writes",
+    "ergebnisse": [
+      {
+        "url": "https://www.strunz.com/bcaa-und-glutamin-apfel.html",
+        "abgerufen": "2026-10-07T20:57:10Z",
+        "http": 200,
+        "produktname_h1": "for you BCAA + Glutamin – Apfel",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin – Apfel"
+        },
+        "ean": [
+          "4260538090140"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090140"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin – Apfel"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich bevorzugt während oder nach einer muskulären Belastun"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "bcaa + glutamin",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/bcaa-und-glutamin-zitrone.html",
+        "abgerufen": "2026-10-07T20:57:10Z",
+        "http": 200,
+        "produktname_h1": "for you BCAA + Glutamin – Zitrone",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin – Zitrone"
+        },
+        "ean": [
+          "4260538090133"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090133"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin – Zitrone"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich bevorzugt während oder nach einer muskulären Belastun"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "bcaa + glutamin",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-amino-energy-maracuja.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you amino energy - Maracuja",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino energy - Maracuja"
+        },
+        "ean": [
+          "4260538094421"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538094421"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino energy - Maracuja"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": "nicht gefunden",
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "amino energy",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-amino-energy.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you amino energy - Limette",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino energy - Limette"
+        },
+        "ean": [
+          "4260538090379"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090379"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino energy - Limette"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich nehmen. Wichtige Hinweise: Die angegebene empfohlene "
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "amino energy",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-amino-night-joghurt-kirsche.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you amino night – Joghurt-Kirsche",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino night – Joghurt-Kirsche"
+        },
+        "ean": [
+          "4260538090621"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090621"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino night – Joghurt-Kirsche"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich vor dem Schlafengehen nehmen. Wichtige Hinweise: Die "
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "amino night",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-amino-night-orange.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you amino night – Orange",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino night – Orange"
+        },
+        "ean": [
+          "4260538090614"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090614"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you amino night – Orange"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich vor dem Schlafengehen nehmen. Wichtige Hinweise: Die "
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "amino night",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-bcaa-glutamin-wassermelone.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you BCAA + Glutamin - Wassermelone",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin - Wassermelone"
+        },
+        "ean": [
+          "4260538095800"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538095800"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you BCAA + Glutamin - Wassermelone"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich bevorzugt während oder nach einer muskulären Belastun"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "bcaa + glutamin",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-darmflora-komplex-maracuja.html",
+        "abgerufen": "2026-10-07T20:57:11Z",
+        "http": 200,
+        "produktname_h1": "for you darmflora komplex - Maracuja",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you darmflora komplex - Maracuja"
+        },
+        "ean": [
+          "4260538094568"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538094568"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you darmflora komplex - Maracuja"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich zu einer Mahlzeit nehmen. Wichtige Hinweise: Die ange"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "darmflora komplex",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/for-you-darmflora-komplex.html",
+        "abgerufen": "2026-10-07T20:57:12Z",
+        "http": 200,
+        "produktname_h1": "for you darmflora komplex",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you darmflora komplex"
+        },
+        "ean": [
+          "4260538090386"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260538090386"
+        },
+        "marke_laut_seite": "for you eHealth",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "for you darmflora komplex"
+        },
+        "auswahloptionen": [],
+        "auswahloptionen_fundstelle": "keine Variantenauswahl auf der Seite (nur Anrede-Felder)",
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1 Portion täglich zu einer Mahlzeit nehmen. Wichtige Hinweise: Die ange"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "darmflora komplex",
+        "gruppenbeleg": "kein Seitenbeleg – Gruppierung bleibt Namenshypothese",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-kaesekuchen-mandarine.html",
+        "abgerufen": "2026-10-07T20:57:12Z",
+        "http": 200,
+        "produktname_h1": "FOREVER YOUNG Multi Eiweiß - Käsekuchen-Mandarine",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Multi Eiweiß - Käsekuchen-Mandarine"
+        },
+        "ean": [
+          "4260180442847"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260180442847"
+        },
+        "marke_laut_seite": "FOREVER YOUNG",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Multi Eiweiß - Käsekuchen-Mandarine"
+        },
+        "auswahloptionen": [
+          "Käsekuchen-Mandarine",
+          "Vanille-Erdbeere"
+        ],
+        "auswahloptionen_fundstelle": {
+          "feld": "Auswahlfeld (select) auf Produktseite",
+          "wortlaut": "Käsekuchen-Mandarine / Vanille-Erdbeere"
+        },
+        "geschmack_fundstelle": {
+          "feld": "Produktbeschreibung",
+          "wortlaut": "Geschmack: Käsekuchen-Mandarine. Zutaten: Molkeneiweiß, Sojaeiweiß , Erbseneiweiß, Mais-De"
+        },
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1-2 mal täglich eine Portion trinken. Wichtige Hinweise: Dieses Produkt"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "multi eiweiß",
+        "gruppenbeleg": "Auswahlfeld derselben Seite listet Käsekuchen-Mandarine und Vanille-Erdbeere – Shop-Auswahlbeleg, keine bestätigte Produktidentität/variant_of",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-vanille-erdbeere.html",
+        "abgerufen": "2026-10-07T20:57:12Z",
+        "http": 200,
+        "produktname_h1": "FOREVER YOUNG Multi Eiweiß - Vanille-Erdbeere",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Multi Eiweiß - Vanille-Erdbeere"
+        },
+        "ean": [
+          "4260180442694"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260180442694"
+        },
+        "marke_laut_seite": "FOREVER YOUNG",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Multi Eiweiß - Vanille-Erdbeere"
+        },
+        "auswahloptionen": [
+          "Vanille-Erdbeere",
+          "Käsekuchen-Mandarine"
+        ],
+        "auswahloptionen_fundstelle": {
+          "feld": "Auswahlfeld (select) auf Produktseite",
+          "wortlaut": "Vanille-Erdbeere / Käsekuchen-Mandarine"
+        },
+        "geschmack_fundstelle": {
+          "feld": "Produktbeschreibung",
+          "wortlaut": "Geschmack: Vanille-Erdbeere. Zutaten: Molkeneiweiß, Sojaeiweiß , Erbseneiweiß, Mais-Dextri"
+        },
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: 1-2 mal täglich eine Portion trinken. Wichtige Hinweise: Dieses Produkt"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "multi eiweiß",
+        "gruppenbeleg": "Auswahlfeld derselben Seite listet Vanille-Erdbeere und Käsekuchen-Mandarine – Shop-Auswahlbeleg, keine bestätigte Produktidentität/variant_of",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/forever-young-vitamineral-phyto-kirsche.html",
+        "abgerufen": "2026-10-07T20:57:12Z",
+        "http": 200,
+        "produktname_h1": "FOREVER YOUNG Vitamineral Phyto - Kirsche",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Vitamineral Phyto - Kirsche"
+        },
+        "ean": [
+          "4260180442892"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260180442892"
+        },
+        "marke_laut_seite": "FOREVER YOUNG",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Vitamineral Phyto - Kirsche"
+        },
+        "auswahloptionen": [
+          "Kirsche",
+          "Orange-Ingwer-Curcuma"
+        ],
+        "auswahloptionen_fundstelle": {
+          "feld": "Auswahlfeld (select) auf Produktseite",
+          "wortlaut": "Kirsche / Orange-Ingwer-Curcuma"
+        },
+        "geschmack_fundstelle": "nur im H1-Namen",
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: Pro Portion 20 g Pulver (1 Sachet) mit 500 ml Wasser mixen. Täglich 1 P"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "vitamineral phyto",
+        "gruppenbeleg": "Auswahlfeld derselben Seite listet Kirsche und Orange-Ingwer-Curcuma – Shop-Auswahlbeleg, keine bestätigte Produktidentität/variant_of",
+        "seitentyp": "produktseite"
+      },
+      {
+        "url": "https://www.strunz.com/forever-young-vitamineral-phyto-orange-ingwer.html",
+        "abgerufen": "2026-10-07T20:57:12Z",
+        "http": 200,
+        "produktname_h1": "FOREVER YOUNG Vitamineral Phyto - Orange-Ingwer-Curcuma",
+        "produktname_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Vitamineral Phyto - Orange-Ingwer-Curcuma"
+        },
+        "ean": [
+          "4260180441970"
+        ],
+        "ean_fundstelle": {
+          "feld": "Produktdaten, Textfeld „EAN:“",
+          "wortlaut": "EAN: 4260180441970"
+        },
+        "marke_laut_seite": "FOREVER YOUNG",
+        "marke_fundstelle": {
+          "feld": "H1",
+          "wortlaut": "FOREVER YOUNG Vitamineral Phyto - Orange-Ingwer-Curcuma"
+        },
+        "auswahloptionen": [
+          "Orange-Ingwer-Curcuma",
+          "Kirsche"
+        ],
+        "auswahloptionen_fundstelle": {
+          "feld": "Auswahlfeld (select) auf Produktseite",
+          "wortlaut": "Orange-Ingwer-Curcuma / Kirsche"
+        },
+        "geschmack_fundstelle": {
+          "feld": "Produktbeschreibung",
+          "wortlaut": "Geschmack: Orange-Ingwer-Curcuma Mit unserem erfrischenden Multi Booster kommen Sie gesund"
+        },
+        "verzehr_fundstelle": {
+          "feld": "Verzehrempfehlung (Shopangabe, intern, keine Dosierempfehlung der Praxis)",
+          "wortlaut": "Verzehrempfehlung: Täglich 1 Portion zu einer der Mahlzeiten trinken. Wichtige Hinweise: D"
+        },
+        "darreichungsform": "offen",
+        "packungsgroesse": "offen – kein eindeutiges Feld gefunden",
+        "zielgruppe": "offen – nicht angegeben",
+        "hersteller": null,
+        "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt; „renommierte Hersteller“ (Rohstoffe) im Qualitätsversprechen nicht übernommen",
+        "shop_vertreiber": "strunz.com (Online-Shop; Herstellerrolle nicht belegt)",
+        "variantengruppe_hypothese": "vitamineral phyto",
+        "gruppenbeleg": "Auswahlfeld derselben Seite listet Orange-Ingwer-Curcuma und Kirsche – Shop-Auswahlbeleg, keine bestätigte Produktidentität/variant_of",
+        "seitentyp": "produktseite"
+      }
+    ],
+    "hinweis": "13/13 HTTP 200, 13 EAN (alle verschieden). Seitenbelegte Auswahl nur bei multi eiweiß (2) und vitamineral phyto (2); übrige 4 Gruppen (bcaa+glutamin, amino energy, amino night, darmflora komplex) bleiben Namenshypothese. Keine Zusammenführung, kein variant_of. Hersteller überall offen; Packungsgröße/Darreichung/Zielgruppe nicht sicher extrahiert → offen."
   }
 }
