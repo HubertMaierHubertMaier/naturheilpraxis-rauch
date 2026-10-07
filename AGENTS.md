@@ -1,3 +1,4 @@
 - Infothek comparison decisions (accepted/kept) live only in browser localStorage per user; a downloadable progress report is the backup path — why: no DB migration allowed for this tool.
 - Editorial status of all Infothek HTMLs is a repo file generated from website-content/infothek/manifest.json — why: durable, reviewable, separate from publication status.
 - Redaktionell geprüfte Wiki-Akteurs-/Quellenzuordnungen liegen als Dateistand in src/lib/wikiReviewedNetwork.ts und werden nur angezeigt, nie in die DB geschrieben – why: keine produktiven Zuordnungswrites vor Freigabe.
+- HTML-Vergleiche aller Artikel laufen über eine Ansicht (/admin/infothek-vergleich/:slug) mit Registry src/lib/infothekComparisonConfigs.ts; Entscheidungsschlüssel je Slug unverändert – why: gleicher Prüfstandard, bestehende Entscheidungen bleiben erhalten.

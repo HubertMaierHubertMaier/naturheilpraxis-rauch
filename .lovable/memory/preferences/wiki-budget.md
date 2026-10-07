@@ -10,3 +10,4 @@ type: preference
 - Stand 07.10.2026 17:52: 275,62 Rest (≈26 verbraucht). Paket 1+2 erledigt; nächster Schritt wartet auf Peters Akteurtypen + Review der Stichprobe.
 - Paket 1 erledigt (Probelauf-Download, 34 Akteure/234 Rollen als Kandidaten, Typ-Heuristik unzuverlässig → Review). Siehe docs/wiki/STATUS.md.
 - Paket 3 erledigt 07.10.2026 ~19:05: Akteurseinordnung, Stichprobe 6/8, Ansicht „Geprüfte Zuordnungen“. Stand vor Paket 234,22 Rest (67,29 verbraucht).
+- Stand 07.10.2026 ~19:50: 211,42 Rest (90,09 verbraucht seit 301,51).

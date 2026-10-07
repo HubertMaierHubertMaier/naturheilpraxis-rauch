@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,27 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
-import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, CHANGE_TOPICS, type ComparisonChange } from "@/lib/infothekComparisonChanges";
+import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
+import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, EXTRA_CHECKS, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
-import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
-const ROUTE = "/krankheit-ist-messbar.html";
+// Active comparison (one page instance at a time; set at render start, page remounts per slug).
+let CFG: ComparisonConfig = configFor(undefined);
+let CHANGES = CFG.changes; let CHANGE_TOPICS = CFG.topics; let UNMARKED_NOTES = CFG.notes; let draftHtml = CFG.draftHtml;
+let ROUTE = CFG.base.kind === "delivered" ? CFG.base.route : `/${CFG.slug}.html`;
+export default function InfothekHtmlVergleichRoute() {
+  const { slug } = useParams();
+  const cfg = configFor(slug ?? "krankheit-ist-messbar");
+  CFG = cfg; CHANGES = cfg.changes; CHANGE_TOPICS = cfg.topics; UNMARKED_NOTES = cfg.notes; draftHtml = cfg.draftHtml;
+  ROUTE = cfg.base.kind === "delivered" ? cfg.base.route : `/${cfg.slug}.html`;
+  return <InfothekHtmlVergleich key={cfg.slug} />;
+}
 type Side = "orig" | "draft";
 
 /** Colours used inside the article frames (legend below mirrors them). */
 const MARK = {
-  orig: { bg: "#fde2e2", border: "#b91c1c", label: "Original" },
+  orig: { bg: "#fde2e2", border: "#b91c1c", label: "Original/Basis" },
   draft: { bg: "#dcfce7", border: "#15803d", label: "Entwurf" },
   active: "#1d4ed8",
 };
@@ -177,7 +187,7 @@ function Pane({ label, html, error, frameRef, onLoad }: {
   );
 }
 
-export default function InfothekHtmlVergleich() {
+function InfothekHtmlVergleich() {
   const { user, loading, isAdmin, roleChecked } = useAuth();
   const [original, setOriginal] = useState<ReturnType<typeof toStaticPreview>>();
   const [synced, setSynced] = useState(true);
@@ -205,7 +215,7 @@ export default function InfothekHtmlVergleich() {
   const origRef = useRef<HTMLIFrameElement>(null);
   const draftRef = useRef<HTMLIFrameElement>(null);
   const [origRaw, setOrigRaw] = useState<string>();
-  const storageKey = user ? `infothek-vergleich:krankheit-ist-messbar:v1:${user.id}` : null;
+  const storageKey = user ? `infothek-vergleich:${CFG.slug}:v1:${user.id}` : null;
   const [accepted, setAccepted] = useState<Set<number>>(new Set());
   const [kept, setKept] = useState<Set<number>>(new Set());
   const [openListOpen, setOpenListOpen] = useState(false);
@@ -299,13 +309,14 @@ export default function InfothekHtmlVergleich() {
     const url = URL.createObjectURL(new Blob([working.html], { type: "text/html;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `krankheit-ist-messbar.arbeitsfassung-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.html`;
+    a.download = `${CFG.slug}.arbeitsfassung-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.html`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   useEffect(() => {
     if (!isAdmin) return;
+    if (CFG.base.kind === "baseDraft") { setOrigRaw(CFG.base.html); setOriginal(toStaticPreview(CFG.base.html, "orig")); return; }
     const controller = new AbortController();
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -542,7 +553,7 @@ export default function InfothekHtmlVergleich() {
     <main className="min-h-screen bg-background">
       <SEOHead title="HTML-Vergleich (Entwurf)" noIndex />
       <div className="container py-2">
-        <h1 className="font-serif text-lg font-semibold leading-tight">HTML-Vergleich: Frequenztherapie („Krankheit ist messbar“) <span className="text-xs font-normal text-muted-foreground">– Entwurf, nicht veröffentlicht, keine Freigabe</span></h1>
+        <h1 className="font-serif text-lg font-semibold leading-tight">HTML-Vergleich: {CFG.heading} <span className="text-xs font-normal text-muted-foreground">– Entwurf, nicht veröffentlicht, keine Freigabe</span></h1>
 
         <div className="my-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-xs">
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(-1)} aria-label="Vorherige Änderung"><ChevronLeft className="h-4 w-4" />Vorherige</Button>
@@ -566,7 +577,7 @@ export default function InfothekHtmlVergleich() {
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setListOpen((o) => !o)} aria-expanded={listOpen}>
               {listOpen ? "Liste einklappen" : "Alle Änderungen"}
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setNamingOpen((o) => !o)} aria-expanded={namingOpen}>HTML-Benennung</Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setNamingOpen((o) => !o)} aria-expanded={namingOpen} disabled={!CFG.naming}>HTML-Benennung</Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setStatusOpen((o) => !o)} aria-expanded={statusOpen}>Stand aller HTMLs</Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={downloadReport} disabled={!storageKey}>Fortschrittsbericht</Button>
           </span>
@@ -575,7 +586,7 @@ export default function InfothekHtmlVergleich() {
           {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
-        {namingOpen && <NamingPanel />}
+        {namingOpen && CFG.naming && <NamingPanel />}
         {openListOpen && (
           <div className="mb-2 rounded-md border border-border bg-card p-2 text-xs">
             <p className="mb-1 text-muted-foreground">Noch offen heißt nicht abgelehnt. Klick springt zur Stelle links/rechts und zur Randnotiz.</p>
@@ -607,7 +618,7 @@ export default function InfothekHtmlVergleich() {
                     <td className="p-1">{e.title}</td>
                     <td className="p-1 font-semibold">{e.state}</td>
                     <td className="p-1">{e.visibility} · {e.reviewStatus}{e.indexable ? " · indexierbar" : " · noindex"}</td>
-                    <td className="p-1">{e.comparePath ? `${openItems.length} Vorschläge offen; ${e.openTopics.join("; ")}` : "–"}</td>
+                    <td className="p-1">{e.comparePath ? (e.comparePath.endsWith(`/${CFG.slug}`) ? `${openItems.length} Vorschläge offen (hier); ` : "") + e.openTopics.join("; ") : "–"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -641,7 +652,7 @@ export default function InfothekHtmlVergleich() {
         )}
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_15rem]">
-          <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
+          <Pane label={CFG.leftLabel} html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
           <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
           <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
             <div ref={railRef} className="relative lg:h-[calc(100vh-8rem)] lg:min-h-[300px]">

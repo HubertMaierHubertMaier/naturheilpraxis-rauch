@@ -105,3 +105,4 @@
 - [HTML Infothek Delivery Status](mem://features/infothek-html-delivery-status) — Produktionsstand 17.07.2026, serverseitige Auslieferung aus patient-library/infothek
 - [HTML-Korrektur-Vergleich](mem://preferences/html-korrektur-vergleich) — Bestätigter Standard: Original links/Entwurf rechts, Randnotiz, Button „Nur Änderung ÄN übernehmen“ je Punkt, für alle weiteren HTMLs; inkl. redaktioneller Maßstab (positiv, sachlich, HWG/UWG) für alle Infothekartikel
 - [Wiki-Vernetzung Abschluss](mem://project/wiki-vernetzung-abschluss) — 07.10.2026: SQL/Test-MD5, 61 PASS, keine Anwendungsfreigabe, Restliste Vernetzung+HTML 28/36, Serie beendet
+- [Arbeitsstränge 07.10. abends](mem://project/arbeitsstraenge-2026-10-07) — Frequenz 34/36 (Ä2 offen), Allergie-Vergleich, Kieferostitis-Entwurf, Strunz-Bestand
