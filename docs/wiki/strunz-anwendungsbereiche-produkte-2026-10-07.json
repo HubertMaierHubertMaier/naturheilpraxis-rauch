@@ -1070,759 +1070,5082 @@
    "name": "BCAA + Glutamin – Apfel",
    "url": "https://www.strunz.com/bcaa-und-glutamin-apfel.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "bcaa + glutamin"
+   "variantengruppe": "bcaa + glutamin",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 41
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 28
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 38
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 47
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "BCAA + Glutamin – Zitrone",
    "url": "https://www.strunz.com/bcaa-und-glutamin-zitrone.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "bcaa + glutamin"
+   "variantengruppe": "bcaa + glutamin",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 36
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 22
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 35
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 41
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "acerola vitamin c pulver",
    "url": "https://www.strunz.com/for-you-acerola-vitamin-c-pulver.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 60
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 43
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 36
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 45
+    },
+    {
+     "bereich": "zaehne-mund",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+     "position": 5
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "AHCC®",
    "url": "https://www.strunz.com/for-you-ahcc.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 74
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 25
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 40
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 25
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "amino energy - Maracuja",
    "url": "https://www.strunz.com/for-you-amino-energy-maracuja.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "amino energy"
+   "variantengruppe": "amino energy",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 45
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 32
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 39
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 48
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "amino energy - Limette",
    "url": "https://www.strunz.com/for-you-amino-energy.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "amino energy"
+   "variantengruppe": "amino energy",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 44
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 31
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 37
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 46
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "amino night – Joghurt-Kirsche",
    "url": "https://www.strunz.com/for-you-amino-night-joghurt-kirsche.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "amino night"
+   "variantengruppe": "amino night",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 43
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 16
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 44
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "amino night  – Orange",
    "url": "https://www.strunz.com/for-you-amino-night-orange.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "amino night"
+   "variantengruppe": "amino night",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 37
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 2
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 39
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "apfelessig ingwer shot",
    "url": "https://www.strunz.com/for-you-apfelessig-ingwer-shot.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 46
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 71
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "aqua phyto balance",
    "url": "https://www.strunz.com/for-you-aqua-phyto-balance.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 43
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 30
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 38
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "ashwagandha",
    "url": "https://www.strunz.com/for-you-ashwagandha.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 34
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 12
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 32
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 37
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "augen vital",
    "url": "https://www.strunz.com/for-you-augen-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "BCAA + Glutamin - Wassermelone",
    "url": "https://www.strunz.com/for-you-bcaa-glutamin-wassermelone.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "bcaa + glutamin"
+   "variantengruppe": "bcaa + glutamin",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 44
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 30
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 40
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 49
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "bitterkräuter",
    "url": "https://www.strunz.com/for-you-bitterkraeuter-tropfen.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 39
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 33
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 27
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "brain vital",
    "url": "https://www.strunz.com/for-you-brain-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "brokkoli plus",
    "url": "https://www.strunz.com/for-you-brokkoli-plus.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 57
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 40
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 6
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "creatin",
    "url": "https://www.strunz.com/for-you-creatin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 8
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 17
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 18
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 22
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora gummies - Ananas-Orange",
    "url": "https://www.strunz.com/for-you-darmflora-gummies.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 25
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora komplex kids",
    "url": "https://www.strunz.com/for-you-darmflora-komplex-kids.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 26
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 47
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 43
+    },
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 5
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora komplex - Maracuja",
    "url": "https://www.strunz.com/for-you-darmflora-komplex-maracuja.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "darmflora komplex"
+   "variantengruppe": "darmflora komplex",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 68
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 22
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 42
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 40
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora komplex",
    "url": "https://www.strunz.com/for-you-darmflora-komplex.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "darmflora komplex"
+   "variantengruppe": "darmflora komplex",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 52
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 14
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 3
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 30
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora probio complete",
    "url": "https://www.strunz.com/for-you-darmflora-probio-complete.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 12
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "darmflora slimbiotika",
    "url": "https://www.strunz.com/for-you-darmflora-slimbiotika.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 42
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 40
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "frauen balance",
    "url": "https://www.strunz.com/for-you-frauen-balance.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 5
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "GABA + B6",
    "url": "https://www.strunz.com/for-you-gaba-b6.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 18
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 36
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 13
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 33
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "glucomannan",
    "url": "https://www.strunz.com/for-you-glucomannan.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 49
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 48
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "hair vital",
    "url": "https://www.strunz.com/for-you-hair-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 18
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 4
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 21
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "haut balance",
    "url": "https://www.strunz.com/for-you-haut-balance.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 31
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 5
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 33
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "haut vital",
    "url": "https://www.strunz.com/for-you-haut-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 32
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 47
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "heidelbeer plus",
    "url": "https://www.strunz.com/for-you-heidelbeer-plus.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 17
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 29
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 30
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "hista komplex",
    "url": "https://www.strunz.com/for-you-hista-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 63
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 20
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 38
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 38
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "krillöl",
    "url": "https://www.strunz.com/for-you-krilloel.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 15
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 24
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 34
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 41
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 3
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 24
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "longevity keto kakao",
    "url": "https://www.strunz.com/for-you-longevity-keto-kakao.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 2
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 2
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 2
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "longevity komplex",
    "url": "https://www.strunz.com/for-you-longevity-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 11
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "mann balance",
    "url": "https://www.strunz.com/for-you-mann-balance.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "melatonin Spray",
    "url": "https://www.strunz.com/for-you-melatonin-spray.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 31
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 11
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 35
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "multi enzym komplex",
    "url": "https://www.strunz.com/for-you-multi-enzym-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 49
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 27
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 29
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "multi kakao kids",
    "url": "https://www.strunz.com/for-you-multi-kakao-kids.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 3
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "multi natural complete",
    "url": "https://www.strunz.com/for-you-multi-natural-complete.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 38
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 3
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 16
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 39
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 25
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 42
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "NADH",
    "url": "https://www.strunz.com/for-you-nadh.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 33
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 8
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "natural basenpulver",
    "url": "https://www.strunz.com/for-you-natural-basenpulver.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 28
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 19
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 39
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 30
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 23
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 40
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "osteo komplex",
    "url": "https://www.strunz.com/for-you-osteo-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 25
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 1
+    },
+    {
+     "bereich": "zaehne-mund",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "phyto balance",
    "url": "https://www.strunz.com/for-you-phyto-balance.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 47
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 73
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 24
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 45
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "phyto slim",
    "url": "https://www.strunz.com/for-you-phyto-slim.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 4
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 29
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "präbio ballaststoffe X10 komplex",
    "url": "https://www.strunz.com/for-you-praebio-ballaststoffe-x10-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 45
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 43
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "probio mundflora",
    "url": "https://www.strunz.com/for-you-probio-mundflora.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 37
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 37
+    },
+    {
+     "bereich": "zaehne-mund",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "prostata vital",
    "url": "https://www.strunz.com/for-you-prostata-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 25
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "pur msm",
    "url": "https://www.strunz.com/for-you-pur-msm.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 46
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 27
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 26
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 20
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "quercetin",
    "url": "https://www.strunz.com/for-you-quercetin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 18
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 35
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 9
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "6b262335-e2f7-5635-b30c-35e344368f39",
+      "name": "Quercetin",
+      "entity_revision_id": "6b262335-e2f7-5635-b30c-35e344368f39",
+      "typ": "plant"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "6b262335-e2f7-5635-b30c-35e344368f39",
+      "name": "Quercetin",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "resveratrol",
    "url": "https://www.strunz.com/for-you-resveratrol.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 29
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 46
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 45
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 37
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 10
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "sango koralle",
    "url": "https://www.strunz.com/for-you-sango-koralle.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 53
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 24
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 14
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "schilddrüse vital",
    "url": "https://www.strunz.com/for-you-schilddruese-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 34
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 27
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 2
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 30
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "schwarzer knoblauch plus",
    "url": "https://www.strunz.com/for-you-schwarzer-knoblauch-plus.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 54
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 20
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 31
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "selen",
    "url": "https://www.strunz.com/for-you-selen-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 58
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 26
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 42
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 32
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 29
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 7
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "064bfa15-3f44-5acc-8a43-4e498ece1564",
+      "name": "Selen",
+      "entity_revision_id": "064bfa15-3f44-5acc-8a43-4e498ece1564",
+      "typ": "nutrient"
+     },
+     {
+      "entity_id": "315879e1-e197-59ce-a27b-935adefff491",
+      "name": "Selen",
+      "entity_revision_id": "315879e1-e197-59ce-a27b-935adefff491",
+      "typ": "lab_parameter"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "064bfa15-3f44-5acc-8a43-4e498ece1564",
+      "name": "Selen",
+      "status": "imported_unreviewed"
+     },
+     {
+      "candidate_id": "315879e1-e197-59ce-a27b-935adefff491",
+      "name": "Selen",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "synbio smoothie bowl - Erdbeere",
    "url": "https://www.strunz.com/for-you-smoothie-bowl-erdbeere.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 48
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 46
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "spirulina",
    "url": "https://www.strunz.com/for-you-spirulina.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 72
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 23
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 44
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 32
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "spurenelemente",
    "url": "https://www.strunz.com/for-you-spurenelemente-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 45
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 32
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 34
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 19
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 6
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 36
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "super greens",
    "url": "https://www.strunz.com/for-you-super-greens.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 62
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 36
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "super reds",
    "url": "https://www.strunz.com/for-you-super-reds.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 64
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 39
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "TMG betain",
    "url": "https://www.strunz.com/for-you-tmg-betain.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 69
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 31
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 39
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 12
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 50
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "vagiflora komplex",
    "url": "https://www.strunz.com/for-you-vagiflora-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 33
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "vegan collagen",
    "url": "https://www.strunz.com/for-you-vegan-collagen.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 33
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 48
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 30
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "venen komplex",
    "url": "https://www.strunz.com/for-you-venen-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 3
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "vitamin C Spray",
    "url": "https://www.strunz.com/for-you-vitamin-c-spray.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 75
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 41
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 49
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 41
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "vitamin D - Lutschtabletten - Walderdbeere",
    "url": "https://www.strunz.com/for-you-vitamin-d-lutschtabletten.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 66
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 46
+    },
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 2
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 28
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamin A, E, D3 & K2 kids",
    "url": "https://www.strunz.com/for-you-vitamin-kids-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 70
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 18
+    },
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 4
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 29
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "weihrauch",
    "url": "https://www.strunz.com/for-you-weihrauch.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 65
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 21
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 41
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 39
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 26
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "zistrose Spray",
    "url": "https://www.strunz.com/for-you-zistrose-spray.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 67
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Acetyl-L-Carnitin",
    "url": "https://www.strunz.com/forever-young-acetyl-l-carnitin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 30
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 12
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 10
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 18
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 16
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 18
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 24
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Active Q10 Spray",
    "url": "https://www.strunz.com/forever-young-active-q10-spray.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 1
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 1
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 1
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 1
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 1
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 1
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Amino 10 - Limette",
    "url": "https://www.strunz.com/forever-young-amino-10.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 19
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 12
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 14
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Amino 11 oblong",
    "url": "https://www.strunz.com/forever-young-amino-11-oblong.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 31
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 8
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 18
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 15
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 19
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Amino 11",
    "url": "https://www.strunz.com/forever-young-amino-11-tabletten.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 12
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 5
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 10
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 12
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 8
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Amino 8",
    "url": "https://www.strunz.com/forever-young-amino-8.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 17
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 23
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 7
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 12
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 14
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 16
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Amino flüssig - Schwarze Johannisbeere",
    "url": "https://www.strunz.com/forever-young-amino-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 10
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 10
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 7
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 10
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Ascorbylpalmitat",
    "url": "https://www.strunz.com/forever-young-ascorbylpalmitat.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 39
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 10
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 22
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 29
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 24
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 17
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 32
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Astaxanthin",
    "url": "https://www.strunz.com/forever-young-astaxanthin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 4
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 8
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 10
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 8
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 5
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 14
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "50ddeb77-686b-5d18-b0ec-b1caae89ed60",
+      "name": "Astaxanthin",
+      "entity_revision_id": "50ddeb77-686b-5d18-b0ec-b1caae89ed60",
+      "typ": "nutrient"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "50ddeb77-686b-5d18-b0ec-b1caae89ed60",
+      "name": "Astaxanthin",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Beta-Carotin",
    "url": "https://www.strunz.com/forever-young-beta-carotin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 22
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 9
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 18
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "a32d668f-f232-5e3b-af38-7df90fbb5f25",
+      "name": "Beta-Carotin",
+      "entity_revision_id": "a32d668f-f232-5e3b-af38-7df90fbb5f25",
+      "typ": "nutrient"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "a32d668f-f232-5e3b-af38-7df90fbb5f25",
+      "name": "Beta-Carotin",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Ca-AKG",
    "url": "https://www.strunz.com/forever-young-calcium-alpha-ketoglutarat.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 17
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 16
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 28
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 21
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 23
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 31
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Eisen Vital - Granatapfel",
    "url": "https://www.strunz.com/forever-young-eisen-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 23
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 32
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 16
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 23
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 17
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 25
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Folsäure aktiv Komplex",
    "url": "https://www.strunz.com/forever-young-folsaeure-aktiv-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 28
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 33
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 35
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 29
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 27
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Geschenkgutschein",
    "url": "https://www.strunz.com/forever-young-geschenkgutschein.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 50
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 77
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 27
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 19
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 49
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 18
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 33
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 44
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 35
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 49
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 50
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 42
+    },
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 6
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 32
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 26
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 35
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 8
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 41
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 51
+    },
+    {
+     "bereich": "zaehne-mund",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+     "position": 6
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Gluco Stabil",
    "url": "https://www.strunz.com/forever-young-gluco-stabil.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 35
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 31
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 40
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Glucosamin + Chondroitin",
    "url": "https://www.strunz.com/forever-young-glucosamin-chondroitin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 19
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 25
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 13
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 3
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 26
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Glycin",
    "url": "https://www.strunz.com/forever-young-glycin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 18
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 25
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 14
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 6
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 16
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 19
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 9
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 7
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "21737273-9152-556b-b779-66ea2c3c9ced",
+      "name": "Glycin",
+      "entity_revision_id": "21737273-9152-556b-b779-66ea2c3c9ced",
+      "typ": "nutrient"
+     },
+     {
+      "entity_id": "b4ebc00a-53c1-5016-9c8f-a7c55c5b73cf",
+      "name": "Glycin",
+      "entity_revision_id": "b4ebc00a-53c1-5016-9c8f-a7c55c5b73cf",
+      "typ": "lab_parameter"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "21737273-9152-556b-b779-66ea2c3c9ced",
+      "name": "Glycin",
+      "status": "imported_unreviewed"
+     },
+     {
+      "candidate_id": "b4ebc00a-53c1-5016-9c8f-a7c55c5b73cf",
+      "name": "Glycin",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Guarana Shot - Kirsch-Himbeere",
    "url": "https://www.strunz.com/forever-young-guarana-shot.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 33
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 16
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 27
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 26
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Hyaluronsäure",
    "url": "https://www.strunz.com/forever-young-hyaluronsaeure-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 13
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 24
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 12
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 19
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Kollagen Skin - Kokos-Maracuja",
    "url": "https://www.strunz.com/forever-young-kollagen-skin-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 3
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 3
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 14
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 20
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 20
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Kollagenhydrolysat",
    "url": "https://www.strunz.com/forever-young-kollagenhydrolysat.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 8
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 11
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 6
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 15
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 10
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 9
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Kupfer Caps",
    "url": "https://www.strunz.com/forever-young-kupfer-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 37
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 21
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 21
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 23
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 27
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 16
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 23
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Arginin + L-Citrullin",
    "url": "https://www.strunz.com/forever-young-l-arginin-l-citrullin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 24
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 13
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 7
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 5
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 15
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 12
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 16
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 15
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 17
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Carnosin",
    "url": "https://www.strunz.com/forever-young-l-carnosin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 16
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 25
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 42
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 41
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 7
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 43
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Citrullin - Orange",
    "url": "https://www.strunz.com/forever-young-l-citrullin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 11
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 21
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 21
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 22
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 29
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Lysin",
    "url": "https://www.strunz.com/forever-young-l-lysin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 13
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 12
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 2
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 8
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 9
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 11
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Phenylalanin",
    "url": "https://www.strunz.com/forever-young-l-phenylalanin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 29
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 25
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 5
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 25
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 31
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Prolin",
    "url": "https://www.strunz.com/forever-young-l-prolin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 27
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 21
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 14
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 10
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 20
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Threonin",
    "url": "https://www.strunz.com/forever-young-l-threonin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 47
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 26
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 17
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 35
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 36
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 22
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 38
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Tryptophan + B6",
    "url": "https://www.strunz.com/forever-young-l-tryptophan-kapseln-b6.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 32
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 23
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 24
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 28
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 10
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 28
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Tyrosin",
    "url": "https://www.strunz.com/forever-young-l-tyrosin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 27
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 11
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 19
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 20
+    },
+    {
+     "bereich": "schilddruese",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+     "position": 1
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 21
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Lactoferrin",
    "url": "https://www.strunz.com/forever-young-lactoferrin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 31
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 42
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 22
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 23
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 33
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Brain Mag",
    "url": "https://www.strunz.com/forever-young-magnesium-l-threonat.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 20
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 2
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 1
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 22
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Power Magnesium - Blutorange",
    "url": "https://www.strunz.com/forever-young-magnesium-pulver.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 8
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 6
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 6
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 6
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 8
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 4
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 5
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 5
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 4
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 5
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Methionin",
    "url": "https://www.strunz.com/forever-young-methionin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 15
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 25
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 30
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 32
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 26
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 18
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 22
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Multi Eiweiß - Käsekuchen-Mandarine",
    "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-kaesekuchen-mandarine.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "multi eiweiß"
+   "variantengruppe": "multi eiweiß",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 24
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 19
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Multi Eiweiß - Vanille-Erdbeere",
    "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-vanille-erdbeere.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "multi eiweiß"
+   "variantengruppe": "multi eiweiß",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 21
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 16
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Mushroom Chai",
    "url": "https://www.strunz.com/forever-young-mushroom-chai.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 55
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 30
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 21
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "NAC + Glycin",
    "url": "https://www.strunz.com/forever-young-nac-glycin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 41
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 14
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 23
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 27
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 30
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 5
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 9
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 27
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Nattokinase",
    "url": "https://www.strunz.com/forever-young-nattokinase-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 33
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 18
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 18
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Omega 3",
    "url": "https://www.strunz.com/forever-young-omega-3-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 2
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 5
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 3
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 5
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 6
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 2
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 13
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "b1c73c97-43eb-5b40-9eea-10034521b31e",
+      "name": "Omega-3",
+      "entity_revision_id": "b1c73c97-43eb-5b40-9eea-10034521b31e",
+      "typ": "nutrient"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "b1c73c97-43eb-5b40-9eea-10034521b31e",
+      "name": "Omega-3",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "OPC + MPC Komplex",
    "url": "https://www.strunz.com/forever-young-opc-mpc-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 1
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 2
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 1
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 2
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 1
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 1
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 2
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 2
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Phytoextrakt",
    "url": "https://www.strunz.com/forever-young-phytoextrakt.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 59
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 17
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 32
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 35
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Power Arginin - Kirsch-Orange",
    "url": "https://www.strunz.com/forever-young-power-arginin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 9
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 5
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 5
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 2
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 10
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 7
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 9
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 6
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 8
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Power Hydration - Wildberry",
    "url": "https://www.strunz.com/forever-young-power-hydration-elektrolyte-pulver.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 14
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 14
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 11
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 6
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 2
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Propionat",
    "url": "https://www.strunz.com/forever-young-propionat-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 37
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 56
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 15
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 31
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 23
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 32
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 38
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "R-Alpha-Liponsäure Bio Enhanced® RLA",
    "url": "https://www.strunz.com/forever-young-r-alpha-liponsaeure.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 22
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 9
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 9
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 17
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 22
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 18
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 23
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Relax Caps",
    "url": "https://www.strunz.com/forever-young-relax-caps.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 3
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 15
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 36
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Schwarzkümmelöl",
    "url": "https://www.strunz.com/forever-young-schwarzkuemmeloel-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 44
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 11
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 24
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 26
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 33
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 28
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Spermidin",
    "url": "https://www.strunz.com/forever-young-spermidin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 13
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 12
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 24
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 23
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Taurin",
    "url": "https://www.strunz.com/forever-young-taurin-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 19
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 10
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 7
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 15
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 13
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 8
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 18
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "09767a90-81d8-5297-80b3-904ba7a9d2d8",
+      "name": "Taurin",
+      "entity_revision_id": "09767a90-81d8-5297-80b3-904ba7a9d2d8",
+      "typ": "lab_parameter"
+     },
+     {
+      "entity_id": "5bdeaa34-94ce-5141-b4d9-3b6a00bcd95d",
+      "name": "Taurin",
+      "entity_revision_id": "5bdeaa34-94ce-5141-b4d9-3b6a00bcd95d",
+      "typ": "nutrient"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "5bdeaa34-94ce-5141-b4d9-3b6a00bcd95d",
+      "name": "Taurin",
+      "status": "imported_unreviewed"
+     },
+     {
+      "candidate_id": "09767a90-81d8-5297-80b3-904ba7a9d2d8",
+      "name": "Taurin",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Ubiquinol",
    "url": "https://www.strunz.com/forever-young-ubiquinol.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 6
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 5
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 6
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 4
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 4
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 4
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 4
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamin B12 Vital-Komplex - Lutschtabletten - Himbeere",
    "url": "https://www.strunz.com/forever-young-vitamin-b12-lutschtabletten.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 30
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 40
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 14
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 13
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 22
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 26
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 26
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamin B3",
    "url": "https://www.strunz.com/forever-young-vitamin-b3-kapseln-niacin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 43
+    },
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 15
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 24
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 29
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 31
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 25
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 21
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 29
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "07da5d4e-601b-5331-90d7-02e208af713a",
+      "name": "Vitamin B3",
+      "entity_revision_id": "07da5d4e-601b-5331-90d7-02e208af713a",
+      "typ": "nutrient"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "07da5d4e-601b-5331-90d7-02e208af713a",
+      "name": "Vitamin B3",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Vitamin K Komplex",
    "url": "https://www.strunz.com/forever-young-vitamin-k1-k2-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 20
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 15
+    },
+    {
+     "bereich": "zaehne-mund",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+     "position": 3
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamineral Amino - Maracuja",
    "url": "https://www.strunz.com/forever-young-vitamineral-amino-komplex.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 13
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 17
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 13
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 15
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 14
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 11
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 13
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamineral Phyto - Kirsche",
    "url": "https://www.strunz.com/forever-young-vitamineral-phyto-kirsche.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "vitamineral phyto"
+   "variantengruppe": "vitamineral phyto",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 25
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 34
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 9
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 20
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 17
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 26
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 19
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 20
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 27
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamineral Phyto - Orange-Ingwer-Curcuma",
    "url": "https://www.strunz.com/forever-young-vitamineral-phyto-orange-ingwer.html",
    "einordnung": "variante_offen",
-   "variantengruppe": "vitamineral phyto"
+   "variantengruppe": "vitamineral phyto",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 16
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 21
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 6
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 11
+    },
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 14
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 17
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 15
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 13
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 15
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Ziegenkolostrum",
    "url": "https://www.strunz.com/forever-young-ziegenkolostrum-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 61
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 19
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 35
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 36
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 44
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Zink Vital - Blutorange",
    "url": "https://www.strunz.com/forever-young-zink-vital.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 18
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 7
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 13
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 13
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 16
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Zink + Vitamin C - Lutschtabletten - Limette",
    "url": "https://www.strunz.com/forever-young-zink-vitamin-c-lutschtabletten.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 48
+    },
+    {
+     "bereich": "allergien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+     "position": 13
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 37
+    },
+    {
+     "bereich": "kindergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html",
+     "position": 1
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 28
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "high curcuma",
    "url": "https://www.strunz.com/high-curcuma.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 17
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 2
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Glutamin",
    "url": "https://www.strunz.com/l-glutamin.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 29
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 15
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 8
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 17
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 21
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Tox",
    "url": "https://www.strunz.com/l-tox-leber-detox-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 21
+    },
+    {
+     "bereich": "entgiften-ausleiten",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+     "position": 1
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "L-Tryptophan",
    "url": "https://www.strunz.com/l-tryptophan.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 7
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 7
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 5
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 7
+    },
+    {
+     "bereich": "schlaf-und-entspannung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+     "position": 4
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 3
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthochondroplus",
    "url": "https://www.strunz.com/orthochondroplus.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 27
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthomental",
    "url": "https://www.strunz.com/orthomental.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 48
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthoneuro",
    "url": "https://www.strunz.com/orthoneuro.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 42
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 47
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthonorm f",
    "url": "https://www.strunz.com/orthonorm-f.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "frauengesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthonorm m",
    "url": "https://www.strunz.com/orthonorm-m.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthonorm",
    "url": "https://www.strunz.com/orthonorm.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 76
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthotendo",
    "url": "https://www.strunz.com/orthotendo.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 31
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Power Carnitin - Ananas",
    "url": "https://www.strunz.com/power-carnitin-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 26
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 35
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 19
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 19
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 28
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "präbio ballaststoffe",
    "url": "https://www.strunz.com/praebio-ballaststoffe.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 40
+    },
+    {
+     "bereich": "darm-verdauung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+     "position": 34
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "vitamin A",
    "url": "https://www.strunz.com/vitamin-a-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 51
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 14
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 38
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "18c3a364-fe14-536d-8e4d-bbdf918dbb5e",
+      "name": "Vitamin A",
+      "entity_revision_id": "18c3a364-fe14-536d-8e4d-bbdf918dbb5e",
+      "typ": "nutrient"
+     },
+     {
+      "entity_id": "c5ab43ce-702d-5e36-8b82-a97e620229c9",
+      "name": "Vitamin A",
+      "entity_revision_id": "c5ab43ce-702d-5e36-8b82-a97e620229c9",
+      "typ": "lab_parameter"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "18c3a364-fe14-536d-8e4d-bbdf918dbb5e",
+      "name": "Vitamin A",
+      "status": "imported_unreviewed"
+     },
+     {
+      "candidate_id": "c5ab43ce-702d-5e36-8b82-a97e620229c9",
+      "name": "Vitamin A",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "vitamin B12",
    "url": "https://www.strunz.com/vitamin-b12-fluessig.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "energie-mitochondrien",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+     "position": 12
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 22
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 22
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 23
+    }
+   ],
+   "abgleich": {
+    "status": "moeglicher_treffer_name",
+    "grund": "nur normalisierter Name gleich – Identität nicht bestätigt",
+    "entitaeten": [
+     {
+      "entity_id": "e9c76905-3b3e-51fd-9677-ce1b5c188cf9",
+      "name": "Vitamin B12",
+      "entity_revision_id": "e9c76905-3b3e-51fd-9677-ce1b5c188cf9",
+      "typ": "lab_parameter"
+     }
+    ],
+    "entitaets_kandidaten": [
+     {
+      "candidate_id": "e9c76905-3b3e-51fd-9677-ce1b5c188cf9",
+      "name": "Vitamin B12",
+      "status": "imported_unreviewed"
+     }
+    ],
+    "mehrdeutig": true
+   }
   },
   {
    "name": "Vitamin C Depo 2er-Set",
    "url": "https://www.strunz.com/vitamin-c-depo-2er-set.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 15
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 20
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 8
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 14
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamin E Tocotrienole",
    "url": "https://www.strunz.com/vitamin-e-tocotrienole-120-kapseln.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 28
+    },
+    {
+     "bereich": "augen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+     "position": 11
+    },
+    {
+     "bereich": "entzuendungen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+     "position": 17
+    },
+    {
+     "bereich": "gehirn-nerven-psyche",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+     "position": 16
+    },
+    {
+     "bereich": "herz-und-gefaesse",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+     "position": 15
+    },
+    {
+     "bereich": "knochen-gelenke-sehnen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+     "position": 11
+    },
+    {
+     "bereich": "longevity",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html",
+     "position": 16
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "orthomolar Vitamincocktail",
    "url": "https://www.strunz.com/vitamincocktail-orthomolar.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 50
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamineral 32 2er-Set",
    "url": "https://www.strunz.com/vitamineral32-2er-set.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 9
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 2
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 9
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 7
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 5
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 6
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   },
   {
    "name": "Vitamineral 32 - Waldbeere",
    "url": "https://www.strunz.com/vitamineral32-waldbeere.html",
-   "einordnung": "eindeutiges_produkt_ohne_karte"
+   "einordnung": "eindeutiges_produkt_ohne_karte",
+   "fundstellen": [
+    {
+     "bereich": "abnehmen",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+     "position": 28
+    },
+    {
+     "bereich": "abwehrkraefte",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+     "position": 38
+    },
+    {
+     "bereich": "haut-haare-naegel",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+     "position": 28
+    },
+    {
+     "bereich": "maennergesundheit",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+     "position": 24
+    },
+    {
+     "bereich": "stress-erschoepfung",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+     "position": 24
+    },
+    {
+     "bereich": "training-und-regeneration",
+     "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+     "position": 30
+    }
+   ],
+   "abgleich": {
+    "status": "kein_treffer",
+    "grund": "weder URL noch EAN noch Name in Entitätsnamen, Entitätskandidaten, Quellrevisionen oder Wiki-Inhalt"
+   }
   }
  ],
  "nicht_eindeutig": [],
@@ -2095,5 +6418,22 @@
   "eindeutig": 136,
   "varianten": 13,
   "variantengruppen": 6
+ },
+ "ungemappt_abgleich": {
+  "geprueft": "2026-10-07",
+  "abfrageumfang": {
+   "kb_entity_names": 533,
+   "kb_entity_candidates": 2068,
+   "kb_source_revisions_und_kandidaten_strunz_url": 18,
+   "kb_entity_identifiers": 0,
+   "admin_knowledge_base_mit_strunz_url": 22
+  },
+  "ean": "keine EAN-Identifikatoren in kb_entity_identifiers (0 Zeilen) – EAN-Abgleich nicht möglich",
+  "ergebnis": {
+   "kein_treffer": 139,
+   "moeglicher_treffer_name": 10
+  },
+  "fundstellen_quelle": "Neuabruf der 21 Bereichsseiten 2026-10-07; Position = Reihenfolge der Produktlinks",
+  "vollstaendigkeit": "nur für die 21 Bereichsseiten laut dokumentierter Pagination; keine Aussage über das gesamte Strunz-Sortiment"
  }
 }
