@@ -64,3 +64,18 @@ export const UNMARKED_NOTES = [
   "SEO: Social-Metadaten (og:*, twitter:card) im Seitenkopf ergänzt.",
   "Lesbarkeit/Ladezeit: Bilder mit loading=\"lazy\", decoding=\"async\", feste Maße.",
 ];
+
+/** Plain-language subject of each proposal (display only; ids unchanged). */
+export const CHANGE_TOPICS: Record<number, string> = {
+  1: "Seitentitel für Browser und Suche", 2: "Beschreibung für Suchergebnisse", 3: "Hauptüberschrift des Artikels",
+  4: "Untertitel auf der Titelseite", 5: "E = mc² und Frequenzen", 6: "Überschrift Carlo Rubbia",
+  7: "Rubbia und das Modell der Frequenztherapie", 8: "Schwingung und Ordnung im Modell", 9: "Überschrift: physikalischer Nachweis",
+  10: "Das CERN-Experiment", 11: "Was das CERN-Ergebnis bedeutet", 12: "Muheims Kenngröße",
+  13: "Das Denkmodell für den Therapieansatz", 14: "Rückenschmerzen im Energiefeld-Modell", 15: "Wo Frequenztherapie ansetzen will",
+  16: "Feld und Masse als Denkmodell", 17: "Muheim und Frequenztherapie", 18: "Zusammenfassung des Modells",
+  19: "Krankheit in der Informationsmedizin", 20: "Bild vom „Körper-WLAN“", 21: "Mögliche Wirkung im Modell",
+  22: "Erfahrungen aus der Praxis", 23: "Kinesiologische Testung", 24: "Metatron-Messung",
+  25: "Bildbeschreibung E = mc²", 26: "Bildbeschreibung Energiefeld", 27: "Bildbeschreibung Medizin-Vergleich",
+  28: "Bildbeschreibung „Steuerpult“", 29: "Doppelte Überschrift", 30: "Weiterlesen: Praxisseiten",
+  31: "Körper als Schwingungsgefüge (Patientensatz)",
+};
