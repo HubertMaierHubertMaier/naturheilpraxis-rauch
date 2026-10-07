@@ -157,6 +157,7 @@ export default function InfothekHtmlVergleich() {
   const cardIdRef = useRef(cardId);
   cardIdRef.current = cardId;
   const [cardTop, setCardTop] = useState(0);
+  const [cardText, setCardText] = useState<{ orig?: string; draft?: string }>({});
   const [listOpen, setListOpen] = useState(false);
   const [namingOpen, setNamingOpen] = useState(false);
   const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
@@ -343,6 +344,17 @@ export default function InfothekHtmlVergleich() {
     const c = CHANGES.find((x) => x.id === cardIdRef.current);
     const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"]`) : null;
     setCardTop(el ? el.getBoundingClientRect().top : 0);
+    // Full wording of the marked element on both sides (badge/why box excluded).
+    const textOf = (side: Side) => {
+      const t = c && !c.headOnly ? docOf(side)?.querySelector(`[data-change="${c.id}"]`) : null;
+      if (!t) return undefined;
+      if (t instanceof HTMLImageElement) return t.alt;
+      const clone = t.cloneNode(true) as Element;
+      clone.querySelectorAll(".cmp-badge, .cmp-why").forEach((x) => x.remove());
+      const txt = (clone.textContent ?? "").replace(/\s+/g, " ").trim();
+      return txt.length > 260 ? `${txt.slice(0, 257)}…` : txt;
+    };
+    setCardText({ orig: textOf("orig"), draft: textOf("draft") });
   }, []);
 
   const [loaded, setLoaded] = useState(0);
@@ -506,8 +518,8 @@ export default function InfothekHtmlVergleich() {
                     )}
                     {!c.headOnly && (c.orig || c.draft) && (
                       <dl className="mb-2 space-y-1">
-                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{c.orig ?? "–"}“</dd></div>
-                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{c.draft ?? "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.orig ?? c.orig ?? "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.draft ?? c.draft ?? "–"}“</dd></div>
                       </dl>
                     )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
