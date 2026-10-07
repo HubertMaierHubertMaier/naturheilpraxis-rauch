@@ -12,6 +12,7 @@ import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, currentCardsOnly, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
 import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
+import { groupByProduct, STRUNZ_AREA } from "@/lib/strunzAreaCandidates";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
