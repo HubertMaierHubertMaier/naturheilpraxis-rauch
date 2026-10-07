@@ -85,10 +85,17 @@ export interface Actor {
   textEntityIds: Set<string>;
   /** Full-text hits in article content (loaded separately, server-side word match). */
   fullTextArticleIds: Set<string>;
+  /** Subset of entityIds: product carries this actor only in its stored manufacturer field (Datenfeld, keine Importrelation). */
+  fieldEntityIds: Set<string>;
+  /** Subset of entityIds: linked via an import relation candidate (manufactured_by). */
+  importEntityIds: Set<string>;
 }
 export interface WikiModel {
   entities: Map<string, Entity>; relations: Relation[]; articles: Map<string, Article>;
-  sources: Map<string, SourceRevIn>; actors: Map<string, Actor>; folders: Map<string, Set<string>>;
+  sources: Map<string, SourceRevIn>;
+  /** All loaded source revisions (current and historical), keyed by revision id – for exact relation evidence. */
+  allSourceRevisions: Map<string, SourceRevIn>;
+  actors: Map<string, Actor>; folders: Map<string, Set<string>>;
   missingRevisions: { articles: number; entities: number; sources: number };
   unassignedArticleIds: string[]; unassignedEntityIds: string[];
   articleTextEntities: Map<string, Set<string>>;
@@ -152,7 +159,7 @@ export function buildWikiModel(i: {
   // Actors: Peter-named + exact data fields (manufacturer entities, publisher, authors).
   const actors = new Map<string, Actor>();
   const actor = (key: string, name: string) => {
-    if (!actors.has(key)) actors.set(key, { key, name, roles: new Set(), folderArticleIds: new Set(), sourceRevisionIds: new Set(), entityIds: new Set(), textArticleIds: new Set(), textEntityIds: new Set(), fullTextArticleIds: new Set() });
+    if (!actors.has(key)) actors.set(key, { key, name, roles: new Set(), folderArticleIds: new Set(), sourceRevisionIds: new Set(), entityIds: new Set(), textArticleIds: new Set(), textEntityIds: new Set(), fullTextArticleIds: new Set(), fieldEntityIds: new Set(), importEntityIds: new Set() });
     return actors.get(key)!;
   };
   const aliasesOf = new Map<string, string[]>();
@@ -168,11 +175,11 @@ export function buildWikiModel(i: {
     for (const au of s.authors ?? []) if (au?.trim()) { const a = actor(keyFor(au), au.trim()); a.roles.add("Autor"); a.sourceRevisionIds.add(s.id); }
   }
   // Manufacturer from the stored product field (exact string, e.g. "Mannayan GmbH & Co. KG").
-  for (const e of entities.values()) if (e.manufacturerField) { const a = actor(keyFor(e.manufacturerField), e.manufacturerField); a.roles.add("Hersteller"); a.entityIds.add(e.id); }
+  for (const e of entities.values()) if (e.manufacturerField) { const a = actor(keyFor(e.manufacturerField), e.manufacturerField); a.roles.add("Hersteller"); a.entityIds.add(e.id); a.fieldEntityIds.add(e.id); }
   // Pharmacy role: only when the stored actor name itself is a pharmacy name (data field). Other roles stay (multi-role).
   for (const a of actors.values()) if (isPharmacyName(a.name)) a.roles.add("Apotheke");
   // Products manufactured_by an actor's manufacturer entity (import link).
-  for (const r of relations) if (r.type === "manufactured_by" && r.objectId) for (const a of actors.values()) if (a.entityIds.has(r.objectId) && r.subjectId) a.entityIds.add(r.subjectId);
+  for (const r of relations) if (r.type === "manufactured_by" && r.objectId) for (const a of actors.values()) if (a.entityIds.has(r.objectId) && r.subjectId && !EXCLUDED_STATUS.has(r.status)) { a.entityIds.add(r.subjectId); a.importEntityIds.add(r.subjectId); }
   // Folder assignment only when folder name equals an actor alias/name (exact, normalized).
   for (const [folder, ids] of folders) {
     const n = norm(folder);
@@ -207,7 +214,7 @@ export function buildWikiModel(i: {
   relations.forEach((r) => { if (r.subjectId) related.add(r.subjectId); if (r.objectId) related.add(r.objectId); });
   actors.forEach((a) => { a.entityIds.forEach((x) => related.add(x)); a.textEntityIds.forEach((x) => related.add(x)); });
   return {
-    entities, relations, articles, sources, actors, folders, missingRevisions: missing, articleTextEntities,
+    entities, relations, articles, sources, allSourceRevisions: new Map([...sRev].filter(([, r]) => i.sources.some((x) => x.id === r.source_id))), actors, folders, missingRevisions: missing, articleTextEntities,
     unassignedArticleIds: [...articles.keys()].filter((id) => !assignedArticles.has(id)),
     unassignedEntityIds: [...entities.keys()].filter((id) => !related.has(id) && !articleTextEntities.has(id)),
   };
@@ -253,21 +260,49 @@ export const paginate = <T,>(xs: T[], page: number, size: number) => {
   return { items: xs.slice((p - 1) * size, p * size), page: p, pages, total: xs.length };
 };
 
-/** Actors linked to an entity (import link or name text hit). */
+/** Candidate statuses that are NOT a valid assignment (kept visible separately in review context). */
+export const EXCLUDED_STATUS = new Set(["rejected", "duplicate"]);
+export type ActorLinkKind = "import" | "field" | "text";
+/** Actors linked to an entity. Kinds are separate: import relation, stored manufacturer field, name text hit. */
 export function actorsOfEntity(m: WikiModel, entityId: string) {
-  return [...m.actors.values()].flatMap((a) => a.entityIds.has(entityId) ? [{ actor: a, kind: "import" as "import" | "text" }] : a.textEntityIds.has(entityId) ? [{ actor: a, kind: "text" as const }] : []);
+  return [...m.actors.values()].flatMap((a) => {
+    const kinds: ActorLinkKind[] = [];
+    if (a.importEntityIds.has(entityId)) kinds.push("import");
+    if (a.fieldEntityIds.has(entityId)) kinds.push("field");
+    if (!kinds.length && a.entityIds.has(entityId)) kinds.push("field"); // manufacturer entity itself = stored record
+    if (!kinds.length && a.textEntityIds.has(entityId)) kinds.push("text");
+    return kinds.length ? [{ actor: a, kind: kinds[0], kinds }] : [];
+  });
 }
 
-/** Products that contain a substance: stored "contains" relation, else product name naming the substance (text hit). */
+/** Products containing a substance. Rejected/duplicate "contains" candidates are not valid – returned separately with status. */
 export function productsWithSubstance(m: WikiModel, substanceId: string) {
   const s = m.entities.get(substanceId);
   if (!s) return [];
-  const viaRel = new Set(m.relations.filter((r) => r.type === "contains" && r.objectId === substanceId && r.subjectId).map((r) => r.subjectId!));
+  const rels = m.relations.filter((r) => r.type === "contains" && r.objectId === substanceId && r.subjectId);
+  const valid = new Map(rels.filter((r) => !EXCLUDED_STATUS.has(r.status)).map((r) => [r.subjectId!, r.status]));
   const n = norm(s.name);
   return [...m.entities.values()].filter((e) => e.stoffart === "Produkt").flatMap((e) =>
-    viaRel.has(e.id) ? [{ product: e, kind: "import" as "import" | "text" }] : n.length >= 3 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const }] : []);
+    valid.has(e.id) ? [{ product: e, kind: "import" as "import" | "text", status: valid.get(e.id) as string | undefined }] : n.length >= 3 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const, status: undefined }] : []);
+}
+/** "contains" candidates with status rejected/duplicate – for review context only, never counted as assignment. */
+export function rejectedContains(m: WikiModel, substanceId: string) {
+  return m.relations.filter((r) => r.type === "contains" && r.objectId === substanceId && r.subjectId && EXCLUDED_STATUS.has(r.status))
+    .flatMap((r) => { const p = m.entities.get(r.subjectId!); return p ? [{ product: p, status: r.status, relationId: r.id }] : []; });
 }
 
+/** Split full-text revision hits: current revision vs. only historical revisions (kept, marked). */
+export function splitRevisionHits(hits: { id: string; article_id: string }[], articles: Map<string, Article>) {
+  const current = new Set<string>(), hist = new Map<string, Set<string>>();
+  for (const h of hits) {
+    const a = articles.get(h.article_id);
+    if (!a) continue;
+    if (h.id === a.revisionId) current.add(a.id);
+    else { if (!hist.has(a.id)) hist.set(a.id, new Set()); hist.get(a.id)!.add(h.id); }
+  }
+  const historical = [...hist.keys()].filter((x) => !current.has(x));
+  return { current: [...current], historical, historicalRevisionIds: hist };
+}
 
 /** Peter's direct topic tiles. Role/category stays explicit; matching only on stored fields (folder, source publisher/author) = "field", titles = "text". */
 export type TopicRole = "Person/Autor" | "Plattform/Herausgeber" | "Therapieansatz" | "Diagnostik" | "Produktlinie";
