@@ -138,3 +138,10 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Doppelte EAN 4260180442878 (Schwarzkümmelöl und Vitamin K Komplex) – Prüfpunkt, keine Identität.
 - Gutschein (Teil 4) als seitentyp gutschein_kein_produkt gesondert. 149 URLs/13 Varianten/6 Gruppen unverändert.
 - Offen: Listeneinträge 121–136, 13 Varianten, wörtliche Fundstellen für 1–72.
+
+## 2026-10-07 ca. 20:30Z Strunz-Listeneinträge Teil 6 (121–136)
+- 16/16 HTTP 200 (`produktquellen_teil6`), wörtliche Fundstellen. 8 mit expliziter EAN, 8 ohne (u. a. orthomol-Linie, präbio ballaststoffe, Vitamincocktail).
+- Marken: FOREVER YOUNG 4 (H1), for you eHealth 3 (Überschrift Qualitätsversprechen), 9 ohne Markennennung → offen („orthomol“ aus Name/Kundenbewertung nicht übernommen). Hersteller überall offen.
+- Keine neue Doppel-EAN; 4260180442878 bleibt einziger Widerspruch (Teil 5), keine Identität.
+- Damit alle 136 nicht als Variante gruppierten Listeneinträge einmal lesend erfasst (Test prüft Abdeckung 136/136). 149 URLs/13 Varianten/6 Gruppen unverändert.
+- Offen: 13 Varianten (eigener Schritt), wörtliche Fundstellen für 1–72 nachrüsten; Hersteller aller 136 offen. Keine Karten/Writes.
