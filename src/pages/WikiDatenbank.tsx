@@ -1,3 +1,4 @@
+import { ArticleEvidencePanel } from "@/components/wiki/ArticleEvidencePanel";
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Bug, Database, ExternalLink, FileSearch, Link2, Search, ShieldCheck } from "lucide-react";
@@ -854,6 +855,7 @@ export default function WikiDatenbank() {
                       {(entry.tags || []).length > 0 && <div className="mt-4 flex flex-wrap gap-2">{entry.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
                       {(entry.therapeutic_topics || []).length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Themen</p><div className="mt-2 flex flex-wrap gap-2">{entry.therapeutic_topics.map((topic) => <Badge key={topic} variant="outline">{topic}</Badge>)}</div></div>}
                       {sources.length > 0 && <div className="mt-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quellen</p><div className="mt-2 flex flex-wrap gap-3 text-sm">{sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">{source.label}<ExternalLink className="h-3.5 w-3.5" /></a>)}</div></div>}
+                      <ArticleEvidencePanel articleId={entry.id} />
                       {(entry.contraindications || []).length > 0 && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"><strong>Gegenanzeigen:</strong> {entry.contraindications.join(", ")}</div>}
                       {(entry.interaction_tags || []).length > 0 && <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"><strong>Interaktionen:</strong> {entry.interaction_tags.join(", ")}</div>}
                       {entry.safety_notes && <div className="mt-3 rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground"><strong>Sicherheitsnotiz:</strong> {entry.safety_notes}</div>}

@@ -17,6 +17,7 @@
 - **Infothek-Ton (alle bestehenden UND neuen HTMLs, ab Erstellung)**: Praxiswerbung + Info + SEO in HWG/UWG-Grenzen; keine Heilversprechen, keine Pauschal-Disclaimer. Siehe html-korrektur-vergleich.
 
 ## Memories
+- [Wikidatenbank-Status](mem://project/wiki-datenbank-status) — HTML-Pause, Alternativen-Ersetzung, Backup-Patch offen, Belege nur Entwürfe
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
 - [DSGVO Compliance](mem://compliance/dsgvo-specifics) — 10y retention, E2E encryption, explicit consent workflow
 - [Multilingual Support](mem://features/multilingual-support) — DE/EN support, LanguageProvider and Switcher

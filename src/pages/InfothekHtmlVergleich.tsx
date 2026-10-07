@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, CHANGE_TOPICS, type ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
-import { buildProgressReport, EXTRA_CHECKS, isOptionalAlternative, parseDecisions, serializeDecisions, undecided } from "@/lib/infothekDecisions";
+import { buildProgressReport, EXTRA_CHECKS, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
 const ROUTE = "/krankheit-ist-messbar.html";
@@ -261,7 +261,7 @@ export default function InfothekHtmlVergleich() {
     if (value) { nextKept.add(id); next.delete(id); } else nextKept.delete(id);
     if (!persist(id, next, nextKept)) return false;
     if (value) {
-      const t = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...nextKept]), id);
+      const t = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...nextKept, ...CHANGES.filter((c) => replacedBy(c, CHANGES, { accepted: next, kept: nextKept }) !== undefined).map((c) => c.id)]), id);
       if (t !== undefined) chooseActive(t);
     }
     return true;
@@ -269,7 +269,7 @@ export default function InfothekHtmlVergleich() {
   const acceptAndAdvance = (id: number) => {
     const next = new Set(accepted).add(id);
     if (!toggleAccepted(id, true)) return;
-    const target = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...kept]), id);
+    const target = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...kept, ...CHANGES.filter((c) => replacedBy(c, CHANGES, { accepted: next, kept }) !== undefined).map((c) => c.id)]), id);
     if (target !== undefined) chooseActive(target);
   };
   const working = useMemo(
@@ -499,14 +499,23 @@ export default function InfothekHtmlVergleich() {
   }, [wide, loaded, equalize, syncFrom, updateCard]);
   useEffect(() => {
     docOf("draft")?.querySelectorAll<HTMLElement>("[data-status-for]").forEach((el) => {
-      const on = accepted.has(Number(el.dataset.statusFor));
-      const k = kept.has(Number(el.dataset.statusFor));
-      el.textContent = on ? "Übernommen" : k ? "Original beibehalten" : "Offen";
-      el.toggleAttribute("data-accepted", on);
-      const box = el.closest(".cmp-why");
+      const id = Number(el.dataset.statusFor);
+      const c = CHANGES.find((x) => x.id === id);
+      const rep = c ? replacedBy(c, CHANGES, { accepted, kept }) : undefined;
+      const on = accepted.has(id);
+      const k = kept.has(id);
+      el.textContent = rep !== undefined ? `Ersetzt durch Ä${rep}` : on ? "Übernommen" : k ? "Original beibehalten" : "Offen";
+      el.toggleAttribute("data-accepted", on && rep === undefined);
+      const box = el.closest<HTMLElement>(".cmp-why");
       const acc = box?.querySelector<HTMLElement>("[data-accept]"), undo = box?.querySelector<HTMLElement>("[data-undo]");
-      if (acc) acc.hidden = on;
-      if (undo) undo.hidden = !on;
+      if (acc) acc.hidden = on || rep !== undefined;
+      if (undo) undo.hidden = !on || rep !== undefined;
+      // Replaced draft wording is hidden; restored automatically when the alternative is undone.
+      const target = box?.previousElementSibling as HTMLElement | null;
+      if (box && target && c && !c.img) {
+        [box, target, c.withPrev ? target.previousElementSibling : null, c.withNext ? box.nextElementSibling : null]
+          .forEach((x) => { if (x) (x as HTMLElement).hidden = rep !== undefined; });
+      }
     });
   }, [accepted, kept, loaded]);
 
@@ -621,7 +630,7 @@ export default function InfothekHtmlVergleich() {
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
-                  <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />
+                  {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
                 </li>
               ))}
             </ol>
@@ -675,8 +684,9 @@ export default function InfothekHtmlVergleich() {
                         <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.draft || c.draft || "–"}“</dd></div>
                       </dl>
                     )}
+                    {replacedBy(c, CHANGES, decisions) !== undefined && <p className="mb-1 rounded bg-muted px-1.5 py-1">Durch Vorschlag {replacedBy(c, CHANGES, decisions)} ersetzt – diese Fassung erscheint nicht in der Arbeitsfassung. Wird Vorschlag {replacedBy(c, CHANGES, decisions)} rückgängig gemacht, ist dieser Vorschlag wieder offen.</p>}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
-                    <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />
+                    {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
                   </div>
                 );
               })()}
