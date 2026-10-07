@@ -12,3 +12,4 @@ type: feature
 - Präzisierung: ein zentraler Mittel-Eintrag mit Mehrfachverknüpfung Anbieter/Symptom/Erkrankung (beidseitig, mit Quelle); Heel/Pascoe = Anbieter homöopathischer Komplexmittel, Einstufung nur per Produktdatensatz; Einstiege Vitamine, Mineralstoffe, Spurenelemente (Untergruppe); Stoff vs. Produkt.
 
 - Kästchen „Ärztliche Mittel / Arzneimittel" (Peter): nur ausdrücklich im Datensatz als Arzneimittel erfasste Einträge; Erwähnung (z.B. Klinghardt) ≠ Arzneimittel; Verschreibungsstatus nur bei hinterlegter Angabe, sonst „unklar"; Wissensnavigation, keine Verordnung/Freigabe; nichts importieren/erfinden; mit Klinghardt/Quelle/Anbieter/Symptom/Erkrankung vernetzen.
+- Kästchen „Apotheken" (Peter): eigene Rolle getrennt von Hersteller/Autor, Mehrfachrolle nur aus Daten; Textnennungen nur als Treffer im Quelltext; keine erfundenen Apotheken.
