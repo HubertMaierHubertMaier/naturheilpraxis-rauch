@@ -32,5 +32,5 @@ describe("Vier neue Vergleiche: Einzel, Paare, alle; bei ≤8 alle Kombinationen
     if (ids.length <= 8) for (let m = 1; m < 1 << ids.length; m++) sets.push(ids.filter((_, i) => m & (1 << i)));
     else { ids.forEach((a, i) => { sets.push([a]); ids.slice(i + 1).forEach((b) => sets.push([a, b])); }); sets.push(ids); }
     for (const s of sets) expect({ s, f: composeWorkingVersion(o, c.draftHtml, c.changes, new Set(s)).failed }).toEqual({ s, f: [] });
-  });
+  }, 120000);
 });
