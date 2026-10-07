@@ -100,3 +100,22 @@ describe("Strunz Produktquellen Teil 4 (73–96)", () => {
     expect(a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen").length).toBe(13);
   });
 });
+
+describe("Strunz Listeneinträge Teil 5 (97–120)", () => {
+  const a = STRUNZ_AREA as any;
+  it("Reihenfolge, wörtliche Fundstellen, Hersteller offen, Gutschein gesondert, doppelte EAN markiert", () => {
+    const r = a.produktquellen_teil5.ergebnisse;
+    const order = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung !== "variante_offen").slice(96, 120).map((x: any) => x.url);
+    expect(r.map((x: any) => x.url)).toEqual(order);
+    const seen: Record<string, number> = {}; r.forEach((x: any) => x.ean.forEach((e: string) => (seen[e] = (seen[e] ?? 0) + 1)));
+    r.forEach((x: any) => {
+      expect(x.hersteller).toBeNull();
+      if (x.ean.length) expect(x.ean_fundstelle.wortlaut).toContain(x.ean[0]); else expect(x.ean_fundstelle).toBe("nicht angegeben");
+      if (x.marke_laut_seite) expect(x.marke_fundstelle.wortlaut.toLowerCase()).toContain(x.marke_laut_seite.toLowerCase());
+      if (x.ean.some((e: string) => seen[e] > 1)) expect(x.ean_hinweis).toContain("uneindeutig");
+    });
+    expect(a.produktquellen_teil4.ergebnisse.filter((x: any) => x.seitentyp === "gutschein_kein_produkt").length).toBe(1);
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+    expect(a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen").length).toBe(13);
+  });
+});
