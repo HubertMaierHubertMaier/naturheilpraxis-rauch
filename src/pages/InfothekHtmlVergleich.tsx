@@ -172,12 +172,13 @@ export default function InfothekHtmlVergleich() {
     if (!a || !b) return;
     const sa = Array.from(a.querySelectorAll<HTMLElement>("[data-sec]"));
     const sb = Array.from(b.querySelectorAll<HTMLElement>("[data-sec]"));
-    [...sa, ...sb].forEach((el) => (el.style.minHeight = ""));
+    [...sa, ...sb].forEach((el) => el.style.removeProperty("min-height"));
     sa.forEach((el, i) => {
       const other = sb[i];
       if (!other) return;
       const h = Math.max(el.offsetHeight, other.offsetHeight);
-      el.style.minHeight = other.style.minHeight = `${h}px`;
+      el.style.setProperty("min-height", `${h}px`, "important");
+      other.style.setProperty("min-height", `${h}px`, "important");
     });
   }, []);
 
