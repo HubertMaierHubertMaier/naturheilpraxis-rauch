@@ -188,13 +188,13 @@ export default function WikiOrdnung() {
   } else if (view === "folders") {
     const list = [...m.folders.entries()].filter(([f]) => !q || matchesAll(f, q)).sort((x, y) => y[1].size - x[1].size);
     const open = id ? m.folders.get(id) : undefined;
-    const pg = paginate(open ? [...open] : list, page, PAGE);
+    const pg = paginate<unknown>(open ? [...open] : list, page, PAGE);
     body = open ? (
-      <Card><CardContent className="p-4 text-sm"><h2 className="mb-2 text-xl font-semibold">Ordner: {id}</h2><ul className="space-y-1">{(pg.items as string[]).map((x) => artLine(x, "field"))}</ul><div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div></CardContent></Card>
+      <Card><CardContent className="p-4 text-sm"><h2 className="mb-2 text-xl font-semibold">Ordner: {id}</h2><ul className="space-y-1">{(pg.items as unknown as string[]).map((x) => artLine(x, "field"))}</ul><div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div></CardContent></Card>
     ) : (
       <>
         <Input className="mb-3 max-w-xs" placeholder="Ordner suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(pg.items as [string, Set<string>][]).map(([f, s]) => <button key={f} onClick={() => set({ id: f })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{f}</span> · {s.size} Artikel</button>)}</div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(pg.items as unknown as [string, Set<string>][]).map(([f, s]) => <button key={f} onClick={() => set({ id: f })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{f}</span> · {s.size} Artikel</button>)}</div>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
