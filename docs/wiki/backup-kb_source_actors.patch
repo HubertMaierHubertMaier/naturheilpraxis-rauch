@@ -1,0 +1,25 @@
+# VORBEREITET, NICHT ANGEWENDET (07.10.2026). Erst nach Migration A und nach
+# backup-kb_import_events.patch anwenden; Edge-Code geht sonst automatisch live.
+# Restore-Reihenfolge: nach kb_assertions, kb_assertion_sources, kb_source_revisions, kb_entities.
+--- a/src/lib/backupAreas.ts
++++ b/src/lib/backupAreas.ts
+@@
+       "kb_article_entities",
++      "kb_source_actors",
++      "kb_assertion_conflicts",
+       "kb_change_proposals",
+--- a/supabase/functions/backup-export/index.ts
++++ b/supabase/functions/backup-export/index.ts
+@@
+-const REQUIRED_KB_IMPORT_TABLES = [
++const REQUIRED_KB_NETWORK_TABLES = [
++  "kb_source_actors",
++  "kb_assertion_conflicts",
++] as const;
++
++const REQUIRED_KB_IMPORT_TABLES = [
+# + REQUIRED_KB_NETWORK_TABLES in dieselbe Vollständigkeitsprüfung aufnehmen wie
+#   REQUIRED_KB_IMPORT_TABLES (fehlende Tabelle = Exportabbruch, kein Teilbackup).
+# Vor Befüllung prüfen: synthetischer Export/Restore mit je 1 draft/approved/withdrawn-Zeile;
+# Restore muss Trigger kb_source_actors_protect beachten (Restore als service_role,
+# Zeilen in Statusreihenfolge oder mit session_replication_role=replica nur im Restore-Job).
