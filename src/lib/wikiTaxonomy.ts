@@ -38,6 +38,13 @@ export function nutrientClass(type: string, name: string): NutrientClass | undef
 export const stoffart = (type: string): "Stoff" | "Produkt" | undefined =>
   ["nutrient", "substance", "plant"].includes(type) ? "Stoff" : ["product", "product_variant"].includes(type) ? "Produkt" : undefined;
 
+/** Arzneimittel only from explicit stored data: entity type or stored original kind. Never from mentions/names. */
+const DRUG_TYPES = ["drug", "medication", "medicinal_product", "pharmaceutical"];
+export const isDrug = (type: string, originalKind?: string | null) =>
+  DRUG_TYPES.includes(type) || /arzneimittel|medikament|pharmakon/i.test(originalKind ?? "");
+/** Prescription status only if a stored field says so; otherwise "unklar". */
+export const rxLabel = (v?: string | null) =>
+  !v ? "Verschreibungsstatus unklar (nicht im Datensatz)" : /^(rx|verschreibungspflichtig|prescription)$/i.test(v) ? "laut Datensatz verschreibungspflichtig" : /^(otc|apothekenpflichtig|freiverkäuflich)$/i.test(v) ? `laut Datensatz: ${v}` : `laut Datensatz: ${v}`;
 export const groupOfType = (t: string | null | undefined): GroupKey => (t && TYPE_GROUP[t]) || "other";
 
 export const RELATION_LABEL: Record<string, string> = {
@@ -60,7 +67,7 @@ export const PETER_ACTORS: Array<{ key: string; name: string; aliases: string[] 
 ];
 
 export interface EntityIn { id: string; entity_type_code: string; current_revision_id: string | null }
-export interface EntityRevIn { id: string; entity_id: string; display_name: string; review_status: string }
+export interface EntityRevIn { id: string; entity_id: string; display_name: string; review_status: string; original_kind?: string | null; prescription_status?: string | null }
 export interface CoreLinkIn { candidate_kind: string; candidate_id: string; core_record_kind: string; core_entity_id: string | null; core_source_revision_id: string | null }
 export interface RelationIn { id: string; subject_candidate_id: string | null; object_candidate_id: string | null; proposed_relation_type_code: string | null; candidate_status: string; source_candidate_id: string | null; source_locator: string | null }
 export interface ArticleIn { id: string; current_revision_id: string | null; article_kind: string }
@@ -68,7 +75,7 @@ export interface ArticleRevIn { id: string; article_id: string; revision_no: num
 export interface SourceIn { id: string; current_revision_id: string | null }
 export interface SourceRevIn { id: string; source_id: string; revision_no: number; title: string | null; publisher: string | null; authors: string[] | null; review_status: string }
 
-export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string; nutrient?: NutrientClass; stoffart?: "Stoff" | "Produkt" }
+export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string; nutrient?: NutrientClass; stoffart?: "Stoff" | "Produkt"; drug?: boolean; rx?: string | null }
 export interface Relation { id: string; subjectId?: string; objectId?: string; type: string; status: string; sourceRevisionId?: string; locator?: string | null }
 export interface Article { id: string; revisionId: string; revisionNo: number; title: string; category: string; kind: string; reviewStatus: string; folders: string[] }
 export interface Actor {
@@ -107,7 +114,7 @@ export function buildWikiModel(i: {
   for (const e of i.entities) {
     const r = e.current_revision_id ? eRev.get(e.current_revision_id) : undefined;
     if (!r || r.entity_id !== e.id) { missing.entities++; continue; }
-    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status, nutrient: nutrientClass(e.entity_type_code, r.display_name), stoffart: stoffart(e.entity_type_code) });
+    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status, nutrient: nutrientClass(e.entity_type_code, r.display_name), stoffart: stoffart(e.entity_type_code), drug: isDrug(e.entity_type_code, r.original_kind), rx: r.prescription_status ?? null });
   }
   const sRev = new Map(i.sourceRevisions.map((r) => [r.id, r]));
   const sources = new Map<string, SourceRevIn>();

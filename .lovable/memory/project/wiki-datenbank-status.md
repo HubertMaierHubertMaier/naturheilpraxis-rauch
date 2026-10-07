@@ -10,3 +10,5 @@ type: feature
 - Details/Zahlen/nächste Schritte: docs/wiki/STATUS.md.
 - Ordnungsauftrag (07.10.2026) verbindlich: Kästchen-Einstieg Firmen&Personen/Mittel/Pathogene/Symptome/Erkrankungen, Peter-Namen Nutramedix, Heel, Dr. Klinghardt, Pascoe; Rollen getrennt; Texttreffer nur als „zu prüfen“; nie Wirksamkeit aus Herstellermaterial; vollständige Listen. Details docs/wiki/STATUS.md.
 - Präzisierung: ein zentraler Mittel-Eintrag mit Mehrfachverknüpfung Anbieter/Symptom/Erkrankung (beidseitig, mit Quelle); Heel/Pascoe = Anbieter homöopathischer Komplexmittel, Einstufung nur per Produktdatensatz; Einstiege Vitamine, Mineralstoffe, Spurenelemente (Untergruppe); Stoff vs. Produkt.
+
+- Kästchen „Ärztliche Mittel / Arzneimittel" (Peter): nur ausdrücklich im Datensatz als Arzneimittel erfasste Einträge; Erwähnung (z.B. Klinghardt) ≠ Arzneimittel; Verschreibungsstatus nur bei hinterlegter Angabe, sonst „unklar"; Wissensnavigation, keine Verordnung/Freigabe; nichts importieren/erfinden; mit Klinghardt/Quelle/Anbieter/Symptom/Erkrankung vernetzen.
