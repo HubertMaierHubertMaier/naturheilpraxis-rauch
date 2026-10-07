@@ -297,7 +297,7 @@ function InfothekHtmlVergleich() {
   const proj = progressProjection(CHANGES, decisions, working?.failed ?? []);
   const downloadReport = () => {
     if (!storageKey) return;
-    const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf, title: CFG.reportTitle, extraChecks: CFG.extraChecks });
+    const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf, title: CFG.reportTitle, extraChecks: CFG.extraChecks, failed: working?.failed ?? [] });
     const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -564,7 +564,7 @@ function InfothekHtmlVergleich() {
           </span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold" title={`Original beibehalten: ${proj.kept.length} · ersetzt durch Alternative: ${proj.replaced.length} · offen: ${proj.open.length}${proj.optionalOpen.length ? ` (davon ${proj.optionalOpen.length} optionale Alternativen)` : ""}`}>{proj.accepted.length} von {CHANGES.length} übernommen{proj.replaced.length ? ` · ${proj.replaced.length} ersetzt` : ""}{proj.appliedFailed.length ? ` · ${proj.appliedFailed.length} nicht angewandt` : ""}</span>
-          {kept.size > 0 && <span className="rounded-full bg-muted px-2 py-0.5">{kept.size} Original beibehalten</span>}
+          {proj.kept.length > 0 && <span className="rounded-full bg-muted px-2 py-0.5">{proj.kept.length} Original beibehalten</span>}
           <Button size="sm" variant={openListOpen ? "default" : "outline"} className="h-7 px-2 text-xs" onClick={() => setOpenListOpen((o) => !o)} aria-expanded={openListOpen}>Noch zu entscheiden ({openItems.length})</Button>
           <label className="flex items-center gap-1.5 font-medium">
             <Switch checked={synced} onCheckedChange={(v) => { setSynced(v); if (v) syncFrom("orig"); }} aria-label="Synchron scrollen" />Synchron
@@ -583,7 +583,7 @@ function InfothekHtmlVergleich() {
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={downloadReport} disabled={!storageKey}>Fortschrittsbericht</Button>
           </span>
           {saveError && <span role="alert" className="w-full font-semibold text-destructive">{saveError}</span>}
-          {openItems.length === 0 && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Vorschläge entschieden ({accepted.size} übernommen, {kept.size} Original beibehalten). Noch nicht abgeschlossen: Restprüfung „Zusätzlich zu prüfen“. Nicht veröffentlicht, keine Freigabe.</span>}
+          {openItems.length === 0 && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Vorschläge entschieden ({proj.accepted.length} übernommen, {proj.kept.length} Original beibehalten{proj.replaced.length ? `, ${proj.replaced.length} ersetzt` : ""}). Noch nicht abgeschlossen: Restprüfung „Zusätzlich zu prüfen“. Nicht veröffentlicht, keine Freigabe.</span>}
           {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
@@ -654,7 +654,7 @@ function InfothekHtmlVergleich() {
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_15rem]">
           <Pane label={CFG.leftLabel} html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
-          <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
+          <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${proj.applied.length} angewandt${proj.appliedFailed.length ? `, ${proj.appliedFailed.length} nicht anwendbar` : ""})` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
           <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
             <div ref={railRef} className="relative lg:h-[calc(100vh-8rem)] lg:min-h-[300px]">
               {(() => {
