@@ -27,3 +27,6 @@ Eintrag in der Registry ergänzen, Entwurf unter `drafts/` ablegen, Tests `infot
 - Redaktionsstatus wird aus der Registry abgeleitet (`editorialWithRegistry`): konfigurierter Vergleich = „Vergleich vorbereitet“, Vorschlagszahl aus der Registry. Allergie zeigt 12 statt veraltet 9.
 - Tests: `infothek-comparison-configs` und `infothek-compose-all` prüfen Anker links/rechts und Zusammensetzung aller Kombinationen je Slug; `infothek-editorial-registry` prüft Status.
 - Restliche 15 bestehende HTMLs ohne Vergleich: candida-diaet, dankbarkeit-alltag, fit-gesund-herbst-winter-7-minuten, fit-gesund-herbst-winter-infothek, kraeuter-schmerz-entzuendung, logi-ernaehrung-mitochondrien, mitochondropathie-hws, muedigkeit-erschoepfung-burnout, parasiten-deutschland, patienteninfo-hochohmiges-wasser, sibo-duenndarmfehlbesiedlung, umwelt-alltag-gesundheit, vieva-pro-vitalanalyse, viren-bakterien-deutschland, zapper-diamond-shield.
+
+## Paket 2 (07.10.2026 ~20:05Z)
+Vorbereitet: candida-diaet (5), sibo-duenndarmfehlbesiedlung (2), muedigkeit-erschoepfung-burnout (6), kraeuter-schmerz-entzuendung (4). Entwürfe unter website-content/infothek/drafts/*.entwurf.html; keine Abnahme/Publikation. Offen: 11 weitere Vergleiche.
