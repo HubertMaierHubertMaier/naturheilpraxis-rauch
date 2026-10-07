@@ -178,3 +178,10 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Status: beide „Offline-Vorbereitung“, nicht online bedienbar. Zählung: 15 vorbereitet, davon 13 online, 2 offline.
 - Edge-Gate, Redirect-Shells, Rechte unverändert. Test infothek-internal-offline.
 - Grenze: frühere Builds/Previews mit diesen Importen können die Inhalte in alten JS-Assets enthalten haben; keine Cachelöschung durchgeführt.
+
+## 2026-10-07 ca. 21:20Z Infothek-HTML-Paket 4 (vier Vergleiche)
+- Neu: logi-ernaehrung-mitochondrien (1), mitochondropathie-hws (2), parasiten-deutschland (5), viren-bakterien-deutschland (3); alle offen.
+- Quellen: docs/wiki/infothek-quellen-paket4-2026-10-07.json (Irving 2017 gelesen; übrige Fachzahlen Prüfpunkte).
+- Abschnittszählung: articleSections() – Reveal-Folien, sonst oberste section-Elemente; Test für alle Vergleiche.
+- Zählung: 19 vorbereitet = 17 online + 2 offline (Herbst/Winter); 3 fehlen (patienteninfo-hochohmiges-wasser, vieva-pro-vitalanalyse, zapper-diamond-shield).
+- Tests: Infothek 206/206 sequentiell.
