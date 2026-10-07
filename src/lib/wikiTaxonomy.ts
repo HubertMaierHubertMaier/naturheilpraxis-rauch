@@ -6,6 +6,7 @@
  *  - "text"     = text hit in title/category only ("Treffer im Quelltext"), never a confirmed link
  */
 export type GroupKey = "products" | "pathogens" | "symptoms" | "diseases" | "other";
+export type NutrientClass = "vitamins" | "minerals" | "trace";
 export type LinkKind = "import" | "field" | "text";
 export type ActorRole = "Hersteller" | "Herausgeber" | "Autor" | "Ordner" | "Von Peter benannt";
 
@@ -21,6 +22,22 @@ const TYPE_GROUP: Record<string, GroupKey> = {
   product: "products", product_variant: "products", substance: "products", plant: "products", nutrient: "products",
   pathogen: "pathogens", symptom: "symptoms", disease: "diseases",
 };
+export const NUTRIENT_LABEL: Record<NutrientClass, string> = { vitamins: "Vitamine", minerals: "Mineralstoffe", trace: "Spurenelemente" };
+/** Classification by substance name (standard nutrition nomenclature), only for entities stored as nutrient. Trace elements are a subgroup of minerals. */
+const TRACE = ["eisen", "jod", "kupfer", "mangan", "selen", "zink", "chrom", "molybdan", "fluor", "kobalt"];
+const MACRO = ["magnesium", "calcium", "kalzium", "kalium", "natrium", "phosphor", "chlorid", "schwefel"];
+export function nutrientClass(type: string, name: string): NutrientClass | undefined {
+  if (type !== "nutrient") return undefined;
+  const n = ` ${norm(name)} `;
+  if (/ vitamin | folsaure | folat | biotin | niacin | riboflavin | thiamin | cobalamin /.test(n)) return "vitamins";
+  if (TRACE.some((t) => n.includes(` ${t} `))) return "trace";
+  if (MACRO.some((t) => n.includes(` ${t} `))) return "minerals";
+  return undefined;
+}
+/** Substance (single compound/plant) vs product (stored product record, may contain several ingredients). */
+export const stoffart = (type: string): "Stoff" | "Produkt" | undefined =>
+  ["nutrient", "substance", "plant"].includes(type) ? "Stoff" : ["product", "product_variant"].includes(type) ? "Produkt" : undefined;
+
 export const groupOfType = (t: string | null | undefined): GroupKey => (t && TYPE_GROUP[t]) || "other";
 
 export const RELATION_LABEL: Record<string, string> = {
@@ -51,12 +68,16 @@ export interface ArticleRevIn { id: string; article_id: string; revision_no: num
 export interface SourceIn { id: string; current_revision_id: string | null }
 export interface SourceRevIn { id: string; source_id: string; revision_no: number; title: string | null; publisher: string | null; authors: string[] | null; review_status: string }
 
-export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string }
+export interface Entity { id: string; name: string; type: string; group: GroupKey; revisionId: string; reviewStatus: string; nutrient?: NutrientClass; stoffart?: "Stoff" | "Produkt" }
 export interface Relation { id: string; subjectId?: string; objectId?: string; type: string; status: string; sourceRevisionId?: string; locator?: string | null }
 export interface Article { id: string; revisionId: string; revisionNo: number; title: string; category: string; kind: string; reviewStatus: string; folders: string[] }
 export interface Actor {
   key: string; name: string; roles: Set<ActorRole>;
   folderArticleIds: Set<string>; sourceRevisionIds: Set<string>; entityIds: Set<string>; textArticleIds: Set<string>;
+  /** Product/term whose stored name contains the actor name – text hit, to be checked. */
+  textEntityIds: Set<string>;
+  /** Full-text hits in article content (loaded separately, server-side word match). */
+  fullTextArticleIds: Set<string>;
 }
 export interface WikiModel {
   entities: Map<string, Entity>; relations: Relation[]; articles: Map<string, Article>;
@@ -86,7 +107,7 @@ export function buildWikiModel(i: {
   for (const e of i.entities) {
     const r = e.current_revision_id ? eRev.get(e.current_revision_id) : undefined;
     if (!r || r.entity_id !== e.id) { missing.entities++; continue; }
-    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status });
+    entities.set(e.id, { id: e.id, name: r.display_name, type: e.entity_type_code, group: groupOfType(e.entity_type_code), revisionId: r.id, reviewStatus: r.review_status, nutrient: nutrientClass(e.entity_type_code, r.display_name), stoffart: stoffart(e.entity_type_code) });
   }
   const sRev = new Map(i.sourceRevisions.map((r) => [r.id, r]));
   const sources = new Map<string, SourceRevIn>();
@@ -124,7 +145,7 @@ export function buildWikiModel(i: {
   // Actors: Peter-named + exact data fields (manufacturer entities, publisher, authors).
   const actors = new Map<string, Actor>();
   const actor = (key: string, name: string) => {
-    if (!actors.has(key)) actors.set(key, { key, name, roles: new Set(), folderArticleIds: new Set(), sourceRevisionIds: new Set(), entityIds: new Set(), textArticleIds: new Set() });
+    if (!actors.has(key)) actors.set(key, { key, name, roles: new Set(), folderArticleIds: new Set(), sourceRevisionIds: new Set(), entityIds: new Set(), textArticleIds: new Set(), textEntityIds: new Set(), fullTextArticleIds: new Set() });
     return actors.get(key)!;
   };
   const aliasesOf = new Map<string, string[]>();
@@ -155,6 +176,11 @@ export function buildWikiModel(i: {
     const a = actors.get(p.key)!;
     for (const [id, t] of normTitles) if (!a.folderArticleIds.has(id) && p.aliases.some((al) => wordHit(t, al))) a.textArticleIds.add(id);
   }
+  // Products whose stored name contains an actor name (e.g. "Mannayan ZINK+") – text hit only.
+  for (const a of actors.values()) {
+    const al = aliasesOf.get(a.key) ?? [norm(a.name)].filter((x) => x.length >= 4 && x.split(" ").length <= 2);
+    for (const e of entities.values()) if (e.stoffart === "Produkt" && !a.entityIds.has(e.id) && al.some((x) => wordHit(norm(e.name), x))) a.textEntityIds.add(e.id);
+  }
   // Entity text hits in article titles (names ≥ 4 chars, word match).
   const articleTextEntities = new Map<string, Set<string>>();
   const titleOnly = new Map([...articles.values()].map((a) => [a.id, norm(a.title)]));
@@ -168,7 +194,7 @@ export function buildWikiModel(i: {
   articleTextEntities.forEach((s) => s.forEach((x) => assignedArticles.add(x)));
   const related = new Set<string>();
   relations.forEach((r) => { if (r.subjectId) related.add(r.subjectId); if (r.objectId) related.add(r.objectId); });
-  actors.forEach((a) => a.entityIds.forEach((x) => related.add(x)));
+  actors.forEach((a) => { a.entityIds.forEach((x) => related.add(x)); a.textEntityIds.forEach((x) => related.add(x)); });
   return {
     entities, relations, articles, sources, actors, folders, missingRevisions: missing, articleTextEntities,
     unassignedArticleIds: [...articles.keys()].filter((id) => !assignedArticles.has(id)),
@@ -198,3 +224,18 @@ export const paginate = <T,>(xs: T[], page: number, size: number) => {
   const p = Math.min(Math.max(1, page), pages);
   return { items: xs.slice((p - 1) * size, p * size), page: p, pages, total: xs.length };
 };
+
+/** Actors linked to an entity (import link or name text hit). */
+export function actorsOfEntity(m: WikiModel, entityId: string) {
+  return [...m.actors.values()].flatMap((a) => a.entityIds.has(entityId) ? [{ actor: a, kind: "import" as const }] : a.textEntityIds.has(entityId) ? [{ actor: a, kind: "text" as const }] : []);
+}
+
+/** Products that contain a substance: stored "contains" relation, else product name naming the substance (text hit). */
+export function productsWithSubstance(m: WikiModel, substanceId: string) {
+  const s = m.entities.get(substanceId);
+  if (!s) return [];
+  const viaRel = new Set(m.relations.filter((r) => r.type === "contains" && r.objectId === substanceId && r.subjectId).map((r) => r.subjectId!));
+  const n = norm(s.name);
+  return [...m.entities.values()].filter((e) => e.stoffart === "Produkt").flatMap((e) =>
+    viaRel.has(e.id) ? [{ product: e, kind: "import" as const }] : n.length >= 4 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const }] : []);
+}
