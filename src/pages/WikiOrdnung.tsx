@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -79,13 +79,13 @@ export default function WikiOrdnung() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState<Awaited<ReturnType<typeof loadModel>> | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [fullText, setFullText] = useState<Record<string, string[] | "loading" | "error">>({});
+  const [fullText, setFullText] = useState<Record<string, ReturnType<typeof splitRevisionHits> | "loading" | "error">>({});
   const searchFullText = async (a: Actor) => {
     const al = PETER_ACTORS.find((p) => p.key === a.key)?.aliases ?? [a.name.toLowerCase()];
     setFullText((x) => ({ ...x, [a.key]: "loading" }));
     const pattern = `(^|[^[:alpha:]])(${al.map((x) => x.replace(/[^a-z0-9 ]/gi, "").replace(/ /g, "[ -]?")).join("|")})([^[:alpha:]]|$)`;
-    const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("article_id").filter("content_markdown", "imatch", pattern).order("id", { ascending: true }).range(f, t));
-    setFullText((x) => ({ ...x, [a.key]: r.error ? "error" : [...new Set((r.data as { article_id: string }[]).map((y) => y.article_id))].filter((id) => m?.articles.get(id)?.revisionId) }));
+    const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("id, article_id").filter("content_markdown", "imatch", pattern).order("id", { ascending: true }).range(f, t));
+    setFullText((x) => ({ ...x, [a.key]: r.error ? "error" : splitRevisionHits(r.data as { id: string; article_id: string }[], m!.articles) }));
   };
   const view = (params.get("v") as View) || "start";
   const id = params.get("id");
@@ -131,10 +131,23 @@ export default function WikiOrdnung() {
     const a = m!.articles.get(aid)!;
     return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
   };
-  const srcLine = (sid: string, extra?: string) => {
-    const s = m!.sources.get(sid);
-    return <li key={sid + (extra ?? "")}>{s ? `${s.title || "Quelle ohne Titel"} (interne Quelle, Rev. ${s.revision_no}, ${st(s.review_status)})` : "Quellenrevision nicht lesbar"}{extra ? ` · Fundstelle: ${extra}` : ""}</li>;
+  const srcText = (sid: string) => {
+    const s = m!.allSourceRevisions.get(sid);
+    if (!s) return "Quellenrevision nicht lesbar";
+    const cur = m!.sources.get(s.id) ? "aktuelle Revision" : "ältere Revision – so gespeichert, nicht durch aktuelle ersetzt";
+    return `${s.title || "Quelle ohne Titel"} (interne Quelle, Rev. ${s.revision_no}, ${cur}, ${st(s.review_status)})`;
   };
+  const srcLine = (sid: string, extra?: string) => <li key={sid + (extra ?? "")}>{srcText(sid)}{extra ? ` · Fundstelle: ${extra}` : ""}</li>;
+  const HitLists = ({ ft, label }: { ft: ReturnType<typeof splitRevisionHits>; label: string }) => (
+    <>
+      <p className="text-xs text-muted-foreground">{ft.current.length} Artikel {label} <LinkBadge kind="text" /></p>
+      <ul className="space-y-1">{ft.current.slice(0, 200).map((x) => artLine(x, "text"))}</ul>
+      {ft.historical.length > 0 && <>
+        <p className="mt-2 text-xs font-semibold">Nur in älteren Revisionen gefunden ({ft.historical.length}) – nicht im aktuellen Text</p>
+        <ul className="space-y-1">{ft.historical.slice(0, 200).map((x) => <li key={x} className="flex flex-wrap items-center gap-2"><span>{m!.articles.get(x)!.title}</span><Badge variant="outline" className="text-[10px]">historischer Treffer · {ft.historicalRevisionIds.get(x)!.size} ältere Rev.</Badge><Badge variant="secondary" className="text-[10px]">aktuell Rev. {m!.articles.get(x)!.revisionNo}</Badge></li>)}</ul>
+      </>}
+    </>
+  );
 
   let body: JSX.Element | null = null;
   if (err) body = <Card><CardContent role="alert" className="p-6 text-destructive">{err}</CardContent></Card>;
@@ -224,7 +237,7 @@ export default function WikiOrdnung() {
         {a.sourceRevisionIds.size > 0 && <div><p className="font-semibold">Interne Quellen ({a.sourceRevisionIds.size}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{[...a.sourceRevisionIds].map((s) => srcLine(s))}</ul></div>}
         {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><ul className="space-y-1">{[...a.folderArticleIds].slice(0, 200).map((x) => artLine(x, "field"))}</ul>{a.folderArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.folderArticleIds.size} angezeigt.</p>}</div>}
         {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><ul className="space-y-1">{[...a.textArticleIds].slice(0, 200).map((x) => artLine(x, "text"))}</ul>{a.textArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.textArticleIds.size} angezeigt.</p>}</div>}
-        <div><p className="font-semibold">Volltext der Artikel</p>{(() => { const ft = fullText[a.key]; return ft === undefined ? <Button size="sm" variant="outline" onClick={() => searchFullText(a)}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <><p className="text-xs text-muted-foreground">{ft.length} Artikel nennen den Namen im Text <LinkBadge kind="text" /></p><ul className="space-y-1">{ft.slice(0, 200).map((x) => artLine(x, "text"))}</ul></>; })()}</div>
+        <div><p className="font-semibold">Volltext der Artikel</p>{(() => { const ft = fullText[a.key]; return ft === undefined ? <Button size="sm" variant="outline" onClick={() => searchFullText(a)}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <HitLists ft={ft} label="nennen den Namen in der aktuellen Revision" />; })()}</div>
         {actorCount(a) === 0 && <p className="font-semibold">Im aktuellen Bestand keine Zuordnung und kein Titel-/Ordnertreffer gefunden.</p>}
       </CardContent></Card>
     );
@@ -321,8 +334,8 @@ export default function WikiOrdnung() {
     const ft = fullText["__drugs"];
     const searchDrugText = async () => {
       setFullText((x) => ({ ...x, __drugs: "loading" }));
-      const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("article_id").filter("content_markdown", "imatch", "(arzneimittel|medikament|verschreibungspflichtig|rezeptpflichtig)").order("id", { ascending: true }).range(f, t));
-      setFullText((x) => ({ ...x, __drugs: r.error ? "error" : [...new Set((r.data as { article_id: string }[]).map((y) => y.article_id))].filter((aid) => m.articles.get(aid)?.revisionId && (!kl || kl.folderArticleIds.has(aid) || kl.textArticleIds.has(aid))) }));
+      const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("id, article_id").filter("content_markdown", "imatch", "(arzneimittel|medikament|verschreibungspflichtig|rezeptpflichtig)").order("id", { ascending: true }).range(f, t));
+      setFullText((x) => ({ ...x, __drugs: r.error ? "error" : (() => { const sp = splitRevisionHits(r.data as { id: string; article_id: string }[], m.articles); const ok = (aid: string) => !kl || kl.folderArticleIds.has(aid) || kl.textArticleIds.has(aid); return { ...sp, current: sp.current.filter(ok), historical: sp.historical.filter(ok) }; })() }));
     };
     const pg = paginate(list, page, PAGE);
     body = (
@@ -336,7 +349,7 @@ export default function WikiOrdnung() {
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
         {kl && <div className="mt-4 text-sm"><p className="font-semibold">Dr. Klinghardt: {kl.sourceRevisionIds.size} interne Quellen, {kl.folderArticleIds.size} Ordner-Artikel <LinkBadge kind="field" /></p>
           <p className="text-muted-foreground">Dort genannte Mittel sind noch nicht als eigene Einträge erfasst. <button className="underline" onClick={() => set({ v: "actors", id: "klinghardt" })}>Zu Dr. Klinghardt</button></p></div>}
-        <div className="mt-3 text-sm"><p className="font-semibold">Klinghardt-Artikel, die „Arzneimittel/Medikament/verschreibungspflichtig" im Text nennen</p>{ft === undefined ? <Button size="sm" variant="outline" onClick={searchDrugText}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <><p className="text-xs text-muted-foreground">{ft.length} Artikel <LinkBadge kind="text" /> – keine Einstufung als Arzneimittel</p><ul className="space-y-1">{ft.slice(0, 200).map((x) => artLine(x, "text"))}</ul></>}</div>
+        <div className="mt-3 text-sm"><p className="font-semibold">Klinghardt-Artikel, die „Arzneimittel/Medikament/verschreibungspflichtig" im Text nennen</p>{ft === undefined ? <Button size="sm" variant="outline" onClick={searchDrugText}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <HitLists ft={ft} label="in der aktuellen Revision – keine Einstufung als Arzneimittel" />}</div>
       </>
     );
   } else if (isNutrientView(view) && !id) {
@@ -370,6 +383,7 @@ export default function WikiOrdnung() {
     const byGroup = (["products", "pathogens", "symptoms", "diseases", "other"] as GroupKey[]).map((g) => [g, nb.filter((x) => x.other!.group === g)] as const).filter(([, xs]) => xs.length);
     const makers = e ? actorsOfEntity(m, e.id) : [];
     const prods = e && e.stoffart === "Stoff" ? productsWithSubstance(m, e.id) : [];
+    const rejProds = e && e.stoffart === "Stoff" ? rejectedContains(m, e.id) : [];
     const texts = e ? [...(m.articleTextEntities.get(e.id) ?? [])] : [];
     body = !e ? <p>Nicht gefunden.</p> : (
       <Card><CardContent className="space-y-3 p-4 text-sm">
@@ -377,8 +391,8 @@ export default function WikiOrdnung() {
         <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.chipCard && <Badge variant="outline">ChipCard (Programm laut Datensatz)</Badge>}{e.manufacturerField && <Badge variant="outline">Herstellerfeld: {e.manufacturerField}</Badge>}{e.drug && <Badge variant="outline">Arzneimittel (laut Datensatz) · {rxLabel(e.rx)}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
         <p className="text-xs text-muted-foreground">Ein zentraler Eintrag: dieselben Verknüpfungen erscheinen bei Anbieter, Symptom und Erkrankung.</p>
         <p className="text-muted-foreground">Beschreibungen aus Hersteller-/Autorenmaterial sind Quellenangaben – keine bestätigte Wirksamkeit oder Therapieempfehlung.</p>
-        <div><p className="font-semibold">Anbieter/Personen</p>{makers.length ? <ul>{makers.map(({ actor: a, kind }) => <li key={a.key} className="flex flex-wrap items-center gap-2"><button className="underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button><LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Kein Anbieter im Datensatz hinterlegt.</p>}</div>
-        {e.stoffart === "Stoff" && <div><p className="font-semibold">Produkte mit diesem Stoff ({prods.length})</p>{prods.length ? <ul>{prods.map(({ product, kind }) => <li key={product.id} className="flex flex-wrap items-center gap-2">{entButton(product.id)}<LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Inhaltsstoffe der Produkte sind für diesen Stoff nicht strukturiert hinterlegt.</p>}</div>}
+        <div><p className="font-semibold">Anbieter/Personen</p>{makers.length ? <ul>{makers.map(({ actor: a, kinds }) => <li key={a.key} className="flex flex-wrap items-center gap-2"><button className="underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button>{kinds.map((k) => <LinkBadge key={k} kind={k} />)}</li>)}</ul> : <p className="text-muted-foreground">Kein Anbieter im Datensatz hinterlegt.</p>}</div>
+        {e.stoffart === "Stoff" && <div><p className="font-semibold">Produkte mit diesem Stoff ({prods.length})</p>{prods.length ? <ul>{prods.map(({ product, kind, status }) => <li key={product.id} className="flex flex-wrap items-center gap-2">{entButton(product.id)}<LinkBadge kind={kind} />{status && <Badge variant="secondary" className="text-[10px]">{st(status)}</Badge>}</li>)}</ul> : <p className="text-muted-foreground">Inhaltsstoffe der Produkte sind für diesen Stoff nicht strukturiert hinterlegt.</p>}</div>}
         {byGroup.map(([g, xs]) => (
           <div key={g}><p className="font-semibold">{GROUP_LABEL[g]} ({xs.length})</p>
             <ul className="space-y-1">{xs.map(({ relation: r, other, direction }) => (
@@ -386,7 +400,7 @@ export default function WikiOrdnung() {
                 {direction === "out" ? <>{RELATION_LABEL[r.type] ?? r.type} → {entButton(other!.id)}</> : <>{entButton(other!.id)} → {RELATION_LABEL[r.type] ?? r.type}</>}
                 <LinkBadge kind="import" /><Badge variant="secondary" className="text-[10px]">{st(r.status)}</Badge>
                 {actorsOfEntity(m, other!.id).map(({ actor: a }) => <button key={a.key} className="text-xs underline" onClick={() => set({ v: "actors", id: a.key })}>Anbieter: {a.name}</button>)}
-                <span className="text-xs text-muted-foreground">{r.sourceRevisionId ? (() => { const s = m.sources.get(r.sourceRevisionId!); return `Quelle: ${s?.title ?? "nicht lesbar"}${s ? ` (Rev. ${s.revision_no})` : ""}${r.locator ? ` · ${r.locator}` : ""}`; })() : "Keine Quelle verknüpft"}</span>
+                <span className="text-xs text-muted-foreground">{r.sourceRevisionId ? `Quelle: ${srcText(r.sourceRevisionId)}${r.locator ? ` · ${r.locator}` : ""}` : "Keine Quelle verknüpft"}</span>
               </li>
             ))}</ul>
           </div>
