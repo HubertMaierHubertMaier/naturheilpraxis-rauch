@@ -162,3 +162,15 @@ describe("ChipCards", () => {
     expect(isChipCard("product", "ChipCard LY")).toBe(false);
   });
 });
+
+import { TOPICS } from "@/lib/wikiTaxonomy";
+describe("Themenkästchen", () => {
+  const re = (k: string) => TOPICS.find((t) => t.key === k)!.re;
+  it("Aliase und Trennung", () => {
+    expect(re("biodiagnostik").test("Bio-Diagnostik")).toBe(true);
+    expect(re("schuessler").test("Schüsslersalze")).toBe(true);
+    expect(re("sel").test("SchnellEinfachGesund")).toBe(true);
+    expect(re("auerswald").test("SchnellEinfachGesund")).toBe(false);
+    expect(re("vitaplace").test("Viatplace Apotheke")).toBe(true);
+  });
+});
