@@ -17,7 +17,10 @@
 
 - **Infothek-Ton (alle bestehenden UND neuen HTMLs, ab Erstellung)**: Praxiswerbung + Info + SEO in HWG/UWG-Grenzen; keine Heilversprechen, keine Pauschal-Disclaimer. Siehe html-korrektur-vergleich.
 
+- **Chat-Status**: „Ich arbeite an: …“ / „Dieser Schritt ist fertig. Noch offen: …“ / „Ich warte auf: …“ – siehe mem://preferences/chat-arbeitsmeldungen
+
 ## Memories
+- [Chat-Arbeitsmeldungen](mem://preferences/chat-arbeitsmeldungen) — Pflichtformat sichtbarer Statusmeldungen
 - [Praxis-Kontakt](mem://project/practice-contact) — Bestätigte Telefonnummer, falsche Varianten
 - [Wiki-Budget](mem://preferences/wiki-budget) — max 250 Credits ab 301,51, Reserve ≥50 (Stopp ≤51,51); Paketberichte; keine Writes/Publish
 - [Wikidatenbank-Status](mem://project/wiki-datenbank-status) — HTML-Pause, Alternativen-Ersetzung, Backup-Patch offen, Belege nur Entwürfe
