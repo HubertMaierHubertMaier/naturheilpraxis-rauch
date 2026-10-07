@@ -1,0 +1,1671 @@
+{
+ "abgerufen": "2026-10-07T18:20Z",
+ "methode": "HTTP GET der 21 Übersichts-URLs (alle 200), Produktliste aus Elementen class=product-item-link; Seite ?p=2 bei 'abnehmen' geprüft: 0 weitere Produkte",
+ "abgleich": "nur exakte Produkt-URL = in DB gespeicherte Quell-URL der Produktkarte",
+ "bedeutung": "Herstellerseite listet das Produkt im Anwendungsbereich (Herstellerzuordnung/Marketingkategorie). KEINE Wirksamkeits- oder Indikationsbestätigung; kein Code indicated_for/may_support.",
+ "seiten": {
+  "Abnehmen und Stoffwechsel": 50,
+  "Immunsystem und Abwehrkraefte": 77,
+  "Allergien und Unvertraeglichkeiten": 27,
+  "Augen": 19,
+  "Darm und Verdauung": 49,
+  "Energie und Mitochondrien": 18,
+  "Leber und Entgiften": 33,
+  "Entzuendungen": 44,
+  "Frauengesundheit": 35,
+  "Gehirn, Nerven und Psyche": 49,
+  "Haut, Haare und Naegel": 50,
+  "Herz und Gefaesse": 42,
+  "Kindergesundheit": 6,
+  "Knochen, Gelenke und Sehnen": 32,
+  "Longevity": 26,
+  "Maennergesundheit": 35,
+  "Schilddruese": 8,
+  "Schlaf und Entspannung": 16,
+  "Stress und Erschoepfung": 41,
+  "Training und Regeneration": 51,
+  "Zaehne und Mund": 6
+ },
+ "kandidaten": [
+  {
+   "area": "Abnehmen und Stoffwechsel",
+   "article_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "revision_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+   "position": 5,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Abnehmen und Stoffwechsel",
+   "article_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "revision_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+   "position": 11,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Abnehmen und Stoffwechsel",
+   "article_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "revision_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+   "position": 12,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Abnehmen und Stoffwechsel",
+   "article_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "revision_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html",
+   "position": 20,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 4,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 7,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 8,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 11,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 14,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 15,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 16,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 26,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Immunsystem und Abwehrkraefte",
+   "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html",
+   "position": 36,
+   "listed_name": "jod",
+   "product_url": "https://www.strunz.com/for-you-jod.html",
+   "product_key": "product-variant:strunz:4260538090904",
+   "entity_id": "b7bb43b7-ba77-52fc-af3a-8495ea879fae",
+   "product_source_revision_id": "936ebf10-6729-503e-a0bc-c3183f0d0d82",
+   "product_name": "for you eHealth Jod",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Allergien und Unvertraeglichkeiten",
+   "article_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "revision_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+   "position": 2,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Allergien und Unvertraeglichkeiten",
+   "article_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "revision_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+   "position": 3,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Allergien und Unvertraeglichkeiten",
+   "article_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "revision_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html",
+   "position": 4,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Augen",
+   "article_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+   "revision_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+   "position": 3,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Augen",
+   "article_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+   "revision_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html",
+   "position": 6,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Darm und Verdauung",
+   "article_id": "a7bf78fb-a6ab-43cc-af22-f2ab2e381429",
+   "revision_id": "a7bf78fb-a6ab-43cc-af22-f2ab2e381429",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html",
+   "position": 9,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Energie und Mitochondrien",
+   "article_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+   "revision_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+   "position": 3,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Energie und Mitochondrien",
+   "article_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+   "revision_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html",
+   "position": 6,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Leber und Entgiften",
+   "article_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "revision_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+   "position": 3,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Leber und Entgiften",
+   "article_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "revision_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+   "position": 4,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Leber und Entgiften",
+   "article_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "revision_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html",
+   "position": 10,
+   "listed_name": "jod",
+   "product_url": "https://www.strunz.com/for-you-jod.html",
+   "product_key": "product-variant:strunz:4260538090904",
+   "entity_id": "b7bb43b7-ba77-52fc-af3a-8495ea879fae",
+   "product_source_revision_id": "936ebf10-6729-503e-a0bc-c3183f0d0d82",
+   "product_name": "for you eHealth Jod",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Entzuendungen",
+   "article_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "revision_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+   "position": 4,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Entzuendungen",
+   "article_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "revision_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+   "position": 7,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Entzuendungen",
+   "article_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "revision_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+   "position": 9,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Entzuendungen",
+   "article_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "revision_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html",
+   "position": 11,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 7,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 8,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 9,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 10,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 11,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 12,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Frauengesundheit",
+   "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html",
+   "position": 20,
+   "listed_name": "jod",
+   "product_url": "https://www.strunz.com/for-you-jod.html",
+   "product_key": "product-variant:strunz:4260538090904",
+   "entity_id": "b7bb43b7-ba77-52fc-af3a-8495ea879fae",
+   "product_source_revision_id": "936ebf10-6729-503e-a0bc-c3183f0d0d82",
+   "product_name": "for you eHealth Jod",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Gehirn, Nerven und Psyche",
+   "article_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "revision_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+   "position": 6,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Gehirn, Nerven und Psyche",
+   "article_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "revision_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+   "position": 9,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Gehirn, Nerven und Psyche",
+   "article_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "revision_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+   "position": 11,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Gehirn, Nerven und Psyche",
+   "article_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "revision_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html",
+   "position": 12,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 7,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 10,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 12,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 13,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 14,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Haut, Haare und Naegel",
+   "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html",
+   "position": 20,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Herz und Gefaesse",
+   "article_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "revision_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+   "position": 6,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Herz und Gefaesse",
+   "article_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "revision_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+   "position": 8,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Herz und Gefaesse",
+   "article_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "revision_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+   "position": 9,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Herz und Gefaesse",
+   "article_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "revision_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html",
+   "position": 10,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Knochen, Gelenke und Sehnen",
+   "article_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "revision_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+   "position": 3,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Knochen, Gelenke und Sehnen",
+   "article_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "revision_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+   "position": 5,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Knochen, Gelenke und Sehnen",
+   "article_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "revision_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html",
+   "position": 7,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 3,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 6,
+   "listed_name": "Zink Caps",
+   "product_url": "https://www.strunz.com/forever-young-zink-caps.html",
+   "product_key": "product-variant:strunz:4260180441338",
+   "entity_id": "092e4be9-bbfc-54d8-a336-eeed31d46f78",
+   "product_source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+   "product_name": "FOREVER YOUNG Zink Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 8,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 11,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 13,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Maennergesundheit",
+   "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html",
+   "position": 17,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Schilddruese",
+   "article_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+   "revision_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+   "position": 3,
+   "listed_name": "Selen + Vitamin C",
+   "product_url": "https://www.strunz.com/selen-und-vitamin-c.html",
+   "product_key": "product-variant:strunz:4260180440966",
+   "entity_id": "05b353e5-3c30-525f-9b82-2b914a263555",
+   "product_source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+   "product_name": "FOREVER YOUNG Selen und Vitamin C",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Schilddruese",
+   "article_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+   "revision_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html",
+   "position": 4,
+   "listed_name": "jod",
+   "product_url": "https://www.strunz.com/for-you-jod.html",
+   "product_key": "product-variant:strunz:4260538090904",
+   "entity_id": "b7bb43b7-ba77-52fc-af3a-8495ea879fae",
+   "product_source_revision_id": "936ebf10-6729-503e-a0bc-c3183f0d0d82",
+   "product_name": "for you eHealth Jod",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Schlaf und Entspannung",
+   "article_id": "b95081a4-25d7-449b-87f7-422636564ed1",
+   "revision_id": "b95081a4-25d7-449b-87f7-422636564ed1",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html",
+   "position": 3,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Stress und Erschoepfung",
+   "article_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "revision_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+   "position": 2,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Stress und Erschoepfung",
+   "article_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "revision_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+   "position": 10,
+   "listed_name": "Vitamin B Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-b-komplex.html",
+   "product_key": "product-variant:strunz:4260180441505",
+   "entity_id": "33e2ff97-7c48-54aa-a11d-4d05c349851b",
+   "product_source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+   "product_name": "FOREVER YOUNG Vitamin B Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Stress und Erschoepfung",
+   "article_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "revision_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html",
+   "position": 16,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Training und Regeneration",
+   "article_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "revision_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+   "position": 3,
+   "listed_name": "Magnesium Caps",
+   "product_url": "https://www.strunz.com/magnesium-caps.html",
+   "product_key": "product-variant:strunz:4260180441079",
+   "entity_id": "b08d48b3-3489-54d9-a8de-7979221ed2f2",
+   "product_source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+   "product_name": "FOREVER YOUNG Magnesium Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Training und Regeneration",
+   "article_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "revision_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+   "position": 7,
+   "listed_name": "Vitamin C Komplex",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-c-komplex.html",
+   "product_key": "product-variant:strunz:4260180441468",
+   "entity_id": "3306497b-944b-5347-b6d5-761d96231a0d",
+   "product_source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+   "product_name": "FOREVER YOUNG Vitamin C Komplex",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Training und Regeneration",
+   "article_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "revision_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+   "position": 12,
+   "listed_name": "Eisen Caps",
+   "product_url": "https://www.strunz.com/forever-young-eisen-caps.html",
+   "product_key": "product-variant:strunz:4260180441345",
+   "entity_id": "5c0a4403-3943-5b43-a6c8-7ee9513da9f2",
+   "product_source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+   "product_name": "FOREVER YOUNG Eisen Caps",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Training und Regeneration",
+   "article_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "revision_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html",
+   "position": 19,
+   "listed_name": "Vitamineral 32 - Maracuja",
+   "product_url": "https://www.strunz.com/vitamineral32-maracuja.html",
+   "product_key": "product-variant:strunz:4260180440386",
+   "entity_id": "e232eaca-d057-5914-9e5b-bad7450bd614",
+   "product_source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+   "product_name": "FOREVER YOUNG Vitamineral 32 Maracuja",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  },
+  {
+   "area": "Zaehne und Mund",
+   "article_id": "20494424-4dc8-41b0-b2f7-1ecadb523137",
+   "revision_id": "20494424-4dc8-41b0-b2f7-1ecadb523137",
+   "page_url": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html",
+   "position": 2,
+   "listed_name": "Vitamin D3 + K2",
+   "product_url": "https://www.strunz.com/forever-young-vitamin-d3-k2-vegan.html",
+   "product_key": "product-variant:strunz:4260180440829",
+   "entity_id": "bc0e9992-6ad4-5098-9610-427a0e1f3085",
+   "product_source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+   "product_name": "FOREVER YOUNG Vitamin D3 + K2",
+   "code": "listed_in_application_area",
+   "status": "kandidat_ungeprueft"
+  }
+ ],
+ "anzahl_kandidaten": 69,
+ "produkte_ohne_karte": 149,
+ "produkte_ohne_karte_liste": [
+  {
+   "name": "BCAA + Glutamin – Apfel",
+   "url": "https://www.strunz.com/bcaa-und-glutamin-apfel.html"
+  },
+  {
+   "name": "BCAA + Glutamin – Zitrone",
+   "url": "https://www.strunz.com/bcaa-und-glutamin-zitrone.html"
+  },
+  {
+   "name": "acerola vitamin c pulver",
+   "url": "https://www.strunz.com/for-you-acerola-vitamin-c-pulver.html"
+  },
+  {
+   "name": "AHCC®",
+   "url": "https://www.strunz.com/for-you-ahcc.html"
+  },
+  {
+   "name": "amino energy - Maracuja",
+   "url": "https://www.strunz.com/for-you-amino-energy-maracuja.html"
+  },
+  {
+   "name": "amino energy - Limette",
+   "url": "https://www.strunz.com/for-you-amino-energy.html"
+  },
+  {
+   "name": "amino night – Joghurt-Kirsche",
+   "url": "https://www.strunz.com/for-you-amino-night-joghurt-kirsche.html"
+  },
+  {
+   "name": "amino night  – Orange",
+   "url": "https://www.strunz.com/for-you-amino-night-orange.html"
+  },
+  {
+   "name": "apfelessig ingwer shot",
+   "url": "https://www.strunz.com/for-you-apfelessig-ingwer-shot.html"
+  },
+  {
+   "name": "aqua phyto balance",
+   "url": "https://www.strunz.com/for-you-aqua-phyto-balance.html"
+  },
+  {
+   "name": "ashwagandha",
+   "url": "https://www.strunz.com/for-you-ashwagandha.html"
+  },
+  {
+   "name": "augen vital",
+   "url": "https://www.strunz.com/for-you-augen-vital.html"
+  },
+  {
+   "name": "BCAA + Glutamin - Wassermelone",
+   "url": "https://www.strunz.com/for-you-bcaa-glutamin-wassermelone.html"
+  },
+  {
+   "name": "bitterkräuter",
+   "url": "https://www.strunz.com/for-you-bitterkraeuter-tropfen.html"
+  },
+  {
+   "name": "brain vital",
+   "url": "https://www.strunz.com/for-you-brain-vital.html"
+  },
+  {
+   "name": "brokkoli plus",
+   "url": "https://www.strunz.com/for-you-brokkoli-plus.html"
+  },
+  {
+   "name": "creatin",
+   "url": "https://www.strunz.com/for-you-creatin.html"
+  },
+  {
+   "name": "darmflora gummies - Ananas-Orange",
+   "url": "https://www.strunz.com/for-you-darmflora-gummies.html"
+  },
+  {
+   "name": "darmflora komplex kids",
+   "url": "https://www.strunz.com/for-you-darmflora-komplex-kids.html"
+  },
+  {
+   "name": "darmflora komplex - Maracuja",
+   "url": "https://www.strunz.com/for-you-darmflora-komplex-maracuja.html"
+  },
+  {
+   "name": "darmflora komplex",
+   "url": "https://www.strunz.com/for-you-darmflora-komplex.html"
+  },
+  {
+   "name": "darmflora probio complete",
+   "url": "https://www.strunz.com/for-you-darmflora-probio-complete.html"
+  },
+  {
+   "name": "darmflora slimbiotika",
+   "url": "https://www.strunz.com/for-you-darmflora-slimbiotika.html"
+  },
+  {
+   "name": "frauen balance",
+   "url": "https://www.strunz.com/for-you-frauen-balance.html"
+  },
+  {
+   "name": "GABA + B6",
+   "url": "https://www.strunz.com/for-you-gaba-b6.html"
+  },
+  {
+   "name": "glucomannan",
+   "url": "https://www.strunz.com/for-you-glucomannan.html"
+  },
+  {
+   "name": "hair vital",
+   "url": "https://www.strunz.com/for-you-hair-vital.html"
+  },
+  {
+   "name": "haut balance",
+   "url": "https://www.strunz.com/for-you-haut-balance.html"
+  },
+  {
+   "name": "haut vital",
+   "url": "https://www.strunz.com/for-you-haut-vital.html"
+  },
+  {
+   "name": "heidelbeer plus",
+   "url": "https://www.strunz.com/for-you-heidelbeer-plus.html"
+  },
+  {
+   "name": "hista komplex",
+   "url": "https://www.strunz.com/for-you-hista-komplex.html"
+  },
+  {
+   "name": "krillöl",
+   "url": "https://www.strunz.com/for-you-krilloel.html"
+  },
+  {
+   "name": "longevity keto kakao",
+   "url": "https://www.strunz.com/for-you-longevity-keto-kakao.html"
+  },
+  {
+   "name": "longevity komplex",
+   "url": "https://www.strunz.com/for-you-longevity-komplex.html"
+  },
+  {
+   "name": "mann balance",
+   "url": "https://www.strunz.com/for-you-mann-balance.html"
+  },
+  {
+   "name": "melatonin Spray",
+   "url": "https://www.strunz.com/for-you-melatonin-spray.html"
+  },
+  {
+   "name": "multi enzym komplex",
+   "url": "https://www.strunz.com/for-you-multi-enzym-komplex.html"
+  },
+  {
+   "name": "multi kakao kids",
+   "url": "https://www.strunz.com/for-you-multi-kakao-kids.html"
+  },
+  {
+   "name": "multi natural complete",
+   "url": "https://www.strunz.com/for-you-multi-natural-complete.html"
+  },
+  {
+   "name": "NADH",
+   "url": "https://www.strunz.com/for-you-nadh.html"
+  },
+  {
+   "name": "natural basenpulver",
+   "url": "https://www.strunz.com/for-you-natural-basenpulver.html"
+  },
+  {
+   "name": "osteo komplex",
+   "url": "https://www.strunz.com/for-you-osteo-komplex.html"
+  },
+  {
+   "name": "phyto balance",
+   "url": "https://www.strunz.com/for-you-phyto-balance.html"
+  },
+  {
+   "name": "phyto slim",
+   "url": "https://www.strunz.com/for-you-phyto-slim.html"
+  },
+  {
+   "name": "präbio ballaststoffe X10 komplex",
+   "url": "https://www.strunz.com/for-you-praebio-ballaststoffe-x10-komplex.html"
+  },
+  {
+   "name": "probio mundflora",
+   "url": "https://www.strunz.com/for-you-probio-mundflora.html"
+  },
+  {
+   "name": "prostata vital",
+   "url": "https://www.strunz.com/for-you-prostata-vital.html"
+  },
+  {
+   "name": "pur msm",
+   "url": "https://www.strunz.com/for-you-pur-msm.html"
+  },
+  {
+   "name": "quercetin",
+   "url": "https://www.strunz.com/for-you-quercetin.html"
+  },
+  {
+   "name": "resveratrol",
+   "url": "https://www.strunz.com/for-you-resveratrol.html"
+  },
+  {
+   "name": "sango koralle",
+   "url": "https://www.strunz.com/for-you-sango-koralle.html"
+  },
+  {
+   "name": "schilddrüse vital",
+   "url": "https://www.strunz.com/for-you-schilddruese-vital.html"
+  },
+  {
+   "name": "schwarzer knoblauch plus",
+   "url": "https://www.strunz.com/for-you-schwarzer-knoblauch-plus.html"
+  },
+  {
+   "name": "selen",
+   "url": "https://www.strunz.com/for-you-selen-fluessig.html"
+  },
+  {
+   "name": "synbio smoothie bowl - Erdbeere",
+   "url": "https://www.strunz.com/for-you-smoothie-bowl-erdbeere.html"
+  },
+  {
+   "name": "spirulina",
+   "url": "https://www.strunz.com/for-you-spirulina.html"
+  },
+  {
+   "name": "spurenelemente",
+   "url": "https://www.strunz.com/for-you-spurenelemente-komplex.html"
+  },
+  {
+   "name": "super greens",
+   "url": "https://www.strunz.com/for-you-super-greens.html"
+  },
+  {
+   "name": "super reds",
+   "url": "https://www.strunz.com/for-you-super-reds.html"
+  },
+  {
+   "name": "TMG betain",
+   "url": "https://www.strunz.com/for-you-tmg-betain.html"
+  },
+  {
+   "name": "vagiflora komplex",
+   "url": "https://www.strunz.com/for-you-vagiflora-komplex.html"
+  },
+  {
+   "name": "vegan collagen",
+   "url": "https://www.strunz.com/for-you-vegan-collagen.html"
+  },
+  {
+   "name": "venen komplex",
+   "url": "https://www.strunz.com/for-you-venen-komplex.html"
+  },
+  {
+   "name": "vitamin C Spray",
+   "url": "https://www.strunz.com/for-you-vitamin-c-spray.html"
+  },
+  {
+   "name": "vitamin D - Lutschtabletten - Walderdbeere",
+   "url": "https://www.strunz.com/for-you-vitamin-d-lutschtabletten.html"
+  },
+  {
+   "name": "Vitamin A, E, D3 & K2 kids",
+   "url": "https://www.strunz.com/for-you-vitamin-kids-fluessig.html"
+  },
+  {
+   "name": "weihrauch",
+   "url": "https://www.strunz.com/for-you-weihrauch.html"
+  },
+  {
+   "name": "zistrose Spray",
+   "url": "https://www.strunz.com/for-you-zistrose-spray.html"
+  },
+  {
+   "name": "Acetyl-L-Carnitin",
+   "url": "https://www.strunz.com/forever-young-acetyl-l-carnitin.html"
+  },
+  {
+   "name": "Active Q10 Spray",
+   "url": "https://www.strunz.com/forever-young-active-q10-spray.html"
+  },
+  {
+   "name": "Amino 10 - Limette",
+   "url": "https://www.strunz.com/forever-young-amino-10.html"
+  },
+  {
+   "name": "Amino 11 oblong",
+   "url": "https://www.strunz.com/forever-young-amino-11-oblong.html"
+  },
+  {
+   "name": "Amino 11",
+   "url": "https://www.strunz.com/forever-young-amino-11-tabletten.html"
+  },
+  {
+   "name": "Amino 8",
+   "url": "https://www.strunz.com/forever-young-amino-8.html"
+  },
+  {
+   "name": "Amino flüssig - Schwarze Johannisbeere",
+   "url": "https://www.strunz.com/forever-young-amino-fluessig.html"
+  },
+  {
+   "name": "Ascorbylpalmitat",
+   "url": "https://www.strunz.com/forever-young-ascorbylpalmitat.html"
+  },
+  {
+   "name": "Astaxanthin",
+   "url": "https://www.strunz.com/forever-young-astaxanthin.html"
+  },
+  {
+   "name": "Beta-Carotin",
+   "url": "https://www.strunz.com/forever-young-beta-carotin-kapseln.html"
+  },
+  {
+   "name": "Ca-AKG",
+   "url": "https://www.strunz.com/forever-young-calcium-alpha-ketoglutarat.html"
+  },
+  {
+   "name": "Eisen Vital - Granatapfel",
+   "url": "https://www.strunz.com/forever-young-eisen-vital.html"
+  },
+  {
+   "name": "Folsäure aktiv Komplex",
+   "url": "https://www.strunz.com/forever-young-folsaeure-aktiv-komplex.html"
+  },
+  {
+   "name": "Geschenkgutschein",
+   "url": "https://www.strunz.com/forever-young-geschenkgutschein.html"
+  },
+  {
+   "name": "Gluco Stabil",
+   "url": "https://www.strunz.com/forever-young-gluco-stabil.html"
+  },
+  {
+   "name": "Glucosamin + Chondroitin",
+   "url": "https://www.strunz.com/forever-young-glucosamin-chondroitin-kapseln.html"
+  },
+  {
+   "name": "Glycin",
+   "url": "https://www.strunz.com/forever-young-glycin.html"
+  },
+  {
+   "name": "Guarana Shot - Kirsch-Himbeere",
+   "url": "https://www.strunz.com/forever-young-guarana-shot.html"
+  },
+  {
+   "name": "Hyaluronsäure",
+   "url": "https://www.strunz.com/forever-young-hyaluronsaeure-kapseln.html"
+  },
+  {
+   "name": "Kollagen Skin - Kokos-Maracuja",
+   "url": "https://www.strunz.com/forever-young-kollagen-skin-komplex.html"
+  },
+  {
+   "name": "Kollagenhydrolysat",
+   "url": "https://www.strunz.com/forever-young-kollagenhydrolysat.html"
+  },
+  {
+   "name": "Kupfer Caps",
+   "url": "https://www.strunz.com/forever-young-kupfer-kapseln.html"
+  },
+  {
+   "name": "L-Arginin + L-Citrullin",
+   "url": "https://www.strunz.com/forever-young-l-arginin-l-citrullin.html"
+  },
+  {
+   "name": "L-Carnosin",
+   "url": "https://www.strunz.com/forever-young-l-carnosin-kapseln.html"
+  },
+  {
+   "name": "L-Citrullin - Orange",
+   "url": "https://www.strunz.com/forever-young-l-citrullin.html"
+  },
+  {
+   "name": "L-Lysin",
+   "url": "https://www.strunz.com/forever-young-l-lysin-kapseln.html"
+  },
+  {
+   "name": "L-Phenylalanin",
+   "url": "https://www.strunz.com/forever-young-l-phenylalanin.html"
+  },
+  {
+   "name": "L-Prolin",
+   "url": "https://www.strunz.com/forever-young-l-prolin-kapseln.html"
+  },
+  {
+   "name": "L-Threonin",
+   "url": "https://www.strunz.com/forever-young-l-threonin.html"
+  },
+  {
+   "name": "L-Tryptophan + B6",
+   "url": "https://www.strunz.com/forever-young-l-tryptophan-kapseln-b6.html"
+  },
+  {
+   "name": "L-Tyrosin",
+   "url": "https://www.strunz.com/forever-young-l-tyrosin.html"
+  },
+  {
+   "name": "Lactoferrin",
+   "url": "https://www.strunz.com/forever-young-lactoferrin-kapseln.html"
+  },
+  {
+   "name": "Brain Mag",
+   "url": "https://www.strunz.com/forever-young-magnesium-l-threonat.html"
+  },
+  {
+   "name": "Power Magnesium - Blutorange",
+   "url": "https://www.strunz.com/forever-young-magnesium-pulver.html"
+  },
+  {
+   "name": "L-Methionin",
+   "url": "https://www.strunz.com/forever-young-methionin-kapseln.html"
+  },
+  {
+   "name": "Multi Eiweiß - Käsekuchen-Mandarine",
+   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-kaesekuchen-mandarine.html"
+  },
+  {
+   "name": "Multi Eiweiß - Vanille-Erdbeere",
+   "url": "https://www.strunz.com/forever-young-multi-eiweiss-beutel-vanille-erdbeere.html"
+  },
+  {
+   "name": "Mushroom Chai",
+   "url": "https://www.strunz.com/forever-young-mushroom-chai.html"
+  },
+  {
+   "name": "NAC + Glycin",
+   "url": "https://www.strunz.com/forever-young-nac-glycin.html"
+  },
+  {
+   "name": "Nattokinase",
+   "url": "https://www.strunz.com/forever-young-nattokinase-kapseln.html"
+  },
+  {
+   "name": "Omega 3",
+   "url": "https://www.strunz.com/forever-young-omega-3-kapseln.html"
+  },
+  {
+   "name": "OPC + MPC Komplex",
+   "url": "https://www.strunz.com/forever-young-opc-mpc-komplex.html"
+  },
+  {
+   "name": "Phytoextrakt",
+   "url": "https://www.strunz.com/forever-young-phytoextrakt.html"
+  },
+  {
+   "name": "Power Arginin - Kirsch-Orange",
+   "url": "https://www.strunz.com/forever-young-power-arginin.html"
+  },
+  {
+   "name": "Power Hydration - Wildberry",
+   "url": "https://www.strunz.com/forever-young-power-hydration-elektrolyte-pulver.html"
+  },
+  {
+   "name": "Propionat",
+   "url": "https://www.strunz.com/forever-young-propionat-kapseln.html"
+  },
+  {
+   "name": "R-Alpha-Liponsäure Bio Enhanced® RLA",
+   "url": "https://www.strunz.com/forever-young-r-alpha-liponsaeure.html"
+  },
+  {
+   "name": "Relax Caps",
+   "url": "https://www.strunz.com/forever-young-relax-caps.html"
+  },
+  {
+   "name": "Schwarzkümmelöl",
+   "url": "https://www.strunz.com/forever-young-schwarzkuemmeloel-kapseln.html"
+  },
+  {
+   "name": "Spermidin",
+   "url": "https://www.strunz.com/forever-young-spermidin-kapseln.html"
+  },
+  {
+   "name": "Taurin",
+   "url": "https://www.strunz.com/forever-young-taurin-kapseln.html"
+  },
+  {
+   "name": "Ubiquinol",
+   "url": "https://www.strunz.com/forever-young-ubiquinol.html"
+  },
+  {
+   "name": "Vitamin B12 Vital-Komplex - Lutschtabletten - Himbeere",
+   "url": "https://www.strunz.com/forever-young-vitamin-b12-lutschtabletten.html"
+  },
+  {
+   "name": "Vitamin B3",
+   "url": "https://www.strunz.com/forever-young-vitamin-b3-kapseln-niacin.html"
+  },
+  {
+   "name": "Vitamin K Komplex",
+   "url": "https://www.strunz.com/forever-young-vitamin-k1-k2-komplex.html"
+  },
+  {
+   "name": "Vitamineral Amino - Maracuja",
+   "url": "https://www.strunz.com/forever-young-vitamineral-amino-komplex.html"
+  },
+  {
+   "name": "Vitamineral Phyto - Kirsche",
+   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-kirsche.html"
+  },
+  {
+   "name": "Vitamineral Phyto - Orange-Ingwer-Curcuma",
+   "url": "https://www.strunz.com/forever-young-vitamineral-phyto-orange-ingwer.html"
+  },
+  {
+   "name": "Ziegenkolostrum",
+   "url": "https://www.strunz.com/forever-young-ziegenkolostrum-kapseln.html"
+  },
+  {
+   "name": "Zink Vital - Blutorange",
+   "url": "https://www.strunz.com/forever-young-zink-vital.html"
+  },
+  {
+   "name": "Zink + Vitamin C - Lutschtabletten - Limette",
+   "url": "https://www.strunz.com/forever-young-zink-vitamin-c-lutschtabletten.html"
+  },
+  {
+   "name": "high curcuma",
+   "url": "https://www.strunz.com/high-curcuma.html"
+  },
+  {
+   "name": "L-Glutamin",
+   "url": "https://www.strunz.com/l-glutamin.html"
+  },
+  {
+   "name": "L-Tox",
+   "url": "https://www.strunz.com/l-tox-leber-detox-kapseln.html"
+  },
+  {
+   "name": "L-Tryptophan",
+   "url": "https://www.strunz.com/l-tryptophan.html"
+  },
+  {
+   "name": "orthochondroplus",
+   "url": "https://www.strunz.com/orthochondroplus.html"
+  },
+  {
+   "name": "orthomental",
+   "url": "https://www.strunz.com/orthomental.html"
+  },
+  {
+   "name": "orthoneuro",
+   "url": "https://www.strunz.com/orthoneuro.html"
+  },
+  {
+   "name": "orthonorm f",
+   "url": "https://www.strunz.com/orthonorm-f.html"
+  },
+  {
+   "name": "orthonorm m",
+   "url": "https://www.strunz.com/orthonorm-m.html"
+  },
+  {
+   "name": "orthonorm",
+   "url": "https://www.strunz.com/orthonorm.html"
+  },
+  {
+   "name": "orthotendo",
+   "url": "https://www.strunz.com/orthotendo.html"
+  },
+  {
+   "name": "Power Carnitin - Ananas",
+   "url": "https://www.strunz.com/power-carnitin-fluessig.html"
+  },
+  {
+   "name": "präbio ballaststoffe",
+   "url": "https://www.strunz.com/praebio-ballaststoffe.html"
+  },
+  {
+   "name": "vitamin A",
+   "url": "https://www.strunz.com/vitamin-a-fluessig.html"
+  },
+  {
+   "name": "vitamin B12",
+   "url": "https://www.strunz.com/vitamin-b12-fluessig.html"
+  },
+  {
+   "name": "Vitamin C Depo 2er-Set",
+   "url": "https://www.strunz.com/vitamin-c-depo-2er-set.html"
+  },
+  {
+   "name": "Vitamin E Tocotrienole",
+   "url": "https://www.strunz.com/vitamin-e-tocotrienole-120-kapseln.html"
+  },
+  {
+   "name": "orthomolar Vitamincocktail",
+   "url": "https://www.strunz.com/vitamincocktail-orthomolar.html"
+  },
+  {
+   "name": "Vitamineral 32 2er-Set",
+   "url": "https://www.strunz.com/vitamineral32-2er-set.html"
+  },
+  {
+   "name": "Vitamineral 32 - Waldbeere",
+   "url": "https://www.strunz.com/vitamineral32-waldbeere.html"
+  }
+ ],
+ "nicht_eindeutig": [],
+ "offen": [
+  "Produkte ohne Karte (siehe Liste) sind nicht im Wiki – keine Entität erfunden",
+  "Listung ist Momentaufnahme des Abrufdatums; Herstellerseite kann sich ändern"
+ ]
+}

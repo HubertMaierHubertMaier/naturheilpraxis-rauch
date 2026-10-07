@@ -11,7 +11,7 @@ import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/i
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
-import { buildProgressReport, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
+import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 
 // Active comparison (one page instance at a time; set at render start, page remounts per slug).
 let CFG: ComparisonConfig = configFor(undefined);
@@ -294,6 +294,7 @@ function InfothekHtmlVergleich() {
   const draft = workingPreview ?? proposal;
   const decisions = { accepted, kept, savedAt };
   const openItems = undecided(CHANGES, decisions);
+  const proj = progressProjection(CHANGES, decisions, working?.failed ?? []);
   const downloadReport = () => {
     if (!storageKey) return;
     const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf, title: CFG.reportTitle, extraChecks: CFG.extraChecks });
@@ -562,7 +563,7 @@ function InfothekHtmlVergleich() {
             {active && <span className="truncate text-xs text-muted-foreground">{CHANGE_TOPICS[active]}{(() => { const c = CHANGES.find((x) => x.id === active); return c?.headOnly ? " · im Artikel nicht sichtbar" : original?.sectionOf.get(active) ? ` · Abschnitt ${original.sectionOf.get(active)}` : ""; })()}</span>}
           </span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
-          <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">{accepted.size} von {CHANGES.length} übernommen</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 font-semibold" title={`Original beibehalten: ${proj.kept.length} · ersetzt durch Alternative: ${proj.replaced.length} · offen: ${proj.open.length}${proj.optionalOpen.length ? ` (davon ${proj.optionalOpen.length} optionale Alternativen)` : ""}`}>{proj.accepted.length} von {CHANGES.length} übernommen{proj.replaced.length ? ` · ${proj.replaced.length} ersetzt` : ""}{proj.appliedFailed.length ? ` · ${proj.appliedFailed.length} nicht angewandt` : ""}</span>
           {kept.size > 0 && <span className="rounded-full bg-muted px-2 py-0.5">{kept.size} Original beibehalten</span>}
           <Button size="sm" variant={openListOpen ? "default" : "outline"} className="h-7 px-2 text-xs" onClick={() => setOpenListOpen((o) => !o)} aria-expanded={openListOpen}>Noch zu entscheiden ({openItems.length})</Button>
           <label className="flex items-center gap-1.5 font-medium">
