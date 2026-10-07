@@ -17,3 +17,13 @@ Diese Darstellung für weitere HTML-Artikel wiederverwenden. Kein neues Layoutex
 9. Erst in der tatsächlichen Vorschau prüfen, dann Abschluss melden.
 
 Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entscheidet die Inhalte.
+
+## Redaktionelle Vorgabe (Peter, 07.10.2026)
+- Infothek soll verständlich aufklären UND Interesse an Praxis/Naturheilkunde wecken: patientenfreundlich, einladend, sachlich.
+- Keine unbelegten Wirkungen behaupten; „kann unterstützen“, „Erfahrungsheilkunde“ oder Disclaimer sind kein Freibrief.
+- Notwendige Einordnungen nicht pauschal entfernen; Hinweise gezielt an tatsächliche Wirkbehauptungen, verständlich, keine identischen klinischen Disclaimer in jedem Absatz, wenig defensiver Fachjargon.
+- Fehlende Belege ≠ nachgewiesene Unwirksamkeit. Naturheilkunde nicht pauschal als unbewiesen darstellen; Verfahren/Anwendungen einzeln beurteilen.
+- Werblich nutzen: belegbare Qualifikation, tatsächlich angebotene Leistungen, Gespräch, Vorgehen, persönliche Begleitung. Keine erfundenen Erfahrungsberichte, Studien, Erfolgszahlen.
+- Physik/Nobelpreis/Schwingungsmodell nie als Nachweis medizinischer Wirkung.
+- Maßstab § 3 HWG, § 5 UWG; Vorschläge sind Prüfvorschläge, keine Rechtsfreigabe.
+- Nachbarsätze, die mitgeändert werden müssen, als eigene neue Änderungsnummer (transparent, keine Umnummerierung bestehender/übernommener Punkte).
