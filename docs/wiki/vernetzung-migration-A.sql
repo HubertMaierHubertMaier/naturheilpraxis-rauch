@@ -10,12 +10,12 @@
 -- braucht approved Domäne (deferred Constraint-Trigger) -> neue Typen INAKTIV;
 -- Domänen nur als draft; Werte name_kind/role/origin_type/source_role wie Kernschema.
 --
--- Polarität (Astra P1-2): Inhaltspolarität gehört zur AUSSAGE, Quellenhaltung zur
--- Quellverknüpfung. "Quelle belegt: X hilft nicht" = negative Assertion
--- (kb_assertions.metadata.claim_polarity='negative') + source_role='supports'.
--- source_role='refutes' heißt: Quelle widerspricht der jeweiligen Aussage.
--- Altbestand ohne claim_polarity = nicht klassifiziert (kein Pauschalwert,
--- keine Änderung an kb_assertions).
+-- Aussage vs. Quellenhaltung: Die Aussage trägt ihren konkreten Wortlaut
+-- (claim_text) und Beziehungstyp; optional metadata.claim_polarity
+-- ('affirmed'|'negated') = ob dieser Wortlaut die Beziehung bejaht oder verneint
+-- (z.B. "enthält kein Zink"). source_role = Haltung der Quelle ZU DIESER AUSSAGE
+-- (supports = Quelle unterstützt diese Aussage; kein klinischer Nachweis).
+-- Altbestand ohne claim_polarity = nicht klassifiziert; kb_assertions unverändert.
 -- ============================================================================
 BEGIN;
 
@@ -124,6 +124,7 @@ CREATE TRIGGER kb_source_actor_withdrawals_protect
 
 CREATE OR REPLACE FUNCTION public.kb_review_source_actor(_id uuid, _notes text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE n int;
 BEGIN
   IF NOT public.has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'Nur Admin'; END IF;
   IF btrim(coalesce(_notes, '')) = '' THEN RAISE EXCEPTION 'Pruefnotiz ist Pflicht'; END IF;
@@ -131,8 +132,9 @@ BEGIN
   UPDATE public.kb_source_actors
      SET review_status = 'approved', review_notes = _notes, reviewed_at = now(), reviewed_by = auth.uid()
    WHERE id = _id AND review_status = 'draft';
+  GET DIAGNOSTICS n = ROW_COUNT;  -- sofort sichern; PERFORM würde FOUND überschreiben
   PERFORM set_config('kb.source_actor_review', 'off', true);
-  IF NOT FOUND THEN RAISE EXCEPTION 'Kein Entwurf mit dieser ID'; END IF;
+  IF n <> 1 THEN RAISE EXCEPTION 'Kein Entwurf mit dieser ID (unbekannt oder bereits geprueft)'; END IF;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.kb_withdraw_source_actor(_id uuid, _reason text)
@@ -167,18 +169,45 @@ CREATE TRIGGER kb_assertion_conflicts_protect
 -- 4. Isolierter Export / kontrollierter Restore (nur service_role)
 CREATE OR REPLACE FUNCTION public.kb_export_source_network()
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT jsonb_build_object(
+  WITH d AS (SELECT jsonb_build_object(
     'format', 'kb_source_network_v1',
     'kb_source_actors', coalesce((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.created_at, a.id) FROM public.kb_source_actors a), '[]'),
     'kb_source_actor_withdrawals', coalesce((SELECT jsonb_agg(to_jsonb(w) ORDER BY w.withdrawn_at, w.id) FROM public.kb_source_actor_withdrawals w), '[]'),
-    'kb_assertion_conflicts', coalesce((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.created_at, c.id) FROM public.kb_assertion_conflicts c), '[]'))
+    'kb_assertion_conflicts', coalesce((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.created_at, c.id) FROM public.kb_assertion_conflicts c), '[]')) AS j)
+  SELECT d.j || jsonb_build_object('manifest', (
+    SELECT jsonb_object_agg(k, jsonb_build_object(
+      'count', jsonb_array_length(d.j->k),
+      'ids_md5', (SELECT md5(coalesce(string_agg(e->>'id', ',' ORDER BY e->>'id'), '')) FROM jsonb_array_elements(d.j->k) e)))
+    FROM unnest(ARRAY['kb_source_actors', 'kb_source_actor_withdrawals', 'kb_assertion_conflicts']) k))
+  FROM d
 $$;
 
 CREATE OR REPLACE FUNCTION public.kb_restore_source_network(_dump jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE n_a int; n_w int; n_c int;
+DECLARE n_a int; n_w int; n_c int; k text; ids uuid[];
 BEGIN
-  IF _dump->>'format' IS DISTINCT FROM 'kb_source_network_v1' THEN RAISE EXCEPTION 'Unbekanntes Format'; END IF;
+  IF _dump IS NULL OR jsonb_typeof(_dump) <> 'object' OR _dump->>'format' IS DISTINCT FROM 'kb_source_network_v1' THEN
+    RAISE EXCEPTION 'Unbekanntes Format';
+  END IF;
+  -- Alle drei Pflichtarrays + Manifest VOR jedem Insert prüfen (fehlend/null/kein Array = Abbruch).
+  FOREACH k IN ARRAY ARRAY['kb_source_actors', 'kb_source_actor_withdrawals', 'kb_assertion_conflicts'] LOOP
+    IF jsonb_typeof(_dump->k) IS DISTINCT FROM 'array' THEN
+      RAISE EXCEPTION 'Pflichtarray % fehlt oder ist kein Array', k;
+    END IF;
+    IF jsonb_typeof(_dump->'manifest'->k) IS DISTINCT FROM 'object'
+       OR (_dump->'manifest'->k->>'count')::int IS DISTINCT FROM jsonb_array_length(_dump->k) THEN
+      RAISE EXCEPTION 'Manifestanzahl fuer % fehlt oder passt nicht', k;
+    END IF;
+    SELECT array_agg((e->>'id')::uuid ORDER BY (e->>'id')) INTO ids FROM jsonb_array_elements(_dump->k) e;
+    IF md5(coalesce(array_to_string(ids, ','), '')) IS DISTINCT FROM _dump->'manifest'->k->>'ids_md5' THEN
+      RAISE EXCEPTION 'Manifest-IDs fuer % passen nicht (unvollstaendig/veraendert)', k;
+    END IF;
+  END LOOP;
+  -- Referenzielle Vollständigkeit innerhalb des Dumps
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(_dump->'kb_source_actor_withdrawals') w
+              WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(_dump->'kb_source_actors') a WHERE a->>'id' = w->>'source_actor_id')) THEN
+    RAISE EXCEPTION 'Ruecknahme verweist auf fehlende Zuordnung';
+  END IF;
   IF EXISTS (SELECT 1 FROM public.kb_source_actors) OR EXISTS (SELECT 1 FROM public.kb_source_actor_withdrawals)
      OR EXISTS (SELECT 1 FROM public.kb_assertion_conflicts) THEN
     RAISE EXCEPTION 'Restore nur in leere Zieltabellen';

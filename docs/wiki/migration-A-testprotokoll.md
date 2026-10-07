@@ -1,16 +1,16 @@
-# Migration A v3 – Offline-Testprotokoll (07.10.2026, nach Astra d45b236c)
+# Migration A v4 – Offline-Testprotokoll (07.10.2026, nach Nachprüfung 277e2a4c)
 
 Umgebung: PGlite (Postgres 17, WASM), leer, ohne Verbindung zum Live-System. Geladen: Stubs (auth.uid, app_role, has_role, Rollen anon/authenticated/service_role mit BYPASSRLS wie Supabase) + **originale** `20260728090000_create_kb_phase1_core.sql` + Entwurf `vernetzung-migration-A.sql`.
 Aufruf: `bun docs/wiki/migration-A-offline-test.ts` – **Exit 1 bei jedem FAIL** (vorher gegengeprüft: Lauf mit 16 FAIL endete mit Exit 1). `--learn` setzt den Soll-Fingerabdruck neu.
 
-Ergebnis: **45 PASS / 0 FAIL, Exit 0.** Fingerabdruck `b770c165e2a16e5a295c37e470e7b477`.
+Ergebnis: **61 PASS / 0 FAIL, Exit 0.** Gegenprobe mit absichtlich falschem Fingerabdruck: Exit 1. Fingerabdruck `b770c165e2a16e5a295c37e470e7b477`.
 
-## Korrekturen v3
-1. **Prüfnachweis unveränderlich:** review_status nur draft|approved; approved ist komplett gesperrt. Rücknahme ist ein eigenes, append-only Ereignis (`kb_source_actor_withdrawals`: Grund, Person, Zeit, höchstens eins pro Zuordnung). Test 13c: Notiz, Prüfer und Zeit sind nach der Rücknahme identisch; 13d: das Ereignis ist rekonstruierbar.
-2. **Polarität ≠ Quellenhaltung:** `metadata.claim_polarity` an der Aussage, source_role an der Quelle. Test 17a: negative Aussage + supports; 17b: positive Aussage + refutes.
-3. **Strukturprüfung:** Am Ende der Transaktion wird ein Fingerabdruck über Spalten (Typ/NULL/Default), Constraints (pg_get_constraintdef inkl. FK/CHECK), Indizes, Policies (cmd/roles/qual/with_check), Trigger, Tabellen- und Spaltenrechte (normalisiert), RLS sowie Typ-/Relationstyp-Status gebildet. Bei Abweichung bricht die ganze Migration ab. Drift-Tests 5a–5f mit gleichen Namen und falschem Typ, Default, CHECK, FK, Policy bzw. Index: jeweils Abbruch und Rollback. Danach läuft die Migration wieder sauber (5h). Zusätzliche Rechte werden von der Migration selbst zurückgesetzt (5g).
-4. **Backup:** isolierter Export/Restore über Funktionen nur für service_role. Restore nur in leere Tabellen, supersedes-Ketten auch bei umgekehrter Lieferung korrekt (23), Export nach Restore identisch inkl. Prüfer/Zeit/Rücknahme (24). Kein Bypass für authenticated (8, 21, 22), Schutz nach Restore aktiv (26). Inventar-Patch vervollständigt (`backup-kb_source_actors.patch`).
-5. **Testskript:** harte Assertions (Domänen = 4, je Tabelle genau 1 Policy, Historie, Genehmigungsnotiz), Exit 1 bei Fehler.
+## Korrekturen v4
+1. **Restore (P1):** Vor jedem Insert werden alle drei Pflichtarrays geprüft (fehlend, null oder kein Array = Abbruch), außerdem Manifestanzahl und ID-Prüfsumme je Tabelle und ob jede Rücknahme auf eine Zuordnung im Dump verweist. Der Export liefert das Manifest mit. Tests 27–35 lehnen alle Varianten ab, auch nur `{format}` und den Dump ohne Rücknahmen. Tests 36/37b: keine Restzeilen, auch bei Abbruch mitten im Insert.
+2. **Review-RPC (P2):** ROW_COUNT wird sofort nach dem UPDATE gesichert. Unbekannte und bereits geprüfte IDs sind Fehler (10b/10c), die Notiz bleibt unverändert (10d).
+3. **Aussage vs. Quellenhaltung (P2):** konkreter Wortlaut + Beziehungstyp, Polarität affirmed/negated, Quellenhaltung als „Quelle unterstützt/widerspricht dieser Aussage“. supports ≠ klinischer Nachweis; kein Wirklabel bei nicht medizinischen Beziehungen. Tests 17a/17b nutzen „enthält (kein) Zink“.
+
+Aus v3 erhalten: unveränderlicher Prüfnachweis + append-only Rücknahme, Fingerabdruck-Strukturprüfung mit Drift-Tests, isolierter Export/Restore, harter Exitcode.
 
 ## Einzelergebnisse
 - PASS 1 Erstlauf inkl. COMMIT-Constraint-Trigger und Strukturprüfung
@@ -35,6 +35,9 @@ Ergebnis: **45 PASS / 0 FAIL, Exit 0.** Fingerabdruck `b770c165e2a16e5a295c37e47
 - PASS 8 Restore-GUC als authenticated
 - PASS 9 Review ohne Notiz
 - PASS 10 Review mit Notiz
+- PASS 10b Review unbekannte ID = Fehler
+- PASS 10c Review bereits geprüfte ID = Fehler
+- PASS 10d Notiz nach Fehlversuch unverändert
 - PASS 11 Geprüfte Fundstelle ändern
 - PASS 12 Geprüfte Zuordnung löschen
 - PASS 13a Rücknahme ohne Grund
@@ -47,8 +50,8 @@ Ergebnis: **45 PASS / 0 FAIL, Exit 0.** Fingerabdruck `b770c165e2a16e5a295c37e47
 - PASS 15b Ersatz prüfen
 - PASS 15c Historie
 - PASS 16 Nicht-Admin Review
-- PASS 17a Fall 1: Quelle belegt negative Aussage = negative Polarität + supports
-- PASS 17b Fall 2: Quelle widerspricht positiver Aussage = positive Polarität + refutes
+- PASS 17a Fall 1: Quelle unterstützt verneinte Aussage „enthält kein Zink“ = negated + supports
+- PASS 17b Fall 2: Quelle widerspricht bejahter Aussage „enthält Zink“ = affirmed + refutes
 - PASS 18 Widerspruch verknüpfen, beide Aussagen bleiben
 - PASS 19 Konflikt löschen (auch service_role)
 - PASS 20 Spiegeldublette
@@ -57,6 +60,22 @@ Ergebnis: **45 PASS / 0 FAIL, Exit 0.** Fingerabdruck `b770c165e2a16e5a295c37e47
 - PASS 23 Restore-Zähler (supersedes umgekehrt geliefert)
 - PASS 24 Export nach Restore identisch (inkl. Prüfer/Zeit/Rücknahme)
 - PASS 25 Restore in nicht leere Tabellen
+- PASS 26 Nach Restore wieder geschützt
+- PASS 27 ohne withdrawals-Array (zurückgezogene würden wieder wirksam)
+- PASS 28 nur {format}
+- PASS 29 withdrawals = null
+- PASS 30 conflicts kein Array
+- PASS 31 Manifest fehlt
+- PASS 32 Zeile entfernt, Manifest alt
+- PASS 33 ID verändert, Anzahl gleich
+- PASS 34 Rücknahme ohne zugehörige Zuordnung
+- PASS 35 Format falsch
+- PASS 36 nach allen Fehlversuchen keine Restzeilen (atomar)
+- PASS 37 Abbruch während Insert (FK)
+- PASS 37b keine Restzeilen nach Insert-Abbruch
+- PASS 38 Export trägt Manifest mit Anzahlen
+
+in nicht leere Tabellen
 - PASS 26 Nach Restore wieder geschützt
 
 ## Offene Grenzen zum Live-System (nicht prüfbar ohne Anwendung)

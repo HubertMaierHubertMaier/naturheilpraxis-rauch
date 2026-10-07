@@ -101,6 +101,9 @@ await expectError(db, "8 Restore-GUC als authenticated", asAdmin(`select set_con
 await expectError(db, "9 Review ohne Notiz", asAdmin(`select kb_review_source_actor('${SA}','')`), /Pflicht/);
 await ok(db, "10 Review mit Notiz", asAdmin(`select kb_review_source_actor('${SA}','BfArM-Register geprüft')`));
 const appr = await q1(db, `select review_notes, reviewed_by::text, reviewed_at from kb_source_actors where id='${SA}'`);
+await expectError(db, "10b Review unbekannte ID = Fehler", asAdmin(`select kb_review_source_actor('39999999-0000-0000-0000-000000000000','x')`), /Kein Entwurf/);
+await expectError(db, "10c Review bereits geprüfte ID = Fehler", asAdmin(`select kb_review_source_actor('${SA}','nochmal')`), /Kein Entwurf/);
+eq("10d Notiz nach Fehlversuch unverändert", (await q1(db, `select review_notes n from kb_source_actors where id='${SA}'`)).n, "BfArM-Register geprüft");
 await expectError(db, "11 Geprüfte Fundstelle ändern", asAdmin(`update kb_source_actors set locator='neu'`), /unveraenderlich/);
 await expectError(db, "12 Geprüfte Zuordnung löschen", asAdmin(`delete from kb_source_actors`), /nicht loeschbar/);
 await expectError(db, "13a Rücknahme ohne Grund", asAdmin(`select kb_withdraw_source_actor('${SA}','')`), /check|reason/i);
@@ -119,13 +122,13 @@ await expectError(db, "16 Nicht-Admin Review", `set test.uid='${OTHER}'; set rol
 await db.exec(`insert into kb_sources(id,canonical_key) values('20000000-0000-0000-0000-000000000002','src:b');
   insert into kb_source_revisions(id,source_id,revision_no,source_type,title,content_hash) values('21000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',1,'website','B',repeat('d',64));
   insert into kb_assertions(id,canonical_key,version_no,assertion_kind,claim_text,content_hash,metadata) values
-   ('40000000-0000-0000-0000-000000000001','a:pos',1,'entity_relation','X hilft bei Y',repeat('b',64),'{"claim_polarity":"positive"}'),
-   ('40000000-0000-0000-0000-000000000002','a:neg',1,'entity_relation','X hilft nicht bei Y',repeat('c',64),'{"claim_polarity":"negative"}');
+   ('40000000-0000-0000-0000-000000000001','a:pos',1,'entity_relation','Produkt X enthält Zink',repeat('b',64),'{"claim_polarity":"affirmed"}'),
+   ('40000000-0000-0000-0000-000000000002','a:neg',1,'entity_relation','Produkt X enthält kein Zink',repeat('c',64),'{"claim_polarity":"negated"}');
   insert into kb_assertion_sources(assertion_id,source_revision_id,source_role,locator) values
    ('40000000-0000-0000-0000-000000000002','21000000-0000-0000-0000-000000000001','supports','S.5'),
    ('40000000-0000-0000-0000-000000000001','21000000-0000-0000-0000-000000000002','refutes','S.9');`);
-eq("17a Fall 1: Quelle belegt negative Aussage = negative Polarität + supports", await q1(db, `select a.metadata->>'claim_polarity' p, s.source_role r from kb_assertions a join kb_assertion_sources s on s.assertion_id=a.id where a.canonical_key='a:neg'`), { p: "negative", r: "supports" });
-eq("17b Fall 2: Quelle widerspricht positiver Aussage = positive Polarität + refutes", await q1(db, `select a.metadata->>'claim_polarity' p, s.source_role r from kb_assertions a join kb_assertion_sources s on s.assertion_id=a.id where a.canonical_key='a:pos'`), { p: "positive", r: "refutes" });
+eq("17a Fall 1: Quelle unterstützt verneinte Aussage „enthält kein Zink“ = negated + supports", await q1(db, `select a.metadata->>'claim_polarity' p, s.source_role r from kb_assertions a join kb_assertion_sources s on s.assertion_id=a.id where a.canonical_key='a:neg'`), { p: "negated", r: "supports" });
+eq("17b Fall 2: Quelle widerspricht bejahter Aussage „enthält Zink“ = affirmed + refutes", await q1(db, `select a.metadata->>'claim_polarity' p, s.source_role r from kb_assertions a join kb_assertion_sources s on s.assertion_id=a.id where a.canonical_key='a:pos'`), { p: "affirmed", r: "refutes" });
 await ok(db, "18 Widerspruch verknüpfen, beide Aussagen bleiben", asAdmin(`insert into kb_assertion_conflicts(assertion_a_id,assertion_b_id,conflict_kind) values('40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002','contradicts')`));
 await expectError(db, "19 Konflikt löschen (auch service_role)", `set role service_role; delete from kb_assertion_conflicts; reset role;`, /append-only/);
 await expectError(db, "20 Spiegeldublette", asAdmin(`insert into kb_assertion_conflicts(assertion_a_id,assertion_b_id,conflict_kind) values('40000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000001','contradicts')`), /duplicate/);
@@ -151,6 +154,40 @@ await db2.exec("reset role");
 eq("24 Export nach Restore identisch (inkl. Prüfer/Zeit/Rücknahme)", dump2, dump);
 await expectError(db2, "25 Restore in nicht leere Tabellen", `set role service_role; select kb_restore_source_network('${JSON.stringify(dump).replace(/'/g, "''")}'::jsonb); reset role;`, /leere/);
 await expectError(db2, "26 Nach Restore wieder geschützt", asAdmin(`update kb_source_actors set locator='x'`), /unveraenderlich/);
+
+// Restore-Härtung: fehlende/ungültige Pflichtteile -> Abbruch vor jedem Insert, keine Restzeilen
+const db3 = await freshDb();
+await db3.exec(A);
+await db3.exec(`insert into kb_entities(id,canonical_key,entity_type_code) values('10000000-0000-0000-0000-000000000001','pharmacy:test','pharmacy');
+  insert into kb_sources(id,canonical_key) values('20000000-0000-0000-0000-000000000001','src:test'),('20000000-0000-0000-0000-000000000002','src:b');
+  insert into kb_source_revisions(id,source_id,revision_no,source_type,title,content_hash) values('21000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',1,'website','T',repeat('a',64)),('21000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',1,'website','B',repeat('d',64));
+  insert into kb_assertions(id,canonical_key,version_no,assertion_kind,claim_text,content_hash) values('40000000-0000-0000-0000-000000000001','a:pos',1,'entity_relation','p',repeat('b',64)),('40000000-0000-0000-0000-000000000002','a:neg',1,'entity_relation','n',repeat('c',64));`);
+const restore = (d: unknown) => `set role service_role; select kb_restore_source_network('${JSON.stringify(d).replace(/'/g, "''")}'::jsonb); reset role;`;
+const { kb_source_actor_withdrawals: _w, ...noWithdrawals } = dump as Record<string, unknown>;
+const cases: Array<[string, unknown, RegExp]> = [
+  ["27 ohne withdrawals-Array (zurückgezogene würden wieder wirksam)", noWithdrawals, /Pflichtarray kb_source_actor_withdrawals/],
+  ["28 nur {format}", { format: "kb_source_network_v1" }, /Pflichtarray/],
+  ["29 withdrawals = null", { ...dump, kb_source_actor_withdrawals: null }, /Pflichtarray/],
+  ["30 conflicts kein Array", { ...dump, kb_assertion_conflicts: {} }, /Pflichtarray/],
+  ["31 Manifest fehlt", { ...dump, manifest: undefined }, /Manifestanzahl/],
+  ["32 Zeile entfernt, Manifest alt", { ...dump, kb_source_actor_withdrawals: [] }, /Manifestanzahl/],
+  ["33 ID verändert, Anzahl gleich", { ...dump, kb_assertion_conflicts: (dump.kb_assertion_conflicts as Record<string, unknown>[]).map((c) => ({ ...c, id: "50000000-0000-0000-0000-000000000009" })) }, /Manifest-IDs/],
+  ["34 Rücknahme ohne zugehörige Zuordnung", (() => { const d = JSON.parse(JSON.stringify(dump)); d.kb_source_actors = d.kb_source_actors.slice(1); d.manifest.kb_source_actors.count = 1; d.manifest.kb_source_actors.ids_md5 = null; return d; })(), /Manifest-IDs|fehlende Zuordnung/],
+  ["35 Format falsch", { ...dump, format: "x" }, /Unbekanntes Format/],
+];
+for (const [n, d, re] of cases) {
+  await expectError(db3, n, restore(d), re);
+  await db3.exec("reset role");
+}
+eq("36 nach allen Fehlversuchen keine Restzeilen (atomar)", await q1(db3, `select (select count(*) from kb_source_actors)::int a, (select count(*) from kb_source_actor_withdrawals)::int w, (select count(*) from kb_assertion_conflicts)::int c`), { a: 0, w: 0, c: 0 });
+// Abbruch mitten im Insert (FK fehlt im Ziel) -> ebenfalls keine Restzeilen
+await db3.exec(`set role service_role`);
+const badFk = JSON.parse(JSON.stringify(dump)); // gleiche IDs, aber Ziel ohne Assertion 40..02
+await db3.exec(`reset role; delete from kb_assertions where id='40000000-0000-0000-0000-000000000002'`);
+await expectError(db3, "37 Abbruch während Insert (FK)", restore(badFk), /foreign key|violates/);
+await db3.exec("reset role");
+eq("37b keine Restzeilen nach Insert-Abbruch", await q1(db3, `select (select count(*) from kb_source_actors)::int a, (select count(*) from kb_source_actor_withdrawals)::int w`), { a: 0, w: 0 });
+eq("38 Export trägt Manifest mit Anzahlen", Object.fromEntries(Object.entries((dump as { manifest: Record<string, { count: number }> }).manifest).map(([k, v]) => [k, v.count])), { kb_source_actors: 2, kb_source_actor_withdrawals: 1, kb_assertion_conflicts: 1 });
 
 console.log(log.join("\n"));
 console.log(`\n${log.length - failed} PASS / ${failed} FAIL`);

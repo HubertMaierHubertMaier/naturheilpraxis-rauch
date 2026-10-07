@@ -42,12 +42,12 @@ Jede Relation → assertion → assertion_sources(source_revision_id, locator, o
 kb_article_entities hängt an article_revision_id. Anzeige: Zuordnung an aktueller Revision = gültig; nur an älterer Revision = „veraltet – an Rev. N belegt, zu prüfen". Neue Revision übernimmt Zuordnungen nur per Review. Quellenbeleg zeigt immer die belegende source_revision, auch wenn neuere existiert.
 
 ## 5. Widerspruch/Verneinung (Ziel 5)
-Zwei getrennte Achsen:
-- **Inhaltspolarität der Aussage** (was behauptet wird): `kb_assertions.metadata.claim_polarity` ∈ {positive, negative} nur für neue Aussagen; fehlt der Schlüssel = „nicht klassifiziert, prüfbedürftig“ (Altbestand unverändert, kein Pauschalwert). Released Aussagen erhalten Polarität nur über eine neue Version.
-- **Haltung der Quelle zur Aussage**: `kb_assertion_sources.source_role` (supports, refutes, qualifies, mentions).
-- Fall 1 „Quelle belegt: X hilft nicht bei Y“ = negative Aussage + `supports`.
-- Fall 2 „Quelle widerspricht: X hilft bei Y“ = positive Aussage + `refutes`.
-- Widerspruch zwischen zwei Aussagen: append-only `kb_assertion_conflicts` (contradicts|qualifies); beide Aussagen bleiben sichtbar. UI: Polarität als „Aussage: hilft / hilft nicht“, Quellenhaltung als „belegt / widerspricht / schränkt ein / erwähnt“. Quellenprüfstatus ≠ Fachfreigabe.
+Keine allgemeinen Etiketten wie „hilft / hilft nicht“. Zwei getrennte Ebenen:
+- **Aussage:** konkreter Wortlaut (`claim_text`) + Beziehungstyp (z. B. `contains`, `manufactured_by`, `offered_by`, `indicated_for`). Optional `metadata.claim_polarity` ∈ {affirmed, negated} = ob dieser Wortlaut die Beziehung bejaht oder verneint („Produkt X enthält kein Zink“, „wird nicht von Y hergestellt“). Fehlt der Schlüssel: „nicht klassifiziert“. Altbestand unverändert.
+- **Haltung der Quelle zu genau dieser Aussage:** `source_role` → UI „Quelle unterstützt diese Aussage“ (supports), „Quelle widerspricht dieser Aussage“ (refutes), „Quelle schränkt diese Aussage ein“ (qualifies), „Quelle erwähnt“ (mentions).
+- `supports` ist **kein klinischer Nachweis**, nur Quellenhaltung. Wirk-/Anwendungsbegriffe erscheinen nur, wo der Beziehungstyp selbst eine Anwendungsangabe ist (indicated_for, may_support: „laut Quelle angegeben bei …“). Bei nicht medizinischen Beziehungen (Hersteller, Anbieter, Inhaltsstoff, Autor) nie ein Wirklabel.
+- Beispiele: Quelle belegt „X enthält kein Zink“ = contains + negated + supports. Quelle bestreitet „X enthält Zink“ = contains + affirmed + refutes.
+- Widerspruch zwischen zwei Aussagen: append-only `kb_assertion_conflicts`; beide bleiben sichtbar. Quellenprüfstatus ≠ Fachfreigabe.
 
 ## 6. Suche/Zähler (Ziel 6)
 Weiter fetchAllPages + exact count; Zähler je Kästchen getrennt nach geprüft / ungeprüft / Kandidat. Bereiche „ohne Zuordnung" und „Kandidat ohne Review" bleiben. Serverseitige Volltextsuche (bestehend) für Kandidatenerzeugung.
@@ -71,7 +71,7 @@ Firmen & Personen, Apotheken, Mannayan, Vitaplace, Heel, Pascoe, Nutramedix, Kli
 
 ## Backup-Inventar
 Neue Tabellen `kb_source_actors`, `kb_source_actor_withdrawals`, `kb_assertion_conflicts`:
-- Isolierter Export `kb_export_source_network()` und kontrollierter Restore `kb_restore_source_network(jsonb)`, beide nur service_role. Restore nur in leere Tabellen, ordnet supersedes-Ketten Eltern vor Kindern, übernimmt Prüfnachweise und Rücknahmeereignisse unverändert (Restore-Modus gilt nur innerhalb der Funktion; für authenticated wirkungslos).
+- Isolierter Export `kb_export_source_network()` und kontrollierter Restore `kb_restore_source_network(jsonb)`, beide nur service_role. Restore prüft vor jedem Insert alle drei Pflichtarrays (fehlend/null/kein Array = Abbruch), Manifestanzahl und ID-Prüfsumme je Tabelle sowie Rücknahme→Zuordnung; nur in leere Tabellen; Abbruch atomar ohne Restzeilen; ordnet supersedes-Ketten Eltern vor Kindern, übernimmt Prüfnachweise und Rücknahmeereignisse unverändert (Restore-Modus gilt nur innerhalb der Funktion; für authenticated wirkungslos).
 - Eintrag ins feste Inventar als vorbereiteter Patch `docs/wiki/backup-kb_source_actors.patch` (nicht angewendet; Edge-Code ginge automatisch live). Reihenfolge: Migration A → Patch kb_import_events + dieser Patch prüfen → synthetischer Export/Restore im Backup-Lauf → erst dann Befüllung.
 
 ## Synthetische Tests (vor jeder Phase, ohne Echtdaten)
