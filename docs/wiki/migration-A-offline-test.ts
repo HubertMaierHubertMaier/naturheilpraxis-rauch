@@ -54,4 +54,11 @@ await db.exec(`insert into kb_entity_types(code,label) values('symptom','S') on 
 insert into kb_entities(id,canonical_key,entity_type_code) values('10000000-0000-0000-0000-000000000002','symptom:x','symptom');`);
 const ac=await db.query(`select column_name from information_schema.columns where table_name='kb_assertions' and is_nullable='NO' and column_default is null`); log.push("INFO Pflichtfelder assertions: "+ac.rows.map((x:any)=>x.column_name).join(","));
 const as=await db.query(`select count(*) c from information_schema.columns where table_name='kb_assertions' and column_name='polarity'`); log.push(((as.rows[0] as any).c==0?"PASS":"FAIL")+" 17 kb_assertions unverändert (keine Pauschal-Polarity)");
+await ok("18 Zwei widersprüchliche Aussagen + Quelle refutes",`insert into kb_assertions(id,canonical_key,version_no,assertion_kind,claim_text,content_hash) values('30000000-0000-0000-0000-000000000001','a:1',1,'entity_relation','X hilft',repeat('b',64)),('30000000-0000-0000-0000-000000000002','a:2',1,'entity_relation','X hilft nicht',repeat('c',64));
+insert into kb_assertion_sources(assertion_id,source_revision_id,source_role,locator) select '30000000-0000-0000-0000-000000000002',id,'refutes','S.5' from kb_source_revisions limit 1;`);
+await db.exec(`set test.uid='00000000-0000-0000-0000-00000000000a'; set role authenticated;`);
+await ok("19 Konflikt verknüpfen (beide Aussagen bleiben)",`insert into kb_assertion_conflicts(assertion_a_id,assertion_b_id,conflict_kind) values('30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','contradicts')`);
+await bad("20 Konflikt löschen (append-only)",`delete from kb_assertion_conflicts`,/permission/);
+await bad("21 Spiegel-Dublette",`insert into kb_assertion_conflicts(assertion_a_id,assertion_b_id,conflict_kind) values('30000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001','contradicts')`,/duplicate/);
+await db.exec(`reset role`);
 console.log(log.join("\n"));
