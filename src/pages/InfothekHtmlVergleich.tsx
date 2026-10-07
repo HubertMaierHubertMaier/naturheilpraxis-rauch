@@ -131,9 +131,9 @@ function Pane({ label, html, error, frameRef, onLoad }: {
       ) : html ? (
         // allow-same-origin only (no allow-scripts): article scripts are removed and cannot run;
         // the parent may scroll to markers.
-        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[calc(100vh-15.5rem)] min-h-[300px] w-full border-0 bg-background" />
+        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[calc(100vh-17rem)] min-h-[300px] w-full border-0 bg-background" />
       ) : (
-        <Skeleton className="m-3 h-[calc(100vh-17rem)] min-h-[280px]" />
+        <Skeleton className="m-3 h-[calc(100vh-18rem)] min-h-[280px]" />
       )}
     </section>
   );
@@ -437,7 +437,7 @@ export default function InfothekHtmlVergleich() {
           <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
           <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
           <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
-            <div className="relative lg:h-[calc(100vh-15.5rem)] lg:min-h-[300px]">
+            <div className="relative lg:h-[calc(100vh-17rem)] lg:min-h-[300px]">
               {(() => {
                 const c = CHANGES.find((x) => x.id === cardId);
                 if (!c) return null;
