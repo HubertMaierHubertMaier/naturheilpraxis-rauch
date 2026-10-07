@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, isPharmacyName, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
