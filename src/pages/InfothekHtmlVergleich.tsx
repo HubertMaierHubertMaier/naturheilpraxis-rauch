@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
-import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
+import { editorialWithRegistry } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 import { fundstelle } from "@/lib/infothekFundstelle";
 import { applyContactCorrection } from "@/lib/practiceContact";
@@ -626,7 +626,7 @@ function InfothekHtmlVergleich() {
             <table className="w-full border-collapse">
               <thead><tr className="text-left"><th className="p-1">Datei</th><th className="p-1">Titel</th><th className="p-1">Bearbeitung</th><th className="p-1">Sichtbarkeit / Prüfung</th><th className="p-1">Offen</th></tr></thead>
               <tbody>
-                {EDITORIAL_STATUS.map((e) => (
+                {editorialWithRegistry(COMPARISON_CONFIGS).map((e) => (
                   <tr key={e.file} className="border-t border-border align-top">
                     <td className="p-1">{e.comparePath ? <a className="underline" href={e.comparePath}>{e.file}</a> : e.file}</td>
                     <td className="p-1">{e.title}</td>
