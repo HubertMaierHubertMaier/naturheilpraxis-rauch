@@ -16,7 +16,10 @@ it("keeps the original wording when nothing is accepted", () => {
 it("applies every proposal and matches the draft text when all are accepted", () => {
   const { html, failed } = composeWorkingVersion(original, draft, CHANGES, new Set(CHANGES.map((c) => c.id)));
   expect(failed).toEqual([]);
-  expect(text(html)).toBe(text(draft));
+  // Superseded alternative (Ä17 replaced by Ä33) is not part of the final text.
+  const d = new DOMParser().parseFromString(draft, "text/html");
+  [...d.querySelectorAll("h3")].find((h) => h.textContent?.includes("regulierend auf dieses Feld einzuwirken"))?.remove();
+  expect(text(html)).toBe(text(`<!DOCTYPE html>${d.documentElement.outerHTML}`));
   const doc = new DOMParser().parseFromString(html, "text/html");
   expect(doc.title).toBe(new DOMParser().parseFromString(draft, "text/html").title);
 });
