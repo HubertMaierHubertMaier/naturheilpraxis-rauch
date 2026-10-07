@@ -507,18 +507,18 @@ export default function WikiDatenbank() {
       setError(null);
       try {
         const [articleResult, revisionResult, linkResult, batchResult, sourceResult, entityResult, relationResult, dosageResult, safetyResult, proposalLinkResult, changeProposalResult, coreLinkResult] = await Promise.all([
-          fetchAllPages((f, t) => supabase.from("kb_articles") .select("id, article_kind, current_revision_id, updated_at") .order("updated_at", { ascending: false }).range(f, t)),
+          fetchAllPages((f, t) => supabase.from("kb_articles") .select("id, article_kind, current_revision_id, updated_at") .order("updated_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
           fetchAllPages((f, t) => supabase.from("kb_article_revisions") .select("id, title, category_path, tags, content_markdown, review_status, metadata").order("id", { ascending: true }).range(f, t)),
-          fetchAllPages((f, t) => supabase.from("knowledge_product_links") .select("id, knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, review_status, admin_knowledge_base(title), mannayan_products(name)") .order("updated_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_import_batches") .select("id, source_label, batch_status, candidate_count, metadata, created_at") .order("created_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_source_candidates") .select("id, batch_id, candidate_status, title, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_entity_candidates") .select("id, batch_id, candidate_status, display_name, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_relation_candidates") .select("id, batch_id, candidate_status, proposed_relation_type_code, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_dosage_candidates") .select("id, batch_id, candidate_status, application_text, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_safety_candidates") .select("id, batch_id, candidate_status, action_text, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).range(f, t)),
+          fetchAllPages((f, t) => supabase.from("knowledge_product_links") .select("id, knowledge_entry_id, relation_type, clinical_topics, confidence, safety_notes, review_status, admin_knowledge_base(title), mannayan_products(name)") .order("updated_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_import_batches") .select("id, source_label, batch_status, candidate_count, metadata, created_at") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_source_candidates") .select("id, batch_id, candidate_status, title, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_entity_candidates") .select("id, batch_id, candidate_status, display_name, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_relation_candidates") .select("id, batch_id, candidate_status, proposed_relation_type_code, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_dosage_candidates") .select("id, batch_id, candidate_status, application_text, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_safety_candidates") .select("id, batch_id, candidate_status, action_text, source_locator, ambiguity_notes") .order("created_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
           fetchAllPages((f, t) => importDb.from("kb_import_candidate_proposals") .select("candidate_kind, candidate_id, proposal_id").order("id", { ascending: true }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_change_proposals") .select("id, proposal_kind, status, submitted_at, reviewed_at, review_notes") .order("submitted_at", { ascending: false }).range(f, t)),
-          fetchAllPages((f, t) => importDb.from("kb_import_core_links") .select("candidate_kind, candidate_id, batch_id, core_record_kind").order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_change_proposals") .select("id, proposal_kind, status, submitted_at, reviewed_at, review_notes") .order("submitted_at", { ascending: false }).order("id", { ascending: true }).range(f, t)),
+          fetchAllPages((f, t) => importDb.from("kb_import_core_links") .select("candidate_kind, candidate_id, batch_id, core_record_kind").order("candidate_kind", { ascending: true }).order("candidate_id", { ascending: true }).range(f, t)),
         ]);
         if (articleResult.error) throw articleResult.error;
         if (revisionResult.error) throw revisionResult.error;
