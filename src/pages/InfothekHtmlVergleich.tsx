@@ -12,7 +12,7 @@ import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
 import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
-import { applyContactCorrection, PRACTICE_PHONE_DISPLAY } from "@/lib/practiceContact";
+import { applyContactCorrection } from "@/lib/practiceContact";
 
 // Active comparison (one page instance at a time; set at render start, page remounts per slug).
 let CFG: ComparisonConfig = configFor(undefined);
