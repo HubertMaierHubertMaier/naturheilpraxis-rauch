@@ -14,7 +14,7 @@ describe("Redaktionsstatus aus Registry", () => {
     expect(a.state).toBe("in Prüfung"); expect(a.openTopics.join()).not.toMatch(/^9 /); expect(a.openTopics[0]).toMatch(/^12 Vorschläge/);
   });
   it("Zählung", () => {
-    expect(s.filter((x) => x.comparePath).length).toBe(17);
-    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 17);
+    expect(s.filter((x) => x.comparePath).length).toBe(19);
+    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 19);
   });
 });

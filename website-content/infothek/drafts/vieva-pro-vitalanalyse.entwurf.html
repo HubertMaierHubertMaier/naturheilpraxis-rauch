@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Vieva Pro Vitalanalyse | Naturheilpraxis Rauch</title>
+    <meta name="description" content="Vieva Pro Vitalanalyse – Ihr Gesundheitsstatus im Gesamtüberblick. Schnell, schmerzlos, ganzheitlich.">
+    <meta name="author" content="Peter Rauch, Heilpraktiker">
+    <link rel="canonical" href="https://rauch-heilpraktiker.de/praxis/vieva-pro-vitalanalyse">
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="/vendor/infothek-fonts.css">
+
+    <style>
+        /* ─── Corporate Design ─── */
+        :root {
+            --bg: #f9f7f2;
+            --bg-card: #f2ede4;
+            --bg-dark: #1f2924;
+            --text: #1f2924;
+            --text-muted: #5a6b5f;
+            --primary: #46715b;
+            --primary-dark: #365a47;
+            --accent: #b35a42;
+            --secondary: #d9ccb9;
+            --border: #d0c8b8;
+            --white: #ffffff;
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+        }
+
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: var(--font-body);
+            color: var(--text);
+            background: #000;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── Slide System ─── */
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.45s ease, visibility 0.45s ease;
+            overflow: hidden;
+        }
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .slide-inner {
+            max-width: 950px;
+            width: 100%;
+        }
+
+        /* ─── Slide Backgrounds ─── */
+        .bg-hero {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 50%, var(--primary-dark) 100%);
+            color: var(--white);
+            text-align: center;
+        }
+        .bg-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 20%, rgba(70,113,91,0.3) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 80%, rgba(179,90,66,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .bg-hero .slide-inner { position: relative; z-index: 1; }
+
+        .bg-light { background: var(--bg); color: var(--text); }
+        .bg-alt { background: var(--bg-card); color: var(--text); }
+        .bg-dark { background: var(--bg-dark); color: var(--white); }
+        .bg-video {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #2a4035 100%);
+            color: var(--white);
+            text-align: center;
+            padding: 2.5rem 3rem;
+        }
+        .bg-cta {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: var(--white);
+            text-align: center;
+        }
+
+        /* ─── Typography ─── */
+        .slide h1 {
+            font-family: var(--font-heading);
+            font-size: 3.8rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 0.6rem;
+        }
+        .slide h1 .accent { color: var(--accent); }
+
+        .slide h2 {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        .bg-dark h2, .bg-video h2, .bg-cta h2 { color: var(--white); }
+        .slide h2 .accent { color: var(--accent); }
+
+        .slide p {
+            font-size: 1.2rem;
+            line-height: 1.7;
+        }
+        .slide p + p { margin-top: 0.8rem; }
+
+        .subtitle {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 2rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.4rem 1.4rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-meta {
+            margin-top: 3rem;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.55);
+        }
+
+        /* ─── Feature List ─── */
+        .feature-list { list-style: none; }
+        .feature-list li {
+            position: relative;
+            padding: 0.7rem 0 0.7rem 2.2rem;
+            border-bottom: 1px solid rgba(70,113,91,0.12);
+            font-size: 1.1rem;
+        }
+        .feature-list li:last-child { border-bottom: none; }
+        .feature-list li::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 1.1rem;
+            width: 10px; height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+        .bg-dark .feature-list li { border-bottom-color: rgba(255,255,255,0.12); }
+        .bg-dark .feature-list li::before { background: var(--accent); }
+        .feature-list li strong { color: var(--primary-dark); font-weight: 600; }
+        .bg-dark .feature-list li strong { color: var(--white); }
+
+        /* ─── Parameters Grid ─── */
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+        }
+        .param-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.85);
+        }
+        .param-card::before {
+            content: '✓';
+            color: var(--accent);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        /* ─── Video Container ─── */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .video-container iframe {
+            width: 100%;
+            height: 450px;
+            display: block;
+        }
+
+        /* ─── Quote Box ─── */
+        .quote-box {
+            background: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            padding: 1.2rem 1.8rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.2rem 0;
+            font-style: italic;
+        }
+        .quote-box strong { color: var(--primary-dark); font-style: normal; }
+
+        /* ─── Disclaimer Box ─── */
+        .disclaimer-box {
+            background: rgba(255, 243, 205, 0.15);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .disclaimer-box h3 {
+            color: #ffc107;
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+        }
+        .disclaimer-box p {
+            color: rgba(255,255,255,0.85);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* ─── CTA Buttons ─── */
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        .cta-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid var(--white);
+            color: var(--white);
+        }
+        .cta-btn:hover {
+            background: var(--white);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* ─── HUD (Heads-Up Display) ─── */
+        .hud {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(31,41,36,0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-top: 1px solid rgba(70,113,91,0.3);
+            transition: transform 0.3s ease;
+        }
+        .hud.hidden { transform: translateY(100%); }
+        .hud-left, .hud-center, .hud-right {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .hud-btn {
+            background: rgba(70,113,91,0.3);
+            border: 1px solid rgba(70,113,91,0.5);
+            color: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .hud-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .hud-nav-btn {
+            font-size: 1.1rem;
+            padding: 0.5rem 0.8rem;
+        }
+        .hud-slide {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .hud-progress-bar {
+            width: 100%;
+            height: 3px;
+            background: rgba(70,113,91,0.3);
+            position: absolute;
+            top: 0; left: 0;
+        }
+        .hud-progress {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .slide { padding: 2rem 1.5rem; }
+            .slide h1 { font-size: 2.5rem; }
+            .slide h2 { font-size: 1.8rem; }
+            .params-grid { grid-template-columns: 1fr; }
+            .hud { padding: 0.6rem 1rem; }
+            .cta-buttons { flex-direction: column; }
+        }
+    </style>
+    <style>
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════════ SLIDE 1: HERO ════════════════════ -->
+    <div class="slide active bg-hero">
+        <div class="slide-inner">
+            <div class="hero-badge">Naturheilpraxis Rauch</div>
+            <h1>Vieva Pro<br><span class="accent">Vitalanalyse</span></h1>
+            <p class="subtitle">Ihr Gesundheitsstatus im Gesamtüberblick</p>
+            <p style="font-size: 1.4rem; margin-top: 2rem;">Schnell • Schmerzlos • Ganzheitlich</p>
+            <p class="hero-meta">Peter Rauch • Heilpraktiker & Physiotherapeut • Augsburg</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 2: WAS IST VIEVA PRO ════════════════════ -->
+    <div class="slide bg-light">
+        <div class="slide-inner">
+            <h2>Was ist <span class="accent">Vieva Pro?</span></h2>
+            
+            <div style="text-align: center; margin: 1.5rem 0;">
+                <img src="vieva-geraet.png" alt="Vieva Pro Analysegerät" style="max-width: 600px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+            </div>
+            
+            <p>Das Vieva Pro Analysesystem kombiniert zwei Messverfahren:</p>
+            
+            <div class="quote-box" style="margin-top: 1.5rem; border-left-color: var(--primary);">
+                <strong>1. HRV-Messung (wissenschaftlich anerkannt)</strong><br>
+                Über zwei Handsensoren wird die <strong>Herzratenvariabilität (HRV)</strong> gemessen – eine wissenschaftlich anerkannte Methode zur Beurteilung der Regulationsfähigkeit Ihres vegetativen Nervensystems.
+            </div>
+
+            <div class="quote-box" style="border-left-color: var(--accent);">
+                <strong>2. Vitalfeld-Analyse (Erfahrungsheilkunde)</strong><br>
+                Zusätzlich werden über Bioresonanz-Verfahren Hinweise auf weitere Parameter wie Nährstoffversorgung, Organfunktionen etc. erfasst. Diese Methode ist <strong>nicht schulmedizinisch anerkannt</strong> und stammt aus der Erfahrungsheilkunde. Sie ersetzt keine ärztliche Diagnostik.
+            </div>
+
+            <ul class="feature-list" style="margin-top: 1.5rem;">
+                <li><strong>Schnell:</strong> Messung dauert nur 5-10 Minuten, Ergebnis steht sofort zur Verfügung</li>
+                <li><strong>Schmerzlos:</strong> Keine Blutabnahme, keine invasiven Eingriffe</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 4: SOFTWARE & TECHNOLOGIE ════════════════════ -->
+    <div class="slide bg-dark">
+        <div class="slide-inner">
+            <h2>Intelligente <span class="accent">Software-Technologie</span></h2>
+            <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">Einfache Handhabung trotz komplizierter Technologie!</p>
+            
+            <ul class="feature-list">
+                <li><strong>Ampel-System:</strong> Alle Messwerte werden leicht verständlich in Ampelfarben dargestellt – auf einen Blick erkennbar.</li>
+                
+                <li><strong>Selbstlernende Algorithmen:</strong> Die Software passt sich individuell an und berücksichtigt Ihre persönlichen Gesundheitsdaten.</li>
+                
+                <li><strong>Umfassende Analyse:</strong> Verbindet Daten aus EKG, HRV, Zellanalytik und Laboranalysen in einem Arbeitsschritt.</li>
+                
+                <li><strong>Detaillierter PDF-Bericht:</strong> Sie erhalten einen ausführlichen, kennwortgeschützten Gesundheitsbericht zum Mitnehmen.</li>
+                
+                <li><strong>Verlaufsdokumentation:</strong> Chronologische Speicherung aller Analysen – Ihre Fortschritte werden sichtbar!</li>
+                
+                <li><strong>Medikamenten-Datenbank:</strong> Berücksichtigt Wechselwirkungen zwischen Medikamenten und Messwerten.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 5: FUNKTIONSWEISE ════════════════════ -->
+    <div class="slide bg-alt">
+        <div class="slide-inner">
+            <h2>Wie funktioniert die <span class="accent">Messung?</span></h2>
+            
+            <div class="quote-box">
+                <strong>1. Messung (5-10 Minuten)</strong><br>
+                Sie halten zwei Handsensoren. Das System erfasst EKG/ECG, HRV (Herzratenvariabilität) und Bioresonanz-Parameter.
+            </div>
+
+            <div class="quote-box">
+                <strong>2. Auswertung (Echtzeit)</strong><br>
+                Die erfassten Daten werden sofort ausgewertet und als übersichtliche Grafiken aufbereitet. Sie erhalten einen detaillierten Bericht.
+            </div>
+
+            <div class="quote-box">
+                <strong>3. Beratung (30-40 Minuten)</strong><br>
+                Gemeinsam besprechen wir Ihre Ergebnisse und entwickeln einen individuellen, ganzheitlichen Therapieplan.
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 6: HRV-PARAMETER ════════════════════ -->
+    <div class="slide bg-dark">
+        <div class="slide-inner">
+            <h2>HRV-Messung <span class="accent">(wissenschaftlich anerkannt)</span></h2>
+            <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">Die Herzratenvariabilität (HRV) ist ein wissenschaftlich validiertes Verfahren zur Beurteilung des vegetativen Nervensystems.</p>
+            
+            <div class="params-grid">
+                <div class="param-card">Herzratenvariabilität (HRV)</div>
+                <div class="param-card">ECG / EKG</div>
+                <div class="param-card">Herzfrequenz</div>
+                <div class="param-card">Vegetatives Nervensystem (VNS)</div>
+                <div class="param-card">HF (Parasympathikus/Entspannung)</div>
+                <div class="param-card">LF (niederfrequenter Anteil)</div>
+                <div class="param-card">VLF (Hormonelle Regulation)</div>
+                <div class="param-card">LF/HF (Verhältnis)</div>
+                <div class="param-card">pNN50</div>
+                <div class="param-card">Power-Intensity</div>
+                <div class="param-card">Relax-Faktor</div>
+                <div class="param-card">Regulationsfähigkeit</div>
+                <div class="param-card">Gesundheitsindex</div>
+                <div class="param-card">Gesamtenergie</div>
+                <div class="param-card">Stress-Index</div>
+                <div class="param-card">Stress- & Regenerationsprofil</div>
+                <div class="param-card">Chronischer Stress-Index</div>
+                <div class="param-card">Anspannung</div>
+                <div class="param-card">Erschöpfung</div>
+                <div class="param-card">Wille</div>
+                <div class="param-card">Erholungsfähigkeit</div>
+                <div class="param-card">Biologisches Alter</div>
+                <div class="param-card">Durchschnittspuls</div>
+                <div class="param-card">Histogramm</div>
+                <div class="param-card">Rhythmogramm</div>
+                <div class="param-card">Gleichgewicht</div>
+                <div class="param-card">Qualität der Regulation</div>
+                <div class="param-card">Intensität der Regulation</div>
+                <div class="param-card">Entspannungsvermögen</div>
+                <div class="param-card">Leistungsvermögen</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 6: HRV DETAILS ════════════════════ -->
+    <div class="slide bg-light">
+        <div class="slide-inner">
+            <h2>HRV im <span class="accent">Detail</span></h2>
+            
+            <div class="quote-box" style="border-left-color: var(--primary);">
+                <strong>HF (High Frequency)</strong><br>
+                Parasympathischer Marker mit entspannungsbezogener Wirkung auf die Herzfrequenz. Steht in direkter Abhängigkeit zur Atmung und zeigt die Regenerationsfähigkeit an.
+            </div>
+
+            <div class="quote-box" style="border-left-color: var(--accent);">
+                <strong>LF (Low Frequency)</strong><br>
+                Niederfrequenter Anteil der Herzratenvariabilität. Er wird von sympathischen, parasympathischen und barorezeptorischen Einflüssen mitgeprägt; ich deute ihn zusammen mit Messbedingungen und Ihren Beschwerden, nicht als eigenständige Stressdiagnose.
+            </div>
+
+            <div class="quote-box" style="border-left-color: var(--primary);">
+                <strong>VLF (Very Low Frequency)</strong><br>
+                Parameter der Leistung unter Berücksichtigung der hormonellen sowie Blutgefäß- und Temperatur-regulierenden Einflüsse sowie des Renin-Angiotensin-Systems.
+            </div>
+
+            <div class="quote-box" style="border-left-color: var(--accent);">
+                <strong>LF/HF Ratio</strong><br>
+                Das Verhältnis von LF zu HF beschreibt die Anteile beider Frequenzbereiche. Zusammen mit Messbedingungen und Ihren Beschwerden gibt es mir Hinweise für die Therapieplanung; ein einzelner Wert ist keine eindeutige Aussage über die vegetative Balance.
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 8: VITALFELD-PARAMETER ════════════════════ -->
+    <div class="slide bg-dark">
+        <div class="slide-inner">
+            <h2>Vitalfeld-Analyse <span class="accent">(Erfahrungsheilkunde)</span></h2>
+            <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);"><strong>⚠️ WICHTIG:</strong> Die folgenden Parameter werden über Bioresonanz-Verfahren erfasst und geben <strong>Hinweise</strong> auf mögliche Ungleichgewichte. Diese Methode ist <strong>nicht schulmedizinisch anerkannt</strong> und ersetzt keine ärztliche Diagnostik oder Laboruntersuchungen.</p>
+            
+            <div class="params-grid">
+                <div class="param-card">Körperzusammensetzung</div>
+                <div class="param-card">Körperfettberechnung</div>
+                <div class="param-card">Körperenergien & Blockaden</div>
+                <div class="param-card">Stoffwechselanalyse</div>
+                <div class="param-card">Stoffwechseltyping</div>
+                <div class="param-card">Stoffwechselaktivität gesamt</div>
+                <div class="param-card">Säure-Basen-Haushalt</div>
+                <div class="param-card">Wasserhaushalt</div>
+                <div class="param-card">Entzündungsindex</div>
+                <div class="param-card">Entzündungsstress</div>
+                <div class="param-card">Metabolischer Stress</div>
+                <div class="param-card">Oxidativer Stress</div>
+                <div class="param-card">Immunsystem-Status</div>
+                <div class="param-card">Antiviraler Status</div>
+                <div class="param-card">Allergisches Reaktionspotenzial</div>
+                <div class="param-card">Spurenelemente & Mineralien</div>
+                <div class="param-card">Vitamine</div>
+                <div class="param-card">Aminosäuren</div>
+                <div class="param-card">Proteine</div>
+                <div class="param-card">Elektromagnetische Strahlenbelastung</div>
+                <div class="param-card">Schwermetalle</div>
+                <div class="param-card">Nikotin & Pestizide</div>
+                <div class="param-card">Umweltbelastungen</div>
+                <div class="param-card">Peristaltik & Absorption</div>
+                <div class="param-card">Intraluminaler Druck</div>
+                <div class="param-card">Leaky Gut</div>
+                <div class="param-card">Leber- & Nierenfunktion</div>
+                <div class="param-card">Belastung der Leber</div>
+                <div class="param-card">Harnsäure</div>
+                <div class="param-card">Software-Rubrik „Osteoporose“</div>
+                <div class="param-card">Software-Rubrik „Knochendichte“ (keine Messung)</div>
+                <div class="param-card">Halswirbelsäulen-Blockade</div>
+                <div class="param-card">Lendenwirbelsäulen-Blockade</div>
+                <div class="param-card">Alkalische Phosphatase</div>
+                <div class="param-card">Versorgung lange Knochen</div>
+                <div class="param-card">Versorgung kurze Knochen & Knorpel</div>
+                <div class="param-card">Kardio & Blutfette</div>
+                <div class="param-card">Lymphsystem</div>
+                <div class="param-card">Fettstoffwechsel</div>
+                <div class="param-card">Cholesterin</div>
+                <div class="param-card">Gesamtcholesterin</div>
+                <div class="param-card">Cholesterinverhältnis</div>
+                <div class="param-card">Muskelgewebe</div>
+                <div class="param-card">Muskelfaszien</div>
+                <div class="param-card">Fettfreie Masse-Index</div>
+                <div class="param-card">Intrazelluläre Flüssigkeit</div>
+                <div class="param-card">Extrazelluläre Flüssigkeit</div>
+                <div class="param-card">Magenperistaltik</div>
+                <div class="param-card">Magen Absorption</div>
+                <div class="param-card">Dünndarmperistaltik</div>
+                <div class="param-card">Dickdarmperistaltik</div>
+                <div class="param-card">Belastungsindex der Leber</div>
+                <div class="param-card">Blei</div>
+                <div class="param-card">Quecksilber</div>
+                <div class="param-card">Aluminium</div>
+                <div class="param-card">Lysin</div>
+                <div class="param-card">Tryptophan</div>
+                <div class="param-card">Arginin</div>
+                <div class="param-card">Vitamin D3</div>
+                <div class="param-card">Entzündungsgeschehen</div>
+                <div class="param-card">Meridiane</div>
+                <div class="param-card">Stimulierende Getränke</div>
+                <div class="param-card">Sportphasen (Aerob/Anaerob)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 8: ANWENDUNGSFÄLLE ════════════════════ -->
+    <div class="slide bg-alt">
+        <div class="slide-inner">
+            <h2>Wann ist eine <span class="accent">Vieva Pro Analyse</span> sinnvoll?</h2>
+            
+            <ul class="feature-list">
+                <li><strong>Chronische Erschöpfung & Burnout:</strong> Hinweise auf Stress-Muster und mögliche Regulationsstörungen des vegetativen Nervensystems.</li>
+                
+                <li><strong>Unklare Beschwerden:</strong> Wenn klassische Laborwerte unauffällig sind, aber Sie sich nicht wohl fühlen.</li>
+                
+                <li><strong>Prävention & Gesundheitsoptimierung:</strong> Hinweise auf mögliche Regulationsstörungen als Ergänzung zur ärztlichen Vorsorge.</li>
+                
+                <li><strong>Therapiebegleitung:</strong> Verlaufsdokumentation während laufender Behandlungen – Veränderungen werden sichtbar.</li>
+                
+                <li><strong>Nährstoffversorgung:</strong> Hinweise auf mögliche Ungleichgewichte bei Vitaminen, Mineralien, Spurenelementen.</li>
+                
+                <li><strong>Verdauungssystem:</strong> Hinweise auf mögliche Funktionsstörungen von Magen und Darm.</li>
+                
+                <li><strong>Umweltbelastungen:</strong> Hinweise auf mögliche Belastungen durch Schwermetalle, Umweltgifte, elektromagnetische Strahlung.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 9: VORTEILE ════════════════════ -->
+    <div class="slide bg-light">
+        <div class="slide-inner">
+            <h2>Ihre <span class="accent">Vorteile</span></h2>
+            
+            <ul class="feature-list">
+                <li><strong>🎯 Ganzheitlicher Ansatz:</strong> Die Analyse kann Hinweise auf mögliche Ansatzpunkte für individuelle Therapiepläne liefern.</li>
+                
+                <li><strong>📊 Verlaufsdokumentation:</strong> Durch regelmäßige Messungen können Veränderungen im Verlauf sichtbar gemacht werden. Das Prinzip: "Messen! Dokumentieren! Vergleichen!"</li>
+                
+                <li><strong>⏱️ Schnell & Schmerzlos:</strong> Die Messungen sind schnell durchführbar und nicht-invasiv – keine Blutabnahme erforderlich.</li>
+                
+                <li><strong>🔍 Ergänzende Information:</strong> Die Analyse kann Hinweise auf mögliche Regulationsstörungen liefern – als Ergänzung zur ärztlichen Diagnostik.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 7: DISCLAIMER ════════════════════ -->
+    <div class="slide bg-dark">
+        <div class="slide-inner">
+            <h2>Wichtiger <span class="accent">Hinweis</span></h2>
+            
+            <div class="disclaimer-box">
+                <h3>⚠️ Rechtlicher Hinweis gemäß HWG &amp; HeilprG</h3>
+                <p><strong>Die HRV-Messung (Herzratenvariabilität)</strong> ist ein wissenschaftlich anerkanntes Verfahren zur Beurteilung des vegetativen Nervensystems.</p>
+                
+                <p style="margin-top: 1rem;"><strong>Die Vitalfeld-Analyse</strong> (Nährstoffe, Mineralien, Vitamine, Aminosäuren, Schwermetalle, Lymphe, Leber etc.) basiert auf Bioresonanz-Verfahren und ist <strong>kein schulmedizinisch anerkanntes Verfahren</strong>. Alle Angaben zu diesen Parametern stammen aus der Erfahrungsheilkunde und stellen <strong>kein Heilversprechen</strong> im Sinne des HWG dar.</p>
+                
+                <p style="margin-top: 1rem;">Die Analyse ersetzt keine ärztliche Diagnostik oder Laboruntersuchungen. Eine Kostenerstattung durch gesetzliche Krankenkassen ist ausgeschlossen.</p>
+
+                <p style="margin-top: 1rem;"><strong>Für Patienten der Naturheilpraxis Peter Rauch:</strong> Die Ergebnisse werden individuell in der Praxis besprochen. Eigenständige Interpretation ohne therapeutische Begleitung erfolgt auf eigene Verantwortung. Für Schäden durch eigenständiges Handeln ohne Rücksprache übernimmt die Naturheilpraxis Peter Rauch keine Haftung (§ 630a ff. BGB).</p>
+
+                <p style="margin-top: 0.8rem; font-size: 0.85rem; opacity: 0.7;">© 2026 Naturheilpraxis Peter Rauch · Heilpraktiker · Augsburg · Alle Rechte vorbehalten</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 8: PREISE ════════════════════ -->
+    <div class="slide bg-alt">
+        <div class="slide-inner">
+            <h2>Investition in Ihre <span class="accent">Gesundheit</span></h2>
+            
+            <div style="text-align: center; margin: 2rem 0;">
+                <div style="font-size: 3rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem;">120 Euro</div>
+                <p style="font-size: 1.3rem; color: var(--text-muted);">Vieva Pro Vitalanalyse</p>
+            </div>
+
+            <div class="quote-box">
+                <strong>Inkludiert:</strong><br>
+                • Ausführliche Messung (ca. 10 Minuten)<br>
+                • Detaillierter Analysebericht<br>
+                • Persönliche Beratung (ca. 30-40 Minuten)
+            </div>
+
+            <p style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 1rem;">
+                <em>Die Kosten sind von Ihnen als Patient in voller Höhe zu tragen, unabhängig von einer möglichen Erstattung durch Ihre Versicherung.</em>
+            </p>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 9: Komplementäre Diagnostik & Frequenztherapie ════════════════════ -->
+    <div class="slide bg-alt">
+        <div class="slide-inner">
+            <h2>Ergänzend: <span class="accent">Komplementäre Diagnostik &amp; Frequenztherapie</span></h2>
+            <p style="font-size:1.15rem; margin-bottom:1.5rem">In der Naturheilpraxis Peter Rauch werden Vieva Pro Analysen mit weiteren komplementären Verfahren kombiniert:</p>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1rem">
+                <div style="background:rgba(255,255,255,0.06); border-radius:1rem; padding:1.25rem; border:1px solid rgba(255,255,255,0.1)">
+                    <h3 style="color:#c66a51; margin-bottom:0.75rem; font-size:1.2rem">🔬 Testung nach Baklayan</h3>
+                    <ul style="font-size:0.95rem; line-height:1.6">
+                        <li><strong>Testampullen &amp; Trikombingerät</strong> nach Alan E. Baklayan</li>
+                        <li>Kinesiologische Austestung von Belastungsfaktoren</li>
+                        <li>Ergänzt die Vieva-Analyse um individuelle Testungen</li>
+                        <li>Verfahren der Erfahrungsheilkunde</li>
+                    </ul>
+                </div>
+                <div style="background:rgba(255,255,255,0.06); border-radius:1rem; padding:1.25rem; border:1px solid rgba(255,255,255,0.1)">
+                    <h3 style="color:#c66a51; margin-bottom:0.75rem; font-size:1.2rem">🖥️ Metatron Hospital</h3>
+                    <ul style="font-size:0.95rem; line-height:1.6">
+                        <li>Biophysikalische Analyse und <strong>Meta-Therapie</strong></li>
+                        <li>Frequenzbasierte Untersuchung von Organsystemen</li>
+                        <li>Diagnostik und Behandlung in einem System</li>
+                        <li>Verfahren der Erfahrungsheilkunde</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem">
+                <div style="background:rgba(255,255,255,0.06); border-radius:1rem; padding:1.25rem; border:1px solid rgba(255,255,255,0.1)">
+                    <h3 style="color:#c66a51; margin-bottom:0.75rem; font-size:1.2rem">⚡ Frequenztherapie</h3>
+                    <ul style="font-size:0.95rem; line-height:1.6">
+                        <li><strong>Diamond Shield Zapper</strong> mit spezifischen ChipCards</li>
+                        <li>Gezielte Frequenzprogramme basierend auf Vieva-Ergebnissen</li>
+                        <li><strong>Heimanwendung</strong> für Patienten mit eigenem Zapper möglich</li>
+                        <li>Verfahren der Erfahrungsheilkunde</li>
+                    </ul>
+                </div>
+                <div style="background:rgba(255,255,255,0.06); border-radius:1rem; padding:1.25rem; border:1px solid rgba(255,255,255,0.1)">
+                    <h3 style="color:#c66a51; margin-bottom:0.75rem; font-size:1.2rem">🏥 Labordiagnostik</h3>
+                    <ul style="font-size:0.95rem; line-height:1.6">
+                        <li>Klassische Labordiagnostik über die Praxis</li>
+                        <li>Blutbild, Organwerte, Spurenelemente</li>
+                        <li><strong>Schulmedizinisch anerkannt</strong></li>
+                        <li>Ergänzt die komplementären Verfahren</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="background:rgba(220,53,69,0.15); border:1px solid rgba(220,53,69,0.3); border-radius:0.75rem; padding:1rem; font-size:0.9rem">
+                <strong>⚠️ Transparenz-Hinweis:</strong> Kinesiologische Testung nach Baklayan, Metatron Hospital und Frequenztherapie sind Verfahren der Erfahrungsheilkunde. Sie sind nicht durch RCTs belegt und nicht schulmedizinisch anerkannt.
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ SLIDE 10: CTA ════════════════════ -->
+    <div class="slide bg-cta">
+        <div class="slide-inner">
+            <h2>Jetzt Termin <span class="accent">vereinbaren!</span></h2>
+            <p style="font-size: 1.3rem; margin-bottom: 2rem;">Vereinbaren Sie Ihren persönlichen Termin für eine Vieva Pro Vitalanalyse</p>
+            
+            <div class="cta-buttons">
+                <a href="tel:08212621462" class="cta-btn">📞 0821 - 262 14 62</a>
+                <a href="mailto:praxis_rauch@icloud.com" class="cta-btn">✉️ E-Mail senden</a>
+            </div>
+
+            <div style="margin-top: 3rem; font-size: 1rem; color: rgba(255,255,255,0.7);">
+                <p><strong>Naturheilpraxis Rauch</strong></p>
+                <p>Heilpraktiker & Physiotherapeut</p>
+                <p>Peter Rauch • Augsburg, Hochzoll</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════ HUD ════════════════════ -->
+    <div class="hud" id="hud">
+        <div class="hud-progress-bar"><div class="hud-progress" id="hudProgress"></div></div>
+        <div class="hud-left">
+            <button class="hud-btn hud-nav-btn" id="btnPrev" title="Zurück">&#9664;</button>
+            <button class="hud-btn hud-nav-btn" id="btnNext" title="Weiter">&#9654;</button>
+            <span class="hud-slide" id="hudSlide">1 / 12</span>
+        </div>
+        <div class="hud-center">
+            <span style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Vieva Pro Vitalanalyse</span>
+        </div>
+        <div class="hud-right">
+            <button class="hud-btn" id="btnHideHud" title="HUD ausblenden (H)">HUD</button>
+        </div>
+    </div>
+
+    <!-- ════════════════════ PRESENTATION ENGINE ════════════════════ -->
+    <script>
+    (function() {
+        var slides = document.querySelectorAll('.slide');
+        var totalSlides = slides.length;
+        var current = 0;
+
+        var hudSlide = document.getElementById('hudSlide');
+        var hudProgress = document.getElementById('hudProgress');
+        var hud = document.getElementById('hud');
+
+        function goTo(index) {
+            if (index < 0 || index >= totalSlides) return;
+            slides[current].classList.remove('active');
+            current = index;
+            slides[current].classList.add('active');
+            updateHud();
+        }
+
+        function next() { goTo(current + 1); }
+        function prev() { goTo(current - 1); }
+
+        function updateHud() {
+            hudSlide.textContent = (current + 1) + ' / ' + totalSlides;
+            hudProgress.style.width = ((current + 1) / totalSlides * 100) + '%';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                case 'PageDown':
+                    e.preventDefault();
+                    next();
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'PageUp':
+                    e.preventDefault();
+                    prev();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    goTo(0);
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    goTo(totalSlides - 1);
+                    break;
+                case 'h':
+                case 'H':
+                    e.preventDefault();
+                    hud.classList.toggle('hidden');
+                    break;
+            }
+        });
+
+        document.getElementById('btnNext').addEventListener('click', next);
+        document.getElementById('btnPrev').addEventListener('click', prev);
+        document.getElementById('btnHideHud').addEventListener('click', function() {
+            hud.classList.toggle('hidden');
+        });
+
+        updateHud();
+    })();
+    </script>
+</body>
+</html>

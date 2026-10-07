@@ -9,5 +9,7 @@ export function fundstelle(c: { id: number; headOnly?: { kind: string } }, p: { 
 export function articleSections(doc: Document): Element[] {
   const slides = Array.from(doc.querySelectorAll(".reveal .slides > section"));
   if (slides.length) return slides;
+  const divSlides = Array.from(doc.body.querySelectorAll("div.slide")).filter((s) => !s.parentElement?.closest(".slide"));
+  if (divSlides.length) return divSlides;
   return Array.from(doc.body.querySelectorAll("section")).filter((s) => !s.parentElement?.closest("section"));
 }

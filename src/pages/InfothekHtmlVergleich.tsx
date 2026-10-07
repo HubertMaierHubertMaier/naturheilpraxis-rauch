@@ -130,6 +130,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     html { overflow-x: hidden !important; overflow-y: auto !important; height: auto !important; max-height: none !important; }
     body { overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; position: static !important; }
     .reveal, .reveal .slides { position: static !important; height: auto !important; width: auto !important; transform: none !important; overflow: visible !important; }
+    div.slide { display: block !important; position: relative !important; inset: auto !important; opacity: 1 !important; visibility: visible !important; transform: none !important; height: auto !important; min-height: 0 !important; }
     .reveal .slides > section, .reveal .slides > section > section {
       display: block !important; position: relative !important; top: auto !important; left: auto !important;
       opacity: 1 !important; visibility: visible !important; transform: none !important; height: auto !important;
