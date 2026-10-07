@@ -132,3 +132,9 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 ## 2026-10-07 ca. 19:55Z Strunz-Produktquellen Teil 4 (73–96)
 - 24/24 HTTP 200 (`produktquellen_teil4`), je positiver Angabe Feld + wörtlicher Auszug. 22 EAN; ohne EAN: Geschenkgutschein (kein Produkt, Eintrag erhalten, Einordnung offen), L-Citrullin Orange. Marke FOREVER YOUNG (24, Zwischenüberschrift); Produkthersteller nirgends → offen.
 - Offen: Produktseiten 97–136 + 13 Varianten; Teile 1–3 haben noch keine wörtlichen Fundstellen (nachrüsten).
+
+## 2026-10-07 ca. 20:10Z Strunz-Listeneinträge Teil 5 (97–120)
+- 24/24 HTTP 200 (`produktquellen_teil5`), wörtliche Fundstellen. 23 EAN; ohne EAN: for you high curcuma. Marken: FOREVER YOUNG 22, for you eHealth 2 (Überschrift „Qualitätsversprechen“ nur Markenbeleg, kein Hersteller). Hersteller überall offen.
+- Doppelte EAN 4260180442878 (Schwarzkümmelöl und Vitamin K Komplex) – Prüfpunkt, keine Identität.
+- Gutschein (Teil 4) als seitentyp gutschein_kein_produkt gesondert. 149 URLs/13 Varianten/6 Gruppen unverändert.
+- Offen: Listeneinträge 121–136, 13 Varianten, wörtliche Fundstellen für 1–72.
