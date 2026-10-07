@@ -54,6 +54,7 @@ const Neupatient = lazy(() => import("./pages/Neupatient"));
 const ReizdarmHypnose = lazy(() => import("./pages/ReizdarmHypnose"));
 const ParkinsonHypnose = lazy(() => import("./pages/ParkinsonHypnose"));
 const InfothekHtml = lazy(() => import("./pages/InfothekHtml"));
+const InfothekHtmlVergleich = lazy(() => import("./pages/InfothekHtmlVergleich"));
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/wikidatenbank" element={<WikiDatenbank />} />
               <Route path="/therapie-kandidaten" element={<TherapieKandidaten />} />
+              <Route path="/admin/infothek-vergleich/krankheit-ist-messbar" element={<InfothekHtmlVergleich />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
               <Route path="/dashboard" element={<ProtectedRoute requireTwoFactor><PatientDashboard /></ProtectedRoute>} />
               <Route path="/patienten-bibliothek" element={<ProtectedRoute requireTwoFactor><PatientenBibliothek /></ProtectedRoute>} />
