@@ -630,7 +630,7 @@ export default function InfothekHtmlVergleich() {
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
-                  {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
+                  {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
                 </li>
               ))}
             </ol>
@@ -686,7 +686,7 @@ export default function InfothekHtmlVergleich() {
                     )}
                     {replacedBy(c, CHANGES, decisions) !== undefined && <p className="mb-1 rounded bg-muted px-1.5 py-1">Durch Vorschlag {replacedBy(c, CHANGES, decisions)} ersetzt – diese Fassung erscheint nicht in der Arbeitsfassung. Wird Vorschlag {replacedBy(c, CHANGES, decisions)} rückgängig gemacht, ist dieser Vorschlag wieder offen.</p>}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
-                    <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
+                    {replacedBy(c, CHANGES, decisions) !== undefined ? <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Ersetzt durch Vorschlag {replacedBy(c, CHANGES, decisions)}</span> : <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />}
                   </div>
                 );
               })()}
