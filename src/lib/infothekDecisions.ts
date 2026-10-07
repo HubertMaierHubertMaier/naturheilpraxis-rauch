@@ -23,8 +23,12 @@ export const serializeDecisions = (d: Decisions) =>
 /** An alternative is optional when the proposal it would replace is already accepted. */
 export const isOptionalAlternative = (c: ComparisonChange, d: Decisions) => c.supersedes !== undefined && d.accepted.has(c.supersedes);
 
+/** Accepted alternative that replaces this proposal (its own decision stays stored unchanged). */
+export const replacedBy = (c: ComparisonChange, changes: ComparisonChange[], d: Decisions) =>
+  changes.find((x) => x.supersedes === c.id && d.accepted.has(x.id))?.id;
+
 /** Still undecided (neither accepted nor explicitly kept). Not the same as rejected. */
-export const undecided = (changes: ComparisonChange[], d: Decisions) => changes.filter((c) => !d.accepted.has(c.id) && !d.kept.has(c.id));
+export const undecided = (changes: ComparisonChange[], d: Decisions) => changes.filter((c) => !d.accepted.has(c.id) && !d.kept.has(c.id) && replacedBy(c, changes, d) === undefined);
 
 /** Points not covered by the numbered proposals; shown visibly, never as hidden HTML comments. */
 export const EXTRA_CHECKS = [
@@ -45,7 +49,8 @@ export function buildProgressReport(opts: {
   const { changes, topics, d, storageKey, sectionOf } = opts;
   const line = (c: ComparisonChange) => {
     const where = c.headOnly ? "im Artikel nicht sichtbar" : sectionOf?.get(c.id) ? `Abschnitt ${sectionOf.get(c.id)}` : "";
-    const state = d.accepted.has(c.id) ? "übernommen" : d.kept.has(c.id) ? "Original beibehalten" : isOptionalAlternative(c, d) ? "offen (optionale Alternative)" : "offen";
+    const rep = replacedBy(c, changes, d);
+    const state = rep !== undefined ? `ersetzt durch Vorschlag ${rep}` : d.accepted.has(c.id) ? "übernommen" : d.kept.has(c.id) ? "Original beibehalten" : isOptionalAlternative(c, d) ? "offen (optionale Alternative)" : "offen";
     const before = c.headOnly?.before ?? c.orig ?? "";
     const after = c.headOnly?.after ?? c.draft ?? "";
     return `- Vorschlag ${c.id} – ${topics[c.id] ?? c.note}${where ? ` (${where})` : ""}: **${state}**\n  - Vorher (Ausschnitt): „${before}“\n  - Nachher (Ausschnitt): „${after}“`;
