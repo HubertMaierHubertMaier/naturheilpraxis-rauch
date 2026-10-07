@@ -33,3 +33,5 @@ Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entschei
 - Gleiche Grenzen für Überschriften, Meta-Daten, Bilder/Alt-Texte, SEO und Google-Snippets.
 - Unterscheiden: fehlende Evidenz / nachgewiesene Unwirksamkeit / bloßes Denkmodell. Einordnung knapp, verständlich, nahe der Aussage.
 - Vorgehen: seitenweise im bestätigten Zwei-HTML-Vergleich, keine Massenänderung, angenommene Punkte und Nutzerentscheidungen nie ändern.
+- Begriffspräzision: Modellvorstellung/Deutung ≠ diagnostischer Befund ≠ belegte Ursache. Deutungen dem konkreten Denkmodell zuordnen (z. B. „Energiefeld-Modell der Frequenztherapie“), nicht pauschal „die Erfahrungsheilkunde“ vereinnahmen. Keine reflexartigen Zusätze wie „kein Diagnosebefund“, wo gar keine Diagnose behauptet wird.
+- Nachbartext im selben Absatz/Element mitprüfen; nötige Änderungen dort nur offen als eigener Vorschlag oder gemeldeter Punkt, nie versteckt.
