@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { byProfile, GAS_CANDIDATES, GAS_SOURCES, uniqueCount, statusCounts } from "@/lib/siboGasProfiles";
+import { ENTITY_MATCHES, PRAXIS_KEIME, byProfile, GAS_CANDIDATES, GAS_SOURCES, uniqueCount, statusCounts } from "@/lib/siboGasProfiles";
 
 describe("SIBO Gasprofile", () => {
   it("drei Profile mit Einträgen", () => { for (const p of ["h2", "ch4", "h2s"] as const) expect(byProfile(p).length).toBeGreaterThan(0); });
