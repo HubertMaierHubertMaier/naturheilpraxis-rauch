@@ -22,7 +22,7 @@ describe("Entscheidungen (isolierter Testzustand)", () => {
     const d = parseDecisions(JSON.stringify({ accepted: [1], kept: [2] }), ids);
     const r = buildProgressReport({ changes: C, topics: CHANGE_TOPICS, d, storageKey: "k:test", sectionOf: new Map() });
     expect(r).toContain("`k:test`"); expect(r).toContain("Original beibehalten"); expect(r).toContain("Zusätzlich zu prüfen");
-    expect(r).toContain(`1 übernommen, 1 Original beibehalten, ${C.length - 2} noch zu entscheiden`);
+    expect(r).toContain(`1 übernommen (davon 1 angewandt), 1 Original beibehalten, 0 ersetzt, ${C.length - 2} noch zu entscheiden`);
   });
 });
 

@@ -44,18 +44,18 @@ export const EXTRA_CHECKS = [
 ];
 
 export function buildProgressReport(opts: {
-  changes: ComparisonChange[]; topics: Record<number, string>; d: Decisions; storageKey: string; sectionOf?: Map<number, number>; title?: string; extraChecks?: string[];
+  changes: ComparisonChange[]; topics: Record<number, string>; d: Decisions; storageKey: string; sectionOf?: Map<number, number>; title?: string; extraChecks?: string[]; failed?: number[];
 }): string {
-  const { changes, topics, d, storageKey, sectionOf, title = "Krankheit ist messbar", extraChecks = EXTRA_CHECKS } = opts;
+  const { changes, topics, d, storageKey, sectionOf, title = "Krankheit ist messbar", extraChecks = EXTRA_CHECKS, failed = [] } = opts;
+  const p = progressProjection(changes, d, failed);
   const line = (c: ComparisonChange) => {
     const where = c.headOnly ? "im Artikel nicht sichtbar" : sectionOf?.get(c.id) ? `Abschnitt ${sectionOf.get(c.id)}` : "";
     const rep = replacedBy(c, changes, d);
-    const state = rep !== undefined ? `ersetzt durch Vorschlag ${rep}` : d.accepted.has(c.id) ? "übernommen" : d.kept.has(c.id) ? "Original beibehalten" : isOptionalAlternative(c, d) ? "offen (optionale Alternative)" : "offen";
+    const state = rep !== undefined ? `ersetzt durch Vorschlag ${rep}` : d.accepted.has(c.id) ? (p.appliedFailed.includes(c.id) ? "übernommen, aber nicht anwendbar" : "übernommen") : d.kept.has(c.id) ? "Original beibehalten" : isOptionalAlternative(c, d) ? "offen (optionale Alternative)" : "offen";
     const before = c.headOnly?.before ?? c.orig ?? "";
     const after = c.headOnly?.after ?? c.draft ?? "";
     return `- Vorschlag ${c.id} – ${topics[c.id] ?? c.note}${where ? ` (${where})` : ""}: **${state}**\n  - Vorher (Ausschnitt): „${before}“\n  - Nachher (Ausschnitt): „${after}“`;
   };
-  const open = undecided(changes, d);
   return [
     `# Fortschrittsbericht – ${title}`,
     ``,
@@ -63,7 +63,7 @@ export function buildProgressReport(opts: {
     `Speicherort der Entscheidungen: nur dieser Browser (localStorage, Schlüssel \`${storageKey}\`), nicht auf dem Server. Dieser Bericht sichert den Stand als Datei.`,
     `Letzte Speicherung: ${d.savedAt ? new Date(d.savedAt).toLocaleString("de-DE") : "–"}`,
     ``,
-    `Status: in Prüfung – ${d.accepted.size} übernommen, ${d.kept.size} Original beibehalten, ${open.length} noch zu entscheiden (von ${changes.length}).`,
+    `Status: in Prüfung – ${p.accepted.length} übernommen (davon ${p.applied.length} angewandt${p.appliedFailed.length ? `, nicht anwendbar: ${p.appliedFailed.map((i) => `Ä${i}`).join(", ")}` : ""}), ${p.kept.length} Original beibehalten, ${p.replaced.length} ersetzt, ${p.open.length} noch zu entscheiden (von ${p.total}).`,
     `Nicht veröffentlicht, keine Inhalts- oder Rechtsfreigabe. Abschluss erst nach bewussten Entscheidungen und Restprüfung.`,
     ``,
     `## Vorschläge`,
