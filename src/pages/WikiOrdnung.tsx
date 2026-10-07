@@ -80,6 +80,8 @@ const LinkBadge = ({ kind }: { kind: "import" | "field" | "text" }) => (
   <Badge variant="outline" className="text-[10px]">{kind === "import" ? "Importverknüpfung, ungeprüft" : kind === "field" ? "Datenfeld" : "Treffer im Quelltext – Zuordnung noch zu prüfen"}</Badge>
 );
 
+const COLL = new Intl.Collator("de", { sensitivity: "base", numeric: true });
+const byName = (a: string, b: string) => COLL.compare(a, b);
 const TILE = "flex h-full w-full flex-col gap-1 rounded-lg border-2 border-primary/30 bg-card p-3 text-left text-sm transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 /** Einheitliche Wiki-Kachel: Name oben, Zusatzangaben darunter; ganze Kachel öffnet den Eintrag (ohne verschachtelte Buttons). */
 function WikiTile({ title, meta, onOpen }: { title: string; meta?: React.ReactNode; onOpen?: () => void }) {
@@ -88,7 +90,8 @@ function WikiTile({ title, meta, onOpen }: { title: string; meta?: React.ReactNo
 }
 
 /** List with visible count and "Weitere Treffer zeigen" – all entries reachable. */
-function RevealList<T>({ items, render, label = "Treffer" }: { items: T[]; render: (x: T) => JSX.Element | null; label?: string }) {
+function RevealList<T>({ items: raw, render, label = "Treffer", sortBy }: { items: T[]; render: (x: T) => JSX.Element | null; label?: string; sortBy?: (x: T) => string }) {
+  const items = useMemo(() => sortBy ? [...raw].sort((a, b) => byName(sortBy(a), sortBy(b))) : raw, [raw, sortBy]);
   const [shown, setShown] = useState(0);
   useEffect(() => setShown(0), [items.length]);
   const w = revealWindow(items, shown);
@@ -143,7 +146,7 @@ export default function WikiOrdnung() {
   const actorsSorted = useMemo(() => {
     if (!m) return [];
     const peter = PETER_ACTORS.map((p) => m.actors.get(p.key)!);
-    const rest = [...m.actors.values()].filter((a) => !a.roles.has("Von Peter benannt")).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const rest = [...m.actors.values()].filter((a) => !a.roles.has("Von Peter benannt")).sort((a, b) => byName(a.name, b.name));
     return [...peter, ...rest];
   }, [m]);
 
@@ -162,6 +165,7 @@ export default function WikiOrdnung() {
   const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size + a.textEntityIds.size;
   const ent = (eid: string) => m?.entities.get(eid);
   const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
+  const artTitle = (aid: string) => m?.articles.get(aid)?.title ?? aid;
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
     return <li key={aid}><WikiTile title={a.title} meta={<><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></>} /></li>;
@@ -176,7 +180,7 @@ export default function WikiOrdnung() {
   const HitLists = ({ ft, label }: { ft: ReturnType<typeof splitRevisionHits>; label: string }) => (
     <>
       <p className="text-xs text-muted-foreground">{ft.current.length} Artikel {label} <LinkBadge kind="text" /></p>
-      <RevealList items={ft.current} render={(x) => artLine(x, "text")} label="aktuelle Treffer" />
+      <RevealList items={ft.current} render={(x) => artLine(x, "text")} sortBy={artTitle} label="aktuelle Treffer" />
       {ft.historical.length > 0 && <>
         <p className="mt-2 text-xs font-semibold">Nur in älteren Revisionen gefunden ({ft.historical.length}) – nicht im aktuellen Text</p>
         <RevealList items={ft.historical} label="historische Treffer" render={(x) => <li key={x} className="flex flex-wrap items-center gap-2"><span>{m!.articles.get(x)!.title}</span><Badge variant="outline" className="text-[10px]">historischer Treffer · {ft.historicalRevisionIds.get(x)!.size} ältere Rev.</Badge><Badge variant="secondary" className="text-[10px]">aktuell Rev. {m!.articles.get(x)!.revisionNo}</Badge></li>} />
@@ -415,8 +419,8 @@ export default function WikiOrdnung() {
         {a.roles.has("Von Peter benannt") && <p className="text-xs text-muted-foreground">Ob ein Produkt ein Komplexmittel ist, steht nur fest, wenn der Produktdatensatz es angibt – keine pauschale Einstufung je Anbieter.</p>}
         {a.textEntityIds.size > 0 && <div><p className="font-semibold">Produkte mit diesem Namen im Produktnamen ({a.textEntityIds.size}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{[...a.textEntityIds].map(entButton)}</div></div>}
         {a.sourceRevisionIds.size > 0 && <div><p className="font-semibold">Interne Quellen ({a.sourceRevisionIds.size}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{[...a.sourceRevisionIds].map((s) => srcLine(s))}</ul></div>}
-        {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><RevealList items={[...a.folderArticleIds]} render={(x) => artLine(x, "field")} label="Artikel" /></div>}
-        {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><RevealList items={[...a.textArticleIds]} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
+        {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><RevealList items={[...a.folderArticleIds]} render={(x) => artLine(x, "field")} sortBy={artTitle} label="Artikel" /></div>}
+        {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><RevealList items={[...a.textArticleIds]} render={(x) => artLine(x, "text")} sortBy={artTitle} label="Artikel" /></div>}
         <div><p className="font-semibold">Volltext der Artikel</p>{(() => { const ft = fullText[a.key]; return ft === undefined ? <Button size="sm" variant="outline" onClick={() => searchFullText(a)}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <HitLists ft={ft} label="nennen den Namen in der aktuellen Revision" />; })()}</div>
         {actorCount(a) === 0 && <p className="font-semibold">Im aktuellen Bestand keine Zuordnung und kein Titel-/Ordnertreffer gefunden.</p>}
       </CardContent></Card>
@@ -458,15 +462,15 @@ export default function WikiOrdnung() {
         <Input className="max-w-xs" placeholder="Artikel suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
         {h.entityIds.length > 0 && <div><p className="font-semibold">Begriffe/Produkte ({h.entityIds.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{h.entityIds.map(entButton)}</div><p className="text-xs text-muted-foreground">Symptome/Erkrankungen/Pathogene stehen jeweils im Begriffseintrag (Importverknüpfung).</p></div>}
         {h.sourceIds.length > 0 && <div><p className="font-semibold">Interne Quellen (Herausgeber/Autor) ({h.sourceIds.length}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{h.sourceIds.map((x) => srcLine(x))}</ul></div>}
-        <div><p className="font-semibold">Artikel im Ordner ({filt(h.folderArticleIds).length}) <LinkBadge kind="field" /></p><RevealList items={filt(h.folderArticleIds)} render={(x) => artLine(x, "field")} label="Artikel" /></div>
-        {h.titleArticleIds.length > 0 && <div><p className="font-semibold">Name nur im Titel ({filt(h.titleArticleIds).length})</p><RevealList items={filt(h.titleArticleIds)} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
+        <div><p className="font-semibold">Artikel im Ordner ({filt(h.folderArticleIds).length}) <LinkBadge kind="field" /></p><RevealList items={filt(h.folderArticleIds)} render={(x) => artLine(x, "field")} sortBy={artTitle} label="Artikel" /></div>
+        {h.titleArticleIds.length > 0 && <div><p className="font-semibold">Name nur im Titel ({filt(h.titleArticleIds).length})</p><RevealList items={filt(h.titleArticleIds)} render={(x) => artLine(x, "text")} sortBy={artTitle} label="Artikel" /></div>}
         {h.folderArticleIds.length + h.titleArticleIds.length + h.sourceIds.length + h.entityIds.length === 0 && <p className="font-semibold">Im Bestand nichts gefunden.</p>}
       </CardContent></Card>
     );
   } else if ((view === "mannayan" || view === "chipcards") && !id) {
     const isM = view === "mannayan";
     const pool = [...m.entities.values()].filter((e) => isM ? !!e.manufacturerField && norm(e.manufacturerField).split(" ").includes(MANNAYAN_ALIAS) : !!e.chipCard);
-    const list = pool.filter((e) => !q || matchesAll(e.name, q)).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const list = pool.filter((e) => !q || matchesAll(e.name, q)).sort((a, b) => byName(a.name, b.name));
     const maker = isM ? [...m.actors.values()].find((a) => norm(a.name).split(" ").includes(MANNAYAN_ALIAS) && a.roles.has("Hersteller")) : undefined;
     const textProducts = isM ? [...m.entities.values()].filter((e) => !pool.includes(e) && e.stoffart === "Produkt" && norm(e.name).split(" ").includes(MANNAYAN_ALIAS)) : [];
     const otherPrograms = !isM ? [...m.entities.values()].filter((e) => e.type === "program" && !e.chipCard) : [];
@@ -490,7 +494,7 @@ export default function WikiOrdnung() {
     );
   } else if (view === "pharmacies") {
     const structured = [...m.actors.values()].filter((a) => a.roles.has("Apotheke"));
-    const textOnly = [...data!.pharmacyText.entries()].filter(([n]) => !structured.some((a) => norm(a.name) === norm(n))).sort((x, y) => x[0].localeCompare(y[0], "de"));
+    const textOnly = [...data!.pharmacyText.entries()].filter(([n]) => !structured.some((a) => norm(a.name) === norm(n))).sort((x, y) => byName(x[0], y[0]));
     body = (
       <>
         <p className="mb-3 text-sm text-muted-foreground">Apotheke ist eine eigene Rolle, getrennt von Hersteller und Autor. Mehrere Rollen erscheinen nur, wenn die Daten sie belegen. Apotheken nur als Text-Erwähnung sind als „Treffer im Quelltext" gekennzeichnet.</p>
@@ -509,7 +513,7 @@ export default function WikiOrdnung() {
       </>
     );
   } else if (view === "drugs" && !id) {
-    const list = [...m.entities.values()].filter((e) => e.drug && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const list = [...m.entities.values()].filter((e) => e.drug && (!q || matchesAll(e.name, q))).sort((a, b) => byName(a.name, b.name));
     const kl = m.actors.get("klinghardt");
     const ft = fullText["__drugs"];
     const searchDrugText = async () => {
@@ -533,7 +537,7 @@ export default function WikiOrdnung() {
       </>
     );
   } else if (isNutrientView(view) && !id) {
-    const list = [...m.entities.values()].filter((e) => (view === "minerals" ? e.nutrient === "minerals" || e.nutrient === "trace" : e.nutrient === view) && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const list = [...m.entities.values()].filter((e) => (view === "minerals" ? e.nutrient === "minerals" || e.nutrient === "trace" : e.nutrient === view) && (!q || matchesAll(e.name, q))).sort((a, b) => byName(a.name, b.name));
     const unclassified = [...m.entities.values()].filter((e) => e.type === "nutrient" && !e.nutrient);
     const pg = paginate(list, page, PAGE);
     body = (
@@ -548,7 +552,7 @@ export default function WikiOrdnung() {
     );
   } else if (!id) {
     const g = view as GroupKey;
-    const list = [...m.entities.values()].filter((e) => e.group === g && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const list = [...m.entities.values()].filter((e) => e.group === g && (!q || matchesAll(e.name, q))).sort((a, b) => byName(a.name, b.name));
     const pg = paginate(list, page, PAGE);
     body = (
       <>
@@ -587,7 +591,7 @@ export default function WikiOrdnung() {
           </div>
         ))}
         {nb.length === 0 && <p>Keine Importverknüpfungen zu anderen Begriffen.</p>}
-        {texts.length > 0 && <div><p className="font-semibold">Artikel mit Namen im Titel ({texts.length})</p><RevealList items={texts} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
+        {texts.length > 0 && <div><p className="font-semibold">Artikel mit Namen im Titel ({texts.length})</p><RevealList items={texts} render={(x) => artLine(x, "text")} sortBy={artTitle} label="Artikel" /></div>}
       </CardContent></Card>
     );
   }
