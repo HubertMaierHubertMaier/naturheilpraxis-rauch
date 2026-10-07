@@ -34,6 +34,7 @@ export const EXTRA_CHECKS = [
   "Muheim-Werte (99,9999999 %, 974 Milliarden Energiequanten „steuern ihn“) und „der allergrößte Teil unseres Seins ist Energie“: physikalisch nicht belegt, noch ohne Vorschlag.",
   "„Aus reiner Strahlung wird Materie“ (Abschnitt 9): am CERN kollidierten Protonen und Antiprotonen – noch ohne Vorschlag.",
   "Alte Hinweisblöcke am Schluss („nicht schulmedizinisch anerkannt“, Transparenz-Hinweis, Rechtlicher Hinweis) wiederholen sich – Zusammenfassung zu einem kurzen Schlusshinweis offen.",
+  "Beschreibung für Suchergebnisse (Vorschlag 2) wirkt defensiv („was Hypothese … ist“). Freundlichere Fassung zur Prüfung: „Frequenztherapie verständlich erklärt: von E = mc² und Muheims Energiefeld-Modell bis zum Angebot der Naturheilpraxis Rauch in Augsburg.“ – bei Bedarf als eigener Vorschlag.",
   "Interne Links (Vorschlag 30) zeigen auf geplante Praxisseiten, die noch nicht online sind.",
   "Öffentliche Seite: Seitentitel/Meta im ausgelieferten Seitenkopf, Autor-/Prüfdatum (von Peter), noindex/Sitemap erst nach Freigabe.",
 ];
