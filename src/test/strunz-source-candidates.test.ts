@@ -60,3 +60,15 @@ describe("Strunz Produktquellen Teil 1 und Beleg 69", () => {
     expect(a.methode).toContain("alle 21 Seiten");
   });
 });
+
+describe("Strunz Produktquellen Teil 2 (25–48)", () => {
+  const a = STRUNZ_AREA as any;
+  it("24 Produktseiten in Listenreihenfolge, Hersteller nie gesetzt, Varianten erhalten", () => {
+    const r = a.produktquellen_teil2.ergebnisse;
+    const order = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung !== "variante_offen").slice(24, 48).map((x: any) => x.url);
+    expect(r.map((x: any) => x.url)).toEqual(order);
+    r.forEach((x: any) => { expect(x.abgerufen).toMatch(/Z$/); expect(x.hersteller).toBeNull(); expect(x.hersteller_status).toContain("offen"); if (!x.ean.length) expect(x.ean_fundstelle).toBe("nicht angegeben"); });
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+    expect(a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen").length).toBe(13);
+  });
+});

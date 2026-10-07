@@ -6798,5 +6798,348 @@
    "url_identisch_mit_kandidat": 69
   },
   "abweichungen": []
+ },
+ "produktquellen_teil2": {
+  "umfang": "Produkte 25–48 der 136 nicht als Variante gekennzeichneten Produkte in Listenreihenfolge",
+  "modus": "HTTP GET lesend, keine DB-Writes",
+  "ergebnisse": [
+   {
+    "url": "https://www.strunz.com/for-you-longevity-komplex.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you longevity komplex",
+    "ean": [
+     "4260538095329"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-mann-balance.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you mann balance",
+    "ean": [
+     "4260538096807"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-melatonin-spray.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you melatonin Spray",
+    "ean": [
+     "4260538094889"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-multi-enzym-komplex.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you multi enzym komplex",
+    "ean": [
+     "4260538092403"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-multi-kakao-kids.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you multi kakao kids",
+    "ean": [
+     "4260538093752"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-multi-natural-complete.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you multi natural complete",
+    "ean": [
+     "4260538093479"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-nadh.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you NADH",
+    "ean": [
+     "4260538095268"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-natural-basenpulver.html",
+    "abgerufen": "2026-10-07T19:22:31Z",
+    "http": 200,
+    "produktname_h1": "for you natural basenpulver",
+    "ean": [
+     "4260538090324"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-osteo-komplex.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you osteo komplex",
+    "ean": [
+     "4260538092236"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-phyto-balance.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you phyto balance",
+    "ean": [
+     "4260538093691"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-phyto-slim.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you phyto slim",
+    "ean": [
+     "4260538093776"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-praebio-ballaststoffe-x10-komplex.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you präbio ballaststoffe X10 komplex",
+    "ean": [
+     "4260538095718"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-probio-mundflora.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you probio mundflora",
+    "ean": [
+     "4260538095008"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-prostata-vital.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you prostata vital",
+    "ean": [
+     "4260538091666"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-pur-msm.html",
+    "abgerufen": "2026-10-07T19:22:32Z",
+    "http": 200,
+    "produktname_h1": "for you pur msm",
+    "ean": [
+     "4260538090683"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)",
+    "rohstoff_textfund": "Produkttext: „Hersteller Balchem Corporation“ – bezieht sich laut Kontext auf den MSM-Rohstoff, nicht als Produkthersteller übernommen"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-quercetin.html",
+    "abgerufen": "2026-10-07T19:22:33Z",
+    "http": 200,
+    "produktname_h1": "for you quercetin",
+    "ean": [
+     "4260538094964"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-resveratrol.html",
+    "abgerufen": "2026-10-07T19:22:33Z",
+    "http": 200,
+    "produktname_h1": "for you resveratrol",
+    "ean": [
+     "4260538096692"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-sango-koralle.html",
+    "abgerufen": "2026-10-07T19:22:33Z",
+    "http": 200,
+    "produktname_h1": "for you sango koralle",
+    "ean": [
+     "4260538092175"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-schilddruese-vital.html",
+    "abgerufen": "2026-10-07T19:22:33Z",
+    "http": 200,
+    "produktname_h1": "for you schilddrüse vital",
+    "ean": [
+     "4260538095589"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-schwarzer-knoblauch-plus.html",
+    "abgerufen": "2026-10-07T19:22:34Z",
+    "http": 200,
+    "produktname_h1": "for you schwarzer knoblauch plus",
+    "ean": [
+     "4260538095572"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-selen-fluessig.html",
+    "abgerufen": "2026-10-07T19:22:34Z",
+    "http": 200,
+    "produktname_h1": "for you selen",
+    "ean": [
+     "4260538092212"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-smoothie-bowl-erdbeere.html",
+    "abgerufen": "2026-10-07T19:22:34Z",
+    "http": 200,
+    "produktname_h1": "for you synbio smoothie bowl - Erdbeere",
+    "ean": [
+     "4260538092915"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-spirulina.html",
+    "abgerufen": "2026-10-07T19:22:34Z",
+    "http": 200,
+    "produktname_h1": "for you spirulina",
+    "ean": [
+     "4260538092748"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-spurenelemente-komplex.html",
+    "abgerufen": "2026-10-07T19:22:34Z",
+    "http": 200,
+    "produktname_h1": "for you spurenelemente",
+    "ean": [
+     "4260538091185"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   }
+  ]
  }
 }
