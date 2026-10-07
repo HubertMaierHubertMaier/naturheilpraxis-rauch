@@ -50,3 +50,11 @@ Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entschei
 - Gesamtwirkung von Überschriften, Bildern, SEO/Metadaten und Nachbarsätzen prüfen.
 - Medizinische Wirkung nur mit tragfähiger Beleggrundlage; keine Heilgarantie, keine Abwertung von Naturheilkunde oder anderer Medizin. Zahlen ohne Quelle (z. B. OP-Prozentangaben) weder bestätigen noch werblich nutzen.
 - Bereits angenommene Punkte nie rückwirkend umschreiben – nur zusätzliche getrennte Vorschläge.
+
+## Geltungsbereich und Erstellungsvorgabe (verbindlich)
+Gilt für ALLE bestehenden, noch nicht bearbeiteten UND künftig neu geschriebenen HTMLs/Infothekartikel – von Anfang an, nicht erst bei Korrektur.
+- Primäre Ziele: überzeugende Praxiswerbung, verständliche Information, SEO/Google-Optimierung innerhalb der rechtlichen Grenzen (§ 3 HWG, § 5 UWG). Keine abwertende/abschreckende Standardsprache.
+- Von Beginn an berücksichtigen: zutreffende Praxisangebote, nachvollziehbarer Ablauf, passende Kontaktmöglichkeiten, Suchintention, gute Überschriftenhierarchie, einzigartige passende Seitentitel und Meta-Beschreibungen, Bilder/Alt-Texte, interne Links, mobile Lesbarkeit.
+- Indexierung/Canonical/Sitemap nur für freigegebene öffentliche Inhalte; geschützte Inhalte bleiben geschützt.
+- Keine falschen Wirk-/Erfolgsbehauptungen, keine Ranking- oder Rechtssicherheitsgarantien.
+- Bestehende Artikel: keine automatische Massenbearbeitung, keine Umnummerierung, keine Veröffentlichung; Peter entscheidet punktweise im bestätigten Vergleich.
