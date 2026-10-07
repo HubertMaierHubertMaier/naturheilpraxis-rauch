@@ -349,7 +349,8 @@ export default function InfothekHtmlVergleich() {
     const textOf = (side: Side) => {
       const t = c && !c.headOnly ? docOf(side)?.querySelector(`[data-change="${c.id}"]`) : null;
       if (!t) return undefined;
-      if (t instanceof HTMLImageElement) return t.alt;
+      // iframe elements belong to another realm: instanceof HTMLImageElement is always false there.
+      if (t.tagName === "IMG") return t.getAttribute("alt") || undefined;
       const clone = t.cloneNode(true) as Element;
       clone.querySelectorAll(".cmp-badge, .cmp-why").forEach((x) => x.remove());
       const txt = (clone.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -521,8 +522,8 @@ export default function InfothekHtmlVergleich() {
                     )}
                     {!c.headOnly && (c.orig || c.draft) && (
                       <dl className="mb-2 space-y-1">
-                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.orig ?? c.orig ?? "–"}“</dd></div>
-                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.draft ?? c.draft ?? "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.orig || c.orig || "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.draft || c.draft || "–"}“</dd></div>
                       </dl>
                     )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
