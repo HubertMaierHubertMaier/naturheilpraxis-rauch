@@ -181,6 +181,18 @@ export default function InfothekHtmlVergleich() {
       }
     } catch { /* ignore broken local state */ }
   }, [storageKey]);
+  // Start selection: last explicitly chosen change (if still valid), otherwise first visible text change.
+  const activeKey = storageKey ? `${storageKey}:active` : null;
+  useEffect(() => {
+    if (!activeKey) return;
+    const stored = Number(localStorage.getItem(activeKey));
+    const valid = CHANGES.some((c) => c.id === stored);
+    setActive(valid ? stored : CHANGES.find((c) => !c.headOnly)?.id);
+  }, [activeKey]);
+  const chooseActive = (id: number) => {
+    setActive(id);
+    if (activeKey) localStorage.setItem(activeKey, String(id));
+  };
   const toggleAccepted = (id: number, value: boolean) => {
     setAccepted((prev) => {
       const next = new Set(prev);
@@ -333,7 +345,7 @@ export default function InfothekHtmlVergleich() {
       const handler = () => {
         if (ignoreScroll.current[side]) { ignoreScroll.current[side] = false; return; }
         if (syncedRef.current) syncFrom(side);
-        if (side === "draft") updateCard(true);
+        if (side === "draft") updateCard(false);
       };
       win.addEventListener("scroll", handler, { passive: true });
       cleanups.push(() => win.removeEventListener("scroll", handler));
@@ -370,7 +382,7 @@ export default function InfothekHtmlVergleich() {
   const step = (dir: 1 | -1) => {
     const idx = jumpable.findIndex((c) => c.id === active);
     const next = idx < 0 ? (dir === 1 ? 0 : jumpable.length - 1) : (idx + dir + jumpable.length) % jumpable.length;
-    setActive(jumpable[next].id);
+    chooseActive(jumpable[next].id);
   };
 
   if (loading || (user && !roleChecked)) return <div className="container py-12"><Skeleton className="h-96 w-full" /></div>;
@@ -422,7 +434,7 @@ export default function InfothekHtmlVergleich() {
             <ol className="max-h-56 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
               {CHANGES.map((c) => (
                 <li key={c.id} className={`flex items-start gap-2 rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
-                  <button type="button" onClick={() => setActive(c.id)} className="min-w-0 flex-1 text-left hover:underline">
+                  <button type="button" onClick={() => chooseActive(c.id)} className="min-w-0 flex-1 text-left hover:underline">
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
@@ -452,7 +464,7 @@ export default function InfothekHtmlVergleich() {
                 return (
                   <div className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 transition-[top] duration-150" style={wide ? { top } : undefined}>
                     <div className="mb-1 flex items-center justify-between gap-2">
-                      <button type="button" className="font-semibold hover:underline" onClick={() => setActive(c.id)}>
+                      <button type="button" className="font-semibold hover:underline" onClick={() => chooseActive(c.id)}>
                         Ä{c.id}{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel" : " · Meta-Beschreibung") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
