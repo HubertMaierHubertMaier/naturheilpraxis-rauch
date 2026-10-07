@@ -9,7 +9,7 @@ describe("Ä11 Umfang", () => {
     expect(failed).toEqual([]);
     expect(html).not.toContain("völlig ineinander");
     expect(html).not.toMatch(/<p>umwandelbar<\/p>/);
-    expect(html).toContain("Frequenz-Denkmodelle knüpfen gedanklich");
+    expect(html).toContain("wie eng Energie und Materie zusammenhängen");
     expect(html.match(/Konsequenz: Einsteins/g)?.length).toBe(1);
   });
 });

@@ -1,0 +1,2 @@
+- Infothek comparison decisions (accepted/kept) live only in browser localStorage per user; a downloadable progress report is the backup path — why: no DB migration allowed for this tool.
+- Editorial status of all Infothek HTMLs is a repo file generated from website-content/infothek/manifest.json — why: durable, reviewable, separate from publication status.

@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, CHANGE_TOPICS, type ComparisonChange } from "@/lib/infothekComparisonChanges";
+import { EDITORIAL_STATUS } from "@/lib/infothekEditorialStatus";
+import { buildProgressReport, EXTRA_CHECKS, isOptionalAlternative, parseDecisions, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
 const ROUTE = "/krankheit-ist-messbar.html";
@@ -205,17 +207,18 @@ export default function InfothekHtmlVergleich() {
   const [origRaw, setOrigRaw] = useState<string>();
   const storageKey = user ? `infothek-vergleich:krankheit-ist-messbar:v1:${user.id}` : null;
   const [accepted, setAccepted] = useState<Set<number>>(new Set());
+  const [kept, setKept] = useState<Set<number>>(new Set());
+  const [openListOpen, setOpenListOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<string>();
   const [rightMode, setRightMode] = useState<"proposal" | "working">("proposal");
   useEffect(() => {
     if (!storageKey) return;
     try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { accepted?: number[]; savedAt?: string };
-        setAccepted(new Set((parsed.accepted ?? []).filter((id) => CHANGES.some((c) => c.id === id))));
-        setSavedAt(parsed.savedAt);
-      }
+      const d = parseDecisions(localStorage.getItem(storageKey), CHANGES.map((c) => c.id));
+      setAccepted(d.accepted);
+      setKept(d.kept);
+      setSavedAt(d.savedAt);
     } catch { /* ignore broken local state */ }
   }, [storageKey]);
   // Start selection: last explicitly chosen change (if still valid), otherwise first visible text change.
@@ -232,26 +235,41 @@ export default function InfothekHtmlVergleich() {
   };
   const [saveError, setSaveError] = useState<string>();
   /** Persists first; only a successful save updates the state (and may advance). */
-  const toggleAccepted = (id: number, value: boolean): boolean => {
-    const next = new Set(accepted);
-    if (value) next.add(id); else next.delete(id);
+  const persist = (id: number, next: Set<number>, nextKept: Set<number>): boolean => {
     const stamp = new Date().toISOString();
     try {
       if (!storageKey) throw new Error("no user");
-      localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
+      localStorage.setItem(storageKey, serializeDecisions({ accepted: next, kept: nextKept, savedAt: stamp }));
     } catch {
       setSaveError(`Ä${id} konnte nicht gespeichert werden – Auswahl bleibt hier.`);
       return false;
     }
     setSaveError(undefined);
     setAccepted(next);
+    setKept(nextKept);
     setSavedAt(stamp);
+    return true;
+  };
+  const toggleAccepted = (id: number, value: boolean): boolean => {
+    const next = new Set(accepted), nextKept = new Set(kept);
+    if (value) { next.add(id); nextKept.delete(id); } else next.delete(id);
+    return persist(id, next, nextKept);
+  };
+  /** Explicit decision "keep original" – separate from the accepted counter. */
+  const toggleKept = (id: number, value: boolean): boolean => {
+    const next = new Set(accepted), nextKept = new Set(kept);
+    if (value) { nextKept.add(id); next.delete(id); } else nextKept.delete(id);
+    if (!persist(id, next, nextKept)) return false;
+    if (value) {
+      const t = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...nextKept]), id);
+      if (t !== undefined) chooseActive(t);
+    }
     return true;
   };
   const acceptAndAdvance = (id: number) => {
     const next = new Set(accepted).add(id);
     if (!toggleAccepted(id, true)) return;
-    const target = nextOpenChange(CHANGES.map((c) => c.id), next, id);
+    const target = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...kept]), id);
     if (target !== undefined) chooseActive(target);
   };
   const working = useMemo(
@@ -264,6 +282,18 @@ export default function InfothekHtmlVergleich() {
     [rightMode, working, accepted],
   );
   const draft = workingPreview ?? proposal;
+  const decisions = { accepted, kept, savedAt };
+  const openItems = undecided(CHANGES, decisions);
+  const downloadReport = () => {
+    if (!storageKey) return;
+    const md = buildProgressReport({ changes: CHANGES, topics: CHANGE_TOPICS, d: decisions, storageKey, sectionOf: original?.sectionOf });
+    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `krankheit-ist-messbar.fortschritt-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const downloadWorking = () => {
     if (!working) return;
     const url = URL.createObjectURL(new Blob([working.html], { type: "text/html;charset=utf-8" }));
@@ -470,14 +500,15 @@ export default function InfothekHtmlVergleich() {
   useEffect(() => {
     docOf("draft")?.querySelectorAll<HTMLElement>("[data-status-for]").forEach((el) => {
       const on = accepted.has(Number(el.dataset.statusFor));
-      el.textContent = on ? "Übernommen" : "Offen";
+      const k = kept.has(Number(el.dataset.statusFor));
+      el.textContent = on ? "Übernommen" : k ? "Original beibehalten" : "Offen";
       el.toggleAttribute("data-accepted", on);
       const box = el.closest(".cmp-why");
       const acc = box?.querySelector<HTMLElement>("[data-accept]"), undo = box?.querySelector<HTMLElement>("[data-undo]");
       if (acc) acc.hidden = on;
       if (undo) undo.hidden = !on;
     });
-  }, [accepted, loaded]);
+  }, [accepted, kept, loaded]);
 
   followRef.current = (id: number) => { noScrollNext.current = true; chooseActive(id); };
   acceptRef.current = acceptAndAdvance;
@@ -512,6 +543,8 @@ export default function InfothekHtmlVergleich() {
           </span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">{accepted.size} von {CHANGES.length} übernommen</span>
+          {kept.size > 0 && <span className="rounded-full bg-muted px-2 py-0.5">{kept.size} Original beibehalten</span>}
+          <Button size="sm" variant={openListOpen ? "default" : "outline"} className="h-7 px-2 text-xs" onClick={() => setOpenListOpen((o) => !o)} aria-expanded={openListOpen}>Noch zu entscheiden ({openItems.length})</Button>
           <label className="flex items-center gap-1.5 font-medium">
             <Switch checked={synced} onCheckedChange={(v) => { setSynced(v); if (v) syncFrom("orig"); }} aria-label="Synchron scrollen" />Synchron
           </label>
@@ -525,13 +558,53 @@ export default function InfothekHtmlVergleich() {
               {listOpen ? "Liste einklappen" : "Alle Änderungen"}
             </Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setNamingOpen((o) => !o)} aria-expanded={namingOpen}>HTML-Benennung</Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setStatusOpen((o) => !o)} aria-expanded={statusOpen}>Stand aller HTMLs</Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={downloadReport} disabled={!storageKey}>Fortschrittsbericht</Button>
           </span>
           {saveError && <span role="alert" className="w-full font-semibold text-destructive">{saveError}</span>}
-          {accepted.size === CHANGES.length && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Änderungen übernommen – Arbeitsfassung vollständig. Nicht veröffentlicht, keine Freigabe; Download über „HTML herunterladen“.</span>}
+          {openItems.length === 0 && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Vorschläge entschieden ({accepted.size} übernommen, {kept.size} Original beibehalten). Noch nicht abgeschlossen: Restprüfung „Zusätzlich zu prüfen“. Nicht veröffentlicht, keine Freigabe.</span>}
           {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
         {namingOpen && <NamingPanel />}
+        {openListOpen && (
+          <div className="mb-2 rounded-md border border-border bg-card p-2 text-xs">
+            <p className="mb-1 text-muted-foreground">Noch offen heißt nicht abgelehnt. Klick springt zur Stelle links/rechts und zur Randnotiz.</p>
+            <ul className="max-h-36 space-y-0.5 overflow-y-auto">
+              {openItems.map((c) => (
+                <li key={c.id}>
+                  <button type="button" className="text-left hover:underline" onClick={() => chooseActive(c.id)}>
+                    <span className="font-semibold">Vorschlag {c.id}</span> · {CHANGE_TOPICS[c.id]}
+                    {c.headOnly ? " · im Artikel nicht sichtbar" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                    {isOptionalAlternative(c, decisions) && <span className="ml-1 rounded bg-muted px-1">optionale Alternative zu Vorschlag {c.supersedes}</span>}
+                  </button>
+                </li>
+              ))}
+              {openItems.length === 0 && <li>Alle Vorschläge entschieden.</li>}
+            </ul>
+            <p className="mt-2 font-semibold">Zusätzlich zu prüfen (nicht durch die Vorschläge abgedeckt)</p>
+            <ul className="list-disc pl-5">{EXTRA_CHECKS.map((x) => <li key={x}>{x}</li>)}</ul>
+          </div>
+        )}
+        {statusOpen && (
+          <div className="mb-2 overflow-x-auto rounded-md border border-border bg-card p-2 text-xs">
+            <p className="mb-1 text-muted-foreground">Redaktioneller Bearbeitungsstand (Quelle: Infothek-Verzeichnis im Projekt). Veröffentlichung wird separat entschieden. Ohne Nachweis gilt eine Seite als nicht begonnen.</p>
+            <table className="w-full border-collapse">
+              <thead><tr className="text-left"><th className="p-1">Datei</th><th className="p-1">Titel</th><th className="p-1">Bearbeitung</th><th className="p-1">Sichtbarkeit / Prüfung</th><th className="p-1">Offen</th></tr></thead>
+              <tbody>
+                {EDITORIAL_STATUS.map((e) => (
+                  <tr key={e.file} className="border-t border-border align-top">
+                    <td className="p-1">{e.comparePath ? <a className="underline" href={e.comparePath}>{e.file}</a> : e.file}</td>
+                    <td className="p-1">{e.title}</td>
+                    <td className="p-1 font-semibold">{e.state}</td>
+                    <td className="p-1">{e.visibility} · {e.reviewStatus}{e.indexable ? " · indexierbar" : " · noindex"}</td>
+                    <td className="p-1">{e.comparePath ? `${openItems.length} Vorschläge offen; ${e.openTopics.join("; ")}` : "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         {listOpen && (
           <div className="mb-2 rounded-md border border-border bg-card p-2">
             <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -548,7 +621,7 @@ export default function InfothekHtmlVergleich() {
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
-                  <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
+                  <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />
                 </li>
               ))}
             </ol>
@@ -581,6 +654,7 @@ export default function InfothekHtmlVergleich() {
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
                     </div>
+                    {c.supersedes !== undefined && <p className="mb-1 rounded bg-muted px-1.5 py-1">Optionale Alternative zu Vorschlag {c.supersedes}{accepted.has(c.supersedes) ? " (bereits übernommen)" : ""} – kein zusätzliches Problem. Bei Übernahme ersetzt sie Vorschlag {c.supersedes} in der Arbeitsfassung.</p>}
                     {c.headOnly && (
                       <div className="mb-2 space-y-1">
                         <p className="rounded bg-muted px-1.5 py-1 font-medium">
@@ -602,7 +676,7 @@ export default function InfothekHtmlVergleich() {
                       </dl>
                     )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
-                    <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
+                    <AcceptControl on={accepted.has(c.id)} kept={kept.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} keep={(id, v) => toggleKept(id, v)} />
                   </div>
                 );
               })()}
@@ -614,7 +688,19 @@ export default function InfothekHtmlVergleich() {
   );
 }
 
-function AcceptControl({ on, id, accept, undo }: { on: boolean; id: number; accept: (id: number) => void; undo: (id: number) => void }) {
+function AcceptControl({ on, kept, id, accept, undo, keep }: { on: boolean; kept: boolean; id: number; accept: (id: number) => void; undo: (id: number) => void; keep: (id: number, v: boolean) => void }) {
+  if (kept) return (
+    <span className="flex items-center gap-1">
+      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">Original beibehalten</span>
+      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => keep(id, false)}>Rückgängig</Button>
+    </span>
+  );
+  if (!on) return (
+    <span className="flex flex-wrap items-center gap-1">
+      <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => accept(id)} aria-label={`Nur Änderung Ä${id} übernehmen`}>Nur Änderung Ä{id} übernehmen</Button>
+      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => keep(id, true)}>Original beibehalten</Button>
+    </span>
+  );
   return on ? (
     <span className="flex items-center gap-1">
       <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Übernommen</span>
