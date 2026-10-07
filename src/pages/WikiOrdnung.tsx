@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
+import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
 import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
@@ -56,10 +57,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
   return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | "klinghardt" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", klinghardt: "Klinghardt-Navigator", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -119,6 +120,12 @@ export default function WikiOrdnung() {
     if (!isAdmin) return;
     loadModel().then(setData).catch((e) => setErr(wikiErrorText(e instanceof Error ? e.message : String(e))));
   }, [isAdmin]);
+  useEffect(() => {
+    if (!isAdmin || view !== "klinghardt" || kCards !== null) return;
+    setKCards("loading");
+    fetchAllPages((f, t) => db.from("kb_source_revisions").select("id, revision_no, title, key:metadata->candidate_snapshot->>candidate_key, locator:metadata->candidate_snapshot->>source_locator, tags:metadata->candidate_snapshot->proposed_data->tags, topics:metadata->candidate_snapshot->proposed_data->therapeutic_topics, content:metadata->candidate_snapshot->proposed_data->>content").eq("publisher", KLINGHARDT_PUBLISHER).order("id", { ascending: true }).range(f, t))
+      .then((r) => { if (r.error) return setKCards("error"); const cur = new Set([...(m?.sources.values() ?? [])].map((s) => s.id)); setKCards((r.data as never[]).map(toCard).filter((c) => cur.size === 0 || cur.has(c.revisionId)).sort((a, b) => a.title.localeCompare(b.title, "de"))); });
+  }, [isAdmin, view, kCards, m]);
 
   const m = data?.model;
   const actorsSorted = useMemo(() => {
