@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -54,10 +54,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
   return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -119,7 +119,7 @@ export default function WikiOrdnung() {
     <nav className="mb-4 flex flex-wrap items-center gap-1 text-sm" aria-label="Rückweg">
       <Link to="/wikidatenbank" className="underline">Wikidatenbank</Link><span>›</span>
       <button className="underline" onClick={() => setParams(new URLSearchParams())}>Ordnung</button>
-      {view !== "start" && <><span>›</span><button className="underline" onClick={() => setParams(new URLSearchParams({ v: view }))}>{VIEW_LABEL[view]}</button></>}
+      {view !== "start" && <><span>›</span><button className="underline" onClick={() => setParams(new URLSearchParams(view === "topic" ? { v: view, t: params.get("t") ?? "" } : { v: view }))}>{view === "topic" ? TOPICS.find((x) => x.key === params.get("t"))?.label ?? VIEW_LABEL[view] : VIEW_LABEL[view]}</button></>}
       {id && <><span>›</span><span className="font-semibold">Detail</span></>}
     </nav>
   );
@@ -154,12 +154,21 @@ export default function WikiOrdnung() {
       ["unassigned", VIEW_LABEL.unassigned, m.unassignedArticleIds.length + m.unassignedEntityIds.length],
     ];
     const c = data!.counts;
+    const topicTiles = TOPICS.map((t) => { const h = topicHits(m, t); return { t, n: h.folderArticleIds.length + h.titleArticleIds.length + h.sourceIds.length + h.entityIds.length }; });
     body = (
       <>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {tiles.map(([v, label, n]) => (
             <button key={v} onClick={() => set({ v })} className="rounded-lg border-2 border-primary/30 bg-card p-4 text-left hover:border-primary">
               <p className="text-lg font-semibold">{label}</p><p className="text-sm text-muted-foreground">{n} Einträge</p>
+            </button>
+          ))}
+        </div>
+        <p className="mt-5 mb-2 font-semibold">Themen, Personen, Plattformen</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {topicTiles.map(({ t, n }) => (
+            <button key={t.key} onClick={() => set({ v: "topic", t: t.key })} className="rounded-lg border-2 border-primary/30 bg-card p-4 text-left hover:border-primary">
+              <p className="text-lg font-semibold">{t.label}</p><p className="text-sm text-muted-foreground">{t.role} · {n} Einträge</p>
             </button>
           ))}
         </div>
@@ -236,6 +245,24 @@ export default function WikiOrdnung() {
         <ul className="space-y-1 text-sm">{pg.items.map((x) => x.k === "e" ? <li key={x.id}>Begriff: {entButton(x.id)}</li> : <li key={x.id}>Artikel: {x.t}</li>)}</ul>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
+    );
+  } else if (view === "topic") {
+    const t = TOPICS.find((x) => x.key === params.get("t"));
+    const h = t ? topicHits(m, t) : undefined;
+    const filt = (ids: string[]) => ids.filter((x) => !q || matchesAll(m.articles.get(x)?.title ?? "", q));
+    body = !t || !h ? <p>Nicht gefunden.</p> : (
+      <Card><CardContent className="space-y-3 p-4 text-sm">
+        <h2 className="text-xl font-semibold">{t.label}</h2>
+        <Badge variant="outline">Rolle/Kategorie: {t.role}</Badge>
+        {t.note && <p className="text-muted-foreground">{t.note}</p>}
+        <p className="text-xs text-muted-foreground">Quellen- und Autorenmaterial ist keine bestätigte Wirksamkeit. Alte Wiki-Inhalte bleiben unverändert.</p>
+        <Input className="max-w-xs" placeholder="Artikel suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        {h.entityIds.length > 0 && <div><p className="font-semibold">Begriffe/Produkte ({h.entityIds.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{h.entityIds.map(entButton)}</div><p className="text-xs text-muted-foreground">Symptome/Erkrankungen/Pathogene stehen jeweils im Begriffseintrag (Importverknüpfung).</p></div>}
+        {h.sourceIds.length > 0 && <div><p className="font-semibold">Interne Quellen (Herausgeber/Autor) ({h.sourceIds.length}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{h.sourceIds.map((x) => srcLine(x))}</ul></div>}
+        <div><p className="font-semibold">Artikel im Ordner ({filt(h.folderArticleIds).length}) <LinkBadge kind="field" /></p><ul className="space-y-1">{filt(h.folderArticleIds).slice(0, 200).map((x) => artLine(x, "field"))}</ul>{filt(h.folderArticleIds).length > 200 && <p className="text-muted-foreground">Erste 200 von {filt(h.folderArticleIds).length} – Suche eingrenzen.</p>}</div>
+        {h.titleArticleIds.length > 0 && <div><p className="font-semibold">Name nur im Titel ({filt(h.titleArticleIds).length})</p><ul className="space-y-1">{filt(h.titleArticleIds).slice(0, 200).map((x) => artLine(x, "text"))}</ul></div>}
+        {h.folderArticleIds.length + h.titleArticleIds.length + h.sourceIds.length + h.entityIds.length === 0 && <p className="font-semibold">Im Bestand nichts gefunden.</p>}
+      </CardContent></Card>
     );
   } else if ((view === "mannayan" || view === "chipcards") && !id) {
     const isM = view === "mannayan";

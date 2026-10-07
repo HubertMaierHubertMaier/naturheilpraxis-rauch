@@ -267,3 +267,29 @@ export function productsWithSubstance(m: WikiModel, substanceId: string) {
   return [...m.entities.values()].filter((e) => e.stoffart === "Produkt").flatMap((e) =>
     viaRel.has(e.id) ? [{ product: e, kind: "import" as "import" | "text" }] : n.length >= 3 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const }] : []);
 }
+
+
+/** Peter's direct topic tiles. Role/category stays explicit; matching only on stored fields (folder, source publisher/author) = "field", titles = "text". */
+export type TopicRole = "Person/Autor" | "Plattform/Herausgeber" | "Therapieansatz" | "Diagnostik" | "Produktlinie";
+export interface TopicDef { key: string; label: string; role: TopicRole; re: RegExp; note?: string }
+export const TOPICS: TopicDef[] = [
+  { key: "buhner", label: "Buhner", role: "Person/Autor", re: /\bbuhner\b/i },
+  { key: "homotoxikologie", label: "Homotoxikologie", role: "Therapieansatz", re: /homotox/i },
+  { key: "strunz", label: "Dr. Strunz", role: "Person/Autor", re: /\bstrunz\b/i },
+  { key: "biodiagnostik", label: "Biodiagnostik", role: "Diagnostik", re: /bio-?diagnost/i, note: "Im Bestand geschrieben als „Bio-Diagnostik“ (Herausgeber einer Quelle); Suchbegriff „Biodiagnostik“ als Alias." },
+  { key: "sanum", label: "Sanum-Therapie", role: "Therapieansatz", re: /\bsanum/i },
+  { key: "schuessler", label: "Schüssler-Salze", role: "Therapieansatz", re: /sch(ü|ue|u)(ß|ss|s)ler/i, note: "Im Bestand als Ordner „Schüsslersalze“." },
+  { key: "auerswald", label: "Martin Auerswald", role: "Person/Autor", re: /auerswald/i, note: "Eigener Ordner „Martin Auerswald“. Quellen nennen ihn als Autor („creator“) auf schnelleinfachgesund.de – er ist nicht mit der Plattform gleichgesetzt." },
+  { key: "sel", label: "SchnellEinfachGesund", role: "Plattform/Herausgeber", re: /schnell ?einfach ?gesund|einfach ?schnell ?gesund/i, note: "Schreibweise laut Quelle: „SchnellEinfachGesund“ (schnelleinfachgesund.de); „Einfach Schnell Gesund“ als Suchalias. Eigener Urheber, nicht automatisch Martin Auerswald." },
+  { key: "vitaplace", label: "Vitaplace", role: "Produktlinie", re: /vitaplace|viatplace/i, note: "Im Bestand nur „Vitaplace“ (Ordner, Produkte). Eine Apothekenrolle ist in keiner Quelle belegt – deshalb nicht unter Apotheken. „Viatplace“ als Suchalias." },
+];
+export interface TopicHits { folderArticleIds: string[]; titleArticleIds: string[]; sourceIds: string[]; entityIds: string[] }
+export function topicHits(m: WikiModel, t: TopicDef): TopicHits {
+  const folder: string[] = [], title: string[] = [];
+  for (const a of m.articles.values()) {
+    if (t.re.test(a.category)) folder.push(a.id); else if (t.re.test(a.title)) title.push(a.id);
+  }
+  const sourceIds = [...m.sources.values()].filter((s) => t.re.test(`${s.publisher ?? ""} ${(s.authors ?? []).join(" ")}`)).map((s) => s.id);
+  const entityIds = [...m.entities.values()].filter((e) => t.re.test(`${e.name} ${e.manufacturerField ?? ""}`)).map((e) => e.id);
+  return { folderArticleIds: folder, titleArticleIds: title, sourceIds, entityIds };
+}
