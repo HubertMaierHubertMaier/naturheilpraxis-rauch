@@ -741,6 +741,7 @@ export default function WikiDatenbank() {
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <BookOpen className="h-5 w-5 text-primary" />
                   Vollstaendigen Wiki-Bestand durchsuchen
+                  <Link to="/wikidatenbank/ordnung" className="ml-auto text-sm font-normal text-primary underline">Geordnete Übersicht (Firmen & Personen, Mittel, Pathogene …)</Link>
                 </CardTitle>
               </CardHeader>
               <CardContent>
