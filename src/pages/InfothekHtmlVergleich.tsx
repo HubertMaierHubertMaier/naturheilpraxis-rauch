@@ -500,14 +500,15 @@ export default function InfothekHtmlVergleich() {
   useEffect(() => {
     docOf("draft")?.querySelectorAll<HTMLElement>("[data-status-for]").forEach((el) => {
       const on = accepted.has(Number(el.dataset.statusFor));
-      el.textContent = on ? "Übernommen" : "Offen";
+      const k = kept.has(Number(el.dataset.statusFor));
+      el.textContent = on ? "Übernommen" : k ? "Original beibehalten" : "Offen";
       el.toggleAttribute("data-accepted", on);
       const box = el.closest(".cmp-why");
       const acc = box?.querySelector<HTMLElement>("[data-accept]"), undo = box?.querySelector<HTMLElement>("[data-undo]");
       if (acc) acc.hidden = on;
       if (undo) undo.hidden = !on;
     });
-  }, [accepted, loaded]);
+  }, [accepted, kept, loaded]);
 
   followRef.current = (id: number) => { noScrollNext.current = true; chooseActive(id); };
   acceptRef.current = acceptAndAdvance;
@@ -653,6 +654,7 @@ export default function InfothekHtmlVergleich() {
                       </button>
                       <span className="text-muted-foreground">{c.reason.join(", ")}</span>
                     </div>
+                    {c.supersedes !== undefined && <p className="mb-1 rounded bg-muted px-1.5 py-1">Optionale Alternative zu Vorschlag {c.supersedes}{accepted.has(c.supersedes) ? " (bereits übernommen)" : ""} – kein zusätzliches Problem. Bei Übernahme ersetzt sie Vorschlag {c.supersedes} in der Arbeitsfassung.</p>}
                     {c.headOnly && (
                       <div className="mb-2 space-y-1">
                         <p className="rounded bg-muted px-1.5 py-1 font-medium">
