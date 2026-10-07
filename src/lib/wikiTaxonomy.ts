@@ -281,7 +281,7 @@ export const TOPICS: TopicDef[] = [
   { key: "schuessler", label: "Schüssler-Salze", role: "Therapieansatz", re: /sch(ü|ue|u)(ß|ss|s)ler/i, note: "Im Bestand als Ordner „Schüsslersalze“." },
   { key: "auerswald", label: "Martin Auerswald", role: "Person/Autor", re: /auerswald/i, note: "Eigener Ordner „Martin Auerswald“. Quellen nennen ihn als Autor („creator“) auf schnelleinfachgesund.de – er ist nicht mit der Plattform gleichgesetzt." },
   { key: "sel", label: "SchnellEinfachGesund", role: "Plattform/Herausgeber", re: /schnell ?einfach ?gesund|einfach ?schnell ?gesund/i, note: "Schreibweise laut Quelle: „SchnellEinfachGesund“ (schnelleinfachgesund.de); „Einfach Schnell Gesund“ als Suchalias. Eigener Urheber, nicht automatisch Martin Auerswald." },
-  { key: "vitaplace", label: "Vitaplace", role: "Produktlinie", re: /vitaplace|viatplace/i, note: "Im Bestand nur „Vitaplace“ (Ordner, Produkte). Eine Apothekenrolle ist in keiner Quelle belegt – deshalb nicht unter Apotheken. „Viatplace“ als Suchalias." },
+  { key: "vitaplace", label: "Vitaplace", role: "Produktlinie", re: /vitaplace|viatplace/i, note: "Im Bestand „Vitaplace“ (Ordner, Produkte). Zusätzlich Apotheke: extern geprüfte Betreiberzuordnung vom 07.10.2026 (siehe Apotheken). „Viatplace“ als Suchalias." },
 ];
 export interface TopicHits { folderArticleIds: string[]; titleArticleIds: string[]; sourceIds: string[]; entityIds: string[] }
 export function topicHits(m: WikiModel, t: TopicDef): TopicHits {
@@ -293,3 +293,16 @@ export function topicHits(m: WikiModel, t: TopicDef): TopicHits {
   const entityIds = [...m.entities.values()].filter((e) => t.re.test(`${e.name} ${e.manufacturerField ?? ""}`)).map((e) => e.id);
   return { folderArticleIds: folder, titleArticleIds: title, sourceIds, entityIds };
 }
+
+/** Pharmacy roles verified OUTSIDE the database (not a stored DB role). Reversible UI assignment; links to articles stay data-based (topic folder). */
+export const EXTERNAL_PHARMACIES: Array<{ name: string; topicKey: string; aliases: string[]; checkedOn: string; note: string; sources: Array<{ label: string; url: string }> }> = [
+  {
+    name: "Vitaplace (VITAPLACE Versandapotheke)", topicKey: "vitaplace", aliases: ["Vitaplace", "Viatplace"], checkedOn: "07.10.2026",
+    note: "Versandapotheke, Terofalstraße 4, München; im BfArM-Versandhandelsregister am selben Standort wie die Blumenau-Apotheke. Extern geprüfte Betreiberzuordnung – keine in der Datenbank gespeicherte Rolle.",
+    sources: [
+      { label: "vitaplace.de", url: "https://www.vitaplace.de/" },
+      { label: "BfArM-Versandhandelsregister", url: "https://versandhandel.dimdi.de/websearch/servlet/Gate?accessid=dimdi_var&term=baa686aeb5b5701de3a453313ff7e7fd" },
+      { label: "Impressum Blumenau-Apotheke", url: "https://www.blumenau-apotheke.de/impressum/" },
+    ],
+  },
+];
