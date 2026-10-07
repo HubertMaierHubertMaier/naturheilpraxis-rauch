@@ -137,6 +137,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-btn { font: 700 13px/1.3 Arial, sans-serif !important; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid #15803d; background: #15803d; color: #fff; -webkit-text-fill-color: #fff; }
     .cmp-btn.cmp-undo { background: #fff; color: #334155; -webkit-text-fill-color: #334155; border-color: #64748b; }
     .cmp-btn[hidden] { display: none !important; }
+    .cmp-why, .cmp-actions, .cmp-btn { pointer-events: auto !important; }
     html body .cmp-mark.cmp-mark.cmp-mark, html body .cmp-mark.cmp-mark *:not(.cmp-badge):not(.cmp-status), html body .reveal .slides section .cmp-mark, html body .reveal .slides section .cmp-mark *:not(.cmp-badge) { color: #111827 !important; -webkit-text-fill-color: #111827 !important; text-shadow: none !important; }
     html body .cmp-badge.cmp-badge { color: #fff !important; -webkit-text-fill-color: #fff !important; }
     html body .cmp-status.cmp-status { -webkit-text-fill-color: currentColor !important; }
