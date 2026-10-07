@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 describe("Alle Vorschläge sind in beiden HTMLs auffindbar", () => {
   for (const slug of ["allergiebehandlung", "kieferostitis"]) {
     it(slug, () => {

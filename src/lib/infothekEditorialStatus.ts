@@ -27,8 +27,10 @@ export const EDITORIAL_STATUS: EditorialEntry[] = [
 ];
 
 /** Status derived from the comparison registry: a configured comparison is at least "Vergleich vorbereitet"; proposal count comes from the registry, never hardcoded. */
-export function editorialWithRegistry(configs: { slug: string; changes: unknown[]; base: { kind: string; route?: string } }[]): EditorialEntry[] {
+export function editorialWithRegistry(configs: { slug: string; changes: unknown[]; base: { kind: string; route?: string } }[], offline: { slug: string }[] = []): EditorialEntry[] {
   return EDITORIAL_STATUS.map((e) => {
+    const o = offline.find((x) => e.file === `${x.slug}.html`);
+    if (o) return { ...e, state: e.state === "nicht begonnen" ? "Vergleich vorbereitet (offline)" : e.state, openTopics: ["Vergleich offline vorbereitet (geschützte Seite)", ...e.openTopics] } as EditorialEntry;
     const c = configs.find((x) => (x.base.kind === "delivered" && x.base.route === `/${e.file}`) || (e.comparePath?.endsWith(`/${x.slug}`)) || e.file === `${x.slug}.html`);
     if (!c) return e;
     return { ...e, comparePath: `/admin/infothek-vergleich/${c.slug}`, state: e.state === "nicht begonnen" ? "Vergleich vorbereitet" : e.state, openTopics: [`${c.changes.length} Vorschläge im Vergleich`, ...e.openTopics.filter((t) => !/Vorschläge vorbereitet/.test(t))] };

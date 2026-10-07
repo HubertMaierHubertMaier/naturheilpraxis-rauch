@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 
 const origOf = (c: (typeof COMPARISON_CONFIGS)[number]) => c.base.kind === "baseDraft" ? c.base.html : readFileSync(`website-content/infothek/${c.slug}.html`, "utf8");
 const cell = (html: string) => new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";

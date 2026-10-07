@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildProgressReport, EXTRA_CHECKS } from "@/lib/infothekDecisions";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 const d = { accepted: new Set<number>(), kept: new Set<number>(), savedAt: null } as never;
 describe("Fortschrittsbericht artikelbezogen", () => {
   it("Allergie/Kieferostitis ohne Frequenztherapie-Titel und -Restnotizen", () => {

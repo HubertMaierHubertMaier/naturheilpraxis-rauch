@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { progressProjection } from "@/lib/infothekDecisions";
 import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 const C = [{ id: 1, note: "a", why: "", reason: [] }, { id: 2, note: "b", why: "", reason: [] }, { id: 3, supersedes: 1, note: "alt", why: "", reason: [] }, { id: 4, note: "c", why: "", reason: [] }] as ComparisonChange[];
 const D = (a: number[], k: number[] = []) => ({ accepted: new Set(a), kept: new Set(k), savedAt: null }) as never;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 const norm = (h: string) => (new DOMParser().parseFromString(h, "text/html").body.textContent ?? "").replace(/\s+/g, "");
 const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "dankbarkeit-alltag", "umwelt-alltag-gesundheit", "logi-ernaehrung-mitochondrien", "mitochondropathie-hws", "parasiten-deutschland", "viren-bakterien-deutschland"];
 describe("Vier Vergleiche: keine Übernahme = Original, alle = vollständiger Entwurf", () => {
