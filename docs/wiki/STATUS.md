@@ -112,3 +112,9 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Abgleich (lesend): 0 URL-Treffer, 0 EAN möglich (kb_entity_identifiers leer), 10 nur Namensgleichheit mit Stoff-/Pflanzen-/Laborkarten (keine Produktidentität), 139 kein Treffer. Keine Karten erstellt.
 - Vollständigkeit nur für die 21 Bereichsseiten.
 - Nächster Schritt: Produktseiten der 136 eindeutigen Produkte lesend auf EAN/Hersteller prüfen (Grundlage für spätere Kartenvorschläge).
+
+## 2026-10-07 ca. 19:00Z Strunz-Produktquellen Teil 1
+- Methodenfeld korrigiert: Übersichtsabruf 18:20Z; Pagination aller 21 Seiten separat ca. 18:30Z (pagination_pruefung).
+- 24/136 eindeutige Produktseiten lesend gelesen (`produktquellen_teil1`): 22 mit expliziter EAN, 2 ohne (hair vital, haut vital); Marke „for you eHealth“ laut Seitentext; Hersteller auf keiner Seite genannt → offen; strunz.com nur Shop.
+- Beleg 69: 19 Artikel/19 aktuelle Revisionen/9 Einträge existieren, 9 Produktquellen-URLs identisch (lesende Abfrage).
+- Offen: 112 eindeutige Produktkonzepte + 13 Varianten. Nächster Schritt: Produktseiten 25–48.
