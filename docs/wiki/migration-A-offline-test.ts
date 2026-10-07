@@ -21,7 +21,7 @@ const OTHER = "00000000-0000-0000-0000-00000000000b";
 
 async function freshDb() {
   const db = new PGlite();
-  await db.exec(`create role anon; create role authenticated; create role service_role;
+  await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; -- wie Supabase
     create schema auth;
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid',true),'')::uuid $$;
     create type public.app_role as enum('admin','patient');

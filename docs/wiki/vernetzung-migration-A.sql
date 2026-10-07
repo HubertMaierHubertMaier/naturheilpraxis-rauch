@@ -119,8 +119,8 @@ CREATE TRIGGER kb_source_actors_protect
   FOR EACH ROW EXECUTE FUNCTION public.kb_protect_source_actor();
 DROP TRIGGER IF EXISTS kb_source_actor_withdrawals_protect ON public.kb_source_actor_withdrawals;
 CREATE TRIGGER kb_source_actor_withdrawals_protect
-  BEFORE UPDATE OR DELETE ON public.kb_source_actor_withdrawals
-  FOR EACH ROW EXECUTE FUNCTION public.kb_protect_append_only();
+  BEFORE UPDATE OR DELETE OR TRUNCATE ON public.kb_source_actor_withdrawals
+  FOR EACH STATEMENT EXECUTE FUNCTION public.kb_protect_append_only();
 
 CREATE OR REPLACE FUNCTION public.kb_review_source_actor(_id uuid, _notes text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -161,8 +161,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS kb_assertion_conflicts_pair_uq
   ON public.kb_assertion_conflicts (least(assertion_a_id, assertion_b_id), greatest(assertion_a_id, assertion_b_id), conflict_kind);
 DROP TRIGGER IF EXISTS kb_assertion_conflicts_protect ON public.kb_assertion_conflicts;
 CREATE TRIGGER kb_assertion_conflicts_protect
-  BEFORE UPDATE OR DELETE ON public.kb_assertion_conflicts
-  FOR EACH ROW EXECUTE FUNCTION public.kb_protect_append_only();
+  BEFORE UPDATE OR DELETE OR TRUNCATE ON public.kb_assertion_conflicts
+  FOR EACH STATEMENT EXECUTE FUNCTION public.kb_protect_append_only();
 
 -- 4. Isolierter Export / kontrollierter Restore (nur service_role)
 CREATE OR REPLACE FUNCTION public.kb_export_source_network()
@@ -204,6 +204,8 @@ END $$;
 
 -- 5. Rechte
 REVOKE ALL ON FUNCTION public.kb_protect_source_actor(), public.kb_protect_append_only(), public.kb_in_restore_mode() FROM PUBLIC, anon, authenticated;
+-- Nur Prädikat für den Insert-Trigger (läuft als Aufrufer); liefert für authenticated immer false.
+GRANT EXECUTE ON FUNCTION public.kb_in_restore_mode() TO authenticated, service_role;
 REVOKE ALL ON FUNCTION public.kb_review_source_actor(uuid, text), public.kb_withdraw_source_actor(uuid, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.kb_review_source_actor(uuid, text), public.kb_withdraw_source_actor(uuid, text) TO authenticated;
 REVOKE ALL ON FUNCTION public.kb_export_source_network(), public.kb_restore_source_network(jsonb) FROM PUBLIC, anon, authenticated;
@@ -236,7 +238,7 @@ END $p$;
 -- 6. Abschluss-Strukturprüfung gegen Soll-Fingerabdruck (tatsächliche Definitionen).
 --    Gleichnamige, aber abweichende Objekte -> RAISE -> Rollback der ganzen Migration.
 DO $chk$
-DECLARE fp text; expected constant text := '768c0de7f04c2dafd01f17a3c04b4c49';
+DECLARE fp text; expected constant text := 'b770c165e2a16e5a295c37e470e7b477';
 BEGIN
   SELECT md5(string_agg(x, E'\n' ORDER BY x)) INTO fp FROM (
     SELECT format('col|%s|%s|%s|%s|%s', c.table_name, c.column_name, c.data_type, c.is_nullable, coalesce(c.column_default, ''))
@@ -255,8 +257,14 @@ BEGIN
     SELECT format('trg|%s|%s', tgrelid::regclass, pg_get_triggerdef(oid))
       FROM pg_trigger WHERE NOT tgisinternal AND tgrelid IN ('public.kb_source_actors'::regclass, 'public.kb_source_actor_withdrawals'::regclass, 'public.kb_assertion_conflicts'::regclass)
     UNION ALL
-    SELECT format('acl|%s|%s', relname, relacl::text) FROM pg_class
-     WHERE oid IN ('public.kb_source_actors'::regclass, 'public.kb_source_actor_withdrawals'::regclass, 'public.kb_assertion_conflicts'::regclass)
+    SELECT format('acl|%s|%s|%s', c.relname, a.grantee::regrole, a.privilege_type)
+      FROM pg_class c, aclexplode(c.relacl) a
+     WHERE c.oid IN ('public.kb_source_actors'::regclass, 'public.kb_source_actor_withdrawals'::regclass, 'public.kb_assertion_conflicts'::regclass)
+    UNION ALL
+    SELECT format('colacl|%s|%s|%s|%s', table_name, column_name, grantee, privilege_type)
+      FROM information_schema.column_privileges
+     WHERE table_schema = 'public' AND grantee IN ('authenticated', 'anon')
+       AND table_name IN ('kb_source_actors', 'kb_source_actor_withdrawals', 'kb_assertion_conflicts')
     UNION ALL
     SELECT format('rls|%s|%s', relname, relrowsecurity) FROM pg_class
      WHERE oid IN ('public.kb_source_actors'::regclass, 'public.kb_source_actor_withdrawals'::regclass, 'public.kb_assertion_conflicts'::regclass)
