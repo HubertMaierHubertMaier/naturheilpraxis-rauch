@@ -181,7 +181,7 @@
           "speichercode": "may_support",
           "objekt": "disease: Reizdarm (Abgleich mit bestehender Entität prüfen)",
           "herkunft": "Artikelkontext",
-          "voraussetzung": "Domäne may_support product→disease prüfen"
+          "voraussetzung": "Domäne may_support product→disease ist approved (geprüft 07.10.2026); Produktentität fehlt noch"
         },
         {
           "ui_bezeichnung": "im Artikel erwähnt",
