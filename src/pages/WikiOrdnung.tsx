@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
+import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
@@ -56,7 +57,7 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
 }
 
 type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | GroupKey | NutrientClass | "folders" | "unassigned";
-const NUTRIENT_VIEWS_PLACEHOLDER = null; void NUTRIENT_VIEWS_PLACEHOLDER;
+const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
 const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
