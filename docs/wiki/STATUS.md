@@ -82,3 +82,8 @@ Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_e
 
 ## Abschlussnachweis 07.10.2026
 SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf65764b6; Offline 61 PASS/0 FAIL/Exit 0; Wiki-Tests 22 PASS; Astra: letzte 3 Befunde behoben. Commit 7668d96a, GitHub-Sync unbestätigt. KEINE Anwendungsfreigabe – offen: Hosted-Fingerprint/Rollen, Backup-Integration, Import-Rollback. Vernetzung offen: 34 Akteure, 8 Kandidaten (2 vollständig/6 unvollständig). HTML 28/36, offen Ä2,11,13,31,32,33,34. Serie beendet.
+
+## Paket 3 (07.10.2026, nach Wiederaufnahme)
+- 34 Akteure redaktionell eingeordnet (Codex-Routine): 4 Personen, 2 Hersteller, 8 Anbieter, 1 Apotheke, 6 Plattformen, 10 Herausgeber/Institutionen, 3 keine Akteure. Datei docs/wiki/akteure-zuordnung.json (je Akteur Belegquellrevisionen), Modul src/lib/wikiReviewedNetwork.ts. A. L. Kalcker ≠ Andreas Kalcker zusammengeführt (keine Fundstelle).
+- Stichprobe: 6/8 vollständig (Zink-Deklaration, Banderol-Herstellerzeile, Erythromycin Folge 020 16:26–18:54, HNO-ChipCard-Artikel d3cc3e16). Offen: Ochsengalle/Heel, Medacalm/Pascoe (nur Artikeltext).
+- UI: /wikidatenbank/ordnung?v=reviewed – geprüft (Dateistand) getrennt von ungeprüften Kandidaten. Nichts in DB angewendet.

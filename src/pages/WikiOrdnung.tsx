@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
+import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
@@ -55,10 +56,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts; pharmacy
   return { model, counts, pharmacyText, pharmacyTextError: !!ph.error };
 }
 
-type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "topic" | "actors" | "pharmacies" | "mannayan" | "chipcards" | "drugs" | "reviewed" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", topic: "Themen & Personen", actors: "Firmen & Personen", pharmacies: "Apotheken", mannayan: "Mannayan-Produkte", chipcards: "ChipCards", drugs: "Ärztliche Mittel / Arzneimittel", reviewed: "Geprüfte Zuordnungen", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -204,6 +205,7 @@ export default function WikiOrdnung() {
           <p className="font-semibold">Vernetzung – Probelauf (nichts wird gespeichert)</p>
           <p className="text-muted-foreground">Die Kästchen sind eine Navigationsschicht, keine fertige Vernetzung. Der Probelauf berechnet Prüfvorschläge für Firmen, Personen und Apotheken samt Rollen aus vorhandenen Datenfeldern und lädt sie als Datei herunter.</p>
           <Button size="sm" variant="outline" onClick={() => { const d = buildDryRun(m); const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }); const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = `wiki-vernetzung-probelauf-${d.generated_at.slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(u); }}>Prüfvorschläge herunterladen</Button>
+          <Button size="sm" onClick={() => set({ v: "reviewed" })}>Geprüfte Zuordnungen &amp; Quellenbeziehungen ansehen</Button>
         </CardContent></Card>
         <Card className="mt-4"><CardContent className="p-4 text-sm">
           <p className="font-semibold">Exakte Zählung (Server) vs. geladen</p>
@@ -216,6 +218,43 @@ export default function WikiOrdnung() {
           {c.kb_articles !== undefined && c.kb_articles !== m.articles.size + m.missingRevisions.articles && <p role="alert" className="mt-1 font-semibold text-destructive">Geladener Bestand weicht von der Zählung ab – Anzeige ist unvollständig.</p>}
         </CardContent></Card>
       </>
+    );
+  } else if (view === "reviewed") {
+    const dry = buildDryRun(m);
+    const split = splitDryRunActors(dry);
+    const srcIdsOf = (name: string) => [...m.sources.values()].filter((s) => norm(s.publisher ?? "") === norm(name) || (s.authors ?? []).some((a) => norm(a) === norm(name))).map((s) => s.id);
+    const cats = Object.keys(CATEGORY_LABEL) as ActorCategory[];
+    body = (
+      <div className="space-y-4 text-sm">
+        <Card><CardContent className="space-y-1 p-4">
+          <p className="font-semibold">Redaktionell geprüft (Codex-Routine 07.10.2026) – Dateistand</p>
+          <p className="text-muted-foreground">Diese Zuordnungen sind fachlich durchgesehen, in der Datenbank aber weiterhin Entwürfe. Keine Wirk- oder Nachweisaussage. Ungeprüfte Kandidaten stehen getrennt darunter.</p>
+        </CardContent></Card>
+        {cats.map((c) => { const list = split.reviewed.filter((x) => x.review.category === c); return list.length === 0 ? null : (
+          <div key={c}><p className="mb-1 font-semibold">{CATEGORY_LABEL[c]} ({list.length})</p>
+            <ul className="space-y-2">{list.map(({ display_name, review: rv }) => { const sids = srcIdsOf(display_name); return (
+              <li key={display_name} className="rounded border border-border bg-card p-2">
+                <div className="flex flex-wrap items-center gap-1"><span className="font-semibold">{display_name}</span><Badge variant="outline">geprüft · {rv.certainty}</Badge></div>
+                <p className="text-muted-foreground">{rv.reason}</p>
+                {rv.linkedTo && <p className="text-xs">{rv.linkedTo.kind === "alias_belegt" ? "Alias (belegt)" : rv.linkedTo.kind === "website_von" ? "Website von" : "Nicht zusammengeführt (Merge-Hinweis)"}: {rv.linkedTo.name}{rv.linkedTo.fundstelle ? ` · Fundstelle: ${rv.linkedTo.fundstelle}` : ""}</p>}
+                {sids.length > 0 && <details><summary className="cursor-pointer text-xs">Belegquellen ({sids.length})</summary><ul className="list-disc pl-5">{sids.map((s) => srcLine(s))}</ul></details>}
+              </li>); })}</ul>
+          </div>); })}
+        <Card><CardContent className="p-4">
+          <p className="font-semibold">Ungeprüfte Akteurskandidaten ({split.unreviewed.length})</p>
+          {split.unreviewed.length === 0 ? <p className="text-muted-foreground">Alle {dry.actors.length} Probelauf-Akteure sind redaktionell eingeordnet.</p> : <ul className="list-disc pl-5">{split.unreviewed.map((n) => <li key={n}>{n} <LinkBadge kind="text" /></li>)}</ul>}
+        </CardContent></Card>
+        <div><p className="mb-1 font-semibold">Quellenbeziehungen der Stichprobe – vollständig belegt ({SOURCE_RELATIONS.filter((s) => s.complete).length})</p>
+          {[true, false].map((done) => <ul key={String(done)} className="mb-3 space-y-2">{!done && <p className="font-semibold">Unvollständig – Beleg fehlt ({SOURCE_RELATIONS.filter((s) => !s.complete).length})</p>}{SOURCE_RELATIONS.filter((s) => s.complete === done).map((s) => (
+            <li key={s.key} className="rounded border border-border bg-card p-2">
+              <div className="flex flex-wrap items-center gap-1"><span className="font-semibold">{s.label}</span><Badge variant="outline">{done ? "Belege vollständig" : "unvollständig"} · {s.certainty}</Badge><Badge variant="outline">nicht in DB angewendet</Badge></div>
+              <p className="text-xs">Fundstelle: {s.fundstelle}</p>
+              {s.sourceRevisionId && <ul className="list-disc pl-5 text-xs">{srcLine(s.sourceRevisionId)}</ul>}
+              <ul className="list-disc pl-5">{s.relations.map((x) => <li key={x.ui}>{x.ui} · Code: {x.code ?? "kein Code"}{x.note ? ` · ${x.note}` : ""}</li>)}</ul>
+              {s.missing && <p className="text-xs text-destructive">Fehlt: {s.missing}</p>}
+            </li>))}</ul>)}
+        </div>
+      </div>
     );
   } else if (view === "actors" && !id) {
     const roles = ["Von Peter benannt", "Apotheke", "Hersteller", "Herausgeber", "Autor", "Ordner"];
