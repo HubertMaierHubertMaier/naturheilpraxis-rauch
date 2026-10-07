@@ -151,10 +151,8 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Nicht gefunden'; END IF;
   PERFORM set_config('kb.source_actor_review', 'off', true);
 END $$;
--- Hinweis Codex: set_config ist fuer jeden Client aufrufbar; ein Admin koennte
--- den Schalter in einer eigenen Transaktion setzen. Gegenmassnahme siehe
--- Abschnitt "Offene Pruefpunkte" im Testprotokoll (Variante: Statusspalten per
--- Spalten-GRANT fuer authenticated sperren). Hier umgesetzt:
+-- Bypass-Schutz: set_config ist frei aufrufbar, daher maßgeblich die Spalten-
+-- GRANTs unten (authenticated darf review_*-Spalten weder einfügen noch ändern).
 REVOKE ALL ON FUNCTION public.kb_protect_source_actor() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.kb_review_source_actor(uuid, text, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.kb_review_source_actor(uuid, text, text) TO authenticated;
