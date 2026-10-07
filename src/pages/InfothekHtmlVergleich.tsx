@@ -364,6 +364,8 @@ export default function InfothekHtmlVergleich() {
     const a = docOf("orig"), b = docOf("draft");
     if (!a || !b) return;
     equalize();
+    // Re-measure after web fonts are ready (natural height changes with font metrics).
+    a.fonts?.ready.then(equalize); b.fonts?.ready.then(equalize);
     const cleanups: (() => void)[] = [];
     for (const doc of [a, b]) {
       Array.from(doc.images).forEach((img) => {
