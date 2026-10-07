@@ -25,7 +25,7 @@ it("mixes original and accepted proposals", () => {
   const { html } = composeWorkingVersion(original, draft, CHANGES, new Set([17, 1]));
   const t = text(html);
   expect(t).not.toContain("Deshalb heilt Frequenztherapie".replace(/\s+/g, ""));
-  expect(t).toContain("kein Heilungsnachweis".replace(/\s+/g, ""));
+  expect(t).toContain("regulierend auf dieses Feld einzuwirken".replace(/\s+/g, ""));
   expect(t).toContain("Carlo Rubbia & die Brücke zur Heilung".replace(/\s+/g, ""));
   expect(t).toContain("Komplettes Körper-WLAN".replace(/\s+/g, ""));
   expect(new DOMParser().parseFromString(html, "text/html").title).toContain("Frequenztherapie: Physik");
