@@ -1,0 +1,1442 @@
+{
+  "status": "Redaktionell geprüft (Codex-Routine 07.10.2026), Dateistand – NICHT in DB angewendet; DB-Datensätze bleiben Entwürfe.",
+  "quelle": "34 Akteure des Probelaufs (Herausgeber-/Autor-/Herstellerfelder, aktuelle Quellrevisionen)",
+  "counts": {
+    "person": 4,
+    "hersteller": 2,
+    "anbieter": 8,
+    "apotheke": 1,
+    "plattform": 6,
+    "herausgeber_institution": 10,
+    "kein_akteur": 3
+  },
+  "actors": [
+    {
+      "name": "Andreas Kalcker",
+      "category": "person",
+      "certainty": "sicher",
+      "reason": "Personenname im Herausgeberfeld; Quellentitel „Andreas Kalcker – Bye Bye Covid, 2022“ / „– CDS-Protokolle“.",
+      "category_label": "Person",
+      "evidence_count": 2,
+      "evidence": [
+        {
+          "source_revision_id": "348e788e-7205-4164-cb28-632fc15f3e2c",
+          "revision_no": 1,
+          "title": "Andreas Kalcker – Bye Bye Covid, 2022",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e087e500-e5ab-1758-5c97-f7f6dcf24a76",
+          "revision_no": 1,
+          "title": "Andreas Kalcker – CDS-Protokolle",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "A. L. Kalcker",
+      "category": "person",
+      "certainty": "sicher",
+      "reason": "Personenname mit Initialen (Quellentitel „A. L. Kalcker – CDS/MMS Heilung ist möglich“).",
+      "linkedTo": {
+        "name": "Andreas Kalcker",
+        "kind": "merge_hinweis_unbelegt",
+        "fundstelle": "keine – „Andreas Ludwig Kalcker“ o. ä. in keiner Quelle/Artikelrevision gefunden; getrennt halten"
+      },
+      "category_label": "Person",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "0367380e-425e-17db-314d-7c4748a5db86",
+          "revision_no": 1,
+          "title": "A. L. Kalcker – CDS/MMS Heilung ist möglich",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Peter Römer",
+      "category": "person",
+      "certainty": "sicher",
+      "reason": "Personenname im Herausgeberfeld (Quellentitel „Peter Römer – Chlordioxid/CDL – bereitgestellte PDF“).",
+      "category_label": "Person",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "2d912804-598e-8249-b392-0566acb4ae47",
+          "revision_no": 1,
+          "title": "Peter Römer – Chlordioxid/CDL – bereitgestellte PDF",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Dr. med. Ralf Kirkamm",
+      "category": "person",
+      "certainty": "sicher",
+      "reason": "Autorfeld der Quellenrevision 30f76a14…",
+      "category_label": "Person",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "30f76a14-03bd-4412-b7a6-8c90c55ac785",
+          "revision_no": 1,
+          "title": "Dr. med. Ralf Kirkamm: SIBO und Duennarmfehlbesiedlung - oeffentliche Webseiten und Video-Seiten",
+          "field": "authors"
+        }
+      ]
+    },
+    {
+      "name": "Mannayan GmbH & Co. KG",
+      "category": "hersteller",
+      "certainty": "sicher",
+      "reason": "Herstellerfeld (proposed_data.manufacturer) von 57 Produkten mit manufacturerSource mannayan.com; zusätzlich Herausgeber der Inventarquellen.",
+      "linkedTo": {
+        "name": "Mannayan",
+        "kind": "alias_belegt",
+        "fundstelle": "Herstellerfeld „Mannayan GmbH & Co. KG“ + Produkttitel „Mannayan …“"
+      },
+      "category_label": "Hersteller",
+      "evidence_count": 58,
+      "evidence": [
+        {
+          "source_revision_id": "003336ce-4061-56b9-b898-0f46951dc3ba",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan My GLUCOFRIEND + (120 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "00be708a-a178-5c05-98e2-4de36691531a",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan MAG-CITRAT + (90 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "014d24fe-1c80-59f4-9e05-3306518bf407",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan SPEZIAL MULTI + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "01cf276d-a34f-5c2d-8c29-87afe2845ff9",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN E KOMPLEX + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "026663b2-a9f1-5407-9740-17038c9c1f72",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CURCU FORTE + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "043a3a06-4c16-5e3e-8b43-9be9b7b72071",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan FER + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "136b64b4-c229-52e2-a514-92860193e313",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan BASIS MULTI + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "1d93164c-f5c6-542a-bd73-9eb547cd0e97",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CLEAN + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "20b8a935-76e1-573c-a4cb-09cb0f278567",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan OLIGO + (Pulver)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "23079843-5716-58cb-af6d-aa28ec52f448",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan REG + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "330fcfa4-e8bb-51d3-a2b2-bbbd7235f224",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan Q10 Aktiv+ (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "35992276-8822-5e78-bfc1-539ff67c9525",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan OMEGA + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "388c9af3-fc8c-5cb2-a01d-e7252d81b249",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan MULTI + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "3bdc3326-3b49-511d-acc9-3f77f4ea7401",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan LACT + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "3feea975-5d71-500a-a29c-968fbff0e069",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan GLUCO + (120 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "4800f828-beed-5b46-bfb4-6599bbf18dc9",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan MANNASICHT + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "4fca4c53-b9d8-553f-b362-9fc9f0bb8881",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan GIN + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "522ab5f1-6585-5981-a224-a3c2caa12b90",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan KRILL-ÖL + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "56334517-36b2-591b-9a23-2806c5cd30c1",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan POWER B + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "573061a6-fa97-5291-b3da-c2bf4ca01662",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CHOLIN + (Pulver)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "58bfb2f3-3924-5842-8dd0-e0cb63f1752a",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan BROM + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "59fbc85e-13f6-5330-942b-5009274aae8e",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan DETOX + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5c2dfa8d-c21d-555f-8d32-c247279c65be",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan Biotin & PABA+ (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5c493cb5-83c0-501a-9430-bee82ee421ce",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN B3 NICOTINAMID RIBOSID + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan ZINK + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "6018755b-dab7-5a5b-9d3b-a89f45f6c868",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CAL + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "61114b11-6901-5c8f-841d-004ff544b2d0",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan ZYM + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "6ae934e5-ee4e-55fd-a1c2-55d71ea94158",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN B5+ (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "6e778fd5-e9a4-581f-94c0-318e34cddad7",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CHROM + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7312ba51-c57a-50c7-bb4d-f08ebfcae9a9",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN C+ (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "732c2225-7575-5ab8-a046-d0f7ea4e7b64",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan LIPO-GLUTATHION Kombi + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "74988d5a-ee66-5e71-b420-90039114b6fb",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan MSM + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "765d36e1-4a93-5e88-aa71-78d200834430",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan BETAIN HCL & PEPSIN + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7781b975-09fe-551f-84c3-0bf79073edaa",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan LEZITHIN + (Granulat)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "77cfa3c6-9555-5b49-81d2-d8401f367af1",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN D3 INTENSIV + (90 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7876ad36-e963-5d42-b143-683004412ab9",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN D3 & K2 Ultra + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7aba44ea-5ce3-5f6e-b139-afc985d5b791",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN C+ (120 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "81b27398-98ec-5254-a351-b23c9c94f3aa",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan ANTIOXI + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "85f1dbaf-418d-5cd4-acf2-d8dc5dad0ad1",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN B AKTIV + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "87968547-05d0-57f4-895e-b5d54fb26f09",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CAND + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "8caac32d-431c-5fd7-b9bc-9b556c61de82",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan D-MANNOSE & CRANBERRY + (Pulver)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "8ef3da82-9a39-5b84-8e56-fddfcb1bd075",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan GLUCAN + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "978467b7-2143-59a5-b8bd-5d441fd24153",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan DECA MINERAL+ (120 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "99d90241-8925-5bd1-be04-f0ade4331007",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN B12 Instant + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "c69e1461-8d97-54a0-adaa-c571881ac02e",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN A + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "cd727882-32b5-5e99-93dc-9f381a21469c",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan L-ARGININ & L-ORNITHIN + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "cdd5c385-060e-57d3-b841-1a10fb09cabb",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan CYST + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "d607fb8b-7d25-5805-a90b-f90fbd652130",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan VITAMIN B6 + (Pyridoxin) (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "db935b92-e933-5224-bc6a-77be291d8c99",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan POWERJOD + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e265c458-fa48-5a6a-b1e5-39e584f05cf1",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan D-RIBOSE + (Pulver)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e4387657-7318-551e-883a-abdb244abe4f",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan MAG + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e5e8281d-fd79-50c1-93ae-a1fcdfe51a6c",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan Q10 + liquid",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e65e4e82-6243-5e27-b3bf-48040c8694ef",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan BETA + mit Lutein (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "ef48b141-018c-5912-b506-9523f341b011",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan Roter Reis+ (90 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "f05ecab1-4fc5-5af8-afdb-b6a20e6293b1",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan FOL + (60 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "fa574096-b562-5800-bf87-2c5a65afef86",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan B-KOMPLETT + (60 Tabletten)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "faa50bfe-60c3-5f39-86e1-4e4285236e3b",
+          "revision_no": 1,
+          "title": "Mannayan-Inventar: Mannayan 7&1+ (SPURENELEMENTE + JOD - 90 Kapseln)",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "343ff969-8fde-ee31-290e-1c0c63b95ea1",
+          "revision_no": 1,
+          "title": "Lokale Mannayan-Produktinventare für ANTIOXI+, BETA+, GLUCAN+ und ZINK+",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "for you eHealth via Strunz product page",
+      "category": "hersteller",
+      "certainty": "unsicher",
+      "reason": "Markenname „for you eHealth“ auf einer Strunz-Produktseite (strunz.com/for-you-jod.html); Hersteller vs. Marke nicht belegt. Strunz GmbH bleibt getrennt.",
+      "linkedTo": {
+        "name": "Strunz GmbH",
+        "kind": "merge_hinweis_unbelegt",
+        "fundstelle": "keine – Vertriebsseite ist kein Herstellerbeleg"
+      },
+      "category_label": "Hersteller",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "936ebf10-6729-503e-a0bc-c3183f0d0d82",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: for you eHealth Jod",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Strunz GmbH",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Herausgeber von Produkt-Faktenkarten (Shop strunz.com); Herstellerrolle je Produkt nicht belegt. Person Dr. Strunz NICHT gleichgesetzt.",
+      "category_label": "Anbieter",
+      "evidence_count": 8,
+      "evidence": [
+        {
+          "source_revision_id": "0d8ef82d-259d-5f30-afd3-3e1574055f4e",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamineral 32 Maracuja",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "19ca50c4-01b3-51eb-9afe-517e057a155c",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Selen und Vitamin C",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "54f21545-29fd-5519-9835-52b2ee36178b",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin C Komplex",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "68b8e8bc-e5d2-5641-9d66-6e880e067e80",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Eisen Caps",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "74fa2687-bf1d-5c1c-bff3-ead9a91a4335",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Zink Caps",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "78908976-7819-5597-88f0-72aaf76f2a21",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin D3 + K2",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "95e1f799-3dd5-595c-ab08-f84d636a5a33",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Vitamin B Komplex",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e8cb12f7-ea70-585d-ad53-5eacf6fa63c9",
+          "revision_no": 1,
+          "title": "Strunz-Faktenkarte: FOREVER YOUNG Magnesium Caps",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Aquintos Wasseraufbereitung",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Produktseite AQuinDos DuoDES (aquintos-wasseraufbereitung.de); Herstellerrolle nicht belegt.",
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "079f537e-48ae-c9b5-c31f-7b479d910f61",
+          "revision_no": 1,
+          "title": "AQuinDos DuoDES – Chlordioxid-Desinfektion",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Diamond Shield Zapper",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Herausgeber der ChipCard-Produktseiten (diamondshieldzapper.com); Gerätemarke – Hersteller nicht im Datensatz.",
+      "category_label": "Anbieter",
+      "evidence_count": 5,
+      "evidence": [
+        {
+          "source_revision_id": "183240b5-6c0b-577f-9a1e-2eade69a936b",
+          "revision_no": 1,
+          "title": "Diamond Shield Zapper Chipcard Md - Müde",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "23b9ca81-b9a7-579f-a950-4a18d1bbfa06",
+          "revision_no": 1,
+          "title": "Diamond Shield Zapper Chipcard IM - Immun-Modulation",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "4c2fc625-0f35-514f-9d8a-c3826af3b725",
+          "revision_no": 1,
+          "title": "Diamond Shield Zapper Chipcard ImVir - Immun-Modulation Viren",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "a538aedc-c5c5-5921-8247-c9e2427acc11",
+          "revision_no": 1,
+          "title": "Diamond Shield Zapper Chipcards",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e4436fac-cfd8-5948-9567-7f7a554db0a2",
+          "revision_no": 1,
+          "title": "Diamond Shield Zapper Chipcard HNO - Hals-Nase-Ohren",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "gehtanders.de",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Shopseite „Chlordioxid gegen Coronavirus – Sammlung … mit DVD“ (Produktverkauf).",
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "8ba01fd0-459b-c6cc-9b30-364e435fee85",
+          "revision_no": 1,
+          "title": "Chlordioxid gegen Coronavirus – Sammlung wissenschaftlicher Studien mit DVD",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "mms-seminar.com",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Website eines Seminar-/E-Book-Angebots („MMS-Seminar E-Book, Version 5.55“).",
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "42649acd-2386-b2bf-c050-b885012bbc51",
+          "revision_no": 1,
+          "title": "MMS-Seminar E-Book, Version 5.55",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "AquaCentrum",
+      "category": "anbieter",
+      "certainty": "unsicher",
+      "reason": "Website hostet PDF von Rainer Taufertshofer; Rolle Anbieter/Hoster unklar. Autor Taufertshofer nur im Titel, nicht im Autorfeld.",
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "ab24080d-17ba-48b9-dc59-510180ee1e68",
+          "revision_no": 1,
+          "title": "Rainer Taufertshofer – Die Wahrheit über CDS/Chlordioxid als Heilmittel",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Heilpraktiker Bioresonanz München",
+      "category": "anbieter",
+      "certainty": "wahrscheinlich",
+      "reason": "Praxis-Website (heilpraktiker-bioresonanz-muenchen.de) – Anbieter einer Behandlung, keine Person benannt.",
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "6989b31f-acd9-0515-076a-da2785517804",
+          "revision_no": 1,
+          "title": "Akutbehandlung in unserer Praxis",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Bio-Diagnostik",
+      "category": "anbieter",
+      "certainty": "unsicher",
+      "reason": "Herausgeber „Bio-Diagnostik – vier neutrale Laborprofile“; Labor/Anbieter, Rechtsform/Ort nicht im Datensatz.",
+      "linkedTo": {
+        "name": "Biodiagnostik",
+        "kind": "alias_belegt",
+        "fundstelle": "Quellentitel „Bio-Diagnostik“ (Schreibweise Biodiagnostik nur Suchalias)"
+      },
+      "category_label": "Anbieter",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "0131509e-429b-5829-9f29-5524055ac0eb",
+          "revision_no": 1,
+          "title": "Bio-Diagnostik - vier neutrale Laborprofile",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Radegundis Apotheke",
+      "category": "apotheke",
+      "certainty": "sicher",
+      "reason": "Herausgeber der Quelle „Radegundis Apotheke – Mittel gegen Pollen …“; Name enthält „Apotheke“; zusätzlich Herstellerbegriff im Bestand.",
+      "category_label": "Apotheke",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "c8aa4a29-25bb-3a71-e25a-7be80e148e2e",
+          "revision_no": 1,
+          "title": "Radegundis Apotheke – Mittel gegen Pollen und Symptome der Nase",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "BitChute",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Videoplattform („Video laut PDF“) – Fundort, kein Urheber/Hersteller.",
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "3b64f007-13ca-1324-1f25-d6c7c7b9f8b5",
+          "revision_no": 1,
+          "title": "Video laut PDF",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Amazon",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Handelsplattform („Bezugsquellenangabe Amazon“) – kein Hersteller.",
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "bc026d34-f344-2f04-aae7-bb472b0e4627",
+          "revision_no": 1,
+          "title": "Bezugsquellenangabe Amazon",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "DocCheck",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Fachportal (DocCheck Flexikon).",
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "a0bbb289-7e45-5030-23e7-5cfc35155d9b",
+          "revision_no": 1,
+          "title": "DocCheck Flexikon – Gewebeanoxie",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Google Patents",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Patentdatenbank (WO2016074203A1) – Anmelder nicht erfasst.",
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "f41542b8-1249-6343-d2db-5984809e31fe",
+          "revision_no": 1,
+          "title": "WO2016074203A1 – Cell apoptosis inducer containing chlorine dioxide",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "PubMed / Clinical and Experimental Dental Research",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Literaturdatenbank PubMed + Fachjournal; Journal-Verlag nicht getrennt erfasst.",
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "6399335a-b4f2-2938-7e42-05ac2699d2f0",
+          "revision_no": 1,
+          "title": "Efficacy of chlorine dioxide mouthwash in reducing oral malodor: A 2-week randomized, double-blind, crossover study",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "dr-kirkamm.de",
+      "category": "plattform",
+      "certainty": "sicher",
+      "reason": "Website (Domain) – nicht die Person.",
+      "linkedTo": {
+        "name": "Dr. med. Ralf Kirkamm",
+        "kind": "website_von",
+        "fundstelle": "Quellenrevision 30f76a14…: Herausgeber dr-kirkamm.de + Autor Dr. med. Ralf Kirkamm, Titel „Dr. med. Ralf Kirkamm: SIBO …“"
+      },
+      "category_label": "Plattform",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "30f76a14-03bd-4412-b7a6-8c90c55ac785",
+          "revision_no": 1,
+          "title": "Dr. med. Ralf Kirkamm: SIBO und Duennarmfehlbesiedlung - oeffentliche Webseiten und Video-Seiten",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "National Health Service, United Kingdom",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Staatlicher Gesundheitsdienst (Herausgeber).",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 10,
+      "evidence": [
+        {
+          "source_revision_id": "268ac61b-6ae8-58cc-bc7d-494c857013a7",
+          "revision_no": 1,
+          "title": "nhs-iron-reference-2026-08-08: General iron function, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "49106702-5abd-55ee-b96d-ce9f0785f5c2",
+          "revision_no": 1,
+          "title": "nhs-vitamin-c-reference-2026-08-08: General vitamin-C functions, food sources and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "6c6811d5-31aa-55d8-a03f-ad0170a1c15c",
+          "revision_no": 1,
+          "title": "nhs-b-vitamins-reference-2026-08-08: General B-vitamin and folate functions, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "8bce6d54-7af4-5ee9-9f6b-215369fe1933",
+          "revision_no": 1,
+          "title": "nhs-vitamin-k-reference-2026-08-08: General vitamin-K functions, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "a292fa9d-e043-53b5-ab28-9e3de255adf4",
+          "revision_no": 1,
+          "title": "nhs-iodine-reference-2026-08-08: General iodine function, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "a46a62b8-195d-55c5-9499-18914093353a",
+          "revision_no": 1,
+          "title": "nhs-vitamin-a-reference-2026-08-08: General vitamin-A and beta-carotene functions, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b1c37bf2-ada7-565f-8fe2-5f30cecc309c",
+          "revision_no": 1,
+          "title": "nhs-calcium-reference-2026-08-08: General calcium functions, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b8f8d656-c15f-522a-83cd-91e8cea0d165",
+          "revision_no": 1,
+          "title": "nhs-other-minerals-reference-2026-08-08: General guidance for beta-carotene, chromium, copper, magnesium, manganese, molybdenum, phosphorus, potassium, selenium, salt and zinc, including dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "c8642f9d-5ebb-5330-9087-5be38064f3f2",
+          "revision_no": 1,
+          "title": "nhs-vitamin-e-reference-2026-08-08: General vitamin-E functions, dietary sources, population context and public safety guidance",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "d5e4fa0c-289e-52a9-8b31-fbc7817dd7b9",
+          "revision_no": 1,
+          "title": "nhs-vitamin-d-reference-2026-08-08: General vitamin-D function, dietary and sunlight sources, public guidance and safety warnings",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Thieme",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Fachverlag.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 3,
+      "evidence": [
+        {
+          "source_revision_id": "4a8798bb-b00e-5f99-f944-e74c122d4b3b",
+          "revision_no": 1,
+          "title": "Kursbuch Traditionelle Chinesische Medizin – Nase und Pulmonalorbis",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b2334cba-b5f9-d604-2fd1-2c59af420a45",
+          "revision_no": 1,
+          "title": "Kursbuch Traditionelle Chinesische Medizin – Algor-laedens-Theorie",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e1e876ee-d753-64f8-e07d-8891e337b7b8",
+          "revision_no": 1,
+          "title": "Kursbuch Traditionelle Chinesische Medizin – Erkältungsprophylaxe",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Springer Berlin Heidelberg",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Fachverlag.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 3,
+      "evidence": [
+        {
+          "source_revision_id": "04352c56-ada5-8df0-84d9-d1b20d73080e",
+          "revision_no": 1,
+          "title": "PhytoPraxis – 7.3 Phytotherapie bei Otitis media und Seromukotympanon",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "462c93f7-ff24-e647-4371-339904568ed6",
+          "revision_no": 1,
+          "title": "PhytoPraxis – Tonsillitis, Mund-/Rachenraum und Pharyngo-Laryngitis",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b4e38a6a-79e5-98b4-b0fa-3670813bb1b0",
+          "revision_no": 1,
+          "title": "PhytoPraxis – von Peter übermittelte Tabellen und Fundstellen",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Hilaris Publisher",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Verlag (Zeitschriftenartikel).",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "220c860d-1404-0150-f41b-e06715727d77",
+          "revision_no": 1,
+          "title": "Determination of the effectiveness of chlorine dioxide in the treatment of COVID-19",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "EFSA",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "EU-Behörde.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "7aaef069-9f6e-6b3e-d823-f9ffe3e2decb",
+          "revision_no": 1,
+          "title": "EFSA 16.02.2016 – Safety of gaseous chlorine dioxide as a preservative slowly released in cold food storage areas",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "European Chemicals Agency",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "EU-Behörde.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "fd895797-c5a4-5306-fbaa-cfa967016c6b",
+          "revision_no": 1,
+          "title": "ECHA substance information 100.030.135",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "European Commission, Directorate-General for Health and Food Safety",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "EU-Kommission (DG SANTE).",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "c48b2fac-0e1c-54aa-8234-da511e4d9835",
+          "revision_no": 1,
+          "title": "eu-health-claims-regulatory-reference-2026-08-08: EU regulatory overview for nutrition and health claims, including function, risk-reduction and child-development claims",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Umweltbundesamt",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Bundesbehörde.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "4f0ac258-ba0d-459f-4cb0-38e89a5cb6f4",
+          "revision_no": 1,
+          "title": "Umweltbundesamt – Liste zulässiger Aufbereitungsstoffe und Desinfektionsverfahren nach § 20 TrinkwV",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Commonwealth of Massachusetts",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "US-Bundesstaat (Behörde).",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "425cecf0-a7c6-fb20-4a61-7eaad08c3246",
+          "revision_no": 1,
+          "title": "Recommended limits for the disinfectant chlorine dioxide",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "World Health Organization",
+      "category": "herausgeber_institution",
+      "certainty": "sicher",
+      "reason": "Internationale Organisation.",
+      "category_label": "Herausgeber (Verlag/Behörde/Institution)",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "0b4ec3f4-cbe8-5fcf-8bcf-8046ab07fd0b",
+          "revision_no": 1,
+          "title": "who-healthy-diet-micronutrient-reference-2026-08-08: General healthy-diet principles, dietary adequacy, balance, moderation, diversity, food safety and micronutrient-rich foods",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Klinghardt Talks 001-025",
+      "category": "kein_akteur",
+      "certainty": "sicher",
+      "reason": "Talk-Reihe (Sammlungstitel), keine Person. Sprecher „DK“ nur über Tag „Sprecher: DK“ je Quellenkarte; Dr. Klinghardt als Autor erst nach Prüfung je Karte.",
+      "category_label": "Kein Akteur",
+      "evidence_count": 62,
+      "evidence": [
+        {
+          "source_revision_id": "01157cf6-a0e9-550a-8f27-b71ff14ebeb6",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Sechs Potenzen und mehrmonatige Eskalation",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "01a80c8a-efb4-5052-8e02-c8d85577b416",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Platin-Fußbad, 20-Personen-Studie und rechtliche Auseinandersetzung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "11363f9e-6e7a-5c2a-94fc-4cb8000f4dea",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Helllicht-Fluoxetin-RCT bei nicht saisonaler Depression",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "20bfbe1c-7b22-569d-8a1f-22464215f857",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Acht Jahre Rollstuhl und angebliches Gehen nach blauem gepulstem Licht",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "20e451aa-3ea9-5e71-b90c-ba724af155ec",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Erythromycin 500 mg viermal täglich, Prolotherapie und Behördenkonflikt",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "22ff8efb-2139-530f-afbc-9228b46ab817",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Falltherapie mit Bindern, Kräutern, DesBio-Series-Kits, FSM und Gehirndiät",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "23fcd018-d42b-564c-8814-43e6f7bd6eb9",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Kinder und Autismus",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "2b63feb5-2887-5660-bc29-7986eb521171",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Pulmonale Hypertonie, Bronchiektasen und Artesunat gegen Lungenfibrose",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "2d74bc0f-62eb-553d-bd03-3e7e31ddb31d",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Cholesterin: Fischol, Retard-Niacin und Chlorella",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "2e8cf94a-8081-519b-818a-f5ddd304381d",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Gedächtnisangst und teure personalisierte Hirnstimulation auf Zypern",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "378571b4-8326-52ee-a6c5-544c427a8526",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Cistus als Resilienz-, Biofilm- und Lyme-Mittel",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "3a8abc72-d8cd-57c5-92bb-11b9d0f2113e",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Fluorid in der Luft, Chemtrailvorbehalt und tägliche Kopfkompression",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "3eb35e4d-e6cd-5303-818e-40b778e35d69",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Herpes zoster und Neuralgie",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "40061e4c-0355-50a5-a9e8-5dac86e6566a",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Ionisches Fußbad bei behaupteter Aluminiumbelastung und Autismus",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "45acac91-9a1c-5a9d-9bfc-666f71a18a87",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Anemie, Methaemoglobin und behauptete Schutzmassnahmen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "50905225-ef0c-509c-9442-09c03f6148b0",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Gezieltes Gehirntraining, Bewegung, Plasmalogenöle und drei Monate Reserve",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "522676be-e3d2-5699-aef9-00515821745d",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Halluzinationsfall, vermutete Metallbelastung und Lichtweg mit DMPS/EDTA",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "57fb2a2e-6db4-57aa-ae9b-d5c12715bed9",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Lactoferrin + Novalytic + InsuLess",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "587e32a0-c475-5a00-b738-36b73cc930e0",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Artemisinin als angebliches Muss bei Babesiose",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5cd50016-a40b-5fa9-9b77-0fde53554ce4",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Aktivkohle",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5dcd16a1-555e-538b-8a08-ad3b3c215472",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Familiäre Lyme-Erkrankungen und sechsmonatige intravenöse Doppelantibiose des Sohnes",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "5f01620e-6589-5c38-b7b2-fdff07684c38",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Schutzkleidung, Stetzer-Filter, Body Voltage und Rollstuhl-Anekdote",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "61b00493-87a6-5490-83f7-333076c7083f",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Livessence, Eliminationswege und Die-off-Narrativ",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "627e1cdd-62ce-5e27-bcf6-862a4040a753",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Vierfachantibiotika, Gewebekompartimente und Fünf-Wochen-Zyklen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7108464f-da73-5dce-891b-c5c483aad5fa",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: LipoSorb und Herbal IV",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "71b7897b-e10e-546d-a8d0-b1b28da93c68",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Disulfiram bei Lyme: langsame Aufdosierung, lange Dauer und 500-mg-Warnung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "73f62a86-badb-5a02-a33d-3b928fe4f8bc",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Floaters als Borrelien, Hyaluronsäure-Köderdosierung und MS-Myelinclaim",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "74ea853e-f87a-59a8-80d6-ab2481143628",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Apolactoferrin / Lactoferrin + Copper1",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "78680f09-1c1d-594f-9256-66ff5beb6512",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Generische 'Heilkrise', Einlaeufe und sehr hohe Binderdosen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "7a8db4fe-18a7-53fd-8bfa-627cee7b4e3e",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Queen-Springs-Wasser und Mikroplastikabwägung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "80b2adf8-7e37-5be9-99a7-82374ce37539",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Alu-Tops, Koriander, Chlorella und Zeolith mit hohen Langzeitdosen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "89027e4e-2126-5f70-a0e4-b5ca65f427d5",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Zwölf Minuten PhotonWave und behauptete Aluminium-Ausscheidung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "89433a4b-ac54-50b8-aaa6-91d39ae17e2a",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Rektales Hochdosis-Melatonin, Krebsdosis und Schwangerschaftsprotokoll",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "897073ad-de3e-5dea-bcdb-d9683d513843",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Borrelien, Mangan und Core-S-zu-Core-Sequenz",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "8b1e0d97-e996-5441-a437-f57e7ef520e1",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: IV-Ozon: Mikroperfusion, Stammzellclaim und nur vorübergehende Besserung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "971c55c4-aedd-514b-8cd1-b7c2c3d2a078",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Melatoninroute, Hatha-Yoga, PhotonWave und Ohrakupunktur",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "9a20bd2a-01dd-59e1-b4da-eafb47b92375",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: IV-Wasserstoffperoxid und 600 mg DHEA bei Lungenerkrankungen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "9f8e5571-b582-58b5-a7c3-c3ab6372cfba",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Kalenderprotokoll mit oralem/IV-EDTA, DMSA und Metallbefunden",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "abf57d97-4d53-5d4e-850e-89a9b2f48334",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Dapson-Kombination bei Lyme/PTLDS",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "ac87a0e5-448e-5c49-a20a-3a5408df53b3",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Bioflavonoid-Cocktail, Ozonfrequenzen und Filterverluste",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "af0192ac-cde5-5d73-b206-9ab3e0bfcb3d",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Anfälle durch Lyme/Parasiten und 20 Tage hoch dosierte Antiparasitika",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b2249666-f102-5f08-8385-d4b943fea8d4",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Borax im Kaffee, unlesbare Messerspitzendosis und Boronfunktionen",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b3962848-e0f9-5c6b-a238-7f688b56fc8b",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Neun-Personen-Autismusstudie mit teleportiertem Methylfolat",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b74649b0-0a39-5dfe-8992-d4a8f3934a51",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Siliziumreiches Wasser und Deferoxamin als Aluminiumchelator",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b7bbb348-2cc0-55eb-8f25-bf2085ba7b48",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Disulfiram 67,5 mg taeglich",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "b942b162-e6a1-5703-a77e-ccd19bcccdf0",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: NovalyticTM",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "bb977a5f-aef7-5250-9a6d-7f036fed0077",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Karpaltunnelsyndrom, Vitamin B6 und Schilddruesenhormon",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "c4ed816f-0a8c-5191-a35c-85693d70e399",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Explizite Kräuterdosen für Lyme, Bartonella und Babesiose",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "c56f9ae0-687f-5b49-a74c-882260fc5542",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Bartonella, Implantate und Lymphatic Detox",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "d229c552-0814-5dcd-bf2d-34a63ae8c8a3",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Photo-Neuro-Immunologie und unveroeffentlichte Liquor-Farbversuche",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "d62b115a-2d19-5e1b-a542-8fc85b7c370f",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: COVID, Long COVID und Virusreaktivierung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "d76760c7-4d19-53dd-9df1-a2ecfec15b18",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Schlaganfallursachen und DMSO-/Vitamin-C-Infusionsrezept",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "dc719bf7-f2e9-536e-8ac4-647f6147e609",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Metallische Abschirmung, geerdete Farben und hoch dosierte Melatonincreme",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "df2e538c-a293-516b-92f4-8cde7b7f033d",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Gedächtnis nach COVID/Lyme und 150 mg Lithiumorotat",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e1c28b0c-dc0c-5655-adae-d76a34d36464",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Blaue Raumlampe beruhige autistische Kinder in fuenf bis sechs Minuten",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e389d49d-71d3-5904-931d-7cdf517c5259",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Herzstillstandsanekdote, Kalzium und behauptete Boraxwirkung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "e931bef1-138e-5b6d-b608-bd55a9fc2f6a",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Farbtherapiegeschichte und angebliche Crohn-Heilung durch Orangenlicht",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "ea6e43a9-077f-57ff-ac5f-5b9c274c7cfd",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Iod verdränge Fluorid nicht; Hochdosis-Iod bei Pneumonie und Produktverfügbarkeit",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "f06c892c-cdee-5b1e-9d4f-ce10290737de",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: InsuLessTM",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "f1a8421b-5575-5b5c-bd41-2776c0b3cea8",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Hyaluronsaeure als angebliche Borrelien-Lockung",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "fb06ef89-f95e-5ad2-83da-47ffe610f9de",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Laserakupunktur, transkranielles/intranasales Infrarot und Feldruecktransport",
+          "field": "publisher"
+        },
+        {
+          "source_revision_id": "fe8a2566-0a95-56a6-8f5b-db4be2e6e1fd",
+          "revision_no": 1,
+          "title": "Klinghardt-Quellenkarte: Kupfer",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Externe Fachquelle",
+      "category": "kein_akteur",
+      "certainty": "sicher",
+      "reason": "Generischer Quellenplatzhalter.",
+      "category_label": "Kein Akteur",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "9d97e4e6-ae53-5e86-9a70-22952ff4ce03",
+          "revision_no": 1,
+          "title": "efsa-food-supplements-safety-reference-2026-08-08: EU food-supplement safety, nutrient-source evaluation, health-claim assessment and tolerable upper intake levels",
+          "field": "publisher"
+        }
+      ]
+    },
+    {
+      "name": "Nutzerbereitgestellte Quelle",
+      "category": "kein_akteur",
+      "certainty": "sicher",
+      "reason": "Generischer Platzhalter im Autorfeld.",
+      "category_label": "Kein Akteur",
+      "evidence_count": 1,
+      "evidence": [
+        {
+          "source_revision_id": "d9c8f89a-753a-45e9-b9cd-b03aa5ff0965",
+          "revision_no": 1,
+          "title": "Vom Nutzer bereitgestelltes dreiseitiges SIBO-PDF",
+          "field": "authors"
+        }
+      ]
+    }
+  ]
+}
