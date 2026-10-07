@@ -248,7 +248,9 @@ function InfothekHtmlVergleich() {
     const valid = CHANGES.some((c) => c.id === stored);
     setActive(valid ? stored : CHANGES.find((c) => !c.headOnly)?.id);
   }, [activeKey]);
+  const revealCard = useRef(false);
   const chooseActive = (id: number) => {
+    revealCard.current = true;
     setActive(id);
     if (activeKey) localStorage.setItem(activeKey, String(id));
   };
@@ -540,9 +542,15 @@ function InfothekHtmlVergleich() {
     });
   }, [accepted, kept, loaded]);
 
-  followRef.current = (id: number) => { noScrollNext.current = true; chooseActive(id); };
+  followRef.current = (id: number) => { noScrollNext.current = true; chooseActive(id); revealCard.current = false; };
   acceptRef.current = acceptAndAdvance;
   undoRef.current = (id: number) => { toggleAccepted(id, false); };
+  useEffect(() => {
+    if (!revealCard.current) return;
+    revealCard.current = false;
+    const t = window.setTimeout(() => cardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }), 250);
+    return () => window.clearTimeout(t);
+  }, [active]);
   const step = (dir: 1 | -1) => {
     const idx = jumpable.findIndex((c) => c.id === active);
     const next = idx < 0 ? (dir === 1 ? 0 : jumpable.length - 1) : (idx + dir + jumpable.length) % jumpable.length;
