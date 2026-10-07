@@ -37,7 +37,7 @@ async function freshDb() {
     update kb_relation_type_domains set review_status='approved' where review_status='draft';`);
   return db;
 }
-const q1 = async (db: PGlite, sql: string) => ((await db.query(sql)).rows[0] ?? {}) as Record<string, unknown>;
+const q1 = async (db: PGlite, sql: string) => { const r = await db.exec(sql); const last = [...r].reverse().find((x) => x.rows.length); return (last?.rows[0] ?? {}) as Record<string, unknown>; };
 const expectError = async (db: PGlite, n: string, sql: string, re: RegExp) => {
   try { await db.exec(sql); fail(n, "kein Fehler"); }
   catch (e) { const m = (e as Error).message; re.test(m) ? pass(n, m) : fail(n, `falscher Fehler: ${m}`); }
