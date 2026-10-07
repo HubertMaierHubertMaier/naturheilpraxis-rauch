@@ -141,3 +141,24 @@ describe("Strunz Listeneinträge Teil 6 (121–136)", () => {
     expect(a.produkte_ohne_karte_liste.length).toBe(149);
   });
 });
+
+describe("Strunz mögliche Varianten (13)", () => {
+  const a = STRUNZ_AREA as any;
+  it("13 Seiten, Gruppen als Hypothese, nichts zusammengeführt", () => {
+    const r = a.produktquellen_varianten.ergebnisse;
+    const v = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen");
+    expect(r.map((x: any) => x.url)).toEqual(v.map((x: any) => x.url));
+    expect(v.reduce((n: number, x: any) => n + x.fundstellen.length, 0)).toBe(56);
+    expect(new Set(r.map((x: any) => x.variantengruppe_hypothese)).size).toBe(6);
+    r.forEach((x: any) => {
+      expect(x.http).toBe(200); expect(x.hersteller).toBeNull();
+      expect(x.ean_fundstelle.wortlaut).toContain(x.ean[0]);
+      if (x.auswahloptionen.length < 2) expect(x.gruppenbeleg).toContain("Namenshypothese"); else expect(x.gruppenbeleg).toContain("keine bestätigte Produktidentität");
+    });
+    expect(new Set(r.flatMap((x: any) => x.ean)).size).toBe(13);
+    const nv = [1, 2, 3, 4, 5, 6].flatMap((i) => a[`produktquellen_teil${i}`].ergebnisse.map((x: any) => x.url));
+    expect(nv.some((u: string) => r.some((x: any) => x.url === u))).toBe(false);
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+    expect(a.produktquellen_teil4.ergebnisse.filter((x: any) => x.seitentyp === "gutschein_kein_produkt").length).toBe(1);
+  });
+});
