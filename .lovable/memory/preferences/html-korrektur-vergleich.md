@@ -41,3 +41,12 @@ Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entschei
 - Metadaten verständlich: „Seitentitel für Browser und Suche“, „Beschreibung für Suchergebnisse“.
 - Schmal: zweizeilig, ohne die HTML-Fenster zu verdrängen. Randnotiz nutzt dieselbe Bezeichnung. Interne Nummern bleiben unverändert.
 - Es sind Vorschläge im Artikel, keine HTML-Dateien.
+
+## Ganzheitliche Leitlinie (Peter, verbindlich für alle HTMLs)
+- Ziel: überzeugender, lesbarer Praxisartikel – keine Sammlung negativer Disclaimer.
+- Positiv und konkret darstellen: tatsächlich angebotene Verfahren, Vorgehen, persönliches Gespräch, Kontakt. Angebote gegen vorhandene Praxisinformationen prüfen, nichts erfinden.
+- Unbewiesene Mechanismen nicht als Tatsache; stattdessen Idee/Ziel der Methode beschreiben („möchte anregen“, „Idee des Modells“). Einordnung gezielt im zusammenhängenden Modellabschnitt, nicht in jeder Aussage „Hypothese/klinischer Nachweis/kein Diagnosebefund“.
+- Falsche Physik- und Ursachenbehauptungen trotzdem konkret an der Stelle korrigieren; ein einmaliger Hinweis deckt sie nicht ab.
+- Gesamtwirkung von Überschriften, Bildern, SEO/Metadaten und Nachbarsätzen prüfen.
+- Medizinische Wirkung nur mit tragfähiger Beleggrundlage; keine Heilgarantie, keine Abwertung von Naturheilkunde oder anderer Medizin. Zahlen ohne Quelle (z. B. OP-Prozentangaben) weder bestätigen noch werblich nutzen.
+- Bereits angenommene Punkte nie rückwirkend umschreiben – nur zusätzliche getrennte Vorschläge.
