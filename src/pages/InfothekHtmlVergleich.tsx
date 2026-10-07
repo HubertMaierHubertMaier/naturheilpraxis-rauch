@@ -386,7 +386,7 @@ export default function InfothekHtmlVergleich() {
       <div className="container py-2">
         <h1 className="font-serif text-lg font-semibold leading-tight">HTML-Vergleich: Frequenztherapie („Krankheit ist messbar“) <span className="text-xs font-normal text-muted-foreground">– Entwurf, nicht veröffentlicht, keine Freigabe</span></h1>
 
-        <div className="sticky top-0 z-10 my-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-xs">
+        <div className="my-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-xs">
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(-1)} aria-label="Vorherige Änderung"><ChevronLeft className="h-4 w-4" />Vorherige</Button>
           <span className="min-w-[4.5rem] text-center font-semibold">{active ? `Ä${active} / ${CHANGES.length}` : `– / ${CHANGES.length}`}</span>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
