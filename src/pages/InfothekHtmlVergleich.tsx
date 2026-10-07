@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
-import { configFor, type ComparisonConfig, COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { configFor, OFFLINE_COMPARISONS, type ComparisonConfig, COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 import { editorialWithRegistry } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 import { fundstelle, articleSections } from "@/lib/infothekFundstelle";
@@ -21,6 +21,8 @@ let CHANGES = CFG.changes; let CHANGE_TOPICS = CFG.topics; let UNMARKED_NOTES = 
 let ROUTE = CFG.base.kind === "delivered" ? CFG.base.route : `/${CFG.slug}.html`;
 export default function InfothekHtmlVergleichRoute() {
   const { slug } = useParams();
+  const off = OFFLINE_COMPARISONS.find((o) => o.slug === slug);
+  if (off) return <div className="container py-10"><h1 className="mb-2 text-2xl font-semibold">{off.heading}</h1><p className="text-muted-foreground">{off.reason}. Original, Entwurf, Vorschläge und deine gespeicherten Entscheidungen bleiben erhalten; der Vergleich ist nicht im Browser-Code enthalten.</p></div>;
   const cfg = configFor(slug ?? "krankheit-ist-messbar");
   CFG = cfg; CHANGES = cfg.changes; CHANGE_TOPICS = cfg.topics; UNMARKED_NOTES = cfg.notes; draftHtml = cfg.draftHtml;
   ROUTE = cfg.base.kind === "delivered" ? cfg.base.route : `/${cfg.slug}.html`;
