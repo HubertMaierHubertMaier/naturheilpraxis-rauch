@@ -41,7 +41,7 @@ export function composeWorkingVersion(
     for (const x of changes) {
       if (x.id === c.id || accepted.has(x.id) || x.headOnly || related(c, x)) continue;
       const xt = findChangeTarget(o, x, "orig");
-      if (xt && region.some((el) => el.contains(xt) || xt.contains(el))) conflicts.push({ id: c.id, with: x.id });
+      if (xt && region.some((el) => el.contains(xt))) conflicts.push({ id: c.id, with: x.id });
     }
   }
 
