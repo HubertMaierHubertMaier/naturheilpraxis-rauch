@@ -1,0 +1,262 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { Layout } from "@/components/layout/Layout";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
+import {
+  buildWikiModel, GROUP_LABEL, matchesAll, neighbours, paginate, PETER_ACTORS, RELATION_LABEL,
+  type Actor, type GroupKey, type WikiModel,
+} from "@/lib/wikiTaxonomy";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+const PAGE = 50;
+const COUNT_TABLES = ["kb_articles", "kb_article_revisions", "kb_entities", "kb_sources", "kb_source_revisions", "kb_relation_candidates", "kb_entity_candidates"] as const;
+type Counts = Partial<Record<(typeof COUNT_TABLES)[number], number>>;
+
+const st = (s: string) => (s === "draft" ? "Entwurf, nicht geprüft" : s === "imported_unreviewed" ? "Import, ungeprüft" : s === "accepted_as_draft" ? "als Entwurf angenommen" : s);
+const all = (table: string, cols: string, order: string[]) =>
+  fetchAllPages((f, t) => order.reduce((q, c) => q.order(c, { ascending: true }), db.from(table).select(cols)).range(f, t));
+
+async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
+  const [e, er, cl, rel, a, ar, s, sr] = await Promise.all([
+    all("kb_entities", "id, entity_type_code, current_revision_id", ["id"]),
+    all("kb_entity_revisions", "id, entity_id, display_name, review_status", ["id"]),
+    all("kb_import_core_links", "candidate_kind, candidate_id, core_record_kind, core_entity_id, core_source_revision_id", ["candidate_kind", "candidate_id"]),
+    all("kb_relation_candidates", "id, subject_candidate_id, object_candidate_id, proposed_relation_type_code, candidate_status, source_candidate_id, source_locator", ["id"]),
+    all("kb_articles", "id, current_revision_id, article_kind", ["id"]),
+    all("kb_article_revisions", "id, article_id, revision_no, title, category_path, review_status", ["id"]),
+    all("kb_sources", "id, current_revision_id", ["id"]),
+    all("kb_source_revisions", "id, source_id, revision_no, title, publisher, authors, review_status", ["id"]),
+  ]);
+  const firstErr = [e, er, cl, rel, a, ar, s, sr].find((x) => x.error)?.error;
+  if (firstErr) throw new Error(firstErr.message);
+  const countRes = await Promise.all(COUNT_TABLES.map((t) => db.from(t).select("id", { count: "exact", head: true })));
+  const counts: Counts = {};
+  COUNT_TABLES.forEach((t, i) => { if (!countRes[i].error) counts[t] = countRes[i].count ?? undefined; });
+  const model = buildWikiModel({
+    entities: e.data as never, entityRevisions: er.data as never, coreLinks: cl.data as never, relations: rel.data as never,
+    articles: a.data as never, articleRevisions: ar.data as never, sources: s.data as never, sourceRevisions: sr.data as never,
+  });
+  return { model, counts };
+}
+
+type View = "start" | "actors" | GroupKey | "folders" | "unassigned";
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", ...GROUP_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+
+function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => set(page - 1)}>Zurück</Button>
+      <span>Seite {page} von {pages} · {total} Treffer</span>
+      <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => set(page + 1)}>Weiter</Button>
+    </div>
+  );
+}
+
+const LinkBadge = ({ kind }: { kind: "import" | "field" | "text" }) => (
+  <Badge variant="outline" className="text-[10px]">{kind === "import" ? "Importverknüpfung, ungeprüft" : kind === "field" ? "Datenfeld" : "Treffer im Quelltext – Zuordnung noch zu prüfen"}</Badge>
+);
+
+export default function WikiOrdnung() {
+  const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [data, setData] = useState<{ model: WikiModel; counts: Counts } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const view = (params.get("v") as View) || "start";
+  const id = params.get("id");
+  const q = params.get("q") ?? "";
+  const role = params.get("rolle") ?? "";
+  const page = Number(params.get("s") ?? "1");
+  const set = (patch: Record<string, string | null>) => {
+    const n = new URLSearchParams(params);
+    Object.entries(patch).forEach(([k, v]) => (v ? n.set(k, v) : n.delete(k)));
+    if (!("s" in patch)) n.delete("s");
+    setParams(n);
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadModel().then(setData).catch((e) => setErr(wikiErrorText(e instanceof Error ? e.message : String(e))));
+  }, [isAdmin]);
+
+  const m = data?.model;
+  const actorsSorted = useMemo(() => {
+    if (!m) return [];
+    const peter = PETER_ACTORS.map((p) => m.actors.get(p.key)!);
+    const rest = [...m.actors.values()].filter((a) => !a.roles.has("Von Peter benannt")).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    return [...peter, ...rest];
+  }, [m]);
+
+  if (authLoading || (user && !roleChecked)) return <Layout><div className="container py-12"><Skeleton className="h-96 w-full" /></div></Layout>;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+
+  const crumbs = (
+    <nav className="mb-4 flex flex-wrap items-center gap-1 text-sm" aria-label="Rückweg">
+      <Link to="/wikidatenbank" className="underline">Wikidatenbank</Link><span>›</span>
+      <button className="underline" onClick={() => setParams(new URLSearchParams())}>Ordnung</button>
+      {view !== "start" && <><span>›</span><button className="underline" onClick={() => setParams(new URLSearchParams({ v: view }))}>{VIEW_LABEL[view]}</button></>}
+      {id && <><span>›</span><span className="font-semibold">Detail</span></>}
+    </nav>
+  );
+  const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size;
+  const ent = (eid: string) => m?.entities.get(eid);
+  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.group, id: eid, q: null })}>{e.name}</button> : null; };
+  const artLine = (aid: string, kind: "field" | "text") => {
+    const a = m!.articles.get(aid)!;
+    return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
+  };
+  const srcLine = (sid: string, extra?: string) => {
+    const s = m!.sources.get(sid);
+    return <li key={sid + (extra ?? "")}>{s ? `${s.title || "Quelle ohne Titel"} (interne Quelle, Rev. ${s.revision_no}, ${st(s.review_status)})` : "Quellenrevision nicht lesbar"}{extra ? ` · Fundstelle: ${extra}` : ""}</li>;
+  };
+
+  let body: JSX.Element | null = null;
+  if (err) body = <Card><CardContent role="alert" className="p-6 text-destructive">{err}</CardContent></Card>;
+  else if (!m) body = <Skeleton className="h-64 w-full" />;
+  else if (view === "start") {
+    const tiles: Array<[View, string, number]> = [
+      ["actors", VIEW_LABEL.actors, m.actors.size],
+      ...(["products", "pathogens", "symptoms", "diseases", "other"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ["folders", VIEW_LABEL.folders, m.folders.size],
+      ["unassigned", VIEW_LABEL.unassigned, m.unassignedArticleIds.length + m.unassignedEntityIds.length],
+    ];
+    const c = data!.counts;
+    body = (
+      <>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {tiles.map(([v, label, n]) => (
+            <button key={v} onClick={() => set({ v })} className="rounded-lg border-2 border-primary/30 bg-card p-4 text-left hover:border-primary">
+              <p className="text-lg font-semibold">{label}</p><p className="text-sm text-muted-foreground">{n} Einträge</p>
+            </button>
+          ))}
+        </div>
+        <Card className="mt-4"><CardContent className="p-4 text-sm">
+          <p className="font-semibold">Exakte Zählung (Server) vs. geladen</p>
+          <ul className="mt-1 list-disc pl-5">
+            <li>Wiki-Artikel: {c.kb_articles ?? "?"} gezählt · {m.articles.size} mit aktueller Revision geladen{m.missingRevisions.articles ? ` · ${m.missingRevisions.articles} ohne lesbare aktuelle Revision` : ""} · Revisionen gesamt: {c.kb_article_revisions ?? "?"}</li>
+            <li>Begriffe (Entitäten): {c.kb_entities ?? "?"} gezählt · {m.entities.size} geladen</li>
+            <li>Interne Quellen: {c.kb_sources ?? "?"} gezählt · {m.sources.size} aktuelle Revisionen geladen</li>
+            <li>Importkandidaten (Beziehungen): {c.kb_relation_candidates ?? "?"} gezählt · {m.relations.length} geladen – Kandidaten sind keine bestätigten Artikel</li>
+          </ul>
+          {c.kb_articles !== undefined && c.kb_articles !== m.articles.size + m.missingRevisions.articles && <p role="alert" className="mt-1 font-semibold text-destructive">Geladener Bestand weicht von der Zählung ab – Anzeige ist unvollständig.</p>}
+        </CardContent></Card>
+      </>
+    );
+  } else if (view === "actors" && !id) {
+    const roles = ["Von Peter benannt", "Hersteller", "Herausgeber", "Autor", "Ordner"];
+    const list = actorsSorted.filter((a) => (!q || matchesAll(a.name, q)) && (!role || a.roles.has(role as never)));
+    const pg = paginate(list, page, PAGE);
+    body = (
+      <>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <Input className="max-w-xs" placeholder="Name suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} aria-label="Firmen und Personen durchsuchen" />
+          {roles.map((r) => <Button key={r} size="sm" variant={role === r ? "default" : "outline"} onClick={() => set({ rolle: role === r ? null : r })}>{r}</Button>)}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {pg.items.map((a) => (
+            <button key={a.key} onClick={() => set({ id: a.key })} className={`rounded-lg border bg-card p-3 text-left hover:border-primary ${a.roles.has("Von Peter benannt") ? "border-2 border-primary/50" : "border-border"}`}>
+              <p className="font-semibold">{a.name}</p>
+              <p className="text-xs text-muted-foreground">{[...a.roles].join(", ")} · {actorCount(a)} Zuordnungen{actorCount(a) === 0 ? " (keine im Bestand gefunden)" : ""}</p>
+            </button>
+          ))}
+        </div>
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+      </>
+    );
+  } else if (view === "actors" && id) {
+    const a = m.actors.get(id);
+    body = !a ? <p>Nicht gefunden.</p> : (
+      <Card><CardContent className="space-y-3 p-4 text-sm">
+        <h2 className="text-xl font-semibold">{a.name}</h2>
+        <div className="flex flex-wrap gap-1">{[...a.roles].map((r) => <Badge key={r} variant="outline">{r}</Badge>)}</div>
+        <p className="text-muted-foreground">Rollen stammen nur aus Datenfeldern (Herstellerbegriff, Herausgeber, Autor, Ordnername) oder aus Peters Benennung – keine abgeleitete Wirksamkeit.</p>
+        {a.entityIds.size > 0 && <div><p className="font-semibold">Mittel/Begriffe (Import, ungeprüft)</p><div className="flex flex-wrap gap-3">{[...a.entityIds].map(entButton)}</div></div>}
+        {a.sourceRevisionIds.size > 0 && <div><p className="font-semibold">Interne Quellen ({a.sourceRevisionIds.size}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{[...a.sourceRevisionIds].map((s) => srcLine(s))}</ul></div>}
+        {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><ul className="space-y-1">{[...a.folderArticleIds].slice(0, 200).map((x) => artLine(x, "field"))}</ul>{a.folderArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.folderArticleIds.size} angezeigt.</p>}</div>}
+        {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><ul className="space-y-1">{[...a.textArticleIds].slice(0, 200).map((x) => artLine(x, "text"))}</ul>{a.textArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.textArticleIds.size} angezeigt.</p>}</div>}
+        {actorCount(a) === 0 && <p className="font-semibold">Im aktuellen Bestand keine Zuordnung und kein Titel-/Ordnertreffer gefunden.</p>}
+      </CardContent></Card>
+    );
+  } else if (view === "folders") {
+    const list = [...m.folders.entries()].filter(([f]) => !q || matchesAll(f, q)).sort((x, y) => y[1].size - x[1].size);
+    const open = id ? m.folders.get(id) : undefined;
+    const pg = paginate<unknown>(open ? [...open] : list, page, PAGE);
+    body = open ? (
+      <Card><CardContent className="p-4 text-sm"><h2 className="mb-2 text-xl font-semibold">Ordner: {id}</h2><ul className="space-y-1">{(pg.items as unknown as string[]).map((x) => artLine(x, "field"))}</ul><div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div></CardContent></Card>
+    ) : (
+      <>
+        <Input className="mb-3 max-w-xs" placeholder="Ordner suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{(pg.items as unknown as [string, Set<string>][]).map(([f, s]) => <button key={f} onClick={() => set({ id: f })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{f}</span> · {s.size} Artikel</button>)}</div>
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+      </>
+    );
+  } else if (view === "unassigned") {
+    const items = [...m.unassignedEntityIds.map((x) => ({ k: "e", id: x, t: m.entities.get(x)!.name })), ...m.unassignedArticleIds.map((x) => ({ k: "a", id: x, t: m.articles.get(x)!.title }))].filter((x) => !q || matchesAll(x.t, q));
+    const pg = paginate(items, page, PAGE);
+    body = (
+      <>
+        <p className="mb-2 text-sm text-muted-foreground">Ohne Firma/Person, ohne Importverknüpfung und ohne Titeltreffer zu einem Begriff. Nichts davon ist ausgeblendet – die Inhalte stehen weiter vollständig in der Wikidatenbank.</p>
+        <Input className="mb-3 max-w-xs" placeholder="Suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <ul className="space-y-1 text-sm">{pg.items.map((x) => x.k === "e" ? <li key={x.id}>Begriff: {entButton(x.id)}</li> : <li key={x.id}>Artikel: {x.t}</li>)}</ul>
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+      </>
+    );
+  } else if (!id) {
+    const g = view as GroupKey;
+    const list = [...m.entities.values()].filter((e) => e.group === g && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const pg = paginate(list, page, PAGE);
+    body = (
+      <>
+        <Input className="mb-3 max-w-xs" placeholder={`${GROUP_LABEL[g]} suchen`} value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · {neighbours(m, e.id).length} Verknüpfungen</button>)}</div>
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+      </>
+    );
+  } else {
+    const e = m.entities.get(id);
+    const nb = e ? neighbours(m, e.id) : [];
+    const byGroup = (["products", "pathogens", "symptoms", "diseases", "other"] as GroupKey[]).map((g) => [g, nb.filter((x) => x.other!.group === g)] as const).filter(([, xs]) => xs.length);
+    const makers = [...m.actors.values()].filter((a) => e && a.entityIds.has(e.id));
+    const texts = e ? [...(m.articleTextEntities.get(e.id) ?? [])] : [];
+    body = !e ? <p>Nicht gefunden.</p> : (
+      <Card><CardContent className="space-y-3 p-4 text-sm">
+        <h2 className="text-xl font-semibold">{e.name}</h2>
+        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge></div>
+        <p className="text-muted-foreground">Beschreibungen aus Hersteller-/Autorenmaterial sind Quellenangaben – keine bestätigte Wirksamkeit oder Therapieempfehlung.</p>
+        {makers.length > 0 && <p>Firma/Person: {makers.map((a) => <button key={a.key} className="mr-2 underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button>)}</p>}
+        {byGroup.map(([g, xs]) => (
+          <div key={g}><p className="font-semibold">{GROUP_LABEL[g]} ({xs.length})</p>
+            <ul className="space-y-1">{xs.map(({ relation: r, other, direction }) => (
+              <li key={r.id + direction} className="flex flex-wrap items-center gap-2">
+                {direction === "out" ? <>{RELATION_LABEL[r.type] ?? r.type} → {entButton(other!.id)}</> : <>{entButton(other!.id)} → {RELATION_LABEL[r.type] ?? r.type}</>}
+                <LinkBadge kind="import" /><Badge variant="secondary" className="text-[10px]">{st(r.status)}</Badge>
+                <span className="text-xs text-muted-foreground">{r.sourceRevisionId ? (() => { const s = m.sources.get(r.sourceRevisionId!); return `Quelle: ${s?.title ?? "nicht lesbar"}${s ? ` (Rev. ${s.revision_no})` : ""}${r.locator ? ` · ${r.locator}` : ""}`; })() : "Keine Quelle verknüpft"}</span>
+              </li>
+            ))}</ul>
+          </div>
+        ))}
+        {nb.length === 0 && <p>Keine Importverknüpfungen zu anderen Begriffen.</p>}
+        {texts.length > 0 && <div><p className="font-semibold">Artikel mit Namen im Titel ({texts.length})</p><ul className="space-y-1">{texts.slice(0, 200).map((x) => artLine(x, "text"))}</ul></div>}
+      </CardContent></Card>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="container py-8">
+        {crumbs}
+        <h1 className="mb-1 text-2xl font-semibold">Wikidatenbank – Ordnung {view !== "start" && `· ${VIEW_LABEL[view]}`}</h1>
+        <p className="mb-4 text-sm text-muted-foreground">Nur lesend, nur für Admins. Alle Zuordnungen stammen aus vorhandenen Daten und sind gekennzeichnet; nichts ist fachlich freigegeben.</p>
+        {body}
+      </div>
+    </Layout>
+  );
+}

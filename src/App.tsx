@@ -42,6 +42,7 @@ const Erstanmeldung = lazy(() => import("./pages/Erstanmeldung"));
 const Quellenhinweis = lazy(() => import("./pages/Quellenhinweis"));
 const Wissensdatenbank = lazy(() => import("./pages/Wissensdatenbank"));
 const WikiDatenbank = lazy(() => import("./pages/WikiDatenbank"));
+const WikiOrdnung = lazy(() => import("./pages/WikiOrdnung"));
 const TherapieKandidaten = lazy(() => import("./pages/TherapieKandidaten"));
 const Raucherentwoehnung = lazy(() => import("./pages/Raucherentwoehnung"));
 const SchilddrueseHypnose = lazy(() => import("./pages/SchilddrueseHypnose"));
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/wissensdatenbank" element={<Wissensdatenbank />} />
               <Route path="/wikidatenbank" element={<WikiDatenbank />} />
+              <Route path="/wikidatenbank/ordnung" element={<WikiOrdnung />} />
               <Route path="/therapie-kandidaten" element={<TherapieKandidaten />} />
               <Route path="/admin/infothek-vergleich/krankheit-ist-messbar" element={<InfothekHtmlVergleich />} />
               <Route path="/patienten" element={<PatientenManagerPage />} />
