@@ -30,6 +30,9 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
   badge.textContent = `Ä${change.id} · ${style === "kept" ? "Original beibehalten (nicht übernommen)" : MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
   target.classList.add("cmp-mark", style);
   target.setAttribute("data-change", String(change.id));
+  // Mark the full replaced range (neighbouring text nodes), so no unmarked remainder appears.
+  if (!change.img) [change.withPrev ? target.previousElementSibling : null, change.withNext ? target.nextElementSibling : null]
+    .forEach((el) => el?.classList.add("cmp-mark", style));
   if (change.img) target.parentElement?.insertBefore(badge, target);
   else target.prepend(badge);
   if (style === "draft" || style === "kept") {
