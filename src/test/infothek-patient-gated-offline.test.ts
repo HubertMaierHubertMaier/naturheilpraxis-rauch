@@ -20,9 +20,9 @@ describe("patientengeschützte Vergleiche offline", () => {
     expect(n).toEqual({ allergiebehandlung: 12, "candida-diaet": 16, "sibo-duenndarmfehlbesiedlung": 8, "kraeuter-schmerz-entzuendung": 6, "dankbarkeit-alltag": 1 });
     for (const c of j.vergleiche) { readFileSync(c.original); readFileSync(c.entwurf); }
   });
-  it("Snippets der Offline-Vergleiche nicht im Client", () => {
+  it("Snippets der Offline-Vergleiche nicht im Client (gleichlautende Standardbegründungen online ausgenommen)", () => {
     const j = JSON.parse(readFileSync("docs/infothek-offline/patient-gated-vergleiche.json", "utf8"));
-    const why = j.vergleiche.flatMap((c: { changes: { why: string }[] }) => c.changes.map((x) => x.why)).filter((w: string) => w.length > 40);
+    const why = j.vergleiche.flatMap((c: { changes: { why: string }[] }) => c.changes.map((x) => x.why)).filter((w: string) => w.length > 40 && !COMPARISON_CONFIGS.some((c) => c.changes.some((x) => x.why === w)));
     const all = SRC.map((f) => readFileSync(f, "utf8")).join("\n");
     for (const w of why) expect(all.includes(w)).toBe(false);
   });
