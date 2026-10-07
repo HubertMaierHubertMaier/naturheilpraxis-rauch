@@ -15,3 +15,10 @@ describe("Wiki-Kacheln A–Z", () => {
     expect((t.match(/sortBy=\{artTitle\}|byName\(artTitle\(a\), artTitle\(b\)\)/g) ?? []).length).toBe((t.match(/artLine\(x,/g) ?? []).length);
   });
 });
+describe("Artikel-Detail", () => {
+  it("nur aktuelle Revision, Fehler/Leer sichtbar, Kachel öffnet", () => {
+    const d = readFileSync("src/components/wiki/WikiArticleDetail.tsx", "utf8");
+    expect(d).toContain("current_revision_id"); expect(d).toContain("nicht gefunden"); expect(d).toContain("Fehler beim Laden"); expect(d).toContain("r.data.article_id !== articleId");
+    expect(readFileSync("src/pages/WikiOrdnung.tsx", "utf8")).toContain('onOpen={() => set({ a: aid, s: params.get("s") })}');
+  });
+});
