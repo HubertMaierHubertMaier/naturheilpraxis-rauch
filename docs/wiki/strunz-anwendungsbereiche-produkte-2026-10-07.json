@@ -2377,7 +2377,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: plant), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -2569,7 +2570,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: lab_parameter, nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -3318,7 +3320,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -3360,7 +3363,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -3729,7 +3733,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: lab_parameter, nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -4676,7 +4681,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -5123,7 +5129,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: lab_parameter, nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -5282,7 +5289,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -5922,7 +5930,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: lab_parameter, nutrient), keine Produktkarte; keine Produktidentität"
    }
   },
   {
@@ -5969,7 +5978,8 @@
       "status": "imported_unreviewed"
      }
     ],
-    "mehrdeutig": true
+    "mehrdeutig": true,
+    "hinweis": "gleichnamige Einträge sind Stoff-/Themenkarten (Typen: lab_parameter), keine Produktkarte; keine Produktidentität"
    }
   },
   {
