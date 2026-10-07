@@ -33,6 +33,7 @@ export function composeWorkingVersion(
 
   for (const c of changes) {
     if (!accepted.has(c.id)) continue;
+    if (changes.some((x) => x.supersedes === c.id && accepted.has(x.id))) continue;
     if (c.headOnly?.kind === "title") {
       o.title = d.title;
       continue;

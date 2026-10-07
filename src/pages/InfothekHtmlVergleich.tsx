@@ -29,7 +29,9 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
   badge.className = `cmp-badge ${style}`;
   badge.textContent = `Ä${change.id} · ${style === "kept" ? "Original beibehalten (nicht übernommen)" : MARK[side].label}${change.img ? " (Alt-Text)" : ""}`;
   target.classList.add("cmp-mark", style);
-  target.setAttribute("data-change", String(change.id));
+  // Alternative proposals (supersedes) share the original element with the earlier proposal.
+  if (target.hasAttribute("data-change")) target.setAttribute("data-change-also", `${target.getAttribute("data-change-also") ?? ""} ${change.id}`.trim());
+  else target.setAttribute("data-change", String(change.id));
   // Mark the full replaced range (neighbouring text nodes), so no unmarked remainder appears.
   if (!change.img) [change.withPrev ? target.previousElementSibling : null, change.withNext ? target.nextElementSibling : null]
     .forEach((el) => el?.classList.add("cmp-mark", style));
@@ -99,7 +101,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     tag.className = "cmp-sec";
     tag.textContent = `Abschnitt ${i + 1}`;
     sec.prepend(tag);
-    sec.querySelectorAll("[data-change]").forEach((el) => sectionOf.set(Number(el.getAttribute("data-change")), i + 1));
+    sec.querySelectorAll("[data-change]").forEach((el) => { sectionOf.set(Number(el.getAttribute("data-change")), i + 1); (el.getAttribute("data-change-also") ?? "").split(" ").filter(Boolean).forEach((x) => sectionOf.set(Number(x), i + 1)); });
   });
   const base = doc.createElement("base");
   base.href = `${window.location.origin}/`;
@@ -347,7 +349,7 @@ export default function InfothekHtmlVergleich() {
       doc.querySelectorAll("[data-active]").forEach((el) => el.removeAttribute("data-active"));
       if (id === undefined) continue;
       if (CHANGES.find((c) => c.id === id)?.headOnly) { if (scroll) setScroll(side, 0); continue; }
-      const el = doc.querySelector(`[data-change="${id}"]`);
+      const el = doc.querySelector(`[data-change="${id}"], [data-change-also~="${id}"]`);
       if (!el) continue;
       el.setAttribute("data-active", "");
       if (!scroll) continue;
@@ -378,11 +380,11 @@ export default function InfothekHtmlVergleich() {
       }
     }
     const c = CHANGES.find((x) => x.id === cardIdRef.current);
-    const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"]`) : null;
+    const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"], [data-change-also~="${c.id}"]`) : null;
     setCardTop(el ? el.getBoundingClientRect().top : 0);
     // Full wording of the marked element on both sides (badge/why box excluded).
     const textOf = (side: Side) => {
-      const t = c && !c.headOnly ? docOf(side)?.querySelector(`[data-change="${c.id}"]`) : null;
+      const t = c && !c.headOnly ? docOf(side)?.querySelector(`[data-change="${c.id}"], [data-change-also~="${c.id}"]`) : null;
       if (!t) return undefined;
       // iframe elements belong to another realm: instanceof HTMLImageElement is always false there.
       if (t.tagName === "IMG") return t.getAttribute("alt") || undefined;
