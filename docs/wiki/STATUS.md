@@ -79,3 +79,6 @@ Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_e
 - Offen: kb_article_revisions lädt alle Revisionen inkl. content_markdown (nur aktuelle werden genutzt) – Optimierung möglich.
 - Vorschlagsstichprobe: docs/wiki/vernetzung-vorschlag-stichprobe.json (8 Kandidaten: Mannayan, Radegundis, Nutramedix, Heel, Pascoe, Vitaplace, Klinghardt-Erythromycin, HNO-ChipCard) mit stabilem candidate_key, Revisions-ID, Fundstelle, Produktart, Beziehungen, Unsicherheit. NICHT angewendet.
 - Vitaplace (07.10.2026, Codex extern geprüft): unter Apotheken als „extern geprüfte Betreiberzuordnung" (vitaplace.de, BfArM-Versandhandelsregister mit Blumenau-Apotheke, Impressum Blumenau-Apotheke); Produktlinienrolle bleibt; Artikel weiter über Ordner. Keine DB-Rolle; reversibel in EXTERNAL_PHARMACIES.
+
+## Abschlussnachweis 07.10.2026
+SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf65764b6; Offline 61 PASS/0 FAIL/Exit 0; Wiki-Tests 22 PASS; Astra: letzte 3 Befunde behoben. Commit 7668d96a, GitHub-Sync unbestätigt. KEINE Anwendungsfreigabe – offen: Hosted-Fingerprint/Rollen, Backup-Integration, Import-Rollback. Vernetzung offen: 34 Akteure, 8 Kandidaten (2 vollständig/6 unvollständig). HTML 28/36, offen Ä2,11,13,31,32,33,34. Serie beendet.
