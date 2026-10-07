@@ -39,3 +39,24 @@ describe("149 unmapped Strunz products", () => {
     expect(a.ungemappt_abgleich.vollstaendigkeit).toContain("keine Aussage über das gesamte");
   });
 });
+
+describe("Strunz Produktquellen Teil 1 und Beleg 69", () => {
+  const a = STRUNZ_AREA as any;
+  it("24 Produktseiten, nur explizite EAN, Hersteller nie aus Marke", () => {
+    const r = a.produktquellen_teil1.ergebnisse;
+    expect(r.length).toBe(24);
+    const order = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung !== "variante_offen").slice(0, 24).map((x: any) => x.url);
+    expect(r.map((x: any) => x.url)).toEqual(order);
+    r.forEach((x: any) => {
+      expect(x.abgerufen).toMatch(/Z$/);
+      if (!x.ean) expect(x.ean_fundstelle).toBe("nicht angegeben");
+      if (!x.hersteller) expect(x.hersteller_status).toContain("offen");
+    });
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+  });
+  it("69 Treffer per Abfrage belegt", () => {
+    expect(a.beleg_69.ergebnis.url_identisch_mit_kandidat).toBe(69);
+    expect(a.beleg_69.abweichungen).toEqual([]);
+    expect(a.methode).toContain("alle 21 Seiten");
+  });
+});
