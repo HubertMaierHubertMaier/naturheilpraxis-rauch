@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WikiArticleDetail } from "@/components/wiki/WikiArticleDetail";
 import { SiboGasProfiles } from "@/components/wiki/SiboGasProfiles";
 import { GAS_CANDIDATES } from "@/lib/siboGasProfiles";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
@@ -121,11 +122,13 @@ export default function WikiOrdnung() {
   const view = (params.get("v") as View) || "start";
   const m = data?.model;
   const id = params.get("id");
+  const art = params.get("a");
   const q = params.get("q") ?? "";
   const role = params.get("rolle") ?? "";
   const page = Number(params.get("s") ?? "1");
   const set = (patch: Record<string, string | null>) => {
     const n = new URLSearchParams(params);
+    if (!("a" in patch)) n.delete("a");
     Object.entries(patch).forEach(([k, v]) => (v ? n.set(k, v) : n.delete(k)));
     if (!("s" in patch)) n.delete("s");
     setParams(n);
@@ -168,7 +171,7 @@ export default function WikiOrdnung() {
   const artTitle = (aid: string) => m?.articles.get(aid)?.title ?? aid;
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
-    return <li key={aid}><WikiTile title={a.title} meta={<><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></>} /></li>;
+    return <li key={aid}><WikiTile title={a.title} onOpen={() => set({ a: aid, s: params.get("s") })} meta={<><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></>} /></li>;
   };
   const srcText = (sid: string) => {
     const s = m!.allSourceRevisions.get(sid);
@@ -189,7 +192,8 @@ export default function WikiOrdnung() {
   );
 
   let body: JSX.Element | null = null;
-  if (err) body = <Card><CardContent role="alert" className="p-6 text-destructive">{err}</CardContent></Card>;
+  if (art && !err) body = <WikiArticleDetail articleId={art} onBack={() => set({ a: null, s: params.get("s") })} />;
+  else if (err) body = <Card><CardContent role="alert" className="p-6 text-destructive">{err}</CardContent></Card>;
   else if (!m) body = <Skeleton className="h-64 w-full" />;
   else if (view === "start") {
     const tiles: Array<[View, string, number]> = [
@@ -445,7 +449,7 @@ export default function WikiOrdnung() {
       <>
         <p className="mb-2 text-sm text-muted-foreground">Ohne Firma/Person, ohne Importverknüpfung und ohne Titeltreffer zu einem Begriff. Nichts davon ist ausgeblendet – die Inhalte stehen weiter vollständig in der Wikidatenbank.</p>
         <Input className="mb-3 max-w-xs" placeholder="Suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
-        <ul className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((x) => { const e = x.k === "e" ? ent(x.id) : undefined; return <li key={x.id}>{x.k === "e" ? <WikiTile title={e?.name ?? x.id} meta="Begriff" onOpen={e ? () => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: x.id, q: null }) : undefined} /> : <WikiTile title={x.t} meta="Artikel" />}</li>; })}</ul>
+        <ul className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((x) => { const e = x.k === "e" ? ent(x.id) : undefined; return <li key={x.id}>{x.k === "e" ? <WikiTile title={e?.name ?? x.id} meta="Begriff" onOpen={e ? () => set({ v: e.drug ? "drugs" : e.chipCard ? "chipcards" : e.nutrient ?? e.group, id: x.id, q: null }) : undefined} /> : <WikiTile title={x.t} meta="Artikel" onOpen={() => set({ a: x.id, s: params.get("s") })} />}</li>; })}</ul>
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
