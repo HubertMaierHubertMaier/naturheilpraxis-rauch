@@ -165,3 +165,10 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - composeWorkingVersion meldet Überlappung eines Austauschbereichs (inkl. withPrev/withNext) mit einem unabhängigen, nicht übernommenen Vorschlag als Konflikt und wendet ihn nicht an; supersedes-Paare ausgenommen.
 - Tests: SIBO 6/4/4+6, Einzelübernahme aller Vergleiche ohne Konflikt, KIM 33→17/35→8/36→5.
 - Quellenpaket 2: veralteter IMO-Prüfpunkt entfernt (Volltextbeleg vorhanden).
+
+## 2026-10-07 ca. 21:05Z Strunz mögliche Varianten (13)
+- 13/13 HTTP 200 (`produktquellen_varianten`), 56 Bereichsnennungen unverändert; 13 verschiedene EAN; Marke laut H1 (for you eHealth 9, FOREVER YOUNG 4).
+- Seitenbelegte Auswahlfelder nur bei Multi Eiweiß und Vitamineral Phyto (je 2 Geschmacksrichtungen) – Shop-Auswahl, keine bestätigte Identität/variant_of. bcaa+glutamin, amino energy, amino night, darmflora komplex: Namenshypothese bleibt.
+- Verzehrempfehlungen nur wörtlich als Shopangabe intern erfasst; Packungsgröße/Darreichung/Zielgruppe offen; Hersteller überall offen.
+- 149 URLs / 136 Einträge / 13 Hypothesen in 6 Gruppen / Gutschein unverändert.
+- Offen: wörtliche Fundstellen 1–72, Hersteller aller 149.
