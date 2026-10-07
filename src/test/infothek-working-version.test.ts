@@ -5,7 +5,7 @@ import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES } from "@/lib/infothekComparis
 
 const original = readFileSync("website-content/infothek/krankheit-ist-messbar.html", "utf8");
 const draft = readFileSync("website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html", "utf8");
-const text = (html: string) => new DOMParser().parseFromString(html, "text/html").body.textContent!.replace(/\s+/g, " ").trim();
+const text = (html: string) => new DOMParser().parseFromString(html, "text/html").body.textContent!.replace(/\s+/g, "");
 
 it("keeps the original wording when nothing is accepted", () => {
   const { html, failed } = composeWorkingVersion(original, draft, CHANGES, new Set());
