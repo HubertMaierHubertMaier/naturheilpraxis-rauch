@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import SEOHead from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, type ComparisonChange } from "@/lib/infothekComparisonChanges";
@@ -45,7 +46,7 @@ function markChange(doc: Document, change: ComparisonChange, side: Side): boolea
 }
 
 /** Static, script-free rendering with change markers. */
-export function toStaticPreview(html: string, side: Side): { html: string; found: Set<number> } {
+export function toStaticPreview(html: string, side: Side): { html: string; found: Set<number>; sectionOf: Map<number, number> } {
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("script, iframe, object, embed, meta[http-equiv]").forEach((el) => el.remove());
   doc.querySelectorAll("*").forEach((el) => {
@@ -60,6 +61,16 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
   });
   const found = new Set<number>();
   for (const change of CHANGES) if (markChange(doc, change, side)) found.add(change.id);
+  // Shared section numbers (same slide order in original and draft).
+  const sectionOf = new Map<number, number>();
+  doc.querySelectorAll(".reveal .slides > section").forEach((sec, i) => {
+    sec.setAttribute("data-sec", String(i + 1));
+    const tag = doc.createElement("div");
+    tag.className = "cmp-sec";
+    tag.textContent = `Abschnitt ${i + 1}`;
+    sec.prepend(tag);
+    sec.querySelectorAll("[data-change]").forEach((el) => sectionOf.set(Number(el.getAttribute("data-change")), i + 1));
+  });
   const base = doc.createElement("base");
   base.href = `${window.location.origin}/`;
   doc.head.prepend(base);
@@ -82,10 +93,12 @@ export function toStaticPreview(html: string, side: Side): { html: string; found
     .cmp-mark { background: ${c.bg} !important; box-shadow: inset 6px 0 0 ${c.border}; padding: 4px 8px 4px 14px !important; border-radius: 4px; color: #1f2937 !important; scroll-margin: 40px; }
     img.cmp-mark { border: 6px solid ${c.border}; padding: 0 !important; box-shadow: none; }
     .cmp-mark[data-active] { outline: 4px solid ${MARK.active}; outline-offset: 3px; }
+    .reveal .slides > section { box-sizing: border-box !important; }
+    .cmp-sec { display: block; margin: -12px 0 10px; font: 700 12px/1.4 Arial, sans-serif !important; color: #475569 !important; letter-spacing: .04em; text-transform: uppercase; }
     .cmp-badge { display: inline-block; margin: 0 8px 4px 0; padding: 2px 8px; border-radius: 999px; background: ${c.border}; color: #fff !important;
       font: 700 13px/1.4 Arial, sans-serif !important; letter-spacing: 0; text-transform: none; vertical-align: middle; }`;
   doc.head.appendChild(style);
-  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found };
+  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found, sectionOf };
 }
 
 function Pane({ label, html, error, frameRef, onLoad }: {
@@ -110,7 +123,11 @@ function Pane({ label, html, error, frameRef, onLoad }: {
 
 export default function InfothekHtmlVergleich() {
   const { user, loading, isAdmin, roleChecked } = useAuth();
-  const [original, setOriginal] = useState<{ html: string; found: Set<number> }>();
+  const [original, setOriginal] = useState<ReturnType<typeof toStaticPreview>>();
+  const [synced, setSynced] = useState(true);
+  const syncedRef = useRef(true);
+  syncedRef.current = synced;
+  const ignoreScroll = useRef<Record<Side, boolean>>({ orig: false, draft: false });
   const [error, setError] = useState<string>();
   const [active, setActive] = useState<number>();
   const origRef = useRef<HTMLIFrameElement>(null);
@@ -140,19 +157,92 @@ export default function InfothekHtmlVergleich() {
 
   const jumpable = CHANGES.filter((c) => !c.headOnly);
 
+  const docOf = (side: Side) => (side === "orig" ? origRef : draftRef).current?.contentDocument ?? null;
+  const absTop = (el: Element) => el.getBoundingClientRect().top + (el.ownerDocument.defaultView?.scrollY ?? 0);
+  const setScroll = (side: Side, y: number) => {
+    const win = docOf(side)?.defaultView;
+    if (!win || Math.abs(win.scrollY - y) < 1) return;
+    ignoreScroll.current[side] = true;
+    win.scrollTo(0, y);
+  };
+
+  /** Make each section pair equally tall so shared section numbers sit at the same height. */
+  const equalize = useCallback(() => {
+    const a = docOf("orig"), b = docOf("draft");
+    if (!a || !b) return;
+    const sa = Array.from(a.querySelectorAll<HTMLElement>("[data-sec]"));
+    const sb = Array.from(b.querySelectorAll<HTMLElement>("[data-sec]"));
+    [...sa, ...sb].forEach((el) => (el.style.minHeight = ""));
+    sa.forEach((el, i) => {
+      const other = sb[i];
+      if (!other) return;
+      const h = Math.max(el.offsetHeight, other.offsetHeight);
+      el.style.minHeight = other.style.minHeight = `${h}px`;
+    });
+  }, []);
+
+  /** Map the source viewport top to the same section + relative position in the other frame. */
+  const syncFrom = useCallback((from: Side) => {
+    const to: Side = from === "orig" ? "draft" : "orig";
+    const src = docOf(from), dst = docOf(to);
+    if (!src || !dst) return;
+    const y = src.defaultView!.scrollY;
+    const secs = Array.from(src.querySelectorAll<HTMLElement>("[data-sec]"));
+    let cur = secs[0];
+    for (const sec of secs) if (absTop(sec) <= y + 1) cur = sec;
+    if (!cur) return;
+    const top = absTop(cur);
+    const frac = Math.min(1, Math.max(0, (y - top) / Math.max(1, cur.offsetHeight)));
+    const target = dst.querySelector<HTMLElement>(`[data-sec="${cur.getAttribute("data-sec")}"]`);
+    if (!target) return;
+    setScroll(to, y < top ? y : absTop(target) + frac * target.offsetHeight);
+  }, []);
+
   const applyActive = useCallback((id?: number) => {
-    for (const ref of [origRef, draftRef]) {
-      const doc = ref.current?.contentDocument;
+    let anchorY: number | undefined;
+    for (const side of ["orig", "draft"] as Side[]) {
+      const doc = docOf(side);
       if (!doc) continue;
       doc.querySelectorAll("[data-active]").forEach((el) => el.removeAttribute("data-active"));
       if (id === undefined) continue;
       const el = doc.querySelector(`[data-change="${id}"]`);
-      if (el) {
-        el.setAttribute("data-active", "");
-        el.scrollIntoView({ block: "center" });
-      }
+      if (!el) continue;
+      el.setAttribute("data-active", "");
+      const win = doc.defaultView!;
+      // Place both markers at the same viewport height (first one centred, second aligned to it).
+      if (anchorY === undefined) anchorY = Math.max(40, win.innerHeight / 2 - el.getBoundingClientRect().height / 2);
+      setScroll(side, Math.max(0, absTop(el) - anchorY));
     }
   }, []);
+
+  const [loaded, setLoaded] = useState(0);
+  const onFrameLoad = useCallback(() => setLoaded((n) => n + 1), []);
+  useEffect(() => {
+    const a = docOf("orig"), b = docOf("draft");
+    if (!a || !b) return;
+    equalize();
+    const cleanups: (() => void)[] = [];
+    for (const doc of [a, b]) {
+      Array.from(doc.images).forEach((img) => {
+        if (!img.complete) { img.addEventListener("load", equalize); cleanups.push(() => img.removeEventListener("load", equalize)); }
+      });
+    }
+    for (const side of ["orig", "draft"] as Side[]) {
+      const win = docOf(side)!.defaultView!;
+      const handler = () => {
+        if (ignoreScroll.current[side]) { ignoreScroll.current[side] = false; return; }
+        if (syncedRef.current) syncFrom(side);
+      };
+      win.addEventListener("scroll", handler, { passive: true });
+      cleanups.push(() => win.removeEventListener("scroll", handler));
+    }
+    const onResize = () => { equalize(); syncFrom("orig"); };
+    window.addEventListener("resize", onResize);
+    cleanups.push(() => window.removeEventListener("resize", onResize));
+    applyActive(active);
+    return () => cleanups.forEach((fn) => fn());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, equalize, syncFrom]);
 
   useEffect(() => applyActive(active), [active, applyActive]);
 
@@ -191,6 +281,10 @@ export default function InfothekHtmlVergleich() {
             <Button size="sm" variant="outline" onClick={() => step(-1)}><ChevronLeft className="h-4 w-4" />Vorherige Änderung</Button>
             <Button size="sm" variant="outline" onClick={() => step(1)}>Nächste Änderung<ChevronRight className="h-4 w-4" /></Button>
             <span className="text-xs text-muted-foreground">{active ? `Ä${active} von ${CHANGES.length}` : `${CHANGES.length} Änderungen`}</span>
+            <label className="ml-auto flex items-center gap-2 text-xs font-medium">
+              <Switch checked={synced} onCheckedChange={(v) => { setSynced(v); if (v) syncFrom("orig"); }} aria-label="Synchron scrollen" />
+              Synchron scrollen (nach gemeinsamer Abschnittsnummer)
+            </label>
           </div>
           <ol className="max-h-56 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
             {CHANGES.map((c) => (
@@ -204,7 +298,7 @@ export default function InfothekHtmlVergleich() {
                 ) : (
                   <button type="button" onClick={() => setActive(c.id)} aria-current={active === c.id}
                     className={`w-full rounded border px-2 py-1 text-left hover:bg-muted ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
-                    <span className="font-semibold">Ä{c.id}</span> [{c.reason.join(", ")}] {c.note}
+                    <span className="font-semibold">Ä{c.id}</span>{original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{status(c, "orig")}{status(c, "draft")}</span>
                   </button>
                 )}
@@ -217,8 +311,8 @@ export default function InfothekHtmlVergleich() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={() => applyActive(active)} />
-          <Pane label="Vorgeschlagener Entwurf" html={draft.html} frameRef={draftRef} onLoad={() => applyActive(active)} />
+          <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
+          <Pane label="Vorgeschlagener Entwurf" html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
         </div>
       </div>
     </Layout>
