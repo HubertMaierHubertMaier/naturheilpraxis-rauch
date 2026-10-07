@@ -20,12 +20,13 @@ describe("Jeder Textvorschlag liegt in einem echten Abschnitt (Original und Entw
     const o = P.parseFromString(c.base.kind === "baseDraft" ? c.base.html : readFileSync(`website-content/infothek/${c.slug}.html`, "utf8"), "text/html");
     const d = P.parseFromString(c.draftHtml, "text/html");
     const so = articleSections(o), sd = articleSections(d);
-    expect(so.length).toBe(sd.length);
+    const added = c.changes.some((x) => x.insertAfter); // Kieferostitis: Entwurf ergänzt einen Abschnitt
+    if (!added) expect(so.length).toBe(sd.length);
     for (const ch of c.changes) {
       if (ch.headOnly || !ch.orig) continue;
       const to = findChangeTarget(o, ch, "orig"), td = findChangeTarget(d, ch, "draft");
       const io = so.findIndex((s) => to && s.contains(to)), id = sd.findIndex((s) => td && s.contains(td));
-      expect({ id: ch.id, io: io >= 0, same: io === id }).toEqual({ id: ch.id, io: true, same: true });
+      expect({ id: ch.id, io: io >= 0, same: added || io === id }).toEqual({ id: ch.id, io: true, same: true });
     }
   });
 });
