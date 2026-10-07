@@ -1,0 +1,201 @@
+{
+  "datum": "2026-10-07T18:10Z",
+  "modus": "read-only SELECT, keine Writes",
+  "abfrageumfang": "kb_articles JOIN kb_article_revisions ON current_revision_id WHERE category_path ILIKE '%strunz%anwend%' (alle Zeilen, ohne LIMIT); Revisionszahl je Artikel aus kb_article_revisions",
+  "anzahl": 21,
+  "revisions_ids_md5": "98ea574424a4ffbbb51834f4f5d1b611",
+  "md5_definition": "md5(string_agg(rev_id::text, ',' ORDER BY rev_id))",
+  "befund": "Alle 21 sind kurze interne Quellenkarten (~530 Zeichen, Typ manufacturer_application_area_index), je 1 Revision (Nr. 1, aktuell, review_status draft), je genau 1 Fundstelle = Strunz-Übersichtsseite des Anwendungsbereichs. Kein Produkt-, Stoff- oder Nährstoffname im Kartentext.",
+  "zuordnung_zu_9_produkten": "keine belegbar – die Karten enthalten nur die URL der Übersichtsseite; eine Produkt-/Nährstoffzuordnung wäre ohne Fundstelle erfunden. Nur Kandidat: Übersichtsseiten abrufen und Produktnennungen mit Fundstelle erfassen (nicht ausgeführt).",
+  "artikel": [
+    {
+      "titel": "Abnehmen und Stoffwechsel",
+      "article_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+      "revision_id": "335f1f3e-dfaa-4e00-a330-0d228847e8ed",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abnehmen.html"
+    },
+    {
+      "titel": "Allergien und Unvertraeglichkeiten",
+      "article_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+      "revision_id": "96cb634b-8c0f-49c6-a3ce-0b196c52b4ca",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/allergien.html"
+    },
+    {
+      "titel": "Augen",
+      "article_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+      "revision_id": "aa248d2f-d4ad-4afd-b25d-c69964d4398a",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/augen.html"
+    },
+    {
+      "titel": "Darm und Verdauung",
+      "article_id": "a7bf78fb-a6ab-43cc-af22-f2ab2e381429",
+      "revision_id": "a7bf78fb-a6ab-43cc-af22-f2ab2e381429",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/darm-verdauung.html"
+    },
+    {
+      "titel": "Energie und Mitochondrien",
+      "article_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+      "revision_id": "b6d3a0d5-5707-4231-af98-6302e38ab515",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/energie-mitochondrien.html"
+    },
+    {
+      "titel": "Entzuendungen",
+      "article_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+      "revision_id": "e4eab681-8623-475c-b14c-13b0098c2602",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entzuendungen.html"
+    },
+    {
+      "titel": "Frauengesundheit",
+      "article_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+      "revision_id": "9bc25b7e-e90f-4887-a0da-a342b74c1a6e",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/frauengesundheit.html"
+    },
+    {
+      "titel": "Gehirn, Nerven und Psyche",
+      "article_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+      "revision_id": "4eb398c4-eb71-40bb-a62f-64821b4cba8f",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/gehirn-nerven-psyche.html"
+    },
+    {
+      "titel": "Haut, Haare und Naegel",
+      "article_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+      "revision_id": "04723a46-a654-4940-a4bf-9c9398d52b6e",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/haut-haare-naegel.html"
+    },
+    {
+      "titel": "Herz und Gefaesse",
+      "article_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+      "revision_id": "2af5eb67-734c-45e7-8db4-d09ba52a8591",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/herz-und-gefaesse.html"
+    },
+    {
+      "titel": "Immunsystem und Abwehrkraefte",
+      "article_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+      "revision_id": "df202673-e1e8-443b-94e3-9c98b0260b04",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/abwehrkraefte.html"
+    },
+    {
+      "titel": "Kindergesundheit",
+      "article_id": "97170675-9232-41b1-a773-14e59a483a34",
+      "revision_id": "97170675-9232-41b1-a773-14e59a483a34",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/kindergesundheit.html"
+    },
+    {
+      "titel": "Knochen, Gelenke und Sehnen",
+      "article_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+      "revision_id": "ed403fe7-c8f4-4d00-90e3-8e9c4401f496",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/knochen-gelenke-sehnen.html"
+    },
+    {
+      "titel": "Leber und Entgiften",
+      "article_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+      "revision_id": "6875c5e9-95d0-4ec3-9812-51b23d335ca2",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/entgiften-ausleiten.html"
+    },
+    {
+      "titel": "Longevity",
+      "article_id": "7fa09c2e-1593-4214-a9dc-e134bb34eb28",
+      "revision_id": "7fa09c2e-1593-4214-a9dc-e134bb34eb28",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/longevity.html"
+    },
+    {
+      "titel": "Maennergesundheit",
+      "article_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+      "revision_id": "a17c49da-19bc-4832-8f97-22977a9f2336",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/maennergesundheit.html"
+    },
+    {
+      "titel": "Schilddruese",
+      "article_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+      "revision_id": "844bda53-090d-4f75-a68f-ff110f50f70b",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schilddruese.html"
+    },
+    {
+      "titel": "Schlaf und Entspannung",
+      "article_id": "b95081a4-25d7-449b-87f7-422636564ed1",
+      "revision_id": "b95081a4-25d7-449b-87f7-422636564ed1",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/schlaf-und-entspannung.html"
+    },
+    {
+      "titel": "Stress und Erschoepfung",
+      "article_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+      "revision_id": "5789607e-1fe2-4cee-9f33-acfce3486255",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/stress-erschoepfung.html"
+    },
+    {
+      "titel": "Training und Regeneration",
+      "article_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+      "revision_id": "237db9d9-1e61-4890-9d3c-ee15d751d52d",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/training-und-regeneration.html"
+    },
+    {
+      "titel": "Zaehne und Mund",
+      "article_id": "20494424-4dc8-41b0-b2f7-1ecadb523137",
+      "revision_id": "20494424-4dc8-41b0-b2f7-1ecadb523137",
+      "revision_no": 1,
+      "revisionen_gesamt": 1,
+      "review_status": "draft",
+      "fundstelle": "https://www.strunz.com/nahrungsergaenzung/anwendungsbereiche/zaehne-mund.html"
+    }
+  ]
+}

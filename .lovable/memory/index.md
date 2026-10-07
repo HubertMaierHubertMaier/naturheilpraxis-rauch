@@ -84,7 +84,7 @@
 - [Anamnesis Versioning](mem://features/anamnesis-versioning-system) — Pre-filled updates generating new chronological records
 - [DSGVO Audit Results](mem://compliance/dsgvo-lovable-audit-results) — Lovable DPA, explicit AI training opt-out for health data
 - [Budget Compliance](mem://constraints/budget-compliance) — Considerations for Pro-plan or EU-based Supabase instances
-- [Praxisrolle-Standard](mem://content/praxisrolle-standard) — Zentrale Praxisrolle (Metatron-Hospital) positiv beschreiben, keine Diagnoseleistung ableiten
+- [Praxisrolle-Standard](mem://content/praxisrolle-standard) — Peter ist behandelnder HP: Angebote eigenständig positiv, keine pauschale ärztliche Unterordnung/„nur Begleitung“
 - [Practitioner Equality Language](mem://content/practitioner-equality-language) — "Heilpraktiker oder Arzt" gleichrangig; "ärztlich" nur bei echtem Arztvorbehalt
 - [Therapy Preferred Remedies](mem://features/admin-therapy-preferred-remedies) — Produktlinien bevorzugen (Vitaplace etc.) + einzelne Wiki-Mittel zwingend pinnen
 - [Therapy Knowledge Search Boost](mem://features/therapy-knowledge-search-boost) — Ordnerauswahl ist Boost (garantiert), kein Filter; Suche immer auf ganzer DB

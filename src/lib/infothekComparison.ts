@@ -1,7 +1,7 @@
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 
 export type Side = "orig" | "draft";
-const TEXT_TAGS = "h1,h2,h3,h4,h5,h6,p,li,td,th,figcaption,blockquote";
+const TEXT_TAGS = "h1,h2,h3,h4,h5,h6,p,li,td,th,figcaption,blockquote,div,span";
 
 /** Finds the real element holding a change snippet (deepest text element, or <img> by alt). */
 export function findChangeTarget(doc: Document, change: ComparisonChange, side: Side): Element | undefined {
