@@ -629,7 +629,7 @@ function InfothekHtmlVergleich() {
             <table className="w-full border-collapse">
               <thead><tr className="text-left"><th className="p-1">Datei</th><th className="p-1">Titel</th><th className="p-1">Bearbeitung</th><th className="p-1">Sichtbarkeit / Prüfung</th><th className="p-1">Offen</th></tr></thead>
               <tbody>
-                {editorialWithRegistry(COMPARISON_CONFIGS).map((e) => (
+                {editorialWithRegistry(COMPARISON_CONFIGS, OFFLINE_COMPARISONS).map((e) => (
                   <tr key={e.file} className="border-t border-border align-top">
                     <td className="p-1">{e.comparePath ? <a className="underline" href={e.comparePath}>{e.file}</a> : e.file}</td>
                     <td className="p-1">{e.title}</td>

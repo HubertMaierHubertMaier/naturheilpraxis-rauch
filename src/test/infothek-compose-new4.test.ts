@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
-import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
+import { ALL_CONFIGS as COMPARISON_CONFIGS } from "./allComparisonConfigs";
 
 const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "ass-salicylat-histamin", "diabetes-handout", "ersttermin-naturheilpraxis", "therapieweg-uebersicht", "dankbarkeit-alltag", "umwelt-alltag-gesundheit", "logi-ernaehrung-mitochondrien", "mitochondropathie-hws", "parasiten-deutschland", "viren-bakterien-deutschland"];
 const cfg = (s: string) => COMPARISON_CONFIGS.find((x) => x.slug === s)!;
