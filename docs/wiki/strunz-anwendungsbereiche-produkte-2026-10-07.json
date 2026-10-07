@@ -6783,5 +6783,20 @@
     "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
    }
   ]
+ },
+ "beleg_69": {
+  "geprueft": "2026-10-07 ca. 19:00Z",
+  "abfrage": "lesendes SELECT: kb_articles (id), kb_article_revisions verknüpft über kb_articles.current_revision_id, kb_entities (id), kb_source_revisions (id, url)",
+  "ergebnis": {
+   "artikel_ids": 19,
+   "artikel_existent": 19,
+   "revisions_ids": 19,
+   "revision_ist_aktuell": 19,
+   "entity_ids": 9,
+   "entity_existent": 9,
+   "produktquellen_revisionen": 9,
+   "url_identisch_mit_kandidat": 69
+  },
+  "abweichungen": []
  }
 }
