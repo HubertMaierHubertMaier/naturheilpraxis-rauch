@@ -63,3 +63,6 @@ Grenzen: Heel-/Pascoe-Mittel existieren im Bestand nur als Artikeltexte (Heel 28
 ## Rubriken „Mannayan-Produkte" und „ChipCards" (Peter, 07.10.2026)
 - Schreibweise bestätigt aus Herstellerfeld und Quellen-Herausgeber: „Mannayan GmbH & Co. KG"; Suchbegriff „Mannayan" als Alias. Produkte über das gespeicherte Herstellerfeld mit dem Hersteller verknüpft (Datenfeld, beidseitig). 57 Produkte; Themen/Symptome dazu im Bestand nicht verknüpft (sichtbar als „keine zugeordnet").
 - ChipCards: nur Programm-Datensätze mit „ChipCard/Chipcard/Chip" im eigenen Namen (7), Typ bleibt „Programm"; keine Arzneimittel-/Wirksamkeitseinstufung. 151 Artikel im Ordner/Titel „Chip Cards" als Datenfeld; die meisten ChipCards existieren nur als Artikel, nicht als Datensatz. Weitere Programme ohne ChipCard im Namen (DTX-Card, Derma-Clean …) sichtbar „nicht eingeordnet".
+
+## WICHTIG (Peter, 07.10.2026): Kästchen ≠ fertige Vernetzung
+Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_entity_relations = 0, kb_article_entities = 0. Weiterer Aufbau: siehe docs/wiki/VERNETZUNG-PLAN.md (Plan) und docs/wiki/vernetzung-migration-A.sql (Entwurf, NICHT angewendet). Codex plant/prüft, Lovable setzt um; jede Phase einzeln freigeben.
