@@ -14,7 +14,7 @@
 - **Vite-Fallbacks**: Hardcoded fallback values in `vite.config.ts` for Supabase URL/Key/Project-ID to prevent production crashes.
 - **HTML Infothek**: Produktionsstand 21.07.2026, App-Code `f26dd55` – 18 HTML-Inhalte liegen bereinigt im privaten Bucket `patient-library/infothek` und werden ausschließlich über `get-infothek-html` mit Allowlist, Sichtbarkeitsprüfung, Authentifizierung, sitzungsgebundener 2FA auch für Admins, Patientenfreigabe und Adminschutz ausgeliefert. Öffentliche Weiterleitungen sind `noindex`, App bleibt `noindex`, Sitemap ist leer. Der ursprüngliche HWS-Therapiesatz ist wiederhergestellt; Reveal-Navigation, Bildpfade und Textzoom werden im geschützten Frame technisch korrigiert.
 
-- **Infothek-Ton (alle HTMLs)**: positiv, einladend, sachlich; keine Heilversprechen, keine Pauschal-Disclaimer, Irreführung konkret im Kontext prüfen. Siehe html-korrektur-vergleich.
+- **Infothek-Ton (alle bestehenden UND neuen HTMLs, ab Erstellung)**: Praxiswerbung + Info + SEO in HWG/UWG-Grenzen; keine Heilversprechen, keine Pauschal-Disclaimer. Siehe html-korrektur-vergleich.
 
 ## Memories
 - [Practitioner Profile](mem://project/practitioner-profile) — Vollständiges Berufs- und Therapieprofil Peter Rauch
