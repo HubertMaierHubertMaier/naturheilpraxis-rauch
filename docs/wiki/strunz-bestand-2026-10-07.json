@@ -1,0 +1,65 @@
+{
+  "stand": "2026-10-07, nur lesend",
+  "abgleich_9_produktkarten": {
+    "datei_fact_candidates": 9,
+    "datei_import_batch": 9,
+    "in_db_als_quellrevision": 9,
+    "in_db_als_produktentitaet": 9,
+    "fehlend": [],
+    "zusaetzlich": [],
+    "keys": [
+      "source:strunz-20260804-vitamin-d3-k2",
+      "source:strunz-20260804-magnesium-caps",
+      "source:strunz-20260804-eisen-caps",
+      "source:strunz-20260804-zink-caps",
+      "source:strunz-20260804-selen-vitamin-c",
+      "source:strunz-20260804-jod",
+      "source:strunz-20260804-vitamin-b-komplex",
+      "source:strunz-20260804-vitamin-c-komplex",
+      "source:strunz-20260804-vitamineral-32-maracuja"
+    ],
+    "hinweis": "Die 9 Produktkarten sind NICHT der gesamte Strunz-Bestand."
+  },
+  "bestand": {
+    "quellen_herausgeber_strunz": {
+      "Strunz GmbH": 8,
+      "for you eHealth via Strunz product page": 1
+    },
+    "quellen_firma_shop_im_text": 6,
+    "quellen_person_dr_strunz": 1,
+    "quellen_nur_erwaehnung": 97,
+    "quellen_nach_importlabel": {
+      "Konsolidierte Wiki-, Strunz-, Naehrstoff- und Sicherheitsartefakte 2026-08-04/05": 58,
+      "Strunz Produktdeklarationen sowie Vitamin-, Mineralstoff- und Sicherheitspruefungen 2026-08-04 bis 09": 53,
+      "Herbst und Winter (2026-08-20)": 2
+    },
+    "wiki_artikel_aktuell": {
+      "ordner_konsolidierte_importpruefung": 58,
+      "ordner_strunz_anwendungsbereiche": 21,
+      "ordner_strunz_produktdeklarationen": 9,
+      "titel_mit_strunz": 52,
+      "text_mit_strunz": 59,
+      "text_nur_erwaehnung_ausserhalb_ordner_titel": 15,
+      "text_strunz_gmbh_oder_shop": 22,
+      "text_person_dr_strunz": 0
+    },
+    "entitaeten": {
+      "produkte_draft": 9,
+      "weitere_mit_strunz_in_metadaten": "7 (Nährstoffe Vitamin E, Protein, Zink, Vitamin C, Omega-3; Protokolle 'Strunz-Quellenprotokoll Seiten 161 bis 162', 'Kohlenhydratreduktion unter 50 g pro Tag')"
+    },
+    "staging_kandidaten_mit_strunz": {
+      "kb_source_candidates": 53,
+      "kb_entity_candidates": 20,
+      "kb_relation_candidates": 6
+    },
+    "admin_knowledge_base_titel_kategorie": 49,
+    "nicht_lesbar": "kb_import_batches (keine Leserechte für die Prüfrolle) – Batchstatus heute nicht bestätigt"
+  },
+  "rollen": "Strunz GmbH = Anbieter/Herausgeber (Shop); Dr. Strunz = Person, nur 1 Quelle nennt ihn ausdrücklich; Marken FOREVER YOUNG / for you eHealth getrennt; Erwähnung ≠ Zuordnung.",
+  "naechste_schritte": [
+    "Batchstatus der Strunz-Imports mit Admin-Leserecht bestätigen (Sorra 'in_progress' vs. Abnahme 18.08.2026)",
+    "21 Anwendungsbereich-Artikel den 9 Produkten/Nährstoffen nur mit Fundstelle zuordnen (Kandidaten)",
+    "Dr. Strunz als Person nur über die 1 ausdrückliche Quelle anlegen; Strunz GmbH ≠ Person",
+    "53 Quellkandidaten aus 'Produktdeklarationen …' gegen 9 Karten prüfen: welche sind Vitamin-/Mineral-/Sicherheitsprüfungen ohne Produkt"
+  ]
+}
