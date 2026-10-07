@@ -21,3 +21,9 @@ InfothekHtmlVergleich.tsx `b44f35e2f281` · infothekComparison.ts `d6c87d906e2f`
 
 ## Neuer Artikel
 Eintrag in der Registry ergänzen, Entwurf unter `drafts/` ablegen, Tests `infothek-compose-all`/`infothek-comparison-configs` laufen automatisch über alle Slugs.
+
+## Fortschreibung 07.10.2026 abends – HTML-Paket 1
+- Neue Vergleiche (Registry-Einträge, Entwürfe unter `website-content/infothek/drafts/`): `ass-salicylat-histamin` (5 Vorschläge), `diabetes-handout` (4), `ersttermin-naturheilpraxis` (4), `therapieweg-uebersicht` (5).
+- Redaktionsstatus wird aus der Registry abgeleitet (`editorialWithRegistry`): konfigurierter Vergleich = „Vergleich vorbereitet“, Vorschlagszahl aus der Registry. Allergie zeigt 12 statt veraltet 9.
+- Tests: `infothek-comparison-configs` und `infothek-compose-all` prüfen Anker links/rechts und Zusammensetzung aller Kombinationen je Slug; `infothek-editorial-registry` prüft Status.
+- Restliche 15 bestehende HTMLs ohne Vergleich: candida-diaet, dankbarkeit-alltag, fit-gesund-herbst-winter-7-minuten, fit-gesund-herbst-winter-infothek, kraeuter-schmerz-entzuendung, logi-ernaehrung-mitochondrien, mitochondropathie-hws, muedigkeit-erschoepfung-burnout, parasiten-deutschland, patienteninfo-hochohmiges-wasser, sibo-duenndarmfehlbesiedlung, umwelt-alltag-gesundheit, vieva-pro-vitalanalyse, viren-bakterien-deutschland, zapper-diamond-shield.

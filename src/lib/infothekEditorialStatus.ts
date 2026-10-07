@@ -1,9 +1,9 @@
 /** Editorial progress of all Infothek HTMLs (source: website-content/infothek/manifest.json). Repo-stored, not publication status. */
-export type EditorialState = "nicht begonnen" | "in Prüfung" | "redaktionell abgeschlossen";
+export type EditorialState = "nicht begonnen" | "Vergleich vorbereitet" | "in Prüfung" | "redaktionell abgeschlossen";
 export interface EditorialEntry { file: string; title: string; visibility: string; reviewStatus: string; indexable: boolean; state: EditorialState; comparePath?: string; openTopics: string[] }
 export const EDITORIAL_STATUS: EditorialEntry[] = [
   { file: "drafts/kieferostitis (neu)", title: "Kieferostitis verstehen: Kieferknochen, Entzündung und Erreger", visibility: "Entwurf", reviewStatus: "pending", indexable: false, state: "in Prüfung", comparePath: "/admin/infothek-vergleich/kieferostitis", openTopics: ["neuer Artikel – keine veröffentlichte Fassung", "Veröffentlichung separat"] },
-  { file: "allergiebehandlung.html", title: "Allergiebehandlung in der Naturheilpraxis | Heilpraktiker Rauch Augsburg", visibility: "patient", reviewStatus: "pending", indexable: false, state: "in Prüfung", comparePath: "/admin/infothek-vergleich/allergiebehandlung", openTopics: ["9 Vorschläge vorbereitet", "Veröffentlichung separat"] },
+  { file: "allergiebehandlung.html", title: "Allergiebehandlung in der Naturheilpraxis | Heilpraktiker Rauch Augsburg", visibility: "patient", reviewStatus: "pending", indexable: false, state: "in Prüfung", comparePath: "/admin/infothek-vergleich/allergiebehandlung", openTopics: ["Veröffentlichung separat"] },
   { file: "ass-salicylat-histamin.html", title: "ASS-Intoleranz, Salicylat- & Histamin-Unverträglichkeit | Naturheilpraxis Rauch", visibility: "public", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
   { file: "candida-diaet.html", title: "Candida-Diät | Naturheilpraxis Rauch", visibility: "patient", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
   { file: "dankbarkeit-alltag.html", title: "Dankbarkeit im Alltag | Naturheilpraxis Peter Rauch", visibility: "patient", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
@@ -25,3 +25,12 @@ export const EDITORIAL_STATUS: EditorialEntry[] = [
   { file: "viren-bakterien-deutschland.html", title: "Viren & Bakterien – Akute und latente Belastungen | Naturheilpraxis Peter Rauch Augsburg", visibility: "public", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
   { file: "zapper-diamond-shield.html", title: "Zapper – Diamond Shield (Mannayan) | Präsentation Naturheilpraxis Rauch", visibility: "public", reviewStatus: "pending", indexable: false, state: "nicht begonnen", openTopics: [] },
 ];
+
+/** Status derived from the comparison registry: a configured comparison is at least "Vergleich vorbereitet"; proposal count comes from the registry, never hardcoded. */
+export function editorialWithRegistry(configs: { slug: string; changes: unknown[]; base: { kind: string; route?: string } }[]): EditorialEntry[] {
+  return EDITORIAL_STATUS.map((e) => {
+    const c = configs.find((x) => (x.base.kind === "delivered" && x.base.route === `/${e.file}`) || (e.comparePath?.endsWith(`/${x.slug}`)));
+    if (!c) return e;
+    return { ...e, comparePath: `/admin/infothek-vergleich/${c.slug}`, state: e.state === "nicht begonnen" ? "Vergleich vorbereitet" : e.state, openTopics: [`${c.changes.length} Vorschläge im Vergleich`, ...e.openTopics.filter((t) => !/Vorschläge vorbereitet/.test(t))] };
+  });
+}
