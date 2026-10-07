@@ -1,3 +1,4 @@
+import { EXTRA_CHECKS } from "./infothekDecisions";
 /**
  * Registry of HTML comparison reviews. One shared view (InfothekHtmlVergleich) serves all articles.
  * Decisions stay browser-local per slug (storage key unchanged for krankheit-ist-messbar).
@@ -18,6 +19,10 @@ export interface ComparisonConfig {
   changes: ComparisonChange[];
   topics: Record<number, string>;
   notes: string[];
+  /** Article-specific open checks not covered by numbered proposals. */
+  extraChecks: string[];
+  /** Title used in the progress report. */
+  reportTitle: string;
   /** Only the first article has the naming table. */
   naming?: boolean;
 }
@@ -48,8 +53,8 @@ const ALLERGIE: ComparisonChange[] = [
 const topicsOf = (c: ComparisonChange[]) => Object.fromEntries(c.map((x) => [x.id, x.note]));
 
 export const COMPARISON_CONFIGS: ComparisonConfig[] = [
-  { slug: "krankheit-ist-messbar", heading: "Frequenztherapie („Krankheit ist messbar“)", base: { kind: "delivered", route: "/krankheit-ist-messbar.html" }, leftLabel: "Original (aktuell ausgeliefert)", draftHtml: kimDraft, changes: KRANKHEIT_IST_MESSBAR_CHANGES, topics: KIM_TOPICS, notes: KIM_NOTES, naming: true },
-  { slug: "allergiebehandlung", heading: "Allergiebehandlung", base: { kind: "delivered", route: "/allergiebehandlung.html" }, leftLabel: "Original (aktuell ausgeliefert)", draftHtml: allergieDraft, changes: ALLERGIE, topics: topicsOf(ALLERGIE), notes: ["Geschützte Patientenfolien (TCM, Orthomolekular, Psychosomatik) bleiben unverändert und wurden nicht bearbeitet."] },
-  { slug: "kieferostitis", heading: "Kieferostitis (neuer Artikel)", base: { kind: "baseDraft", html: kieferBase }, leftLabel: "Basisentwurf (Arbeitsstand – nie veröffentlicht)", draftHtml: kieferDraft, changes: KIEFER, topics: topicsOf(KIEFER), notes: ["Neuer Artikel: Es gibt keine bisher veröffentlichte Fassung. Links steht der erste Arbeitsstand, rechts der überarbeitete Entwurf.", "Freigabe von Textänderungen und Veröffentlichung sind getrennte Schritte; der Entwurf ist noindex und nicht verlinkt."] },
+  { slug: "krankheit-ist-messbar", heading: "Frequenztherapie („Krankheit ist messbar“)", base: { kind: "delivered", route: "/krankheit-ist-messbar.html" }, leftLabel: "Original (aktuell ausgeliefert)", draftHtml: kimDraft, changes: KRANKHEIT_IST_MESSBAR_CHANGES, topics: KIM_TOPICS, notes: KIM_NOTES, extraChecks: EXTRA_CHECKS, reportTitle: "Krankheit ist messbar (Frequenztherapie)", naming: true },
+  { slug: "allergiebehandlung", heading: "Allergiebehandlung", base: { kind: "delivered", route: "/allergiebehandlung.html" }, leftLabel: "Original (aktuell ausgeliefert)", draftHtml: allergieDraft, changes: ALLERGIE, topics: topicsOf(ALLERGIE), notes: ["Geschützte Patientenfolien (TCM, Orthomolekular, Psychosomatik) bleiben unverändert und wurden nicht bearbeitet."], extraChecks: ["20–30 %-Angabe: Primärquelle von Peter offen (Vorschlag 4).", "Öffentliche Seite: Seitentitel/Meta im ausgelieferten Seitenkopf, Prüfdatum, Veröffentlichung separat."], reportTitle: "Allergiebehandlung" },
+  { slug: "kieferostitis", heading: "Kieferostitis (neuer Artikel)", base: { kind: "baseDraft", html: kieferBase }, leftLabel: "Basisentwurf (Arbeitsstand – nie veröffentlicht)", draftHtml: kieferDraft, changes: KIEFER, topics: topicsOf(KIEFER), notes: ["Neuer Artikel: Es gibt keine bisher veröffentlichte Fassung. Links steht der erste Arbeitsstand, rechts der überarbeitete Entwurf.", "Freigabe von Textänderungen und Veröffentlichung sind getrennte Schritte; der Entwurf ist noindex und nicht verlinkt."], extraChecks: ["Enteroviren: Ergebnis als offene Forschungsfrage (Vorschlag 8); keine klinische Humanstudie gefunden.", "Handyansicht noch ansehen.", "Neuer Artikel: noindex bis Freigabe, Veröffentlichung separat."], reportTitle: "Kieferostitis (neuer Artikel)" },
 ];
 export const configFor = (slug: string | undefined) => COMPARISON_CONFIGS.find((c) => c.slug === slug) ?? COMPARISON_CONFIGS[0];
