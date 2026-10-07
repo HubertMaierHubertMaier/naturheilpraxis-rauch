@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
 import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 
-const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "ass-salicylat-histamin", "diabetes-handout", "ersttermin-naturheilpraxis", "therapieweg-uebersicht", "dankbarkeit-alltag", "umwelt-alltag-gesundheit", "fit-gesund-herbst-winter-7-minuten", "fit-gesund-herbst-winter-infothek"];
+const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung", "ass-salicylat-histamin", "diabetes-handout", "ersttermin-naturheilpraxis", "therapieweg-uebersicht", "dankbarkeit-alltag", "umwelt-alltag-gesundheit", "logi-ernaehrung-mitochondrien", "mitochondropathie-hws", "parasiten-deutschland", "viren-bakterien-deutschland"];
 const cfg = (s: string) => COMPARISON_CONFIGS.find((x) => x.slug === s)!;
 const orig = (s: string) => readFileSync(`website-content/infothek/${s}.html`, "utf8");
 

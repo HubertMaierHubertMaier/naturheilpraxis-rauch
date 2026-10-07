@@ -172,3 +172,9 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - Verzehrempfehlungen nur wörtlich als Shopangabe intern erfasst; Packungsgröße/Darreichung/Zielgruppe offen; Hersteller überall offen.
 - 149 URLs / 136 Einträge / 13 Hypothesen in 6 Gruppen / Gutschein unverändert.
 - Offen: wörtliche Fundstellen 1–72, Hersteller aller 149.
+
+## 2026-10-07 ca. 21:10Z Sicherheitsfix interne Herbst/Winter-Vergleiche
+- 4 ?raw-Importe (Original+Entwurf HW7/HW-Infothek) und deren Vorschlags-Snippets aus der Browser-Registry entfernt; Vorschläge offline in docs/infothek-offline/herbst-winter-vergleich.json, Dateien unverändert, README mit späterem geschütztem Abruf (nicht umgesetzt).
+- Status: beide „Offline-Vorbereitung“, nicht online bedienbar. Zählung: 15 vorbereitet, davon 13 online, 2 offline.
+- Edge-Gate, Redirect-Shells, Rechte unverändert. Test infothek-internal-offline.
+- Grenze: frühere Builds/Previews mit diesen Importen können die Inhalte in alten JS-Assets enthalten haben; keine Cachelöschung durchgeführt.

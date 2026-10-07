@@ -4,7 +4,7 @@ import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 describe("Redaktionsstatus aus Registry", () => {
   const s = editorialWithRegistry(COMPARISON_CONFIGS);
   it("neue Vergleiche sind vorbereitet, nicht abgeschlossen", () => {
-    for (const f of ["ass-salicylat-histamin.html", "diabetes-handout.html", "ersttermin-naturheilpraxis.html", "therapieweg-uebersicht.html", "candida-diaet.html", "sibo-duenndarmfehlbesiedlung.html", "muedigkeit-erschoepfung-burnout.html", "kraeuter-schmerz-entzuendung.html", "dankbarkeit-alltag.html", "umwelt-alltag-gesundheit.html", "fit-gesund-herbst-winter-7-minuten.html", "fit-gesund-herbst-winter-infothek.html"]) {
+    for (const f of ["ass-salicylat-histamin.html", "diabetes-handout.html", "ersttermin-naturheilpraxis.html", "therapieweg-uebersicht.html", "candida-diaet.html", "sibo-duenndarmfehlbesiedlung.html", "muedigkeit-erschoepfung-burnout.html", "kraeuter-schmerz-entzuendung.html", "dankbarkeit-alltag.html", "umwelt-alltag-gesundheit.html"]) {
       const e = s.find((x) => x.file === f)!;
       expect(e.state).toBe("Vergleich vorbereitet"); expect(e.comparePath).toMatch(/infothek-vergleich/);
     }
@@ -14,17 +14,7 @@ describe("Redaktionsstatus aus Registry", () => {
     expect(a.state).toBe("in Prüfung"); expect(a.openTopics.join()).not.toMatch(/^9 /); expect(a.openTopics[0]).toMatch(/^12 Vorschläge/);
   });
   it("Zählung", () => {
-    expect(s.filter((x) => x.comparePath).length).toBe(15);
-    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 15);
-  });
-});
-describe("Herbst/Winter bleiben intern", () => {
-  it("visibility internal, pending, nicht indexierbar, noindex im Entwurf", async () => {
-    const s = editorialWithRegistry(COMPARISON_CONFIGS);
-    for (const f of ["fit-gesund-herbst-winter-7-minuten", "fit-gesund-herbst-winter-infothek"]) {
-      const e = s.find((x) => x.file === `${f}.html`)!;
-      expect([e.visibility, e.reviewStatus, e.indexable]).toEqual(["internal", "pending", false]);
-      expect(COMPARISON_CONFIGS.find((c) => c.slug === f)!.draftHtml).toMatch(/noindex, nofollow/);
-    }
+    expect(s.filter((x) => x.comparePath).length).toBe(17);
+    expect(s.filter((x) => x.state === "nicht begonnen").length).toBe(s.length - 17);
   });
 });

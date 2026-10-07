@@ -12,7 +12,7 @@ import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
 import { configFor, type ComparisonConfig, COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 import { editorialWithRegistry } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
-import { fundstelle } from "@/lib/infothekFundstelle";
+import { fundstelle, articleSections } from "@/lib/infothekFundstelle";
 import { applyContactCorrection } from "@/lib/practiceContact";
 
 // Active comparison (one page instance at a time; set at render start, page remounts per slug).
@@ -112,7 +112,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
   }
   // Shared section numbers (same slide order in original and draft).
   const sectionOf = new Map<number, number>();
-  doc.querySelectorAll(".reveal .slides > section").forEach((sec, i) => {
+  articleSections(doc).forEach((sec, i) => {
     sec.setAttribute("data-sec", String(i + 1));
     const tag = doc.createElement("div");
     tag.className = "cmp-sec";
@@ -169,7 +169,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-badge { display: inline-block; margin: 0 8px 4px 0; padding: 2px 8px; border-radius: 999px; background: ${c.border}; color: #fff !important;
       font: 700 13px/1.4 Arial, sans-serif !important; letter-spacing: 0; text-transform: none; vertical-align: middle; }`;
   doc.head.appendChild(style);
-  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found, sectionOf, sectionCount: doc.querySelectorAll(".reveal .slides > section").length };
+  return { html: `<!doctype html>${doc.documentElement.outerHTML}`, found, sectionOf, sectionCount: articleSections(doc).length };
 }
 
 function Pane({ label, html, error, frameRef, onLoad }: {
