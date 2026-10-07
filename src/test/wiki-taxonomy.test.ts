@@ -128,3 +128,17 @@ describe("Vitamine/Mineralstoffe/Spurenelemente und zentrale Mittel", () => {
     expect(m.entities.get("E1")!.stoffart).toBe("Produkt");
   });
 });
+
+import { isDrug, rxLabel } from "@/lib/wikiTaxonomy";
+describe("Arzneimittel-Rubrik", () => {
+  it("stuft nur bei ausdrücklicher Datensatzangabe ein", () => {
+    expect(isDrug("drug")).toBe(true);
+    expect(isDrug("product", "Arzneimittel")).toBe(true);
+    expect(isDrug("product", null)).toBe(false);
+    expect(isDrug("protocol", "Klinghardt-Protokoll")).toBe(false);
+  });
+  it("Verschreibungsstatus sonst unklar", () => {
+    expect(rxLabel(null)).toMatch(/unklar/);
+    expect(rxLabel("verschreibungspflichtig")).toMatch(/verschreibungspflichtig/);
+  });
+});
