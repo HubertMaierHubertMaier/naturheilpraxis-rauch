@@ -22,7 +22,7 @@ const LEGAL = /\b(gmbh|co|kg|ag|ug|e k|ek|ltd|inc|llc|ohg|gbr|mbh)\b/g;
 /** Matching key only: legal suffixes removed. Display name never changed. */
 export const matchKey = (s: string) => norm(s).replace(LEGAL, " ").replace(/\s+/g, " ").trim();
 /** Personen erkennen nur an Titeln/Initial-Muster – sonst Organisation (konservativ). */
-export const looksLikePerson = (s: string) => /^(dr|prof|med)\b|\b[A-ZÄÖÜ]\.\s?[A-ZÄÖÜ][a-zäöüß]+$|^[A-ZÄÖÜ][a-zäöüß]+,\s?[A-ZÄÖÜ]\.?$/.test(s.trim());
+export const looksLikePerson = (s: string) => /^(Dr|Prof|Med|dr|prof)\.?\s|\b[A-ZÄÖÜ]\.\s?[A-ZÄÖÜ][a-zäöüß]+$|^[A-ZÄÖÜ][a-zäöüß]+,\s?[A-ZÄÖÜ]\.?$/.test(s.trim());
 const INTERNAL = /interne|praxis|recherche|strukturierung|importpr|quellen- und/i;
 
 export function buildDryRun(m: WikiModel, now = new Date()): DryRun {
