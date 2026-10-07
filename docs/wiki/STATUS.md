@@ -123,3 +123,8 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - 24/24 Seiten HTTP 200 lesend (`produktquellen_teil2`), 24 mit expliziter EAN; Marke „for you eHealth“; Produkthersteller auf keiner Seite genannt → offen. MSM: „Hersteller Balchem Corporation“ nur Rohstoff-Textfund, nicht übernommen.
 - 149 URLs / 13 Varianten unverändert. Keine Karten/Writes.
 - Offen: 88 eindeutige Produktseiten (49–136) + 13 Varianten; Hersteller aller 48 offen. Nächster Schritt: Produktseiten 49–72.
+
+## 2026-10-07 ca. 19:35Z Strunz-Produktquellen Teil 3 (49–72)
+- 24/24 HTTP 200 (`produktquellen_teil3`), 24 explizite EAN; Marken „for you eHealth“ (11) / „FOREVER YOUNG“ (13, laut Produktname); Produkthersteller nirgends genannt → offen. „Hersteller“-Wortfunde aus Kundenbewertungen verworfen.
+- Offen: Produktseiten 73–136 + 13 Varianten. Nächster Schritt: 73–96.
+- Infothek-Quellenbelege DCCT/UKPDS/IgG: docs/wiki/infothek-quellen-dcct-ukpds-igg-2026-10-07.json.

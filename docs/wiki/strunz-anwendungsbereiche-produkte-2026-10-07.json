@@ -7141,5 +7141,348 @@
     "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
    }
   ]
+ },
+ "produktquellen_teil3": {
+  "umfang": "Produkte 49–72 der 136 nicht als Variante gekennzeichneten Produkte in Listenreihenfolge",
+  "modus": "HTTP GET lesend, keine DB-Writes",
+  "ergebnisse": [
+   {
+    "url": "https://www.strunz.com/for-you-super-greens.html",
+    "abgerufen": "2026-10-07T19:32:11Z",
+    "http": 200,
+    "produktname_h1": "for you super greens",
+    "ean": [
+     "4260538095220"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-super-reds.html",
+    "abgerufen": "2026-10-07T19:32:11Z",
+    "http": 200,
+    "produktname_h1": "for you super reds",
+    "ean": [
+     "4260538095831"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-tmg-betain.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you TMG betain",
+    "ean": [
+     "4260538094575"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-vagiflora-komplex.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you vagiflora komplex",
+    "ean": [
+     "4260538093790"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-vegan-collagen.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you vegan collagen",
+    "ean": [
+     "4260538095701"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-venen-komplex.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you venen komplex",
+    "ean": [
+     "4260538096814"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-vitamin-c-spray.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you vitamin C Spray",
+    "ean": [
+     "4260538095305"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-vitamin-d-lutschtabletten.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you vitamin D - Lutschtabletten - Walderdbeere",
+    "ean": [
+     "4260538095237"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-vitamin-kids-fluessig.html",
+    "abgerufen": "2026-10-07T19:32:12Z",
+    "http": 200,
+    "produktname_h1": "for you Vitamin A, E, D3 & K2 kids",
+    "ean": [
+     "4260538091710"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-weihrauch.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "for you weihrauch",
+    "ean": [
+     "4260538092908"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/for-you-zistrose-spray.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "for you zistrose Spray",
+    "ean": [
+     "4260538093677"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "for you eHealth",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-acetyl-l-carnitin.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Acetyl-L-Carnitin",
+    "ean": [
+     "4260180441819"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-active-q10-spray.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Active Q10 Spray",
+    "ean": [
+     "4260180442960"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-amino-10.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Amino 10 - Limette",
+    "ean": [
+     "4260180441307"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-amino-11-oblong.html",
+    "abgerufen": "2026-10-07T19:32:13Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Amino 11 oblong",
+    "ean": [
+     "4260180441840"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-amino-11-tabletten.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Amino 11",
+    "ean": [
+     "4260180441482"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-amino-8.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Amino 8",
+    "ean": [
+     "4260180441420"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-amino-fluessig.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Amino flüssig - Schwarze Johannisbeere",
+    "ean": [
+     "4260180440133"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-ascorbylpalmitat.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Ascorbylpalmitat",
+    "ean": [
+     "4260180442687"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-astaxanthin.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Astaxanthin",
+    "ean": [
+     "4260180441284"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-beta-carotin-kapseln.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Beta-Carotin",
+    "ean": [
+     "4260180441826"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-calcium-alpha-ketoglutarat.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Ca-AKG",
+    "ean": [
+     "4260180442649"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-eisen-vital.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Eisen Vital - Granatapfel",
+    "ean": [
+     "4260180440799"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   },
+   {
+    "url": "https://www.strunz.com/forever-young-folsaeure-aktiv-komplex.html",
+    "abgerufen": "2026-10-07T19:32:14Z",
+    "http": 200,
+    "produktname_h1": "FOREVER YOUNG Folsäure aktiv Komplex",
+    "ean": [
+     "4260180441918"
+    ],
+    "ean_fundstelle": "Produktseite, Textfeld „EAN:“",
+    "marke_laut_seite": "FOREVER YOUNG (laut Produktname)",
+    "hersteller": null,
+    "hersteller_status": "offen – Produkthersteller auf Seite nicht genannt (nur allgemeiner Satz zu bezogenen Herstellern; Marke ≠ Hersteller)",
+    "shop_vertreiber": "strunz.com (Online-Shop; Rolle als Hersteller nicht belegt)"
+   }
+  ],
+  "hinweis": "„Hersteller“-Wortfunde auf 3 FOREVER-YOUNG-Seiten stammen aus Kundenbewertungen und wurden nicht übernommen."
  }
 }
