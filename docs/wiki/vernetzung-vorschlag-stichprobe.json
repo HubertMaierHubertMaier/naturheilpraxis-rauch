@@ -1,0 +1,108 @@
+{
+  "status": "VORSCHLAG – NICHT ANGEWENDET. Keine Produktivwrites, keine Migration. Gelesen aus Hosted-DB am 2026-10-07.",
+  "hinweis_ids": "Bei Importdatensätzen sind Entitäts-/Artikel-ID und aktuelle Revisions-ID laut Abfrage identisch (deterministische Import-IDs). Vor Übernahme durch Codex verifizieren.",
+  "regeln": [
+    "candidate_key stabil: '<kind>:<typ>:<normalisierter name>' – unabhängig von Lauf/Zeit",
+    "Quelle = bestehende Revision; Fundstelle wörtlich aus Datensatz/Text",
+    "review_status immer 'candidate'; Quellenaussage ≠ Wirkung/Freigabe",
+    "Produktart nur vorgeschlagen, mit Begründung und Unsicherheit"
+  ],
+  "kandidaten": [
+    {
+      "candidate_key": "rel:mannayan-zink-60-tabletten:manufactured_by:mannayan",
+      "anbieter": "Mannayan GmbH & Co. KG",
+      "subjekt": { "art": "kb_entity", "id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440", "revision_id": "1d454818-0bda-5c22-a82b-a3cc5c2a3440", "name": "Mannayan ZINK + (60 Tabletten)", "typ_ist": "product_variant" },
+      "fundstelle": "docs/source-inventory/2026-08-07-mannayan-zink-read-only.json (Herstellerfeld proposed_data.manufacturer)",
+      "quelle_kandidat_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
+      "vorgeschlagene_produktart": "Nahrungsergänzungsmittel",
+      "beziehungen": [
+        { "typ": "manufactured_by", "objekt": "organization:mannayan gmbh co kg (neu, Kandidat)", "herkunft": "Datenfeld" },
+        { "typ": "contains", "objekt": "nutrient:Zink (bestehend)", "herkunft": "Produktname/Deklaration – zu prüfen" }
+      ],
+      "unsicherheit": "niedrig für Hersteller (Feld); Produktart aus Herstellerdeklaration abgeleitet, nicht als Feld gespeichert"
+    },
+    {
+      "candidate_key": "rel:radegundis-nase-frei:offered_by:radegundis-apotheke",
+      "anbieter": "Radegundis Apotheke",
+      "subjekt": { "art": "kb_entity", "id": "b2bda25d-27de-52b5-0afa-3121d763e8da", "revision_id": "b2bda25d-27de-52b5-0afa-3121d763e8da", "name": "Radegundis Nase frei", "typ_ist": "product" },
+      "fundstelle": "S. 2, Spalte Akute Phase (Quelle „Radegundis Apotheke – Mittel gegen Pollen und Symptome der Nase“)",
+      "quelle_kandidat_id": "c8aa4a29-25bb-3a71-e25a-7be80e148e2e",
+      "vorgeschlagene_produktart": "unklar (Apothekeneigenprodukt; Arzneimittel/NEM nicht angegeben)",
+      "beziehungen": [
+        { "typ": "offered_by", "objekt": "pharmacy:Radegundis Apotheke (bestehend als manufacturer → Typ prüfen)", "herkunft": "Quelle/Herausgeber" },
+        { "typ": "indicated_for (laut Quelle)", "objekt": "Symptome der Nase – bestehende Importverknüpfungen in /wikidatenbank/ordnung übernehmen", "herkunft": "Import" }
+      ],
+      "unsicherheit": "mittel: Hersteller vs. Anbieter (Apotheke) aus Quelle nicht eindeutig"
+    },
+    {
+      "candidate_key": "rel:banderol:manufactured_by:nutramedix",
+      "anbieter": "Nutramedix",
+      "subjekt": { "art": "kb_entity", "id": "e8455b88-2003-654d-a76b-b7dc7fe15d86", "revision_id": "e8455b88-2003-654d-a76b-b7dc7fe15d86", "name": "Banderol", "typ_ist": "product" },
+      "fundstelle": "„Bestehende lokale Quelle und Peters Praxisangabe“; Ordner Nutramedix (Datenfeld)",
+      "quelle_kandidat_id": "7ba2f517-0b7c-5c12-b8d7-776d8cfa45eb",
+      "vorgeschlagene_produktart": "Pflanzenextrakt/Nahrungsergänzung – unklar",
+      "beziehungen": [ { "typ": "manufactured_by", "objekt": "organization:nutramedix (neu, Kandidat)", "herkunft": "Ordner + Produktbekanntheit – Herstellerfeld fehlt" } ],
+      "unsicherheit": "mittel: Herstellerzuordnung nicht als Feld gespeichert; Peter bestätigen"
+    },
+    {
+      "candidate_key": "ent:product:ochsengalle-felis-tauri-d6-heel",
+      "anbieter": "Heel",
+      "subjekt": { "art": "kb_article", "id": "26b7f387-164d-4f05-a17f-f04376e32bfd", "revision_id": "26b7f387-164d-4f05-a17f-f04376e32bfd", "titel": "Gallensäuren im Stuhl" },
+      "fundstelle": "Artikeltext: „**Ochsengalle** (Felis tauri D6, Heel) | 3×10 Tr. | 6 Wo.“",
+      "vorgeschlagene_produktart": "homöopathisches Arzneimittel (Einzelmittel, Potenz D6) – nicht Komplexmittel",
+      "beziehungen": [
+        { "typ": "neue Entität", "objekt": "product:Ochsengalle Felis tauri D6", "herkunft": "Texttreffer" },
+        { "typ": "manufactured_by", "objekt": "organization:heel (neu)", "herkunft": "Texttreffer" },
+        { "typ": "kb_article_entities", "rolle": "produkt", "objekt": "Artikel-Revision oben", "herkunft": "Texttreffer" }
+      ],
+      "unsicherheit": "hoch: nur Texttreffer; Dosierung bleibt Admin-Wiki-Inhalt, nicht in Relation"
+    },
+    {
+      "candidate_key": "ent:product:medacalm-pascoe",
+      "anbieter": "Pascoe",
+      "subjekt": { "art": "kb_article", "id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f", "revision_id": "1530835d-b0c6-4e69-b3d0-a6ab6c71dc6f", "titel": "Reizdarm – Symptome & naturheilkundliche Mittel" },
+      "fundstelle": "Artikeltext: „Medacalm Kps. (Pascoe) – 3× tgl. 1 Kps.“",
+      "vorgeschlagene_produktart": "unklar (Arzneimittel oder NEM nicht im Text)",
+      "beziehungen": [
+        { "typ": "manufactured_by", "objekt": "organization:pascoe (neu)", "herkunft": "Texttreffer" },
+        { "typ": "may_support (laut Quelle)", "objekt": "disease:Reizdarm (Abgleich mit bestehender Entität prüfen)", "herkunft": "Artikelkontext" }
+      ],
+      "unsicherheit": "hoch: Texttreffer; Komplexmittel-Status unbekannt"
+    },
+    {
+      "candidate_key": "ent:product:night-relax-kapseln-vitaplace",
+      "anbieter": "Vitaplace",
+      "subjekt": { "art": "kb_article", "id": "fbca0501-7f87-440d-982e-48b2051c6d63", "revision_id": "fbca0501-7f87-440d-982e-48b2051c6d63", "titel": "Night Relax Kapseln" },
+      "fundstelle": "Ordner „Vitaplace > Nahrungsergänzungsmittel“ (Datenfeld)",
+      "vorgeschlagene_produktart": "Nahrungsergänzungsmittel (aus Ordnername)",
+      "beziehungen": [ { "typ": "manufactured_by oder offered_by", "objekt": "organization:vitaplace (neu) – keine Apothekenrolle belegt", "herkunft": "Ordner" } ],
+      "unsicherheit": "mittel: Rolle Hersteller vs. Händler offen"
+    },
+    {
+      "candidate_key": "ent:drug:erythromycin",
+      "anbieter": "– (Wirkstoff; Quelle Dr. Klinghardt)",
+      "subjekt": { "art": "kb_source_revision", "id": "20e451aa-3ea9-5e71-b90c-ba724af155ec", "revision_no": 1, "titel": "Klinghardt-Quellenkarte: Erythromycin 500 mg viermal täglich, Prolotherapie und Behördenkonflikt", "herausgeber": "Klinghardt Talks 001-025" },
+      "fundstelle": "Quellentitel (Volltext-Fundstelle in Quellenkarte bei Review ergänzen)",
+      "vorgeschlagene_produktart": "Arzneimittel (Makrolid-Antibiotikum)",
+      "verschreibungsstatus": "unklar laut Datensatz (nicht gespeichert; fachlich bekannt, aber nur mit Quelle setzen)",
+      "beziehungen": [
+        { "typ": "described_in / authored_by", "objekt": "source:Klinghardt Talks → person:Dr. Klinghardt (Reihe ≠ Person; Rolle prüfen)", "herkunft": "Herausgeberfeld" }
+      ],
+      "unsicherheit": "mittel: Quellenkarte beschreibt Anekdote/Einsatz, keine Wirkfreigabe; keine Dosis in Relation"
+    },
+    {
+      "candidate_key": "rel:hno-chipcard:program-classification",
+      "anbieter": "– (kein Hersteller im Datensatz)",
+      "subjekt": { "art": "kb_entity", "id": "ad6b83bf-70c8-0895-2b93-0a7298395133", "revision_id": "ad6b83bf-70c8-0895-2b93-0a7298395133", "name": "HNO-ChipCard", "typ_ist": "program" },
+      "fundstelle": "„Praxisangaben 20.08.2026“ (Import „Herbst und Winter: HNO-, Virus-, TCM- und Praxisquellen“)",
+      "quelle_kandidat_id": "83e27f19-b762-3d10-c58b-f3ffbb2337ef",
+      "vorgeschlagene_produktart": "Programm/ChipCard (Typ bleibt) – kein Arzneimittel",
+      "beziehungen": [
+        { "typ": "bestehende Importverknüpfungen (14)", "objekt": "Symptome/Erkrankungen laut /wikidatenbank/ordnung", "herkunft": "Import, ungeprüft" },
+        { "typ": "kb_article_entities", "rolle": "hauptthema", "objekt": "Artikel im Ordner „Chip Cards“ mit Titel HNO – Abgleich zu prüfen", "herkunft": "Titeltreffer" },
+        { "typ": "manufactured_by", "objekt": "offen – Gerätehersteller nicht im Datensatz", "herkunft": "fehlt" }
+      ],
+      "unsicherheit": "mittel: Zuordnung Programm↔Gerät (Zapper/Trikombin) nicht gespeichert"
+    }
+  ]
+}
