@@ -13,6 +13,8 @@ export interface ComparisonChange {
   origNth?: number;
   draftNth?: number;
   /** Only in <head>, not visible in the article. */
+  /** Alternative to an earlier proposal; when accepted it replaces that one in the working version. */
+  supersedes?: number;
   headOnly?: { before: string; after: string; kind: "title" | "description" };
   /** Plain-language reason: problem of the original and benefit of the proposal. */
   why: string;
@@ -45,11 +47,11 @@ export const KRANKHEIT_IST_MESSBAR_CHANGES: ComparisonChange[] = [
   { id: 17, reason: ["Inhalt/Recht"], note: "„Deshalb heilt“ → Idee der Frequenztherapie", orig: "Deshalb heilt Frequenztherapie", draft: "regulierend auf dieses Feld einzuwirken", why: "„Muheim beweist … Deshalb heilt Frequenztherapie“ war ein Heilversprechen aus einem Physikmodell. Jetzt wird die Idee der Methode beschrieben, ohne Heilung zu behaupten – und ohne zusätzlichen Warnsatz." },
   { id: 18, reason: ["Inhalt/Recht", "Lesbarkeit"], note: "Zusammenfassung freundlich als Modellüberblick", orig: "Nun was haben wir bis jetzt verstanden", draft: "das Modell im Überblick", why: "Die Überschrift ordnet den Abschnitt klar als Modell ein. „(nicht belegt)“ ist entbehrlich, weil die Einordnung schon in den Abschnitten davor steht." },
   { id: 19, reason: ["Inhalt/Recht"], note: "Krankheitsverständnis der Informationsmedizin zugeordnet", orig: "Krankheit ist: eine fehlende", draft: "eine Sichtweise der Informationsmedizin", withPrev: true, why: "Der Satz bleibt als Sichtweise der Informationsmedizin erkennbar und wird nicht als allgemeine Krankheitsdefinition behauptet. Die lange Klammer mit Fachbegriffen fällt weg." },
-  { id: 20, reason: ["Inhalt/Recht"], note: "Praxis-Vorgehen statt „Komplettes Körper-WLAN“", orig: "Komplettes Körper-WLAN", draft: "kombiniere ich diese Geräte", why: "„Komplettes Körper-WLAN“ suggerierte eine umfassende Wirkung. Jetzt steht das tatsächliche Vorgehen der Praxis: Geräte je nach Anliegen und vorher besprochen." },
+  { id: 20, reason: ["Inhalt/Recht"], note: "Praxisangebot statt „Komplettes Körper-WLAN“ – Ablauf von Peter zu bestätigen", orig: "Komplettes Körper-WLAN", draft: "Diese Geräte stehen in meiner Praxis zur Verfügung", why: "„Komplettes Körper-WLAN“ suggerierte eine umfassende Wirkung. Jetzt steht nur, was der Artikel selbst belegt (Geräteliste der Praxis), plus Einladung zum Gespräch. Bitte bestätigen, dass diese Geräte aktuell vorhanden sind." },
   { id: 21, reason: ["Inhalt/Recht"], note: "Formel als Idee des Modells", orig: "= UNTERSTÜTZUNG DER SELBSTREGULATION", draft: "so die Idee des Modells", why: "Die Formel bleibt einprägsam. Der kurze Zusatz zeigt, dass es die Idee des Modells ist, nicht ein gesichertes Ergebnis." },
   { id: 22, reason: ["Inhalt/Recht"], note: "Selbstregulation: Ziel der Methode statt Wirkbehauptung", orig: "die durch passende Frequenzen unterstützt werden können", draft: "anregen möchte", why: "„Unterstützt werden können“ klang nach belegter Wirkung. „Anregen möchte“ beschreibt verständlich das Ziel der Methode, ohne neuen Warnhinweis." },
   { id: 23, reason: ["Inhalt/Recht"], note: "Kinesiologie: keine sichere Identifikation zusagen", orig: "zur Identifikation von Belastungsfaktoren", draft: "Suche nach möglichen Belastungsfaktoren", why: "„Identifikation von Belastungsfaktoren“ verspricht eine sichere Erkennung. „Suche nach möglichen Belastungsfaktoren nach dem Konzept der Methode“ ist genauer." },
-  { id: 24, reason: ["Inhalt/Recht"], note: "Metatron: ergänzende Rolle positiv beschrieben", orig: "Diagnostik und Behandlung in einem System", draft: "ergänzend zur klassischen Diagnostik eingesetzt", why: "Statt der Abgrenzung „ersetzt keine anerkannte Diagnostik“ steht positiv, wie das System in der Praxis eingesetzt wird: ergänzend zur klassischen Diagnostik. Der Diagnoseanspruch des Originals bleibt dabei weg." },
+  { id: 24, reason: ["Inhalt/Recht"], note: "Metatron: Angebot und Erläuterung beim Termin, keine Diagnoseleistung behauptet", orig: "Diagnostik und Behandlung in einem System", draft: "wie es angewendet wird, erläutere ich Ihnen beim Termin", why: "„Diagnostik und Behandlung in einem System“ behauptete eine diagnostische Leistung. Jetzt wird das Angebot beschrieben und die Erläuterung beim Termin – ohne Aussage über diagnostischen Nutzen." },
   { id: 25, reason: ["SEO", "Lesbarkeit"], note: "Alt-Text als Symbolbild", img: true, orig: "E=mc² – Energie wird zu Materie", draft: "Symbolbild zur Formel E = mc²", why: "Der alte Alt-Text stellte das Bild als Tatsache dar. „Symbolbild“ ist für Screenreader und Suchmaschinen genauer." },
   { id: 26, reason: ["Inhalt/Recht", "SEO"], note: "Alt-Text: Bild als Symbolbild zum Denkmodell", img: true, orig: "Der menschliche Körper als leuchtendes Energiefeld", draft: "Symbolbild zum Denkmodell: menschlicher Körper", why: "Das Bild zeigt eine Vorstellung, keine Messung. Als Symbolbild zum Denkmodell beschrieben, entsteht kein falscher Eindruck." },
   { id: 27, reason: ["Inhalt/Recht", "SEO"], note: "Alt-Text: Vergleich als Denkmodell", img: true, orig: "Vergleich: Konventionelle Medizin vs. Frequenztherapie", draft: "konventionelle Medizin und Frequenztherapie im Vergleich", why: "Der Vergleich ist eine Illustration des Modells. Der neue Alt-Text sagt das und beschreibt das Bild verständlicher." },
@@ -58,6 +60,7 @@ export const KRANKHEIT_IST_MESSBAR_CHANGES: ComparisonChange[] = [
   { id: 30, reason: ["SEO"], note: "Interne Links zu geplanten Praxisseiten ergänzt", orig: "Fragen zur Frequenztherapie?", draft: "Weiterlesen:", insertAfter: "self", draftWrap: "nav", why: "Am Ende fehlte ein Weg zu weiteren Praxisseiten. Die Links helfen Lesern weiter und verbinden die Seiten untereinander." },
   { id: 31, reason: ["Inhalt/Recht"], note: "Separater Vorschlag zu Ä8: Patientensatz als Denkmodell statt Tatsache", orig: "Schwingungen; Frequenztherapie versucht", draft: "Frequenztherapie greift dafür das Bild", withPrev: true, withNext: true, why: "Direkt nach Ä8 stand „Der Körper ist … ein geordnetes Feld“ als Tatsache – damit wäre der Wirkungseindruck sofort zurück. Jetzt bleibt das Bild vom Instrument erhalten, wird aber klar als Vergleich des Denkmodells erkennbar." },
   { id: 32, reason: ["Inhalt/Recht"], note: "Gleichrangig „Heilpraktiker oder Arzt“ statt nur „ärztlich“", orig: "kein Ersatz für ärztliche Behandlung", draft: "Behandlung durch Heilpraktiker oder Arzt", why: "Die Einordnung als ergänzender Baustein bleibt. Neu: Notwendige Behandlung durch Heilpraktiker oder Arzt wird gleichrangig genannt – die Praxis wird nicht stillschweigend ausgeklammert, und keine Medizin wird abgewertet." },
+  { id: 33, supersedes: 17, reason: ["Inhalt/Recht"], note: "Alternative zu Ä17 (Ä17 bleibt unverändert)", orig: "Deshalb heilt Frequenztherapie", draft: "gedanklichen Rahmen für ihr Arbeiten", why: "Zusatzvorschlag zur bereits übernommenen Ä17: „Daraus entwickelt … regulierend einzuwirken“ kann noch wie eine Herleitung der Wirkung aus der Physik klingen. Hier dient Muheims Bild nur als gedanklicher Rahmen. Wird Ä33 übernommen, ersetzt sie Ä17 in der Arbeitsfassung; Ä17 selbst bleibt gespeichert." },
 ];
 
 export const UNMARKED_NOTES = [
@@ -74,9 +77,9 @@ export const CHANGE_TOPICS: Record<number, string> = {
   10: "Das CERN-Experiment", 11: "Was das CERN-Ergebnis bedeutet", 12: "Muheims Kenngröße",
   13: "Das Denkmodell für den Therapieansatz", 14: "Rückenschmerzen im Energiefeld-Modell", 15: "Frequenztherapie in meiner Praxis",
   16: "Feld und Masse als Denkmodell", 17: "Muheim und Frequenztherapie", 18: "Zusammenfassung des Modells",
-  19: "Krankheit in der Informationsmedizin", 20: "Wie ich die Geräte kombiniere", 21: "Mögliche Wirkung im Modell",
+  19: "Krankheit in der Informationsmedizin", 20: "Geräte in meiner Praxis", 21: "Mögliche Wirkung im Modell",
   22: "Erfahrungen aus der Praxis", 23: "Kinesiologische Testung", 24: "Metatron-Messung",
   25: "Bildbeschreibung E = mc²", 26: "Bildbeschreibung Energiefeld", 27: "Bildbeschreibung Medizin-Vergleich",
   28: "Bildbeschreibung „Steuerpult“", 29: "Doppelte Überschrift", 30: "Weiterlesen: Praxisseiten",
-  31: "Körper als Schwingungsgefüge (Patientensatz)", 32: "Ergänzender Baustein – Heilpraktiker oder Arzt",
+  31: "Körper als Schwingungsgefüge (Patientensatz)", 32: "Ergänzender Baustein – Heilpraktiker oder Arzt", 33: "Muheims Bild als gedanklicher Rahmen (Alternative zu 17)",
 };

@@ -13,3 +13,17 @@ describe("Ä11 Umfang", () => {
     expect(html.match(/Konsequenz: Einsteins/g)?.length).toBe(1);
   });
 });
+describe("Ä33 ersetzt Ä17 nur wenn übernommen", () => {
+  it("Ä17 allein bleibt", () => {
+    const { html } = composeWorkingVersion(orig, draft, C, new Set([17, 18]));
+    expect(html).toContain("regulierend auf dieses Feld einzuwirken");
+    expect(html).not.toContain("gedanklichen Rahmen");
+  });
+  it("Ä17 + Ä33: nur Ä33-Text", () => {
+    const { html, failed } = composeWorkingVersion(orig, draft, C, new Set([1, 6, 7, 9, 10, 12, 17, 18, 33]));
+    expect(failed).toEqual([]);
+    expect(html).toContain("gedanklichen Rahmen");
+    expect(html).not.toContain("regulierend auf dieses Feld einzuwirken");
+    expect(html).not.toContain("Deshalb heilt");
+  });
+});

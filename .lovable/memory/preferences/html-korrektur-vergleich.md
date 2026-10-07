@@ -58,3 +58,5 @@ Gilt für ALLE bestehenden, noch nicht bearbeiteten UND künftig neu geschrieben
 - Indexierung/Canonical/Sitemap nur für freigegebene öffentliche Inhalte; geschützte Inhalte bleiben geschützt.
 - Keine falschen Wirk-/Erfolgsbehauptungen, keine Ranking- oder Rechtssicherheitsgarantien.
 - Bestehende Artikel: keine automatische Massenbearbeitung, keine Umnummerierung, keine Veröffentlichung; Peter entscheidet punktweise im bestätigten Vergleich.
+- Übernommene Punkte: Text nie nachträglich ändern (Übernahme speichert nur die Nummer – jede Entwurfsänderung wäre rückwirkend). Neue Fassung nur als eigener Vorschlag mit „supersedes“ auf die alte Nummer. Annahmestatus nie raten, sondern von Peter/aus der sichtbaren Liste übernehmen.
+- Praxisangaben (Geräte, Ablauf) nur mit benannter Quelle; sonst als „von Peter zu bestätigen“ kennzeichnen. Einsatz eines Geräts belegt keinen diagnostischen Nutzen.
