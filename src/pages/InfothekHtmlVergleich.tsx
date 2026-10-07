@@ -32,7 +32,7 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
   target.setAttribute("data-change", String(change.id));
   if (change.img) target.parentElement?.insertBefore(badge, target);
   else target.prepend(badge);
-  if (style === "draft") {
+  if (style === "draft" || style === "kept") {
     const why = doc.createElement("div");
     why.className = "cmp-why";
     const head = doc.createElement("strong");
@@ -41,7 +41,26 @@ function markChange(doc: Document, change: ComparisonChange, side: Side, style: 
     status.className = "cmp-status";
     status.setAttribute("data-status-for", String(change.id));
     status.textContent = "Offen";
-    why.append(status, head, doc.createTextNode(change.why));
+    const text = doc.createElement("span");
+    text.className = "cmp-why-text";
+    text.textContent = change.why;
+    head.className = "cmp-why-text";
+    // Comparison-only controls; handled by a listener in the parent page (no scripts run in the frame).
+    const actions = doc.createElement("span");
+    actions.className = "cmp-actions";
+    const accept = doc.createElement("button");
+    accept.type = "button";
+    accept.className = "cmp-btn cmp-accept";
+    accept.setAttribute("data-accept", String(change.id));
+    accept.textContent = `Nur Änderung Ä${change.id} übernehmen`;
+    const undo = doc.createElement("button");
+    undo.type = "button";
+    undo.className = "cmp-btn cmp-undo";
+    undo.setAttribute("data-undo", String(change.id));
+    undo.textContent = "Rückgängig";
+    undo.hidden = true;
+    actions.append(accept, undo);
+    why.append(status, head, text, actions);
     target.after(why);
   }
   return true;
@@ -112,7 +131,13 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-badge.kept { background: #475569; }
     .cmp-why { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed ${c.border}; border-radius: 6px; background: #ffffff;
       font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
-    html.has-rail .cmp-why { display: none !important; }
+    html.has-rail .cmp-why-text { display: none !important; }
+    html.has-rail .cmp-why { padding: 4px 8px; }
+    .cmp-actions { display: inline-flex; gap: 6px; margin-left: 6px; vertical-align: middle; }
+    .cmp-btn { font: 700 13px/1.3 Arial, sans-serif !important; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid #15803d; background: #15803d; color: #fff; -webkit-text-fill-color: #fff; }
+    .cmp-btn.cmp-undo { background: #fff; color: #334155; -webkit-text-fill-color: #334155; border-color: #64748b; }
+    .cmp-btn[hidden] { display: none !important; }
+    .cmp-why, .cmp-actions, .cmp-btn { pointer-events: auto !important; }
     html body .cmp-mark.cmp-mark.cmp-mark, html body .cmp-mark.cmp-mark *:not(.cmp-badge):not(.cmp-status), html body .reveal .slides section .cmp-mark, html body .reveal .slides section .cmp-mark *:not(.cmp-badge) { color: #111827 !important; -webkit-text-fill-color: #111827 !important; text-shadow: none !important; }
     html body .cmp-badge.cmp-badge { color: #fff !important; -webkit-text-fill-color: #fff !important; }
     html body .cmp-status.cmp-status { -webkit-text-fill-color: currentColor !important; }
@@ -158,6 +183,8 @@ export default function InfothekHtmlVergleich() {
   const cardIdRef = useRef(cardId);
   cardIdRef.current = cardId;
   const [cardTop, setCardTop] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [cardText, setCardText] = useState<{ orig?: string; draft?: string }>({});
   const [listOpen, setListOpen] = useState(false);
   const [namingOpen, setNamingOpen] = useState(false);
@@ -309,17 +336,18 @@ export default function InfothekHtmlVergleich() {
     setScroll(to, y < top ? y : absTop(target) + frac * target.offsetHeight);
   }, []);
 
-  const applyActive = useCallback((id?: number) => {
+  const applyActive = useCallback((id?: number, scroll = true) => {
     let anchorY: number | undefined;
     for (const side of ["orig", "draft"] as Side[]) {
       const doc = docOf(side);
       if (!doc) continue;
       doc.querySelectorAll("[data-active]").forEach((el) => el.removeAttribute("data-active"));
       if (id === undefined) continue;
-      if (CHANGES.find((c) => c.id === id)?.headOnly) { setScroll(side, 0); continue; }
+      if (CHANGES.find((c) => c.id === id)?.headOnly) { if (scroll) setScroll(side, 0); continue; }
       const el = doc.querySelector(`[data-change="${id}"]`);
       if (!el) continue;
       el.setAttribute("data-active", "");
+      if (!scroll) continue;
       const win = doc.defaultView!;
       // Place both markers at the same viewport height (first one centred, second aligned to it).
       if (anchorY === undefined) anchorY = Math.max(40, win.innerHeight / 2 - el.getBoundingClientRect().height / 2);
@@ -337,10 +365,14 @@ export default function InfothekHtmlVergleich() {
       doc.querySelectorAll<HTMLElement>("[data-change]").forEach((el) => {
         const r = el.getBoundingClientRect();
         if (r.bottom < 0 || r.top > h) return;
-        const d = Math.abs(r.top - h / 3);
+        const d = Math.abs(r.top - h * 0.2);
         if (d < dist) { dist = d; best = Number(el.dataset.change); }
       });
-      if (best !== undefined && best !== cardIdRef.current) { cardIdRef.current = best; setCardId(best); }
+      if (best !== undefined && best !== cardIdRef.current) {
+        cardIdRef.current = best;
+        setCardId(best);
+        followRef.current?.(best);
+      }
     }
     const c = CHANGES.find((x) => x.id === cardIdRef.current);
     const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"]`) : null;
@@ -352,12 +384,19 @@ export default function InfothekHtmlVergleich() {
       // iframe elements belong to another realm: instanceof HTMLImageElement is always false there.
       if (t.tagName === "IMG") return t.getAttribute("alt") || undefined;
       const clone = t.cloneNode(true) as Element;
-      clone.querySelectorAll(".cmp-badge, .cmp-why").forEach((x) => x.remove());
+      clone.querySelectorAll(".cmp-badge, .cmp-why, .cmp-actions").forEach((x) => x.remove());
       const txt = (clone.textContent ?? "").replace(/\s+/g, " ").trim();
       return txt.length > 260 ? `${txt.slice(0, 257)}…` : txt;
     };
     setCardText({ orig: textOf("orig"), draft: textOf("draft") });
   }, []);
+
+  // Refs so listeners inside the frames always call the current handlers.
+  const followRef = useRef<(id: number) => void>();
+  const acceptRef = useRef<(id: number) => void>();
+  const undoRef = useRef<(id: number) => void>();
+  const noScrollNext = useRef(false);
+  const lastUserInput = useRef(0);
 
   const [loaded, setLoaded] = useState(0);
   const onFrameLoad = useCallback(() => setLoaded((n) => n + 1), []);
@@ -375,14 +414,31 @@ export default function InfothekHtmlVergleich() {
     }
     for (const side of ["orig", "draft"] as Side[]) {
       const win = docOf(side)!.defaultView!;
+      const doc = docOf(side)!;
+      const markUser = () => { lastUserInput.current = Date.now(); };
+      for (const ev of ["wheel", "touchmove", "keydown", "mousedown"]) {
+        doc.addEventListener(ev, markUser, { passive: true });
+        cleanups.push(() => doc.removeEventListener(ev, markUser));
+      }
       const handler = () => {
         if (ignoreScroll.current[side]) { ignoreScroll.current[side] = false; return; }
         if (syncedRef.current) syncFrom(side);
-        if (side === "draft") updateCard(false);
+        // Only scrolling caused by the user (wheel/touch/keys/scrollbar) re-targets the margin note.
+        const byUser = Date.now() - lastUserInput.current < 800;
+        updateCard(byUser);
       };
       win.addEventListener("scroll", handler, { passive: true });
       cleanups.push(() => win.removeEventListener("scroll", handler));
     }
+    const onClick = (e: Event) => {
+      const t = (e.target as Element | null)?.closest?.("[data-accept],[data-undo]");
+      if (!t) return;
+      e.preventDefault();
+      const acc = t.getAttribute("data-accept");
+      if (acc) acceptRef.current?.(Number(acc)); else undoRef.current?.(Number(t.getAttribute("data-undo")));
+    };
+    b.addEventListener("click", onClick);
+    cleanups.push(() => b.removeEventListener("click", onClick));
     const onResize = () => { equalize(); syncFrom("orig"); };
     window.addEventListener("resize", onResize);
     cleanups.push(() => window.removeEventListener("resize", onResize));
@@ -393,7 +449,9 @@ export default function InfothekHtmlVergleich() {
 
   useEffect(() => {
     if (active !== undefined) { cardIdRef.current = active; setCardId(active); }
-    applyActive(active);
+    const scroll = !noScrollNext.current;
+    noScrollNext.current = false;
+    applyActive(active, scroll);
     requestAnimationFrame(() => updateCard(false));
   }, [active, applyActive, updateCard]);
   useEffect(() => {
@@ -409,9 +467,16 @@ export default function InfothekHtmlVergleich() {
       const on = accepted.has(Number(el.dataset.statusFor));
       el.textContent = on ? "Übernommen" : "Offen";
       el.toggleAttribute("data-accepted", on);
+      const box = el.closest(".cmp-why");
+      const acc = box?.querySelector<HTMLElement>("[data-accept]"), undo = box?.querySelector<HTMLElement>("[data-undo]");
+      if (acc) acc.hidden = on;
+      if (undo) undo.hidden = !on;
     });
   }, [accepted, loaded]);
 
+  followRef.current = (id: number) => { noScrollNext.current = true; chooseActive(id); };
+  acceptRef.current = acceptAndAdvance;
+  undoRef.current = (id: number) => { toggleAccepted(id, false); };
   const step = (dir: 1 | -1) => {
     const idx = jumpable.findIndex((c) => c.id === active);
     const next = idx < 0 ? (dir === 1 ? 0 : jumpable.length - 1) : (idx + dir + jumpable.length) % jumpable.length;
@@ -489,7 +554,7 @@ export default function InfothekHtmlVergleich() {
           <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
           <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
           <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
-            <div className="relative lg:h-[calc(100vh-8rem)] lg:min-h-[300px]">
+            <div ref={railRef} className="relative lg:h-[calc(100vh-8rem)] lg:min-h-[300px]">
               {(() => {
                 const c = CHANGES.find((x) => x.id === cardId);
                 if (!c) return (
@@ -497,9 +562,11 @@ export default function InfothekHtmlVergleich() {
                     Keine Änderung gewählt. Mit „Nächste“ eine Änderung wählen oder zu einer markierten Stelle scrollen – die Randnotiz zeigt dann deren Nummer und Begründung.
                   </div>
                 );
-                const top = wide ? Math.max(0, Math.min(cardTop, window.innerHeight - 22 * 16)) : 0;
+                const railH = railRef.current?.clientHeight ?? 400;
+                const cardH = Math.min(cardRef.current?.offsetHeight ?? 0, railH);
+                const top = wide ? Math.max(0, Math.min(cardTop, railH - cardH)) : 0;
                 return (
-                  <div className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 transition-[top] duration-150" style={wide ? { top } : undefined}>
+                  <div ref={cardRef} className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 lg:overflow-y-auto transition-[top] duration-150" style={wide ? { top, maxHeight: railH } : undefined}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <button type="button" className="font-semibold hover:underline" onClick={() => chooseActive(c.id)}>
                         Ä{c.id}{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel" : " · Meta-Beschreibung") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
