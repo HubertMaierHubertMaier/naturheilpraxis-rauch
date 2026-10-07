@@ -42,7 +42,12 @@ Jede Relation → assertion → assertion_sources(source_revision_id, locator, o
 kb_article_entities hängt an article_revision_id. Anzeige: Zuordnung an aktueller Revision = gültig; nur an älterer Revision = „veraltet – an Rev. N belegt, zu prüfen". Neue Revision übernimmt Zuordnungen nur per Review. Quellenbeleg zeigt immer die belegende source_revision, auch wenn neuere existiert.
 
 ## 5. Widerspruch/Verneinung (Ziel 5)
-Keine neue Spalte an kb_assertions (kein pauschales „affirms" für Altbestand; Altbestand gilt als nicht klassifiziert/prüfbedürftig). Verneinung/Einschränkung über vorhandenes `kb_assertion_sources.source_role` (refutes, qualifies; supports, mentions). Widersprüche zwischen zwei Aussagen in append-only `kb_assertion_conflicts` (contradicts|qualifies|negates), beide Aussagen bleiben. Beide Aussagen bleiben sichtbar. review_status der Quelle ≠ Fachfreigabe; „angegeben für (laut Quelle)" nie als Wirkung formulieren.
+Zwei getrennte Achsen:
+- **Inhaltspolarität der Aussage** (was behauptet wird): `kb_assertions.metadata.claim_polarity` ∈ {positive, negative} nur für neue Aussagen; fehlt der Schlüssel = „nicht klassifiziert, prüfbedürftig“ (Altbestand unverändert, kein Pauschalwert). Released Aussagen erhalten Polarität nur über eine neue Version.
+- **Haltung der Quelle zur Aussage**: `kb_assertion_sources.source_role` (supports, refutes, qualifies, mentions).
+- Fall 1 „Quelle belegt: X hilft nicht bei Y“ = negative Aussage + `supports`.
+- Fall 2 „Quelle widerspricht: X hilft bei Y“ = positive Aussage + `refutes`.
+- Widerspruch zwischen zwei Aussagen: append-only `kb_assertion_conflicts` (contradicts|qualifies); beide Aussagen bleiben sichtbar. UI: Polarität als „Aussage: hilft / hilft nicht“, Quellenhaltung als „belegt / widerspricht / schränkt ein / erwähnt“. Quellenprüfstatus ≠ Fachfreigabe.
 
 ## 6. Suche/Zähler (Ziel 6)
 Weiter fetchAllPages + exact count; Zähler je Kästchen getrennt nach geprüft / ungeprüft / Kandidat. Bereiche „ohne Zuordnung" und „Kandidat ohne Review" bleiben. Serverseitige Volltextsuche (bestehend) für Kandidatenerzeugung.
@@ -60,12 +65,14 @@ Firmen & Personen, Apotheken, Mannayan, Vitaplace, Heel, Pascoe, Nutramedix, Kli
 - Importbatches: erlaubt sind nur created/processing/ready_for_review/reviewed/failed/cancelled; reviewed/failed/cancelled sind terminal, ready_for_review→cancelled ist verboten. Einen „verworfen"-Status gibt es nicht. Ein abgeschlossener Batch wird **nie** umgestellt.
 - Rücknahme = eigener, auditierbarer **Rücknahmebatch** (created→processing→ready_for_review→reviewed) mit Begründung in dessen metadata; er referenziert die zurückzunehmenden Objekte.
 - Materialisierte Entitätsrelationen: kb_entity_relations hat kein metadata-Feld. Herkunft liegt an der tragenden Assertion (`kb_assertions.metadata.import_batch_id`) und an `kb_import_core_links`. Rücknahme = neue Assertion-Version bzw. Statusübergang über den bestehenden Review-Workflow (released→withdrawn/superseded, durch kb_protect_reviewed_record erlaubt), kein DELETE.
-- kb_source_actors: Rücknahme nur über `kb_review_source_actor(id,'withdrawn',notiz)`; Ersatz als neue Zeile mit supersedes_id. Löschen nur im Entwurf.
+- kb_source_actors: Genehmigung (Notiz, Prüfer, Zeit) ist nach `kb_review_source_actor(id, notiz)` unveränderlich. Rücknahme = eigenes append-only Ereignis über `kb_withdraw_source_actor(id, grund)` in `kb_source_actor_withdrawals` (Grund, Person, Zeit; je Zuordnung höchstens eins). Wirksamer Status = approved ohne Rücknahmeereignis. Ersatz als neue Zeile mit supersedes_id. Löschen nur im Entwurf.
 - Migration A rein additiv; Rückweg: neue Typen bleiben inaktiv.
 - Backup: siehe Abschnitt „Backup-Inventar".
 
 ## Backup-Inventar
-`kb_source_actors` und `kb_assertion_conflicts` fehlen im festen Inventar (`src/lib/backupAreas.ts`, `supabase/functions/backup-export/index.ts`). Vorbereitet als **zusätzlicher Patch** `docs/wiki/backup-kb_source_actors.patch` (nicht angewendet; Edge-Code würde automatisch live gehen). Reihenfolge: Patch kb_import_events + dieser Patch prüfen → Probe-Export/Restore synthetisch → erst dann Befüllung (Phase 2).
+Neue Tabellen `kb_source_actors`, `kb_source_actor_withdrawals`, `kb_assertion_conflicts`:
+- Isolierter Export `kb_export_source_network()` und kontrollierter Restore `kb_restore_source_network(jsonb)`, beide nur service_role. Restore nur in leere Tabellen, ordnet supersedes-Ketten Eltern vor Kindern, übernimmt Prüfnachweise und Rücknahmeereignisse unverändert (Restore-Modus gilt nur innerhalb der Funktion; für authenticated wirkungslos).
+- Eintrag ins feste Inventar als vorbereiteter Patch `docs/wiki/backup-kb_source_actors.patch` (nicht angewendet; Edge-Code ginge automatisch live). Reihenfolge: Migration A → Patch kb_import_events + dieser Patch prüfen → synthetischer Export/Restore im Backup-Lauf → erst dann Befüllung.
 
 ## Synthetische Tests (vor jeder Phase, ohne Echtdaten)
 Fixtures mit erfundenen Namen (z.B. „Testfirma Alpha GmbH", „Teststoff X"):
