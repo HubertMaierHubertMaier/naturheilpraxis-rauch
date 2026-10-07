@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES } from "@/lib/infothekComparisonChanges";
 
