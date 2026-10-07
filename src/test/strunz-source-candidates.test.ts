@@ -83,3 +83,20 @@ describe("Strunz Produktquellen Teil 3 (49–72)", () => {
     expect(a.produkte_ohne_karte_liste.length).toBe(149);
   });
 });
+
+describe("Strunz Produktquellen Teil 4 (73–96)", () => {
+  const a = STRUNZ_AREA as any;
+  it("Reihenfolge, wörtliche Fundstellen je positiver Angabe, Hersteller offen", () => {
+    const r = a.produktquellen_teil4.ergebnisse;
+    const order = a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung !== "variante_offen").slice(72, 96).map((x: any) => x.url);
+    expect(r.map((x: any) => x.url)).toEqual(order);
+    r.forEach((x: any) => {
+      expect(x.abgerufen).toMatch(/Z$/); expect(x.hersteller).toBeNull(); expect(x.hersteller_status).toContain("offen");
+      if (x.ean.length) expect(x.ean_fundstelle.wortlaut).toContain(x.ean[0]); else expect(x.ean_fundstelle).toBe("nicht angegeben");
+      if (x.marke_laut_seite) expect(x.marke_fundstelle.wortlaut.toLowerCase()).toContain(x.marke_laut_seite.toLowerCase());
+      expect(x.produktname_fundstelle.feld).toBe("H1");
+    });
+    expect(a.produkte_ohne_karte_liste.length).toBe(149);
+    expect(a.produkte_ohne_karte_liste.filter((x: any) => x.einordnung === "variante_offen").length).toBe(13);
+  });
+});

@@ -128,3 +128,7 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - 24/24 HTTP 200 (`produktquellen_teil3`), 24 explizite EAN; Marken „for you eHealth“ (11) / „FOREVER YOUNG“ (13, laut Produktname); Produkthersteller nirgends genannt → offen. „Hersteller“-Wortfunde aus Kundenbewertungen verworfen.
 - Offen: Produktseiten 73–136 + 13 Varianten. Nächster Schritt: 73–96.
 - Infothek-Quellenbelege DCCT/UKPDS/IgG: docs/wiki/infothek-quellen-dcct-ukpds-igg-2026-10-07.json.
+
+## 2026-10-07 ca. 19:55Z Strunz-Produktquellen Teil 4 (73–96)
+- 24/24 HTTP 200 (`produktquellen_teil4`), je positiver Angabe Feld + wörtlicher Auszug. 22 EAN; ohne EAN: Geschenkgutschein (kein Produkt, Eintrag erhalten, Einordnung offen), L-Citrullin Orange. Marke FOREVER YOUNG (24, Zwischenüberschrift); Produkthersteller nirgends → offen.
+- Offen: Produktseiten 97–136 + 13 Varianten; Teile 1–3 haben noch keine wörtlichen Fundstellen (nachrüsten).
