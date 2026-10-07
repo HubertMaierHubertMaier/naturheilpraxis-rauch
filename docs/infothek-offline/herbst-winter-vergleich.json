@@ -1,0 +1,37 @@
+{
+  "hinweis": "Offline-Vorbereitung, nicht im Browser-Bundle; Vergleich erst nach geschütztem Abruf (siehe docs/infothek-offline/README.md) online bedienbar.",
+  "fit-gesund-herbst-winter-7-minuten": [
+    {
+      "id": 1,
+      "reason": [
+        "Inhalt/Recht"
+      ],
+      "note": "Erfahrungsheilkunde: individuelle Planung + klare Einordnung",
+      "orig": "Wichtig ist mir eine ehrliche Einordnung",
+      "draft": "plane ich individuell mit Ihnen",
+      "why": "Praxisrollenstandard: eigenständige Planung positiv beschrieben; Einordnung bleibt konkret (Erfahrungsheilkunde, schulmedizinisch nicht anerkannt), Warnzeichen haben Vorrang. Keine Wirkung behauptet."
+    },
+    {
+      "id": 2,
+      "reason": [
+        "Inhalt/Recht"
+      ],
+      "note": "Notruf 112 bei schwerer Atemnot, Bewusstseinsstörung, blauen Lippen",
+      "orig": "Bitte holen Sie rasch medizinische Hilfe bei Atemnot",
+      "draft": "wählen Sie sofort den Notruf 112",
+      "why": "Lebensbedrohliche Zeichen getrennt von „rasch abklären“; übrige Warnzeichen unverändert."
+    }
+  ],
+  "fit-gesund-herbst-winter-infothek": [
+    {
+      "id": 1,
+      "reason": [
+        "Inhalt/Recht"
+      ],
+      "note": "Meningitis-Verdacht als Notfall (112)",
+      "orig": "Nackensteife, ungewöhnlicher Ausschlag oder starke Lichtscheu",
+      "draft": "Notfall – sofort 112",
+      "why": "NHS Meningitis (gelesen 07.10.2026): sofortige Hilfe bei sehr starken Kopfschmerzen, Fieber, Ausschlag, der beim Glastest nicht verblasst; „might not have every symptom“. Bisher nur unter „zeitnah“ eingeordnet."
+    }
+  ]
+}

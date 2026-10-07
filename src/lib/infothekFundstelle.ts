@@ -4,3 +4,10 @@ export function fundstelle(c: { id: number; headOnly?: { kind: string } }, p: { 
   const sec = p?.sectionOf.get(c.id);
   return sec && p ? `${page} · Abschnitt ${sec} von ${p.sectionCount}` : `${page} · Abschnitt nicht ermittelbar`;
 }
+
+/** Article sections in document order: Reveal slides when present, otherwise top-level <section> elements (not nested in another section). */
+export function articleSections(doc: Document): Element[] {
+  const slides = Array.from(doc.querySelectorAll(".reveal .slides > section"));
+  if (slides.length) return slides;
+  return Array.from(doc.body.querySelectorAll("section")).filter((s) => !s.parentElement?.closest("section"));
+}
