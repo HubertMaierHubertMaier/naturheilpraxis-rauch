@@ -95,6 +95,7 @@ export default function WikiOrdnung() {
   const [data, setData] = useState<Awaited<ReturnType<typeof loadModel>> | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [fullText, setFullText] = useState<Record<string, ReturnType<typeof splitRevisionHits> | "loading" | "error">>({});
+  const [kCards, setKCards] = useState<KCard[] | "loading" | "error" | null>(null);
   const searchFullText = async (a: Actor) => {
     const al = PETER_ACTORS.find((p) => p.key === a.key)?.aliases ?? [a.name.toLowerCase()];
     setFullText((x) => ({ ...x, [a.key]: "loading" }));
@@ -175,6 +176,7 @@ export default function WikiOrdnung() {
       ["chipcards", "ChipCards", [...m.entities.values()].filter((e) => e.chipCard).length],
       ["pharmacies", "Apotheken", EXTERNAL_PHARMACIES.length + [...m.actors.values()].filter((a) => a.roles.has("Apotheke")).length + [...data!.pharmacyText.keys()].filter((n) => ![...m.actors.values()].some((a) => a.roles.has("Apotheke") && norm(a.name) === norm(n))).length],
       ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
+      ["klinghardt", "Klinghardt-Navigator (Quellenkarten)", [...m.sources.values()].filter((s) => s.publisher === KLINGHARDT_PUBLISHER).length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
       ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
       ["trace", "Spurenelemente", [...m.entities.values()].filter((e) => e.nutrient === "trace").length],
@@ -219,6 +221,53 @@ export default function WikiOrdnung() {
         </CardContent></Card>
       </>
     );
+  } else if (view === "klinghardt") {
+    const kc = kCards;
+    const axes = (params.get("ax") ?? "").split(",").filter(Boolean) as AxisKey[];
+    const chapter = params.get("kap");
+    if (kc === null || kc === "loading") body = <p>Lädt Quellenkarten …</p>;
+    else if (kc === "error") body = <p className="text-destructive">Quellenkarten nicht lesbar.</p>;
+    else {
+      const list = filterCards(kc, { chapter, axes, q });
+      const pg = paginate(list, page, PAGE);
+      const mx = overlapMatrix(kc);
+      const open = id ? kc.find((c) => c.revisionId === id) : undefined;
+      body = (
+        <div className="space-y-4 text-sm">
+          <Card><CardContent className="space-y-1 p-4">
+            <p className="font-semibold">Klinghardt-Navigator – Talks 001–025</p>
+            <p>Im Wiki vorhanden: <b>{kc.length} Praxis-Quellenkarten</b> (aktuelle Revisionen). Kompendium-Bestand laut PDF: {COMPENDIUM.sourceCards} Quellenkarten, {COMPENDIUM.themeRows} Themenzeilen, {COMPENDIUM.pages} Seiten – <b>nicht</b> vollständig importiert.</p>
+            <p className="text-xs text-muted-foreground">PDF SHA-256 {COMPENDIUM.pdfSha256} · Quellregister DOCX SHA-256 {COMPENDIUM.docxSha256}. Sprecheraussagen sind Originalaussagen; Quellenprüfung/Sicherheit stehen getrennt. Achsen = Texttreffer, keine Diagnose- oder Wirkzuordnung.</p>
+            <p className="text-xs">Unabhängige Folgen in Auswahl: {independentEpisodes(list)} (Sprachpaare {LANGUAGE_PAIRS.map((p) => p.join("/")).join(", ")} zählen je einmal).</p>
+          </CardContent></Card>
+          <div className="grid gap-2 sm:grid-cols-3">{CHAPTERS.map((ch) => <button key={ch} onClick={() => set({ kap: chapter === ch ? null : ch, id: null })} className={`rounded-lg border-2 bg-card p-3 text-left ${chapter === ch ? "border-primary" : "border-primary/30"}`}><p className="font-semibold">{ch}</p><p className="text-xs text-muted-foreground">{filterCards(kc, { chapter: ch }).length} Karten</p></button>)}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input className="max-w-xs" placeholder="Karten durchsuchen (Mehrwort)" value={q} onChange={(e) => set({ q: e.target.value || null, id: null })} aria-label="Klinghardt-Karten durchsuchen" />
+            {AXES.map((a) => <Button key={a.key} size="sm" variant={axes.includes(a.key) ? "default" : "outline"} onClick={() => { const n = axes.includes(a.key) ? axes.filter((x) => x !== a.key) : [...axes, a.key]; set({ ax: n.join(",") || null, id: null }); }}>{a.label} ({mx[a.key][a.key]})</Button>)}
+          </div>
+          <details><summary className="cursor-pointer font-semibold">Überschneidungsmatrix der Achsen (Karten mit beiden Begriffen)</summary>
+            <table className="mt-1 text-xs"><thead><tr><th />{AXES.map((a) => <th key={a.key} className="px-2">{a.label}</th>)}</tr></thead><tbody>{AXES.map((a) => <tr key={a.key}><th className="pr-2 text-left">{a.label}</th>{AXES.map((b) => <td key={b.key} className="px-2 text-center">{mx[a.key][b.key]}</td>)}</tr>)}</tbody></table>
+            <p className="text-xs text-muted-foreground">Gemeinsame Nennung im selben Mehrthemen-Eintrag ist keine Relation.</p></details>
+          {open ? (
+            <Card><CardContent className="space-y-2 p-4">
+              <Button size="sm" variant="outline" onClick={() => set({ id: null })}>Zurück zur Liste</Button>
+              <h2 className="text-lg font-semibold">{open.title}</h2>
+              <div className="flex flex-wrap gap-1">{open.chapters.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}<Badge variant="outline">Rev. {open.revisionNo}</Badge>{open.speaker && <Badge variant="outline">Sprecher: {open.speaker}</Badge>}</div>
+              <p><b>Fundstelle:</b> {open.locator || "–"} · Folgen {open.episodes.map(episodeGroup).join(", ")} · {open.eIds.join(", ")}</p>
+              <div className="rounded border border-border p-2"><p className="font-semibold">Originalaussage (Sprecher)</p><p className="whitespace-pre-wrap">{open.claim}</p>{open.remedies && <><p className="mt-1 font-semibold">Genannte Mittel/Verfahren</p><p className="whitespace-pre-wrap">{open.remedies}</p></>}{open.dose && <><p className="mt-1 font-semibold">Angaben laut Video (ungeprüft)</p><p className="whitespace-pre-wrap">{open.dose}</p></>}</div>
+              <div className="rounded border border-border p-2"><p className="font-semibold">Quellenprüfung / Evidenzeinordnung (getrennt)</p><p className="whitespace-pre-wrap">{open.evidence || "–"}</p>{open.safety && <><p className="mt-1 font-semibold">Sicherheit</p><p className="whitespace-pre-wrap">{open.safety}</p></>}</div>
+              <details><summary className="cursor-pointer font-semibold">Komplette Quellenkarte (unverändert)</summary><pre className="whitespace-pre-wrap text-xs">{open.content}</pre></details>
+            </CardContent></Card>
+          ) : (
+            <>
+              <p className="text-muted-foreground">{list.length} von {kc.length} Karten</p>
+              <ul className="space-y-1">{pg.items.map((c) => <li key={c.revisionId}><button className="text-left underline" onClick={() => set({ id: c.revisionId })}>{c.title}</button> <span className="text-xs text-muted-foreground">· {c.chapters.join(", ")} · {c.locator}</span></li>)}</ul>
+              <Pager {...pg} set={(p) => set({ s: String(p) })} />
+            </>
+          )}
+        </div>
+      );
+    }
   } else if (view === "reviewed") {
     const dry = buildDryRun(m);
     const split = splitDryRunActors(dry);
