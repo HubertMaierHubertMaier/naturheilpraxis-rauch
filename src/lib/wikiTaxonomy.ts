@@ -8,7 +8,7 @@
 export type GroupKey = "products" | "pathogens" | "symptoms" | "diseases" | "other";
 export type NutrientClass = "vitamins" | "minerals" | "trace";
 export type LinkKind = "import" | "field" | "text";
-export type ActorRole = "Hersteller" | "Herausgeber" | "Autor" | "Ordner" | "Von Peter benannt";
+export type ActorRole = "Apotheke" | "Hersteller" | "Herausgeber" | "Autor" | "Ordner" | "Von Peter benannt";
 
 export const GROUP_LABEL: Record<GroupKey, string> = {
   products: "Mittel/Produkte",
@@ -167,6 +167,8 @@ export function buildWikiModel(i: {
     if (s.publisher?.trim()) { const a = actor(keyFor(s.publisher), s.publisher.trim()); a.roles.add("Herausgeber"); a.sourceRevisionIds.add(s.id); }
     for (const au of s.authors ?? []) if (au?.trim()) { const a = actor(keyFor(au), au.trim()); a.roles.add("Autor"); a.sourceRevisionIds.add(s.id); }
   }
+  // Pharmacy role: only when the stored actor name itself is a pharmacy name (data field). Other roles stay (multi-role).
+  for (const a of actors.values()) if (isPharmacyName(a.name)) a.roles.add("Apotheke");
   // Products manufactured_by an actor's manufacturer entity (import link).
   for (const r of relations) if (r.type === "manufactured_by" && r.objectId) for (const a of actors.values()) if (a.entityIds.has(r.objectId) && r.subjectId) a.entityIds.add(r.subjectId);
   // Folder assignment only when folder name equals an actor alias/name (exact, normalized).
@@ -207,6 +209,19 @@ export function buildWikiModel(i: {
     unassignedArticleIds: [...articles.keys()].filter((id) => !assignedArticles.has(id)),
     unassignedEntityIds: [...entities.keys()].filter((id) => !related.has(id) && !articleTextEntities.has(id)),
   };
+}
+
+/** A name is a pharmacy name if one of its words is "...apotheke" (e.g. "Radegundis Apotheke", "Burgapotheke"). Generic "Apotheke(n)" alone is not a name. */
+export const isPharmacyName = (name: string) => {
+  const w = norm(name).split(" ");
+  return w.some((x) => x.endsWith("apotheke")) && w.filter((x) => x !== "apotheke" && x !== "apotheken").length > 0;
+};
+/** Named pharmacies mentioned in article text, e.g. "(Schlossapotheke Koblenz)". Text hits only, never a confirmed link. */
+export function pharmacyNamesInText(text: string): string[] {
+  const out = new Set<string>();
+  const re = /\b([A-ZÄÖÜ][a-zäöüß]*apotheke(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?|[A-ZÄÖÜ][a-zäöüß]+[ -]Apotheke)\b/g;
+  for (const m of text.matchAll(re)) { const n = m[1].trim(); if (isPharmacyName(n) && !/^(Die|Der|Das|Ihre|Eine|Jede|Ihrer|Online)[ -]/.test(n)) out.add(n); }
+  return [...out];
 }
 
 /** Bidirectional neighbours of an entity via import relations (never via text hits). */
