@@ -236,7 +236,7 @@ END $p$;
 -- 6. Abschluss-Strukturprüfung gegen Soll-Fingerabdruck (tatsächliche Definitionen).
 --    Gleichnamige, aber abweichende Objekte -> RAISE -> Rollback der ganzen Migration.
 DO $chk$
-DECLARE fp text; expected constant text := '__FINGERPRINT__';
+DECLARE fp text; expected constant text := '768c0de7f04c2dafd01f17a3c04b4c49';
 BEGIN
   SELECT md5(string_agg(x, E'\n' ORDER BY x)) INTO fp FROM (
     SELECT format('col|%s|%s|%s|%s|%s', c.table_name, c.column_name, c.data_type, c.is_nullable, coalesce(c.column_default, ''))
