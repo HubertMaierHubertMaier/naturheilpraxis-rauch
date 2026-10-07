@@ -101,7 +101,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     tag.className = "cmp-sec";
     tag.textContent = `Abschnitt ${i + 1}`;
     sec.prepend(tag);
-    sec.querySelectorAll("[data-change]").forEach((el) => sectionOf.set(Number(el.getAttribute("data-change")), i + 1));
+    sec.querySelectorAll("[data-change]").forEach((el) => { sectionOf.set(Number(el.getAttribute("data-change")), i + 1); (el.getAttribute("data-change-also") ?? "").split(" ").filter(Boolean).forEach((x) => sectionOf.set(Number(x), i + 1)); });
   });
   const base = doc.createElement("base");
   base.href = `${window.location.origin}/`;
