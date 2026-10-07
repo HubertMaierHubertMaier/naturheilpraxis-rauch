@@ -20,6 +20,7 @@
 - **Chat-Status**: „Ich arbeite an: …“ / „Dieser Schritt ist fertig. Noch offen: …“ / „Ich warte auf: …“ – siehe mem://preferences/chat-arbeitsmeldungen
 
 ## Memories
+- [HTML-Vergleich Vorlage](mem://features/infothek-html-vergleich-vorlage) — Bestätigte Zwei-HTML-Vorlage, Wiederherstellung docs/restore/infothek-html-vergleich-vorlage.md
 - [Chat-Arbeitsmeldungen](mem://preferences/chat-arbeitsmeldungen) — Pflichtformat sichtbarer Statusmeldungen
 - [Praxis-Kontakt](mem://project/practice-contact) — Bestätigte Telefonnummer, falsche Varianten
 - [Wiki-Budget](mem://preferences/wiki-budget) — max 250 Credits ab 301,51, Reserve ≥50 (Stopp ≤51,51); Paketberichte; keine Writes/Publish
