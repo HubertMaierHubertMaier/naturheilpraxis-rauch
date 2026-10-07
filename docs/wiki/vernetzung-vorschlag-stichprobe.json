@@ -1,5 +1,5 @@
 {
-  "status": "VORSCHLAG v2 (07.10.2026, an korrigierten Plan angepasst) – NICHT ANGEWENDET, NICHT AUSFÜHRBAR. Keine Produktivwrites, keine Migration. Kein Eintrag ist eine fertige Zuordnung; alle Speichercodes sind Zielcodes für eine spätere Review-Materialisierung.",
+  "status": "VORSCHLAG v2 (07.10.2026, an korrigierten Plan angepasst) – NICHT ANGEWENDET, NICHT AUSFÜHRBAR. Keine Produktivwrites, keine Migration. Kein Eintrag ist eine fertige Zuordnung; alle Speichercodes sind Zielcodes für eine spätere Review-Materialisierung. | Stand 07.10.2026 19:xx: 6/8 vollständig (Zink, Radegundis, Banderol, Night Relax, Erythromycin, HNO-ChipCard); offen Ochsengalle/Heel, Medacalm/Pascoe. Nicht angewendet.",
   "hinweis_ids": "Revisions-IDs je Tabelle am 07.10.2026 read-only geprüft (siehe id_pruefung je Kandidat). Gleichheit Objekt-ID = Revisions-ID ist bei Importdatensätzen tatsächlich so gespeichert (kb_entities/kb_articles.current_revision_id zeigt auf denselben UUID-Wert in kb_entity_revisions/kb_article_revisions; kb_source_revisions.source_id = id, revision_no 1). Nicht für andere Datensätze verallgemeinern.",
   "regeln": [
     "candidate_key stabil: '<kind>:<typ>:<normalisierter name>'",
@@ -36,16 +36,24 @@
           "speichertabelle": "kb_entity_relations",
           "speichercode": "contains",
           "objekt": "nutrient: Zink (bestehend)",
-          "herkunft": "Produktname – Deklaration noch nicht belegt",
-          "fundstelle_fehlt": true
+          "herkunft": "Herstellerdeklaration (source: manufacturer)",
+          "fundstelle": "kb_source_revisions 5fb3b98e… metadata.candidate_snapshot.proposed_data.inventory.atomicStatements: id=ingredients („Zinkcitrat und Kupfersulphat …“), id=zinc-form („Zinkcitrat“); mannayan.com/Mannayan-ZINK-60-Tabletten/010104"
+        },
+        {
+          "ui_bezeichnung": "enthält Kupfer (laut Deklaration) – neuer Kandidat",
+          "speichertabelle": "kb_entity_relations",
+          "speichercode": "contains",
+          "objekt": "Kupfer – Entität vor Anlage prüfen",
+          "herkunft": "Herstellerdeklaration",
+          "fundstelle": "atomicStatements id=ingredients"
         }
       ],
       "unsicherheit": "niedrig für Hersteller (Feld); Produktart aus Herstellerdeklaration abgeleitet, nicht als Feld gespeichert",
       "id_pruefung": "kb_entities.id vorhanden (Typ product_variant); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
       "quelle_revision_id": "5fb3b98e-1133-53d9-b0f6-021bb6d889cb",
       "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
-      "vollstaendig": false,
-      "unvollstaendig_grund": "Hersteller belegt; contains ohne Deklarationsfundstelle"
+      "vollstaendig": true,
+      "unvollstaendig_grund": null
     },
     {
       "candidate_key": "rel:radegundis-nase-frei:offered_by:radegundis-apotheke",
@@ -90,8 +98,8 @@
       "vollstaendig": true
     },
     {
-      "candidate_key": "ent:product:banderol:hersteller-offen",
-      "anbieter": "offen (Ordner „Nutramedix“ vorhanden – kein Herstellerbeleg)",
+      "candidate_key": "rel:banderol:manufactured_by:nutramedix-ltd",
+      "anbieter": "NutraMedix Ltd (laut Herstellerzeile im Wiki-Artikel; Primärquelle fehlt)",
       "subjekt": {
         "art": "kb_entity",
         "id": "e8455b88-2003-654d-a76b-b7dc7fe15d86",
@@ -99,23 +107,23 @@
         "name": "Banderol",
         "typ_ist": "product"
       },
-      "fundstelle": "Quellentitel „Bestehende lokale Quelle und Peters Praxisangabe“; Herstellerangabe fehlt",
+      "fundstelle": "kb_article_revisions 42bc0f0c-80d7-4e2f-a41b-4a2fc8b33a6b („NutraMedix Banderol“, aktuelle Rev. 1): „**Hersteller:** NutraMedix Ltd“; Quelle 7ba2f517… nennt Banderol",
       "vorgeschlagene_produktart": "Pflanzenextrakt/Nahrungsergänzung – unklar",
       "beziehungen": [
         {
-          "ui_bezeichnung": "Hersteller",
+          "ui_bezeichnung": "hergestellt von",
           "speichertabelle": "kb_entity_relations",
-          "speichercode": null,
-          "objekt": "offen – Nutramedix NICHT als Hersteller eintragen, solange kein Herstellerfeld/keine Quellenfundstelle",
-          "herkunft": "Ordnerzugehörigkeit (nur Navigation)",
-          "grund": "kein Herstellerfeld im Datensatz; Ordner und Produktbekanntheit sind kein Beleg"
+          "speichercode": "manufactured_by",
+          "objekt": "organization: NutraMedix Ltd (neu, Kandidat)",
+          "herkunft": "Herstellerzeile im internen Wiki-Artikel (Sekundärangabe)",
+          "voraussetzung": "Domäne product→organization draft"
         }
       ],
-      "unsicherheit": "hoch für Hersteller: unbelegt; Peter/Quelle muss Hersteller mit Fundstelle liefern",
+      "unsicherheit": "mittel: Herstellerangabe ausdrücklich im Artikel, aber interne Sekundärangabe; Herstellerseite als Primärbeleg nachreichen",
       "id_pruefung": "kb_entities.id vorhanden (Typ product); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
       "quelle_revision_id": "7ba2f517-0b7c-5c12-b8d7-776d8cfa45eb",
       "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
-      "vollstaendig": false
+      "vollstaendig": true
     },
     {
       "candidate_key": "ent:product:ochsengalle-felis-tauri-d6-heel",
@@ -155,7 +163,8 @@
       ],
       "unsicherheit": "hoch: nur Texttreffer; Dosierung bleibt Admin-Wiki-Inhalt, nicht in Relation",
       "id_pruefung": "admin_knowledge_base.id und kb_articles.id vorhanden; current_revision_id = gleicher UUID, in kb_article_revisions vorhanden (article_id passt)",
-      "vollstaendig": false
+      "vollstaendig": false,
+      "unvollstaendig_grund": "Bestand durchsucht (Entitäten, Quelltitel/-metadaten, Artikel): nur Artikeltext 26b7f387… nennt „Felis tauri D6, Heel“ – keine Produktentität, keine Quellrevision"
     },
     {
       "candidate_key": "ent:product:medacalm-pascoe",
@@ -177,14 +186,6 @@
           "herkunft": "Texttreffer"
         },
         {
-          "ui_bezeichnung": "kann unterstützen (laut Artikel)",
-          "speichertabelle": "kb_entity_relations",
-          "speichercode": "may_support",
-          "objekt": "disease: Reizdarm (Abgleich mit bestehender Entität prüfen)",
-          "herkunft": "Artikelkontext",
-          "voraussetzung": "Domäne may_support product→disease ist approved (geprüft 07.10.2026); Produktentität fehlt noch"
-        },
-        {
           "ui_bezeichnung": "im Artikel erwähnt",
           "speichertabelle": "kb_article_entities",
           "speichercode": "mentions",
@@ -194,7 +195,8 @@
       ],
       "unsicherheit": "hoch: Texttreffer; Komplexmittel-Status unbekannt",
       "id_pruefung": "admin_knowledge_base.id und kb_articles.id vorhanden; current_revision_id = gleicher UUID, in kb_article_revisions vorhanden (article_id passt)",
-      "vollstaendig": false
+      "vollstaendig": false,
+      "unvollstaendig_grund": "Bestand durchsucht: nur Artikeltext 1530835d… nennt „Medacalm Kps. (Pascoe)“ – keine Produktentität, keine Quellrevision; may_support ohne Quelle gestrichen"
     },
     {
       "candidate_key": "ent:product:night-relax-kapseln-vitaplace",
@@ -247,7 +249,7 @@
         "titel": "Klinghardt-Quellenkarte: Erythromycin 500 mg viermal täglich, Prolotherapie und Behördenkonflikt",
         "herausgeber": "Klinghardt Talks 001-025"
       },
-      "fundstelle": "FEHLT – nur Quellentitel gelesen; Volltext-Fundstelle in der Quellenkarte ist nicht erfasst",
+      "fundstelle": "kb_source_revisions 20e451aa… Abschnitt „Sprecher und Fundstellen“: Folge 020 · 16:26–18:54 · E020-008 · DK",
       "vorgeschlagene_produktart": "Arzneimittel (Makrolid-Antibiotikum)",
       "verschreibungsstatus": "unklar laut Datensatz (nicht gespeichert; fachlich bekannt, aber nur mit Quelle setzen)",
       "beziehungen": [
@@ -278,8 +280,9 @@
       "unsicherheit": "mittel: Quellenkarte beschreibt Anekdote/Einsatz, keine Wirkfreigabe; keine Dosis in Relation",
       "id_pruefung": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
       "quelle_revision_id": "20e451aa-3ea9-5e71-b90c-ba724af155ec",
-      "vollstaendig": false,
-      "unvollstaendig_grund": "ausdrücklich unvollständiger Vorschlag: Quellrevision vorhanden, Fundstelle fehlt"
+      "vollstaendig": true,
+      "unvollstaendig_grund": null,
+      "hinweis_sprecher": "DK nur über Tag „Sprecher: DK“; Gleichsetzung mit Dr. Klinghardt vor Autor-Eintrag prüfen. SAFETY_HOLD der Quellenkarte bleibt; keine Dosis/Wirkrelation."
     },
     {
       "candidate_key": "rel:hno-chipcard:program-classification",
@@ -305,23 +308,30 @@
           "ui_bezeichnung": "Hauptthema des Artikels",
           "speichertabelle": "kb_article_entities",
           "speichercode": "about",
-          "objekt": "Artikel im Ordner „Chip Cards“ mit HNO im Titel – konkrete Artikel-ID noch nicht ermittelt",
-          "herkunft": "Titeltreffer",
-          "fundstelle_fehlt": true
+          "objekt": "kb_article_revisions d3cc3e16-a1b3-5fd6-9bd0-01c1b648d320 „HNO-ChipCard – Hals-Nase-Ohren“ (Ordner Chip Cards, aktuelle Rev. 1)",
+          "herkunft": "Titel + Ordner"
         },
         {
           "ui_bezeichnung": "Hersteller",
           "speichertabelle": "kb_entity_relations",
           "speichercode": null,
-          "objekt": "offen – nicht im Datensatz",
+          "objekt": "offen – nicht im Datensatz; Website-Anbieter Diamond Shield Zapper ist kein Herstellerbeleg",
           "herkunft": "fehlt"
+        },
+        {
+          "ui_bezeichnung": "angeboten auf Website",
+          "speichertabelle": "kb_source_actors",
+          "speichercode": null,
+          "objekt": "Diamond Shield Zapper (Herausgeber Quelle e4436fac-cfd8-5948-9567-7f7a554db0a2)",
+          "grund": "offered_by gilt nur für product/product_variant; Programm bleibt Programm"
         }
       ],
       "unsicherheit": "mittel: Zuordnung Programm↔Gerät (Zapper/Trikombin) nicht gespeichert",
       "id_pruefung": "kb_entities.id vorhanden (Typ program); current_revision_id = gleicher UUID, in kb_entity_revisions vorhanden (entity_id passt, review_status=draft)",
       "quelle_revision_id": "83e27f19-b762-3d10-c58b-f3ffbb2337ef",
       "id_pruefung_quelle": "kb_sources.id und kb_source_revisions.id (source_id passt, revision_no=1) vorhanden; gleicher UUID auch in kb_source_candidates",
-      "vollstaendig": false
+      "vollstaendig": true,
+      "unvollstaendig_grund": null
     }
   ]
 }
