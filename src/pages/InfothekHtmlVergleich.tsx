@@ -109,6 +109,7 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .cmp-badge.kept { background: #475569; }
     .cmp-why { margin: 6px 0 12px; padding: 8px 10px; border: 1px dashed ${c.border}; border-radius: 6px; background: #ffffff;
       font: 400 14px/1.45 Arial, sans-serif !important; color: #1f2937 !important; text-align: left; }
+    html.has-rail .cmp-why { display: none !important; }
     .cmp-why strong { font-weight: 700; }
     .cmp-status { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid #64748b; font: 700 12px/1.4 Arial, sans-serif; color: #334155; }
     .cmp-status[data-accepted] { background: #15803d; border-color: #15803d; color: #fff; }
@@ -130,9 +131,9 @@ function Pane({ label, html, error, frameRef, onLoad }: {
       ) : html ? (
         // allow-same-origin only (no allow-scripts): article scripts are removed and cannot run;
         // the parent may scroll to markers.
-        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[70vh] w-full border-0 bg-background" />
+        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[calc(100vh-15.5rem)] min-h-[300px] w-full border-0 bg-background" />
       ) : (
-        <Skeleton className="m-3 h-[65vh]" />
+        <Skeleton className="m-3 h-[calc(100vh-17rem)] min-h-[280px]" />
       )}
     </section>
   );
@@ -147,6 +148,18 @@ export default function InfothekHtmlVergleich() {
   const ignoreScroll = useRef<Record<Side, boolean>>({ orig: false, draft: false });
   const [error, setError] = useState<string>();
   const [active, setActive] = useState<number>();
+  const [cardId, setCardId] = useState<number>(CHANGES[0].id);
+  const cardIdRef = useRef(cardId);
+  cardIdRef.current = cardId;
+  const [cardTop, setCardTop] = useState(0);
+  const [listOpen, setListOpen] = useState(false);
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setWide(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const origRef = useRef<HTMLIFrameElement>(null);
   const draftRef = useRef<HTMLIFrameElement>(null);
   const [origRaw, setOrigRaw] = useState<string>();
@@ -218,7 +231,7 @@ export default function InfothekHtmlVergleich() {
     return () => controller.abort();
   }, [isAdmin]);
 
-  const jumpable = CHANGES.filter((c) => !c.headOnly);
+  const jumpable = CHANGES;
 
   const docOf = (side: Side) => (side === "orig" ? origRef : draftRef).current?.contentDocument ?? null;
   const absTop = (el: Element) => el.getBoundingClientRect().top + (el.ownerDocument.defaultView?.scrollY ?? 0);
@@ -269,6 +282,7 @@ export default function InfothekHtmlVergleich() {
       if (!doc) continue;
       doc.querySelectorAll("[data-active]").forEach((el) => el.removeAttribute("data-active"));
       if (id === undefined) continue;
+      if (CHANGES.find((c) => c.id === id)?.headOnly) { setScroll(side, 0); continue; }
       const el = doc.querySelector(`[data-change="${id}"]`);
       if (!el) continue;
       el.setAttribute("data-active", "");
@@ -277,6 +291,26 @@ export default function InfothekHtmlVergleich() {
       if (anchorY === undefined) anchorY = Math.max(40, win.innerHeight / 2 - el.getBoundingClientRect().height / 2);
       setScroll(side, Math.max(0, absTop(el) - anchorY));
     }
+  }, []);
+
+  /** Margin note follows its marker in the right frame; while scrolling it switches to the marker in view. */
+  const updateCard = useCallback((follow: boolean) => {
+    const doc = docOf("draft");
+    if (!doc) return;
+    const h = doc.defaultView!.innerHeight;
+    if (follow) {
+      let best: number | undefined, dist = Infinity;
+      doc.querySelectorAll<HTMLElement>("[data-change]").forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > h) return;
+        const d = Math.abs(r.top - h / 3);
+        if (d < dist) { dist = d; best = Number(el.dataset.change); }
+      });
+      if (best !== undefined && best !== cardIdRef.current) { cardIdRef.current = best; setCardId(best); }
+    }
+    const c = CHANGES.find((x) => x.id === cardIdRef.current);
+    const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"]`) : null;
+    setCardTop(el ? el.getBoundingClientRect().top : 0);
   }, []);
 
   const [loaded, setLoaded] = useState(0);
@@ -296,6 +330,7 @@ export default function InfothekHtmlVergleich() {
       const handler = () => {
         if (ignoreScroll.current[side]) { ignoreScroll.current[side] = false; return; }
         if (syncedRef.current) syncFrom(side);
+        if (side === "draft") updateCard(true);
       };
       win.addEventListener("scroll", handler, { passive: true });
       cleanups.push(() => win.removeEventListener("scroll", handler));
@@ -308,7 +343,19 @@ export default function InfothekHtmlVergleich() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, equalize, syncFrom]);
 
-  useEffect(() => applyActive(active), [active, applyActive]);
+  useEffect(() => {
+    if (active !== undefined) { cardIdRef.current = active; setCardId(active); }
+    applyActive(active);
+    requestAnimationFrame(() => updateCard(false));
+  }, [active, applyActive, updateCard]);
+  useEffect(() => {
+    const doc = docOf("draft");
+    if (!doc) return;
+    doc.documentElement.classList.toggle("has-rail", wide);
+    equalize();
+    syncFrom("draft");
+    updateCard(false);
+  }, [wide, loaded, equalize, syncFrom, updateCard]);
   useEffect(() => {
     docOf("draft")?.querySelectorAll<HTMLElement>("[data-status-for]").forEach((el) => {
       const on = accepted.has(Number(el.dataset.statusFor));
@@ -336,84 +383,99 @@ export default function InfothekHtmlVergleich() {
   return (
     <Layout>
       <SEOHead title="HTML-Vergleich (Entwurf)" noIndex />
-      <div className="container py-6">
-        <h1 className="font-serif text-2xl font-semibold">HTML-Vergleich: Frequenztherapie („Krankheit ist messbar“)</h1>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Redaktioneller Entwurf zur gemeinsamen Prüfung – nicht veröffentlicht, keine Inhalts- oder Rechtsfreigabe. Statische Ansicht ohne Artikel-Skripte. Markierungen nur in dieser Ansicht.
-        </p>
+      <div className="container py-2">
+        <h1 className="font-serif text-lg font-semibold leading-tight">HTML-Vergleich: Frequenztherapie („Krankheit ist messbar“) <span className="text-xs font-normal text-muted-foreground">– Entwurf, nicht veröffentlicht, keine Freigabe</span></h1>
 
-        <div className="mb-4 rounded-md border border-border bg-card p-3">
-          <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.orig.bg, boxShadow: `inset 4px 0 0 ${MARK.orig.border}` }} />Rot + „Äx · Original“: beanstandete Stelle (links)</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.draft.bg, boxShadow: `inset 4px 0 0 ${MARK.draft.border}` }} />Grün + „Äx · Entwurf“: geänderte Stelle (rechts)</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: "#f1f5f9", boxShadow: "inset 4px 0 0 #64748b" }} />Grau + „Original beibehalten“: in der Arbeitsfassung nicht übernommen</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border-2" style={{ borderColor: MARK.active }} />Blauer Rahmen: aktuell gewählte Änderung</span>
-          </div>
-          <div className="mb-2 flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => step(-1)}><ChevronLeft className="h-4 w-4" />Vorherige Änderung</Button>
-            <Button size="sm" variant="outline" onClick={() => step(1)}>Nächste Änderung<ChevronRight className="h-4 w-4" /></Button>
-            <span className="text-xs text-muted-foreground">{active ? `Ä${active} von ${CHANGES.length}` : `${CHANGES.length} Änderungen`}</span>
-            <label className="ml-auto flex items-center gap-2 text-xs font-medium">
-              <Switch checked={synced} onCheckedChange={(v) => { setSynced(v); if (v) syncFrom("orig"); }} aria-label="Synchron scrollen" />
-              Synchron scrollen (nach gemeinsamer Abschnittsnummer)
-            </label>
-          </div>
-          <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-border bg-muted/40 px-2 py-1.5 text-xs">
-            <span className="font-semibold">{accepted.size} von {CHANGES.length} Änderungen übernommen</span>
-            <span className="text-muted-foreground">
-              Gespeichert nur lokal in diesem Browser für dein Konto{savedAt ? ` (zuletzt ${new Date(savedAt).toLocaleString("de-DE")})` : ""} – nicht auf dem Server, keine Freigabe, Originalartikel unverändert.
-            </span>
-            <span className="ml-auto flex gap-2">
-              <Button size="sm" variant={rightMode === "working" ? "default" : "outline"} className="h-7 text-xs"
-                onClick={() => setRightMode((m) => (m === "working" ? "proposal" : "working"))} disabled={!working}>
-                {rightMode === "working" ? "Rechts: Vorschlag zeigen" : "Rechts: Arbeitsfassung zeigen"}
-              </Button>
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={downloadWorking} disabled={!working}>Arbeitsfassung herunterladen (HTML)</Button>
-            </span>
-            {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
-          </div>
-          <ol className="max-h-80 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
-            {CHANGES.map((c) => {
-              const on = accepted.has(c.id);
-              return (
-                <li key={c.id} className={`rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
-                  <div className="flex flex-wrap items-start gap-2">
-                    {c.headOnly ? (
-                      <div className="min-w-0 flex-1">
-                        <span className="font-semibold">Ä{c.id}</span> · Seitenkopf [{c.reason.join(", ")}] {c.note}
-                        <span className="block text-muted-foreground">vorher: „{c.headOnly.before}“</span>
-                        <span className="block">neu: „{c.headOnly.after}“</span>
-                      </div>
-                    ) : (
-                      <button type="button" onClick={() => setActive(c.id)} aria-current={active === c.id} className="min-w-0 flex-1 text-left hover:underline">
-                        <span className="font-semibold">Ä{c.id}</span>{original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
-                        <span className="text-destructive">{status(c, "orig")}{status(c, "draft")}</span>
-                      </button>
-                    )}
-                    {on ? (
-                      <span className="flex items-center gap-1">
-                        <span className="rounded-full bg-primary px-2 py-0.5 font-semibold text-primary-foreground">Übernommen</span>
-                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => toggleAccepted(c.id, false)}>Rückgängig</Button>
-                      </span>
-                    ) : (
-                      <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => toggleAccepted(c.id, true)} aria-label={`Ä${c.id} übernehmen`}>Übernehmen</Button>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-muted-foreground">Warum besser: {c.why}</p>
-                </li>
-              );
-            })}
-          </ol>
-          <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
-            {UNMARKED_NOTES.map((n) => <li key={n}>{n}</li>)}
-          </ul>
+        <div className="sticky top-0 z-10 my-2 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-xs">
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(-1)} aria-label="Vorherige Änderung"><ChevronLeft className="h-4 w-4" />Vorherige</Button>
+          <span className="min-w-[4.5rem] text-center font-semibold">{active ? `Ä${active} / ${CHANGES.length}` : `– / ${CHANGES.length}`}</span>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => step(1)} aria-label="Nächste Änderung">Nächste<ChevronRight className="h-4 w-4" /></Button>
+          <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">{accepted.size} von {CHANGES.length} übernommen</span>
+          <label className="flex items-center gap-1.5 font-medium">
+            <Switch checked={synced} onCheckedChange={(v) => { setSynced(v); if (v) syncFrom("orig"); }} aria-label="Synchron scrollen" />Synchron
+          </label>
+          <span className="ml-auto flex flex-wrap gap-1.5">
+            <Button size="sm" variant={rightMode === "working" ? "default" : "outline"} className="h-7 px-2 text-xs"
+              onClick={() => setRightMode((m) => (m === "working" ? "proposal" : "working"))} disabled={!working}>
+              {rightMode === "working" ? "Rechts: Vorschlag" : "Rechts: Arbeitsfassung"}
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={downloadWorking} disabled={!working}>HTML herunterladen</Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setListOpen((o) => !o)} aria-expanded={listOpen}>
+              {listOpen ? "Liste einklappen" : "Alle Änderungen"}
+            </Button>
+          </span>
+          {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        {listOpen && (
+          <div className="mb-2 rounded-md border border-border bg-card p-2">
+            <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.orig.bg, boxShadow: `inset 4px 0 0 ${MARK.orig.border}` }} />Original (links)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: MARK.draft.bg, boxShadow: `inset 4px 0 0 ${MARK.draft.border}` }} />Entwurf (rechts)</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm" style={{ background: "#f1f5f9", boxShadow: "inset 4px 0 0 #64748b" }} />Original beibehalten</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-5 rounded-sm border-2" style={{ borderColor: MARK.active }} />aktuelle Änderung</span>
+              <span className="text-muted-foreground">Entscheidungen nur lokal in diesem Browser gespeichert{savedAt ? ` (zuletzt ${new Date(savedAt).toLocaleString("de-DE")})` : ""} – nicht auf dem Server.</span>
+            </div>
+            <ol className="max-h-56 space-y-1 overflow-y-auto pr-1 text-xs" aria-label="Änderungsliste">
+              {CHANGES.map((c) => (
+                <li key={c.id} className={`flex items-start gap-2 rounded border px-2 py-1 ${active === c.id ? "border-primary bg-muted" : "border-border"}`}>
+                  <button type="button" onClick={() => setActive(c.id)} className="min-w-0 flex-1 text-left hover:underline">
+                    <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? " · Seitenkopf" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
+                    <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
+                  </button>
+                  <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                </li>
+              ))}
+            </ol>
+            <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
+              {UNMARKED_NOTES.map((n) => <li key={n}>{n}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_15rem]">
           <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
-          <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommene Vorschläge)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
+          <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
+          <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
+            <div className="relative lg:h-[calc(100vh-15.5rem)] lg:min-h-[300px]">
+              {(() => {
+                const c = CHANGES.find((x) => x.id === cardId);
+                if (!c) return null;
+                const top = wide ? Math.max(0, Math.min(cardTop, window.innerHeight - 22 * 16)) : 0;
+                return (
+                  <div className="rounded-md border-2 border-primary/60 bg-card p-2 text-xs shadow-sm lg:absolute lg:inset-x-0 transition-[top] duration-150" style={wide ? { top } : undefined}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <button type="button" className="font-semibold hover:underline" onClick={() => setActive(c.id)}>
+                        Ä{c.id}{c.headOnly ? " · Seitenkopf (SEO)" : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""}
+                      </button>
+                      <span className="text-muted-foreground">{c.reason.join(", ")}</span>
+                    </div>
+                    {c.headOnly && (
+                      <div className="mb-1 space-y-0.5">
+                        <p className="text-muted-foreground">vorher: „{c.headOnly.before}“</p>
+                        <p>neu: „{c.headOnly.after}“</p>
+                      </div>
+                    )}
+                    <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
+                    <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                  </div>
+                );
+              })()}
+            </div>
+          </aside>
         </div>
       </div>
     </Layout>
+  );
+}
+
+function AcceptControl({ on, id, toggle }: { on: boolean; id: number; toggle: (id: number, v: boolean) => void }) {
+  return on ? (
+    <span className="flex items-center gap-1">
+      <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Übernommen</span>
+      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => toggle(id, false)}>Rückgängig</Button>
+    </span>
+  ) : (
+    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => toggle(id, true)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
   );
 }
