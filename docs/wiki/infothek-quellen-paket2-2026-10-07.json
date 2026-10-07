@@ -1,42 +1,51 @@
 {
- "gelesen": "2026-10-07T20:15Z",
- "quellen": [
-  {
-   "url": "https://www.cdc.gov/candidiasis/hcp/clinical-overview/",
-   "beleg": "Candida ist kommensaler Organismus von GI-Trakt und Haut; invasive Candidiasis: unspezifische Symptome (Fieber, Schüttelfrost), Diagnose über Blutkulturen",
-   "grenze": "Betrifft invasive Candidiasis; keine Aussage zu Candida-Diät"
+  "gelesen": "2026-10-07T20:15Z",
+  "quellen": [
+    {
+      "url": "https://www.cdc.gov/candidiasis/hcp/clinical-overview/",
+      "beleg": "Candida ist kommensaler Organismus von GI-Trakt und Haut; invasive Candidiasis: unspezifische Symptome (Fieber, Schüttelfrost), Diagnose über Blutkulturen",
+      "grenze": "Betrifft invasive Candidiasis; keine Aussage zu Candida-Diät"
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/32023228/",
+      "beleg": "ACG-Leitlinie SIBO 2020 (Abstract via NCBI E-Utilities): SIBO = übermäßige Bakterienzahl im Dünndarm mit GI-Symptomen; GRADE + Expertenkonsens",
+      "grenze": "Nur Abstract gelesen (PubMed-Seite per Captcha gesperrt); IMO-Begriff aus Volltext nicht selbst verifiziert"
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng206/chapter/Recommendations",
+      "beleg": "1.11.9–1.11.14: keine Bewegung außerhalb eines ME/CFS-Spezialprogramms; personalisiert, Baseline ohne Symptomverschlechterung; keine generalisierten oder fest gesteigerten Programme (GET)",
+      "grenze": "Gilt für ME/CFS"
+    },
+    {
+      "url": "https://www.bfr.bund.de/cm/349/ashwagandha-food-supplements-with-potential-health-risks.pdf",
+      "beleg": "BfR 39/2024: Kinder, Schwangere, Stillende, akute/frühere Lebererkrankung sollen nicht einnehmen; Fallberichte Leberschäden; Effekte auf Cortisol/Blutzucker/Schilddrüse möglich",
+      "grenze": "Risikobewertung nicht abschließend"
+    },
+    {
+      "url": "https://www.ema.europa.eu/en/medicines/herbal/salicis-cortex",
+      "beleg": "Salicin → Salicylsäure (geringe Menge); Nebenwirkungen u. a. Magen-Darm; kontraindiziert bei Überempfindlichkeit gegen Salicylate oder andere NSAR, einschließlich dadurch ausgelösten Asthmas (Asthma nicht pauschal)",
+      "grenze": "Keine Aussage zu besserer Magenverträglichkeit vs. ASS",
+      "praezisiert": "2026-10-07 nach Astra"
+    },
+    {
+      "url": "https://www.ema.europa.eu/en/medicines/human/EPAR/qutenza",
+      "beleg": "Qutenza (Capsaicin 8 %) wird vom Arzt oder Fachpersonal unter ärztlicher Aufsicht angewendet",
+      "grenze": "Niedrig dosierte Capsaicin-Pflaster nicht bewertet"
+    },
+    {
+      "url": "https://commdx.com/wp-content/uploads/2023/06/ACG_Clinical_Guideline__Small_Intestinal_Bacterial.9.pdf",
+      "abgerufen": "2026-10-07T20:32:43Z",
+      "zitierung": "Pimentel M et al., ACG Clinical Guideline: SIBO. Am J Gastroenterol 2020;115:165–178",
+      "beleg": "Volltext-PDF (14 S.) selbst abgerufen und gelesen: „methanogens are not “bacteria” … but belong to the domain Archaea and may also overgrow in the colon and not just the small intestine … we have proposed a new term, intestinal methanogen overgrowth (IMO)“; „the term IMO may be more appropriate than “SIBO” or “methane-SIBO.”“; Methanobrevibacter smithii als vorherrschender Methanbildner.",
+      "grenze": "Kopie auf Drittanbieterserver (commdx.com), nicht Verlagsseite; Druckseitenzuordnung (laut Astra 167/172) nicht selbst aus PDF-Seitenzahlen verifiziert; Leitlinie bewertet Atemtests, nicht pflanzliche Mittel."
+    }
+  ],
+  "intern_erhaltene_originalangaben": {
+    "sibo_methan_pdf": "Biofilmloser morgens, Allicin bis ca. 2500 mg taeglich, Oreganooel, Berberin, Neem, Altratin, Ingwer- plus Artischockenextrakt mit je ca. 500 mg taeglich vor dem Schlafengehen sowie sporenbasierte Bakterien; normale Probiotika im PDF ausgeschlossen (nur intern, nicht öffentlich)"
   },
-  {
-   "url": "https://pubmed.ncbi.nlm.nih.gov/32023228/",
-   "beleg": "ACG-Leitlinie SIBO 2020 (Abstract via NCBI E-Utilities): SIBO = übermäßige Bakterienzahl im Dünndarm mit GI-Symptomen; GRADE + Expertenkonsens",
-   "grenze": "Nur Abstract gelesen (PubMed-Seite per Captcha gesperrt); IMO-Begriff aus Volltext nicht selbst verifiziert"
-  },
-  {
-   "url": "https://www.nice.org.uk/guidance/ng206/chapter/Recommendations",
-   "beleg": "1.11.9–1.11.14: keine Bewegung außerhalb eines ME/CFS-Spezialprogramms; personalisiert, Baseline ohne Symptomverschlechterung; keine generalisierten oder fest gesteigerten Programme (GET)",
-   "grenze": "Gilt für ME/CFS"
-  },
-  {
-   "url": "https://www.bfr.bund.de/cm/349/ashwagandha-food-supplements-with-potential-health-risks.pdf",
-   "beleg": "BfR 39/2024: Kinder, Schwangere, Stillende, akute/frühere Lebererkrankung sollen nicht einnehmen; Fallberichte Leberschäden; Effekte auf Cortisol/Blutzucker/Schilddrüse möglich",
-   "grenze": "Risikobewertung nicht abschließend"
-  },
-  {
-   "url": "https://www.ema.europa.eu/en/medicines/herbal/salicis-cortex",
-   "beleg": "Salicin → Salicylsäure (geringe Menge); Nebenwirkungen u. a. Magen-Darm; kontraindiziert bei Salicylat-/NSAR-Überempfindlichkeit und Asthma",
-   "grenze": "Keine Aussage zu besserer Magenverträglichkeit vs. ASS"
-  },
-  {
-   "url": "https://www.ema.europa.eu/en/medicines/human/EPAR/qutenza",
-   "beleg": "Qutenza (Capsaicin 8 %) wird vom Arzt oder Fachpersonal unter ärztlicher Aufsicht angewendet",
-   "grenze": "Niedrig dosierte Capsaicin-Pflaster nicht bewertet"
-  }
- ],
- "intern_erhaltene_originalangaben": {
-  "sibo_methan_pdf": "Biofilmloser morgens, Allicin bis ca. 2500 mg taeglich, Oreganooel, Berberin, Neem, Altratin, Ingwer- plus Artischockenextrakt mit je ca. 500 mg taeglich vor dem Schlafengehen sowie sporenbasierte Bakterien; normale Probiotika im PDF ausgeschlossen (nur intern, nicht öffentlich)"
- },
- "offen": [
-  "Akupunktur-Cortisol-Satz im Burnout-Artikel nur mit Suchlink belegt",
-  "SIBO-IMO-Begriff: Leitlinienvolltext lesen"
- ]
+  "offen": [
+    "Akupunktur-Cortisol-Satz im Burnout-Artikel nur mit Suchlink belegt",
+    "SIBO-IMO-Begriff: Leitlinienvolltext lesen"
+  ],
+  "hinweis_zugriff": "docs/wiki liegt im Repository und ist kein Beleg für Zugriffsschutz; Dosierungen dort nur als Quellenprüfdokumentation."
 }
