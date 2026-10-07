@@ -66,3 +66,24 @@ describe("Luna-Befunde 711b3449", () => {
     expect(rejectedContains(m, "N1")).toEqual([{ product: m.entities.get("P1"), status: "rejected", relationId: "R2" }]);
   });
 });
+
+import { revealWindow } from "@/lib/wikiTaxonomy";
+describe("Trefferlisten ohne stillen 200er-Schnitt", () => {
+  const current = Array.from({ length: 450 }, (_, i) => `A${i}`);
+  const historical = Array.from({ length: 230 }, (_, i) => `H${i}`);
+  it("zeigt zuerst 200, dann schrittweise alle; Anzahl/Gesamt klar", () => {
+    let w = revealWindow(current, 0);
+    expect([w.shown, w.total, w.remaining, w.next]).toEqual([200, 450, 250, 400]);
+    w = revealWindow(current, w.next);
+    expect([w.shown, w.remaining, w.next]).toEqual([400, 50, 450]);
+    w = revealWindow(current, w.next);
+    expect([w.shown, w.remaining]).toEqual([450, 0]);
+    expect(w.visible.at(-1)).toBe("A449");
+  });
+  it("aktuelle und historische Listen unabhängig", () => {
+    const c = revealWindow(current, 450), h = revealWindow(historical, 0);
+    expect([c.shown, h.shown, h.total, h.remaining]).toEqual([450, 200, 230, 30]);
+    expect(revealWindow(historical, h.next).visible.at(-1)).toBe("H229");
+    expect(h.visible.some((x) => x.startsWith("A"))).toBe(false);
+  });
+});

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -73,6 +73,20 @@ function Pager({ page, pages, total, set }: { page: number; pages: number; total
 const LinkBadge = ({ kind }: { kind: "import" | "field" | "text" }) => (
   <Badge variant="outline" className="text-[10px]">{kind === "import" ? "Importverknüpfung, ungeprüft" : kind === "field" ? "Datenfeld" : "Treffer im Quelltext – Zuordnung noch zu prüfen"}</Badge>
 );
+
+/** List with visible count and "Weitere Treffer zeigen" – all entries reachable. */
+function RevealList<T>({ items, render, label = "Treffer" }: { items: T[]; render: (x: T) => JSX.Element | null; label?: string }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => setShown(0), [items.length]);
+  const w = revealWindow(items, shown);
+  return (
+    <>
+      <ul className="space-y-1">{w.visible.map(render)}</ul>
+      {w.total > 0 && w.total > 200 && <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">{w.shown} von {w.total} {label} angezeigt
+        {w.remaining > 0 && <><Button size="sm" variant="outline" onClick={() => setShown(w.next)}>Weitere {w.next - w.shown} zeigen</Button><Button size="sm" variant="ghost" onClick={() => setShown(w.total)}>Alle {w.total} zeigen</Button></>}</p>}
+    </>
+  );
+}
 
 export default function WikiOrdnung() {
   const { user, loading: authLoading, isAdmin, roleChecked } = useAuth();
@@ -141,10 +155,10 @@ export default function WikiOrdnung() {
   const HitLists = ({ ft, label }: { ft: ReturnType<typeof splitRevisionHits>; label: string }) => (
     <>
       <p className="text-xs text-muted-foreground">{ft.current.length} Artikel {label} <LinkBadge kind="text" /></p>
-      <ul className="space-y-1">{ft.current.slice(0, 200).map((x) => artLine(x, "text"))}</ul>
+      <RevealList items={ft.current} render={(x) => artLine(x, "text")} label="aktuelle Treffer" />
       {ft.historical.length > 0 && <>
         <p className="mt-2 text-xs font-semibold">Nur in älteren Revisionen gefunden ({ft.historical.length}) – nicht im aktuellen Text</p>
-        <ul className="space-y-1">{ft.historical.slice(0, 200).map((x) => <li key={x} className="flex flex-wrap items-center gap-2"><span>{m!.articles.get(x)!.title}</span><Badge variant="outline" className="text-[10px]">historischer Treffer · {ft.historicalRevisionIds.get(x)!.size} ältere Rev.</Badge><Badge variant="secondary" className="text-[10px]">aktuell Rev. {m!.articles.get(x)!.revisionNo}</Badge></li>)}</ul>
+        <RevealList items={ft.historical} label="historische Treffer" render={(x) => <li key={x} className="flex flex-wrap items-center gap-2"><span>{m!.articles.get(x)!.title}</span><Badge variant="outline" className="text-[10px]">historischer Treffer · {ft.historicalRevisionIds.get(x)!.size} ältere Rev.</Badge><Badge variant="secondary" className="text-[10px]">aktuell Rev. {m!.articles.get(x)!.revisionNo}</Badge></li>} />
       </>}
     </>
   );
@@ -235,8 +249,8 @@ export default function WikiOrdnung() {
         {a.roles.has("Von Peter benannt") && <p className="text-xs text-muted-foreground">Ob ein Produkt ein Komplexmittel ist, steht nur fest, wenn der Produktdatensatz es angibt – keine pauschale Einstufung je Anbieter.</p>}
         {a.textEntityIds.size > 0 && <div><p className="font-semibold">Produkte mit diesem Namen im Produktnamen ({a.textEntityIds.size}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{[...a.textEntityIds].map(entButton)}</div></div>}
         {a.sourceRevisionIds.size > 0 && <div><p className="font-semibold">Interne Quellen ({a.sourceRevisionIds.size}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{[...a.sourceRevisionIds].map((s) => srcLine(s))}</ul></div>}
-        {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><ul className="space-y-1">{[...a.folderArticleIds].slice(0, 200).map((x) => artLine(x, "field"))}</ul>{a.folderArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.folderArticleIds.size} angezeigt.</p>}</div>}
-        {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><ul className="space-y-1">{[...a.textArticleIds].slice(0, 200).map((x) => artLine(x, "text"))}</ul>{a.textArticleIds.size > 200 && <p className="text-muted-foreground">Erste 200 von {a.textArticleIds.size} angezeigt.</p>}</div>}
+        {a.folderArticleIds.size > 0 && <div><p className="font-semibold">Artikel im Ordner ({a.folderArticleIds.size})</p><RevealList items={[...a.folderArticleIds]} render={(x) => artLine(x, "field")} label="Artikel" /></div>}
+        {a.textArticleIds.size > 0 && <div><p className="font-semibold">Treffer im Quelltext ({a.textArticleIds.size})</p><RevealList items={[...a.textArticleIds]} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
         <div><p className="font-semibold">Volltext der Artikel</p>{(() => { const ft = fullText[a.key]; return ft === undefined ? <Button size="sm" variant="outline" onClick={() => searchFullText(a)}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <HitLists ft={ft} label="nennen den Namen in der aktuellen Revision" />; })()}</div>
         {actorCount(a) === 0 && <p className="font-semibold">Im aktuellen Bestand keine Zuordnung und kein Titel-/Ordnertreffer gefunden.</p>}
       </CardContent></Card>
@@ -278,8 +292,8 @@ export default function WikiOrdnung() {
         <Input className="max-w-xs" placeholder="Artikel suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
         {h.entityIds.length > 0 && <div><p className="font-semibold">Begriffe/Produkte ({h.entityIds.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{h.entityIds.map(entButton)}</div><p className="text-xs text-muted-foreground">Symptome/Erkrankungen/Pathogene stehen jeweils im Begriffseintrag (Importverknüpfung).</p></div>}
         {h.sourceIds.length > 0 && <div><p className="font-semibold">Interne Quellen (Herausgeber/Autor) ({h.sourceIds.length}) <LinkBadge kind="field" /></p><ul className="list-disc pl-5">{h.sourceIds.map((x) => srcLine(x))}</ul></div>}
-        <div><p className="font-semibold">Artikel im Ordner ({filt(h.folderArticleIds).length}) <LinkBadge kind="field" /></p><ul className="space-y-1">{filt(h.folderArticleIds).slice(0, 200).map((x) => artLine(x, "field"))}</ul>{filt(h.folderArticleIds).length > 200 && <p className="text-muted-foreground">Erste 200 von {filt(h.folderArticleIds).length} – Suche eingrenzen.</p>}</div>
-        {h.titleArticleIds.length > 0 && <div><p className="font-semibold">Name nur im Titel ({filt(h.titleArticleIds).length})</p><ul className="space-y-1">{filt(h.titleArticleIds).slice(0, 200).map((x) => artLine(x, "text"))}</ul></div>}
+        <div><p className="font-semibold">Artikel im Ordner ({filt(h.folderArticleIds).length}) <LinkBadge kind="field" /></p><RevealList items={filt(h.folderArticleIds)} render={(x) => artLine(x, "field")} label="Artikel" /></div>
+        {h.titleArticleIds.length > 0 && <div><p className="font-semibold">Name nur im Titel ({filt(h.titleArticleIds).length})</p><RevealList items={filt(h.titleArticleIds)} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
         {h.folderArticleIds.length + h.titleArticleIds.length + h.sourceIds.length + h.entityIds.length === 0 && <p className="font-semibold">Im Bestand nichts gefunden.</p>}
       </CardContent></Card>
     );
@@ -303,7 +317,7 @@ export default function WikiOrdnung() {
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
         {textProducts.length > 0 && <div className="mt-3 text-sm"><p className="font-semibold">Produkte mit „Mannayan" nur im Namen, ohne Herstellerfeld ({textProducts.length}) <LinkBadge kind="text" /></p><div className="flex flex-wrap gap-3">{textProducts.map((e) => entButton(e.id))}</div></div>}
         {!isM && <div className="mt-4 space-y-3 text-sm">
-          <div><p className="font-semibold">Artikel im Ordner/Titel „Chip Cards" ({chipArticles.length}) <LinkBadge kind="field" /></p><ul className="space-y-1">{chipArticles.slice(0, 200).map((a) => artLine(a.id, "field"))}</ul>{chipArticles.length > 200 && <p className="text-muted-foreground">Erste 200 von {chipArticles.length}.</p>}</div>
+          <div><p className="font-semibold">Artikel im Ordner/Titel „Chip Cards" ({chipArticles.length}) <LinkBadge kind="field" /></p><RevealList items={chipArticles} render={(a) => artLine(a.id, "field")} label="Artikel" /></div>
           <div><p className="font-semibold">Weitere Programm-Datensätze ohne „ChipCard" im Namen ({otherPrograms.length}) – nicht eingeordnet, zu prüfen</p><div className="flex flex-wrap gap-3">{otherPrograms.map((e) => entButton(e.id))}</div></div>
         </div>}
       </>
@@ -407,7 +421,7 @@ export default function WikiOrdnung() {
           </div>
         ))}
         {nb.length === 0 && <p>Keine Importverknüpfungen zu anderen Begriffen.</p>}
-        {texts.length > 0 && <div><p className="font-semibold">Artikel mit Namen im Titel ({texts.length})</p><ul className="space-y-1">{texts.slice(0, 200).map((x) => artLine(x, "text"))}</ul></div>}
+        {texts.length > 0 && <div><p className="font-semibold">Artikel mit Namen im Titel ({texts.length})</p><RevealList items={texts} render={(x) => artLine(x, "text")} label="Artikel" /></div>}
       </CardContent></Card>
     );
   }

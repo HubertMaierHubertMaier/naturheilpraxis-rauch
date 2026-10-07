@@ -341,3 +341,10 @@ export const EXTERNAL_PHARMACIES: Array<{ name: string; topicKey: string; aliase
     ],
   },
 ];
+
+/** Stepwise reveal for long lists: never a silent cutoff. */
+export const REVEAL_STEP = 200;
+export function revealWindow<T>(items: T[], shown: number, step = REVEAL_STEP) {
+  const n = Math.min(items.length, Math.max(step, shown));
+  return { visible: items.slice(0, n), shown: n, total: items.length, remaining: items.length - n, next: Math.min(items.length, n + step) };
+}
