@@ -13,6 +13,7 @@ import { buildDryRun } from "@/lib/wikiNetworkDryRun";
 import { AXES, CHAPTERS, COMPENDIUM, episodeGroup, filterCards, independentEpisodes, KLINGHARDT_PUBLISHER, LANGUAGE_PAIRS, overlapMatrix, toCard, currentCardsOnly, type AxisKey, type KCard } from "@/lib/klinghardtNavigator";
 import { CATEGORY_LABEL, SOURCE_RELATIONS, splitDryRunActors, type ActorCategory } from "@/lib/wikiReviewedNetwork";
 import { groupByProduct, STRUNZ_AREA } from "@/lib/strunzAreaCandidates";
+import { STRUNZ_SOURCES, TYP_LABEL } from "@/lib/strunzSourceCandidates";
 import {
   actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, pharmacyNamesInText, productsWithSubstance, rejectedContains, revealWindow, splitRevisionHits, rxLabel, norm, MANNAYAN_ALIAS, TOPICS, topicHits, EXTERNAL_PHARMACIES, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
@@ -317,6 +318,14 @@ export default function WikiOrdnung() {
           <p className="text-xs text-muted-foreground">Abgerufen {STRUNZ_AREA.abgerufen}. {STRUNZ_AREA.bedeutung} Weitere {STRUNZ_AREA.produkte_ohne_karte} gelistete Produkte haben keine Wiki-Karte. <Badge variant="outline">nicht in DB angewendet</Badge></p>
           <ul className="mt-2 space-y-1">{groupByProduct(STRUNZ_AREA.kandidaten).map(([k, xs]) => (
             <li key={k}><span className="font-semibold">{xs[0].product_name}</span> <span className="text-xs">({k}) – gelistet in {xs.length}: {xs.map((x) => <a key={x.article_id} href={x.page_url} target="_blank" rel="noreferrer" className="underline mr-1">{x.area} (Pos. {x.position})</a>)}</span></li>
+          ))}</ul>
+          <p className="mt-2 text-xs text-muted-foreground">Folgeseiten geprüft: {(STRUNZ_AREA as any).pagination_pruefung?.alle_vollstaendig ? "alle 21 Listen vollständig auf Seite 1 (Shop-Gesamtzahl = Produktlinks, ?p=2 ohne neue Produkte)" : "nicht verifiziert"}. Ohne Karte: {(STRUNZ_AREA as any).ungemappt_aufteilung?.eindeutig} eindeutige Produkte, {(STRUNZ_AREA as any).ungemappt_aufteilung?.varianten} Varianten in {(STRUNZ_AREA as any).ungemappt_aufteilung?.variantengruppen} Gruppen (nicht zusammengeführt).</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <p className="font-semibold">Strunz-Staging-Quellkandidaten (Batch {STRUNZ_SOURCES.batch_id.slice(0, 8)}): {STRUNZ_SOURCES.anzahl}</p>
+          <p className="text-xs text-muted-foreground">Lesend geprüft {STRUNZ_SOURCES.geprueft}. {STRUNZ_SOURCES.regel}. <Badge variant="outline">ungeprüft · nicht in DB angewendet</Badge></p>
+          <ul className="mt-2 space-y-1 text-xs">{STRUNZ_SOURCES.kandidaten.map((c) => (
+            <li key={c.candidate_id}><Badge variant={c.product_key ? "secondary" : "outline"}>{TYP_LABEL[c.typ] ?? c.typ}</Badge> <span className="font-mono">{c.candidate_key.replace(/^source:/, "")}</span> → {c.product_key ?? <span className="text-destructive">offen</span>} · Rev. {c.core_source_revision_id?.slice(0, 8) ?? "–"} · {c.source_url ? <a href={c.source_url} target="_blank" rel="noreferrer" className="underline">Quelle</a> : (c.fundstelle ?? "keine Fundstelle")}</li>
           ))}</ul>
         </CardContent></Card>
       </div>
