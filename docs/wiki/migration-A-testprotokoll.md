@@ -1,30 +1,67 @@
-# Migration A v2 – Offline-Testprotokoll (07.10.2026)
+# Migration A v3 – Offline-Testprotokoll (07.10.2026, nach Astra d45b236c)
 
-Umgebung: PGlite (Postgres 17, WASM), leer, keine Hosted-Verbindung. Geladen: Stubs (auth.uid, app_role, has_role, Rollen anon/authenticated/service_role, update_updated_at_column) + **original** `20260728090000_create_kb_phase1_core.sql` inkl. aller Trigger + Entwurf `vernetzung-migration-A.sql` (3×). Skript: `docs/wiki/migration-A-offline-test.ts` (`bun` mit `@electric-sql/pglite`).
+Umgebung: PGlite (Postgres 17, WASM), leer, ohne Verbindung zum Live-System. Geladen: Stubs (auth.uid, app_role, has_role, Rollen anon/authenticated/service_role mit BYPASSRLS wie Supabase) + **originale** `20260728090000_create_kb_phase1_core.sql` + Entwurf `vernetzung-migration-A.sql`.
+Aufruf: `bun docs/wiki/migration-A-offline-test.ts` – **Exit 1 bei jedem FAIL** (vorher gegengeprüft: Lauf mit 16 FAIL endete mit Exit 1). `--learn` setzt den Soll-Fingerabdruck neu.
 
-Ergebnis: **24 PASS / 0 FAIL**.
+Ergebnis: **45 PASS / 0 FAIL, Exit 0.** Fingerabdruck `b770c165e2a16e5a295c37e470e7b477`.
 
-| # | Prüfung | Ergebnis |
-|---|---|---|
-| 1–3 | Erst-, Zweit-, Drittlauf inkl. COMMIT (deferred Constraint-Trigger) | PASS; nach 3 Läufen 4 offered_by-Domänen, offered_by inaktiv, 1 Policy |
-| 4 | Alter Fehler reproduziert: offered_by aktiv ohne approved Domäne | abgelehnt („requires at least one approved domain") |
-| 5 | Strukturprüfung bei abweichender Tabelle | Abbruch mit Spaltenliste |
-| 6 | Fehler mitten in Transaktion | vollständiger Rollback, kein Teilinsert |
-| 7a–c | Admin: Draft anlegen ok; approved per UPDATE/INSERT | permission denied (Spaltengrants) |
-| 8 | Bypass: `set_config('kb.source_actor_review','on')` + Statuswrite | permission denied |
-| 9–10 | Review ohne Notiz abgelehnt, mit Notiz ok | PASS |
-| 11–12 | Geprüfte Fundstelle ändern / löschen | abgelehnt |
-| 13–15 | Rücknahme → withdrawn, danach unveränderlich, Ersatz mit supersedes_id | Historie: withdrawn → draft |
-| 16 | Nicht-Admin ruft Review | „Nur Admin" |
-| 17 | kb_assertions ohne neue Spalte (kein Pauschal-„affirms") | PASS |
-| 18–21 | Gegenaussage mit source_role refutes; Konflikt verknüpft, nicht löschbar, Spiegeldublette abgelehnt | PASS |
+## Korrekturen v3
+1. **Prüfnachweis unveränderlich:** review_status nur draft|approved; approved ist komplett gesperrt. Rücknahme ist ein eigenes, append-only Ereignis (`kb_source_actor_withdrawals`: Grund, Person, Zeit, höchstens eins pro Zuordnung). Test 13c: Notiz, Prüfer und Zeit sind nach der Rücknahme identisch; 13d: das Ereignis ist rekonstruierbar.
+2. **Polarität ≠ Quellenhaltung:** `metadata.claim_polarity` an der Aussage, source_role an der Quelle. Test 17a: negative Aussage + supports; 17b: positive Aussage + refutes.
+3. **Strukturprüfung:** Am Ende der Transaktion wird ein Fingerabdruck über Spalten (Typ/NULL/Default), Constraints (pg_get_constraintdef inkl. FK/CHECK), Indizes, Policies (cmd/roles/qual/with_check), Trigger, Tabellen- und Spaltenrechte (normalisiert), RLS sowie Typ-/Relationstyp-Status gebildet. Bei Abweichung bricht die ganze Migration ab. Drift-Tests 5a–5f mit gleichen Namen und falschem Typ, Default, CHECK, FK, Policy bzw. Index: jeweils Abbruch und Rollback. Danach läuft die Migration wieder sauber (5h). Zusätzliche Rechte werden von der Migration selbst zurückgesetzt (5g).
+4. **Backup:** isolierter Export/Restore über Funktionen nur für service_role. Restore nur in leere Tabellen, supersedes-Ketten auch bei umgekehrter Lieferung korrekt (23), Export nach Restore identisch inkl. Prüfer/Zeit/Rücknahme (24). Kein Bypass für authenticated (8, 21, 22), Schutz nach Restore aktiv (26). Inventar-Patch vervollständigt (`backup-kb_source_actors.patch`).
+5. **Testskript:** harte Assertions (Domänen = 4, je Tabelle genau 1 Policy, Historie, Genehmigungsnotiz), Exit 1 bei Fehler.
 
-## Hosted-Abgleich (read-only, 07.10.2026)
-- Vorhanden & aktiv: Typen product, product_variant, pharmacy, manufacturer, publisher …; person/organization fehlen. Relationstyp manufactured_by aktiv, approved u.a. product→manufacturer. offered_by fehlt.
-- CHECK-Werte name_kind, article role, source_role, origin_type, batch_status entsprechen den Originaldateien (Migrationsdateien gelesen; Hosted-Constraint-Abfrage wurde in der Ausgabe abgeschnitten – **Constraint-Texte hosted nicht vollständig verglichen, offen**).
+## Einzelergebnisse
+- PASS 1 Erstlauf inkl. COMMIT-Constraint-Trigger und Strukturprüfung
+- PASS 2 Zweitlauf (idempotent)
+- PASS 3 Drittlauf (idempotent)
+- PASS 3a offered_by-Domänen = 4
+- PASS 3b offered_by inaktiv
+- PASS 3c genau 1 Policy je neue Tabelle
+- PASS 3d kb_assertions unverändert (keine polarity-Spalte)
+- PASS 4 offered_by aktiv ohne approved Domäne
+- PASS 5a Spaltentyp
+- PASS 5b Default
+- PASS 5c CHECK gelockert
+- PASS 5d FK entfernt
+- PASS 5e Policy gleichnamig offen
+- PASS 5f Index verändert
+- PASS 5g Grant-Erweiterung wird durch REVOKE/GRANT der Migration zurückgesetzt
+- PASS 5g2 authenticated darf review_status danach nicht ändern
+- PASS 5h nach Drift-Rollbacks wieder sauber (Lauf 4)
+- PASS 6 Admin legt Draft an
+- PASS 7 approved per UPDATE (authenticated)
+- PASS 8 Restore-GUC als authenticated
+- PASS 9 Review ohne Notiz
+- PASS 10 Review mit Notiz
+- PASS 11 Geprüfte Fundstelle ändern
+- PASS 12 Geprüfte Zuordnung löschen
+- PASS 13a Rücknahme ohne Grund
+- PASS 13b Rücknahme als Ereignis
+- PASS 13c Genehmigungsnachweis nach Rücknahme unverändert
+- PASS 13d Rücknahmeereignis rekonstruierbar
+- PASS 14a zweite Rücknahme
+- PASS 14b Rücknahmeereignis löschen (service_role)
+- PASS 15 Ersatz mit supersedes_id
+- PASS 15b Ersatz prüfen
+- PASS 15c Historie
+- PASS 16 Nicht-Admin Review
+- PASS 17a Fall 1: Quelle belegt negative Aussage = negative Polarität + supports
+- PASS 17b Fall 2: Quelle widerspricht positiver Aussage = positive Polarität + refutes
+- PASS 18 Widerspruch verknüpfen, beide Aussagen bleiben
+- PASS 19 Konflikt löschen (auch service_role)
+- PASS 20 Spiegeldublette
+- PASS 21 Export als authenticated verboten
+- PASS 22 Restore als authenticated verboten
+- PASS 23 Restore-Zähler (supersedes umgekehrt geliefert)
+- PASS 24 Export nach Restore identisch (inkl. Prüfer/Zeit/Rücknahme)
+- PASS 25 Restore in nicht leere Tabellen
+- PASS 26 Nach Restore wieder geschützt
 
-## Offen / nicht prüfbar
-- Hosted-Rechte und Policy-Namen nicht gegen PGlite verifizierbar (Stub-Rollen).
-- Import-Staging-Migration nicht mitgeladen; Rücknahmebatch-Ablauf nur gegen Statusregeln (Z. 353–361) dokumentiert, nicht ausgeführt.
-- Backup-Patch nur vorbereitet; synthetischer Export/Restore fehlt.
-- Der GUC-Schalter ist nur Zusatzschutz; maßgeblich sind die Spaltengrants (kein UPDATE auf review_status für authenticated).
+## Offene Grenzen zum Live-System (nicht prüfbar ohne Anwendung)
+- Der **Fingerabdruck stammt aus PGlite/PG 17.** Die Ausgabe von pg_get_*def und die Rollen bzw. Grantors im Live-System können abweichen. Dann bricht die Migration live ab, es bleibt nichts zurück. Vor einer Anwendung den Soll-Wert in einer isolierten Kopie bestimmen (z. B. Draft-Stack) und von Codex gegenprüfen lassen.
+- Rechte, Policy-Namen und das Supabase-Rollenverhalten (BYPASSRLS, Grantor `postgres` vs. `supabase_admin`) sind nur nachgebildet.
+- Die Regeln im Live-System wurden nur stichprobenhaft gelesen (Typen/Domänen); die vollständigen Regeltexte sind nicht verglichen.
+- Den Backup-Patch habe ich nicht gegen die echte Edge-Function ausgeführt; die Variablennamen in den Hunks sind vor einer Anwendung abzugleichen. Kein Deploy.
+- Den Ablauf mit Rücknahmebatches (Import-Staging) habe ich nur dokumentiert, nicht ausgeführt.
