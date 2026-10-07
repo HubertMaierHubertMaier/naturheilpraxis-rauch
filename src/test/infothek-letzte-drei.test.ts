@@ -9,9 +9,9 @@ const B = "website-content/infothek/";
 const text = (h: string) => new JSDOM(h).window.document.body.textContent!.replace(/\s+/g, " ");
 
 describe("letzte drei HTMLs", () => {
-  it("Vieva: 12 Folien als Abschnitte, gleich in Original und Entwurf", () => {
+  it("Vieva: 13 tatsächliche Folien als Abschnitte, gleich in Original und Entwurf", () => {
     for (const f of [B + "vieva-pro-vitalanalyse.html", B + "drafts/vieva-pro-vitalanalyse.entwurf.html"])
-      expect(articleSections(new JSDOM(readFileSync(f, "utf8")).window.document).length).toBe(12);
+      expect(articleSections(new JSDOM(readFileSync(f, "utf8")).window.document).length).toBe(13);
   });
   it("Vieva/Zapper online registriert; jeder Vorschlag orig im Original, draft im Entwurf", () => {
     for (const slug of ["vieva-pro-vitalanalyse", "zapper-diamond-shield"]) {
