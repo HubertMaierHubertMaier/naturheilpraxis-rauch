@@ -21,3 +21,12 @@ describe("Praxis-Telefon", () => {
     expect(readFileSync("website-content/infothek/allergiebehandlung.html", "utf8")).toContain("tel:+49821217726700");
   });
 });
+
+import { PRACTICE_EMAIL_MAILTO } from "@/lib/practiceContact";
+describe("Praxis-E-Mail", () => {
+  it("alle mailto-Links in Infothek-HTMLs zeigen auf die Praxisadresse", () => {
+    const { readdirSync } = require("node:fs");
+    const files = ["website-content/infothek", "website-content/infothek/drafts"].flatMap((d: string) => readdirSync(d).filter((f: string) => f.endsWith(".html")).map((f: string) => `${d}/${f}`));
+    for (const f of files) for (const m of readFileSync(f, "utf8").matchAll(/mailto:([^"'?\s>]+)/g)) expect(`mailto:${m[1]}`).toBe(PRACTICE_EMAIL_MAILTO);
+  });
+});

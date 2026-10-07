@@ -1,6 +1,8 @@
 /** Central confirmed practice contact (Peter, 07.10.2026). Use for all Infothek drafts/exports/new HTMLs. */
 export const PRACTICE_PHONE_DISPLAY = "0821-2621462";
 export const PRACTICE_PHONE_TEL = "tel:+498212621462";
+export const PRACTICE_EMAIL = "praxis_rauch@icloud.com";
+export const PRACTICE_EMAIL_MAILTO = "mailto:praxis_rauch@icloud.com";
 
 /** Known wrong practice numbers. Only these are replaced; other numbers untouched. */
 const WRONG: [RegExp, string][] = [
