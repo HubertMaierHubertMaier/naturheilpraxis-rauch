@@ -237,5 +237,5 @@ export function productsWithSubstance(m: WikiModel, substanceId: string) {
   const viaRel = new Set(m.relations.filter((r) => r.type === "contains" && r.objectId === substanceId && r.subjectId).map((r) => r.subjectId!));
   const n = norm(s.name);
   return [...m.entities.values()].filter((e) => e.stoffart === "Produkt").flatMap((e) =>
-    viaRel.has(e.id) ? [{ product: e, kind: "import" as const }] : n.length >= 4 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const }] : []);
+    viaRel.has(e.id) ? [{ product: e, kind: "import" as const }] : n.length >= 3 && wordHit(norm(e.name), n) ? [{ product: e, kind: "text" as const }] : []);
 }
