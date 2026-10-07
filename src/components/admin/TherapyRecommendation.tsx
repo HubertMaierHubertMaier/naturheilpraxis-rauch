@@ -4676,7 +4676,7 @@ export function TherapyRecommendation() {
         const archive = item.archiveReceipt
           ? await verifyArchivedPatientOriginal(supabase as any, pid, item.archiveReceipt)
           : item.archiveCopy
-            ? await archivePatientOriginal(supabase as any, pid, item.archiveCopy, item.documentType || "dokument", item.documentDate, () => scopeIsCurrent() && privacyApprovalEpochRef.current === approvalEpoch)
+            ? await archivePatientOriginal(supabase as any, pid, item.archiveCopy, (item.documentType === "biodiagnostik" ? "labor" : item.documentType || "dokument"), item.documentDate, () => scopeIsCurrent() && privacyApprovalEpochRef.current === approvalEpoch)
             : undefined;
         if (isPdfClinicalDocument(item.file) && !archive) throw new Error("Anonymisierte PDF-Archivkopie fehlt; das PDF-Original bleibt lokal.");
         if (archive) {
