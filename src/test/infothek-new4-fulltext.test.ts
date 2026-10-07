@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
 import { COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
-const norm = (h: string) => (new DOMParser().parseFromString(h, "text/html").body.textContent ?? "").replace(/\s+/g, " ").trim();
+const norm = (h: string) => (new DOMParser().parseFromString(h, "text/html").body.textContent ?? "").replace(/\s+/g, "");
 const SLUGS = ["candida-diaet", "sibo-duenndarmfehlbesiedlung", "muedigkeit-erschoepfung-burnout", "kraeuter-schmerz-entzuendung"];
 describe("Vier Vergleiche: keine Übernahme = Original, alle = vollständiger Entwurf", () => {
   for (const slug of SLUGS) it(slug, () => {
