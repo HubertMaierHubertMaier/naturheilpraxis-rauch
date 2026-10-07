@@ -1,0 +1,12 @@
+{
+  "gelesen": "2026-10-07T20:45Z",
+  "quellen": [
+    {"url": "https://www.bfr.bund.de/fragen-und-antworten/thema/ausgewaehlte-fragen-und-antworten-zu-geschirr-mit-antihaftbeschichtung-aus-ptfe-fuer-das-braten-kochen-und-backen/", "stand": "02.07.2025", "beleg": "Gesundheitsrisiko nur, wenn ungefüllt stark erhitzt; ab 360 °C gesundheitsschädliche Dämpfe; bei bestimmungsgemäßem Gebrauch keine gesundheitlichen Beeinträchtigungen zu erwarten", "grenze": "Über Websuche-Auszug gelesen (direkter Abruf leitete auf Startseite um); Kratzer-Aussage nicht wörtlich geprüft"},
+    {"url": "https://www.bfr.bund.de/fragen-und-antworten/thema/bienenwachstuecher-worauf-sollten-sie-achten/", "stand": "11.09.2023", "beleg": "Übergang von Wachsbestandteilen in fettige Lebensmittel möglich; lebensmitteltaugliche Textilien/Wachs nötig", "grenze": "Auszug endete vor einer Aussage zu rohen tierischen Lebensmitteln"},
+    {"url": "https://www.verbraucherzentrale.nrw/schadstoffe/kueche/bienenwachstuecher-gibt-es-bedenken-43438", "stand": "25.08.2026", "beleg": "nicht heiß spülbar (Wachs schmilzt ca. 62 °C), daher nicht für rohes Fleisch und Fisch", "grenze": "Verbraucherzentrale, keine Behörde"},
+    {"url": "https://www.umweltbundesamt.de/system/files/medien/1968/publikationen/160930_uba_rg_duftstoffe_barrierefrei.pdf", "beleg": "Natürliche Duftstoffe im Allgemeinen nicht weniger belästigend oder allergieauslösend als synthetische", "grenze": "Ratgeber 2016"},
+    {"url": "https://www.umweltbundesamt.de/themen/duftstoffe-chemische-begleiter-im-alltag", "beleg": "Bei Empfindlichkeit Produkte „Ohne Duftstoffe“; Geruch oft Warnsignal zum Lüften", "grenze": "Stand 2016"},
+    {"url": "https://www.nhs.uk/conditions/meningitis/", "abgerufen": "2026-10-07T20:42Z", "beleg": "Call 999 bei u. a. sehr starken Kopfschmerzen, Fieber, Ausschlag, der beim Glastest nicht verblasst; might not have every symptom", "grenze": "UK-Versorgung (999 ≙ 112)"},
+    {"url": "https://jamanetwork.com/journals/jamapsychiatry/fullarticle/2820770", "beleg": "laut Astra: 49.275 Frauen, adjustierte HR 0,91", "grenze": "Abruf HTTP 403, selbst nicht gelesen; Artikeltext unverändert"}
+  ]
+}
