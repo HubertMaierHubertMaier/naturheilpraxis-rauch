@@ -69,3 +69,11 @@ Gilt für ALLE bestehenden, noch nicht bearbeiteten UND künftig neu geschrieben
 - Bearbeitungsstand aller HTMLs aus dem Manifest (nicht begonnen / in Prüfung / redaktionell abgeschlossen), Veröffentlichung separat; ohne Nachweis = nicht begonnen.
 - Downloadbarer Fortschrittsbericht mit Datum, Entscheidungen, Textschnappschuss, echtem Speicherort (browserlokal, solange kein Server-Speicher).
 - Peter ist der behandelnde Heilpraktiker: seine Methoden nicht sprachlich „neben seine eigene Behandlung“ stellen. Abgrenzung einmal am Übergang zur Modellvorstellung statt Negativformeln am Satzende. MRT o. ä. nie als Beleg für Frequenztherapie, andere Frequenzanwendungen nicht abwerten.
+
+## Keine schematischen Endformeln (Peter, verbindlich für alle HTMLs)
+- Sätze nicht mit Negativ-Formeln enden lassen („… ist kein Nachweis“, „lässt sich nicht ableiten“, „nicht gesichert“, „kein Diagnosebefund“). Peter will sie nicht Punkt für Punkt diskutieren – offene Entwürfe systematisch prüfen.
+- „Hypothese“ nicht in jeden Absatz streuen. Idee/Ziel der Methode positiv beschreiben („soll“, „Idee der Frequenztherapie“, „Denkmodell, das …“).
+- Ehrlich ≠ abwertend; fehlender Nachweis ≠ nachgewiesene Unwirksamkeit. Kern: tatsächliches Angebot, Gespräch, Anwendung, anschauliche Modellbeschreibung.
+- Einordnung einmal kurz am passenden Übergang (z. B. Überschrift „Modellvorstellung …“). Ein falscher Schluss ist korrigiert, wenn er wegfällt – kein Zusatz-Dementi nötig.
+- Keine sichere Wirkung aus Physik, MRT oder Modell ableiten; keine Belege erfinden.
+- Übernahmestand nie aus älteren Snapshots festschreiben; bei möglicherweise schon übernommenen Punkten neue Fassung nur als Alternative (supersedes).
