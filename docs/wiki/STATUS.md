@@ -106,3 +106,9 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - `docs/wiki/strunz-quellkandidaten-53-2026-10-07.json`: 53 echte Kandidaten-IDs (Batch ffe44e71) lesend typisiert; 27 eindeutig auf 9 Karten (je Produktseite + Form/Zielgruppe + Interaktion), 26 offen (12 Einzelstoff-, 1 Regulatorik-, 2 übergreifende Sicherheits-, 11 Auditberichte). Keine Zuordnung über gleichen Nährstoff.
 - Pagination: alle 21 Listen vollständig auf Seite 1 (amountData = Produktlinks, ?p=2 ohne neue). 149 ungemappt = 136 eindeutige Produkte + 13 Varianten in 6 Gruppen (nicht zusammengeführt).
 - Nächster Schritt: 136 eindeutige Produkte ohne Karte gegen bestehende kb_entities-Namen lesend auf vorhandene Karten/Dubletten prüfen.
+
+## 2026-10-07 149 ungemappte Strunz-Produkte
+- Fundstellen ergänzt: alle 149 URLs mit Bereich+Position aus Neuabruf der 21 Seiten (645 Bereichsnennungen).
+- Abgleich (lesend): 0 URL-Treffer, 0 EAN möglich (kb_entity_identifiers leer), 10 nur Namensgleichheit mit Stoff-/Pflanzen-/Laborkarten (keine Produktidentität), 139 kein Treffer. Keine Karten erstellt.
+- Vollständigkeit nur für die 21 Bereichsseiten.
+- Nächster Schritt: Produktseiten der 136 eindeutigen Produkte lesend auf EAN/Hersteller prüfen (Grundlage für spätere Kartenvorschläge).
