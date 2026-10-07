@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
+import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, type ComparisonChange } from "@/lib/infothekComparisonChanges";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
@@ -86,7 +86,9 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
   const c = MARK[side];
   const style = doc.createElement("style");
   style.textContent = `
-    html, body { overflow: auto !important; height: auto !important; }
+    /* Exactly one vertical scroller per article: the document (html). body never scrolls itself. */
+    html { overflow-x: hidden !important; overflow-y: auto !important; height: auto !important; max-height: none !important; }
+    body { overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; position: static !important; }
     .reveal, .reveal .slides { position: static !important; height: auto !important; width: auto !important; transform: none !important; overflow: visible !important; }
     .reveal .slides > section, .reveal .slides > section > section {
       display: block !important; position: relative !important; top: auto !important; left: auto !important;
@@ -193,15 +195,29 @@ export default function InfothekHtmlVergleich() {
     setActive(id);
     if (activeKey) localStorage.setItem(activeKey, String(id));
   };
-  const toggleAccepted = (id: number, value: boolean) => {
-    setAccepted((prev) => {
-      const next = new Set(prev);
-      if (value) next.add(id); else next.delete(id);
-      const stamp = new Date().toISOString();
-      if (storageKey) localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
-      setSavedAt(stamp);
-      return next;
-    });
+  const [saveError, setSaveError] = useState<string>();
+  /** Persists first; only a successful save updates the state (and may advance). */
+  const toggleAccepted = (id: number, value: boolean): boolean => {
+    const next = new Set(accepted);
+    if (value) next.add(id); else next.delete(id);
+    const stamp = new Date().toISOString();
+    try {
+      if (!storageKey) throw new Error("no user");
+      localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
+    } catch {
+      setSaveError(`Ä${id} konnte nicht gespeichert werden – Auswahl bleibt hier.`);
+      return false;
+    }
+    setSaveError(undefined);
+    setAccepted(next);
+    setSavedAt(stamp);
+    return true;
+  };
+  const acceptAndAdvance = (id: number) => {
+    const next = new Set(accepted).add(id);
+    if (!toggleAccepted(id, true)) return;
+    const target = nextOpenChange(CHANGES.map((c) => c.id), next, id);
+    if (target !== undefined) chooseActive(target);
   };
   const working = useMemo(
     () => (origRaw ? composeWorkingVersion(origRaw, draftHtml, CHANGES, accepted) : undefined),
