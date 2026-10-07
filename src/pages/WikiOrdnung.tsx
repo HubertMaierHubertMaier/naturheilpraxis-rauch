@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAllPages, wikiErrorText } from "@/lib/wikiFetchAll";
 import {
-  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, productsWithSubstance, RELATION_LABEL,
+  actorsOfEntity, buildWikiModel, GROUP_LABEL, matchesAll, neighbours, NUTRIENT_LABEL, paginate, PETER_ACTORS, productsWithSubstance, rxLabel, RELATION_LABEL,
   type Actor, type GroupKey, type NutrientClass, type WikiModel,
 } from "@/lib/wikiTaxonomy";
 
@@ -27,7 +27,7 @@ const all = (table: string, cols: string, order: string[]) =>
 async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
   const [e, er, cl, rel, a, ar, s, sr] = await Promise.all([
     all("kb_entities", "id, entity_type_code, current_revision_id", ["id"]),
-    all("kb_entity_revisions", "id, entity_id, display_name, review_status", ["id"]),
+    all("kb_entity_revisions", "id, entity_id, display_name, review_status, original_kind:metadata->candidate_snapshot->proposed_data->>original_kind, prescription_status:metadata->candidate_snapshot->proposed_data->>prescription_status", ["id"]),
     all("kb_import_core_links", "candidate_kind, candidate_id, core_record_kind, core_entity_id, core_source_revision_id", ["candidate_kind", "candidate_id"]),
     all("kb_relation_candidates", "id, subject_candidate_id, object_candidate_id, proposed_relation_type_code, candidate_status, source_candidate_id, source_locator", ["id"]),
     all("kb_articles", "id, current_revision_id, article_kind", ["id"]),
@@ -47,10 +47,10 @@ async function loadModel(): Promise<{ model: WikiModel; counts: Counts }> {
   return { model, counts };
 }
 
-type View = "start" | "actors" | GroupKey | NutrientClass | "folders" | "unassigned";
+type View = "start" | "actors" | "drugs" | GroupKey | NutrientClass | "folders" | "unassigned";
 const NUTRIENT_VIEWS: NutrientClass[] = ["vitamins", "minerals", "trace"];
 const isNutrientView = (v: View): v is NutrientClass => (NUTRIENT_VIEWS as string[]).includes(v);
-const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
+const VIEW_LABEL: Record<View, string> = { start: "Übersicht", actors: "Firmen & Personen", drugs: "Ärztliche Mittel / Arzneimittel", ...GROUP_LABEL, ...NUTRIENT_LABEL, folders: "Ordner (Kategoriepfad)", unassigned: "Noch nicht zugeordnet" };
 
 function Pager({ page, pages, total, set }: { page: number; pages: number; total: number; set: (p: number) => void }) {
   return (
@@ -118,7 +118,7 @@ export default function WikiOrdnung() {
   );
   const actorCount = (a: Actor) => a.folderArticleIds.size + a.sourceRevisionIds.size + a.entityIds.size + a.textArticleIds.size + a.textEntityIds.size;
   const ent = (eid: string) => m?.entities.get(eid);
-  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
+  const entButton = (eid: string) => { const e = ent(eid); return e ? <button key={eid} className="underline" onClick={() => set({ v: e.drug ? "drugs" : e.nutrient ?? e.group, id: eid, q: null })}>{e.name}</button> : null; };
   const artLine = (aid: string, kind: "field" | "text") => {
     const a = m!.articles.get(aid)!;
     return <li key={aid} className="flex flex-wrap items-center gap-2"><span>{a.title}</span><Badge variant="secondary" className="text-[10px]">Artikel · Rev. {a.revisionNo} · {st(a.reviewStatus)}</Badge><LinkBadge kind={kind} /></li>;
@@ -135,6 +135,7 @@ export default function WikiOrdnung() {
     const tiles: Array<[View, string, number]> = [
       ["actors", VIEW_LABEL.actors, m.actors.size],
       ...(["products", "pathogens", "symptoms", "diseases"] as GroupKey[]).map((g) => [g, GROUP_LABEL[g], [...m.entities.values()].filter((e) => e.group === g).length] as [View, string, number]),
+      ["drugs", "Ärztliche Mittel / Arzneimittel", [...m.entities.values()].filter((e) => e.drug).length],
       ["vitamins", "Vitamine", [...m.entities.values()].filter((e) => e.nutrient === "vitamins").length],
       ["minerals", "Mineralstoffe (inkl. Spurenelemente)", [...m.entities.values()].filter((e) => e.nutrient === "minerals" || e.nutrient === "trace").length],
       ["trace", "Spurenelemente", [...m.entities.values()].filter((e) => e.nutrient === "trace").length],
@@ -226,6 +227,30 @@ export default function WikiOrdnung() {
         <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
       </>
     );
+  } else if (view === "drugs" && !id) {
+    const list = [...m.entities.values()].filter((e) => e.drug && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
+    const kl = m.actors.get("klinghardt");
+    const ft = fullText["__drugs"];
+    const searchDrugText = async () => {
+      setFullText((x) => ({ ...x, __drugs: "loading" }));
+      const r = await fetchAllPages((f, t) => db.from("kb_article_revisions").select("article_id").filter("content_markdown", "imatch", "(arzneimittel|medikament|verschreibungspflichtig|rezeptpflichtig)").order("id", { ascending: true }).range(f, t));
+      setFullText((x) => ({ ...x, __drugs: r.error ? "error" : [...new Set((r.data as { article_id: string }[]).map((y) => y.article_id))].filter((aid) => m.articles.get(aid)?.revisionId && (!kl || kl.folderArticleIds.has(aid) || kl.textArticleIds.has(aid))) }));
+    };
+    const pg = paginate(list, page, PAGE);
+    body = (
+      <>
+        <Card className="mb-3"><CardContent className="space-y-1 p-4 text-sm">
+          <p>Wissensnavigation – keine Verordnung und keine Anwendungsfreigabe. Als Arzneimittel gilt ein Eintrag nur, wenn sein Datensatz das ausdrücklich angibt (Begriffstyp oder hinterlegte Art); eine bloße Erwähnung, etwa in den Klinghardt-Unterlagen, reicht nicht. Verschreibungsstatus nur, wenn im Datensatz hinterlegt, sonst „unklar".</p>
+        </CardContent></Card>
+        <Input className="mb-3 max-w-xs" placeholder="Arzneimittel suchen" value={q} onChange={(e) => set({ q: e.target.value || null })} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pg.items.map((e) => <button key={e.id} onClick={() => set({ id: e.id })} className="rounded border border-border bg-card p-2 text-left text-sm hover:border-primary"><span className="font-semibold">{e.name}</span> · {rxLabel(e.rx)} · {neighbours(m, e.id).length} Verknüpfungen</button>)}</div>
+        {list.length === 0 && <p className="text-sm font-semibold">Im Bestand ist derzeit kein Eintrag als Arzneimittel strukturiert erfasst (kein Begriffstyp „Arzneimittel", keine PZN/ATC-Kennung, keine hinterlegte Produktart).</p>}
+        <div className="mt-3"><Pager {...pg} set={(p) => set({ s: String(p) })} /></div>
+        {kl && <div className="mt-4 text-sm"><p className="font-semibold">Dr. Klinghardt: {kl.sourceRevisionIds.size} interne Quellen, {kl.folderArticleIds.size} Ordner-Artikel <LinkBadge kind="field" /></p>
+          <p className="text-muted-foreground">Dort genannte Mittel sind noch nicht als eigene Einträge erfasst. <button className="underline" onClick={() => set({ v: "actors", id: "klinghardt" })}>Zu Dr. Klinghardt</button></p></div>}
+        <div className="mt-3 text-sm"><p className="font-semibold">Klinghardt-Artikel, die „Arzneimittel/Medikament/verschreibungspflichtig" im Text nennen</p>{ft === undefined ? <Button size="sm" variant="outline" onClick={searchDrugText}>Volltext durchsuchen</Button> : ft === "loading" ? <p>Sucht …</p> : ft === "error" ? <p className="text-destructive">Volltextsuche nicht möglich.</p> : <><p className="text-xs text-muted-foreground">{ft.length} Artikel <LinkBadge kind="text" /> – keine Einstufung als Arzneimittel</p><ul className="space-y-1">{ft.slice(0, 200).map((x) => artLine(x, "text"))}</ul></>}</div>
+      </>
+    );
   } else if (isNutrientView(view) && !id) {
     const list = [...m.entities.values()].filter((e) => (view === "minerals" ? e.nutrient === "minerals" || e.nutrient === "trace" : e.nutrient === view) && (!q || matchesAll(e.name, q))).sort((a, b) => a.name.localeCompare(b.name, "de"));
     const unclassified = [...m.entities.values()].filter((e) => e.type === "nutrient" && !e.nutrient);
@@ -261,7 +286,7 @@ export default function WikiOrdnung() {
     body = !e ? <p>Nicht gefunden.</p> : (
       <Card><CardContent className="space-y-3 p-4 text-sm">
         <h2 className="text-xl font-semibold">{e.name}</h2>
-        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
+        <div className="flex flex-wrap gap-1"><Badge variant="outline">{GROUP_LABEL[e.group]}</Badge><Badge variant="outline">Typ: {e.type}</Badge><Badge variant="outline">{st(e.reviewStatus)}</Badge>{e.stoffart && <Badge variant="outline">{e.stoffart}</Badge>}{e.drug && <Badge variant="outline">Arzneimittel (laut Datensatz) · {rxLabel(e.rx)}</Badge>}{e.nutrient && <Badge variant="outline">{NUTRIENT_LABEL[e.nutrient]}{e.nutrient === "trace" ? " (Untergruppe Mineralstoffe)" : ""}</Badge>}</div>
         <p className="text-xs text-muted-foreground">Ein zentraler Eintrag: dieselben Verknüpfungen erscheinen bei Anbieter, Symptom und Erkrankung.</p>
         <p className="text-muted-foreground">Beschreibungen aus Hersteller-/Autorenmaterial sind Quellenangaben – keine bestätigte Wirksamkeit oder Therapieempfehlung.</p>
         <div><p className="font-semibold">Anbieter/Personen</p>{makers.length ? <ul>{makers.map(({ actor: a, kind }) => <li key={a.key} className="flex flex-wrap items-center gap-2"><button className="underline" onClick={() => set({ v: "actors", id: a.key })}>{a.name}</button><LinkBadge kind={kind} /></li>)}</ul> : <p className="text-muted-foreground">Kein Anbieter im Datensatz hinterlegt.</p>}</div>
