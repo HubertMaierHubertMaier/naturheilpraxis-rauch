@@ -25,6 +25,8 @@ export interface ComparisonChange {
   insertAfter?: "self" | "parentNext";
   /** Composition: insert the closest draft ancestor matching this selector. */
   draftWrap?: string;
+  /** Optional CSS selector restricting the target element on both sides (e.g. "strong" for a heading inside a cell). */
+  targetSelector?: string;
 }
 
 export const KRANKHEIT_IST_MESSBAR_CHANGES: ComparisonChange[] = [

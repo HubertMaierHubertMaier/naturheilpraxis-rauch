@@ -9,7 +9,7 @@ export function findChangeTarget(doc: Document, change: ComparisonChange, side: 
   if (!snippet) return undefined;
   const nth = (side === "orig" ? change.origNth : change.draftNth) ?? 0;
   if (change.img) return Array.from(doc.images).filter((img) => img.alt.includes(snippet))[nth];
-  const hits = Array.from(doc.body.querySelectorAll(TEXT_TAGS)).filter((el) => el.textContent?.includes(snippet));
+  const hits = Array.from(doc.body.querySelectorAll(change.targetSelector ?? TEXT_TAGS)).filter((el) => el.textContent?.includes(snippet));
   return hits.filter((el) => !hits.some((other) => other !== el && el.contains(other)))[nth];
 }
 
@@ -25,14 +25,29 @@ export function composeWorkingVersion(
   draftHtml: string,
   changes: ComparisonChange[],
   accepted: Set<number>,
-): { html: string; failed: number[] } {
+): { html: string; failed: number[]; conflicts: { id: number; with: number }[] } {
   const parser = new DOMParser();
   const o = parser.parseFromString(originalHtml, "text/html");
   const d = parser.parseFromString(draftHtml, "text/html");
   const failed: number[] = [];
+  // Pre-pass: an accepted swap region must not contain/overlap an independent, not accepted proposal.
+  const related = (a: ComparisonChange, b: ComparisonChange) => a.supersedes === b.id || b.supersedes === a.id;
+  const conflicts: { id: number; with: number }[] = [];
+  for (const c of changes) {
+    if (!accepted.has(c.id) || c.headOnly || c.insertAfter) continue;
+    const t = findChangeTarget(o, c, "orig");
+    if (!t) continue;
+    const region = group(t, c);
+    for (const x of changes) {
+      if (x.id === c.id || accepted.has(x.id) || x.headOnly || related(c, x)) continue;
+      const xt = findChangeTarget(o, x, "orig");
+      if (xt && region.some((el) => el.contains(xt))) conflicts.push({ id: c.id, with: x.id });
+    }
+  }
 
   for (const c of changes) {
     if (!accepted.has(c.id)) continue;
+    if (conflicts.some((k) => k.id === c.id)) { failed.push(c.id); continue; }
     if (changes.some((x) => x.supersedes === c.id && accepted.has(x.id))) continue;
     if (c.headOnly?.kind === "title") {
       o.title = d.title;
@@ -69,7 +84,7 @@ export function composeWorkingVersion(
     o.createComment(` ARBEITSFASSUNG – Original mit ${accepted.size} übernommenen Vorschlägen. Nicht veröffentlicht, keine Inhalts- oder Rechtsfreigabe. `),
     o.head,
   );
-  return { html: `<!DOCTYPE html>\n${o.documentElement.outerHTML}`, failed };
+  return { html: `<!DOCTYPE html>\n${o.documentElement.outerHTML}`, failed, conflicts };
 }
 
 /** Next not yet accepted change after `current` in list order (wrapping); undefined when all are accepted. */
