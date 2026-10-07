@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Layout } from "@/components/layout/Layout";
 import SEOHead from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,10 +92,12 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
     .reveal .slides > section, .reveal .slides > section > section {
       display: block !important; position: relative !important; top: auto !important; left: auto !important;
       opacity: 1 !important; visibility: visible !important; transform: none !important; height: auto !important;
-      width: auto !important; min-height: 0 !important; margin: 0 0 24px !important; padding: 24px !important;
+      width: auto !important; min-height: 0 !important; max-height: none !important; margin: 0 0 24px !important; padding: 24px !important;
       border-bottom: 2px dashed #b7c3ae; overflow: visible !important;
     }
     .reveal h2, .reveal h3 { position: static !important; }
+    .reveal .slides section, .reveal .slides section * { max-height: none !important; }
+    .reveal .slides section { height: auto !important; }
     .reveal .controls, .reveal .progress, .protected-overlay { display: none !important; }
     .reveal { font-size: 18px !important; }
     .reveal h1 { font-size: 2.2em !important; } .reveal h2 { font-size: 1.5em !important; } .reveal h3 { font-size: 1.2em !important; }
@@ -136,9 +137,9 @@ function Pane({ label, html, error, frameRef, onLoad }: {
       ) : html ? (
         // allow-same-origin only (no allow-scripts): article scripts are removed and cannot run;
         // the parent may scroll to markers.
-        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[calc(100vh-17rem)] min-h-[300px] w-full border-0 bg-background" />
+        <iframe ref={frameRef} onLoad={onLoad} title={label} srcDoc={html} sandbox="allow-same-origin" referrerPolicy="no-referrer" className="h-[calc(100vh-8rem)] min-h-[300px] w-full border-0 bg-background" />
       ) : (
-        <Skeleton className="m-3 h-[calc(100vh-18rem)] min-h-[280px]" />
+        <Skeleton className="m-3 h-[calc(100vh-9rem)] min-h-[280px]" />
       )}
     </section>
   );
@@ -285,7 +286,7 @@ export default function InfothekHtmlVergleich() {
     sa.forEach((el, i) => {
       const other = sb[i];
       if (!other) return;
-      const h = Math.max(el.offsetHeight, other.offsetHeight);
+      const h = Math.max(el.scrollHeight, other.scrollHeight, el.offsetHeight, other.offsetHeight);
       el.style.setProperty("min-height", `${h}px`, "important");
       other.style.setProperty("min-height", `${h}px`, "important");
     });
@@ -425,7 +426,7 @@ export default function InfothekHtmlVergleich() {
   };
 
   return (
-    <Layout>
+    <main className="min-h-screen bg-background">
       <SEOHead title="HTML-Vergleich (Entwurf)" noIndex />
       <div className="container py-2">
         <h1 className="font-serif text-lg font-semibold leading-tight">HTML-Vergleich: Frequenztherapie („Krankheit ist messbar“) <span className="text-xs font-normal text-muted-foreground">– Entwurf, nicht veröffentlicht, keine Freigabe</span></h1>
@@ -485,7 +486,7 @@ export default function InfothekHtmlVergleich() {
           <Pane label="Original (aktuell ausgeliefert)" html={original?.html} error={error} frameRef={origRef} onLoad={onFrameLoad} />
           <Pane label={rightMode === "working" ? `Arbeitsfassung (Original + ${accepted.size} übernommen)` : "Vorgeschlagener Entwurf"} html={draft.html} frameRef={draftRef} onLoad={onFrameLoad} />
           <aside className="relative lg:pt-[37px]" aria-label="Randnotiz zur Änderung">
-            <div className="relative lg:h-[calc(100vh-17rem)] lg:min-h-[300px]">
+            <div className="relative lg:h-[calc(100vh-8rem)] lg:min-h-[300px]">
               {(() => {
                 const c = CHANGES.find((x) => x.id === cardId);
                 if (!c) return (
@@ -531,7 +532,7 @@ export default function InfothekHtmlVergleich() {
           </aside>
         </div>
       </div>
-    </Layout>
+    </main>
   );
 }
 
@@ -542,7 +543,7 @@ function AcceptControl({ on, id, accept, undo }: { on: boolean; id: number; acce
       <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => undo(id)}>Rückgängig</Button>
     </span>
   ) : (
-    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => accept(id)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
+    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => accept(id)} aria-label={`Nur Änderung Ä${id} übernehmen`}>Nur Änderung Ä{id} übernehmen</Button>
   );
 }
 
