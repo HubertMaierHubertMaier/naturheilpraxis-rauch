@@ -71,3 +71,10 @@ Die Ordnung ist eine Navigationsschicht (Ordner, Datenfelder, Texttreffer). kb_e
 - src/lib/wikiNetworkDryRun.ts + Button „Prüfvorschläge herunterladen" (Ordnung-Startseite); Tests src/test/wiki-network-dryrun.test.ts (4, synthetisch).
 - Echter Lauf: 34 Akteurvorschläge (30 Organisation, 3 Person, 1 Apotheke), 234 Rollenbeziehungen (manufactured_by/published_by/authored_by) als candidate; 1 bereits als Entität vorhanden (Radegundis); 0 Merge-Hinweise.
 - Review-Befunde (vor Phase 2 zu klären): Typ-Heuristik Person/Organisation unzuverlässig („Andreas Kalcker", „Peter Römer" als Organisation; „Nutzerbereitgestellte Quelle", „Externe Fachquelle" sind keine Akteure; „Klinghardt Talks 001-025" ist Reihe/Herausgeber, nicht Person Dr. Klinghardt; „A. L. Kalcker" vs „Andreas Kalcker" mögliche Dublette ohne automatischen Hinweis; Plattformen wie Amazon/BitChute/PubMed sind Fundorte). → Typ je Akteur muss Peter/Codex festlegen; keine automatische Typisierung übernehmen.
+
+## Paket 2 (07.10.2026): Wikidatenbank-Liste + Vorschlagsstichprobe
+- /wikidatenbank: sichtbare Liste 25 je Seite (Erste/Zurück/Weiter/Letzte, oben+unten), Zähler „X Treffer von 2149 Artikeln (aktuelle Revision) · angezeigt a–b"; Mehrwortsuche weiter über den vollständig geladenen Bestand; Suchwechsel → Seite 1; Volltext je Artikel per „Volltext öffnen" (unverändert, ungekürzt). Alte Wiki unverändert.
+- UI-Prüfung (Testbrowser): Laden 6,9 s; 25 Karten; Seite 2 = 26–50; Letzte = 2126–2149 (Seite 86/86); „Klinghardt Covid" = 8 Treffer, Seite 1; Volltext öffnen/schließen ok; Suche leeren → wieder 1–25.
+- Teilbestand: Ladefehler auf späterer Seite bricht weiterhin mit Fehlermeldung ab (fetchAllPages-Test), keine Teilzahl als vollständig.
+- Offen: kb_article_revisions lädt alle Revisionen inkl. content_markdown (nur aktuelle werden genutzt) – Optimierung möglich.
+- Vorschlagsstichprobe: docs/wiki/vernetzung-vorschlag-stichprobe.json (8 Kandidaten: Mannayan, Radegundis, Nutramedix, Heel, Pascoe, Vitaplace, Klinghardt-Erythromycin, HNO-ChipCard) mit stabilem candidate_key, Revisions-ID, Fundstelle, Produktart, Beziehungen, Unsicherheit. NICHT angewendet.

@@ -7,5 +7,5 @@ type: preference
 - Keine Aufladung/Tarifänderung. Keine Credits nur zum Verbrauch. Vor jedem längeren Paket Balance prüfen; bei gefährdeter Reserve kein neues Paket.
 - Codex orchestriert/prüft, Lovable setzt um. Pro Paket berichten: Änderungen, Tests, Lücken.
 - Grenzen: keine produktiven Migrationen/Zuordnungswrites, keine Importe, keine Patientenakten, kein Publish, keine Edge-Livebereitstellung; HTML-Entscheidungen warten auf Peter (Stand 28/36 inkl. Ä35/Ä36).
-- Stand 07.10.2026 17:46: 282,42 Rest. Paket 1 = Probelauf-Prüfvorschläge (nur Download, kein Write).
+- Stand 07.10.2026 17:52: 275,62 Rest (≈26 verbraucht). Paket 1+2 erledigt; nächster Schritt wartet auf Peters Akteurtypen + Review der Stichprobe.
 - Paket 1 erledigt (Probelauf-Download, 34 Akteure/234 Rollen als Kandidaten, Typ-Heuristik unzuverlässig → Review). Siehe docs/wiki/STATUS.md.
