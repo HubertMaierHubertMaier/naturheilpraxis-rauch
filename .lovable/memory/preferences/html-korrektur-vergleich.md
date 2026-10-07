@@ -18,7 +18,7 @@ Diese Darstellung für weitere HTML-Artikel wiederverwenden. Kein neues Layoutex
 
 Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entscheidet die Inhalte.
 
-## Redaktionelle Vorgabe (Peter, 07.10.2026)
+## Redaktionelle Vorgabe (Peter, 07.10.2026) – gilt für ALLE HTMLs/Infothekartikel
 - Infothek soll verständlich aufklären UND Interesse an Praxis/Naturheilkunde wecken: patientenfreundlich, einladend, sachlich.
 - Keine unbelegten Wirkungen behaupten; „kann unterstützen“, „Erfahrungsheilkunde“ oder Disclaimer sind kein Freibrief.
 - Notwendige Einordnungen nicht pauschal entfernen; Hinweise gezielt an tatsächliche Wirkbehauptungen, verständlich, keine identischen klinischen Disclaimer in jedem Absatz, wenig defensiver Fachjargon.
@@ -27,3 +27,9 @@ Zuständigkeit: Lovable setzt primär um, Codex plant und prüft, Peter entschei
 - Physik/Nobelpreis/Schwingungsmodell nie als Nachweis medizinischer Wirkung.
 - Maßstab § 3 HWG, § 5 UWG; Vorschläge sind Prüfvorschläge, keine Rechtsfreigabe.
 - Nachbarsätze, die mitgeändert werden müssen, als eigene neue Änderungsnummer (transparent, keine Umnummerierung bestehender/übernommener Punkte).
+- Grundton positiv, überzeugend, verständlich: Praxis und Naturheilkunde Vertrauen/Interesse fördern; kein abwertender Ton, keine systematische Umformung positiver Aussagen in Forschungsdisclaimer.
+- Positive Wertungen („faszinierend“, „spannend“) nicht automatisch beanstanden; Änderungsgrund muss die konkrete Irreführungsgefahr im Kontext benennen, nicht die positive Wertung.
+- Andere Medizin ebenfalls nicht abwerten. Keine Garantie rechtlicher Risikofreiheit behaupten; Aussagen im Gesamtzusammenhang prüfen.
+- Gleiche Grenzen für Überschriften, Meta-Daten, Bilder/Alt-Texte, SEO und Google-Snippets.
+- Unterscheiden: fehlende Evidenz / nachgewiesene Unwirksamkeit / bloßes Denkmodell. Einordnung knapp, verständlich, nahe der Aussage.
+- Vorgehen: seitenweise im bestätigten Zwei-HTML-Vergleich, keine Massenänderung, angenommene Punkte und Nutzerentscheidungen nie ändern.
