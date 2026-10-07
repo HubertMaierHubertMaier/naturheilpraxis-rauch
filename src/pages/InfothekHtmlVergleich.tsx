@@ -261,7 +261,7 @@ export default function InfothekHtmlVergleich() {
     if (value) { nextKept.add(id); next.delete(id); } else nextKept.delete(id);
     if (!persist(id, next, nextKept)) return false;
     if (value) {
-      const t = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...nextKept]), id);
+      const t = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...nextKept, ...CHANGES.filter((c) => replacedBy(c, CHANGES, { accepted: next, kept: nextKept }) !== undefined).map((c) => c.id)]), id);
       if (t !== undefined) chooseActive(t);
     }
     return true;
@@ -269,7 +269,7 @@ export default function InfothekHtmlVergleich() {
   const acceptAndAdvance = (id: number) => {
     const next = new Set(accepted).add(id);
     if (!toggleAccepted(id, true)) return;
-    const target = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...kept]), id);
+    const target = nextOpenChange(CHANGES.map((c) => c.id), new Set([...next, ...kept, ...CHANGES.filter((c) => replacedBy(c, CHANGES, { accepted: next, kept }) !== undefined).map((c) => c.id)]), id);
     if (target !== undefined) chooseActive(target);
   };
   const working = useMemo(

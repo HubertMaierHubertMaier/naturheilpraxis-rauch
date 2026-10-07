@@ -25,3 +25,16 @@ describe("Entscheidungen (isolierter Testzustand)", () => {
     expect(r).toContain(`1 übernommen, 1 Original beibehalten, ${C.length - 2} noch zu entscheiden`);
   });
 });
+
+import { replacedBy as rb, undecided as ud } from "@/lib/infothekDecisions";
+import { KRANKHEIT_IST_MESSBAR_CHANGES as ALL } from "@/lib/infothekComparisonChanges";
+it("übernommene Alternative ersetzt den alten Vorschlag, Rückgängig stellt ihn wieder her", () => {
+  const c8 = ALL.find((c) => c.id === 8)!;
+  const on = { accepted: new Set([35, 36]), kept: new Set<number>() };
+  expect(rb(c8, ALL, on)).toBe(35);
+  expect(ud(ALL, on).map((c) => c.id)).not.toContain(8);
+  expect(ud(ALL, on).map((c) => c.id)).not.toContain(5);
+  const off = { accepted: new Set([36]), kept: new Set<number>() };
+  expect(rb(c8, ALL, off)).toBeUndefined();
+  expect(ud(ALL, off).map((c) => c.id)).toContain(8);
+});
