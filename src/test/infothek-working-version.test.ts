@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { composeWorkingVersion } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES } from "@/lib/infothekComparisonChanges";
 
@@ -30,4 +30,12 @@ it("mixes original and accepted proposals", () => {
   expect(t).toContain("Komplettes Körper-WLAN".replace(/\s+/g, ""));
   expect(new DOMParser().parseFromString(html, "text/html").title).toContain("Frequenztherapie: Physik");
   expect(html).toContain("ARBEITSFASSUNG");
+});
+
+import { nextOpenChange } from "@/lib/infothekComparison";
+describe("nextOpenChange (isolierte Testentscheidungen)", () => {
+  const order = [3, 4, 5, 1, 2];
+  it("überspringt übernommene", () => expect(nextOpenChange(order, new Set([3, 4]), 3)).toBe(5));
+  it("springt am Ende zum Anfang", () => expect(nextOpenChange(order, new Set([2]), 2)).toBe(3));
+  it("liefert undefined wenn alle übernommen", () => expect(nextOpenChange(order, new Set(order), 5)).toBeUndefined());
 });

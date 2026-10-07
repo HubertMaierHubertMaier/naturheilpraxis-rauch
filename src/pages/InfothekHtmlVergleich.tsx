@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { composeWorkingVersion, findChangeTarget } from "@/lib/infothekComparison";
+import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import { KRANKHEIT_IST_MESSBAR_CHANGES as CHANGES, UNMARKED_NOTES, type ComparisonChange } from "@/lib/infothekComparisonChanges";
 import draftHtml from "../../website-content/infothek/drafts/krankheit-ist-messbar.entwurf.html?raw";
 
@@ -86,7 +86,9 @@ export function toStaticPreview(html: string, side: Side, workingAccepted?: Set<
   const c = MARK[side];
   const style = doc.createElement("style");
   style.textContent = `
-    html, body { overflow: auto !important; height: auto !important; }
+    /* Exactly one vertical scroller per article: the document (html). body never scrolls itself. */
+    html { overflow-x: hidden !important; overflow-y: auto !important; height: auto !important; max-height: none !important; }
+    body { overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; position: static !important; }
     .reveal, .reveal .slides { position: static !important; height: auto !important; width: auto !important; transform: none !important; overflow: visible !important; }
     .reveal .slides > section, .reveal .slides > section > section {
       display: block !important; position: relative !important; top: auto !important; left: auto !important;
@@ -155,7 +157,9 @@ export default function InfothekHtmlVergleich() {
   const cardIdRef = useRef(cardId);
   cardIdRef.current = cardId;
   const [cardTop, setCardTop] = useState(0);
+  const [cardText, setCardText] = useState<{ orig?: string; draft?: string }>({});
   const [listOpen, setListOpen] = useState(false);
+  const [namingOpen, setNamingOpen] = useState(false);
   const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -193,15 +197,29 @@ export default function InfothekHtmlVergleich() {
     setActive(id);
     if (activeKey) localStorage.setItem(activeKey, String(id));
   };
-  const toggleAccepted = (id: number, value: boolean) => {
-    setAccepted((prev) => {
-      const next = new Set(prev);
-      if (value) next.add(id); else next.delete(id);
-      const stamp = new Date().toISOString();
-      if (storageKey) localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
-      setSavedAt(stamp);
-      return next;
-    });
+  const [saveError, setSaveError] = useState<string>();
+  /** Persists first; only a successful save updates the state (and may advance). */
+  const toggleAccepted = (id: number, value: boolean): boolean => {
+    const next = new Set(accepted);
+    if (value) next.add(id); else next.delete(id);
+    const stamp = new Date().toISOString();
+    try {
+      if (!storageKey) throw new Error("no user");
+      localStorage.setItem(storageKey, JSON.stringify({ accepted: [...next].sort((x, y) => x - y), savedAt: stamp }));
+    } catch {
+      setSaveError(`Ä${id} konnte nicht gespeichert werden – Auswahl bleibt hier.`);
+      return false;
+    }
+    setSaveError(undefined);
+    setAccepted(next);
+    setSavedAt(stamp);
+    return true;
+  };
+  const acceptAndAdvance = (id: number) => {
+    const next = new Set(accepted).add(id);
+    if (!toggleAccepted(id, true)) return;
+    const target = nextOpenChange(CHANGES.map((c) => c.id), next, id);
+    if (target !== undefined) chooseActive(target);
   };
   const working = useMemo(
     () => (origRaw ? composeWorkingVersion(origRaw, draftHtml, CHANGES, accepted) : undefined),
@@ -326,6 +344,17 @@ export default function InfothekHtmlVergleich() {
     const c = CHANGES.find((x) => x.id === cardIdRef.current);
     const el = c && !c.headOnly ? doc.querySelector(`[data-change="${c.id}"]`) : null;
     setCardTop(el ? el.getBoundingClientRect().top : 0);
+    // Full wording of the marked element on both sides (badge/why box excluded).
+    const textOf = (side: Side) => {
+      const t = c && !c.headOnly ? docOf(side)?.querySelector(`[data-change="${c.id}"]`) : null;
+      if (!t) return undefined;
+      if (t instanceof HTMLImageElement) return t.alt;
+      const clone = t.cloneNode(true) as Element;
+      clone.querySelectorAll(".cmp-badge, .cmp-why").forEach((x) => x.remove());
+      const txt = (clone.textContent ?? "").replace(/\s+/g, " ").trim();
+      return txt.length > 260 ? `${txt.slice(0, 257)}…` : txt;
+    };
+    setCardText({ orig: textOf("orig"), draft: textOf("draft") });
   }, []);
 
   const [loaded, setLoaded] = useState(0);
@@ -418,10 +447,14 @@ export default function InfothekHtmlVergleich() {
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setListOpen((o) => !o)} aria-expanded={listOpen}>
               {listOpen ? "Liste einklappen" : "Alle Änderungen"}
             </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setNamingOpen((o) => !o)} aria-expanded={namingOpen}>HTML-Benennung</Button>
           </span>
+          {saveError && <span role="alert" className="w-full font-semibold text-destructive">{saveError}</span>}
+          {accepted.size === CHANGES.length && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Änderungen übernommen – Arbeitsfassung vollständig. Nicht veröffentlicht, keine Freigabe; Download über „HTML herunterladen“.</span>}
           {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
+        {namingOpen && <NamingPanel />}
         {listOpen && (
           <div className="mb-2 rounded-md border border-border bg-card p-2">
             <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -438,7 +471,7 @@ export default function InfothekHtmlVergleich() {
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
-                  <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                  <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
                 </li>
               ))}
             </ol>
@@ -483,8 +516,14 @@ export default function InfothekHtmlVergleich() {
                         </dl>
                       </div>
                     )}
+                    {!c.headOnly && (c.orig || c.draft) && (
+                      <dl className="mb-2 space-y-1">
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.orig ?? c.orig ?? "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{cardText.draft ?? c.draft ?? "–"}“</dd></div>
+                      </dl>
+                    )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
-                    <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                    <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
                   </div>
                 );
               })()}
@@ -496,13 +535,42 @@ export default function InfothekHtmlVergleich() {
   );
 }
 
-function AcceptControl({ on, id, toggle }: { on: boolean; id: number; toggle: (id: number, v: boolean) => void }) {
+function AcceptControl({ on, id, accept, undo }: { on: boolean; id: number; accept: (id: number) => void; undo: (id: number) => void }) {
   return on ? (
     <span className="flex items-center gap-1">
       <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Übernommen</span>
-      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => toggle(id, false)}>Rückgängig</Button>
+      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => undo(id)}>Rückgängig</Button>
     </span>
   ) : (
-    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => toggle(id, true)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
+    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => accept(id)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
+  );
+}
+
+/** Three different "names" of the article, kept apart. Values come from the files / existing SEO notes. */
+function NamingPanel() {
+  const t = CHANGES.find((c) => c.headOnly?.kind === "title")?.headOnly;
+  const h1 = CHANGES.find((c) => c.id === 3);
+  const rows = [
+    { what: "Dateiname / öffentliche Adresse", where: "Adresszeile, Links, Suchergebnis-URL", before: ROUTE, after: "/ratgeber/frequenztherapie (Vorschlag aus den SEO-Notizen)",
+      why: "SEO/Lesbarkeit: Adresse benennt das Thema statt eines Messbarkeits-Versprechens. Rechtlicher Prüfbedarf (§ 3 HWG) möglich, keine abschließende Bewertung. Nicht umbenannt – Umstellung nur nach Freigabe, dann mit 301-Weiterleitung von der alten Adresse." },
+    { what: "HTML-Seitentitel (Ä1)", where: "Browser-Tab, Suchergebnis – im Artikel nicht sichtbar", before: t?.before, after: t?.after, why: "SEO + rechtlicher Prüfbedarf: „Krankheit ist messbar“ als Aussage ist im Artikel nicht belegt; neuer Titel beschreibt den Inhalt." },
+    { what: "Sichtbare H1 (Ä3)", where: "Erste Überschrift im Artikel", before: h1?.orig, after: h1?.draft, why: "Lesbarkeit + rechtlicher Prüfbedarf: „Grundlagen“ klingt nach Beweis; Vorschlag trennt Modell und Erfahrungsheilkunde." },
+  ];
+  return (
+    <div className="mb-2 overflow-x-auto rounded-md border border-border bg-card p-2 text-xs">
+      <table className="w-full border-collapse">
+        <thead><tr className="text-left"><th className="p-1">Benennung</th><th className="p-1">Original</th><th className="p-1">Vorschlag</th><th className="p-1">Prüfgrund</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.what} className="border-t border-border align-top">
+              <td className="p-1"><span className="font-semibold">{r.what}</span><span className="block text-muted-foreground">{r.where}</span></td>
+              <td className="p-1">„{r.before}“</td>
+              <td className="p-1">„{r.after}“</td>
+              <td className="p-1">{r.why}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

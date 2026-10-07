@@ -70,3 +70,13 @@ export function composeWorkingVersion(
   );
   return { html: `<!DOCTYPE html>\n${o.documentElement.outerHTML}`, failed };
 }
+
+/** Next not yet accepted change after `current` in list order (wrapping); undefined when all are accepted. */
+export function nextOpenChange(order: number[], accepted: Set<number>, current?: number): number | undefined {
+  const start = current === undefined ? -1 : order.indexOf(current);
+  for (let k = 1; k <= order.length; k++) {
+    const id = order[(start + k + order.length) % order.length];
+    if (!accepted.has(id)) return id;
+  }
+  return undefined;
+}
