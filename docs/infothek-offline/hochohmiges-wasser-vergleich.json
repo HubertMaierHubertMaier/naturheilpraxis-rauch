@@ -1,0 +1,33 @@
+{
+ "slug": "patienteninfo-hochohmiges-wasser",
+ "zugriff": "visibility=patient, pending, noindex – nur offline, kein Browser-Import",
+ "original": "website-content/infothek/patienteninfo-hochohmiges-wasser.html",
+ "entwurf": "website-content/infothek/drafts/patienteninfo-hochohmiges-wasser.entwurf.html",
+ "entscheidungen": "alle offen",
+ "vorschlaege": [
+  {
+   "id": 1,
+   "orig": "Es zeichnet sich durch besondere Reinheit und eine geringe Mineralstoffbelastung aus.",
+   "draft": "Es enthält nur wenige gelöste Mineralstoffe; die Wahl des passenden Wassers besprechen wir gemeinsam.",
+   "why": "Mineralarmut belegt keine Reinheit; Salzgehalt ist von chemischer/mikrobiologischer Qualität zu trennen.",
+   "quelle": "https://www.umweltbundesamt.de/daten/wasser/wasserwirtschaft/qualitaet-des-trinkwassers-aus-zentralen",
+   "status": "offen"
+  },
+  {
+   "id": 2,
+   "orig": "2–3 Liter pro Tag, verteilt über den Tag – nicht auf einmal",
+   "draft": "eine individuell passende Trinkmenge, verteilt über den Tag – als allgemeine Orientierung für gesunde Erwachsene nennt die DGE rund 1,5 Liter Getränke; erhöhten Bedarf oder eine bestehende Trinkmengenbeschränkung berücksichtigen wir",
+   "why": "Keine pauschale Therapiemenge nach jeder Behandlung; DGE-Orientierung, Bedarf/Beschränkung individuell.",
+   "quelle": "https://www.dge.de/gesunde-ernaehrung/gut-essen-und-trinken/dge-empfehlungen/am-besten-wasser-trinken/",
+   "status": "offen"
+  },
+  {
+   "id": 3,
+   "orig": "<div class=\"stat-val\">2–3</div>\n      <div class=\"stat-unit\">Liter pro Tag</div>\n      <div class=\"stat-label\">Empfohlene Trinkmenge</div>",
+   "draft": "<div class=\"stat-val\">ca. 1,5</div>\n      <div class=\"stat-unit\">Liter Getränke (DGE-Orientierung)</div>\n      <div class=\"stat-label\">Trinkmenge individuell besprechen</div>",
+   "why": "Zahlenkarte wie Ä2; Zahl ist keine Therapiedosis.",
+   "quelle": "https://www.dge.de/gesunde-ernaehrung/gut-essen-und-trinken/dge-empfehlungen/am-besten-wasser-trinken/",
+   "status": "offen"
+  }
+ ]
+}
