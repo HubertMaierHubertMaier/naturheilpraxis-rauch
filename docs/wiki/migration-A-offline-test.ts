@@ -13,8 +13,9 @@ const log: string[] = [];
 let failed = 0;
 const pass = (n: string, extra = "") => log.push(`PASS ${n}${extra ? " -> " + extra : ""}`);
 const fail = (n: string, why: string) => { failed++; log.push(`FAIL ${n}: ${why}`); };
+const canon = (v: unknown): unknown => Array.isArray(v) ? v.map(canon) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, canon((v as Record<string, unknown>)[k])])) : v;
 const eq = (n: string, got: unknown, want: unknown) =>
-  JSON.stringify(got) === JSON.stringify(want) ? pass(n, JSON.stringify(got)) : fail(n, `got ${JSON.stringify(got)} want ${JSON.stringify(want)}`);
+  JSON.stringify(canon(got)) === JSON.stringify(canon(want)) ? pass(n, JSON.stringify(got)) : fail(n, `got ${JSON.stringify(got)} want ${JSON.stringify(want)}`);
 
 const ADMIN = "00000000-0000-0000-0000-00000000000a";
 const OTHER = "00000000-0000-0000-0000-00000000000b";
@@ -79,12 +80,13 @@ const drift: Array<[string, string]> = [
   ["5d FK entfernt", `alter table kb_source_actors drop constraint kb_source_actors_entity_id_fkey`],
   ["5e Policy gleichnamig offen", `drop policy kb_source_actors_admin_all on kb_source_actors; create policy kb_source_actors_admin_all on kb_source_actors for all to authenticated using (true) with check (true)`],
   ["5f Index verändert", `drop index kb_source_actors_lookup_idx; create index kb_source_actors_lookup_idx on kb_source_actors(entity_id)`],
-  ["5g Grant erweitert", `grant update on kb_source_actors to authenticated`],
 ];
 for (const [n, ddl] of drift) {
   const body = A.replace(/^BEGIN;/m, "").replace(/^COMMIT;[\s\S]*$/m, "");
   await expectError(db, `${n} -> Abbruch`, `begin; ${ddl}; ${body} commit;`, /Strukturabweichung/);
 }
+await ok(db, "5g Grant-Erweiterung wird durch REVOKE/GRANT der Migration zurückgesetzt", `grant update on kb_source_actors to authenticated; ${A}`);
+eq("5g2 authenticated darf review_status danach nicht ändern", (await q1(db, `select has_column_privilege('authenticated','kb_source_actors','review_status','UPDATE') p`)).p, false);
 await ok(db, "5h nach Drift-Rollbacks wieder sauber (Lauf 4)", A);
 
 // Daten
