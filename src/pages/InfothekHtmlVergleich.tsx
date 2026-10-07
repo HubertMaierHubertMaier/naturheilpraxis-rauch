@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { composeWorkingVersion, findChangeTarget, nextOpenChange } from "@/lib/infothekComparison";
 import type { ComparisonChange } from "@/lib/infothekComparisonChanges";
-import { configFor, type ComparisonConfig } from "@/lib/infothekComparisonConfigs";
+import { configFor, type ComparisonConfig, COMPARISON_CONFIGS } from "@/lib/infothekComparisonConfigs";
 import { editorialWithRegistry } from "@/lib/infothekEditorialStatus";
 import { buildProgressReport, progressProjection, isOptionalAlternative, parseDecisions, replacedBy, serializeDecisions, undecided } from "@/lib/infothekDecisions";
 import { fundstelle } from "@/lib/infothekFundstelle";
