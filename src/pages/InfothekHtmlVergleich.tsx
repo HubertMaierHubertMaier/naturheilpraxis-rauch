@@ -158,6 +158,7 @@ export default function InfothekHtmlVergleich() {
   cardIdRef.current = cardId;
   const [cardTop, setCardTop] = useState(0);
   const [listOpen, setListOpen] = useState(false);
+  const [namingOpen, setNamingOpen] = useState(false);
   const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -434,10 +435,14 @@ export default function InfothekHtmlVergleich() {
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setListOpen((o) => !o)} aria-expanded={listOpen}>
               {listOpen ? "Liste einklappen" : "Alle Änderungen"}
             </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setNamingOpen((o) => !o)} aria-expanded={namingOpen}>HTML-Benennung</Button>
           </span>
+          {saveError && <span role="alert" className="w-full font-semibold text-destructive">{saveError}</span>}
+          {accepted.size === CHANGES.length && <span role="status" className="w-full rounded bg-primary/10 px-2 py-1 font-semibold">Alle {CHANGES.length} Änderungen übernommen – Arbeitsfassung vollständig. Nicht veröffentlicht, keine Freigabe; Download über „HTML herunterladen“.</span>}
           {working && working.failed.length > 0 && <span className="w-full text-destructive">Nicht anwendbar: {working.failed.map((id) => `Ä${id}`).join(", ")}</span>}
         </div>
 
+        {namingOpen && <NamingPanel />}
         {listOpen && (
           <div className="mb-2 rounded-md border border-border bg-card p-2">
             <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -454,7 +459,7 @@ export default function InfothekHtmlVergleich() {
                     <span className="font-semibold">Ä{c.id}</span>{c.headOnly ? (c.headOnly.kind === "title" ? " · HTML-Seitentitel (im Artikel nicht sichtbar)" : " · Meta-Beschreibung (im Artikel nicht sichtbar)") : original?.sectionOf.get(c.id) ? ` · Abschnitt ${original.sectionOf.get(c.id)}` : ""} [{c.reason.join(", ")}] {c.note}
                     <span className="text-destructive">{c.headOnly ? "" : status(c, "orig") + status(c, "draft")}</span>
                   </button>
-                  <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                  <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
                 </li>
               ))}
             </ol>
@@ -499,8 +504,14 @@ export default function InfothekHtmlVergleich() {
                         </dl>
                       </div>
                     )}
+                    {!c.headOnly && (c.orig || c.draft) && (
+                      <dl className="mb-2 space-y-1">
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.orig.border }}><dt className="font-semibold">Vorher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{c.orig ?? "–"}“</dd></div>
+                        <div className="rounded border-l-4 bg-muted/40 px-1.5 py-0.5" style={{ borderColor: MARK.draft.border }}><dt className="font-semibold">Nachher{c.img ? " (Alt-Text)" : ""}</dt><dd>„{c.draft ?? "–"}“</dd></div>
+                      </dl>
+                    )}
                     <p className="mb-2"><span className="font-semibold">Warum besser:</span> {c.why}</p>
-                    <AcceptControl on={accepted.has(c.id)} id={c.id} toggle={toggleAccepted} />
+                    <AcceptControl on={accepted.has(c.id)} id={c.id} accept={acceptAndAdvance} undo={(id) => toggleAccepted(id, false)} />
                   </div>
                 );
               })()}
@@ -512,13 +523,42 @@ export default function InfothekHtmlVergleich() {
   );
 }
 
-function AcceptControl({ on, id, toggle }: { on: boolean; id: number; toggle: (id: number, v: boolean) => void }) {
+function AcceptControl({ on, id, accept, undo }: { on: boolean; id: number; accept: (id: number) => void; undo: (id: number) => void }) {
   return on ? (
     <span className="flex items-center gap-1">
       <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Übernommen</span>
-      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => toggle(id, false)}>Rückgängig</Button>
+      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => undo(id)}>Rückgängig</Button>
     </span>
   ) : (
-    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => toggle(id, true)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
+    <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => accept(id)} aria-label={`Ä${id} übernehmen`}>Übernehmen</Button>
+  );
+}
+
+/** Three different "names" of the article, kept apart. Values come from the files / existing SEO notes. */
+function NamingPanel() {
+  const t = CHANGES.find((c) => c.headOnly?.kind === "title")?.headOnly;
+  const h1 = CHANGES.find((c) => c.id === 3);
+  const rows = [
+    { what: "Dateiname / öffentliche Adresse", where: "Adresszeile, Links, Suchergebnis-URL", before: ROUTE, after: "/ratgeber/frequenztherapie (Vorschlag aus den SEO-Notizen)",
+      why: "SEO/Lesbarkeit: Adresse benennt das Thema statt eines Messbarkeits-Versprechens. Rechtlicher Prüfbedarf (§ 3 HWG) möglich, keine abschließende Bewertung. Nicht umbenannt – Umstellung nur nach Freigabe, dann mit 301-Weiterleitung von der alten Adresse." },
+    { what: "HTML-Seitentitel (Ä1)", where: "Browser-Tab, Suchergebnis – im Artikel nicht sichtbar", before: t?.before, after: t?.after, why: "SEO + rechtlicher Prüfbedarf: „Krankheit ist messbar“ als Aussage ist im Artikel nicht belegt; neuer Titel beschreibt den Inhalt." },
+    { what: "Sichtbare H1 (Ä3)", where: "Erste Überschrift im Artikel", before: h1?.orig, after: h1?.draft, why: "Lesbarkeit + rechtlicher Prüfbedarf: „Grundlagen“ klingt nach Beweis; Vorschlag trennt Modell und Erfahrungsheilkunde." },
+  ];
+  return (
+    <div className="mb-2 overflow-x-auto rounded-md border border-border bg-card p-2 text-xs">
+      <table className="w-full border-collapse">
+        <thead><tr className="text-left"><th className="p-1">Benennung</th><th className="p-1">Original</th><th className="p-1">Vorschlag</th><th className="p-1">Prüfgrund</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.what} className="border-t border-border align-top">
+              <td className="p-1"><span className="font-semibold">{r.what}</span><span className="block text-muted-foreground">{r.where}</span></td>
+              <td className="p-1">„{r.before}“</td>
+              <td className="p-1">„{r.after}“</td>
+              <td className="p-1">{r.why}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
