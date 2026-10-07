@@ -330,6 +330,11 @@ export default function WikiOrdnung() {
               <li key={x.url}><a href={x.url} target="_blank" rel="noreferrer" className="underline">{x.produktname_h1 ?? x.url}</a> · EAN {x.ean?.join(", ") ?? <span className="text-destructive">nicht angegeben</span>} · Marke laut Seite: {x.marke_laut_seite ?? "–"} · Hersteller: {x.hersteller ?? <span className="text-destructive">offen</span>} · abgerufen {x.abgerufen}</li>
             ))}</ul>
           </details>
+          <details className="mt-2 text-xs"><summary className="cursor-pointer font-semibold">Produktquellen Teil 2 (25–48): {(STRUNZ_AREA as any).produktquellen_teil2?.ergebnisse?.length ?? 0} Produktseiten gelesen (ungeprüfte Quellenkandidaten)</summary>
+            <ul className="mt-1 space-y-1">{((STRUNZ_AREA as any).produktquellen_teil2?.ergebnisse ?? []).map((x: any) => (
+              <li key={x.url}><a href={x.url} target="_blank" rel="noreferrer" className="underline">{x.produktname_h1 ?? x.url}</a> · EAN {x.ean?.length ? x.ean.join(", ") : <span className="text-destructive">nicht angegeben</span>} · Marke laut Seite: {x.marke_laut_seite ?? "–"} · Hersteller: <span className="text-destructive">offen</span>{x.rohstoff_textfund ? ` · ${x.rohstoff_textfund}` : ""} · abgerufen {x.abgerufen}</li>
+            ))}</ul>
+          </details>
           <p className="mt-2 text-xs text-muted-foreground">Beleg der 69 Treffer (lesende Abfrage {(STRUNZ_AREA as any).beleg_69?.geprueft}): {(STRUNZ_AREA as any).beleg_69?.ergebnis?.artikel_existent}/19 Artikel, {(STRUNZ_AREA as any).beleg_69?.ergebnis?.revision_ist_aktuell}/19 aktuelle Revisionen, {(STRUNZ_AREA as any).beleg_69?.ergebnis?.entity_existent}/9 Einträge, {(STRUNZ_AREA as any).beleg_69?.ergebnis?.url_identisch_mit_kandidat}/69 Produktquellen-URLs identisch.</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">

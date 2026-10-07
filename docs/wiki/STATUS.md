@@ -118,3 +118,8 @@ SQL MD5 877cc8e3a0404d7aecb051efaf23bfff, Test MD5 b54c5f08092d36d2024f2b3cf6576
 - 24/136 eindeutige Produktseiten lesend gelesen (`produktquellen_teil1`): 22 mit expliziter EAN, 2 ohne (hair vital, haut vital); Marke „for you eHealth“ laut Seitentext; Hersteller auf keiner Seite genannt → offen; strunz.com nur Shop.
 - Beleg 69: 19 Artikel/19 aktuelle Revisionen/9 Einträge existieren, 9 Produktquellen-URLs identisch (lesende Abfrage).
 - Offen: 112 eindeutige Produktkonzepte + 13 Varianten. Nächster Schritt: Produktseiten 25–48.
+
+## 2026-10-07 ca. 19:25Z Strunz-Produktquellen Teil 2 (25–48)
+- 24/24 Seiten HTTP 200 lesend (`produktquellen_teil2`), 24 mit expliziter EAN; Marke „for you eHealth“; Produkthersteller auf keiner Seite genannt → offen. MSM: „Hersteller Balchem Corporation“ nur Rohstoff-Textfund, nicht übernommen.
+- 149 URLs / 13 Varianten unverändert. Keine Karten/Writes.
+- Offen: 88 eindeutige Produktseiten (49–136) + 13 Varianten; Hersteller aller 48 offen. Nächster Schritt: Produktseiten 49–72.
