@@ -23,7 +23,7 @@ describe("BackupCenter one-click sequence", () => {
     const resultCheck = oneClick.indexOf("if (!fullBackupSucceeded)");
     const codeDownload = oneClick.indexOf("downloadGithubZip");
 
-    expect(oneClick).toContain("const fullBackupSucceeded = await downloadFullBackup()");
+    expect(oneClick).toContain("const fullBackupSucceeded = await downloadFullBackup(destination)");
     expect(resultCheck).toBeGreaterThan(-1);
     expect(oneClick).toContain("githubWindow?.close()");
     expect(codeDownload).toBeGreaterThan(resultCheck);
@@ -39,9 +39,9 @@ describe("BackupCenter one-click sequence", () => {
       source.indexOf("const totalRows"),
     );
 
-    expect(codeBackup).toContain("filename, preparedWindow");
+    expect(codeBackup).toContain("destination, preparedWindow");
     expect(oneClick).toContain("githubWindow.document.close()");
-    expect(oneClick).toContain("downloadGithubZip(githubWindow)");
+    expect(oneClick).toContain("downloadGithubZip(githubWindow, destination)");
   });
 });
 

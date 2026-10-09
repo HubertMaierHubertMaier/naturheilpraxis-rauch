@@ -29,6 +29,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BACKUP_AREAS, type BackupArea } from "@/lib/backupAreas";
+import { validateCodeBackupZip } from "@/lib/validateCodeBackupZip";
+import { chooseBackupDirectory, backupFingerprint, validateBackupArchive, verifySavedBackup, writeVerifiedBackup, type BackupDirectory } from "@/lib/backupFileSave";
+type BackupKey = "lastFull" | "lastDb" | "lastGithub";
+type PendingBackup = { filename: string; size: number; hash: string; keys: BackupKey[] };
 
 type Stats = {
   generatedAt: string;
@@ -127,6 +131,11 @@ function buildBackupManifest(
     "",
     `Auth-Benutzerkonten: ${authUserCount} (ohne Passwörter, siehe \`auth/users.json\`)`,
     "",
+    "## Umfang und Stand",
+    "",
+    "Dieses Archiv enthält die oben aufgelisteten, vom Export erreichbaren Tabellen und Dateien. Die Dateiprüfung bestätigt die gespeicherten ZIP-Bytes; sie bestätigt keine vollständige Datenbankstruktur oder erfolgreiche Wiederherstellung.",
+    "Die Tabellen werden nacheinander gelesen, ohne gemeinsamen Datenbank-Snapshot. Änderungen während des Exports können deshalb unterschiedliche Datenstände verursachen. Vor einer Wiederherstellung den Export in einer getrennten Testumgebung prüfen.",
+    "",
   ];
   if (unavailableTables.length > 0) {
     lines.push("## Im Schema vorgemerkt, aber in dieser Datenbank nicht vorhanden", "");
@@ -157,9 +166,7 @@ function buildBackupManifest(
 }
 
 function isoTimestamp(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
+  return `${new Date().toISOString().replace(/[:.]/g, "-")}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function getFunctionsUrl(): string {
@@ -201,7 +208,7 @@ export function BackupCenter() {
   const [progress, setProgress] = useState(0);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<
-    | { ok: true; filename: string; size: number; durationSec: number; warnings: number }
+    | { ok: true; filename: string; size: number; durationSec: number; warnings: number; verified?: boolean }
     | { ok: false; message: string }
     | null
   >(null);
@@ -210,6 +217,47 @@ export function BackupCenter() {
   const [repoDraft, setRepoDraft] = useState<string>("");
   const [branchDraft, setBranchDraft] = useState<string>("main");
   const [savingRepo, setSavingRepo] = useState(false);
+  const [pendingBackups, setPendingBackups] = useState<PendingBackup[]>([]);
+  const [checkingFiles, setCheckingFiles] = useState(false);
+  const verificationInput = useRef<HTMLInputElement>(null);
+
+  async function saveBackup(blob: Blob, filename: string, keys: BackupKey[], destination: BackupDirectory | null, preparedWindow?: Window | null) {
+    await validateBackupArchive(blob);
+    if (destination) {
+      await writeVerifiedBackup(destination, filename, blob);
+      keys.forEach(markDone);
+      log(`Datei gespeichert und erneut vollständig gelesen: ${filename}.`);
+      return true;
+    }
+    const hash = await backupFingerprint(blob);
+    saveBlob(blob, filename, preparedWindow);
+    setPendingBackups((previous) => [...previous.filter((item) => item.filename !== filename), { filename, size: blob.size, hash, keys }]);
+    log(`Download gestartet: ${filename}. Bestätigung erst nach Prüfung der gespeicherten Datei.`);
+    return false;
+  }
+
+  async function confirmDownloadedFiles(files: FileList | null) {
+    if (!files || checkingFiles) return;
+    setCheckingFiles(true);
+    try {
+      for (const file of Array.from(files)) {
+        const hash = await backupFingerprint(file);
+        const pending = pendingBackups.find((item) => item.size === file.size && item.hash === hash);
+        if (!pending) throw new Error("Die ausgewählte Datei gehört nicht zu den noch ungeprüften Sicherungen dieses Tabs.");
+        await verifySavedBackup(file, pending.size, pending.hash);
+        pending.keys.forEach(markDone);
+        setPendingBackups((previous) => previous.filter((item) => item.hash !== pending.hash));
+        setLastResult((previous) => previous?.ok && previous.filename === pending.filename ? { ...previous, verified: true } : previous);
+        toast.success(`Gespeicherte ZIP-Datei vollständig geprüft: ${pending.filename}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Dateiprüfung fehlgeschlagen.");
+    } finally {
+      setCheckingFiles(false);
+      if (verificationInput.current) verificationInput.current.value = "";
+    }
+  }
+
   const [lastFullBackup, setLastFullBackup] = useState<string | null>(null);
   const [lastDbBackup, setLastDbBackup] = useState<string | null>(null);
   const [lastGithubZip, setLastGithubZip] = useState<string | null>(null);
@@ -315,37 +363,37 @@ export function BackupCenter() {
       throw new Error(`GitHub-Code-ZIP HTTP ${res.status}${detail ? ` — ${detail}` : ""}`);
     }
     const buf = await res.arrayBuffer();
-    const cd = res.headers.get("Content-Disposition") ?? "";
-    const match = cd.match(/filename="?([^"]+)"?/);
-    const filename = match?.[1] ?? info.filename;
-    log(`Code-ZIP empfangen (${formatBytes(buf.byteLength)}).`);
+    await validateCodeBackupZip(buf);
+    const filename = info.filename;
+    log(`Code-ZIP empfangen und auf Integrität geprüft (${formatBytes(buf.byteLength)}).`);
     return { bytes: buf, filename };
   }
 
-  const downloadGithubZip = async (preparedWindow?: Window | null) => {
+  const downloadGithubZip = async (preparedWindow?: Window | null, chosenDestination?: BackupDirectory | null) => {
     setDownloading("code");
     setProgress(0);
     setLastResult(null);
     const started = Date.now();
     let info: ReturnType<typeof getGithubZipDownload> | null = null;
     try {
+      const destination = chosenDestination === undefined ? await chooseBackupDirectory() : chosenDestination;
       const token = await getToken();
       setProgress(40);
       info = getGithubZipDownload();
       const { bytes, filename } = await fetchGithubZipBytes(token);
       setProgress(100);
-      saveBlob(new Blob([bytes], { type: "application/zip" }), filename, preparedWindow);
+      const verified = await saveBackup(new Blob([bytes], { type: "application/zip" }), filename, ["lastGithub"], destination, preparedWindow);
       const dur = Math.round((Date.now() - started) / 1000);
-      setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0 });
-      markDone("lastGithub");
-      toast.success(`Code-ZIP heruntergeladen: ${filename} (${formatBytes(bytes.byteLength)}).`);
+      setLastResult({ ok: true, filename, size: bytes.byteLength, durationSec: dur, warnings: 0, verified });
+      toast.success(verified ? `Code-ZIP gespeichert und geprüft: ${filename}` : `Code-ZIP geprüft; Download gestartet: ${filename}. Dateiprüfung steht noch aus.`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "GitHub-ZIP konnte nicht geladen werden.";
       if (preparedWindow && info && !preparedWindow.closed) {
         preparedWindow.location.href = info.githubUrl;
-        markDone("lastGithub");
+        log(`FEHLER: ${msg}; manueller GitHub-Download ungeprüft.`);
+        setLastResult({ ok: false, message: `${msg} Ein manueller GitHub-Download wurde geöffnet, ist aber nicht als geprüftes Backup bestätigt.` });
         toast.warning(
-          `Server-Download fehlgeschlagen (${msg}). Notfall-Fallback: direkter GitHub-Download im neuen Tab — ACHTUNG: Datei heißt dann "${info.cleaned.split("/")[1]}-${info.branch}.zip" statt "Naturheilpraxis-CODE-Backup-…". Für korrekten Namen GITHUB_TOKEN-Secret hinterlegen.`,
+          `Server-Download fehlgeschlagen (${msg}). Manueller GitHub-Download im neuen Tab geöffnet. Bitte Datei und ZIP-Inhalt prüfen; dieser Versuch zählt nicht als erfolgreiches Backup.`,
           { duration: 12000 }
         );
         return;
@@ -361,13 +409,14 @@ export function BackupCenter() {
   useEffect(() => {
     loadStats();
     loadGithubRepo();
-    setLastFullBackup(localStorage.getItem("backup:lastFull"));
-    setLastDbBackup(localStorage.getItem("backup:lastDb"));
-    setLastGithubZip(localStorage.getItem("backup:lastGithub"));
+    setLastFullBackup(localStorage.getItem("backup:verified:lastFull"));
+    setLastDbBackup(localStorage.getItem("backup:verified:lastDb"));
+    setLastGithubZip(localStorage.getItem("backup:verified:lastGithub"));
   }, []);
 
   const markDone = (key: "lastFull" | "lastDb" | "lastGithub") => {
     const iso = new Date().toISOString();
+    localStorage.setItem(`backup:verified:${key}`, iso);
     localStorage.setItem(`backup:${key}`, iso);
     if (key === "lastFull") setLastFullBackup(iso);
     if (key === "lastDb") setLastDbBackup(iso);
@@ -473,13 +522,17 @@ export function BackupCenter() {
         if (page.table !== table.name || page.from !== nextFrom || !Array.isArray(page.rows)) {
           throw new Error(`Tabelle ${table.name}: ungültige Exportantwort`);
         }
+        if (!Number.isSafeInteger(page.total) || page.total !== table.rows) throw new Error(`Tabelle ${table.name}: Umfang hat sich während der Sicherung geändert`);
         total = page.total;
+        if (page.nextFrom !== null && (page.rows.length === 0 || page.nextFrom !== nextFrom + page.rows.length)) throw new Error(`Tabelle ${table.name}: Exportseite fehlt`);
         rows.push(...page.rows);
         if (page.nextFrom !== null && page.nextFrom <= nextFrom) {
           throw new Error(`Tabelle ${table.name}: ungültige Seitennummer`);
         }
         nextFrom = page.nextFrom;
       }
+      const rowIds = rows.filter((row) => row.id !== undefined && row.id !== null).map((row) => JSON.stringify(row.id));
+      if (new Set(rowIds).size !== rowIds.length) throw new Error(`Tabelle ${table.name}: doppelte Datensätze im Export`);
       if (rows.length !== total) {
         throw new Error(`Tabelle ${table.name}: ${rows.length} von ${total} Zeilen empfangen`);
       }
@@ -505,10 +558,15 @@ export function BackupCenter() {
       }>(`${baseUrl}?mode=auth-page&page=${authPage}&perPage=500`, token);
       if (page.page !== authPage || !Array.isArray(page.users)) throw new Error("Auth-Export: ungültige Antwort");
       authUsers.push(...page.users);
-      if (typeof page.total === "number") reportedAuthTotal = page.total;
+      if (typeof page.total === "number") {
+        if (page.total !== exportStats.authUserCount) throw new Error("Auth-Export: Kontenzahl hat sich während der Sicherung geändert");
+        reportedAuthTotal = page.total;
+      }
       if (page.nextPage !== null && page.nextPage <= authPage) throw new Error("Auth-Export: ungültige Seitennummer");
       authPage = page.nextPage;
     }
+    const authIds = authUsers.map((user) => user.id);
+    if (authIds.some((id) => typeof id !== "string") || new Set(authIds).size !== authIds.length) throw new Error("Auth-Export: ungültige oder doppelte Konten");
     const expectedAuthTotal = reportedAuthTotal ?? exportStats.authUserCount;
     if (expectedAuthTotal >= 0 && authUsers.length !== expectedAuthTotal) {
       throw new Error(`Auth-Export: ${authUsers.length} von ${expectedAuthTotal} Konten empfangen`);
@@ -544,18 +602,18 @@ export function BackupCenter() {
     setLastResult(null);
     const started = Date.now();
     try {
+      const destination = await chooseBackupDirectory();
       const token = await getToken();
       const { bytes } = await fetchDbZipBytes(token, "db", (fraction) => {
         setProgress(Math.round(5 + fraction * 90));
       });
       setProgress(100);
       const fn = `Naturheilpraxis-DATEN-Backup-${isoTimestamp()}.zip`;
-      saveBlob(new Blob([bytes], { type: "application/zip" }), fn);
+      const verified = await saveBackup(new Blob([bytes], { type: "application/zip" }), fn, ["lastDb"], destination);
       const dur = Math.round((Date.now() - started) / 1000);
-      log(`Fertig: ${fn} gespeichert.`);
-      setLastResult({ ok: true, filename: fn, size: bytes.byteLength, durationSec: dur, warnings: 0 });
-      markDone("lastDb");
-      toast.success(`Schnell-Backup heruntergeladen (${formatBytes(bytes.byteLength)}).`);
+      log(verified ? `Fertig: ${fn} gespeichert und geprüft.` : `Dateiprüfung ausstehend: ${fn}.`);
+      setLastResult({ ok: true, filename: fn, size: bytes.byteLength, durationSec: dur, warnings: 0, verified });
+      toast.success(verified ? "Schnell-Backup gespeichert und geprüft." : "Schnell-Backup: Download gestartet; Dateiprüfung steht aus.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unbekannter Fehler";
       log(`FEHLER: ${msg}`);
@@ -566,7 +624,7 @@ export function BackupCenter() {
     }
   };
 
-  const downloadFullBackup = async () => {
+  const downloadFullBackup = async (chosenDestination?: BackupDirectory | null) => {
     setDownloading("full");
     setProgress(0);
     setLogLines([]);
@@ -574,6 +632,7 @@ export function BackupCenter() {
     const started = Date.now();
     let warnings = 0;
     try {
+      const destination = chosenDestination === undefined ? await chooseBackupDirectory() : chosenDestination;
       const token = await getToken();
 
       // 1) DB-ZIP holen und entpacken (wir packen alles neu zusammen)
@@ -634,6 +693,7 @@ export function BackupCenter() {
             const r = await fetch(f.signedUrl);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const buf = new Uint8Array(await r.arrayBuffer());
+            if (buf.length !== f.size) throw new Error("Dateigröße stimmt nicht mit der Exportliste überein");
             zip.file(`storage/${f.bucket}/${f.path}`, buf);
             downloadedBytes += buf.length;
           } catch (e) {
@@ -669,14 +729,12 @@ export function BackupCenter() {
       );
       setProgress(100);
       const fn = `Naturheilpraxis-DATEN-voll-Backup-${isoTimestamp()}.zip`;
-      saveBlob(finalBlob, fn);
+      const verified = await saveBackup(finalBlob, fn, ["lastFull", "lastDb"], destination);
       const dur = Math.round((Date.now() - started) / 1000);
-      log(`Fertig: ${fn} gespeichert (${formatBytes(finalBlob.size)} in ${dur}s).`);
-      setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings });
-      markDone("lastFull");
-      markDone("lastDb");
+      log(verified ? `Fertig: ${fn} gespeichert und geprüft.` : `Download gestartet: ${fn}; Dateiprüfung steht aus.`);
+      setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings, verified });
       if (warnings === 0) {
-        toast.success(`Voll-Backup heruntergeladen (${formatBytes(finalBlob.size)}).`);
+        toast.success(verified ? "Voll-Backup gespeichert und geprüft." : "Voll-Backup: Download gestartet; Dateiprüfung steht aus.");
       } else {
         toast.warning(
           `Voll-Backup heruntergeladen (${formatBytes(finalBlob.size)}) — ${warnings} Datei(en) mit Fehler.`,
@@ -704,6 +762,7 @@ export function BackupCenter() {
     const started = Date.now();
     let warnings = 0;
     try {
+      const destination = await chooseBackupDirectory();
       const token = await getToken();
       const apikey = getApiKey();
       const zip = new JSZip();
@@ -759,6 +818,7 @@ export function BackupCenter() {
             const r = await fetch(f.signedUrl);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const buf = new Uint8Array(await r.arrayBuffer());
+            if (buf.length !== f.size) throw new Error("Dateigröße stimmt nicht mit der Exportliste überein");
             zip.file(`storage/${f.bucket}/${f.path}`, buf);
           } catch (e) {
             warnings++;
@@ -833,13 +893,12 @@ export function BackupCenter() {
           `- **public-assets/** — Statische Dateien aus public/ (${area.publicAssets.length} Datei(en))`,
           `- **AREA-MANIFEST.json** — Komplette Liste inkl. zugehöriger Source-Code-Pfade`,
           "",
-          `## Wiederherstellen über Lovable-Chat`,
+          `## Kontrollierte Wiederherstellung`,
           "",
-          "1. Dieses ZIP in den Lovable-Chat ziehen.",
-          `2. Schreiben: *"Bitte spiele dieses Teilbereich-Backup '${area.label}' wieder ein. ` +
-            `Lies AREA-MANIFEST.json und frage VOR jedem destruktiven Schritt um Bestätigung."*`,
-          "3. Lovable importiert nur die zu diesem Bereich gehörenden Tabellen + Dateien — ",
-          "   der Rest deiner App bleibt unangetastet.",
+          "1. Archiv lokal prüfen. Es kann Gesundheitsdaten enthalten; nicht in einen allgemeinen Chat hochladen.",
+          "2. Code und Datenbankschema aus dem passenden Codebackup in einer getrennten, zugriffsgeschützten Testumgebung bereitstellen.",
+          "3. AREA-MANIFEST.json mit dem gewünschten Umfang abgleichen, Tabellen und Dateien dort kontrolliert wiederherstellen und prüfen.",
+          "4. Änderungen am produktiven System erst nach ausdrücklicher Freigabe und aktueller Sicherung durchführen.",
           "",
           `## Zugehörige Source-Code-Pfade`,
           "Falls auch Code dieses Bereichs wiederhergestellt werden muss, im GitHub-Code-ZIP",
@@ -850,6 +909,8 @@ export function BackupCenter() {
         ].join("\n"),
       );
 
+      if (warnings > 0) throw new Error(`Teilbereich-Backup unvollständig: ${warnings} Exportfehler. Keine Sicherung bestätigt.`);
+
       // 6) ZIP bauen
       log("Packe ZIP…");
       setProgress(92);
@@ -859,12 +920,12 @@ export function BackupCenter() {
       );
       setProgress(100);
       const fn = `Naturheilpraxis-${area.id}-Backup-${isoTimestamp()}.zip`;
-      saveBlob(finalBlob, fn);
+      const verified = await saveBackup(finalBlob, fn, [], destination);
       const dur = Math.round((Date.now() - started) / 1000);
       log(`Fertig: ${fn} (${formatBytes(finalBlob.size)} in ${dur}s).`);
-      setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings });
+      setLastResult({ ok: true, filename: fn, size: finalBlob.size, durationSec: dur, warnings, verified });
       if (warnings === 0) {
-        toast.success(`Teilbereich-Backup "${area.label}" gespeichert (${formatBytes(finalBlob.size)}).`);
+        toast.success(verified ? `Teilbereich-Backup "${area.label}" gespeichert und geprüft.` : `Teilbereich-Backup "${area.label}": Download gestartet; Dateiprüfung steht aus.`);
       } else {
         toast.warning(
           `Teilbereich-Backup "${area.label}" mit ${warnings} Warnung(en) gespeichert.`,
@@ -883,18 +944,24 @@ export function BackupCenter() {
 
   const runOneClick = async () => {
     if (downloading || oneClickRunning) return;
+    setOneClickRunning(true);
     let githubWindow: Window | null = null;
-    if (githubRepo.trim()) {
+    let destination: BackupDirectory | null;
+    try { destination = await chooseBackupDirectory(); } catch {
+      setOneClickRunning(false);
+      toast.info("Sicherung abgebrochen; kein Sicherungszeitpunkt geändert.");
+      return;
+    }
+    if (!destination && githubRepo.trim()) {
       githubWindow = window.open("", "_blank");
       if (githubWindow) {
         githubWindow.document.write("<p style='font-family:system-ui;padding:24px'>Code-ZIP wartet auf Fertigstellung des Daten-Backups…</p>");
         githubWindow.document.close();
       }
     }
-    setOneClickRunning(true);
     try {
       toast.info("Schritt 1/2: Voll-Backup wird erstellt…");
-      const fullBackupSucceeded = await downloadFullBackup();
+      const fullBackupSucceeded = await downloadFullBackup(destination);
       if (!fullBackupSucceeded) {
         githubWindow?.close();
         return;
@@ -903,7 +970,7 @@ export function BackupCenter() {
       await new Promise((r) => setTimeout(r, 800));
       if (githubRepo.trim()) {
         toast.info("Schritt 2/2: GitHub-Code-ZIP wird gestartet…");
-        await downloadGithubZip(githubWindow);
+        await downloadGithubZip(githubWindow, destination);
       } else {
         toast.warning("GitHub-Repo nicht gesetzt — Code-ZIP übersprungen. Bitte unten Repo eintragen.");
       }
@@ -928,12 +995,12 @@ export function BackupCenter() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Sicherungs-Routine — 1 Klick, alles erledigt
+            Sicherungs-Routine — erstellen, speichern und prüfen
           </CardTitle>
           <CardDescription>
             Drücke <strong>einmal</strong> auf den grünen Knopf. Das System lädt nacheinander{" "}
-            <strong>Voll-Backup</strong> (alle Patientendaten + Dateien) und{" "}
-            <strong>Code-ZIP</strong> (gesamte App von GitHub) in deinen Download-Ordner.
+            <strong>Voll-Backup</strong> (Datenbankexport + Dateien) und{" "}
+            <strong>Code-ZIP</strong> (App-Stand von GitHub). In Brave, Chrome oder Edge wählst du zuerst den Zielordner; beide Dateien werden dort gespeichert und erneut gelesen. Andere Browser starten Downloads und verlangen anschließend die Dateiprüfung.
             Empfehlung: <strong>1× pro Woche</strong>.
           </CardDescription>
         </CardHeader>
@@ -951,7 +1018,7 @@ export function BackupCenter() {
               </span>
             </div>
             <span className="text-xs font-normal opacity-90">
-              2 separate ZIPs landen automatisch im Download-Ordner (kein zweiter Speichern-Dialog)
+              2 separate ZIPs · bestätigt erst nach Prüfung der gespeicherten Dateien
             </span>
           </Button>
 
@@ -1053,7 +1120,7 @@ export function BackupCenter() {
           <div className="rounded border bg-background p-3 text-sm">
             <p className="mb-2 font-medium">So lagerst du die 2 ZIP-Dateien sicher:</p>
             <ol className="ml-5 list-decimal space-y-1 text-muted-foreground">
-              <li>Beide ZIPs aus dem Download-Ordner an <strong>2 getrennte Orte</strong> kopieren:
+              <li>Beide geprüften ZIPs aus deinem Sicherungsordner an <strong>2 getrennte Orte</strong> kopieren:
                 z. B. <strong>USB-Stick</strong> + <strong>externe Festplatte</strong> (oder verschlüsselter Cloud-Ordner).</li>
               <li>Mindestens den USB-Stick mit <strong>VeraCrypt</strong> verschlüsseln (enthält Gesundheitsdaten).</li>
               <li>Alte Backups älter als 10 Jahre <strong>sicher löschen</strong> (DSGVO).</li>
@@ -1064,12 +1131,25 @@ export function BackupCenter() {
             <Info className="h-4 w-4" />
             <AlertTitle>Wann brauchst du das?</AlertTitle>
             <AlertDescription className="text-sm">
-              Wenn etwas kaputtgeht, ziehst du die ZIP-Datei einfach in den Lovable-Chat und schreibst
-              „Bitte wiederherstellen". Details und Profi-Optionen findest du in den Abschnitten unten.
+              Code und Daten werden getrennt wiederhergestellt. Die ZIPs enthalten die jeweilige Anleitung. Ein Wiederherstellungstest erfolgt zuerst in einer getrennten Umgebung; Patientenarchive gehören nicht in einen allgemeinen Chat.
             </AlertDescription>
           </Alert>
         </CardContent>
       </Card>
+
+      {pendingBackups.length > 0 && (
+        <Card className="border-amber-500/50">
+          <CardHeader><CardTitle>Dateiprüfung ausstehend</CardTitle><CardDescription>
+            Wähle die heruntergeladenen ZIP-Dateien aus. Die Prüfung erfolgt nur in diesem Browser; die Dateien werden nicht hochgeladen.
+            Bis dahin gelten diese Downloads nicht als bestätigte Sicherung. Halte diesen Tab offen.
+          </CardDescription></CardHeader>
+          <CardContent className="space-y-3">
+            <ul className="list-disc pl-5 text-sm">{pendingBackups.map((item) => <li key={item.filename}>{item.filename}</li>)}</ul>
+            <input ref={verificationInput} type="file" accept=".zip,application/zip" multiple hidden onChange={(event) => void confirmDownloadedFiles(event.target.files)} />
+            <Button disabled={checkingFiles} onClick={() => verificationInput.current?.click()}>{checkingFiles ? "Prüfe Dateien…" : "Gespeicherte ZIP-Dateien prüfen"}</Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Was-ist-wo Übersicht */}
       <Card>
@@ -1138,7 +1218,7 @@ export function BackupCenter() {
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-xs">
-                      {row.status === "ok" && <span className="text-green-700 dark:text-green-400">✓ {row.note ?? "vollständig gesichert"}</span>}
+                      {row.status === "ok" && <span className="text-green-700 dark:text-green-400">✓ {row.note ?? "ZIP-Datei geprüft"}</span>}
                       {row.status === "warn" && <span className="text-amber-700 dark:text-amber-400">⚠ {row.note}</span>}
                       {row.status === "info" && <span className="text-muted-foreground">ℹ {row.note}</span>}
                     </td>
@@ -1262,7 +1342,7 @@ export function BackupCenter() {
             <Button
               size="lg"
               variant="secondary"
-              onClick={downloadFullBackup}
+              onClick={() => downloadFullBackup()}
               disabled={downloading !== null}
               className="h-auto flex-col gap-2 py-5"
             >
@@ -1311,16 +1391,17 @@ export function BackupCenter() {
               )}
               <AlertTitle>
                 {lastResult.ok
-                  ? lastResult.warnings > 0
-                    ? "Backup mit Warnungen abgeschlossen"
-                    : "Backup erfolgreich abgeschlossen"
+                  ? lastResult.verified ? "ZIP gespeichert und geprüft" : "Download gestartet — Dateiprüfung ausstehend"
                   : "Backup fehlgeschlagen"}
               </AlertTitle>
               <AlertDescription className="text-sm">
                 {lastResult.ok ? (
                   <>
-                    Datei <code>{lastResult.filename}</code> wurde in deinen Browser-Download-Ordner
-                    gespeichert · {formatBytes(lastResult.size)} · {lastResult.durationSec}s
+                    Datei <code>{lastResult.filename}</code>{" "}
+                    {lastResult.verified
+                      ? "wurde gespeichert, erneut gelesen und vollständig mit der erzeugten ZIP verglichen."
+                      : "wurde als Download gestartet. Bitte die gespeicherte Datei unten zur Prüfung auswählen; bisher ist keine Speicherung bestätigt."}
+                    {" · "}{formatBytes(lastResult.size)} · {lastResult.durationSec}s
                     {lastResult.warnings > 0 && ` · ${lastResult.warnings} Datei(en) mit Fehler (siehe ERROR.txt im ZIP)`}
                   </>
                 ) : (
