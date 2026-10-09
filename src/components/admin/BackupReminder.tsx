@@ -59,8 +59,8 @@ export function BackupReminder() {
 
   useEffect(() => {
     const read = () => {
-      setLastFull(localStorage.getItem("backup:lastFull"));
-      setLastGithub(localStorage.getItem("backup:lastGithub"));
+      setLastFull(localStorage.getItem("backup:verified:lastFull"));
+      setLastGithub(localStorage.getItem("backup:verified:lastGithub"));
       const snoozeUntil = localStorage.getItem("backup:reminderSnoozeUntil");
       setDismissed(snoozeUntil ? Date.parse(snoozeUntil) > Date.now() : false);
     };

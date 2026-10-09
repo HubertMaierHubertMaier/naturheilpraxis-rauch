@@ -12,6 +12,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "npm:jszip@3.10.1";
 import { OWNER_TRANSPORT_TABLE, readOwnerTransportPage } from "../_shared/backupOwnerTransport.ts";
+import { fetchGithubCodeArchive } from "../_shared/githubCodeArchive.ts";
 
 const allowedCorsHostnames = new Set([
   "naturheilpraxis-rauch.lovable.app",
@@ -612,22 +613,7 @@ Deno.serve(async (req) => {
     if (mode === "github-code") {
       const { repo, branch } = sanitizeGithubInput(url.searchParams.get("repo"), url.searchParams.get("branch"));
       const githubToken = Deno.env.get("GITHUB_TOKEN") ?? "";
-      const ghHeaders: Record<string, string> = { "User-Agent": "naturheilpraxis-backup-export" };
-      if (githubToken) ghHeaders["Authorization"] = `Bearer ${githubToken}`;
-      // GitHub API endpoint supports private repos with token and returns a redirect to codeload
-      const apiUrl = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(branch)}`;
-      const codeloadUrl = `https://codeload.github.com/${repo}/zip/refs/heads/${encodeURIComponent(branch)}`;
-      const githubRes = await fetch(githubToken ? apiUrl : codeloadUrl, { headers: ghHeaders, redirect: "follow" });
-      if (!githubRes.ok || !githubRes.body) {
-        const status = githubRes.status;
-        if (status === 404 && !githubToken) {
-          throw new Error(`GitHub-Code-ZIP HTTP 404 — Repo ist vermutlich PRIVAT. Bitte ein GitHub Personal Access Token mit "repo"-Scope als Secret "GITHUB_TOKEN" hinterlegen.`);
-        }
-        if (status === 401 || status === 403) {
-          throw new Error(`GitHub-Code-ZIP HTTP ${status} — Token abgelaufen oder ohne "repo"-Scope. Bitte GITHUB_TOKEN erneuern.`);
-        }
-        throw new Error(`GitHub-Code-ZIP konnte nicht geladen werden (HTTP ${status}). Repo/Branch prüfen.`);
-      }
+      const githubRes = await fetchGithubCodeArchive(repo, branch, githubToken);
       const filename = `Naturheilpraxis-CODE-Backup-${isoTimestamp()}.zip`;
       return new Response(githubRes.body, {
         status: 200,
@@ -813,6 +799,7 @@ Deno.serve(async (req) => {
       }
 
       const storageOut: Record<string, Array<{ path: string; size: number; signedUrl: string }>> = {};
+      const subsetStorageErrors: Array<{ bucket: string; message: string }> = [];
       for (const bucket of area.buckets) {
         try {
           const files = await listAllFiles(adminClient, bucket);
@@ -831,11 +818,18 @@ Deno.serve(async (req) => {
               }
             }
           }
+          if (entries.length !== files.length) throw new Error("Nicht alle Storage-Dateien konnten zum Export vorbereitet werden");
           storageOut[bucket] = entries;
         } catch (e) {
           console.error(`[backup-export] subset storage ${bucket}:`, e);
-          storageOut[bucket] = [];
+          subsetStorageErrors.push({ bucket, message: "Storage-Liste oder signierte Download-Adressen unvollständig" });
         }
+      }
+
+      if (subsetStorageErrors.length > 0) {
+        return new Response(JSON.stringify({ error: "subset_storage_export_failed", area: areaId, storageErrors: subsetStorageErrors }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       return new Response(
